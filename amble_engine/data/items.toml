@@ -1,0 +1,485 @@
+# [[items]]
+# id = "token"
+# name = "display_name"
+# description = """
+# full_description
+# """
+# portable = true
+# location = {}
+# # -----------------------------------------------------------------------------
+
+[[items]]
+id = "no_cake"
+name = "No Cake"
+description = """
+You carry an uneasy feeling where a dessert might be. It is the absence of cake,
+and somehow you know you’ve always had it.
+"""
+portable = true
+location = { Inventory = "player" }
+
+# -----------------------------------------------------------------------------
+[[items]]
+id = "invitation"
+name = "Engraved Invitation"
+description = """
+A standard letter-size slab of asbestos with ornate and official-looking
+lettering burned into it. It remains too hot to touch.
+"""
+portable = true
+location = { Nowhere = "spawns@aperture-lab" }
+abilities = ["read"]
+interaction_requires.handle = "insulate"
+text = """
+Candidate #2112-42:
+You are cordially invited to complete your evaluation and induction. Please
+present this invitation at the Amble Adventures office immediately upon arrival.
+"""
+
+# -----------------------------------------------------------------------------
+[[items]]
+id = "lebowski_rug"
+name = "The Dude's Rug"
+description = """
+It really ties the room together.
+"""
+portable = true
+location = { Room = "lounge" }
+
+# -----------------------------------------------------------------------------
+[[items]]
+id = "portal_gun"
+name = "Portal Gun"
+description = """
+A black and white Portal gun affixed to a stand and aimed at a target on the
+wall. There's a power switch and a door to a battery compartment.
+"""
+portable = false
+container = true
+open = false
+locked = false
+
+location = { Room = "portal-room" }
+abilities = ["turnOn"]
+
+# -----------------------------------------------------------------------------
+[[items]]
+id = "road_sign"
+name = "Welcome Sign"
+description = """
+A 10-foot tall sign, spotlit from below by a fusion powered sodium lamp. The
+sign is tilted upward, as if it was meant to be read from the air as well as
+the ground.
+"""
+portable = false
+location = { Room = "inca-road" }
+abilities = ["read"]
+text = """
+                            AMBLE ADVENTURES
+                           (Inca Road Branch)
+                 * a division of Brains Anonymous, LLC
+"""
+
+# -----------------------------------------------------------------------------
+[[items]]
+id = "reservation_book"
+name = "Reservation Book"
+description = """
+A leather-bound guest book sits at the host stand, its pages flipping themselves
+when unattended. You spot several names written in wildly different scripts,
+including: 'Zaphod B.', 'Marvin (ugh, not again)', 'The Ambler (late)', and
+'Jenkins the Time Ferret (Pending)'.
+
+There's a faint doodle of a bright sun and a pair of sunglasses near the bottom.
+"""
+portable = false
+location = { Room = "restaurant" }
+
+# -----------------------------------------------------------------------------
+[[items]]
+id = "un_drink"
+name = "Negative Cocktail"
+description = """
+A crystal glass sits half full of... nothing. And yet, the liquid level keeps
+rising, as if the drink is slowly returning to the bartender across time. The
+stir stick spins gently in defiance of gravity and good sense.
+"""
+portable = true
+location = { Room = "patio" }
+
+# -----------------------------------------------------------------------------
+[[items]]
+id = "elevator_keycard"
+name = "Proximity Keycard"
+description = """
+This is either a keycard or a rejected prototype for a business card. It reads:
+'Amble Adventures — Internal Use Only — Do Not Duplicate, Think About, or Eat'.
+It's warm to the touch, and it buzzes slightly.
+"""
+portable = true
+location = { Room = "poetry-panic" }
+
+# -----------------------------------------------------------------------------
+[[items]]
+id = "delivery_box"
+name = "Shipping Box"
+description = """
+A cardboard box affixed with several shipping labels and beaten into a barely
+recognizable shape. It would probably fall apart completely if you tried to
+open it. One of the stickers reads "Fragile: Handle with Care!" and another is
+addressed to YOU at Amble Adventures headquarters.
+"""
+portable = true
+location = { Nowhere = "spawns@inca-road after first leaving" }
+container = true
+
+# -----------------------------------------------------------------------------
+[[items]]
+id = "destroyed_box"
+name = "Destroyed Shipping Box"
+description = """
+A pile of packing tape, stickers, and mangled carboard fragments that used to
+be a shipping box before it fell apart.
+"""
+portable = true
+location = { Nowhere = "spawns@player when delivery_box opened" }
+container = false
+
+# -----------------------------------------------------------------------------
+[[items]]
+id = "towel"
+name = "Towel"
+description = "A plain white bath towel with plooksilk stiching, fully charged."
+portable = true
+abilities = ["insulate"]
+location = { Nowhere = "spawns@player when delivery_box is opened" }
+
+# -----------------------------------------------------------------------------
+[[items]]
+id = "vogon_poetry_book"
+name = "Selected Poems of the Largest Vogons"
+description = """
+A bound volume of Vogon poetry, with the usual safety devices and locks removed.
+Looking inside is likely to cause brain damage and a permanent smell of boiling
+cauliflower to haunt you, if you're lucky.
+"""
+portable = true
+location = { Room = "vip-bathroom" }
+# -----------------------------------------------------------------------------
+
+[[items]]
+id = "poetry_performer"
+name = "Poetry Performer"
+description = """
+In lieu of decades-old magazines, the office has installed this poetry recitation
+device. If poetic material is supplied, it is automatically performed in the voice
+that is the most soulful and gripping for each listener in the room (as long as
+that happens to be Morgan Freeman's).
+"""
+portable = false
+container = true
+open = false
+locked = false
+location = { Room = "b-a-office" }
+# -----------------------------------------------------------------------------
+
+[[items]]
+id = "charged_battery"
+name = "Charged Battery"
+description = """
+A fully charged, 20 kilovolt battery. Don't touch it to your tongue to test it.
+"""
+portable = true
+restricted = true
+location = { Npc = "gonk_droid" }
+# -----------------------------------------------------------------------------
+
+[[items]]
+id = "visitor_pass"
+name = "Visitor Pass"
+description = """
+A laminated slip of psychic paper on a lanyard. It reads the mind of whatever is
+checking it and shows whatever is needed to gain access.
+"""
+portable = true
+location = { Nowhere = "b_a_receptionist" }
+# -----------------------------------------------------------------------------
+
+[[items]]
+id = "gonk_family_photo"
+name = "Gonk's Family Photo"
+description = """
+A slightly scorched photograph of the gonk droid with its family: a PC power
+supply, a D-cell, and a set of adorable AAA triplets.
+"""
+portable = true
+location = { Npc = "gonk_droid" }
+abilities = ["read"]
+text = """
+Brains Anonymous Energy Division Picnic — For Staff & Families of Room AA-3B.
+
+(and added below: "Just hours before the Candidate reported for load test...")
+"""
+
+[[items]]
+id = "empty_battery"
+name = "Empty Battery"
+description = """
+A completely discharged 20 kilovolt battery. It would take months to charge it,
+but you might be able to exchange it somewhere for one with a charge.
+"""
+portable = true
+location = { Chest = "portal_gun" }
+
+[[items]]
+id = "peril_sunglasses"
+name = "Stylish Sunglasses"
+description = """
+A pair of stylish black shades that automatically go completely opaque at the
+first sign of danger. Unfortunately, this includes things like loud noises,
+sudden movement, or mild existential dread.
+"""
+portable = true
+location = { Chest = "lost_and_found_box" }
+
+[[items]]
+id = "lost_and_found_box"
+name = "Lost & Found Box"
+description = """
+A battered plastic container with an official-looking sticker reading:
+'Lost & Found — Amble Adventures Division'. Inside are random trinkets,
+including a rubber band ball, a half-eaten donut, and a suspiciously shady
+pair of sunglasses.
+"""
+portable = false
+container = true
+open = true
+locked = false
+location = { Room = "b-a-office" }
+
+[[items]]
+id = "margarine"
+name = "Nanook's Finest Margarine"
+description = """
+An open tub of margarine with a light dusting of toast and pancake crumbs.
+"""
+portable = true
+location = { Room = "st-alfonzo-parish" }
+abilities = ["read"]
+text = """
+Nanook's Finest Margarine: #1 for Delicious Pancakes!
+   (also #1 for curing yellow-snow deflicted eyes)
+"""
+
+[[items]]
+id = "plaque_1"
+name = "Weathered Plaque"
+description = """
+A plaque worn nearly smooth by decade upon decade of weather and grime. The
+intricate masonry of its pillar suggests utmost importance and profundity of
+its message."""
+portable = false
+location = { Room = "high-ridge" }
+abilities = ["read"]
+text = """
+A common mistake that people make when trying to design something completely
+foolproof is to underestimate the ingenuity of complete fools.
+-- D.A., Head of Architectural Illogistics, Area 42
+"""
+
+[[items]]
+id = "lab_printer"
+name = "Initech PlasmaJet 2 Printer"
+description = """
+A sleek, off white printer, with a blinking LED near a small status screen.
+This model is known for its high precision, micrometer-level resolution, and
+ability to ignite almost any printing surface."""
+portable = false
+container = true
+open = true
+locked = false
+location = { Room = "aperture-lab" }
+abilities = ["read", "turnOn"]
+text = "PC Load Letter"
+
+[[items]]
+id = "scrawled_note"
+name = "Scrawled Note"
+portable = false
+location = { Room = "high-ridge" }
+description = """
+A note scrawled in red permanent marker, nailed to a post at the bottow of
+the stone steps."""
+abilities = ["read"]
+text = """
+CANDIDATES: PROCEED TO OFFICE TO OBTAIN VISITOR PASS
+           MUST SHOW VALID INVITATION
+"""
+
+[[items]]
+id = "printer_paper"
+name = "Copy Paper (Std Letter)"
+portable = true
+location = { Room = "supply-closet" }
+description = "A pack of plain white paper, standard letter size."
+
+[[items]]
+id = "staples"
+name = "Swingline Staples"
+location = { Room = "supply-closet" }
+portable = true
+description = """
+A box of Swingline paper staples. The name "Milton" is written on it in several
+places.
+"""
+
+[[items]]
+id = "asbestos_sheet"
+name = "Asbestos Sheets"
+location = { Room = "supply-closet" }
+portable = true
+description = """
+A pack of sheets of asbestos, about the size of a pack of copy paper.
+"""
+abilities = ["read"]
+text = "Manufacturer's Warning: Do Not Breathe While Using This Product!"
+
+[[items]]
+id = "magnifying_glass"
+name = "Magnifying Glass"
+location = { Room = "aperture-lab" }
+portable = true
+description = "Small gets big -- it's a rig."
+abilities = ["use"]
+
+[[items]]
+id = "burnt_invitation"
+name = "Charred Paper Bits"
+location = { Nowhere = "spawns@aperture-lab" }
+portable = true
+description = """
+The charred remains of a sheet of printer paper. A few areas aren't completely
+black, or vaporized. One bit remains legible."""
+abilities = ["read"]
+text = "--ally invited to com--"
+
+[[items]]
+id = "lumberjack_axe"
+name = "Lumberjack's Axe"
+location = { Room = "two-sheds" }
+description = "A hefty lumberjack's axe. The blade is slightly rusted, but it looks usable."
+portable = true
+abilities = ["cutWood"]
+
+[[items]]
+id = "flamethrower"
+name = "Initech Arson-Aid"
+location = { Room = "two-sheds" }
+description = """
+A small personal flamethrower, for use in home and garden -- just not your own,
+if you know what's good for you."""
+portable = true
+abilities = ["ignite", "read"]
+text = """
+Instructions:
+1) Aim carefully.
+2) Slowly squeeze trigger.
+3) Throw at target (quickly!)
+4) Flee.
+"""
+
+[[items]]
+id = "fallen_tree"
+name = "Fallen Tree"
+location = { Room = "two-sheds-landing" }
+description = """
+A large, fallen oak tree obstructing the path further up the steps. Well,
+maybe not so much "fallen" as ripped from the mountainside and tossed down
+by whatever left the deep claw marks in the trunk.
+"""
+portable = false
+interaction_requires.burn = "ignite"
+interaction_requires.cut = "cutWood"
+
+[[items]]
+id = "weird_bush"
+name = "Weird Bush"
+location = { Room = "east-of-building" } # Or wherever you decide
+description = """
+A squat, leafy bush with long, pale strands growing among the branches. The
+fibers look oddly uniform — almost like... dental floss?"""
+portable = false
+container = true
+open = true
+
+[[items]]
+id = "dental_floss"
+name = "Dental Floss"
+location = { Chest = "weird_bush" }
+description = """
+A long, strong strand of waxed dental floss, harvested from the weird bush.
+It smells faintly minty, but seems surprisingly durable — maybe even useful
+for something besides oral hygiene."""
+portable = true
+abilities = ["read"]
+text = "Pride of Montana"
+
+[[items]]
+id = "lighter"
+name = "Butane Lighter"
+location = { Room = "patio" }
+portable = true
+description = "An engraved, metallic Zippo-style lighter, worn but functional."
+abilities = ["ignite", "read"]
+text = "DJVB"
+
+[[items]]
+id = "foamsafe-x17"
+name = "Initech FoamSafe™ X-17"
+location = { Nowhere = "????????" } # To be determined!
+description = """
+A fire extinguisher-like device with the words "Initech FoamSafe™ X-17" proudly
+emblazoned on its side. Its label promises peace of mind in emergencies — though
+closer inspection suggests otherwise."""
+portable = true
+abilities = ["read"]
+text = """
+INITECH FOAMSAFE™ MODEL X-17
+
+FOR EMERGENCY USE ONLY
+Contents: Pressurized mineral oil, cedar essence, trace accelerants
+*Note: Foam not included.*
+
+Instructions:
+1. Shake vigorously.
+2. Point away from self (ideally).
+3. Spray liberally and accept the consequences.
+
+Warning: Device may not extinguish fires. Initech assumes no liability for secondary
+combustion, flashpoint misalignment, or structural regrets.
+"""
+
+[[items]]
+id = "zircon_tweezers"
+name = "Zircon-Encrusted Tweezers"
+location = { Chest = "lost_and_found_box" }
+description = """
+A heavy-duty pair of tweezers, encrusted in zircon for extra dazzle and especially
+good for plucking."""
+portable = true
+
+[[items]]
+id = "melted_aa_3b_id"
+name = "Section AA-3 Staff ID"
+location = { Chest = "lost_and_found_box" }
+portable = true
+description = """
+A facility ID card for sector AA-3. Its weight seems to change as you hold it,
+as does the temperature. It's not warped or melted exactly -- just *distorted*
+somehow."""
+abilities = ["read"]
+text = """
+ RESTRICTED ACCESS PASS
+SECTOR AA-3, HIGH ENERGY
+ REALITY BRIDGE PROJECT
+"""

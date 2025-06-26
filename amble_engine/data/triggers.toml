@@ -1,0 +1,452 @@
+[[triggers]]
+name = "Inca-Road: Traveling Without Towel"
+only_once = true
+conditions = [
+    { type = "enter", room_id = "inca-road" },
+    { type = "missingItem", item_id = "towel" },
+]
+actions = [{ type = "showMessage", text = """
+You pause here, realizing with increasing concern that you are traveling in
+a strange land without a towel.
+""" }]
+
+[[triggers]]
+name = "Global: Got-Towel"
+only_once = true
+conditions = [{ type = "take", item_id = "towel" }]
+actions = [
+    { type = "addAchievement", achievement = "got-towel" },
+    { type = "awardPoints", amount = 2 },
+    { type = "showMessage", text = """
+Now you're a frood who really knows where his towel is.
+""" },
+]
+
+[[triggers]]
+name = "Inca Road: Spawn Special Delivery"
+only_once = true
+conditions = [{ type = "leave", room_id = "inca-road" }]
+actions = [
+    { type = "spawnItemInRoom", item_id = "delivery_box", room_id = "inca-road" },
+    { type = "showMessage", text = """
+You hear a thud behind you, back toward the road, like something was just
+dropped off. You glimpse a drone flying away quickly, as if hoping not to
+be seen. Was that a Sirius Cybernetics logo on the side?
+""" },
+]
+
+[[triggers]]
+name = "Global: Open-Delivery-Box"
+only_once = true
+conditions = [{ type = "open", item_id = "delivery_box" }]
+actions = [
+    { type = "despawnItem", item_id = "delivery_box" },
+    { type = "spawnItemCurrentRoom", item_id = "destroyed_box" },
+    { type = "spawnItemCurrentRoom", item_id = "towel" },
+    { type = "showMessage", text = """
+The box sighs and collapses in a heap as soon as you touch it, relieved that its
+mission is over. Inside, you find a nanotruss-reinforced tachyon-powered towel
+with an attached note:
+
+                Always be a frood who knows where his towel is.
+                                -- F.P.
+""" },
+]
+
+[[triggers]]
+name = "Global: Take-Vogon-Poetry"
+only_once = false
+conditions = [{ type = "take", item_id = "vogon_poetry_book" }]
+actions = [
+    { type = "showMessage", text = "A greasy feeling of nausea envelops you." },
+]
+
+[[triggers]]
+name = "Global: Drop-Vogon-Poetry"
+only_once = false
+conditions = [{ type = "drop", item_id = "vogon_poetry_book" }]
+actions = [
+    { type = "showMessage", text = "That greasy, queasy feeling subsides." },
+]
+
+[[triggers]]
+name = "Office: Open-Poetry-Performer"
+only_once = false
+conditions = [{ type = "open", item_id = "poetry_performer" }]
+actions = [{ type = "showMessage", text = """
+The machine clicks on and hums. A flashing red light warns:
+            ⚠️ NOT FOR USE WITH VOGON POETRY ⚠️
+""" }]
+
+# START LOUNGE, PORTAL GUN TRIGGERS
+# remove rug to reveal hidden exit to portal room
+[[triggers]]
+name = "Lounge: Found Portal Room"
+only_once = true
+conditions = [{ type = "take", item_id = "lebowski_rug" }]
+actions = [
+    { type = "revealExit", direction = "trapdoor", exit_from = "lounge", exit_to = "portal-room" },
+    { type = "addAchievement", achievement = "found-portal-room" },
+    { type = "awardPoints", amount = 3 },
+    { type = "showMessage", text = """
+Light shines around the edges of a trapdoor revealed in the floor when you move
+the rug.
+""" },
+]
+
+# give portal_powered achievement when charged battery inserted
+[[triggers]]
+name = "Portal-Room: Gun Powered"
+only_once = false
+conditions = [
+    { type = "insert", item_id = "charged_battery", container_id = "portal_gun" },
+]
+actions = [
+    { type = "addAchievement", achievement = "portal-gun-powered" },
+    { type = "awardPoints", amount = 5 },
+    { type = "showMessage", text = """
+The gun emits a quick high-pitched whine, and the power LED lights green.
+""" },
+]
+
+# turn on: if gun powered, open portal exit to Aperture Science Laboratory
+[[triggers]]
+name = "Portal-Room: Open Portal"
+only_once = true
+conditions = [
+    { type = "useItem", item_id = "portal_gun", ability = "turnOn" },
+    { type = "hasAchievement", achievement = "portal-gun-powered" },
+]
+actions = [
+    { type = "revealExit", direction = "portal", exit_from = "portal-room", exit_to = "aperture-lab" },
+    { type = "showMessage", text = """
+A loud \"Squip!\" comes from the gun. The wall in front of it sizzles for a
+moment, and then a crackling oval blue portal expands on the wall to reveal a
+laboratory space on the other side.
+""" },
+]
+
+# turn on: fail, gun not powered yet
+[[triggers]]
+name = "Portal-Room: Can't Turn Gun On Without Power"
+only_once = false
+conditions = [
+    { type = "useItem", item_id = "portal_gun", ability = "turnOn" },
+    { type = "missingAchievement", achievement = "portal-gun-powered" },
+]
+actions = [
+    { type = "showMessage", text = "When you press the button, the power LED briefly flashes red, then goes dark." },
+]
+
+# START LAB PRINTER TRIGGERS
+[[triggers]]
+name = "Aperture-Lab: Printer Burns Paper"
+only_once = false
+conditions = [
+    { type = "containerHasItem", container_id = "lab_printer", item_id = "printer_paper" },
+    { type = "useItem", item_id = "lab_printer", ability = "turnOn" },
+]
+actions = [
+    { type = "despawnItem", item_id = "printer_paper" },
+    { type = "spawnItemInRoom", item_id = "burnt_invitation", room_id = "aperture-lab" },
+    { type = "showMessage", text = "The paper ignites with a flash, and the PlasmaJet spits it onto the floor." },
+    { type = "showMessage", text = """
+A nearby smoke detector alarms briefly, then quits with an exasperated sigh
+when it sees you using the printer.
+""" },
+]
+
+[[triggers]]
+name = "Aperture-Lab: Print Invitation (Asbestos)"
+only_once = true
+conditions = [
+    { type = "containerHasItem", item_id = "asbestos_sheet", container_id = "lab_printer" },
+    { type = "useItem", item_id = "lab_printer", ability = "turnOn" },
+]
+actions = [
+    { type = "addAchievement", achievement = "invitation-sans-ignition" },
+    { type = "awardPoints", amount = 10 },
+    { type = "despawnItem", item_id = "asbestos_sheet" },
+    { type = "spawnItemInRoom", item_id = "invitation", room_id = "aperture-lab" },
+    { type = "showMessage", text = """
+The PlasmaJet emits a blinding flash of light, leaving a printer-shaped purple
+blob in your visual field for a few moments.
+""" },
+    { type = "showMessage", text = """
+When your vision clears, you see a slightly glowing printed invitation on the
+floor.
+""" },
+]
+
+# messages and achievement when invitation is acquired
+[[triggers]]
+name = "Aperture-Lab: Take Invitation Using Towel"
+only_once = true
+conditions = [
+    { type = "useItemOnItem", tool_id = "towel", target_id = "invitation", interaction = "handle" },
+]
+actions = [
+    { type = "despawnItem", item_id = "invitation" },
+    { type = "spawnItemInInventory", item_id = "invitation" },
+    { type = "addAchievement", achievement = "got-invitation" },
+    { type = "awardPoints", amount = 5 },
+    { type = "showMessage", text = """
+Using the towel as a potholder, you are able to get the piping hot invitation
+into your pack.""" },
+]
+
+[[triggers]]
+name = "Aperture-Lab: Drop Invitation w/o Using Towel"
+only_once = false
+conditions = [
+    { type = "take", item_id = "invitation" },
+    { type = "missingItem", item_id = "towel" },
+]
+actions = [
+    { type = "despawnItem", item_id = "invitation" },
+    { type = "spawnItemCurrentRoom", item_id = "invitation" },
+    { type = "showMessage", text = """
+You burn your fingers and drop the invitation on the floor. It emits a reddish
+glow, and shimmers from the radiating heat.""" },
+]
+
+[[triggers]]
+name = "Aperture-Lab: Invitation Hint"
+only_once = true
+conditions = [
+    { type = "take", item_id = "invitation" },
+    { type = "hasVisited", room_id = "b-a-office" },
+]
+actions = [
+    { type = "showMessage", text = "Maybe now that snooty reception droid at the office will be more helpful..." },
+]
+
+# START TRIGGERS FOR VOGON POETRY --> OPEN PANIC ROOM
+[[triggers]]
+name = "Office: Insert Vogon Poetry -> Reveal Panic Room"
+only_once = true
+conditions = [
+    { type = "insert", item_id = "vogon_poetry_book", container_id = "poetry_performer" },
+]
+actions = [
+    { type = "despawnItem", item_id = "vogon_poetry_book" },
+    { type = "revealExit", direction = "west", exit_from = "b-a-office", exit_to = "poetry-panic" },
+    { type = "showMessage", text = """
+The machine begins to whine at a high pitch and gives off a noxious odor of
+burning hair. A klaxon blares and the display warns:
+
+            ⚠️ VOGON INPUT DETECTED - POETRY PANIC ROOM UNLOCKED ⚠️
+               ☣ VAPORIZING VOGON INPUT - AVOID TOXIC FUMES ☣
+
+The whiteboard on the west wall slides to the side, revealing a vault-like door.
+""" },
+]
+
+# START ELEVATOR ACTIVATION TRIGGERS
+# (note: life exit no longer added here -- now exists from the start but is
+# disabled if player isn't carrying the pass and keycard.
+[[triggers]]
+name = "Elevator: Activate-Elevator"
+only_once = true
+conditions = [
+    { type = "enter", room_id = "lift-bank-main" },
+    { type = "hasItem", item_id = "elevator_keycard" },
+]
+actions = [{ type = "showMessage", text = """
+As you approach, the keycard in your pack chirps twice and the elevator springs
+to life. A Muzak version of Porcupine Tree's "The Sound of Muzak" plays softly.
+""" }]
+
+[[triggers]]
+name = "Lobby: First Gonk Encounter"
+only_once = true
+conditions = [
+    { type = "enter", room_id = "main-lobby" },
+    { type = "withNpc", npc_id = "gonk_droid" },
+    { type = "hasItem", item_id = "towel" },
+]
+actions = [{ type = "showMessage", text = """
+A gonk droid clomps around the room, muttering. You can never find one
+when you need one. Your towel is fully charged, of course.
+""" }]
+
+# B-A Receptionist Triggers
+[[triggers]]
+name = "Office: Snooty-Receptionist-If-No-Pass"
+only_once = false
+conditions = [
+    { type = "withNpc", npc_id = "b_a_receptionist" },
+    { type = "missingAchievement", achievement = "got-visitor-pass" },
+    { type = "missingAchievement", achievement = "got-elevator-keycard" },
+]
+actions = [
+    { type = "setNpcMood", npc_id = "b_a_receptionist", mood = "Normal" },
+]
+
+[[triggers]]
+name = "Office: Helpful-Receptionist-If-Have-Pass"
+only_once = false
+conditions = [
+    { type = "withNpc", npc_id = "b_a_receptionist" },
+    { type = "hasAchievement", achievement = "got-visitor-pass" },
+    { type = "missingAchievement", achievement = "got-elevator-keycard" },
+]
+actions = [{ type = "setNpcMood", npc_id = "b_a_receptionist", mood = "Happy" }]
+
+[[triggers]]
+name = "Office: Grant-Visitor-Pass"
+only_once = true
+conditions = [
+    { type = "giveToNpc", item_id = "invitation", npc_id = "b_a_receptionist" },
+]
+actions = [
+    { type = "addAchievement", achievement = "got-visitor-pass" },
+    { type = "despawnItem", item_id = "invitation" },
+    { type = "spawnItemInInventory", item_id = "visitor_pass" },
+    { type = "showMessage", text = """
+The robotic receptionist initially glances at you with the disdain of someone
+who spends all day waiting on people who are waiting on someone else, but her
+demeanor and even appearance immediately become pleasant when she sees the
+invitation in your hand. She deftly takes it from you and examines it intently.
+
+With a grand gesture, she then hands you a laminated card on a lanyard. It
+appears blank, yet also appears to show a variety of credentials at the same
+time. She explains:
+
+"This is your visitor's pass. Certain areas will be inaccessible without it.
+So please take care not to lose it, share it, or smoke it. Treat it like a
+second towel."
+""" },
+]
+
+[[triggers]]
+name = "Gonk: Exchange Battery"
+only_once = true
+conditions = [
+    { type = "giveToNpc", item_id = "empty_battery", npc_id = "gonk_droid" },
+]
+actions = [
+    { type = "giveItemToPlayer", npc_id = "gonk_droid", item_id = "charged_battery" },
+    { type = "setNpcMood", npc_id = "gonk_droid", mood = "Happy" },
+    { type = "showMessage", text = """
+Elated that you've given it such a large, empty battery to charge, the gonk
+droid gives you a fully charged one, free of ... charge?
+""" },
+]
+
+[[triggers]]
+name = "Patio: Sunglasses Required"
+only_once = false
+conditions = [
+    { type = "enter", room_id = "patio" },
+    { type = "missingItem", item_id = "peril_sunglasses" },
+]
+actions = [
+    { type = "pushPlayerTo", room_id = "restaurant" },
+    { type = "showMessage", text = """
+A blinding burst of light erupts from the swirling starfield, forcing you to
+shield your eyes. With no protection, you're forcibly propelled back toward
+the relative safety of the restaurant.
+""" },
+]
+
+[[triggers]]
+name = "Patio: Use Sunglasses"
+only_once = false
+conditions = [
+    { type = "enter", room_id = "patio" },
+    { type = "hasItem", item_id = "peril_sunglasses" },
+]
+actions = [{ type = "showMessage", text = """
+Sensing the possible harm in eating a dessert a stone's throw away from the
+explosions of all nearby stars, your peril-sensitive sunglasses flash nearly
+completely opaque, allowing you to see without permanent damage to the retina.
+""" }]
+
+[[triggers]]
+name = "Global: Cannot Discard No_Cake"
+only_once = false
+conditions = [{ type = "drop", item_id = "no_cake" }]
+actions = [
+    { type = "despawnItem", item_id = "no_cake" },
+    { type = "spawnItemInInventory", item_id = "no_cake" },
+    { type = "showMessage", text = """
+Try as you might, you cannot rid yourself of the feeling of a missing a
+promised dessert. The cake was a lie.
+""" },
+]
+
+[[triggers]]
+name = "Plaque 1: Need Towel to Read"
+only_once = false
+conditions = [
+    { type = "useItem", item_id = "plaque_1", ability = "read" },
+    { type = "missingItem", item_id = "towel" },
+]
+actions = [
+    { type = "denyRead", reason = "It's too grimy. You need something to wipe it off." },
+]
+
+[[triggers]]
+name = "Plaque 1: Towel Used"
+only_once = true
+conditions = [
+    { type = "useItem", item_id = "plaque_1", ability = "read" },
+    { type = "hasItem", item_id = "towel" },
+]
+actions = [
+    { type = "showMessage", text = "You used the towel to wipe the grime off the plaque." },
+]
+
+[[triggers]]
+name = "Poetry-Panic: Acquired Elevator Keycard"
+only_once = true
+conditions = [{ type = "take", item_id = "elevator_keycard" }]
+actions = [
+    { type = "setNpcMood", npc_id = "b_a_receptionist", mood = "Bored" },
+    { type = "addAchievement", achievement = "got-elevator-keycard" },
+]
+
+# START FALLEN TREE TRIGGERS
+[[triggers]]
+name = "Two-Sheds-Landing: Cut Tree with Axe"
+only_once = true
+conditions = [
+    { type = "useItemOnItem", tool_id = "lumberjack_axe", target_id = "fallen_tree", interaction = "cut" },
+]
+actions = [
+    { type = "showMessage", text = "You swing the axe with practiced heft, chopping through the tree in a shower of splinters." },
+    { type = "despawnItem", item_id = "fallen_tree" },
+    { type = "addAchievement", achievement = "cleared-fallen-tree" },
+    { type = "awardPoints", amount = 5 },
+]
+
+[[triggers]]
+name = "Two-Sheds-Landing: Burn Tree with Flamethrower"
+only_once = true
+conditions = [
+    { type = "useItemOnItem", tool_id = "flamethrower", target_id = "fallen_tree", interaction = "burn" },
+]
+actions = [
+    { type = "despawnItem", item_id = "fallen_tree" },
+    { type = "despawnItem", item_id = "flamethrower" },
+    { type = "addAchievement", achievement = "cleared-fallen-tree" },
+    { type = "awardPoints", amount = 5 },
+    { type = "showMessage", text = """
+    You step back, aim, and squeeze the trigger... The device flares to life — and then
+    catches fire *itself*. Panicking, you hurl it straight into the mass of limbs and
+    branches. The fallen tree erupts into flame and, quite improbably, is reduced to
+    ash in mere seconds.""" },
+]
+
+[[triggers]]
+name = "Pluck Dental Floss"
+only_once = true
+conditions = [{ type = "take", item_id = "dental_floss" }]
+actions = [
+    { type = "showMessage", text = """
+You pluck a strand of floss from the bush. It comes away easily — disturbingly so.
+Minty. Strong. Too strong. You’re no botanist, but you’re pretty sure this shouldn’t
+be growing out of a shrubbery.""" },
+    { type = "awardPoints", amount = 3 },
+]

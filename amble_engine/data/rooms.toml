@@ -1,0 +1,590 @@
+# ROOM ENTRY TEMPLATE START
+# # ---------------------------------------------------------------------------
+# [[rooms]]
+# id = "token_id"
+# name = "room_name"
+# description = """
+# multi-line_description
+# """
+# location = "Nowhere"
+# visited = false
+
+# [rooms.exits.north]
+# to = ""
+#
+# [rooms.exits.south]
+# to = ""
+#
+# [rooms.exits.east]
+# to = ""
+#
+# [rooms.exits.west]
+# to = ""
+
+# ---------------------------------------------------------------------------
+# EXTERIOR START AREA "ROOMS"
+[[rooms]]
+id = "high-ridge"
+name = "High Isolated Ridge"
+description = """
+A small, flat ridge in the midst of a steeply sloped wooded area. Probably
+west of something, depending on how you're oriented.
+
+Some rough stairs carved into the slope curve upward into the trees.
+"""
+location = "Nowhere"
+visited = true
+
+[rooms.exits.up]
+to = "parish-landing"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "parish-landing"
+name = "Parish Landing"
+description = """
+A small plateau carved into the hillside, marked by an old wooden sign that reads:
+'Pilgrims Welcome – Pancakes Served Daily (Terms and Conditions Apply)'. A faded
+poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a
+holy relic.
+
+From here, the steps curve gently upward to another distant landing. A modest trail
+leads west toward a nearby parish.
+"""
+location = "Nowhere"
+
+[rooms.exits.down]
+to = "high-ridge"
+
+[rooms.exits.west]
+to = "st-alfonzo-parish"
+
+[rooms.exits.up]
+to = "two-sheds-landing"
+
+# -----------------------------------------------------------------------------
+[[rooms]]
+id = "st-alfonzo-parish"
+name = "Parish of Saint Alfonzo"
+
+description = """
+The parish resembles a half-abandoned diner and half-absolved church, complete
+with stained glass windows depicting breakfast foods in heroic poses. The air
+smells faintly of syrup and tobacco.
+
+A refrigerated pedestal in the corner hums solemnly. On it rests a lone tub of
+margarine bearing the label: 'Nanook's Finest'. A hymn board near the door
+lists this week’s sermon: 'On the Sanctity of the Short Stack.'
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.east]
+to = "parish-landing"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "two-sheds-landing"
+name = "Jackson's Landing"
+
+description = """
+A quiet landing tucked along the slope, with a rusted mailbox labeled 'A. Jackson'
+standing to one side. A trail sign points east toward something optimistically named
+'Two Sheds'. Underneath, someone has scratched in: 'Technically One.'
+
+Faint hammering sounds echo from up the trail.
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.up]
+to = "guard-post"
+required_actions = ["cleared-fallen-tree"]
+barred_message = "You'll need to find a way to clear the tree from the path first."
+
+[rooms.exits.down]
+to = "parish-landing"
+
+[rooms.exits.east]
+to = "two-sheds"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "two-sheds"
+name = "Two Sheds"
+
+description = """
+A modest wooden shed stands alone in the clearing. It appears freshly painted and
+surprisingly well cared for. A plaque on the door reads:
+
+        'ARTHUR "TWO SHEDS" JACKSON
+         Philosopher, Composer, Owner of One Shed'
+
+A second, smaller foundation lies nearby, overgrown with weeds. A broken signpost
+beside it reads: 'Future Site of Shed #2 – Delayed Indefinitely.' A few forgotten
+tools sit on the ground nearby.
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.west]
+to = "two-sheds-landing"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "guard-post"
+name = "Guard Post"
+
+description = """
+A small stone guard post clings to the side of the trail, complete with a creaky
+wooden chair and a megaphone labeled 'USE ONLY IF VERY SURE'.
+
+A faded official-looking placard reads:
+
+        'NOTICE: Passage beyond this point may lead to anachronism.'
+
+It seems no one’s been stationed here in quite some time. The trail continues upward,
+leading to what appears to be an ancient road—and a distinctly non-ancient office park.
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.up]
+to = "inca-road"
+
+[rooms.exits.down]
+to = "two-sheds-landing"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "inca-road"
+name = "Inca Road"
+
+description = """
+An ancient road of broken and uneven stones winds precariously along the mountainside,
+half-swallowed by time and weeds. South of here, a river's rocky rapid rushes westward
+through the gorge.
+
+To the north lies a trim, modern lawn with an improbably square footprint. It leads up
+to a squat commercial building that seems to have landed here by accident.
+"""
+
+location = "Nowhere"
+
+[rooms.exits.north]
+to = "front-entrance"
+
+[rooms.exits.down]
+to = "guard-post"
+
+# ---------------------------------------------------------------------------
+# START AMBLE ADVENTURES OFFICE EXTERIOR
+[[rooms]]
+id = "front-entrance"
+name = "Front Entrance"
+
+description = """
+Potted plants flank a plain, darkened glass door on the front of the building
+to the north. As you approach the door, the LED on a security camera mounted
+above it flashes green and red in alternation as it scans you. A sign above
+it reads:
+
+                       "Always Know Where Your Towel Is"
+
+The security system seems excessive for a building that looks to be a simple
+single-story commercial office—nothing you'd expect to house anything more
+ambitious than a shady insurance firm.
+
+Paved paths lead around the building to the east and west.
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.north]
+to = "main-lobby"
+required_actions = ["got-towel"]
+barred_message = "Not so fast. Do you know where your towel is?"
+
+[rooms.exits.south]
+to = "inca-road"
+
+[rooms.exits.west]
+to = "west-of-building"
+
+[rooms.exits.east]
+to = "east-of-building"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "west-of-building"
+name = "West of Building"
+
+description = """
+You stand west of the squat building. The wall here is windowless and beige,
+like a blank page that gave up. A small HVAC unit hums softly on the roof,
+heroically failing to change the temperature of anything. A VHF television
+aerial sprouts beside it.
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.northeast]
+to = "loading-dock"
+
+[rooms.exits.southeast]
+to = "front-entrance"
+
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "loading-dock"
+name = "Useless Loading Dock"
+
+description = """
+The so-called loading dock juts ten feet *above* the ground, with no ramp, stairs,
+or apparent means of access and a loading door thirty feet wide and ten inches tall.
+A conveyor belt runs from the building wall to the edge of the dock, then loops
+straight back in again without touching anything.
+
+A bronze plaque proudly identifies this as a **Bloody Stupid Johnson** project:
+> 'Winner of the 3rd Prize for Architectural Enthusiasm, 1873.'
+
+It's unclear what this office ever needed to load—or who would deliver to the side
+of a remote building halfway up a mountain.
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.southeast]
+to = "east-of-building"
+
+[rooms.exits.southwest]
+to = "west-of-building"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "east-of-building"
+name = "East of Building"
+
+description = """
+You’re east of the building now, facing a patch of ornamental gravel and a struggling
+yucca plant. The air here smells faintly of ozone and buttered lobster, though the
+source is unclear.
+
+The side of the building appears to be a normal wall, but you keep glimpsing
+something that looks like -- restaurant patio umbrellas? -- from the corner of your
+eye. You briefly wonder if the building is bending space or if your sense of
+geography is just feeling shy.
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.northwest]
+to = "loading-dock"
+
+[rooms.exits.southwest]
+to = "front-entrance"
+
+
+# ---------------------------------------------------------------------------
+# START AMBLE ADVENTURES OFFICE BUIDLING INTERIOR
+[[rooms]]
+id = "main-lobby"
+name = "Main Lobby"
+description = """
+The lobby is clinically clean in a way that feels suspicious. A slightly humming
+vending machine stands beside an empty receptionist's desk bearing a dusty nameplate
+that reads, in Comic Sans: 'WELCOME TEMPORARY LIFEFORM'. A softly glowing sign on
+the north wall reads 'Elevator Access', while arrows on the east and west
+walls point toward other destinations with little enthusiasm.
+"""
+location = "Nowhere"
+visited = false
+
+[rooms.exits.north]
+to = "lift-bank-main"
+
+[rooms.exits.south]
+to = "front-entrance"
+
+[rooms.exits.east]
+to = "restaurant"
+
+[rooms.exits.west]
+to = "b-a-office"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "b-a-office"
+name = "Amble Adventures Office"
+description = """
+The office of Amble Adventures, a wholly disowned subsidiary of Brains Anonymous™,
+is a shrine to barely-funded creativity. Faded posters of games that were never
+released adorn the walls, including one titled 'Keyboard Warrior: The Tab Key
+Chronicles'. A sagging ficus looms in the corner like it’s been through something.
+A Sirius Cybernetics™ Poetry Performer plays possum in another corner, hoping you
+don't notice it. A floor-to-ceiling whiteboard on the west wall boasts an impressive
+flowchart labeled "Planning to Plan".
+"""
+location = "Nowhere"
+visited = false
+
+[rooms.exits.east]
+to = "main-lobby"
+
+[rooms.exits.north]
+to = "supply-closet"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "lift-bank-main"
+name = "Elevator Bank"
+description = """
+A bank of elevators waits here, none of which seem eager to go anywhere. One of
+them is labeled 'MAIN LIFT' in glowing teal Comic Sans. A card reader is mounted
+next to it, and scans you in a way that manages to be both judgmental and slightly
+passive-aggressive. To the east, a door marked 'LOUNGE' is just slightly ajar,
+as if luring you to come in.
+"""
+location = "Nowhere"
+visited = false
+
+[rooms.exits.north]
+to = "lift-main"
+
+[rooms.exits.east]
+to = "lounge"
+
+[rooms.exits.south]
+to = "main-lobby"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "lift-main"
+name = "Elevator (Ground Floor)"
+description = """
+The elevator interior is surprisingly luxurious—polished chrome panels, soft
+lighting, and a faint scent of something that might be vanilla or data corruption.
+Only two buttons appear on the control panel, faintly pulsing.
+"""
+location = "Nowhere"
+visited = false
+
+[rooms.exits.main]
+to = "lift-bank-main"
+
+[rooms.exits.aa-3]
+to = "lift-sublevel-1"
+required_items = ["visitor_pass", "elevator_keycard"]
+barred_message = """
+That button is disabled. Visitor pass and proximity card required for access."""
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "lounge"
+name = "Lounge"
+description = """
+A small space to relax, with a sofa, a few magazines, and part of a jigsaw
+puzzle. A tarry substance slowly bubbles in the bottom of a coffee carafe.
+There's an ornate maroon rug on the floor. It really ties the room together.
+"""
+location = "Nowhere"
+visited = false
+
+[rooms.exits.west]
+to = "lift-bank-main"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "portal-room"
+name = "Portal Room"
+description = """
+A bare white room. In the center, a black and white Portal gun is affixed to
+a stand, aimed at a bullseye on the wall. A ladder leads back up to the trap
+door in the ceiling.
+"""
+location = "Nowhere"
+visited = false
+
+[rooms.exits.up]
+to = "lounge"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "aperture-lab"
+name = "Aperture Science Laboratory"
+
+description = """
+The lab is unnaturally white—walls, floor, ceiling, even the air feels overexposed.
+Everything here hums at a frequency designed to encourage compliance. A single
+console blinks on a table beside a dormant printer labeled "Aperture Science
+Hospitality Dispenser."
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.portal]
+to = "portal-room"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "restaurant"
+name = "Restaurant at the End of the Universe"
+description = """
+Soft jazz wafts through invisible speakers, accompanied by the occasional sound
+of imploding galaxies. A tasteful sign declares this to be the Restaurant at the
+End of the Universe, though it appears to be between dinner rushes. Tables float
+slightly above the ground and rearrange themselves when you're not looking. A
+host's podium displays a reservation list. Restrooms lie to the south bearing
+a sign in fancy script reading:
+
+                             VIP PAN-SPECIES RESTROOM
+                       (must possess visitor pass to enter)
+
+Patio seating stretches farther east.
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.west]
+to = "main-lobby"
+
+[rooms.exits.east]
+to = "patio"
+
+[rooms.exits.south]
+to = "vip-bathroom"
+required_items = ["visitor_pass"]
+barred_message = """
+The door apologizes profusely for refusing to open, explaining that it's
+forced by programming not to let you in without a visitor's pass."""
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "vip-bathroom"
+name = "VIP Bathroom"
+description = """
+Blinding white tile and pristine mirrors make it almost seem like this
+pan-gender, pan-species bathroom has never been used, but a lingering asparagus
+odor suggests otherwise.
+"""
+location = "Nowhere"
+visited = false
+
+[rooms.exits.north]
+to = "restaurant"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "patio"
+name = "Restaurant Patio"
+description = """
+The patio overlooks nothing in particular—just an endless starfield gently swirling
+beyond a transparent force field. A few metal tables are bolted to the floor, and
+one of them has a half-empty cocktail glass slowly un-drinking itself. A sign near
+the edge reads: 'No Leaning Beyond This Point. You have been warned.'
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.west]
+to = "restaurant"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "poetry-panic"
+name = "Poetry Panic Room"
+description = """
+A concrete and titanium vacuum-sealed room equipped with noise generators, active
+voice-cancelling harmonics and Cone of Silence technology. A seal by the door
+proudly states that the chamber is almost completely Vogon poetry-proof.
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.east]
+to = "b-a-office"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "lift-sublevel-1"
+name = "Elevator (Sublevel 1)"
+description = """
+After dropping for what seems like two or three minutes, the elevator arrives
+at a deep sublevel with a "ding!", THUNK and a wobble. The muzak version of
+"The Sound of Muzak" continues to play softly from a tinny overhead speaker,
+on repeat, with a detuned flute playing the vocal melodies. The doors happily
+slide apart to reveal the Sublevel 1 landing.
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.main]
+to = "lift-main"
+
+[rooms.exits.south]
+to = "sublevel-1-entrance"
+
+# ---------------------------------------------------------------------------
+[[rooms]]
+id = "sublevel-1-entrance"
+name = "Entrance to Sublevel One"
+description = """
+A small landing area covered in dust. Buckets, tools, and debris are strewn
+about the floor. All exits are blocked with barriers that read:
+
+                        🚧 UNDER CONSTRUCTION 🚧
+                 *PLEASE WAIT WHILE WE BUILD THIS FLOOR
+"""
+location = "Nowhere"
+visited = false
+
+[rooms.exits.north]
+to = "lift-sublevel-1"
+
+[rooms.exits.west]
+to = "room-aa-3b"
+required_actions = ["nonexistent_achievement"]
+barred_message = """
+Room AA-3B no longer exists at this location. If found, DO NOT ATTEMPT TO ENTER
+and notify the risk management office immediately!"""
+
+# -----------------------------------------------------------------------------
+[[rooms]]
+id = "supply-closet"
+name = "Supply Closet"
+description = """
+A small closet lit by a bare bulb being repeatedly rammed by a fluttering moth.
+Crowded shelves offer paper products, bottles of toner, staples, and other
+office... ... staples.
+"""
+location = "Nowhere"
+visited = false
+
+[rooms.exits.south]
+to = "b-a-office"
+
+[[rooms]]
+id = "room-aa-3b"
+name = "Room AA-3B"
+description = """
+<This room intentionally inaccessible...for now?>
+"""
+location = "Nowhere"
+visited = false
+
+[rooms.exits.east]
+to = "sublevel-1-entrance"

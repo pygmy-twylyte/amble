@@ -1,0 +1,6 @@
+/target
+*.log
+*.tar.gz
+amble_map.drawio
+.$amble_map.drawio.bkp
+/saved_games

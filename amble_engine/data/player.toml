@@ -1,0 +1,4 @@
+id = "player"
+name = "The Candidate"
+description = "a seasoned adventurer with a faint memory of a promised cake."
+location = { Room = "high-ridge" }
