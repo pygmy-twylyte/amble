@@ -1,10 +1,6 @@
-use std::{collections::HashMap, io, path::Path, time::Duration};
+use std::{collections::HashMap, io, time::Duration};
 
-use amble_engine::{
-    loader::items::{build_items, load_raw_items},
-    loader::SymbolTable,
-    Item,
-};
+use amble_engine::{load_world, Item};
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
@@ -20,11 +16,9 @@ use ratatui::{
 use uuid::Uuid;
 
 fn load_items_from_engine() -> anyhow::Result<HashMap<Uuid, Item>> {
-    let mut symbols = SymbolTable::default();
-    let raw_items = load_raw_items(Path::new("amble_engine/data/items.toml"))?;
-    let items = build_items(&raw_items, &mut symbols)?;
-    let item_map = items.into_iter().map(|i| (i.id, i)).collect();
-    Ok(item_map)
+    let world = load_world()?;
+
+    Ok(world.items.clone())
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -64,10 +58,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // Right panel: item detail
             let detail = format!(
-                "Name: {}\nUUID: {}\nDescription: {}",
+                "Name: {}\nUUID: {}\nDescription: {}\nLocation: {:?}",
                 items[selected].name,
                 items[selected].id,
-                items[selected].description.as_deref().unwrap_or("<none>")
+                items[selected].description,
+                items[selected].location
             );
 
             let paragraph = Paragraph::new(detail)
