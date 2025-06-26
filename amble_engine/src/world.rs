@@ -1,7 +1,7 @@
 use crate::npc::Npc;
 use crate::spinners::{SpinnerType, default_spinners};
 use crate::trigger::Trigger;
-use crate::{Item, Location, Player, Room};
+use crate::{Item, Player, Room};
 
 use anyhow::{Result, anyhow};
 use gametools::Spinner;
@@ -10,6 +10,26 @@ use serde::{Deserialize, Serialize};
 
 use std::collections::HashMap;
 use uuid::Uuid;
+use variantly::Variantly;
+
+/// Kinds of places where a WorldObject may be located.
+#[derive(Debug, Default, Clone, Serialize, Deserialize, Variantly, PartialEq, Eq)]
+pub enum Location {
+    Item(Uuid),
+    Inventory,
+    #[default]
+    Nowhere,
+    Npc(Uuid),
+    Room(Uuid),
+}
+
+/// Methods common to any object in the world.
+pub trait WorldObject {
+    fn id(&self) -> Uuid;
+    fn name(&self) -> &str;
+    fn description(&self) -> &str;
+    fn location(&self) -> &Location;
+}
 
 /// The Amble world.
 #[derive(Debug, Default, Serialize, Deserialize)]

@@ -1,4 +1,4 @@
-use crate::{ItemHolder, Location, WorldObject, style::GameStyle, world::AmbleWorld};
+use crate::{Location, WorldObject, style::GameStyle, world::AmbleWorld};
 use anyhow::Result;
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
@@ -7,6 +7,13 @@ use std::{
     fmt::Display,
 };
 use uuid::Uuid;
+
+/// Methods common to things that can hold items.
+pub trait ItemHolder {
+    fn add_item(&mut self, item_id: Uuid);
+    fn remove_item(&mut self, item_id: Uuid);
+    fn contains_item(&self, item_id: Uuid) -> bool;
+}
 
 /// Things an item can do.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Eq, Hash)]

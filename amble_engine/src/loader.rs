@@ -79,11 +79,11 @@ pub fn resolve_location(
 /// # Errors
 /// Multiple errors can be returned from file IO and symbol table lookups
 pub fn load_world() -> Result<AmbleWorld> {
-    let item_toml_path = Path::new("data/items.toml");
-    let room_toml_path = Path::new("data/rooms.toml");
-    let player_toml_path = Path::new("data/player.toml");
-    let npc_toml_path = Path::new("data/npcs.toml");
-    let trigger_toml_path = Path::new("data/triggers.toml");
+    let item_toml_path = Path::new("amble_engine/data/items.toml");
+    let room_toml_path = Path::new("amble_engine/data/rooms.toml");
+    let player_toml_path = Path::new("amble_engine/data/player.toml");
+    let npc_toml_path = Path::new("amble_engine/data/npcs.toml");
+    let trigger_toml_path = Path::new("amble_engine/data/triggers.toml");
 
     let mut world = AmbleWorld::new_empty();
     let mut symbols = SymbolTable::default();

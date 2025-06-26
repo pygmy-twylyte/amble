@@ -32,9 +32,11 @@ name = "amble_editor"
 version = "0.1.0"
 dependencies = [
  "amble_engine",
+ "anyhow",
  "crossterm",
  "ratatui",
  "toml_edit 0.21.1",
+ "uuid 1.17.0",
 ]
 
 [[package]]
