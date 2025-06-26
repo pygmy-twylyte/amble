@@ -1,2 +1,8 @@
-target
-amble_editor/target
+# Ignore Cargo build and intermediate files
+target/
+**/*.rs.bk
+Cargo.lock
+
+# VSCode and Zed config (if applicable)
+.vscode/
+.zed/
