@@ -7,3 +7,6 @@ Cargo.lock
 # VSCode and Zed config (if applicable)
 .vscode/
 .zed/
+
+# Ignore saved game files
+saved_games/
