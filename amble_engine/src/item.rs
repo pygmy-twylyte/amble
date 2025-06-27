@@ -26,6 +26,7 @@ pub enum ItemAbility {
     Read,
     TurnOn,
     TurnOff,
+    Unlock(Option<Uuid>),
     Use,
 }
 impl Display for ItemAbility {
@@ -37,6 +38,7 @@ impl Display for ItemAbility {
             ItemAbility::Read => write!(f, "read"),
             ItemAbility::TurnOn => write!(f, "turn on"),
             ItemAbility::TurnOff => write!(f, "turn off"),
+            ItemAbility::Unlock(_) => write!(f, "unlock"),
             ItemAbility::Use => write!(f, "use"),
             ItemAbility::Pluck => write!(f, "pluck"),
         }

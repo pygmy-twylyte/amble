@@ -282,7 +282,7 @@ pub fn lock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
 /// Unlocks and opens an item nearby.
 pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     let room = world.player_room_ref()?;
-    let (container_id, name) = if let Some(entity) =
+    let (container_id, container_name) = if let Some(entity) =
         find_world_object(&room.contents, &world.items, &world.npcs, pattern)
     {
         if let Some(item) = entity.item() {
@@ -296,6 +296,17 @@ pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
         return entity_not_found(world, pattern);
     };
 
+    // 🔐 Check player inventory for valid key
+    let has_valid_key = world.player.inventory.iter().any(|id| {
+        world.items.get(id).map_or(false, |i| {
+            i.abilities.iter().any(|a| match a {
+                ItemAbility::Unlock(Some(target)) => *target == container_id,
+                ItemAbility::Unlock(None) => true, // universal key
+                _ => false,
+            })
+        })
+    });
+
     if let Some(target_item) = world.get_item_mut(container_id) {
         match target_item {
             item if !item.container => {
@@ -308,17 +319,23 @@ pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
                 println!("The {} is already unlocked.", item.name().item_style());
             }
             item => {
-                item.locked = false;
-                item.open = true;
-                println!("You unlocked the {}.\n", item.name().item_style());
-                info!(
-                    "{} unlocked the {} ({})",
-                    world.player.name(),
-                    name,
-                    container_id
-                );
-                // world.check_triggers(TriggerEvent::Unlock(container_id))?;
-                check_triggers(world, &[TriggerCondition::Unlock(container_id)])?;
+                if has_valid_key {
+                    item.locked = false;
+                    item.open = true;
+                    println!("You unlocked the {}.\n", item.name().item_style());
+                    info!(
+                        "{} unlocked the {} ({})",
+                        world.player.name(),
+                        container_name,
+                        container_id
+                    );
+                    check_triggers(world, &[TriggerCondition::Unlock(container_id)])?;
+                } else {
+                    println!(
+                        "You don't have anything that can unlock the {}.",
+                        item.name().item_style()
+                    );
+                }
             }
         }
     }

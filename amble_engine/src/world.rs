@@ -38,7 +38,7 @@ pub struct AmbleWorld {
     pub items: HashMap<Uuid, Item>,
     pub triggers: Vec<Trigger>,
     pub player: Player,
-    #[serde(skip)]
+    #[serde(skip)] // these are hard-coded into source
     pub spinners: HashMap<SpinnerType, Spinner<&'static str>>,
     pub npcs: HashMap<Uuid, Npc>,
 }

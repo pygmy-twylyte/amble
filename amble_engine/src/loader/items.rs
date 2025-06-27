@@ -19,6 +19,20 @@ use crate::{
 
 use super::{SymbolTable, resolve_location};
 
+#[derive(Debug, Deserialize, PartialEq, Eq, Hash)]
+#[serde(tag = "type", content = "target")]
+pub enum RawItemAbility {
+    CutWood,
+    Ignite,
+    Insulate,
+    Pluck,
+    Read,
+    TurnOn,
+    TurnOff,
+    Unlock(Option<String>),
+    Use,
+}
+
 #[derive(Debug, Deserialize)]
 /// First stage of loading an `Item` from the items TOML file.
 /// In the TOML, id(token), name, description, portable, and location are all mandatory.
@@ -45,7 +59,7 @@ pub struct RawItem {
     #[serde(default)]
     pub contents: HashSet<Uuid>,
     #[serde(default)]
-    pub abilities: HashSet<ItemAbility>,
+    pub abilities: HashSet<RawItemAbility>,
     #[serde(default)]
     pub interaction_requires: HashMap<ItemInteractionType, ItemAbility>,
     #[serde(default)]
@@ -69,6 +83,31 @@ impl RawItem {
             }
         };
 
+        let mut abilities = HashSet::new();
+        for raw_ability in &self.abilities {
+            let ability = match raw_ability {
+                RawItemAbility::CutWood => ItemAbility::CutWood,
+                RawItemAbility::Ignite => ItemAbility::Ignite,
+                RawItemAbility::Insulate => ItemAbility::Insulate,
+                RawItemAbility::Pluck => ItemAbility::Pluck,
+                RawItemAbility::Read => ItemAbility::Read,
+                RawItemAbility::TurnOn => ItemAbility::TurnOn,
+                RawItemAbility::TurnOff => ItemAbility::TurnOff,
+                RawItemAbility::Unlock(Some(sym)) => {
+                    let target = symbols.items.get(sym).with_context(|| {
+                        format!(
+                            "raw item ({}) ability Unlock({sym}): not found in symbol table",
+                            self.id
+                        )
+                    })?;
+                    ItemAbility::Unlock(Some(*target))
+                }
+                RawItemAbility::Unlock(None) => ItemAbility::Unlock(None),
+                RawItemAbility::Use => ItemAbility::Use,
+            };
+            abilities.insert(ability);
+        }
+
         let real_item = Item {
             id: item_id,
             name: self.name.to_string(),
@@ -80,7 +119,7 @@ impl RawItem {
             open: self.open,
             locked: self.locked,
             restricted: self.restricted,
-            abilities: self.abilities.clone(),
+            abilities,
             interaction_requires: self.interaction_requires.clone(),
             text: self.text.clone(),
         };

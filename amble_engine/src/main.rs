@@ -5,10 +5,10 @@
 
 use amble_engine::{WorldObject, load_world, run_repl};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use colored::Colorize;
 
-use log::{error, info};
+use log::info;
 
 use std::fs;
 use std::io::Write;
@@ -16,21 +16,16 @@ use std::io::Write;
 fn main() -> Result<()> {
     env_logger::init();
     info!("Start: loading Amble world...");
-    let mut world = match load_world() {
-        Ok(world) => world,
-        Err(e) => {
-            error!("error loading AmbleWorld: {e}");
-            return Err(e);
-        }
-    };
+    let mut world = load_world().context("while loading AmbleWorld")?;
     info!("AmbleWorld loaded successfully.");
-    info!("Starting the game!");
-    // clears the screen
+
+    // clear the screen
     print!("\x1B[2J\x1B[H");
     std::io::stdout().flush().unwrap();
+    info!("Starting the game!");
 
     println!(
-        "{:^80}",
+        "{:^84}",
         "AMBLE: AN ADVENTURE IN THE ABSURD"
             .bright_yellow()
             .underline()
