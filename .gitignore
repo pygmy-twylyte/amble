@@ -1,6 +1,7 @@
 # Ignore Cargo build and intermediate files
 target/
 **/*.rs.bk
+*.log
 Cargo.lock
 
 # VSCode and Zed config (if applicable)
