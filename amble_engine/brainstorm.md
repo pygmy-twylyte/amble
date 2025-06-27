@@ -1,19 +1,15 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
--- dev commands to teleport (DONE), get items / achievs
-?? add Wear command and item capability
--- NPC inventory display -- remove "visible", make heading bold item_style
--- if flamethrower used to pass tree, it lights itself on fire and throws itself into the tree
-  -- later, the axe or flamethrower can be used to remove the rug in the lounge
+- create ShowNPCMessage action -- for triggered NPC dialogue (print with NPC: message style)
+- make Vogon Poetry readable 
+- dev commands to teleport (DONE), get items / achievs
+- ?? add Wear command and item capability
 
 ## FIXITs from runthroughs
--- change to "copy paper" from "printer paper" to avoid name ambiguity with the lab printer
 -- make reservation book readable
--- caption Gonk's Photo
 -- rename abandoned game from Brains Anonymous: Pong Construction Set '84
--- make Welcome Sign at Inca-Road readable
-** "burn poet with flame" --> no user feedback at all?
+
 
 ## 🧠 World Concept: The AA-3B Breach & Amble's Origin
 
