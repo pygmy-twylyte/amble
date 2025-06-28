@@ -23,7 +23,9 @@ pub enum ItemAbility {
     Ignite,
     Insulate,
     Pluck,
+    Pry,
     Read,
+    Smash,
     TurnOn,
     TurnOff,
     Unlock(Option<Uuid>),
@@ -41,6 +43,8 @@ impl Display for ItemAbility {
             ItemAbility::Unlock(_) => write!(f, "unlock"),
             ItemAbility::Use => write!(f, "use"),
             ItemAbility::Pluck => write!(f, "pluck"),
+            ItemAbility::Pry => write!(f, "pry"),
+            ItemAbility::Smash => write!(f, "smash"),
         }
     }
 }
@@ -55,6 +59,7 @@ pub enum ItemInteractionType {
     Cut,
     Handle,
     Move,
+    Open,
     Turn,
     Unlock,
 }

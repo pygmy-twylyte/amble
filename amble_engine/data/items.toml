@@ -405,6 +405,8 @@ description = "A hefty lumberjack's axe. The blade is slightly rusted, but it lo
 portable = true
 [[items.abilities]]
 type = "CutWood"
+[[items.abilities]]
+type = "Smash"
 
 # ----------------------------------------------------------------------------
 [[items]]
@@ -551,3 +553,51 @@ type = "Unlock"
 target = "lost_and_found_box"
 
 # --------------------------------------------------------------------------
+[[items]]
+id = "dock_crate_key"
+name = "Small Brass Key"
+description = """
+A small brass key labeled 'Dock Crate'. Its teeth are worn, as if it’s been
+used many times before — or chewed on in boredom. There's a bit of ear wax
+on the tip as well.
+"""
+portable = true
+location = { Room = "guard-post" }
+
+[[items.abilities]]
+type = "Unlock"
+target = "security_crate"
+
+# --------------------------------------------------------------------------
+[[items]]
+id = "security_crate"
+name = "Security Supply Crate"
+description = """
+A heavy wooden locker marked 'AMBLE SECURITY - Authorize Use Only'. The
+planks are reinforced, and the it rattles faintly when nudged.
+"""
+portable = false
+container = true
+open = false
+locked = true
+location = { Room = "loading-dock" }
+interaction_requires.cut = "cutWood"
+interaction_requires.break = "smash"
+interaction_requires.burn = "ignite"
+
+# --------------------------------------------------------------------------
+[[items]]
+id = "crowbar"
+name = "Crowbar"
+description = """
+A sturdy crowbar with the initials 'G.F.' etched near the handle grip. It looks
+like it could pry open doors or smash obstacles — a proper scientist’s multitool.
+"""
+portable = true
+location = { Nowhere = "spawns@loading-dock or security_crate depending on access method" }
+
+[[items.abilities]]
+type = "Pry"
+
+[[items.abilities]]
+type = "Smash"

@@ -486,3 +486,83 @@ Minty. Strong. Too strong. You’re no botanist, but you’re pretty sure this s
 be growing out of a shrubbery.""" },
     { type = "awardPoints", amount = 3 },
 ]
+
+[[triggers]]
+name = "Loading Dock: Open Security Crate (Key)"
+only_once = true
+conditions = [{ type = "unlock", item_id = "security_crate" }]
+actions = [
+    { type = "spawnItemInContainer", item_id = "crowbar", container_id = "security_crate" },
+    { type = "showMessage", text = """
+The ear wax on the tip of the key eases it into the rusted lock, which snaps
+open with a satisfying clunk.
+""" },
+]
+
+[[triggers]]
+name = "Loading Dock: Open Security Crate (Cut Wood)"
+only_once = true
+conditions = [
+    { type = "useItemOnItem", tool_id = "lumberjack_axe", target_id = "security_crate", interaction = "cut" },
+]
+actions = [
+    { type = "despawnItem", item_id = "security_crate" },
+    { type = "despawnItem", item_id = "crowbar" },
+    { type = "spawnItemCurrentRoom", item_id = "crowbar" },
+    { type = "showMessage", text = """
+You're surprised to hear yourself singing, "I'm a lumberjack, and I'm OK. I
+sleep all night and I work all day!" -- as you chop the security locker into
+splinters. There is a crowbar lying amongst the rubble.""" },
+]
+
+[[triggers]]
+name = "Loading Dock: Open Security Crate (Break)"
+only_once = true
+conditions = [
+    { type = "useItemOnItem", tool_id = "lumberjack_axe", target_id = "security_crate", interaction = "break" },
+]
+actions = [
+    { type = "despawnItem", item_id = "security_crate" },
+    { type = "despawnItem", item_id = "crowbar" },
+    { type = "spawnItemCurrentRoom", item_id = "crowbar" },
+    { type = "showMessage", text = """
+With a few hefty blows using the blunt side of the axe head, you manage to
+break the lock haft completely off of the security locker -- well after a few
+misses had already caved in the lid and destroyed it, but you were having fun.
+You can hardly have damaged the crowbar that was stored inside.""" },
+]
+
+[[triggers]]
+name = "Loading Dock: Open Security Crate (Burn)"
+only_once = true
+conditions = [
+    { type = "useItemOnItem", tool_id = "flamethrower", target_id = "security_crate", interaction = "burn" },
+]
+actions = [
+    { type = "despawnItem", item_id = "security_crate" },
+    { type = "despawnItem", item_id = "crowbar" },
+    { type = "spawnItemCurrentRoom", item_id = "crowbar" },
+    { type = "showMessage", text = """
+Following the directions, you aim and slowly squeeze the Arson-Aid trigger.
+The entire device catches fire. Panicking, you chuck it at the security
+supply locker...
+
+WHOOOOOMP! The locker, which you now realize may have been made from the solid
+magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking
+your eyebrows with it. Luckily, the crowbar that was stored inside only warped
+a bit, but it's still quite usable.
+""" },
+]
+
+[[triggers]]
+name = "Got Crowbar"
+only_once = true
+conditions = [{ type = "take", item_id = "crowbar" }]
+actions = [
+    { type = "showMessage", text = "You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?" },
+    { type = "showMessage", text = """Then you wonder why you're thinking of Barney as a real person instead of a
+character in a game. Wait, he was just a fiction, right? Come to think of it, you feel a little unsure of
+reality, and it's worse the nearer you are to the building.""" },
+    { type = "addAchievement", achievement = "got-crowbar" },
+    { type = "awardPoints", amount = "4" },
+]
