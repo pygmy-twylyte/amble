@@ -46,7 +46,7 @@ pub fn look_at_handler(world: &AmbleWorld, thing: &str) -> Result<()> {
                 item.name(),
                 item.id()
             );
-            item.show(world)?;
+            item.show(world);
         }
         if let Some(npc) = entity.npc() {
             info!(
@@ -58,7 +58,7 @@ pub fn look_at_handler(world: &AmbleWorld, thing: &str) -> Result<()> {
             npc.show(world)?;
         }
     } else {
-        return entity_not_found(world, thing);
+        entity_not_found(world, thing);
     }
     Ok(())
 }
@@ -116,14 +116,15 @@ pub fn read_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
             None
         }
     } else {
-        return entity_not_found(world, pattern);
+        entity_not_found(world, pattern);
+        return Ok(());
     };
     // check triggers for any DenyRead action that may have fired, and show the text if not
     if let Some(item_id) = found_item_id {
         let fired = check_triggers(
             world,
             &[TriggerCondition::UseItem {
-                item_id: item_id,
+                item_id,
                 ability: ItemAbility::Read,
             }],
         )?;

@@ -159,12 +159,12 @@ pub enum TriggerAction {
 }
 
 /// Determines if a matching trigger condition exists in a list of triggers.
-/// Useful to see if a TriggerCondition just sent to check_triggers did anything.
+/// Useful to see if a `TriggerCondition` just sent to `check_triggers` did anything.
 pub fn triggers_contain_condition<F>(list: &[&Trigger], matcher: F) -> bool
 where
     F: Fn(&TriggerCondition) -> bool,
 {
-    list.iter().any(|t| t.conditions.iter().any(|c| matcher(c)))
+    list.iter().any(|t| t.conditions.iter().any(&matcher))
 }
 
 /// Determine which triggers meet conditions to fire now, fire them, and return a list of fired triggers.
@@ -212,7 +212,7 @@ fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()>
         TriggerAction::DenyRead(reason) => deny_read(reason),
         TriggerAction::DespawnItem { item_id } => despawn_item(world, item_id)?,
         TriggerAction::GiveItemToPlayer { npc_id, item_id } => {
-            give_to_player(world, npc_id, item_id)?
+            give_to_player(world, npc_id, item_id)?;
         }
         TriggerAction::LockItem(item_id) => lock_item(world, item_id)?,
         TriggerAction::PushPlayerTo(room_id) => push_player(world, room_id)?,
@@ -221,7 +221,7 @@ fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()>
             exit_from,
             exit_to,
         } => reveal_exit(world, direction, exit_from, exit_to)?,
-        TriggerAction::SetNPCMood { npc_id, mood } => set_npc_mood(world, npc_id, mood)?,
+        TriggerAction::SetNPCMood { npc_id, mood } => set_npc_mood(world, npc_id, *mood)?,
         TriggerAction::ShowMessage(text) => show_message(text),
         TriggerAction::SpawnItemInContainer {
             item_id,
@@ -230,7 +230,7 @@ fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()>
         TriggerAction::SpawnItemInInventory(item_id) => spawn_item_in_inventory(world, item_id)?,
         TriggerAction::SpawnItemCurrentRoom(item_id) => spawn_item_in_current_room(world, item_id)?,
         TriggerAction::SpawnItemInRoom { item_id, room_id } => {
-            spawn_item_in_specific_room(world, item_id, room_id)?
+            spawn_item_in_specific_room(world, item_id, room_id)?;
         }
         TriggerAction::UnlockItem(item_id) => unlock_item(world, item_id)?,
         TriggerAction::UnlockExit {
@@ -275,7 +275,7 @@ fn add_achievement(world: &mut AmbleWorld, task: &String) {
 fn lock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Result<()> {
     if let Some(exit) = world
         .rooms
-        .get_mut(&from_room)
+        .get_mut(from_room)
         .and_then(|rm| rm.exits.get_mut(direction))
     {
         exit.locked = true;
@@ -290,7 +290,7 @@ fn lock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Re
 fn unlock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Result<()> {
     if let Some(exit) = world
         .rooms
-        .get_mut(&from_room)
+        .get_mut(from_room)
         .and_then(|r| r.exits.get_mut(direction))
     {
         exit.locked = false;
@@ -303,7 +303,7 @@ fn unlock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> 
 
 /// unlock an item
 fn unlock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
-    if let Some(item) = world.items.get_mut(&item_id) {
+    if let Some(item) = world.items.get_mut(item_id) {
         if item.container {
             item.locked = false;
             item.open = true;
@@ -324,13 +324,13 @@ fn spawn_item_in_specific_room(
 ) -> Result<()> {
     let item = world
         .items
-        .get_mut(&item_id)
+        .get_mut(item_id)
         .ok_or_else(|| anyhow!("item {} missing", item_id))?;
     if item.location.is_nowhere() {
         item.set_location_room(*room_id);
         world
             .rooms
-            .get_mut(&room_id)
+            .get_mut(room_id)
             .ok_or_else(|| anyhow!("room {} missing", room_id))?
             .add_item(*item_id);
         info!("└─ action: SpawnItemInRoom({item_id}, {room_id})");
@@ -348,7 +348,7 @@ fn spawn_item_in_current_room(world: &mut AmbleWorld, item_id: &Uuid) -> Result<
         .with_context(|| "SpawnItemCurrentRoom: player not in a room".to_string())?;
     let item = world
         .items
-        .get_mut(&item_id)
+        .get_mut(item_id)
         .ok_or_else(|| anyhow!("item {} missing", item_id))?;
     if item.location.is_nowhere() {
         item.set_location_room(*room_id);
@@ -367,7 +367,7 @@ fn spawn_item_in_current_room(world: &mut AmbleWorld, item_id: &Uuid) -> Result<
 fn spawn_item_in_inventory(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     let item = world
         .items
-        .get_mut(&item_id)
+        .get_mut(item_id)
         .ok_or_else(|| anyhow!("item {} missing", item_id))?;
     if item.location.is_nowhere() {
         item.set_location_inventory();
@@ -386,13 +386,13 @@ fn spawn_item_in_container(
 ) -> Result<()> {
     let item = world
         .items
-        .get_mut(&item_id)
+        .get_mut(item_id)
         .ok_or_else(|| anyhow!("item {} missing", item_id))?;
     if item.location.is_nowhere() {
         item.set_location_item(*container_id);
         world
             .items
-            .get_mut(&container_id)
+            .get_mut(container_id)
             .ok_or_else(|| anyhow!("container {} missing", container_id))?
             .add_item(*item_id);
         info!("└─ action: SpawnItemInContainer({item_id}, {container_id})");
@@ -410,9 +410,9 @@ fn show_message(text: &String) {
     );
 }
 
-fn set_npc_mood(world: &mut AmbleWorld, npc_id: &Uuid, mood: &NpcMood) -> Result<()> {
-    if let Some(npc) = world.npcs.get_mut(&npc_id) {
-        npc.mood = *mood;
+fn set_npc_mood(world: &mut AmbleWorld, npc_id: &Uuid, mood: NpcMood) -> Result<()> {
+    if let Some(npc) = world.npcs.get_mut(npc_id) {
+        npc.mood = mood;
         info!("└─ action: SetNPCMood({npc_id}, {mood:?})");
         Ok(())
     } else {
@@ -428,7 +428,7 @@ fn reveal_exit(
 ) -> Result<()> {
     let exit = world
         .rooms
-        .get_mut(&exit_from)
+        .get_mut(exit_from)
         .ok_or_else(|| anyhow!("invalid exit_from room {}", exit_from))?
         .exits
         .entry(direction.clone())
@@ -449,7 +449,7 @@ fn push_player(world: &mut AmbleWorld, room_id: &Uuid) -> Result<()> {
 }
 
 fn lock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
-    if let Some(item) = world.items.get_mut(&item_id) {
+    if let Some(item) = world.items.get_mut(item_id) {
         item.locked = true;
         info!("└─ action: LockItem({item_id})");
         Ok(())
@@ -461,10 +461,10 @@ fn lock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
 fn give_to_player(world: &mut AmbleWorld, npc_id: &Uuid, item_id: &Uuid) -> Result<()> {
     let npc = world
         .npcs
-        .get_mut(&npc_id)
+        .get_mut(npc_id)
         .with_context(|| format!("NPC {npc_id} not found"))?;
     if npc.contains_item(*item_id) {
-        let item = world.items.get_mut(&item_id).with_context(|| {
+        let item = world.items.get_mut(item_id).with_context(|| {
             format!("item {item_id} in NPC inventory but missing from world.items")
         })?;
         item.set_location_inventory();
@@ -480,23 +480,23 @@ fn give_to_player(world: &mut AmbleWorld, npc_id: &Uuid, item_id: &Uuid) -> Resu
 fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     let item = world
         .items
-        .get_mut(&item_id)
+        .get_mut(item_id)
         .ok_or_else(|| anyhow!("unknown item {}", item_id))?;
     let prev_loc = std::mem::replace(&mut item.location, Location::Nowhere);
     match prev_loc {
         Location::Room(id) => {
             if let Some(r) = world.rooms.get_mut(&id) {
-                r.remove_item(*item_id)
+                r.remove_item(*item_id);
             }
         }
         Location::Item(id) => {
             if let Some(c) = world.items.get_mut(&id) {
-                c.remove_item(*item_id)
+                c.remove_item(*item_id);
             }
         }
         Location::Npc(id) => {
             if let Some(n) = world.npcs.get_mut(&id) {
-                n.remove_item(*item_id)
+                n.remove_item(*item_id);
             }
         }
         Location::Inventory => {

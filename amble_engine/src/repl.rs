@@ -50,10 +50,11 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
 
         match parse_command(&input) {
             Command::Help => help_handler()?,
-            Command::Quit => match quit_handler(world)? {
-                ReplControl::Quit => break,
-                ReplControl::Continue => continue,
-            },
+            Command::Quit => {
+                if let ReplControl::Quit = quit_handler(world)? {
+                    break;
+                }
+            }
             Command::Look => look_handler(world)?,
             Command::LookAt(thing) => look_at_handler(world, &thing)?,
             Command::MoveTo(direction) => move_to_handler(world, &direction)?,
@@ -72,7 +73,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
                     world
                         .spin_spinner(SpinnerType::UnrecognizedCommand, "Didn't quite catch that?")
                         .italic()
-                )
+                );
             }
             Command::TalkTo(npc_name) => talk_to_handler(world, &npc_name)?,
             Command::Teleport(room_toml_id) => teleport_handler(world, &room_toml_id), // only for development
@@ -82,7 +83,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             Command::Load(gamefile) => load_handler(world, &gamefile)?,
             Command::Save(gamefile) => save_handler(world, &gamefile)?,
             Command::UseItemOn { verb, tool, target } => {
-                use_item_on_handler(world, verb, &tool, &target)?
+                use_item_on_handler(world, verb, &tool, &target)?;
             }
         }
     }
@@ -121,11 +122,10 @@ pub fn find_world_object<'a>(
 }
 
 /// Feedback to player if an entity search comes up empty
-fn entity_not_found(world: &AmbleWorld, search_text: &str) -> Result<()> {
+fn entity_not_found(world: &AmbleWorld, search_text: &str) {
     println!(
         "\"{}\"? {}",
         search_text.error_style(),
         world.spin_spinner(SpinnerType::EntityNotFound, "What's that?")
     );
-    Ok(())
 }

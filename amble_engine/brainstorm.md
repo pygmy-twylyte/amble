@@ -2,9 +2,11 @@
 
 ## CODING TODOs
 - create ShowNPCMessage action -- for triggered NPC dialogue (print with NPC: message style)
-- make Vogon Poetry readable 
+- make Vogon Poetry readable
 - dev commands to teleport (DONE), get items / achievs
 - ?? add Wear command and item capability
+- add something breakable and the crowbar!
+- add "clean" / "wipe" item interaction
 
 ## FIXITs from runthroughs
 -- make reservation book readable

@@ -37,10 +37,11 @@ pub enum RawItemAbility {
 /// First stage of loading an `Item` from the items TOML file.
 /// In the TOML, id(token), name, description, portable, and location are all mandatory.
 /// Token IDs (e.g. "towel") are converted to UUIDs before second stage (placement)
-/// Container, open, and locked only need be defined for containers (all default false).
-/// Contents are populated dynamically from other item entries and should not be in the TOML at all.
-/// Restricted is for puzzle/quest items that can't simply be "taken" from an NPC
-/// Abilities designate additional abilities implemented in triggers (e.g. "TurnOn")
+/// `Container`, open, and locked only need be defined for containers (all default false).
+/// `Contents` are populated dynamically from other item entries and should not be in the TOML at all.
+/// `Restricted` is for puzzle/quest items that can't simply be "taken" from an NPC
+/// `Abilities` designate additional abilities implemented in triggers (e.g. `TurnOn`)
+/// `Interaction_requires`: e.g. to "burn" x with y, x requires y to have "ignite" capability
 /// Text contains anything readable on the item or None.
 pub struct RawItem {
     pub id: String,
@@ -151,7 +152,7 @@ pub fn interaction_requirement_met(
 /// - if unable to read or parse the items.toml file
 pub fn load_raw_items(toml_path: &Path) -> Result<Vec<RawItem>> {
     let item_file = fs::read_to_string(toml_path)
-        .with_context(|| format!("reading item data from {toml_path:?}"))?;
+        .with_context(|| format!("reading item data from '{}'", toml_path.display()))?;
     let wrapper: RawItemFile = toml::from_str(&item_file)?;
     info!(
         "{} raw items successfully loaded from {}",
@@ -162,6 +163,9 @@ pub fn load_raw_items(toml_path: &Path) -> Result<Vec<RawItem>> {
 }
 
 /// Build `Items` from raw items.
+/// # Errors
+/// - if an item pre-registered during room loading is not found it items loaded from file
+/// - if there is a failed lookup in the symbol table during raw item conversion
 pub fn build_items(raw_items: &[RawItem], symbols: &mut SymbolTable) -> Result<Vec<Item>> {
     // copy items pre-inserted during Room loading (to verify they actually exist in items.toml)
     let early_inserts = symbols.items.clone();
@@ -181,13 +185,14 @@ pub fn build_items(raw_items: &[RawItem], symbols: &mut SymbolTable) -> Result<V
         );
     }
     // make sure pre-inserted items are in symbols built from items.toml
-    for (token_id, item_uuid) in &early_inserts {
+    for (token_id, preloaded_uuid) in &early_inserts {
         if symbols.items.contains_key(token_id) {
-            if item_uuid != symbols.items.get(token_id).unwrap() {
-                bail!(
-                    "pre-registered and final UUIDs for '{}' don't match",
-                    token_id
-                );
+            if let Some(item_uuid) = symbols.items.get(token_id) {
+                if item_uuid != preloaded_uuid {
+                    bail!(
+                        "pre-registered ({preloaded_uuid}) and final ({item_uuid}) UUIDs for '{token_id}' don't match"
+                    );
+                }
             }
         } else {
             bail!(
@@ -211,6 +216,8 @@ pub fn build_items(raw_items: &[RawItem], symbols: &mut SymbolTable) -> Result<V
 }
 
 /// Place items in their starting locations, if any.
+/// # Errors
+/// - on failed lookups of items, rooms, or NPCs in the symbol table
 pub fn place_items(world: &mut AmbleWorld) -> Result<()> {
     // build lists of placements for items
     info!("building item location lists for placement stage");

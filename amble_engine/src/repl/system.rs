@@ -78,7 +78,10 @@ pub fn load_handler(world: &mut AmbleWorld, gamefile: &str) -> Result<()> {
                 "Saved game {} loaded successfully. Sally forth.",
                 gamefile.underline().green()
             );
-            info!("Player reloaded AmbleWorld from file ({load_path:?})")
+            info!(
+                "Player reloaded AmbleWorld from file '{}'",
+                load_path.display()
+            );
         } else {
             println!(
                 "Unable to parse the {} save. World structure may have changed since it was created.",
@@ -107,7 +110,7 @@ pub fn save_handler(world: &AmbleWorld, gamefile: &str) -> Result<()> {
     // create save file
     let save_path = PathBuf::from("saved_games").join(format!("amble-{gamefile}.ron"));
     let mut save_file = fs::File::create(save_path.as_path())
-        .with_context(|| format!("creating file {save_path:?}"))?;
+        .with_context(|| format!("creating file '{}'", save_path.display()))?;
 
     // write world to file
     save_file
@@ -116,6 +119,6 @@ pub fn save_handler(world: &AmbleWorld, gamefile: &str) -> Result<()> {
 
     // disco!
     println!("Game saved as {}", gamefile.underline());
-    info!("Player saved game to \"{}\"", gamefile);
+    info!("Player saved game to \"{gamefile}\"");
     Ok(())
 }

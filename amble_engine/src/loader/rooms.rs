@@ -110,17 +110,19 @@ pub struct RawRoomFile {
 /// - if unable to read or parse the rooms.toml file
 pub fn load_raw_rooms(toml_path: &Path) -> Result<Vec<RawRoom>> {
     let room_file = fs::read_to_string(toml_path)
-        .with_context(|| format!("reading room data from {toml_path:?}"))?;
+        .with_context(|| format!("reading room data from '{}'", toml_path.display()))?;
     let wrapper: RawRoomFile = toml::from_str(&room_file)?;
     info!(
-        "{} raw rooms successfully loaded from {:?}",
+        "{} raw rooms successfully loaded from '{}'",
         wrapper.rooms.len(),
-        toml_path
+        toml_path.display()
     );
     Ok(wrapper.rooms)
 }
 
 /// Build Room vector from raw rooms.
+/// # Errors
+/// - if symbol table lookup fails when building room instances
 pub fn build_rooms(raw_rooms: &[RawRoom], symbols: &mut SymbolTable) -> Result<Vec<Room>> {
     for rr in raw_rooms {
         symbols.rooms.insert(

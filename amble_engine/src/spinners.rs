@@ -2,7 +2,7 @@ use gametools::spinners::{Spinner, Wedge};
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-#[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum SpinnerType {
     Movement,
     TakeVerb,

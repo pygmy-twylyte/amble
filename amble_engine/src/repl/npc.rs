@@ -39,16 +39,18 @@ pub fn talk_to_handler(world: &mut AmbleWorld, npc_name: &str) -> Result<()> {
     if let Some(npc) = select_npc(world.player.location(), &world.npcs, npc_name) {
         // success -> call random dialogue
         let stem = format!("{}", npc.name().npc_style());
-        let dialogue = npc.random_dialogue(world.spinners.get(&SpinnerType::NpcIgnore).unwrap());
-        println!("{stem}: {dialogue}");
-        info!(
-            "{} talked to NPC \"{}\" ({})",
-            world.player.name(),
-            npc.name(),
-            npc.id()
-        );
+        if let Some(ignore_spinner) = world.spinners.get(&SpinnerType::NpcIgnore) {
+            let dialogue = npc.random_dialogue(ignore_spinner);
+            println!("{stem}: {dialogue}");
+            info!(
+                "{} talked to NPC \"{}\" ({})",
+                world.player.name(),
+                npc.name(),
+                npc.id()
+            );
+        }
     } else {
-        return entity_not_found(world, npc_name);
+        entity_not_found(world, npc_name);
     }
     Ok(())
 }
@@ -72,7 +74,8 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Res
             return Ok(());
         }
     } else {
-        return entity_not_found(world, npc);
+        entity_not_found(world, npc);
+        return Ok(());
     };
 
     // find the target item in inventory, ensure it's portable, collect metadata
@@ -99,7 +102,8 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Res
             return Ok(());
         }
     } else {
-        return entity_not_found(world, item);
+        entity_not_found(world, item);
+        return Ok(());
     };
 
     // set new location in NPC on world item

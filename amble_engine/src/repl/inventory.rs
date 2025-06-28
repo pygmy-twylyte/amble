@@ -59,7 +59,8 @@ pub fn drop_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
             Ok(())
         }
     } else {
-        entity_not_found(world, thing)
+        entity_not_found(world, thing);
+        return Ok(());
     }
 }
 
@@ -122,7 +123,7 @@ pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
             }
         }
     } else {
-        return entity_not_found(world, thing);
+        entity_not_found(world, thing);
     }
     Ok(())
 }
@@ -140,7 +141,7 @@ pub fn take_from_handler(
     item_pattern: &str,
     vessel_pattern: &str,
 ) -> Result<()> {
-    // find vessel id from containers and NPCs in room and make sure it's accessible
+    // find vessel id from containers and NPCs in room
     let current_room = world.player_room_ref()?;
     let search_scope: HashSet<Uuid> = current_room
         .contents
@@ -148,6 +149,7 @@ pub fn take_from_handler(
         .copied()
         .collect();
 
+    // extract metadata for the npc or container we're transferring from
     let (vessel_id, vessel_name, vessel_type) = if let Some(entity) =
         find_world_object(&search_scope, &world.items, &world.npcs, vessel_pattern)
     {
@@ -173,119 +175,139 @@ pub fn take_from_handler(
             return Ok(());
         }
     } else {
-        return entity_not_found(world, vessel_pattern);
+        entity_not_found(world, vessel_pattern);
+        return Ok(());
     };
 
-    // find ID of wanted item within specified vessel, and make sure it's portable
+    // Validate and execute transfer of loot from container item or NPC
     match vessel_type {
         VesselType::Item => {
-            let container = world
-                .items
-                .get(&vessel_id)
-                .ok_or(anyhow!("container {} lookup failed", vessel_id))?;
-            let (loot_id, loot_name) = if let Some(entity) =
-                find_world_object(&container.contents, &world.items, &world.npcs, item_pattern)
-            {
-                if let Some(loot) = entity.item() {
-                    if !loot.portable || loot.restricted {
-                        println!("Sorry, the {} can't be taken.", loot.name().item_style());
-                        return Ok(());
-                    }
-                    (loot.id(), loot.name().to_string())
-                } else {
-                    warn!(
-                        "Non-item WorldEntity found inside container '{}' ({})",
-                        container.name(),
-                        container.id(),
-                    );
-                    println!(
-                        "You can't take {} from {}",
-                        item_pattern.error_style(),
-                        container.name()
-                    );
-                    return Ok(());
-                }
-            } else {
-                println!(
-                    "You don't see any {} in the {} to take.",
-                    item_pattern.error_style(),
-                    vessel_name.item_style()
-                );
-                return Ok(());
-            };
-            transfer_to_player(
-                world,
-                VesselType::Item,
-                vessel_id,
-                vessel_name,
-                loot_id,
-                loot_name,
-            );
-            check_triggers(world, &[TriggerCondition::Take(loot_id)])?;
+            validate_and_transfer_from_item(world, item_pattern, vessel_id, vessel_name)?;
         }
         VesselType::Npc => {
-            let container = world
-                .npcs
-                .get(&vessel_id)
-                .ok_or(anyhow!("container {} lookup failed", vessel_id))?;
-            let (loot_id, loot_name) = if let Some(entity) = find_world_object(
-                &container.inventory,
-                &world.items,
-                &world.npcs,
-                item_pattern,
-            ) {
-                if let Some(loot) = entity.item() {
-                    if !loot.portable || loot.restricted {
-                        println!(
-                            "Sorry, you can't take {} from {}.\n(But it may be given to you under the right conditions.)",
-                            loot.name().item_style(),
-                            vessel_name.npc_style()
-                        );
-                        return Ok(());
-                    }
-                    (loot.id(), loot.name().to_string())
-                } else {
-                    warn!(
-                        "Non-item WorldEntity found inside NPC '{}' ({})",
-                        container.name(),
-                        container.id(),
-                    );
-                    println!(
-                        "You can't take {} from {}",
-                        item_pattern.error_style(),
-                        container.name().npc_style()
-                    );
-                    return Ok(());
-                }
-            } else {
-                println!(
-                    "{} doesn't have any {} to take.",
-                    vessel_name.npc_style(),
-                    item_pattern.error_style(),
-                );
-                return Ok(());
-            };
-            transfer_to_player(
-                world,
-                VesselType::Npc,
-                vessel_id,
-                vessel_name,
-                loot_id,
-                loot_name,
-            );
-            check_triggers(
-                world,
-                &[
-                    TriggerCondition::Take(loot_id),
-                    TriggerCondition::TakeFromNpc {
-                        item_id: loot_id,
-                        npc_id: vessel_id,
-                    },
-                ],
-            )?;
+            validate_and_transfer_from_npc(world, item_pattern, vessel_id, vessel_name)?;
         }
     }
+    Ok(())
+}
 
+fn validate_and_transfer_from_npc(
+    world: &mut AmbleWorld,
+    item_pattern: &str,
+    vessel_id: Uuid,
+    vessel_name: String,
+) -> Result<(), anyhow::Error> {
+    let container = world
+        .npcs
+        .get(&vessel_id)
+        .ok_or(anyhow!("container {} lookup failed", vessel_id))?;
+    let (loot_id, loot_name) = if let Some(entity) = find_world_object(
+        &container.inventory,
+        &world.items,
+        &world.npcs,
+        item_pattern,
+    ) {
+        if let Some(loot) = entity.item() {
+            if !loot.portable || loot.restricted {
+                println!(
+                    "Sorry, you can't take {} from {}.\n(But it may be given to you under the right conditions.)",
+                    loot.name().item_style(),
+                    vessel_name.npc_style()
+                );
+                return Ok(());
+            }
+            (loot.id(), loot.name().to_string())
+        } else {
+            warn!(
+                "Non-item WorldEntity found inside NPC '{}' ({})",
+                container.name(),
+                container.id(),
+            );
+            println!(
+                "You can't take {} from {}",
+                item_pattern.error_style(),
+                container.name().npc_style()
+            );
+            return Ok(());
+        }
+    } else {
+        println!(
+            "{} doesn't have any {} to take.",
+            vessel_name.npc_style(),
+            item_pattern.error_style(),
+        );
+        return Ok(());
+    };
+    transfer_to_player(
+        world,
+        VesselType::Npc,
+        vessel_id,
+        &vessel_name,
+        loot_id,
+        &loot_name,
+    );
+    check_triggers(
+        world,
+        &[
+            TriggerCondition::Take(loot_id),
+            TriggerCondition::TakeFromNpc {
+                item_id: loot_id,
+                npc_id: vessel_id,
+            },
+        ],
+    )?;
+    Ok(())
+}
+
+fn validate_and_transfer_from_item(
+    world: &mut AmbleWorld,
+    item_pattern: &str,
+    vessel_id: Uuid,
+    vessel_name: String,
+) -> Result<(), anyhow::Error> {
+    let container = world
+        .items
+        .get(&vessel_id)
+        .ok_or(anyhow!("container {} lookup failed", vessel_id))?;
+    let (loot_id, loot_name) = if let Some(entity) =
+        find_world_object(&container.contents, &world.items, &world.npcs, item_pattern)
+    {
+        if let Some(loot) = entity.item() {
+            if !loot.portable || loot.restricted {
+                println!("Sorry, the {} can't be taken.", loot.name().item_style());
+                return Ok(());
+            }
+            (loot.id(), loot.name().to_string())
+        } else {
+            warn!(
+                "Non-item WorldEntity found inside container '{}' ({})",
+                container.name(),
+                container.id(),
+            );
+            println!(
+                "You can't take {} from {}",
+                item_pattern.error_style(),
+                container.name()
+            );
+            return Ok(());
+        }
+    } else {
+        println!(
+            "You don't see any {} in the {} to take.",
+            item_pattern.error_style(),
+            vessel_name.item_style()
+        );
+        return Ok(());
+    };
+    transfer_to_player(
+        world,
+        VesselType::Item,
+        vessel_id,
+        &vessel_name,
+        loot_id,
+        &loot_name,
+    );
+    check_triggers(world, &[TriggerCondition::Take(loot_id)])?;
     Ok(())
 }
 
@@ -294,9 +316,9 @@ pub fn transfer_to_player(
     world: &mut AmbleWorld,
     vessel_type: VesselType,
     vessel_id: Uuid,
-    vessel_name: String,
+    vessel_name: &str,
     loot_id: Uuid,
-    loot_name: String,
+    loot_name: &str,
 ) {
     // Change item location to inventory
     if let Some(moving_item) = world.get_item_mut(loot_id) {
@@ -346,7 +368,8 @@ pub fn put_in_handler(world: &mut AmbleWorld, item: &str, container: &str) -> Re
             return Ok(());
         }
     } else {
-        return entity_not_found(world, item);
+        entity_not_found(world, item);
+        return Ok(());
     };
 
     let room = world.player_room_ref()?;
@@ -364,7 +387,8 @@ pub fn put_in_handler(world: &mut AmbleWorld, item: &str, container: &str) -> Re
             return Ok(());
         }
     } else {
-        return entity_not_found(world, container);
+        entity_not_found(world, container);
+        return Ok(());
     };
     // check that container is open
     if !vessel_open {

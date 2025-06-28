@@ -65,13 +65,15 @@ impl RawPlayer {
 /// - if unable to read the player.toml file or unable to parse it
 pub fn load_player(toml_path: &Path) -> Result<RawPlayer> {
     let player_file = fs::read_to_string(toml_path)
-        .with_context(|| format!("reading player data from {toml_path:?}"))?;
+        .with_context(|| format!("reading player data from '{}'", toml_path.display()))?;
     let raw_player: RawPlayer = toml::from_str(&player_file)
-        .with_context(|| format!("parsing player data from {toml_path:?}"))?;
+        .with_context(|| format!("parsing player data from '{}'", toml_path.display()))?;
     Ok(raw_player)
 }
 
 /// Build `Player` from raw player.
+/// # Errors
+/// - if symbol lookup fails during conversion of raw player to player instance
 pub fn build_player(raw_player: &RawPlayer, symbols: &mut SymbolTable) -> Result<Player> {
     symbols.characters.insert(
         raw_player.id.to_string(),

@@ -1,5 +1,5 @@
 use crate::{Location, WorldObject, style::GameStyle, world::AmbleWorld};
-use anyhow::Result;
+
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -128,7 +128,7 @@ impl Item {
         self.location = Location::Npc(npc_id);
     }
     /// Show item description (and any contents if a container and open).
-    pub fn show(&self, world: &AmbleWorld) -> Result<()> {
+    pub fn show(&self, world: &AmbleWorld) {
         println!("{}", self.name().item_style().underline());
         println!("{}", self.description().description_style());
         if self.container {
@@ -151,7 +151,6 @@ impl Item {
                 println!("You'll have to {action} it first.");
             }
         }
-        Ok(())
     }
 
     /// Checks if an item requires a something special for a particular interaction

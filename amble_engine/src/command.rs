@@ -50,7 +50,7 @@ pub enum Command {
 pub fn parse_command(input: &str) -> Command {
     let words: Vec<&str> = input.split_whitespace().collect();
     match words.as_slice() {
-        ["!port", room_toml_id] => Command::Teleport(room_toml_id.to_string()),
+        ["!port", room_toml_id] => Command::Teleport((*room_toml_id).to_string()),
         ["look"] => Command::Look,
         ["give", item, "to", npc] => Command::GiveToNpc {
             item: (*item).to_string(),
@@ -75,8 +75,9 @@ pub fn parse_command(input: &str) -> Command {
         ["quit" | "exit"] => Command::Quit,
         ["drop", thing] => Command::Drop((*thing).to_string()),
         ["talk" | "speak", "to" | "with", npc_name] => Command::TalkTo((*npc_name).to_string()),
-        ["turn" | "switch", thing, "on"] => Command::TurnOn((*thing).to_string()),
-        ["start", thing] => Command::TurnOn((*thing).to_string()),
+        ["turn" | "switch", thing, "on"] | ["start", thing] => {
+            Command::TurnOn((*thing).to_string())
+        }
         ["help" | "?"] => Command::Help,
         ["read", thing] => Command::Read((*thing).to_string()),
         ["load", gamefile] => Command::Load((*gamefile).to_string()),
@@ -100,7 +101,7 @@ pub fn parse_command(input: &str) -> Command {
     }
 }
 
-/// Takes a verb from user input and returns a matching ItemInteractionType if any determined
+/// Takes a verb from user input and returns a matching `ItemInteractionType` if any determined
 pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
     match verb {
         "break" | "smash" | "crack" | "shatter" => Some(ItemInteractionType::Break),

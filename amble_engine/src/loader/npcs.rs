@@ -60,7 +60,7 @@ impl RawNpc {
 /// Loads raw NPCs from file.
 pub fn load_raw_npcs(toml_path: &Path) -> Result<Vec<RawNpc>> {
     let file_contents = fs::read_to_string(toml_path)
-        .with_context(|| format!("reading NPC data from {toml_path:?}"))?;
+        .with_context(|| format!("reading NPC data from '{}'", toml_path.display()))?;
     let wrapper: RawNpcFile = toml::from_str(&file_contents)
         .with_context(|| "parsing NPC data from file contents".to_string())?;
     info!(

@@ -45,9 +45,9 @@ pub fn use_item_on_handler(
     let target = maybe_target.unwrap();
     let tool = maybe_tool.unwrap();
     let target_name = target.name().to_string();
-    let target_id = target.id().to_owned();
+    let target_id = target.id().clone();
     let tool_name = tool.name().to_string();
-    let tool_id = tool.id().to_owned();
+    let tool_id = tool.id().clone();
 
     // check if these items can interact in this way
     if !interaction_requirement_met(interaction, target, tool) {
@@ -66,7 +66,7 @@ pub fn use_item_on_handler(
     let fired = check_triggers(
         world,
         &[TriggerCondition::UseItemOnItem {
-            interaction: interaction,
+            interaction,
             target_id: target.id(),
             tool_id: tool.id(),
         }],
@@ -90,8 +90,7 @@ pub fn use_item_on_handler(
             )
         );
         warn!(
-            "No matching trigger for {:?} {} ({}) with {} ({})",
-            interaction, target_name, target_id, tool_name, tool_id
+            "No matching trigger for {interaction:?} {target_name} ({target_id}) with {tool_name} ({tool_id})"
         );
     }
     Ok(())
@@ -141,7 +140,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, item_pattern: &str) -> Result<()>
             );
         }
     } else {
-        return entity_not_found(world, item_pattern);
+        entity_not_found(world, item_pattern);
     }
     Ok(())
 }
@@ -169,7 +168,8 @@ pub fn open_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
             return Ok(());
         }
     } else {
-        return entity_not_found(world, pattern);
+        entity_not_found(world, pattern);
+        return Ok(());
     };
 
     if let Some(target_item) = world.get_item_mut(container_id) {
@@ -217,7 +217,8 @@ pub fn close_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
             return Ok(());
         }
     } else {
-        return entity_not_found(world, pattern);
+        entity_not_found(world, pattern);
+        return Ok(());
     };
 
     if let Some(target_item) = world.get_item_mut(uuid) {
@@ -255,7 +256,8 @@ pub fn lock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
             return Ok(());
         }
     } else {
-        return entity_not_found(world, pattern);
+        entity_not_found(world, pattern);
+        return Ok(());
     };
 
     if let Some(target_item) = world.get_item_mut(uuid) {
@@ -293,12 +295,13 @@ pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
             return Ok(());
         }
     } else {
-        return entity_not_found(world, pattern);
+        entity_not_found(world, pattern);
+        return Ok(());
     };
 
     // Check player inventory for valid key
     let has_valid_key = world.player.inventory.iter().any(|id| {
-        world.items.get(id).map_or(false, |i| {
+        world.items.get(id).is_some_and(|i| {
             i.abilities.iter().any(|a| match a {
                 ItemAbility::Unlock(Some(target)) => *target == container_id,
                 ItemAbility::Unlock(None) => true, // universal key
