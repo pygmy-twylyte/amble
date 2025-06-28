@@ -4,6 +4,7 @@ pub trait GameStyle {
     fn item_style(&self) -> ColoredString;
     fn npc_style(&self) -> ColoredString;
     fn room_style(&self) -> ColoredString;
+    fn room_titlebar_style(&self) -> ColoredString;
     fn description_style(&self) -> ColoredString;
     fn triggered_style(&self) -> ColoredString;
     fn trig_icon_style(&self) -> ColoredString;
@@ -21,7 +22,10 @@ impl GameStyle for &str {
         self.truecolor(13, 130, 60).underline()
     }
     fn room_style(&self) -> ColoredString {
-        self.truecolor(163, 47, 5).bold()
+        self.truecolor(223, 77, 10).bold()
+    }
+    fn room_titlebar_style(&self) -> ColoredString {
+        self.truecolor(223, 77, 10).on_black()
     }
     fn description_style(&self) -> ColoredString {
         self.italic().truecolor(102, 208, 250)
@@ -55,6 +59,9 @@ impl GameStyle for String {
     }
     fn room_style(&self) -> ColoredString {
         self.as_str().room_style()
+    }
+    fn room_titlebar_style(&self) -> ColoredString {
+        self.as_str().room_titlebar_style()
     }
     fn description_style(&self) -> ColoredString {
         self.as_str().description_style()
