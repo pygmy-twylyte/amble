@@ -1,2 +1,3 @@
 [workspace]
 members = ["amble_engine", "amble_editor"]
+resolver = "3"
