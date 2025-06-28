@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, anyhow, bail};
 use log::info;
 use serde::Deserialize;
 
@@ -355,6 +355,10 @@ pub enum RawTriggerAction {
         from_room: String,
         direction: String,
     },
+    NpcSays {
+        npc_id: String,
+        quote: String,
+    },
     PushPlayerTo {
         room_id: String,
     },
@@ -395,6 +399,16 @@ pub enum RawTriggerAction {
 impl RawTriggerAction {
     fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
+            RawTriggerAction::NpcSays { npc_id, quote } => {
+                if let Some(npc_uuid) = symbols.characters.get(npc_id) {
+                    Ok(TriggerAction::NpcSays {
+                        npc_id: *npc_uuid,
+                        quote: quote.to_string(),
+                    })
+                } else {
+                    bail!("RawTriggerAction::NpcSays({npc_id},_): token not in symbol table")
+                }
+            }
             RawTriggerAction::AddAchievement { achievement: task } => {
                 Ok(TriggerAction::AddAchievement(task.to_string()))
             }

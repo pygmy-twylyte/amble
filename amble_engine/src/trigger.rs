@@ -1,5 +1,5 @@
 use crate::{
-    AmbleWorld, ItemHolder, Location,
+    AmbleWorld, ItemHolder, Location, WorldObject,
     item::{ItemAbility, ItemInteractionType},
     npc::NpcMood,
     room::Exit,
@@ -113,6 +113,7 @@ impl TriggerCondition {
 pub enum TriggerAction {
     AddAchievement(String),
     AwardPoints(isize),
+    DenyRead(String),
     DespawnItem {
         item_id: Uuid,
     },
@@ -125,33 +126,36 @@ pub enum TriggerAction {
         direction: String,
     },
     LockItem(Uuid),
+    NpcSays {
+        npc_id: Uuid,
+        quote: String,
+    },
     PushPlayerTo(Uuid),
     RevealExit {
         exit_from: Uuid,
         exit_to: Uuid,
         direction: String,
     },
-    DenyRead(String),
     SetNPCMood {
         npc_id: Uuid,
         mood: NpcMood,
     },
     ShowMessage(String),
+    SpawnItemCurrentRoom(Uuid),
     SpawnItemInContainer {
         item_id: Uuid,
         container_id: Uuid,
     },
     SpawnItemInInventory(Uuid),
-    SpawnItemCurrentRoom(Uuid),
     SpawnItemInRoom {
         item_id: Uuid,
         room_id: Uuid,
     },
-    UnlockItem(Uuid),
     UnlockExit {
         from_room: Uuid,
         direction: String,
     },
+    UnlockItem(Uuid),
 }
 
 /// Determines if a matching trigger condition exists in a list of triggers.
@@ -163,6 +167,7 @@ where
     list.iter().any(|t| t.conditions.iter().any(|c| matcher(c)))
 }
 
+/// Determine which triggers meet conditions to fire now, fire them, and return a list of fired triggers.
 pub fn check_triggers<'a>(
     world: &'a mut AmbleWorld,
     events: &[TriggerCondition],
@@ -203,6 +208,7 @@ pub fn check_triggers<'a>(
 /// fires the matching trigger action by calling its handler function
 fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()> {
     match action {
+        TriggerAction::NpcSays { npc_id, quote } => npc_says(world, npc_id, quote)?,
         TriggerAction::DenyRead(reason) => deny_read(reason),
         TriggerAction::DespawnItem { item_id } => despawn_item(world, item_id)?,
         TriggerAction::GiveItemToPlayer { npc_id, item_id } => {
@@ -238,6 +244,18 @@ fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()>
         TriggerAction::AddAchievement(task) => add_achievement(world, task),
         TriggerAction::AwardPoints(amount) => award_points(world, *amount),
     }
+    Ok(())
+}
+
+/// Trigger a bit of dialogue from an NPC
+pub fn npc_says(world: &AmbleWorld, npc_id: &Uuid, quote: &str) -> Result<()> {
+    let npc_name = world
+        .npcs
+        .get(npc_id)
+        .with_context(|| format!("action NpcSays({npc_id},_): npc not found"))?
+        .name();
+    println!("{}: {quote}", npc_name.npc_style());
+    info!("└─ action: NpcSays({npc_name}, \"{quote}\")");
     Ok(())
 }
 
