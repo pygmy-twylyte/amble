@@ -71,16 +71,16 @@ pub fn use_item_on_handler(
             tool_id: tool.id(),
         }],
     )?;
-    dbg!(&fired);
+    let sent_interaction = interaction;
     let reaction_fired = triggers_contain_condition(&fired, |cond| match cond {
         TriggerCondition::UseItemOnItem {
-            interaction: _,
+            interaction,
             target_id: _,
             tool_id: _,
-        } => true,
+        } => *interaction == sent_interaction,
         _ => false,
     });
-    dbg!(reaction_fired);
+
     if !reaction_fired {
         println!(
             "{}",
@@ -296,7 +296,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
         return entity_not_found(world, pattern);
     };
 
-    // 🔐 Check player inventory for valid key
+    // Check player inventory for valid key
     let has_valid_key = world.player.inventory.iter().any(|id| {
         world.items.get(id).map_or(false, |i| {
             i.abilities.iter().any(|a| match a {
