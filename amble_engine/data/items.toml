@@ -29,15 +29,14 @@ lettering burned into it. It remains too hot to touch.
 portable = true
 location = { Nowhere = "spawns@aperture-lab" }
 
-[[items.abilities]]
-type = "Read"
-
 interaction_requires.handle = "insulate"
 text = """
 Candidate #2112-42:
 You are cordially invited to complete your evaluation and induction. Please
 present this invitation at the Amble Adventures office immediately upon arrival.
 """
+[[items.abilities]]
+type = "Read"
 
 # -----------------------------------------------------------------------------
 [[items]]
@@ -79,14 +78,13 @@ the ground.
 portable = false
 location = { Room = "inca-road" }
 
-[[items.abilities]]
-type = "Read"
-
 text = """
                             AMBLE ADVENTURES
                            (Inca Road Branch)
                  * a division of Brains Anonymous, LLC
 """
+[[items.abilities]]
+type = "Read"
 
 # -----------------------------------------------------------------------------
 [[items]]
@@ -164,7 +162,6 @@ location = { Nowhere = "spawns@player when delivery_box is opened" }
 [[items.abilities]]
 type = "Insulate"
 
-
 # -----------------------------------------------------------------------------
 [[items]]
 id = "vogon_poetry_book"
@@ -225,16 +222,14 @@ supply, a D-cell, and a set of adorable AAA triplets.
 """
 portable = true
 location = { Npc = "gonk_droid" }
-
+text = """
+Brains Anonymous Energy Division Picnic — For Staff & Families of Room AA-3B.
+(added below: "Just hours before the Candidate reported for load test...")
+"""
 [[items.abilities]]
 type = "Read"
 
-text = """
-Brains Anonymous Energy Division Picnic — For Staff & Families of Room AA-3B.
-
-(and added below: "Just hours before the Candidate reported for load test...")
-"""
-
+# --------------------------------------------------------------------------
 [[items]]
 id = "empty_battery"
 name = "Empty Battery"
@@ -245,6 +240,7 @@ but you might be able to exchange it somewhere for one with a charge.
 portable = true
 location = { Chest = "portal_gun" }
 
+# -------------------------------------------------------------------------
 [[items]]
 id = "peril_sunglasses"
 name = "Stylish Sunglasses"
@@ -256,21 +252,22 @@ sudden movement, or mild existential dread.
 portable = true
 location = { Chest = "lost_and_found_box" }
 
+# -----------------------------------------------------------------------
 [[items]]
 id = "lost_and_found_box"
 name = "Lost & Found Box"
 description = """
-A battered plastic container with an official-looking sticker reading:
-'Lost & Found — Amble Adventures Division'. Inside are random trinkets,
-including a rubber band ball, a half-eaten donut, and a suspiciously shady
-pair of sunglasses.
+A sturdy metal lock box with an official-looking sticker reading:
+'Lost & Found — Amble Adventures Division' and 'Caution: Contents May
+Be Fictional'.
 """
 portable = false
 container = true
-open = true
-locked = false
+open = false
+locked = true
 location = { Room = "b-a-office" }
 
+# -----------------------------------------------------------------------
 [[items]]
 id = "margarine"
 name = "Nanook's Finest Margarine"
@@ -279,14 +276,14 @@ An open tub of margarine with a light dusting of toast and pancake crumbs.
 """
 portable = true
 location = { Room = "st-alfonzo-parish" }
-[[items.abilities]]
-type = "Read"
-
 text = """
 Nanook's Finest Margarine: #1 for Delicious Pancakes!
    (also #1 for curing yellow-snow deflicted eyes)
 """
+[[items.abilities]]
+type = "Read"
 
+# -------------------------------------------------------------------------
 [[items]]
 id = "plaque_1"
 name = "Weathered Plaque"
@@ -296,15 +293,16 @@ intricate masonry of its pillar suggests utmost importance and profundity of
 its message."""
 portable = false
 location = { Room = "high-ridge" }
-[[items.abilities]]
-type = "Read"
-
 text = """
 A common mistake that people make when trying to design something completely
 foolproof is to underestimate the ingenuity of complete fools.
 -- D.A., Head of Architectural Illogistics, Area 42
 """
+[[items.abilities]]
+type = "Read"
 
+
+# -------------------------------------------------------------------------
 [[items]]
 id = "lab_printer"
 name = "Initech PlasmaJet 2 Printer"
@@ -317,6 +315,9 @@ container = true
 open = true
 locked = false
 location = { Room = "aperture-lab" }
+text = """
+PC LOAD LETTER
+"""
 
 [[items.abilities]]
 type = "TurnOn"
@@ -324,12 +325,7 @@ type = "TurnOn"
 [[items.abilities]]
 type = "Read"
 
-text = """
-A common mistake that people make when trying to design something completely
-foolproof is to underestimate the ingenuity of complete fools.
--- D.A., Head of Architectural Illogistics, Area 42
-"""
-
+# --------------------------------------------------------------------------
 [[items]]
 id = "scrawled_note"
 name = "Scrawled Note"
@@ -338,14 +334,14 @@ location = { Room = "high-ridge" }
 description = """
 A note scrawled in red permanent marker, nailed to a post at the bottow of
 the stone steps."""
-[[items.abilities]]
-type = "Read"
-
 text = """
 CANDIDATES: PROCEED TO OFFICE TO OBTAIN VISITOR PASS
            MUST SHOW VALID INVITATION
 """
+[[items.abilities]]
+type = "Read"
 
+# ----------------------------------------------------------------------------
 [[items]]
 id = "printer_paper"
 name = "Copy Paper (Std Letter)"
@@ -353,6 +349,7 @@ portable = true
 location = { Room = "supply-closet" }
 description = "A pack of plain white paper, standard letter size."
 
+# ----------------------------------------------------------------------------
 [[items]]
 id = "staples"
 name = "Swingline Staples"
@@ -363,6 +360,7 @@ A box of Swingline paper staples. The name "Milton" is written on it in several
 places.
 """
 
+# ------------------------------------------------------------------------------
 [[items]]
 id = "asbestos_sheet"
 name = "Asbestos Sheets"
@@ -371,11 +369,11 @@ portable = true
 description = """
 A pack of sheets of asbestos, about the size of a pack of copy paper.
 """
+text = "Manufacturer's Warning: Do Not Breathe While Using This Product!"
 [[items.abilities]]
 type = "Read"
 
-text = "Manufacturer's Warning: Do Not Breathe While Using This Product!"
-
+# ------------------------------------------------------------------------------
 [[items]]
 id = "magnifying_glass"
 name = "Magnifying Glass"
@@ -385,6 +383,7 @@ description = "Small gets big -- it's a rig."
 [[items.abilities]]
 type = "Use"
 
+# -----------------------------------------------------------------------------
 [[items]]
 id = "burnt_invitation"
 name = "Charred Paper Bits"
@@ -393,11 +392,11 @@ portable = true
 description = """
 The charred remains of a sheet of printer paper. A few areas aren't completely
 black, or vaporized. One bit remains legible."""
+text = "--ally invited to com--"
 [[items.abilities]]
 type = "Read"
 
-text = "--ally invited to com--"
-
+# ----------------------------------------------------------------------------
 [[items]]
 id = "lumberjack_axe"
 name = "Lumberjack's Axe"
@@ -405,8 +404,9 @@ location = { Room = "two-sheds" }
 description = "A hefty lumberjack's axe. The blade is slightly rusted, but it looks usable."
 portable = true
 [[items.abilities]]
-type = "Use"
+type = "CutWood"
 
+# ----------------------------------------------------------------------------
 [[items]]
 id = "flamethrower"
 name = "Initech Arson-Aid"
@@ -415,12 +415,6 @@ description = """
 A small personal flamethrower, for use in home and garden -- just not your own,
 if you know what's good for you."""
 portable = true
-[[items.abilities]]
-type = "Use"
-
-[[items.abilities]]
-type = "Read"
-
 text = """
 Instructions:
 1) Aim carefully.
@@ -428,7 +422,13 @@ Instructions:
 3) Throw at target (quickly!)
 4) Flee.
 """
+[[items.abilities]]
+type = "Ignite"
 
+[[items.abilities]]
+type = "Read"
+
+# -----------------------------------------------------------------------------
 [[items]]
 id = "fallen_tree"
 name = "Fallen Tree"
@@ -442,6 +442,7 @@ portable = false
 interaction_requires.burn = "ignite"
 interaction_requires.cut = "cutWood"
 
+# -----------------------------------------------------------------------------
 [[items]]
 id = "weird_bush"
 name = "Weird Bush"
@@ -453,6 +454,7 @@ portable = false
 container = true
 open = true
 
+# ------------------------------------------------------------------------------
 [[items]]
 id = "dental_floss"
 name = "Dental Floss"
@@ -462,24 +464,24 @@ A long, strong strand of waxed dental floss, harvested from the weird bush.
 It smells faintly minty, but seems surprisingly durable — maybe even useful
 for something besides oral hygiene."""
 portable = true
+text = "Pride of Montana"
 [[items.abilities]]
 type = "Read"
 
-text = "Pride of Montana"
-
+# -------------------------------------------------------------------------------
 [[items]]
 id = "lighter"
 name = "Butane Lighter"
 location = { Room = "patio" }
 portable = true
 description = "An engraved, metallic Zippo-style lighter, worn but functional."
+text = "DJVB"
 [[items.abilities]]
 type = "Ignite"
 [[items.abilities]]
 type = "Read"
 
-text = "DJVB"
-
+# --------------------------------------------------------------------------------
 [[items]]
 id = "foamsafe-x17"
 name = "Initech FoamSafe™ X-17"
@@ -489,9 +491,6 @@ A fire extinguisher-like device with the words "Initech FoamSafe™ X-17" proudl
 emblazoned on its side. Its label promises peace of mind in emergencies — though
 closer inspection suggests otherwise."""
 portable = true
-[[items.abilities]]
-type = "Read"
-
 text = """
 INITECH FOAMSAFE™ MODEL X-17
 
@@ -507,7 +506,10 @@ Instructions:
 Warning: Device may not extinguish fires. Initech assumes no liability for secondary
 combustion, flashpoint misalignment, or structural regrets.
 """
+[[items.abilities]]
+type = "Read"
 
+# ------------------------------------------------------------------------------
 [[items]]
 id = "zircon_tweezers"
 name = "Zircon-Encrusted Tweezers"
@@ -517,6 +519,7 @@ A heavy-duty pair of tweezers, encrusted in zircon for extra dazzle and especial
 good for plucking."""
 portable = true
 
+#--------------------------------------------------------------------------------
 [[items]]
 id = "melted_aa_3b_id"
 name = "Section AA-3 Staff ID"
@@ -526,63 +529,25 @@ description = """
 A facility ID card for sector AA-3. Its weight seems to change as you hold it,
 as does the temperature. It's not warped or melted exactly -- just *distorted*
 somehow."""
-[[items.abilities]]
-type = "Read"
-
 text = """
  RESTRICTED ACCESS PASS
 SECTOR AA-3, HIGH ENERGY
  REALITY BRIDGE PROJECT
 """
+[[items.abilities]]
+type = "Read"
 
+# -------------------------------------------------------------------------
 [[items]]
-id = "bronze-key"
-name = "Bronze_Key"
-description = "A small bronze key with an ornate bow."
-location = { Room = "high-ridge" }
+id = "lost_and_found_key"
+name = "Lost and Found Key"
+description = "A small brass key on a ring, labeled \"Lost and Found\"."
+location = { Npc = "b_a_receptionist" }
 portable = true
+restricted = true
 
 [[items.abilities]]
 type = "Unlock"
-target = "bronze-chest"
+target = "lost_and_found_box"
 
-[[items]]
-id = "silver-key"
-name = "Silver_Key"
-description = "Shiny and well-polished."
-location = { Room = "high-ridge" }
-portable = true
-
-[[items.abilities]]
-type = "Unlock"
-target = "silver-chest"
-
-[[items]]
-id = "crowbar"
-name = "Crowbar"
-description = "Heavy-duty and slightly bent."
-location = { Room = "high-ridge" }
-portable = true
-
-[[items.abilities]]
-type = "Unlock"
-
-[[items]]
-id = "bronze-chest"
-name = "Bronze_Chest"
-description = "This sturdy bronze chest has a simple keyhole."
-location = { Room = "high-ridge" }
-portable = false
-container = true
-locked = true
-open = false
-
-[[items]]
-id = "silver-chest"
-name = "Silver_Chest"
-description = "Fancier than the bronze one — and just as locked."
-location = { Room = "high-ridge" }
-portable = false
-container = true
-locked = true
-open = false
+# --------------------------------------------------------------------------

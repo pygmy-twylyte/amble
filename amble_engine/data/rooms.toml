@@ -544,10 +544,10 @@ id = "sublevel-1-entrance"
 name = "Entrance to Sublevel One"
 description = """
 A small landing area covered in dust. Buckets, tools, and debris are strewn
-about the floor. All exits are blocked with barriers that read:
+about the floor. The door to the west is labeled with a sign:
 
-                        🚧 UNDER CONSTRUCTION 🚧
-                 *PLEASE WAIT WHILE WE BUILD THIS FLOOR
+                        🚧 ROOM AA-3B 🚧
+                 FICTIONAL UNIVERSE CONTAINMENT
 """
 location = "Nowhere"
 visited = false

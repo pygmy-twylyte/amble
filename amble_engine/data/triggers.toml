@@ -31,7 +31,7 @@ actions = [
     { type = "showMessage", text = """
 You hear a thud behind you, back toward the road, like something was just
 dropped off. You glimpse a drone flying away quickly, as if hoping not to
-be seen. Was that a Sirius Cybernetics logo on the side?
+be seen. Was that an Initech logo on the side?
 """ },
 ]
 
@@ -303,6 +303,8 @@ actions = [
     { type = "addAchievement", achievement = "got-visitor-pass" },
     { type = "despawnItem", item_id = "invitation" },
     { type = "spawnItemInInventory", item_id = "visitor_pass" },
+    { type = "awardPoints", amount = 5 },
+    { type = "setNpcMood", npc_id = "b_a_receptionist", mood = "Happy" },
     { type = "showMessage", text = """
 The robotic receptionist initially glances at you with the disdain of someone
 who spends all day waiting on people who are waiting on someone else, but her
@@ -396,6 +398,8 @@ conditions = [
 ]
 actions = [
     { type = "showMessage", text = "You used the towel to wipe the grime off the plaque." },
+    { type = "addAchievement", achievement = "read-plaque-1" },
+    { type = "awardPoints", amount = 5 },
 ]
 
 [[triggers]]
@@ -405,6 +409,38 @@ conditions = [{ type = "take", item_id = "elevator_keycard" }]
 actions = [
     { type = "setNpcMood", npc_id = "b_a_receptionist", mood = "Bored" },
     { type = "addAchievement", achievement = "got-elevator-keycard" },
+]
+
+[[triggers]]
+name = "Office: Acquire Lost and Found Key"
+only_once = true
+conditions = [
+    { type = "enter", room_id = "b-a-office" },
+    { type = "hasAchievement", achievement = "got-elevator-keycard" },
+    { type = "withNpc", npc_id = "b_a_receptionist" },
+]
+actions = [
+    { type = "giveItemToPlayer", npc_id = "b_a_receptionist", item_id = "lost_and_found_key" },
+    { type = "showMessage", text = """
+Seeing you return with the keycard, the receptionist looks around warily and
+slips something into your hand, then looks directly at the lost and found box.
+    """ },
+    { type = "npcSays", npc_id = "b_a_receptionist", quote = """
+Finally! A Candidate bright enough to get to that keycard. I guess I lost the
+pool. Who'd have thought it'd be a primate?
+""" },
+    { type = "npcSays", npc_id = "b_a_receptionist", quote = """
+(quietly) Use this before you head down to AA-3B.
+""" },
+]
+
+[[triggers]]
+name = "Office: Lost & Found Unlocked"
+only_once = true
+conditions = [{ type = "unlock", item_id = "lost_and_found_box" }]
+actions = [
+    { type = "awardPoints", amount = 5 },
+    { type = "addAchievement", achievement = "lost-and-found-opened" },
 ]
 
 # START FALLEN TREE TRIGGERS
