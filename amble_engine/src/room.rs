@@ -1,6 +1,5 @@
 use crate::{ItemHolder, Location, WorldObject, style::GameStyle, world::AmbleWorld};
 use anyhow::{Result, anyhow};
-use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
@@ -70,7 +69,7 @@ impl ItemHolder for Room {
 }
 impl Room {
     pub fn show(&self, world: &AmbleWorld) -> Result<()> {
-        let banner = self.name.room_style().underline();
+        let banner = self.name.room_titlebar_style();
         println!("{banner:^80}");
         println!("{}", self.description.description_style());
 
