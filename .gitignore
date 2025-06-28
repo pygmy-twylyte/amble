@@ -3,6 +3,7 @@ target/
 **/*.rs.bk
 *.log
 Cargo.lock
+**/*.bkp
 
 # VSCode and Zed config (if applicable)
 .vscode/
