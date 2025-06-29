@@ -322,25 +322,45 @@ fn spawn_item_in_specific_room(
     item_id: &Uuid,
     room_id: &Uuid,
 ) -> Result<()> {
+    // warn and remove item from world if it's already somewhere to avoid dups
+    if let Some(item) = world.items.get(item_id)
+        && item.location.is_not_nowhere()
+    {
+        warn!(
+            "SpawnItemRoom({item_id}): '{}' already in world -- MOVING item instead (may not be desired!)",
+            item.name()
+        );
+        despawn_item(world, item_id)?;
+    }
+
+    // spawn in specified room as intended
     let item = world
         .items
         .get_mut(item_id)
         .ok_or_else(|| anyhow!("item {} missing", item_id))?;
-    if item.location.is_nowhere() {
-        item.set_location_room(*room_id);
-        world
-            .rooms
-            .get_mut(room_id)
-            .ok_or_else(|| anyhow!("room {} missing", room_id))?
-            .add_item(*item_id);
-        info!("└─ action: SpawnItemInRoom({item_id}, {room_id})");
-        Ok(())
-    } else {
-        bail!("SpawnItemInRoom({item_id}): tried to spawn item already in existence");
-    }
+    info!("└─ action: SpawnItemInRoom({item_id}, {room_id})");
+    item.set_location_room(*room_id);
+    world
+        .rooms
+        .get_mut(room_id)
+        .ok_or_else(|| anyhow!("room {} missing", room_id))?
+        .add_item(*item_id);
+    Ok(())
 }
 
 fn spawn_item_in_current_room(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
+    // warn and remove item from world if it's already somewhere to avoid dups
+    if let Some(item) = world.items.get(item_id)
+        && item.location.is_not_nowhere()
+    {
+        warn!(
+            "SpawnItemCurrentRoom({item_id}): '{}' already in world -- MOVING item instead (may not be desired!)",
+            item.name()
+        );
+        despawn_item(world, item_id)?;
+    }
+
+    // then spawn at current location as intended
     let room_id = world
         .player
         .location
@@ -350,33 +370,37 @@ fn spawn_item_in_current_room(world: &mut AmbleWorld, item_id: &Uuid) -> Result<
         .items
         .get_mut(item_id)
         .ok_or_else(|| anyhow!("item {} missing", item_id))?;
-    if item.location.is_nowhere() {
-        item.set_location_room(*room_id);
-        world
-            .rooms
-            .get_mut(room_id)
-            .ok_or_else(|| anyhow!("room {} missing", room_id))?
-            .add_item(*item_id);
-        info!("└─ action: SpawnItemCurrentRoom({item_id})");
-        Ok(())
-    } else {
-        bail!("SpawnItemCurrentRoom({item_id}): tried to spawn item already in existence");
-    }
+
+    info!("└─ action: SpawnItemCurrentRoom({item_id})");
+    item.set_location_room(*room_id);
+    world
+        .rooms
+        .get_mut(room_id)
+        .ok_or_else(|| anyhow!("room {} missing", room_id))?
+        .add_item(*item_id);
+    Ok(())
 }
 
 fn spawn_item_in_inventory(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
+    // warn and remove item from world if it's already somewhere to avoid dups
+    if let Some(item) = world.items.get(item_id)
+        && item.location.is_not_nowhere()
+    {
+        warn!(
+            "SpawnItemInInventory({item_id}): '{}' already in world -- MOVING item instead (may not be desired!)",
+            item.name()
+        );
+        despawn_item(world, item_id)?;
+    }
+    // add item to player inventory as intended
     let item = world
         .items
         .get_mut(item_id)
         .ok_or_else(|| anyhow!("item {} missing", item_id))?;
-    if item.location.is_nowhere() {
-        item.set_location_inventory();
-        world.player.add_item(*item_id);
-        info!("└─ action: SpawnItemInInventory({item_id})");
-        Ok(())
-    } else {
-        bail!("SpawnItemInInvetory({item_id}): tried to spawn item already in existence");
-    }
+    info!("└─ action: SpawnItemInInventory({item_id})");
+    item.set_location_inventory();
+    world.player.add_item(*item_id);
+    Ok(())
 }
 
 fn spawn_item_in_container(
@@ -384,22 +408,30 @@ fn spawn_item_in_container(
     item_id: &Uuid,
     container_id: &Uuid,
 ) -> Result<()> {
+    // if item is already in-world, warn and remove it to avoid duplications / inconsistent state
+    if let Some(item) = world.items.get(item_id)
+        && item.location.is_not_nowhere()
+    {
+        warn!(
+            "SpawnItemInContainer({item_id},_): '{}' already in world -- MOVING item instead (may not be desired!)",
+            item.name()
+        );
+        despawn_item(world, item_id)?;
+    }
+
+    // then spawn again in the desired location
     let item = world
         .items
         .get_mut(item_id)
         .ok_or_else(|| anyhow!("item {} missing", item_id))?;
-    if item.location.is_nowhere() {
-        item.set_location_item(*container_id);
-        world
-            .items
-            .get_mut(container_id)
-            .ok_or_else(|| anyhow!("container {} missing", container_id))?
-            .add_item(*item_id);
-        info!("└─ action: SpawnItemInContainer({item_id}, {container_id})");
-        Ok(())
-    } else {
-        bail!("SpawnItemInContainer({item_id}, _): tried to spawn item already in existence");
-    }
+    info!("└─ action: SpawnItemInContainer({item_id}, {container_id})");
+    item.set_location_item(*container_id);
+    world
+        .items
+        .get_mut(container_id)
+        .ok_or_else(|| anyhow!("container {} missing", container_id))?
+        .add_item(*item_id);
+    Ok(())
 }
 
 fn show_message(text: &String) {
