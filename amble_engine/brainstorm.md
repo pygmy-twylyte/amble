@@ -1,7 +1,6 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
-- create ShowNPCMessage action -- for triggered NPC dialogue (print with NPC: message style)
 - make Vogon Poetry readable
 - dev commands to teleport (DONE), get items / achievs
 - ?? add Wear command and item capability
