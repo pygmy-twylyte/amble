@@ -601,3 +601,92 @@ type = "Pry"
 
 [[items.abilities]]
 type = "Smash"
+
+# -------------------------------------------------------------------------------
+[[items]]
+id = "security_log"
+name = "Amble Security Log"
+description = """
+A well-used notebook labeled "Amble Security Log / Section 42" and liberally
+stained with coffee, ale, and mustard.
+"""
+location = { Nowhere = "may_spawn@security_crate" }
+portable = true
+restricted = false
+text = """
+March 1, 2025: New coffee machine installed. Emits mild static when brewing.
+March 2, 2025: Security camera in break room rotated 180 degrees overnight. Ed again?
+March 3, 2025: Lost and found box inventory updated. One sock, three gloves.
+March 4, 2025: Receptionist requested upgrade to sarcasm module. Denied.
+March 5, 2025: Maintenance reported light flickering in elevator. Resolved.
+
+March 6, 2025: Surge detected at AA-3B containment. Reality distortion at 14%. Within policy.
+
+Stardate 4711.5: Unauthorized medieval figure (Black Knight) blocking sublevel entrance.
+Stardate 4712.3: Droid exhibiting “gonk” vocalizations wandering main lobby. Source unknown.
+Stardate 4713.0: Poetry recitation device demanding arrest of visitor with Vogon poetry.
+Stardate 4713.7: Candidate #2112-42 en route. Receptionist instructed to increase scrutiny.
+Stardate 4714.2: Staff experiencing deja vu from alternate realities. Incident logged for risk management.
+"""
+
+[[items.abilities]]
+type = "Read"
+
+# ---------------------------------------------------------------------------------
+[[items]]
+id = "burned_security_log"
+name = "Amble Security Log"
+description = """
+This appears to have once been a security event log for the building and dock, but
+is now better described as a security charcoal briquet.
+"""
+location = { Nowhere = "may_spawn@security_crate or loading-dock" }
+portable = true
+restricted = false
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "glass_vial"
+name = "Strange Liquid"
+description = """
+A glass vial, unnaturally cold to the touch, containing a dark liquid that seems
+to reach for the warmth of your fingers.
+"""
+location = { Nowhere = "may_spawn@loading-dock or security_crate" }
+portable = true
+restricted = false
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "shattered_vial"
+name = "Shattered Vial"
+description = """
+Some shards of glass that used to be a vial of liquid, but whatever what inside
+evaporated in the intense heat of the fire.
+"""
+location = { Nowhere = "may_spawn@loading-dock" }
+portable = false
+restricted = false
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "initech_mug"
+name = "Initech Anti-Spill Mug"
+description = """
+A coffee mug bearing the Initech logo with a complex seal on top, requiring the
+use of both hands and a spotter to drink from it or fill it. There's an inscription
+on the bottom.
+"""
+location = { Nowhere = "spawns@loading-dock or security_crate" }
+portable = true
+restricted = false
+container = true
+locked = true
+open = true
+text = """
+To: CMOT, A Kindred Spirit
+From: Your Initech Rep
+"""
+
+[[items.abilities]]
+type = "Read"
