@@ -493,6 +493,9 @@ only_once = true
 conditions = [{ type = "unlock", item_id = "security_crate" }]
 actions = [
     { type = "spawnItemInContainer", item_id = "crowbar", container_id = "security_crate" },
+    { type = "spawnItemInContainer", item_id = "security_log", container_id = "security_crate" },
+    { type = "spawnItemInContainer", item_id = "glass_vial", container_id = "security_crate" },
+    { type = "spawnItemInContainer", item_id = "initech_mug", container_id = "security_crate" },
     { type = "showMessage", text = """
 The ear wax on the tip of the key eases it into the rusted lock, which snaps
 open with a satisfying clunk.
@@ -507,8 +510,10 @@ conditions = [
 ]
 actions = [
     { type = "despawnItem", item_id = "security_crate" },
-    { type = "despawnItem", item_id = "crowbar" },
     { type = "spawnItemCurrentRoom", item_id = "crowbar" },
+    { type = "spawnItemCurrentRoom", item_id = "shattered_vial" },
+    { type = "spawnItemCurrentRoom", item_id = "security_log" },
+    { type = "spawnItemCurrentRoom", item_id = "initech_mug" },
     { type = "showMessage", text = """
 You're surprised to hear yourself singing, "I'm a lumberjack, and I'm OK. I
 sleep all night and I work all day!" -- as you chop the security locker into
@@ -523,8 +528,10 @@ conditions = [
 ]
 actions = [
     { type = "despawnItem", item_id = "security_crate" },
-    { type = "despawnItem", item_id = "crowbar" },
     { type = "spawnItemCurrentRoom", item_id = "crowbar" },
+    { type = "spawnItemCurrentRoom", item_id = "shattered_vial" },
+    { type = "spawnItemCurrentRoom", item_id = "security_log" },
+    { type = "spawnItemCurrentRoom", item_id = "initech_mug" },
     { type = "showMessage", text = """
 With a few hefty blows using the blunt side of the axe head, you manage to
 break the lock haft completely off of the security locker -- well after a few
@@ -540,8 +547,10 @@ conditions = [
 ]
 actions = [
     { type = "despawnItem", item_id = "security_crate" },
-    { type = "despawnItem", item_id = "crowbar" },
     { type = "spawnItemCurrentRoom", item_id = "crowbar" },
+    { type = "spawnItemCurrentRoom", item_id = "burned_security_log" },
+    { type = "spawnItemCurrentRoom", item_id = "glass_vial" },
+    { type = "spawnItemCurrentRoom", item_id = "initech_mug" },
     { type = "showMessage", text = """
 Following the directions, you aim and slowly squeeze the Arson-Aid trigger.
 The entire device catches fire. Panicking, you chuck it at the security
@@ -559,10 +568,14 @@ name = "Got Crowbar"
 only_once = true
 conditions = [{ type = "take", item_id = "crowbar" }]
 actions = [
-    { type = "showMessage", text = "You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?" },
-    { type = "showMessage", text = """Then you wonder why you're thinking of Barney as a real person instead of a
-character in a game. Wait, he was just a fiction, right? Come to think of it, you feel a little unsure of
-reality, and it's worse the nearer you are to the building.""" },
+    { type = "showMessage", text = """
+You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?
+""" },
+    { type = "showMessage", text = """
+Then you wonder why you're thinking of Barney as a real person instead of a
+character in a game. Wait, he was just a fiction, right? Come to think of it,
+you feel a little unsure of reality, and it's worse the nearer you are to the
+building.""" },
     { type = "addAchievement", achievement = "got-crowbar" },
-    { type = "awardPoints", amount = "4" },
+    { type = "awardPoints", amount = 4 },
 ]
