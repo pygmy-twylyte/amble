@@ -809,9 +809,9 @@ pub fn load_raw_triggers(toml_path: &Path) -> Result<Vec<RawTrigger>> {
         .with_context(|| format!("reading triggers from {toml_path:?}"))?;
     let wrapper: RawTriggerFile = toml::from_str(&trigger_file)?;
     info!(
-        "{} raw triggers loaded from {:?}",
+        "{} raw triggers loaded from '{}'",
         wrapper.triggers.len(),
-        toml_path
+        toml_path.display(),
     );
     Ok(wrapper.triggers)
 }

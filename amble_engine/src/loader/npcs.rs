@@ -64,9 +64,9 @@ pub fn load_raw_npcs(toml_path: &Path) -> Result<Vec<RawNpc>> {
     let wrapper: RawNpcFile = toml::from_str(&file_contents)
         .with_context(|| "parsing NPC data from file contents".to_string())?;
     info!(
-        "{} raw NPCs loaded from {:?}",
+        "{} raw NPCs loaded from '{}'",
         wrapper.npcs.len(),
-        toml_path
+        toml_path.display(),
     );
     Ok(wrapper.npcs)
 }

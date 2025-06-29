@@ -159,9 +159,9 @@ pub fn load_raw_items(toml_path: &Path) -> Result<Vec<RawItem>> {
         .with_context(|| format!("reading item data from '{}'", toml_path.display()))?;
     let wrapper: RawItemFile = toml::from_str(&item_file)?;
     info!(
-        "{} raw items successfully loaded from {}",
+        "{} raw items successfully loaded from '{}'",
         wrapper.items.len(),
-        toml_path.to_string_lossy()
+        toml_path.display(),
     );
     Ok(wrapper.items)
 }
