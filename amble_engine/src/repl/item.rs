@@ -63,6 +63,9 @@ pub fn use_item_on_handler(
         return Ok(());
     }
     // do the interaction as appropriate
+    let sent_interaction = interaction;
+    let sent_target_id = target.id();
+    let sent_tool_id = tool.id();
     let fired = check_triggers(
         world,
         &[TriggerCondition::UseItemOnItem {
@@ -71,13 +74,17 @@ pub fn use_item_on_handler(
             tool_id: tool.id(),
         }],
     )?;
-    let sent_interaction = interaction;
+
     let reaction_fired = triggers_contain_condition(&fired, |cond| match cond {
         TriggerCondition::UseItemOnItem {
             interaction,
-            target_id: _,
-            tool_id: _,
-        } => *interaction == sent_interaction,
+            target_id,
+            tool_id,
+        } => {
+            *interaction == sent_interaction
+                && *target_id == sent_target_id
+                && *tool_id == sent_tool_id
+        }
         _ => false,
     });
 
