@@ -83,7 +83,10 @@ pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
         if let Some(item) = entity.item() {
             // check to make sure special handling isn't necessary
             if let Some(ability) = item.requires_capability_for(ItemInteractionType::Handle) {
-                println!("You can't pick it up barehanded.");
+                println!(
+                    "You can't pick it up barehanded. Use something to {} it.",
+                    ability.to_string().bold()
+                );
                 info!(
                     "Blocked attempt to take {} ({}) without item that can \"{ability}\"",
                     item.name(),
@@ -208,7 +211,7 @@ fn validate_and_transfer_from_npc(
         item_pattern,
     ) {
         if let Some(loot) = entity.item() {
-            if !loot.portable || loot.restricted {
+            if loot.restricted {
                 println!(
                     "Sorry, you can't take {} from {}.\n(But it may be given to you under the right conditions.)",
                     loot.name().item_style(),
@@ -220,13 +223,11 @@ fn validate_and_transfer_from_npc(
         } else {
             warn!(
                 "Non-item WorldEntity found inside NPC '{}' ({})",
-                container.name(),
-                container.id(),
+                vessel_name, vessel_id,
             );
             println!(
-                "You can't take {} from {}",
-                item_pattern.error_style(),
-                container.name().npc_style()
+                "{} shouldn't have that. You can't have it either.",
+                vessel_name.npc_style()
             );
             return Ok(());
         }
@@ -273,21 +274,19 @@ fn validate_and_transfer_from_item(
         find_world_object(&container.contents, &world.items, &world.npcs, item_pattern)
     {
         if let Some(loot) = entity.item() {
-            if !loot.portable || loot.restricted {
-                println!("Sorry, the {} can't be taken.", loot.name().item_style());
+            if !loot.portable {
+                println!("Sorry, the {} can't be removed.", loot.name().item_style());
                 return Ok(());
             }
             (loot.id(), loot.name().to_string())
         } else {
             warn!(
-                "Non-item WorldEntity found inside container '{}' ({})",
-                container.name(),
-                container.id(),
+                "NPC WorldEntity found inside container '{}' ({})",
+                vessel_name, vessel_id
             );
             println!(
-                "You can't take {} from {}",
-                item_pattern.error_style(),
-                container.name()
+                "That shouldn't be in the {} and can't be taken. Just ignore it.",
+                vessel_name.item_style()
             );
             return Ok(());
         }
