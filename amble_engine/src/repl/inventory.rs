@@ -373,11 +373,16 @@ pub fn put_in_handler(world: &mut AmbleWorld, item: &str, container: &str) -> Re
     };
 
     let room = world.player_room_ref()?;
-    let (vessel_id, vessel_name, vessel_open) = if let Some(entity) =
+    let (vessel_id, vessel_name, vessel_container, vessel_open) = if let Some(entity) =
         find_world_object(&room.contents, &world.items, &world.npcs, container)
     {
         if let Some(vessel) = entity.item() {
-            (vessel.id(), vessel.name().to_string(), vessel.open)
+            (
+                vessel.id(),
+                vessel.name().to_string(),
+                vessel.container,
+                vessel.open,
+            )
         } else {
             warn!("Command:PutIn(_,{container}) matched a non-Item WorldEntity");
             println!(
@@ -390,6 +395,14 @@ pub fn put_in_handler(world: &mut AmbleWorld, item: &str, container: &str) -> Re
         entity_not_found(world, container);
         return Ok(());
     };
+    // check that vessel is a container-type item
+    if !vessel_container {
+        println!(
+            "The {} isn't a container; you can't put anything in it.",
+            vessel_name.item_style()
+        );
+        return Ok(());
+    }
     // check that container is open
     if !vessel_open {
         println!(
