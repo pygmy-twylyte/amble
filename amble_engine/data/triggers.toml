@@ -579,3 +579,26 @@ building.""" },
     { type = "addAchievement", achievement = "got-crowbar" },
     { type = "awardPoints", amount = 4 },
 ]
+
+[[triggers]]
+name = "Taking Sword Angers Knight"
+only_once = false
+conditions = [
+    { type = "takeFromNpc", item_id = "dull_longsword", npc_id = "black_knight" },
+]
+actions = [
+    { type = "setNpcMood", npc_id = "black_knight", mood = "Mad" },
+    { type = "npcSays", npc_id = "black_knight", quote = "Hey! Give that back, you coward!" },
+]
+
+[[triggers]]
+name = "Angry Knight Kicks Player"
+only_once = false
+conditions = [
+    { type = "withNpc", npc_id = "black_knight" },
+    { type = "npcInMood", npc_id = "black_knight", mood = "Mad" },
+]
+actions = [
+    { type = "showMessage", text = """
+The Black Knight is prancing around the room, occasionally trying to kick you in the shin.""" },
+]
