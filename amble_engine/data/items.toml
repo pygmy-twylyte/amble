@@ -690,3 +690,40 @@ From: Your Initech Rep
 
 [[items.abilities]]
 type = "Read"
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "dull_longsword"
+name = "Dull Longsword"
+description = """
+The Black Knight's masterfully forged longsword, dulled from years of hacking up
+those who insist upon passing.
+"""
+location = { Npc = "black_knight" }
+portable = true
+restricted = false
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "keen_longsword"
+name = "Keen Longsword"
+location = { Nowhere = "spawns@player_after_sharpening_dull_longsword" }
+portable = true
+restricted = true
+description = """
+The Black Knight's masterfully forged longsword, newly sharpened and eager to
+return to slicing up passers by.
+"""
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "whetstone"
+name = "Belgian Coticule Whetstone"
+location = { Room = "two-sheds" }
+portable = true
+restricted = false
+description = """
+One of the finest of all naturally whetstones, it could sharpen a jellyfish to
+the point where you could shave with it, though the jellyfish is typically quite
+annoyed afterward.
+"""
