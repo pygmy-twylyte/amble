@@ -1,6 +1,8 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
+- create trigger to cause NPC to utter random dialogue for current mood
+- need a call of some kind to check_triggers with any recognized command so state triggers can fire too.
 - make Vogon Poetry readable
 - dev commands to teleport (DONE), get items / achievs
 - ?? add Wear command and item capability
