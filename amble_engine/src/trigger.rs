@@ -95,15 +95,16 @@ impl TriggerCondition {
                 .npcs
                 .get(npc_id)
                 .is_some_and(|npc| npc.contains_item(*item_id)),
-            Self::NpcInMood { npc_id, mood } => {
-                world.npcs.get(npc_id).is_some_and(|npc| npc.mood == *mood)
-            }
+            Self::NpcInMood { npc_id, mood } => world
+                .npcs
+                .get(npc_id)
+                .is_some_and(|npc| dbg!(npc.mood) == dbg!(*mood)),
             Self::HasItem(item_id) => world.player.contains_item(*item_id),
             Self::MissingItem(item_id) => !world.player.contains_item(*item_id),
             Self::WithNpc(npc_id) => world
                 .npcs
                 .get(npc_id)
-                .is_some_and(|npc| npc.location == world.player.location),
+                .is_some_and(|npc| dbg!(&npc.location) == dbg!(&world.player.location)),
             _ => false,
         }
     }
