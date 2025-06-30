@@ -91,7 +91,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
 }
 
 /// Encapsulates references to different types of `WorldObjects` to allow search across different types.
-#[derive(Debug, Variantly, Clone)]
+#[derive(Debug, Variantly, Clone, Copy)]
 pub enum WorldEntity<'a> {
     Item(&'a Item),
     Npc(&'a Npc),
