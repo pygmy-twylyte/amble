@@ -43,10 +43,10 @@ pub fn talk_to_handler(world: &mut AmbleWorld, npc_name: &str) -> Result<()> {
             let dialogue = npc.random_dialogue(ignore_spinner);
             println!("{stem}: {dialogue}");
             info!(
-                "{} talked to NPC \"{}\" ({})",
-                world.player.name(),
+                "NPC \"{}\" ({}) said \"{}\"",
                 npc.name(),
-                npc.id()
+                npc.id(),
+                dialogue
             );
         }
     } else {
