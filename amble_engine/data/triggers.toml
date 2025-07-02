@@ -588,7 +588,7 @@ conditions = [
 ]
 actions = [
     { type = "setNpcMood", npc_id = "black_knight", mood = "Mad" },
-    { type = "npcSays", npc_id = "black_knight", quote = "Hey! Give that back, you coward!" },
+    { type = "npcSays", npc_id = "black_knight", quote = "Hey! Give that back, you cowardly cur!" },
 ]
 
 [[triggers]]
@@ -600,5 +600,7 @@ conditions = [
 ]
 actions = [
     { type = "showMessage", text = """
-The Black Knight is prancing around the room, occasionally trying to kick you in the shin.""" },
+The Black Knight dodges around the room, occasionally trying to kick you in the shin.
+""" },
+    { type = "npcSaysRandom", npc_id = "black_knight" },
 ]
