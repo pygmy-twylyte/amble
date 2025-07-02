@@ -18,13 +18,14 @@ use log::info;
 use uuid::Uuid;
 
 /// Shows description of surroundings.
-pub fn look_handler(world: &AmbleWorld) -> Result<()> {
+pub fn look_handler(world: &mut AmbleWorld) -> Result<()> {
     let room = world.player_room_ref()?;
     room.show(world)?;
     info!(
         "{} looked around {} ({})",
         world.player.name, room.name, room.id
     );
+    let _fired = check_triggers(world, &[]);
     Ok(())
 }
 
