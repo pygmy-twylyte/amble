@@ -3,6 +3,7 @@ use crate::{
     item::{ItemAbility, ItemInteractionType},
     npc::NpcMood,
     room::Exit,
+    spinners::SpinnerType,
     style::GameStyle,
 };
 use anyhow::{Context, Result, anyhow, bail};
@@ -131,6 +132,9 @@ pub enum TriggerAction {
         npc_id: Uuid,
         quote: String,
     },
+    NpcSaysRandom {
+        npc_id: Uuid,
+    },
     PushPlayerTo(Uuid),
     RevealExit {
         exit_from: Uuid,
@@ -209,6 +213,7 @@ pub fn check_triggers<'a>(
 /// fires the matching trigger action by calling its handler function
 fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()> {
     match action {
+        TriggerAction::NpcSaysRandom { npc_id } => npc_says_random(world, npc_id)?,
         TriggerAction::NpcSays { npc_id, quote } => npc_says(world, npc_id, quote)?,
         TriggerAction::DenyRead(reason) => deny_read(reason),
         TriggerAction::DespawnItem { item_id } => despawn_item(world, item_id)?,
@@ -247,8 +252,23 @@ fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()>
     }
     Ok(())
 }
+/// Trigger random dialogue (based on mood) from NPC
+pub fn npc_says_random(world: &AmbleWorld, npc_id: &Uuid) -> Result<()> {
+    let npc = world
+        .npcs
+        .get(npc_id)
+        .with_context(|| format!("action NpcSaysRandom({npc_id}): npc not found"))?;
+    let ignore_spinner = world
+        .spinners
+        .get(&SpinnerType::NpcIgnore)
+        .with_context(|| "failed lookup of NpcIgnore spinner".to_string())?;
+    let line = npc.random_dialogue(ignore_spinner);
+    println!("{}: {line}", npc.name().npc_style());
+    info!("└─ action: NpcSays({}, \"{line}\")", npc.name());
+    Ok(())
+}
 
-/// Trigger a bit of dialogue from an NPC
+/// Trigger specific dialogue from an NPC
 pub fn npc_says(world: &AmbleWorld, npc_id: &Uuid, quote: &str) -> Result<()> {
     let npc_name = world
         .npcs

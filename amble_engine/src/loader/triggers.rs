@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::{Context, Result, bail};
 use log::info;
 use serde::Deserialize;
 
@@ -182,272 +182,223 @@ fn cook_use_item_on_item(
     interaction: ItemInteractionType,
     target_id: &String,
     tool_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let target_uuid = symbols
-        .items
-        .get(target_id)
-        .with_context(|| format!("UseItemOnItem({target_id},_,_): token not in symbols"))?;
-    let tool_uuid = symbols
-        .items
-        .get(tool_id)
-        .with_context(|| format!("UseItemOnItem(_,_,{tool_id}): token not in symbols"))?;
-    Ok(TriggerCondition::UseItemOnItem {
-        interaction,
-        target_id: *target_uuid,
-        tool_id: *tool_uuid,
-    })
+) -> Result<TriggerCondition> {
+    if let Some(target_uuid) = symbols.items.get(target_id)
+        && let Some(tool_uuid) = symbols.items.get(tool_id)
+    {
+        Ok(TriggerCondition::UseItemOnItem {
+            interaction,
+            target_id: *target_uuid,
+            tool_id: *tool_uuid,
+        })
+    } else {
+        bail!("raw condition UseItemOnItem(_, {target_id}, {tool_id}): token not in symbols")
+    }
 }
 
 fn cook_npc_in_mood(
     symbols: &SymbolTable,
     npc_id: &String,
     mood: NpcMood,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let npc_uuid = symbols
-        .characters
-        .get(npc_id)
-        .with_context(|| format!("NpcInMood({npc_id},_): token not in symbols"))?;
-    Ok(TriggerCondition::NpcInMood {
-        npc_id: *npc_uuid,
-        mood,
-    })
+) -> Result<TriggerCondition> {
+    if let Some(npc_uuid) = symbols.characters.get(npc_id) {
+        Ok(TriggerCondition::NpcInMood {
+            npc_id: *npc_uuid,
+            mood,
+        })
+    } else {
+        bail!("raw condition NpcInMood({npc_id}, {mood}): token not in symbols");
+    }
 }
 
 fn cook_npc_has_item(
     symbols: &SymbolTable,
     npc_id: &String,
     item_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let npc_uuid = symbols
-        .characters
-        .get(npc_id)
-        .with_context(|| format!("NpcHasItem({npc_id},_): token not in symbols"))?;
-    let item_uuid = symbols
-        .items
-        .get(item_id)
-        .with_context(|| format!("NpcHasItem(_,{item_id}): token not in symbols"))?;
-    Ok(TriggerCondition::NpcHasItem {
-        npc_id: *npc_uuid,
-        item_id: *item_uuid,
-    })
+) -> Result<TriggerCondition> {
+    if let Some(npc_uuid) = symbols.characters.get(npc_id)
+        && let Some(item_uuid) = symbols.items.get(item_id)
+    {
+        Ok(TriggerCondition::NpcHasItem {
+            npc_id: *npc_uuid,
+            item_id: *item_uuid,
+        })
+    } else {
+        bail!("raw condition NpcHasItem({npc_id},{item_id}): token not in symbols");
+    }
 }
 
-fn cook_in_room(
-    symbols: &SymbolTable,
-    room_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let room_uuid = symbols
-        .rooms
-        .get(room_id)
-        .with_context(|| format!("InRoom({room_id}): token not in symbols"))?;
-    Ok(TriggerCondition::InRoom(*room_uuid))
+fn cook_in_room(symbols: &SymbolTable, room_id: &String) -> Result<TriggerCondition> {
+    if let Some(room_uuid) = symbols.rooms.get(room_id) {
+        Ok(TriggerCondition::InRoom(*room_uuid))
+    } else {
+        bail!("raw condition InRoom({room_id}): token not in symbols");
+    }
 }
 
-fn cook_has_visited(
-    symbols: &SymbolTable,
-    room_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let room_uuid = symbols
-        .rooms
-        .get(room_id)
-        .with_context(|| format!("HasVisited({room_id}): token not in symbols"))?;
-    Ok(TriggerCondition::HasVisited(*room_uuid))
+fn cook_has_visited(symbols: &SymbolTable, room_id: &String) -> Result<TriggerCondition> {
+    if let Some(room_uuid) = symbols.rooms.get(room_id) {
+        Ok(TriggerCondition::HasVisited(*room_uuid))
+    } else {
+        bail!("raw condition HasVisited({room_id}): token not in symbols");
+    }
 }
 
-fn cook_with_npc(
-    symbols: &SymbolTable,
-    npc_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let npc_uuid = symbols
-        .characters
-        .get(npc_id)
-        .ok_or_else(|| anyhow!("WithNpc({}): token not in symbols", npc_id))?;
-    Ok(TriggerCondition::WithNpc(*npc_uuid))
+fn cook_with_npc(symbols: &SymbolTable, npc_id: &String) -> Result<TriggerCondition> {
+    if let Some(npc_uuid) = symbols.characters.get(npc_id) {
+        Ok(TriggerCondition::WithNpc(*npc_uuid))
+    } else {
+        bail!("raw condition WithNpc({npc_id}): token not in symbols");
+    }
 }
 
-fn cook_missing_item(
-    symbols: &SymbolTable,
-    item_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let item_uuid = symbols
-        .items
-        .get(item_id)
-        .ok_or_else(|| anyhow!("MissingItem({}): token not in symbols", item_id))?;
-    Ok(TriggerCondition::MissingItem(*item_uuid))
+fn cook_missing_item(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition> {
+    if let Some(item_uuid) = symbols.items.get(item_id) {
+        Ok(TriggerCondition::MissingItem(*item_uuid))
+    } else {
+        bail!("raw condition MissingItem({item_id}): token not in symbols");
+    }
 }
 
-fn cook_has_item(
-    symbols: &SymbolTable,
-    item_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let item_uuid = symbols.items.get(item_id).ok_or_else(|| {
-        anyhow!(
-            "Event:HasItem({}) load error: item token not in symbols",
-            item_id
-        )
-    })?;
-    Ok(TriggerCondition::HasItem(*item_uuid))
+fn cook_has_item(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition> {
+    if let Some(item_uuid) = symbols.items.get(item_id) {
+        Ok(TriggerCondition::HasItem(*item_uuid))
+    } else {
+        bail!("raw condition HasItem({item_id}): token not in symbols");
+    }
 }
 
-fn cook_open(
-    symbols: &SymbolTable,
-    item_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let item_uuid = symbols.items.get(item_id).ok_or(anyhow!(
-        "Event:Open({}) load error: item token not in symbols",
-        item_id
-    ))?;
-    Ok(TriggerCondition::Open(*item_uuid))
+fn cook_open(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition> {
+    if let Some(item_uuid) = symbols.items.get(item_id) {
+        Ok(TriggerCondition::Open(*item_uuid))
+    } else {
+        bail!("raw condition Open({item_id}): token not in symbols");
+    }
 }
 
-fn cook_unlock(
-    symbols: &SymbolTable,
-    item_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let item_uuid = symbols.items.get(item_id).ok_or(anyhow!(
-        "Event:Unlock({}) load error: item token not in symbols",
-        item_id
-    ))?;
-    Ok(TriggerCondition::Unlock(*item_uuid))
+fn cook_unlock(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition> {
+    if let Some(item_uuid) = symbols.items.get(item_id) {
+        Ok(TriggerCondition::Unlock(*item_uuid))
+    } else {
+        bail!("raw condition Unlock({item_id}): token not in symbols");
+    }
 }
 
 fn cook_insert(
     symbols: &SymbolTable,
     item_id: &String,
     container_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let item_uuid = symbols.items.get(item_id).ok_or(anyhow!(
-        "Event:Insert({},_) load error: item token not in symbols",
-        item_id
-    ))?;
-    let container_uuid = symbols.items.get(container_id).ok_or(anyhow!(
-        "Event:Insert(_,{}) load error: container token not in symbols",
-        container_id
-    ))?;
-    Ok(TriggerCondition::Insert {
-        item: *item_uuid,
-        container: *container_uuid,
-    })
+) -> Result<TriggerCondition> {
+    if let Some(item_uuid) = symbols.items.get(item_id)
+        && let Some(container_uuid) = symbols.items.get(container_id)
+    {
+        Ok(TriggerCondition::Insert {
+            item: *item_uuid,
+            container: *container_uuid,
+        })
+    } else {
+        bail!("raw condition Insert({item_id}, {container_id}): token not in symbols");
+    }
 }
 
-fn cook_drop(
-    symbols: &SymbolTable,
-    item_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let item_uuid = symbols.items.get(item_id).ok_or(anyhow!(
-        "Event:Drop({}) load error: item token not in symbols",
-        item_id
-    ))?;
-    Ok(TriggerCondition::Drop(*item_uuid))
+fn cook_drop(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition> {
+    if let Some(item_uuid) = symbols.items.get(item_id) {
+        Ok(TriggerCondition::Drop(*item_uuid))
+    } else {
+        bail!("raw condition Drop({item_id}): token not in symbols");
+    }
 }
 
-fn cook_leave(
-    symbols: &SymbolTable,
-    room_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let room_uuid = symbols.rooms.get(room_id).ok_or(anyhow!(
-        "Event:Leave({}) load error: room token not in symbols",
-        room_id
-    ))?;
-    Ok(TriggerCondition::Leave(*room_uuid))
+fn cook_leave(symbols: &SymbolTable, room_id: &String) -> Result<TriggerCondition> {
+    if let Some(room_uuid) = symbols.rooms.get(room_id) {
+        Ok(TriggerCondition::Leave(*room_uuid))
+    } else {
+        bail!("raw condition Leave({room_id}): token not in symbols");
+    }
 }
 
 fn cook_give_to_npc(
     symbols: &SymbolTable,
     item_id: &String,
     npc_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let item_uuid = symbols.items.get(item_id).ok_or_else(|| {
-        anyhow!(
-            "GiveToNpc({}, _) load error: item token not in symbols",
-            item_id
-        )
-    })?;
-    let npc_uuid = symbols
-        .characters
-        .get(npc_id)
-        .ok_or_else(|| anyhow!("GiveToNpc(_,{}): token not in symbols", npc_id))?;
-    Ok(TriggerCondition::GiveToNpc {
-        item_id: *item_uuid,
-        npc_id: *npc_uuid,
-    })
+) -> Result<TriggerCondition> {
+    if let Some(item_uuid) = symbols.items.get(item_id)
+        && let Some(npc_uuid) = symbols.characters.get(npc_id)
+    {
+        Ok(TriggerCondition::GiveToNpc {
+            item_id: *item_uuid,
+            npc_id: *npc_uuid,
+        })
+    } else {
+        bail!("raw condition GiveToNpc({item_id},{npc_id}): token not in symbols");
+    }
 }
 
-fn cook_enter(
-    symbols: &SymbolTable,
-    room_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let room_uuid = symbols.rooms.get(room_id).ok_or(anyhow!(
-        "Enter({}) load error: room token not in symbols",
-        room_id
-    ))?;
-    Ok(TriggerCondition::Enter(*room_uuid))
+fn cook_enter(symbols: &SymbolTable, room_id: &String) -> Result<TriggerCondition> {
+    if let Some(room_uuid) = symbols.rooms.get(room_id) {
+        Ok(TriggerCondition::Enter(*room_uuid))
+    } else {
+        bail!("raw condition Enter({room_id}): token not in symbols");
+    }
 }
 
-fn cook_take(
-    symbols: &SymbolTable,
-    item_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let item_uuid = symbols.items.get(item_id).ok_or(anyhow!(
-        "Take({}) load error: item token not in symbols",
-        item_id
-    ))?;
-    Ok(TriggerCondition::Take(*item_uuid))
+fn cook_take(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition> {
+    if let Some(item_uuid) = symbols.items.get(item_id) {
+        Ok(TriggerCondition::Take(*item_uuid))
+    } else {
+        bail!("raw condition Take({item_id}): token not in symbols");
+    }
 }
 
 fn cook_take_from_npc(
     symbols: &SymbolTable,
     item_id: &String,
     npc_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let item_uuid = symbols.items.get(item_id).ok_or_else(|| {
-        anyhow!(
-            "TakeFromNpc({}, _) load error: item token not in symbols",
-            item_id
-        )
-    })?;
-    let npc_uuid = symbols
-        .characters
-        .get(npc_id)
-        .ok_or_else(|| anyhow!("TakeFromNpc(_,{}): token not in symbols", npc_id))?;
-    Ok(TriggerCondition::TakeFromNpc {
-        item_id: *item_uuid,
-        npc_id: *npc_uuid,
-    })
+) -> Result<TriggerCondition> {
+    if let Some(item_uuid) = symbols.items.get(item_id)
+        && let Some(npc_uuid) = symbols.characters.get(npc_id)
+    {
+        Ok(TriggerCondition::TakeFromNpc {
+            item_id: *item_uuid,
+            npc_id: *npc_uuid,
+        })
+    } else {
+        bail!("raw condition TakeFromNpc({item_id}, {npc_id}): token not in symbols")
+    }
 }
 
 fn cook_use_item(
     symbols: &SymbolTable,
     item_id: &String,
     ability: &ItemAbility,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let item_uuid = symbols
-        .items
-        .get(item_id)
-        .ok_or_else(|| anyhow!("UseItem({}) load error: item token not in symbols", item_id))?;
-    Ok(TriggerCondition::UseItem {
-        item_id: *item_uuid,
-        ability: *ability,
-    })
+) -> Result<TriggerCondition> {
+    if let Some(item_uuid) = symbols.items.get(item_id) {
+        Ok(TriggerCondition::UseItem {
+            item_id: *item_uuid,
+            ability: *ability,
+        })
+    } else {
+        bail!("raw condition UseItem({item_id}, {ability}): token not in symbols");
+    }
 }
 
 fn cook_container_has_item(
     symbols: &SymbolTable,
     container_id: &String,
     item_id: &String,
-) -> std::result::Result<TriggerCondition, anyhow::Error> {
-    let item_uuid = symbols
-        .items
-        .get(item_id)
-        .with_context(|| format!("item {item_id} not in symbol table"))?;
-    let container_uuid = symbols
-        .items
-        .get(container_id)
-        .with_context(|| format!("container {container_id} not in symbol table"))?;
-    Ok(TriggerCondition::ContainerHasItem {
-        container_id: *container_uuid,
-        item_id: *item_uuid,
-    })
+) -> Result<TriggerCondition> {
+    if let Some(item_uuid) = symbols.items.get(item_id)
+        && let Some(container_uuid) = symbols.items.get(container_id)
+    {
+        Ok(TriggerCondition::ContainerHasItem {
+            container_id: *container_uuid,
+            item_id: *item_uuid,
+        })
+    } else {
+        bail!(
+            "raw condition ContainerHasItem({container_id},{item_id}): item token not in symbols"
+        );
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -479,6 +430,9 @@ pub enum RawTriggerAction {
     NpcSays {
         npc_id: String,
         quote: String,
+    },
+    NpcSaysRandom {
+        npc_id: String,
     },
     PushPlayerTo {
         room_id: String,
@@ -520,6 +474,7 @@ pub enum RawTriggerAction {
 impl RawTriggerAction {
     fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
+            RawTriggerAction::NpcSaysRandom { npc_id } => cook_npc_says_random(symbols, npc_id),
             RawTriggerAction::NpcSays { npc_id, quote } => cook_npc_says(symbols, npc_id, quote),
             RawTriggerAction::AddAchievement { achievement: task } => {
                 Ok(TriggerAction::AddAchievement(task.to_string()))
@@ -571,6 +526,14 @@ impl RawTriggerAction {
     }
 }
 
+fn cook_npc_says_random(symbols: &SymbolTable, npc_id: &String) -> Result<TriggerAction> {
+    if let Some(npc_uuid) = symbols.characters.get(npc_id) {
+        Ok(TriggerAction::NpcSaysRandom { npc_id: *npc_uuid })
+    } else {
+        bail!("raw action NpcSaysRandom({npc_id}): token not in symbol table");
+    }
+}
+
 fn cook_unlock_exit(
     symbols: &SymbolTable,
     from_room: &String,
@@ -582,10 +545,7 @@ fn cook_unlock_exit(
             direction: direction.to_string(),
         })
     } else {
-        Err(anyhow!(
-            "RawTriggerAction:UnlockRoom >> unknown room ({})",
-            from_room
-        ))
+        bail!("raw action UnlockExit({from_room}): token not in symbol table");
     }
 }
 
@@ -596,10 +556,7 @@ fn cook_spawn_item_in_inventory(
     if let Some(item_uuid) = symbols.items.get(item_id) {
         Ok(TriggerAction::SpawnItemInInventory(*item_uuid))
     } else {
-        Err(anyhow!(
-            "RawTriggerAction:SpawnItemInInventory >> unknown item ({})",
-            item_id
-        ))
+        bail!("raw action SpawnItemInInventory({item_id}): token not in symbol table");
     }
 }
 
@@ -614,10 +571,7 @@ fn cook_lock_exit(
             from_room: *room_uuid,
         })
     } else {
-        Err(anyhow!(
-            "RawTriggerAction:LockRoom >> unknown room ({})",
-            from_room
-        ))
+        bail!("raw action LockExit({from_room}): token not in symbol table");
     }
 }
 
@@ -628,10 +582,7 @@ fn cook_lock_item(
     if let Some(item_uuid) = symbols.items.get(item_id) {
         Ok(TriggerAction::LockItem(*item_uuid))
     } else {
-        Err(anyhow!(
-            "RawTriggerAction:LockItem >> unknown item ({})",
-            item_id
-        ))
+        bail!("raw action LockItem({item_id}): token not in symbol table");
     }
 }
 
@@ -644,10 +595,7 @@ fn cook_despawn_item(
             item_id: *item_uuid,
         })
     } else {
-        Err(anyhow!(
-            "RawTriggerAction:DespawnItem item_id ({}) not found",
-            item_id
-        ))
+        bail!("raw action DespawnItem({item_id}): token not in symbol table");
     }
 }
 
@@ -656,23 +604,17 @@ fn cook_spawn_item_in_container(
     item_id: &String,
     container_id: &String,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
-    if let Some(item_uuid) = symbols.items.get(item_id) {
-        if let Some(room_uuid) = symbols.items.get(container_id) {
-            Ok(TriggerAction::SpawnItemInContainer {
-                item_id: *item_uuid,
-                container_id: *room_uuid,
-            })
-        } else {
-            Err(anyhow!(
-                "container token {} not in symbols when converting raw SpawnItemInContainer",
-                container_id
-            ))
-        }
+    if let Some(item_uuid) = symbols.items.get(item_id)
+        && let Some(room_uuid) = symbols.items.get(container_id)
+    {
+        Ok(TriggerAction::SpawnItemInContainer {
+            item_id: *item_uuid,
+            container_id: *room_uuid,
+        })
     } else {
-        Err(anyhow!(
-            "item token {} not found in symbols when converting raw SpawnItemInContainer",
-            item_id
-        ))
+        bail!(
+            "raw action SpawnItemInContainer({item_id},{container_id}): token not in symbol table"
+        );
     }
 }
 
@@ -681,23 +623,15 @@ fn cook_spawn_item_in_room(
     item_id: &String,
     room_id: &String,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
-    if let Some(item_uuid) = symbols.items.get(item_id) {
-        if let Some(room_uuid) = symbols.rooms.get(room_id) {
-            Ok(TriggerAction::SpawnItemInRoom {
-                item_id: *item_uuid,
-                room_id: *room_uuid,
-            })
-        } else {
-            Err(anyhow!(
-                "room token {} not in symbols when converting raw SpawnItemInRoom",
-                room_id
-            ))
-        }
+    if let Some(item_uuid) = symbols.items.get(item_id)
+        && let Some(room_uuid) = symbols.rooms.get(room_id)
+    {
+        Ok(TriggerAction::SpawnItemInRoom {
+            item_id: *item_uuid,
+            room_id: *room_uuid,
+        })
     } else {
-        Err(anyhow!(
-            "item token {} not found in symbols when converting raw SpawnItemInRoom",
-            item_id
-        ))
+        bail!("raw action SpawnItemInRoom({item_id},{room_id}): token not in symbol table");
     }
 }
 
@@ -707,19 +641,17 @@ fn cook_reveal_exit(
     exit_to: &String,
     direction: &String,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
-    let exit_from_id = symbols
-        .rooms
-        .get(exit_from)
-        .with_context(|| format!("room symbol missing: {exit_from}"))?;
-    let exit_to_id = symbols
-        .rooms
-        .get(exit_to)
-        .with_context(|| format!("room symbol missing: {exit_to}"))?;
-    Ok(TriggerAction::RevealExit {
-        direction: direction.to_string(),
-        exit_from: *exit_from_id,
-        exit_to: *exit_to_id,
-    })
+    if let Some(from_id) = symbols.rooms.get(exit_from)
+        && let Some(to_id) = symbols.rooms.get(exit_to)
+    {
+        Ok(TriggerAction::RevealExit {
+            direction: direction.to_string(),
+            exit_from: *from_id,
+            exit_to: *to_id,
+        })
+    } else {
+        bail!("raw action RevealExit({exit_from}, {exit_to}): token not in symbols");
+    }
 }
 
 fn cook_unlock_item(
@@ -729,10 +661,7 @@ fn cook_unlock_item(
     if let Some(target_id) = symbols.items.get(target) {
         Ok(TriggerAction::UnlockItem(*target_id))
     } else {
-        Err(anyhow!(
-            "couldn't find target ({}) in symbol table for an UnlockItem trigger",
-            target
-        ))
+        bail!("raw action UnlockItem({target}): token not found in symbols");
     }
 }
 
@@ -741,14 +670,14 @@ fn cook_set_npc_mood(
     npc_id: &String,
     mood: NpcMood,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
-    let npc_uuid = symbols
-        .characters
-        .get(npc_id)
-        .with_context(|| format!("converting RawTriggerAction({npc_id}, {mood:?})"))?;
-    Ok(TriggerAction::SetNPCMood {
-        npc_id: *npc_uuid,
-        mood,
-    })
+    if let Some(npc_uuid) = symbols.characters.get(npc_id) {
+        Ok(TriggerAction::SetNPCMood {
+            npc_id: *npc_uuid,
+            mood,
+        })
+    } else {
+        bail!("raw action SetNpcMood({npc_id}, {mood}): token not found in symbols");
+    }
 }
 
 fn cook_give_item_to_player(
@@ -756,36 +685,38 @@ fn cook_give_item_to_player(
     npc_id: &String,
     item_id: &String,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
-    let npc_uuid = symbols.characters.get(npc_id).with_context(|| {
-        format!("loading GiveItemToPlayer({npc_id},_): token id not in symbol table")
-    })?;
-    let item_uuid = symbols.items.get(item_id).with_context(|| {
-        format!("loading GiveItemToPlayer(_,{item_id}): token id not in symbol table")
-    })?;
-    Ok(TriggerAction::GiveItemToPlayer {
-        npc_id: *npc_uuid,
-        item_id: *item_uuid,
-    })
+    if let Some(npc_uuid) = symbols.characters.get(npc_id)
+        && let Some(item_uuid) = symbols.items.get(item_id)
+    {
+        Ok(TriggerAction::GiveItemToPlayer {
+            npc_id: *npc_uuid,
+            item_id: *item_uuid,
+        })
+    } else {
+        bail!("raw action GiveItemToPlayer({npc_id},{item_id}): token not found in symbols");
+    }
 }
 
 fn cook_push_player_to(
     symbols: &SymbolTable,
     room_id: &String,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
-    let room_uuid = symbols.rooms.get(room_id).with_context(|| {
-        format!("loading PushPlayerTo({room_id}): token id not in symbol table")
-    })?;
-    Ok(TriggerAction::PushPlayerTo(*room_uuid))
+    if let Some(room_uuid) = symbols.rooms.get(room_id) {
+        Ok(TriggerAction::PushPlayerTo(*room_uuid))
+    } else {
+        bail!("raw action PushPlayerTo({room_id}): token not found in symbols");
+    }
 }
 
 fn cook_spawn_item_current_room(
     symbols: &SymbolTable,
     item_id: &String,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
-    let item_uuid = symbols.items.get(item_id).with_context(|| {
-        format!("loading SpawnItemCurrentRoom({item_id}): token id not in symbol table")
-    })?;
-    Ok(TriggerAction::SpawnItemCurrentRoom(*item_uuid))
+    if let Some(item_uuid) = symbols.items.get(item_id) {
+        Ok(TriggerAction::SpawnItemCurrentRoom(*item_uuid))
+    } else {
+        bail!("raw action SpawnItemCurrentRoom({item_id}): token not found in symbols");
+    }
 }
 
 fn cook_npc_says(
@@ -799,7 +730,7 @@ fn cook_npc_says(
             quote: quote.to_string(),
         })
     } else {
-        bail!("RawTriggerAction::NpcSays({npc_id},_): token not in symbol table")
+        bail!("raw action NpcSays({npc_id},_): token not found in symbols")
     }
 }
 
