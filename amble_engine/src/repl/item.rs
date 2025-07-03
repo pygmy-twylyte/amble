@@ -74,7 +74,7 @@ pub fn use_item_on_handler(
             tool_id: tool.id(),
         }],
     )?;
-
+    // check to see if the trigger we just sent fired
     let reaction_fired = triggers_contain_condition(&fired, |cond| match cond {
         TriggerCondition::UseItemOnItem {
             interaction,
