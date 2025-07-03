@@ -112,6 +112,7 @@ pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
         "move" | "remove" | "shift" | "shove" | "budge" => Some(ItemInteractionType::Move),
         "turn" | "spin" | "twist" | "swivel" => Some(ItemInteractionType::Turn),
         "unlock" | "undo" | "open" => Some(ItemInteractionType::Unlock),
+        "sharpen" | "hone" => Some(ItemInteractionType::Sharpen),
         _ => None,
     }
 }
