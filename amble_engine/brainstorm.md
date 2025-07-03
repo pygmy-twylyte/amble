@@ -1,7 +1,8 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
-- create trigger to cause NPC to utter random dialogue for current mood
+- add action RestrictItem -- so items can be blocked from being taken back from NPCs when appropriate (Black Knight sword)
+- add Happy "you may pass" dialogue to black_knight
 - need a call of some kind to check_triggers with any recognized command so state triggers can fire too.
 - make Vogon Poetry readable
 - dev commands to teleport (DONE), get items / achievs
