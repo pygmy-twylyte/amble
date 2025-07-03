@@ -723,7 +723,10 @@ location = { Room = "two-sheds" }
 portable = true
 restricted = false
 description = """
-One of the finest of all naturally whetstones, it could sharpen a jellyfish to
+One of the finest of all natural whetstones, it could sharpen a jellyfish to
 the point where you could shave with it, though the jellyfish is typically quite
 annoyed afterward.
 """
+
+[[items.abilities]]
+type = "Sharpen"

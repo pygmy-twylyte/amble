@@ -581,7 +581,7 @@ building.""" },
 ]
 
 [[triggers]]
-name = "Taking Sword Angers Knight"
+name = "Black Knight: Taking Sword Angers Knight"
 only_once = false
 conditions = [
     { type = "takeFromNpc", item_id = "dull_longsword", npc_id = "black_knight" },
@@ -592,7 +592,7 @@ actions = [
 ]
 
 [[triggers]]
-name = "Angry Knight Kicks Player"
+name = "Black Knight: Angry, Kicks Player"
 only_once = false
 conditions = [
     { type = "withNpc", npc_id = "black_knight" },
@@ -600,7 +600,38 @@ conditions = [
 ]
 actions = [
     { type = "showMessage", text = """
-The Black Knight dodges around the room, occasionally trying to kick you in the shin.
+The Black Knight continues dodging about the room, occasionally trying to kick you in the shin.
 """ },
     { type = "npcSaysRandom", npc_id = "black_knight" },
+]
+
+[[triggers]]
+name = "Black Knight: Sharpened Sword"
+only_once = true
+conditions = [
+    { type = "useItemOnItem", tool_id = "whetstone", target_id = "dull_longsword", interaction = "sharpen" },
+]
+actions = [
+    { type = "despawnItem", item_id = "dull_longsword" },
+    { type = "spawnItemInInventory", item_id = "keen_longsword" },
+    { type = "showMessage", text = """
+In almost no time, you hone the Black Knight's sword to a keen edge.
+""" },
+    { type = "addAchievement", achievement = "sword-sharpened" },
+    { type = "awardPoints", amount = 3 },
+]
+
+[[triggers]]
+name = "Black Knight: Happy When Keen Sword Returned"
+only_once = true
+conditions = [
+    { type = "giveToNpc", item_id = "keen_longsword", npc_id = "black_knight" },
+]
+actions = [
+    { type = "addAchievement", achievement = "appeased-black-knight" },
+    { type = "awardPoints", amount = 5 },
+    { type = "setNpcMood", npc_id = "black_knight", mood = "Happy" },
+    { type = "npcSays", npc_id = "black_knight", quote = """
+Thank you, good Sir! For your kind deed, I swear on my sword that I shall
+not cut you to bits with it. And you may pass wherever you like.""" },
 ]
