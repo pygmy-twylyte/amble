@@ -124,47 +124,37 @@ pub enum RawTriggerCondition {
 impl RawTriggerCondition {
     fn to_condition(&self, symbols: &SymbolTable) -> Result<TriggerCondition> {
         match self {
-            RawTriggerCondition::ContainerHasItem {
+            Self::ContainerHasItem {
                 container_id,
                 item_id,
             } => cook_container_has_item(symbols, container_id, item_id),
-            RawTriggerCondition::MissingAchievement { achievement } => Ok(
-                TriggerCondition::MissingAchievement(achievement.to_string()),
-            ),
-            RawTriggerCondition::HasAchievement { achievement } => {
+            Self::MissingAchievement { achievement } => Ok(TriggerCondition::MissingAchievement(
+                achievement.to_string(),
+            )),
+            Self::HasAchievement { achievement } => {
                 Ok(TriggerCondition::HasAchievement(achievement.to_string()))
             }
-            RawTriggerCondition::UseItem { item_id, ability } => {
-                cook_use_item(symbols, item_id, ability)
-            }
-            RawTriggerCondition::TakeFromNpc { item_id, npc_id } => {
-                cook_take_from_npc(symbols, item_id, npc_id)
-            }
-            RawTriggerCondition::Take { item_id } => cook_take(symbols, item_id),
-            RawTriggerCondition::Enter { room_id } => cook_enter(symbols, room_id),
-            RawTriggerCondition::GiveToNpc { item_id, npc_id } => {
-                cook_give_to_npc(symbols, item_id, npc_id)
-            }
-            RawTriggerCondition::Leave { room_id } => cook_leave(symbols, room_id),
-            RawTriggerCondition::Drop { item_id } => cook_drop(symbols, item_id),
-            RawTriggerCondition::Insert {
+            Self::UseItem { item_id, ability } => cook_use_item(symbols, item_id, ability),
+            Self::TakeFromNpc { item_id, npc_id } => cook_take_from_npc(symbols, item_id, npc_id),
+            Self::Take { item_id } => cook_take(symbols, item_id),
+            Self::Enter { room_id } => cook_enter(symbols, room_id),
+            Self::GiveToNpc { item_id, npc_id } => cook_give_to_npc(symbols, item_id, npc_id),
+            Self::Leave { room_id } => cook_leave(symbols, room_id),
+            Self::Drop { item_id } => cook_drop(symbols, item_id),
+            Self::Insert {
                 item_id,
                 container_id,
             } => cook_insert(symbols, item_id, container_id),
-            RawTriggerCondition::Unlock { item_id } => cook_unlock(symbols, item_id),
-            RawTriggerCondition::Open { item_id } => cook_open(symbols, item_id),
-            RawTriggerCondition::HasItem { item_id } => cook_has_item(symbols, item_id),
-            RawTriggerCondition::MissingItem { item_id } => cook_missing_item(symbols, item_id),
-            RawTriggerCondition::WithNpc { npc_id } => cook_with_npc(symbols, npc_id),
-            RawTriggerCondition::HasVisited { room_id } => cook_has_visited(symbols, room_id),
-            RawTriggerCondition::InRoom { room_id } => cook_in_room(symbols, room_id),
-            RawTriggerCondition::NpcHasItem { npc_id, item_id } => {
-                cook_npc_has_item(symbols, npc_id, item_id)
-            }
-            RawTriggerCondition::NpcInMood { npc_id, mood } => {
-                cook_npc_in_mood(symbols, npc_id, *mood)
-            }
-            RawTriggerCondition::UseItemOnItem {
+            Self::Unlock { item_id } => cook_unlock(symbols, item_id),
+            Self::Open { item_id } => cook_open(symbols, item_id),
+            Self::HasItem { item_id } => cook_has_item(symbols, item_id),
+            Self::MissingItem { item_id } => cook_missing_item(symbols, item_id),
+            Self::WithNpc { npc_id } => cook_with_npc(symbols, npc_id),
+            Self::HasVisited { room_id } => cook_has_visited(symbols, room_id),
+            Self::InRoom { room_id } => cook_in_room(symbols, room_id),
+            Self::NpcHasItem { npc_id, item_id } => cook_npc_has_item(symbols, npc_id, item_id),
+            Self::NpcInMood { npc_id, mood } => cook_npc_in_mood(symbols, npc_id, *mood),
+            Self::UseItemOnItem {
                 interaction,
                 target_id,
                 tool_id,
@@ -437,6 +427,9 @@ pub enum RawTriggerAction {
     PushPlayerTo {
         room_id: String,
     },
+    RestrictItem {
+        item_id: String,
+    },
     RevealExit {
         exit_from: String,
         exit_to: String,
@@ -474,55 +467,62 @@ pub enum RawTriggerAction {
 impl RawTriggerAction {
     fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
-            RawTriggerAction::NpcSaysRandom { npc_id } => cook_npc_says_random(symbols, npc_id),
-            RawTriggerAction::NpcSays { npc_id, quote } => cook_npc_says(symbols, npc_id, quote),
-            RawTriggerAction::AddAchievement { achievement: task } => {
+            Self::RestrictItem { item_id } => cook_restrict_item(symbols, item_id),
+            Self::NpcSaysRandom { npc_id } => cook_npc_says_random(symbols, npc_id),
+            Self::NpcSays { npc_id, quote } => cook_npc_says(symbols, npc_id, quote),
+            Self::AddAchievement { achievement: task } => {
                 Ok(TriggerAction::AddAchievement(task.to_string()))
             }
-            RawTriggerAction::AwardPoints { amount } => Ok(TriggerAction::AwardPoints(*amount)),
-            RawTriggerAction::SpawnItemCurrentRoom { item_id } => {
+            Self::AwardPoints { amount } => Ok(TriggerAction::AwardPoints(*amount)),
+            Self::SpawnItemCurrentRoom { item_id } => {
                 cook_spawn_item_current_room(symbols, item_id)
             }
-            RawTriggerAction::PushPlayerTo { room_id } => cook_push_player_to(symbols, room_id),
-            RawTriggerAction::GiveItemToPlayer { npc_id, item_id } => {
+            Self::PushPlayerTo { room_id } => cook_push_player_to(symbols, room_id),
+            Self::GiveItemToPlayer { npc_id, item_id } => {
                 cook_give_item_to_player(symbols, npc_id, item_id)
             }
-            RawTriggerAction::SetNpcMood { npc_id, mood } => {
-                cook_set_npc_mood(symbols, npc_id, *mood)
-            }
-            RawTriggerAction::ShowMessage { text } => {
-                Ok(TriggerAction::ShowMessage(text.to_string()))
-            }
-            RawTriggerAction::UnlockItem { item_id: target } => cook_unlock_item(symbols, target),
-            RawTriggerAction::RevealExit {
+            Self::SetNpcMood { npc_id, mood } => cook_set_npc_mood(symbols, npc_id, *mood),
+            Self::ShowMessage { text } => Ok(TriggerAction::ShowMessage(text.to_string())),
+            Self::RevealExit {
                 exit_from,
                 exit_to,
                 direction,
             } => cook_reveal_exit(symbols, exit_from, exit_to, direction),
-            RawTriggerAction::SpawnItemInRoom { item_id, room_id } => {
+            Self::SpawnItemInRoom { item_id, room_id } => {
                 cook_spawn_item_in_room(symbols, item_id, room_id)
             }
-            RawTriggerAction::SpawnItemInContainer {
+            Self::SpawnItemInContainer {
                 item_id,
                 container_id,
             } => cook_spawn_item_in_container(symbols, item_id, container_id),
-            RawTriggerAction::DespawnItem { item_id } => cook_despawn_item(symbols, item_id),
-            RawTriggerAction::LockItem { item_id } => cook_lock_item(symbols, item_id),
-            RawTriggerAction::LockExit {
+            Self::DespawnItem { item_id } => cook_despawn_item(symbols, item_id),
+            Self::LockItem { item_id } => cook_lock_item(symbols, item_id),
+            Self::UnlockItem { item_id } => cook_unlock_item(symbols, item_id),
+            Self::LockExit {
                 from_room,
                 direction,
             } => cook_lock_exit(symbols, from_room, direction),
-            RawTriggerAction::SpawnItemInInventory { item_id } => {
+            Self::SpawnItemInInventory { item_id } => {
                 cook_spawn_item_in_inventory(symbols, item_id)
             }
-            RawTriggerAction::UnlockExit {
+            Self::UnlockExit {
                 from_room,
                 direction,
             } => cook_unlock_exit(symbols, from_room, direction),
-            RawTriggerAction::DenyRead { reason } => {
-                Ok(TriggerAction::DenyRead(reason.to_string()))
-            }
+            Self::DenyRead { reason } => Ok(TriggerAction::DenyRead(reason.to_string())),
         }
+    }
+}
+
+/*
+ * "Cook" functions below convert RawTriggerActions to TriggerActions
+ */
+
+fn cook_restrict_item(symbols: &SymbolTable, item_id: &String) -> Result<TriggerAction> {
+    if let Some(item_uuid) = symbols.items.get(item_id) {
+        Ok(TriggerAction::RestrictItem(*item_uuid))
+    } else {
+        bail!("raw action RestrictItem({item_id}): item not found in symbols");
     }
 }
 

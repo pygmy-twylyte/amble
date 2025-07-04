@@ -628,6 +628,7 @@ conditions = [
     { type = "giveToNpc", item_id = "keen_longsword", npc_id = "black_knight" },
 ]
 actions = [
+    { type = "restrictItem", item_id = "keen_longsword" },
     { type = "addAchievement", achievement = "appeased-black-knight" },
     { type = "awardPoints", amount = 5 },
     { type = "setNpcMood", npc_id = "black_knight", mood = "Happy" },

@@ -136,6 +136,7 @@ pub enum TriggerAction {
         npc_id: Uuid,
     },
     PushPlayerTo(Uuid),
+    RestrictItem(Uuid),
     RevealExit {
         exit_from: Uuid,
         exit_to: Uuid,
@@ -213,6 +214,7 @@ pub fn check_triggers<'a>(
 /// fires the matching trigger action by calling its handler function
 fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()> {
     match action {
+        TriggerAction::RestrictItem(item_id) => restrict_item(world, item_id)?,
         TriggerAction::NpcSaysRandom { npc_id } => npc_says_random(world, npc_id)?,
         TriggerAction::NpcSays { npc_id, quote } => npc_says(world, npc_id, quote)?,
         TriggerAction::DenyRead(reason) => deny_read(reason),
@@ -251,6 +253,16 @@ fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()>
         TriggerAction::AwardPoints(amount) => award_points(world, *amount),
     }
     Ok(())
+}
+/// Changes an item's status to restricted
+pub fn restrict_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
+    if let Some(item) = world.items.get_mut(item_id) {
+        item.restricted = true;
+        info!("└─ action: RestrictItem({item_id}) \"{}\"", item.name());
+        Ok(())
+    } else {
+        bail!("action RestrictItem({item_id}): item not found");
+    }
 }
 /// Trigger random dialogue (based on mood) from NPC
 pub fn npc_says_random(world: &AmbleWorld, npc_id: &Uuid) -> Result<()> {

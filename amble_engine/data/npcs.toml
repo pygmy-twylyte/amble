@@ -3,7 +3,7 @@
 [[npcs]]
 id = "black_knight"
 name = "The Black Knight"
-description = "A dark, glowering presence in a black suit of armor with a greatsword."
+description = "A dark, glowering presence in a black suit of armor with a longsword."
 mood = "Normal"
 
 [npcs.location]
@@ -15,11 +15,19 @@ Mad = [
     "I'm invincible!",
     "'tis but a scratch.",
     "It's just a flesh wound!",
+    "Come on, you pansy!",
+    "Chicken! Bawk-bawk! Chicken!",
 ]
 Normal = [
     "None shall pass.",
     "I move -- for no man.",
     "(He stands silently, blocking your path.)",
+]
+Happy = [
+    "None shall pa-- oh, no, you can go.",
+    "YOU may pass, Candidate; I will be sure to dice anyone who dares to follow.",
+    "You may pass, but beware and steer clear of Room AA-3B, should it reappear.",
+    "Behold! (slices an aluminum can and then a tomato, laughing maniacally)",
 ]
 
 # ----------- START GONK DROID
