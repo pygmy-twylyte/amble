@@ -1,18 +1,19 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
-- add action RestrictItem -- so items can be blocked from being taken back from NPCs when appropriate (Black Knight sword)
-- add Happy "you may pass" dialogue to black_knight
+- refactor Item: put container/open/locked in a ContainerState enum and replace those fields with container: Option<ContainerState>
+- add code to dynamically calculate max score during loading -- will need to add to world.max_score during triggeraction:awardPoints raw -> real conversion
+- add ambient triggers checked each repl look in a check_ambient_triggers() function
+  - TriggerCondition::Ambient{ Option<room_uuid>, spinner_type }
+  - function runs at end of repl, finds and fires those Ambients related actions if the location matches (if specified)
 - need a call of some kind to check_triggers with any recognized command so state triggers can fire too.
-- make Vogon Poetry readable
 - dev commands to teleport (DONE), get items / achievs
-- ?? add Wear command and item capability
-- add something breakable and the crowbar!
 - add "clean" / "wipe" item interaction
 
 ## FIXITs from runthroughs
--- make reservation book readable
--- rename abandoned game from Brains Anonymous: Pong Construction Set '84
+- make Vogon Poetry readable
+- make reservation book readable
+- rename abandoned game from Brains Anonymous: Pong Construction Set '84
 
 
 ## 🧠 World Concept: The AA-3B Breach & Amble's Origin
