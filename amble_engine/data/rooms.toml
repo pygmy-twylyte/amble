@@ -560,7 +560,20 @@ to = "room-aa-3b"
 required_actions = ["nonexistent_achievement"]
 barred_message = """
 Room AA-3B no longer exists at this location. If found, DO NOT ATTEMPT TO ENTER
-and notify the risk management office immediately!"""
+and notify the risk management office immediately!
+"""
+
+[rooms.exits.east]
+to = "security-station"
+required_actions = ["appeased-black-knight"]
+barred_message = """The Black Knight blocks your way.
+"""
+
+[rooms.exits.south]
+to = "corridor"
+required_actions = ["appeased-black-knight"]
+barred_message = """The Black Knight blocks your way.
+"""
 
 # -----------------------------------------------------------------------------
 [[rooms]]
@@ -577,14 +590,86 @@ visited = false
 [rooms.exits.south]
 to = "b-a-office"
 
+# -----------------------------------------------------------------------------
 [[rooms]]
 id = "room-aa-3b"
 name = "Room AA-3B"
 description = """
-<This room intentionally inaccessible...for now?>
+The door opens into a swirling mass of static and fractured reality. Flickering
+projections of impossible geometries ripple through the darkness. Objects seem
+to vanish halfway through existing. A guttural voice whispers paradoxes from
+the walls themselves. Anyone with a sense of self-preservation should probably
+leave immediately.
+
+A small sign by the entrance reads: 'Amble Adventures assumes no responsibility
+for ontological damage incurred within.'
 """
+
 location = "Nowhere"
 visited = false
 
 [rooms.exits.east]
+to = "sublevel-1-entrance"
+
+# -----------------------------------------------------------------------------
+[[rooms]]
+id = "corridor"
+name = "Research Corridor"
+description = """
+A dimly lit concrete hallway stretches out, lined with emergency lights that
+flicker like they're deciding whether to stay on. Faint scratching sounds echo
+through the walls at irregular intervals.
+
+Graffiti on one wall reads: 'THEY NEVER LEFT AA-3B.' A maintenance hatch rattles
+occasionally, as if something on the other side is trying to remember how to
+use a doorknob.
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.north]
+to = "sublevel-1-entrance"
+
+[rooms.exits.west]
+to = "observation-room"
+
+# -----------------------------------------------------------------------------
+[[rooms]]
+id = "observation-room"
+name = "Field Observation Room"
+description = """
+Thick observation windows, long since spiderwebbed with cracks, overlook what
+should be Room AA-3B—but only darkness and occasional flashes of unreality
+appear beyond. Abandoned swivel chairs and battered clipboards litter the room.
+A faint smell of burnt ozone hangs in the air.
+
+A console near the glass flickers with a repeating message: 'CONTAINMENT BREACH
+LOGGED – STATUS: UNRESOLVED.'
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.east]
+to = "corridor"
+
+# ------------------------------------------------------------------------------
+[[rooms]]
+id = "security-station"
+name = "AA-3 Security Station"
+description = """
+A compact but well-equipped station with reinforced blast doors, a wall of
+cracked CRT monitors, and a steel locker emblazoned with 'IN CASE OF EMERGENCY,
+RUN FASTER.' Paperwork is scattered across the floor, including an ominous
+memo titled 'AA-3B: Risk Management Recommendations.'
+
+A blinking red light on the central console indicates the sublevel is still in
+lockdown.
+"""
+
+location = "Nowhere"
+visited = false
+
+[rooms.exits.west]
 to = "sublevel-1-entrance"

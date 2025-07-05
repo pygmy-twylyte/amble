@@ -591,19 +591,6 @@ actions = [
     { type = "npcSays", npc_id = "black_knight", quote = "Hey! Give that back, you cowardly cur!" },
 ]
 
-[[triggers]]
-name = "Black Knight: Angry, Kicks Player"
-only_once = false
-conditions = [
-    { type = "withNpc", npc_id = "black_knight" },
-    { type = "npcInMood", npc_id = "black_knight", mood = "Mad" },
-]
-actions = [
-    { type = "showMessage", text = """
-The Black Knight continues dodging about the room, occasionally trying to kick you in the shin.
-""" },
-    { type = "npcSaysRandom", npc_id = "black_knight" },
-]
 
 [[triggers]]
 name = "Black Knight: Sharpened Sword"
@@ -635,4 +622,18 @@ actions = [
     { type = "npcSays", npc_id = "black_knight", quote = """
 Thank you, good Sir! For your kind deed, I swear on my sword that I shall
 not cut you to bits with it. And you may pass wherever you like.""" },
+]
+
+[[triggers]]
+name = "Black Knight: Angry, Kicks Player"
+only_once = false
+conditions = [
+    { type = "withNpc", npc_id = "black_knight" },
+    { type = "npcInMood", npc_id = "black_knight", mood = "Mad" },
+]
+actions = [
+    { type = "showMessage", text = """
+The Black Knight continues dodging about the room, occasionally trying to kick you in the shin.
+""" },
+    { type = "npcSaysRandom", npc_id = "black_knight" },
 ]
