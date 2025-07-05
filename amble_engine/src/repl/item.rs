@@ -6,7 +6,7 @@ use std::collections::HashSet;
 
 use crate::{
     AmbleWorld, WorldObject,
-    item::{ItemAbility, ItemInteractionType},
+    item::{ContainerState, ItemAbility, ItemInteractionType},
     loader::items::interaction_requirement_met,
     repl::{entity_not_found, find_world_object},
     spinners::SpinnerType,
@@ -180,18 +180,20 @@ pub fn open_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     };
 
     if let Some(target_item) = world.get_item_mut(container_id) {
-        match target_item {
-            item if !item.container => {
-                println!("The {} can't be opened.", item.name().item_style());
+        match target_item.container_state {
+            None => {
+                println!("The {} can't be opened.", target_item.name().item_style());
             }
-            item if item.locked => println!(
+            Some(ContainerState::Locked) => println!(
                 "The {} is locked. You'll have to unlock it first.",
-                item.name().item_style()
+                target_item.name().item_style()
             ),
-            item if item.open => println!("The {} is already open.", item.name().item_style()),
-            item => {
-                item.open = true;
-                println!("You opened the {}.\n", item.name().item_style());
+            Some(ContainerState::Open) => {
+                println!("The {} is already open.", target_item.name().item_style())
+            }
+            Some(ContainerState::Closed) => {
+                target_item.container_state = Some(ContainerState::Open);
+                println!("You opened the {}.\n", target_item.name().item_style());
                 info!(
                     "{} opened the {} ({})",
                     world.player.name(),
@@ -229,19 +231,16 @@ pub fn close_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     };
 
     if let Some(target_item) = world.get_item_mut(uuid) {
-        match target_item {
-            item if !item.container => {
-                println!(
-                    "The {} isn't something that can be closed.",
-                    item.name().item_style()
-                );
+        match target_item.container_state {
+            None => {
+                println!("The {} can't be closed.", target_item.name().item_style());
             }
-            item if !item.open => {
-                println!("The {} is already closed.", item.name().item_style());
+            Some(ContainerState::Closed) | Some(ContainerState::Locked) => {
+                println!("The {} is already closed.", target_item.name().item_style());
             }
-            item => {
-                item.open = false;
-                println!("You closed the {}.\n", item.name().item_style());
+            Some(ContainerState::Open) => {
+                target_item.container_state = Some(ContainerState::Closed);
+                println!("You closed the {}.\n", target_item.name().item_style());
                 info!("{} closed the {} ({})", world.player.name(), name, uuid);
             }
         }
@@ -268,19 +267,19 @@ pub fn lock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     };
 
     if let Some(target_item) = world.get_item_mut(uuid) {
-        match target_item {
-            item if !item.container => {
+        match target_item.container_state {
+            None => {
                 println!(
                     "The {} isn't something that can be locked.",
-                    item.name().item_style()
+                    target_item.name().item_style()
                 );
             }
-            item if item.locked => {
-                println!("The {} is already locked.", item.name().item_style());
+            Some(ContainerState::Locked) => {
+                println!("The {} is already locked.", target_item.name().item_style());
             }
-            item => {
-                item.locked = true;
-                println!("You locked the {}.\n", item.name().item_style());
+            Some(ContainerState::Open) | Some(ContainerState::Closed) => {
+                target_item.container_state = Some(ContainerState::Locked);
+                println!("You locked the {}.\n", target_item.name().item_style());
                 info!("{} locked the {} ({})", world.player.name(), name, uuid);
             }
         }
@@ -318,21 +317,17 @@ pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     });
 
     if let Some(target_item) = world.get_item_mut(container_id) {
-        match target_item {
-            item if !item.container => {
-                println!(
-                    "The {} isn't something that can be unlocked.",
-                    item.name().item_style()
-                );
+        match target_item.container_state {
+            None => {
+                println!("The {} can't be unlocked.", target_item.name().item_style());
             }
-            item if !item.locked => {
-                println!("The {} is already unlocked.", item.name().item_style());
+            Some(ContainerState::Open) | Some(ContainerState::Closed) => {
+                println!("The {} is isn't locked.", target_item.name().item_style());
             }
-            item => {
+            Some(ContainerState::Locked) => {
                 if has_valid_key {
-                    item.locked = false;
-                    item.open = true;
-                    println!("You unlocked the {}.\n", item.name().item_style());
+                    target_item.container_state = Some(ContainerState::Closed);
+                    println!("You unlocked the {}.\n", target_item.name().item_style());
                     info!(
                         "{} unlocked the {} ({})",
                         world.player.name(),
@@ -343,7 +338,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
                 } else {
                     println!(
                         "You don't have anything that can unlock the {}.",
-                        item.name().item_style()
+                        target_item.name().item_style()
                     );
                 }
             }

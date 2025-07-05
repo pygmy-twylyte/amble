@@ -57,10 +57,7 @@ A black and white Portal gun affixed to a stand and aimed at a target on the
 wall. There's a power switch and a door to a battery compartment.
 """
 portable = false
-container = true
-open = false
-locked = false
-
+container_state = "closed"
 location = { Room = "portal-room" }
 
 [[items.abilities]]
@@ -137,7 +134,7 @@ addressed to YOU at Amble Adventures headquarters.
 """
 portable = true
 location = { Nowhere = "spawns@inca-road after first leaving" }
-container = true
+container_state = "closed"
 
 # -----------------------------------------------------------------------------
 [[items]]
@@ -149,7 +146,6 @@ be a shipping box before it fell apart.
 """
 portable = true
 location = { Nowhere = "spawns@player when delivery_box opened" }
-container = false
 
 # -----------------------------------------------------------------------------
 [[items]]
@@ -185,9 +181,7 @@ that is the most soulful and gripping for each listener in the room (as long as
 that happens to be Morgan Freeman's).
 """
 portable = false
-container = true
-open = false
-locked = false
+container_state = "closed"
 location = { Room = "b-a-office" }
 # -----------------------------------------------------------------------------
 
@@ -262,9 +256,7 @@ A sturdy metal lock box with an official-looking sticker reading:
 Be Fictional'.
 """
 portable = false
-container = true
-open = false
-locked = true
+container_state = "locked"
 location = { Room = "b-a-office" }
 
 # -----------------------------------------------------------------------
@@ -311,9 +303,7 @@ A sleek, off white printer, with a blinking LED near a small status screen.
 This model is known for its high precision, micrometer-level resolution, and
 ability to ignite almost any printing surface."""
 portable = false
-container = true
-open = true
-locked = false
+container_state = "open"
 location = { Room = "aperture-lab" }
 text = """
 PC LOAD LETTER
@@ -453,8 +443,7 @@ description = """
 A squat, leafy bush with long, pale strands growing among the branches. The
 fibers look oddly uniform — almost like... dental floss?"""
 portable = false
-container = true
-open = true
+container_state = "open"
 
 # ------------------------------------------------------------------------------
 [[items]]
@@ -577,9 +566,7 @@ A heavy wooden locker marked 'AMBLE SECURITY - Authorize Use Only'. The
 planks are reinforced, and the it rattles faintly when nudged.
 """
 portable = false
-container = true
-open = false
-locked = true
+container_state = "locked"
 location = { Room = "loading-dock" }
 interaction_requires.cut = "cutWood"
 interaction_requires.break = "smash"
@@ -680,9 +667,6 @@ on the bottom.
 location = { Nowhere = "spawns@loading-dock or security_crate" }
 portable = true
 restricted = false
-container = true
-locked = true
-open = true
 text = """
 To: CMOT, A Kindred Spirit
 From: Your Initech Rep

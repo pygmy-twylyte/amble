@@ -1,6 +1,6 @@
 use crate::{
     AmbleWorld, ItemHolder, Location, WorldObject,
-    item::{ItemAbility, ItemInteractionType},
+    item::{ContainerState, ItemAbility, ItemInteractionType},
     npc::NpcMood,
     room::Exit,
     spinners::SpinnerType,
@@ -337,12 +337,16 @@ fn unlock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> 
 /// unlock an item
 fn unlock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     if let Some(item) = world.items.get_mut(item_id) {
-        if item.container {
-            item.locked = false;
-            item.open = true;
-            info!("└─ action: UnlockItem({item_id})");
-        } else {
-            warn!("└─! action: UnlockItem({item_id}): unlocked item is not a container");
+        match item.container_state {
+            Some(ContainerState::Locked) => {
+                item.container_state = Some(ContainerState::Open);
+                info!("└─ action: UnlockItem({item_id}) '{}'", item.name());
+            }
+            Some(_) => warn!("action UnlockItem({item_id}): item wasn't locked"),
+            None => warn!(
+                "action UnlockItem({item_id}): item '{}' isn't a container",
+                item.name()
+            ),
         }
         Ok(())
     } else {
@@ -515,8 +519,15 @@ fn push_player(world: &mut AmbleWorld, room_id: &Uuid) -> Result<()> {
 
 fn lock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     if let Some(item) = world.items.get_mut(item_id) {
-        item.locked = true;
-        info!("└─ action: LockItem({item_id})");
+        if item.container_state.is_some() {
+            item.container_state = Some(ContainerState::Locked);
+            info!("└─ action: LockItem({item_id})");
+        } else {
+            warn!(
+                "action LockItem({item_id}): '{}' is not a container",
+                item.name()
+            );
+        }
         Ok(())
     } else {
         bail!("item ({item_id}) not found in world.items");

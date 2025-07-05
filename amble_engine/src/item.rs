@@ -7,6 +7,7 @@ use std::{
     fmt::Display,
 };
 use uuid::Uuid;
+use variantly::Variantly;
 
 /// Methods common to things that can hold items.
 pub trait ItemHolder {
@@ -67,6 +68,14 @@ pub enum ItemInteractionType {
     Unlock,
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Variantly)]
+#[serde(rename_all = "camelCase")]
+pub enum ContainerState {
+    Open,
+    Closed,
+    Locked,
+}
+
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Item {
     pub id: Uuid,
@@ -74,9 +83,7 @@ pub struct Item {
     pub description: String,
     pub location: Location,
     pub portable: bool,
-    pub container: bool,
-    pub open: bool,
-    pub locked: bool,
+    pub container_state: Option<ContainerState>,
     pub restricted: bool,
     pub contents: HashSet<Uuid>,
     pub abilities: HashSet<ItemAbility>,
@@ -99,12 +106,12 @@ impl WorldObject for Item {
 }
 impl ItemHolder for Item {
     fn add_item(&mut self, item_id: Uuid) {
-        if self.container && self.id.ne(&item_id) {
+        if self.container_state.is_some() && self.id.ne(&item_id) {
             self.contents.insert(item_id);
         }
     }
     fn remove_item(&mut self, item_id: Uuid) {
-        if self.container {
+        if self.container_state.is_some() {
             self.contents.remove(&item_id);
         }
     }
@@ -115,7 +122,7 @@ impl ItemHolder for Item {
 impl Item {
     /// Returns true if item's contents can be accessed.
     pub fn is_accessible(&self) -> bool {
-        self.container && self.open && !self.locked
+        self.container_state.is_some_and(|cs| cs.is_open())
     }
     /// Set location to a `Room` by UUID
     pub fn set_location_room(&mut self, room_id: Uuid) {
@@ -128,6 +135,7 @@ impl Item {
     /// Set location to player inventory by UUID
     pub fn set_location_inventory(&mut self) {
         // once a restricted item has been obtained, must no longer be so
+        // if given back to an NPC it can be optionally re-restricted using a trigger action
         self.restricted = false;
         self.location = Location::Inventory;
     }
@@ -139,7 +147,7 @@ impl Item {
     pub fn show(&self, world: &AmbleWorld) {
         println!("{}", self.name().item_style().underline());
         println!("{}", self.description().description_style());
-        if self.container {
+        if self.container_state.is_some() {
             println!("{}", "Contents:".bold());
             if self.is_accessible() {
                 if self.contents.is_empty() {
@@ -151,7 +159,7 @@ impl Item {
                         .for_each(|i| println!("\t{}", i.name().item_style()));
                 }
             } else {
-                let action = if self.locked {
+                let action = if self.container_state.is_some_and(|cs| cs.is_locked()) {
                     "unlock".bold().red()
                 } else {
                     "open".bold().green()
@@ -164,5 +172,24 @@ impl Item {
     /// Checks if an item requires a something special for a particular interaction
     pub fn requires_capability_for(&self, inter: ItemInteractionType) -> Option<ItemAbility> {
         self.interaction_requires.get(&inter).copied()
+    }
+
+    /// Returns the reason the item can't be accessed (as a container), if any
+    pub fn access_denied_reason(&self) -> Option<String> {
+        match self.container_state {
+            Some(ContainerState::Open) => None,
+            Some(ContainerState::Closed) => {
+                let reason = format!("The {} is {}.", self.name().item_style(), "closed".bold());
+                Some(reason)
+            }
+            Some(ContainerState::Locked) => {
+                let reason = format!("The {} is {}.", self.name().item_style(), "locked".bold());
+                Some(reason)
+            }
+            None => {
+                let reason = format!("The {} isn't a container.", self.name().item_style());
+                Some(reason)
+            }
+        }
     }
 }

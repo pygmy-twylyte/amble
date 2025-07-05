@@ -15,7 +15,7 @@ use crate::{
 
 use anyhow::{Result, anyhow};
 use colored::Colorize;
-use log::{info, warn};
+use log::{error, info, warn};
 use uuid::Uuid;
 
 /// Drops an item from inventory in the current room.
@@ -158,14 +158,13 @@ pub fn take_from_handler(
     {
         if let Some(vessel) = entity.clone().item() {
             if vessel.is_accessible() {
+                // it's a container and it's open
                 (vessel.id(), vessel.name().to_string(), VesselType::Item)
             } else {
-                let reason = if vessel.locked {
-                    "locked".red()
-                } else {
-                    "closed".yellow()
-                };
-                println!("You can't do that. The container is {reason}.");
+                // tell player why vessel can't be accessed
+                if let Some(reason) = vessel.access_denied_reason() {
+                    println!("{reason} You can't take anything from it.");
+                }
                 return Ok(());
             }
         } else if let Some(npc) = entity.npc() {
@@ -357,11 +356,24 @@ pub fn transfer_to_player(
 /// Removes an item from inventory and places it in a nearby container.
 pub fn put_in_handler(world: &mut AmbleWorld, item: &str, container: &str) -> Result<()> {
     // get uuid of item and container
-    let (item_id, item_name, item_portable) = if let Some(entity) =
+    let (item_id, item_name) = if let Some(entity) =
         find_world_object(&world.player.inventory, &world.items, &world.npcs, item)
     {
         if let Some(item) = entity.item() {
-            (item.id(), item.name().to_string(), item.portable)
+            if item.portable {
+                (item.id(), item.name().to_string())
+            } else {
+                println!(
+                    "You can't take the {}; it isn't portable.",
+                    item.name().item_style()
+                );
+                info!(
+                    "The Candidate tried to take fixed item '{}' ({})",
+                    item.name(),
+                    item.id()
+                );
+                return Ok(());
+            }
         } else {
             println!("Nothing in inventory matches {}.", item.error_style());
             return Ok(());
@@ -372,18 +384,22 @@ pub fn put_in_handler(world: &mut AmbleWorld, item: &str, container: &str) -> Re
     };
 
     let room = world.player_room_ref()?;
-    let (vessel_id, vessel_name, vessel_container, vessel_open) = if let Some(entity) =
+    let (vessel_id, vessel_name) = if let Some(entity) =
         find_world_object(&room.contents, &world.items, &world.npcs, container)
     {
         if let Some(vessel) = entity.item() {
-            (
-                vessel.id(),
-                vessel.name().to_string(),
-                vessel.container,
-                vessel.open,
-            )
+            if let Some(reason) = vessel.access_denied_reason() {
+                println!("{reason} You can't put anything in it.");
+                return Ok(());
+            } else {
+                (vessel.id(), vessel.name().to_string())
+            }
         } else {
-            warn!("Command:PutIn(_,{container}) matched a non-Item WorldEntity");
+            error!(
+                "a non-item (= NPC) WorldEntity was found in contents of room '{}' ({})",
+                room.name(),
+                room.id()
+            );
             println!(
                 "You don't see a container by the name {}",
                 container.error_style()
@@ -394,30 +410,7 @@ pub fn put_in_handler(world: &mut AmbleWorld, item: &str, container: &str) -> Re
         entity_not_found(world, container);
         return Ok(());
     };
-    // check that vessel is a container-type item
-    if !vessel_container {
-        println!(
-            "The {} isn't a container; you can't put anything in it.",
-            vessel_name.item_style()
-        );
-        return Ok(());
-    }
-    // check that container is open
-    if !vessel_open {
-        println!(
-            "The {} must be opened before you can put something in it.",
-            vessel_name.item_style()
-        );
-        return Ok(());
-    }
-    // check that item is portable
-    if !item_portable {
-        println!(
-            "The {} isn't portable and can't go in a container.",
-            item_name.item_style()
-        );
-        return Ok(());
-    }
+
     // update item location and add to container
     if let Some(moved_item) = world.items.get_mut(&item_id) {
         moved_item.set_location_item(vessel_id);

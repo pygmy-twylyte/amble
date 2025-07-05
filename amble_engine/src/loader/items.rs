@@ -13,7 +13,7 @@ use uuid::Uuid;
 use crate::{
     ItemHolder, Location,
     idgen::{NAMESPACE_ITEM, uuid_from_token},
-    item::{Item, ItemAbility, ItemInteractionType},
+    item::{ContainerState, Item, ItemAbility, ItemInteractionType},
     world::AmbleWorld,
 };
 
@@ -51,12 +51,7 @@ pub struct RawItem {
     pub name: String,
     pub description: String,
     pub portable: bool,
-    #[serde(default)]
-    pub container: bool,
-    #[serde(default)]
-    pub open: bool,
-    #[serde(default)]
-    pub locked: bool,
+    pub container_state: Option<ContainerState>,
     #[serde(default)]
     pub restricted: bool,
     pub location: HashMap<String, String>,
@@ -121,10 +116,8 @@ impl RawItem {
             description: self.description.to_string(),
             location: loc,
             portable: self.portable,
-            container: self.container,
+            container_state: self.container_state,
             contents: HashSet::<Uuid>::default(),
-            open: self.open,
-            locked: self.locked,
             restricted: self.restricted,
             abilities,
             interaction_requires: self.interaction_requires.clone(),
