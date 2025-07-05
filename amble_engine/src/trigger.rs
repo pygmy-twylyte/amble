@@ -105,7 +105,7 @@ impl TriggerCondition {
             Self::WithNpc(npc_id) => world
                 .npcs
                 .get(npc_id)
-                .is_some_and(|npc| dbg!(&npc.location) == dbg!(&world.player.location)),
+                .is_some_and(|npc| npc.location == world.player.location),
             _ => false,
         }
     }
