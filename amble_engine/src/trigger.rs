@@ -26,7 +26,7 @@ pub struct Trigger {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TriggerCondition {
     Ambient {
-        room_ids: HashSet<Uuid>,
+        room_ids: HashSet<Uuid>, // empty = applies everywhere
         spinner: SpinnerType,
     },
     ContainerHasItem {
