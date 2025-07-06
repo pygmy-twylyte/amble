@@ -156,7 +156,13 @@ impl Item {
                     self.contents
                         .iter()
                         .filter_map(|item_id| world.items.get(item_id))
-                        .for_each(|i| println!("\t{}", i.name().item_style()));
+                        .for_each(|item| {
+                            if item.restricted {
+                                println!("\t{}🔒", item.name().item_style());
+                            } else {
+                                println!("\t{}", item.name().item_style());
+                            }
+                        });
                 }
             } else {
                 let action = if self.container_state.is_some_and(|cs| cs.is_locked()) {

@@ -273,11 +273,12 @@ fn validate_and_transfer_from_item(
         find_world_object(&container.contents, &world.items, &world.npcs, item_pattern)
     {
         if let Some(loot) = entity.item() {
-            if !loot.portable {
+            if loot.portable && !loot.restricted {
+                (loot.id(), loot.name().to_string())
+            } else {
                 println!("Sorry, the {} can't be removed.", loot.name().item_style());
                 return Ok(());
             }
-            (loot.id(), loot.name().to_string())
         } else {
             warn!(
                 "NPC WorldEntity found inside container '{}' ({})",
