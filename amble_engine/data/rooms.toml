@@ -410,13 +410,14 @@ id = "portal-room"
 name = "Portal Room"
 description = """
 A bare white room. In the center, a black and white Portal gun is affixed to
-a stand, aimed at a bullseye on the wall. A ladder leads back up to the trap
-door in the ceiling.
+a stand, aimed at a bullseye on the wall.
+
+A ladder leads back up through the trap door in the ceiling.
 """
 location = "Nowhere"
 visited = false
 
-[rooms.exits.up]
+[rooms.exits.ladder]
 to = "lounge"
 
 # ---------------------------------------------------------------------------

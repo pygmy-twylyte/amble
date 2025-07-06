@@ -104,8 +104,11 @@ conditions = [
 actions = [
     { type = "addAchievement", achievement = "portal-gun-powered" },
     { type = "awardPoints", amount = 5 },
+    { type = "restrictItem", item_id = "charged_battery" },
     { type = "showMessage", text = """
-The gun emits a quick high-pitched whine, and the power LED lights green.
+Arcing wildly as you insert it, the fully charged 20 KV battery fuses itself
+to the contacts inside the portal gun -- when then emits a quick high-pitched
+whine. The POWER indicator lights a steady green.
 """ },
 ]
 
