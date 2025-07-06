@@ -114,14 +114,22 @@ pub fn turn_on_handler(world: &mut AmbleWorld, item_pattern: &str) -> Result<()>
         if let Some(item) = entity.clone().item() {
             if item.abilities.contains(&ItemAbility::TurnOn) {
                 info!("Player switched on {} ({})", item.name(), item.id());
-                let fired = check_triggers(
+                let sent_id = item.id();
+                let fired_triggers = check_triggers(
                     world,
                     &[TriggerCondition::UseItem {
-                        item_id: item.id(),
+                        item_id: sent_id,
                         ability: ItemAbility::TurnOn,
                     }],
                 )?;
-                if fired.is_empty() {
+                let sent_trigger_fired =
+                    triggers_contain_condition(&fired_triggers, |cond| match cond {
+                        TriggerCondition::UseItem { item_id, ability } => {
+                            *item_id == sent_id && *ability == ItemAbility::TurnOn
+                        }
+                        _ => false,
+                    });
+                if !sent_trigger_fired {
                     println!(
                         "{}",
                         "You hear a clicking sound and then... nothing happens.".italic()
