@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::{
     AmbleWorld, ItemHolder, Location, WorldObject,
     item::{ContainerState, ItemAbility, ItemInteractionType},
@@ -23,6 +25,10 @@ pub struct Trigger {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TriggerCondition {
+    Ambient {
+        room_ids: HashSet<Uuid>,
+        spinner: SpinnerType,
+    },
     ContainerHasItem {
         container_id: Uuid,
         item_id: Uuid,
