@@ -57,7 +57,8 @@ pub fn parse_command(input: &str) -> Command {
             npc: (*npc).to_string(),
         },
         ["look", "at" | "in", thing] => Command::LookAt((*thing).to_string()),
-        ["move" | "go", dir] => Command::MoveTo((*dir).to_string()),
+        ["go" | "climb", "to" | "up" | "down" | "through", dir]
+        | ["move" | "go" | "enter" | "climb", dir] => Command::MoveTo((*dir).to_string()),
         ["take", thing] => Command::Take((*thing).to_string()),
         ["take" | "remove", thing, "from", container] => Command::TakeFrom {
             item: (*thing).to_string(),
