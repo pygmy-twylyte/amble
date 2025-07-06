@@ -6,14 +6,25 @@
 - add ambient triggers checked each repl look in a check_ambient_triggers() function
   - TriggerCondition::Ambient{ Option<room_uuid>, spinner_type }
   - function runs at end of repl, finds and fires those Ambients related actions if the location matches (if specified)
-- need a call of some kind to check_triggers with any recognized command so state triggers can fire too.
+- need a call of some kind to check_triggers with any recognized command so state triggers can fire too?
 - dev commands to teleport (DONE), get items / achievs
 - add "clean" / "wipe" item interaction
+- spinner for when no destination matches on "go" command
+- more go synonyms that work with things like "ladder" or "trapdoor" (climb, go through, enter, etc.)
+- giveitemtoNPC should block (or reverse) transfer if there is no trigger for NPC response. "NPC doesn't want that." spinner.
+- trigger action to change the .read field on an item to update displays etc
 
-## FIXITs from runthroughs
+## FIXITs from runthroughs / CONTENT additions
+- remove key access to security suppy crate to avoid inventory problems if crate is destroyed after contents removed
 - make Vogon Poetry readable
 - make reservation book readable
 - rename abandoned game from Brains Anonymous: Pong Construction Set '84
+- A. Jackson needs a mailbox and something funny / lore-building inside it (jackson's landing)
+- add trigger so something happens if you sharpen the axe with the stone
+- maybe add river bank location south of inca-road (already mentioned in description) and put whetstone there
+- turn west of building into a snowfield?
+- charged battery should be restricted once placed in portal gun. Might require modification of take_from handler.
+- add warning / instruction label to read on poetry performer, and make it Initech
 
 
 ## 🧠 World Concept: The AA-3B Breach & Amble's Origin
