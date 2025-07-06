@@ -1,8 +1,6 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
-- refactor Item: put container/open/locked in a ContainerState enum and replace those fields with container: Option<ContainerState>
-- add code to dynamically calculate max score during loading -- will need to add to world.max_score during triggeraction:awardPoints raw -> real conversion
 - add ambient triggers checked each repl look in a check_ambient_triggers() function
   - TriggerCondition::Ambient{ Option<room_uuid>, spinner_type }
   - function runs at end of repl, finds and fires those Ambients related actions if the location matches (if specified)
