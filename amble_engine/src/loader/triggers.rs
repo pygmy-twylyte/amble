@@ -1,4 +1,4 @@
-use std::{fs, path::Path};
+use std::{collections::HashSet, fs, path::Path};
 
 use anyhow::{Context, Result, bail};
 use log::info;
@@ -7,6 +7,7 @@ use serde::Deserialize;
 use crate::{
     item::{ItemAbility, ItemInteractionType},
     npc::NpcMood,
+    spinners::SpinnerType,
     trigger::{Trigger, TriggerAction, TriggerCondition},
 };
 
@@ -48,6 +49,10 @@ impl RawTrigger {
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum RawTriggerCondition {
+    Ambient {
+        room_ids: Option<Vec<String>>,
+        spinner: SpinnerType,
+    },
     ContainerHasItem {
         container_id: String,
         item_id: String,
@@ -124,6 +129,7 @@ pub enum RawTriggerCondition {
 impl RawTriggerCondition {
     fn to_condition(&self, symbols: &SymbolTable) -> Result<TriggerCondition> {
         match self {
+            Self::Ambient { room_ids, spinner } => cook_ambient(symbols, room_ids, spinner),
             Self::ContainerHasItem {
                 container_id,
                 item_id,
@@ -166,6 +172,25 @@ impl RawTriggerCondition {
 //
 // "COOK" helper functions convert raw trigger components to "cooked" real instances
 //
+fn cook_ambient(
+    symbols: &SymbolTable,
+    room_symbols: &Option<Vec<String>>,
+    spinner: &SpinnerType,
+) -> Result<TriggerCondition> {
+    let mut room_ids = HashSet::new();
+    if let Some(syms) = room_symbols {
+        for sym in syms {
+            let uuid = symbols.rooms.get(sym).with_context(|| {
+                format!("converting raw condition Ambient: room symbol '{sym}' not found")
+            })?;
+            room_ids.insert(*uuid);
+        }
+    }
+    Ok(TriggerCondition::Ambient {
+        room_ids,
+        spinner: *spinner,
+    })
+}
 
 fn cook_use_item_on_item(
     symbols: &SymbolTable,
