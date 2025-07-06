@@ -39,7 +39,7 @@ pub enum ReplControl {
 /// - Could panic if unable to flush stdout for some reason
 pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     loop {
-        print!("\n[Score: {}/??]> ", world.player.score);
+        print!("\n[Score: {}/{}]> ", world.player.score, world.max_score);
         io::stdout().flush().unwrap();
         let mut input = String::new();
         if io::stdin().read_line(&mut input).is_err() {

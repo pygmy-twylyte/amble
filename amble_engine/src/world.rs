@@ -41,6 +41,7 @@ pub struct AmbleWorld {
     #[serde(skip)] // these are hard-coded into source
     pub spinners: HashMap<SpinnerType, Spinner<&'static str>>,
     pub npcs: HashMap<Uuid, Npc>,
+    pub max_score: usize,
 }
 impl AmbleWorld {
     /// Create a new empty world with a default player.
@@ -52,6 +53,7 @@ impl AmbleWorld {
             triggers: Vec::new(),
             player: Player::default(),
             spinners: default_spinners(),
+            max_score: 0,
         };
         info!("new, empty 'AmbleWorld' created");
         info!("{} spinners added to 'AmbleWorld'", world.spinners.len());

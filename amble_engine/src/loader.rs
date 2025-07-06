@@ -9,6 +9,7 @@ use crate::loader::player::load_player;
 use crate::loader::rooms::load_raw_rooms;
 use crate::loader::triggers::load_raw_triggers;
 
+use crate::trigger::TriggerAction;
 use crate::{AmbleWorld, Location, WorldObject};
 use anyhow::{Context, Result, anyhow};
 use items::{build_items, place_items};
@@ -95,6 +96,7 @@ pub fn load_world() -> Result<AmbleWorld> {
     for rm in rooms {
         world.rooms.insert(rm.id(), rm);
     }
+    world.max_score += world.rooms.len();
     info!("{} rooms added to AmbleWorld", world.rooms.len());
 
     /* Load Player */
@@ -135,6 +137,16 @@ pub fn load_world() -> Result<AmbleWorld> {
         load_raw_triggers(trigger_toml_path).context("when loading triggers from file")?;
     world.triggers = build_triggers(&raw_triggers, &symbols)?;
     info!("{} triggers added to AmbleWorld", world.triggers.len());
+
+    for trigger in &world.triggers {
+        for action in &trigger.actions {
+            if let TriggerAction::AwardPoints(amount) = action
+                && *amount > 0
+            {
+                world.max_score = world.max_score.saturating_add_signed(*amount);
+            }
+        }
+    }
 
     Ok(world)
 }
