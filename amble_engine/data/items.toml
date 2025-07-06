@@ -1,13 +1,3 @@
-# [[items]]
-# id = "token"
-# name = "display_name"
-# description = """
-# full_description
-# """
-# portable = true
-# location = {}
-# # -----------------------------------------------------------------------------
-
 [[items]]
 id = "no_cake"
 name = "No Cake"
@@ -560,9 +550,9 @@ target = "security_crate"
 # --------------------------------------------------------------------------
 [[items]]
 id = "security_crate"
-name = "Security Supply Crate"
+name = "Security Supply Locker"
 description = """
-A heavy wooden locker marked 'AMBLE SECURITY - Authorize Use Only'. The
+A heavy wooden locker marked 'AMBLE SECURITY - Authorized Use Only'. The
 planks are reinforced, and the it rattles faintly when nudged.
 """
 portable = false
