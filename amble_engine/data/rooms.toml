@@ -274,14 +274,16 @@ id = "east-of-building"
 name = "East of Building"
 
 description = """
-You’re east of the building now, facing a patch of ornamental gravel and a struggling
-yucca plant. The air here smells faintly of ozone and buttered lobster, though the
-source is unclear.
+You’re east of the building now, facing a patch of ornamental gravel and a
+struggling yucca plant. The air here smells faintly of ozone and buttered
+lobster, though the source is unclear.
 
 The side of the building appears to be a normal wall, but you keep glimpsing
-something that looks like -- restaurant patio umbrellas? -- from the corner of your
+something that looks like -- patio umbrellas? -- from the corner of your
 eye. You briefly wonder if the building is bending space or if your sense of
 geography is just feeling shy.
+
+The walkway wraps around the building to the northwest and southwest.
 """
 
 location = "Nowhere"
