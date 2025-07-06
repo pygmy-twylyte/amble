@@ -21,7 +21,6 @@
 - add trigger so something happens if you sharpen the axe with the stone
 - maybe add river bank location south of inca-road (already mentioned in description) and put whetstone there
 - turn west of building into a snowfield?
-- charged battery should be restricted once placed in portal gun. Might require modification of take_from handler.
 - add warning / instruction label to read on poetry performer, and make it Initech
 
 
