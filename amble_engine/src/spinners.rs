@@ -11,6 +11,7 @@ pub enum SpinnerType {
     QuitMsg,
     UnrecognizedCommand,
     NoEffect,
+    AmbientWoodland,
 }
 
 pub trait SpinnerExt {
@@ -113,6 +114,24 @@ pub fn default_spinners() -> HashMap<SpinnerType, Spinner<&'static str>> {
             "The laws of physics remain disappointingly unaltered.",
             "Reality refuses to acknowledge your efforts.",
             "No errors, no effect, no fanfare. Just... stillness.",
+            "That's another entry for the Journal of Failed Experiments.",
+        ]),
+    );
+
+    spinners.insert(
+        SpinnerType::AmbientWoodland,
+        Spinner::new(vec![
+            Wedge::new_weighted("", 16),
+            Wedge::new_weighted("A bird sings warily: \"Poo-tee-weet?\"", 1),
+            Wedge::new_weighted("A swallow flies past, carrying a coconut...", 1),
+            Wedge::new_weighted(
+                "A hummingbird flies by, but gliding like an albatross on an unseen wind...",
+                1,
+            ),
+            Wedge::new_weighted(
+                "Something tromps through the leaves behind you, but stops when you turn around...",
+                1,
+            ),
         ]),
     );
 
