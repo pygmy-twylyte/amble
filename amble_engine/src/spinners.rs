@@ -1,4 +1,4 @@
-use gametools::spinners::{Spinner, Wedge};
+use gametools::spinners::{Spinner, Wedge, wedges_from_tuples};
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -14,6 +14,8 @@ pub enum SpinnerType {
     UnrecognizedCommand,
     NoEffect,
     AmbientWoodland,
+    AmbientAA3B,
+    AmbientInterior,
 }
 
 pub trait SpinnerExt {
@@ -32,7 +34,7 @@ pub fn default_spinners() -> HashMap<SpinnerType, Spinner<&'static str>> {
     let quit_msg_spinner = Spinner::from_strs(&[
         "Bye.",
         "Auf Wiedersehen.",
-        "Later, gator",
+        "Later, 'gator!",
         "Aww. Come back soon.",
     ]);
     spinners.insert(SpinnerType::QuitMsg, quit_msg_spinner);
@@ -100,6 +102,7 @@ pub fn default_spinners() -> HashMap<SpinnerType, Spinner<&'static str>> {
             "Command not recognized. Try 'help', 'yell', or 'cry'.",
             "That input caused a minor existential crisis in the REPL. It's fine now.",
             "Unrecognized verb. Maybe try it in ALL CAPS for emphasis?",
+            "Snagrilfromp. I can make words up too.",
         ]),
     );
 
@@ -120,21 +123,41 @@ pub fn default_spinners() -> HashMap<SpinnerType, Spinner<&'static str>> {
         ]),
     );
 
+    #[rustfmt::skip]
     spinners.insert(
         SpinnerType::AmbientWoodland,
-        Spinner::new(vec![
-            Wedge::new_weighted("", 16),
-            Wedge::new_weighted("A bird sings warily: \"Poo-tee-weet?\"", 1),
-            Wedge::new_weighted("A swallow flies past, carrying a coconut...", 1),
-            Wedge::new_weighted(
-                "A hummingbird flies by, but gliding like an albatross on an unseen wind...",
-                1,
-            ),
-            Wedge::new_weighted(
-                "Something tromps through the leaves behind you, but stops when you turn around...",
-                1,
-            ),
-        ]),
+        Spinner::new(wedges_from_tuples(vec![
+            ("", 16),
+            ("A bird sings warily: \"Poo-tee-weet?\"", 1),
+            ("A swallow flies past, carrying a coconut.", 1),
+            ("A hummingbird flies by, but gliding like an albatross on an unseen wind.", 1),
+            ("Something tromps through the leaves behind you, but stops when you turn around.", 1),
+        ])),
+    );
+
+    spinners.insert(
+        SpinnerType::AmbientAA3B,
+        Spinner::new(wedges_from_tuples(vec![
+            ("", 15),
+            ("A shimmering blue police box flickers into existence for an instant, then vanishes.", 1),
+            ("A robed figure mutters in an unknown tongue before dissolving into mist.", 1),
+            ("For a moment, your surroundings flatten as if the world became two-dimensional.", 1),
+            ("A penguin waddles past, wearing a lab coat and muttering about a narrative malfunction.", 1),
+            ("A black obelisk taller than you shimmers into view, then fades as quickly as it appeared.", 1),
+        ])),
+    );
+
+    spinners.insert(
+        SpinnerType::AmbientInterior,
+        Spinner::new(wedges_from_tuples(vec![
+            ("", 20),
+            ("The intercom crackles: \"Please return the time machine to the checkout desk.\"", 1),
+            ("A siren whoops twice, then cuts off mid-blare.", 1),
+            ("A calm female voice over the PA says: \"Welcome to Aperture Science. Enjoy your stay,\" followed by a beep.", 1),
+            ("Somewhere behind the walls, gears grind and then stop abruptly.", 1),
+            ("The lights flicker and buzz with a discordant hum.", 1),
+            ("A gust of wind rushes through the corridor, but there are no open doors or windows.", 1),
+        ])),
     );
 
     info!("{} default spinners created", spinners.len());

@@ -8,6 +8,8 @@ pub trait GameStyle {
     fn description_style(&self) -> ColoredString;
     fn triggered_style(&self) -> ColoredString;
     fn trig_icon_style(&self) -> ColoredString;
+    fn ambient_icon_style(&self) -> ColoredString;
+    fn ambient_trig_style(&self) -> ColoredString;
     fn exit_visited_style(&self) -> ColoredString;
     fn exit_locked_style(&self) -> ColoredString;
     fn exit_unvisited_style(&self) -> ColoredString;
@@ -25,7 +27,7 @@ impl GameStyle for &str {
         self.truecolor(223, 77, 10).bold()
     }
     fn room_titlebar_style(&self) -> ColoredString {
-        self.truecolor(223, 77, 10).on_black()
+        self.truecolor(223, 77, 10).on_truecolor(0, 0, 30)
     }
     fn description_style(&self) -> ColoredString {
         self.italic().truecolor(102, 208, 250)
@@ -44,6 +46,12 @@ impl GameStyle for &str {
     }
     fn trig_icon_style(&self) -> ColoredString {
         self.bold().truecolor(230, 80, 80)
+    }
+    fn ambient_icon_style(&self) -> ColoredString {
+        self.dimmed().truecolor(80, 80, 230)
+    }
+    fn ambient_trig_style(&self) -> ColoredString {
+        self.truecolor(150, 230, 30).dimmed()
     }
     fn error_style(&self) -> ColoredString {
         self.underline().truecolor(230, 30, 30)
@@ -78,9 +86,14 @@ impl GameStyle for String {
     fn exit_unvisited_style(&self) -> ColoredString {
         self.as_str().exit_unvisited_style()
     }
-
+    fn ambient_trig_style(&self) -> ColoredString {
+        self.as_str().ambient_trig_style()
+    }
     fn trig_icon_style(&self) -> ColoredString {
         self.as_str().trig_icon_style()
+    }
+    fn ambient_icon_style(&self) -> ColoredString {
+        self.as_str().ambient_icon_style()
     }
     fn error_style(&self) -> ColoredString {
         self.as_str().error_style()

@@ -5,6 +5,7 @@ pub mod movement;
 pub mod npc;
 pub mod system;
 
+use gametools::Spinner;
 pub use inventory::*;
 pub use item::*;
 pub use look::*;
@@ -16,6 +17,7 @@ use crate::command::{Command, parse_command};
 use crate::npc::Npc;
 use crate::spinners::SpinnerType;
 use crate::style::GameStyle;
+use crate::trigger::TriggerCondition;
 use crate::world::AmbleWorld;
 use crate::{Item, WorldObject};
 
@@ -84,6 +86,39 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             Command::Save(gamefile) => save_handler(world, &gamefile)?,
             Command::UseItemOn { verb, tool, target } => {
                 use_item_on_handler(world, verb, &tool, &target)?;
+            }
+        }
+        check_ambient_triggers(world)?;
+    }
+    Ok(())
+}
+
+/// Check and fire any Ambient triggers that apply (run each time around the REPL loop)
+pub fn check_ambient_triggers(world: &mut AmbleWorld) -> Result<()> {
+    let current_room_id = world.player_room_ref()?.id();
+    for trigger in &mut world.triggers {
+        if trigger.fired && trigger.only_once {
+            continue;
+        }
+
+        for cond in &trigger.conditions {
+            if let TriggerCondition::Ambient { room_ids, spinner } = cond {
+                // empty = applies globally
+                if room_ids.is_empty() || room_ids.contains(&current_room_id) {
+                    let message = world
+                        .spinners
+                        .get(spinner)
+                        .and_then(Spinner::spin)
+                        .unwrap_or_default();
+                    if !message.is_empty() {
+                        trigger.fired = true;
+                        println!(
+                            "\n{} {}",
+                            "❉".ambient_icon_style(),
+                            message.ambient_trig_style()
+                        );
+                    }
+                }
             }
         }
     }
