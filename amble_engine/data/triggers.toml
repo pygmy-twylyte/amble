@@ -640,3 +640,47 @@ The Black Knight continues dodging about the room, occasionally trying to kick y
 """ },
     { type = "npcSaysRandom", npc_id = "black_knight" },
 ]
+
+[[triggers]]
+name = "Ambient: Woodland"
+only_once = false
+conditions = [
+    { type = "ambient", spinner = "ambientWoodland", room_ids = [
+        "high-ridge",
+        "parish-landing",
+        "two-sheds-landing",
+        "two-sheds",
+        "guard-post",
+    ] },
+]
+actions = []
+
+[[triggers]]
+name = "Ambient: Near AA-3B"
+only_once = false
+conditions = [
+    { type = "ambient", spinner = "ambientAA3B", room_ids = [
+        "lift-sublevel-1",
+        "sublevel-1-entrance",
+        "corridor",
+        "observation-room",
+        "security-station",
+    ] },
+]
+actions = []
+
+[[triggers]]
+name = "Ambient: AA Building Main Floor"
+only_once = false
+conditions = [
+    { type = "ambient", spinner = "ambientInterior", room_ids = [
+        "main-lobby",
+        "b-a-office",
+        "restaurant",
+        "patio",
+        "lift-bank-main",
+        "lounge",
+        "vip-bathroom",
+    ] },
+]
+actions = []
