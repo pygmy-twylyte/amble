@@ -39,7 +39,9 @@ pub struct RawNpc {
     pub mood: NpcMood,
 }
 impl RawNpc {
-    /// Converts this `RawNpc` to a real `Npc`.
+    /// Converts this `RawNpc` to a real `Npc`
+    /// # Errors
+    /// - on failure to resolve location or look up NPC in symbol table
     pub fn to_npc(&self, symbols: &SymbolTable) -> Result<Npc> {
         let start_room = resolve_location(&self.location, symbols)?;
         Ok(Npc {
@@ -58,6 +60,8 @@ impl RawNpc {
 }
 
 /// Loads raw NPCs from file.
+/// # Errors
+/// - on failed access to NPC TOML file or error when parsing file
 pub fn load_raw_npcs(toml_path: &Path) -> Result<Vec<RawNpc>> {
     let file_contents = fs::read_to_string(toml_path)
         .with_context(|| format!("reading NPC data from '{}'", toml_path.display()))?;
@@ -72,6 +76,8 @@ pub fn load_raw_npcs(toml_path: &Path) -> Result<Vec<RawNpc>> {
 }
 
 /// Builds full NPCs from a vector of `RawNpcs`
+/// # Errors
+/// - on failure to convert any `RawNpc` to `Npc`.
 pub fn build_npcs(raw_npcs: &[RawNpc], symbols: &mut SymbolTable) -> Result<Vec<Npc>> {
     // add npcs to character symbol table - follows pattern of others, but necessary?
     for rnpc in raw_npcs {
@@ -89,6 +95,9 @@ pub fn build_npcs(raw_npcs: &[RawNpc], symbols: &mut SymbolTable) -> Result<Vec<
     Ok(npcs)
 }
 
+/// Place NPCs in their respective starting areas on the map.
+/// # Errors
+/// - on invalid placement location
 pub fn place_npcs(world: &mut AmbleWorld) -> Result<()> {
     // create job list of placements (NPC id , room id) and count unspawned for logging
     let mut placements: Vec<(Uuid, Uuid)> = Vec::new();

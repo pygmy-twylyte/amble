@@ -60,7 +60,7 @@ pub fn drop_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
         }
     } else {
         entity_not_found(world, thing);
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -156,7 +156,7 @@ pub fn take_from_handler(
     let (vessel_id, vessel_name, vessel_type) = if let Some(entity) =
         find_world_object(&search_scope, &world.items, &world.npcs, vessel_pattern)
     {
-        if let Some(vessel) = entity.clone().item() {
+        if let Some(vessel) = entity.item() {
             if vessel.is_accessible() {
                 // it's a container and it's open
                 (vessel.id(), vessel.name().to_string(), VesselType::Item)
@@ -184,10 +184,10 @@ pub fn take_from_handler(
     // Validate and execute transfer of loot from container item or NPC
     match vessel_type {
         VesselType::Item => {
-            validate_and_transfer_from_item(world, item_pattern, vessel_id, vessel_name)?;
+            validate_and_transfer_from_item(world, item_pattern, vessel_id, &vessel_name)?;
         }
         VesselType::Npc => {
-            validate_and_transfer_from_npc(world, item_pattern, vessel_id, vessel_name)?;
+            validate_and_transfer_from_npc(world, item_pattern, vessel_id, &vessel_name)?;
         }
     }
     Ok(())
@@ -197,7 +197,7 @@ fn validate_and_transfer_from_npc(
     world: &mut AmbleWorld,
     item_pattern: &str,
     vessel_id: Uuid,
-    vessel_name: String,
+    vessel_name: &str,
 ) -> Result<(), anyhow::Error> {
     let container = world
         .npcs
@@ -263,7 +263,7 @@ fn validate_and_transfer_from_item(
     world: &mut AmbleWorld,
     item_pattern: &str,
     vessel_id: Uuid,
-    vessel_name: String,
+    vessel_name: &str,
 ) -> Result<(), anyhow::Error> {
     let container = world
         .items
@@ -280,10 +280,7 @@ fn validate_and_transfer_from_item(
                 return Ok(());
             }
         } else {
-            warn!(
-                "NPC WorldEntity found inside container '{}' ({})",
-                vessel_name, vessel_id
-            );
+            warn!("NPC WorldEntity found inside container '{vessel_name}' ({vessel_id})");
             println!(
                 "That shouldn't be in the {} and can't be taken. Just ignore it.",
                 vessel_name.item_style()
@@ -392,9 +389,8 @@ pub fn put_in_handler(world: &mut AmbleWorld, item: &str, container: &str) -> Re
             if let Some(reason) = vessel.access_denied_reason() {
                 println!("{reason} You can't put anything in it.");
                 return Ok(());
-            } else {
-                (vessel.id(), vessel.name().to_string())
             }
+            (vessel.id(), vessel.name().to_string())
         } else {
             error!(
                 "a non-item (= NPC) WorldEntity was found in contents of room '{}' ({})",

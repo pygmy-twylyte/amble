@@ -27,6 +27,9 @@ pub struct RawTrigger {
     pub only_once: bool,
 }
 impl RawTrigger {
+    /// Convert a `RawTrigger` loaded from TOML to a `Trigger`
+    /// # Errors
+    /// - on failed symbol lookups / failure to convert any component of the trigger
     pub fn to_trigger(&self, symbols: &SymbolTable) -> Result<Trigger> {
         let mut conditions = Vec::new();
         let mut actions = Vec::new();
@@ -129,7 +132,9 @@ pub enum RawTriggerCondition {
 impl RawTriggerCondition {
     fn to_condition(&self, symbols: &SymbolTable) -> Result<TriggerCondition> {
         match self {
-            Self::Ambient { room_ids, spinner } => cook_ambient(symbols, room_ids, spinner),
+            Self::Ambient { room_ids, spinner } => {
+                cook_ambient(symbols, room_ids.as_ref(), *spinner)
+            }
             Self::ContainerHasItem {
                 container_id,
                 item_id,
@@ -174,8 +179,8 @@ impl RawTriggerCondition {
 //
 fn cook_ambient(
     symbols: &SymbolTable,
-    room_symbols: &Option<Vec<String>>,
-    spinner: &SpinnerType,
+    room_symbols: Option<&Vec<String>>,
+    spinner: SpinnerType,
 ) -> Result<TriggerCondition> {
     let mut room_ids = HashSet::new();
     if let Some(syms) = room_symbols {
@@ -186,10 +191,7 @@ fn cook_ambient(
             room_ids.insert(*uuid);
         }
     }
-    Ok(TriggerCondition::Ambient {
-        room_ids,
-        spinner: *spinner,
-    })
+    Ok(TriggerCondition::Ambient { room_ids, spinner })
 }
 
 fn cook_use_item_on_item(
@@ -759,10 +761,12 @@ fn cook_npc_says(
     }
 }
 
-/// Load raw trigger representations from TOML
+/// Load `RawTrigger` representations from TOML
+/// # Errors
+/// - on failed file access or TOML parsing
 pub fn load_raw_triggers(toml_path: &Path) -> Result<Vec<RawTrigger>> {
     let trigger_file = fs::read_to_string(toml_path)
-        .with_context(|| format!("reading triggers from {toml_path:?}"))?;
+        .with_context(|| format!("reading triggers from \"{}\"", toml_path.display()))?;
     let wrapper: RawTriggerFile = toml::from_str(&trigger_file)?;
     info!(
         "{} raw triggers loaded from '{}'",
@@ -771,7 +775,9 @@ pub fn load_raw_triggers(toml_path: &Path) -> Result<Vec<RawTrigger>> {
     );
     Ok(wrapper.triggers)
 }
-/// Build triggers from raw triggers.
+/// Build `Triggers` from `RawTriggers` loaded from TOML.
+/// # Errors
+/// - on failed conversion of any raw to real trigger
 pub fn build_triggers(raw_triggers: &[RawTrigger], symbols: &SymbolTable) -> Result<Vec<Trigger>> {
     let triggers: Vec<Trigger> = raw_triggers
         .iter()

@@ -83,21 +83,20 @@ pub fn parse_command(input: &str) -> Command {
         ["read", thing] => Command::Read((*thing).to_string()),
         ["load", gamefile] => Command::Load((*gamefile).to_string()),
         ["save", gamefile] => Command::Save((*gamefile).to_string()),
-        [verb, target, "with" | "using", tool] => {
-            if let Some(interaction) = parse_interaction_type(verb) {
-                Command::UseItemOn {
-                    verb: interaction,
-                    tool: (*tool).to_string(),
-                    target: (*target).to_string(),
-                }
-            } else {
+        [verb, target, "with" | "using", tool] => parse_interaction_type(verb).map_or_else(
+            || {
                 println!(
                     "I don't understand {} in this context.",
                     (*verb).error_style()
                 );
                 Command::Unknown
-            }
-        } // ex. burn wood with torch
+            },
+            |interaction| Command::UseItemOn {
+                verb: interaction,
+                tool: (*tool).to_string(),
+                target: (*target).to_string(),
+            },
+        ), // ex. burn wood with torch
         _ => Command::Unknown,
     }
 }

@@ -287,6 +287,8 @@ pub fn npc_says_random(world: &AmbleWorld, npc_id: &Uuid) -> Result<()> {
 }
 
 /// Trigger specific dialogue from an NPC
+/// # Errors
+/// - on failed NPC uuid lookup
 pub fn npc_says(world: &AmbleWorld, npc_id: &Uuid, quote: &str) -> Result<()> {
     let npc_name = world
         .npcs
@@ -298,19 +300,21 @@ pub fn npc_says(world: &AmbleWorld, npc_id: &Uuid, quote: &str) -> Result<()> {
     Ok(())
 }
 
-/// award some points to the player (or penalize if amount < 0)
+/// Award some points to the player (or penalize if amount < 0)
 pub fn award_points(world: &mut AmbleWorld, amount: isize) {
     world.player.score = world.player.score.saturating_add_signed(amount);
     info!("└─ action: AwardPoints({amount})");
 }
 
-/// grants player with an achievement or task completion
+/// Grant player with an achievement or task completion
 fn add_achievement(world: &mut AmbleWorld, task: &String) {
     world.player.achievements.insert(task.to_string());
     info!("└─ action: AddAchievement(\"{task}\")");
 }
 
 /// lock an exit specified by room and direction
+/// # Errors
+/// - on invalid room or exit direction
 fn lock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Result<()> {
     if let Some(exit) = world
         .rooms
@@ -326,6 +330,8 @@ fn lock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Re
 }
 
 /// unlock an exit specified by room and direction
+/// # Errors
+/// - on invalid room or exit direction
 fn unlock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Result<()> {
     if let Some(exit) = world
         .rooms
@@ -340,7 +346,9 @@ fn unlock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> 
     }
 }
 
-/// unlock an item
+/// Unlock an item
+/// # Errors
+/// - on invalid item uuid
 fn unlock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     if let Some(item) = world.items.get_mut(item_id) {
         match item.container_state {
@@ -360,6 +368,9 @@ fn unlock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     }
 }
 
+/// Spawn an `Item` in a specific `Room`
+/// # Errors
+/// - on failed item or room lookup
 fn spawn_item_in_specific_room(
     world: &mut AmbleWorld,
     item_id: &Uuid,
@@ -391,6 +402,9 @@ fn spawn_item_in_specific_room(
     Ok(())
 }
 
+/// Spawn an `Item` in the `Room` the player currently occupies
+/// # Errors
+/// - on failed item or room lookup
 fn spawn_item_in_current_room(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     // warn and remove item from world if it's already somewhere to avoid dups
     if let Some(item) = world.items.get(item_id)
@@ -424,6 +438,9 @@ fn spawn_item_in_current_room(world: &mut AmbleWorld, item_id: &Uuid) -> Result<
     Ok(())
 }
 
+/// Spawn an `Item` in player's inventory
+/// # Errors
+/// - on failed item lookup
 fn spawn_item_in_inventory(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     // warn and remove item from world if it's already somewhere to avoid dups
     if let Some(item) = world.items.get(item_id)
@@ -446,6 +463,9 @@ fn spawn_item_in_inventory(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()>
     Ok(())
 }
 
+/// Spawn an `Item` within a container `Item`
+/// # Errors
+/// - on failed item or container lookup
 fn spawn_item_in_container(
     world: &mut AmbleWorld,
     item_id: &Uuid,
@@ -477,6 +497,7 @@ fn spawn_item_in_container(
     Ok(())
 }
 
+/// Show a message to the player.
 fn show_message(text: &String) {
     println!("{} {}", "✦".trig_icon_style(), text.triggered_style());
     info!(
@@ -485,6 +506,9 @@ fn show_message(text: &String) {
     );
 }
 
+/// Set the mood of a specified `Npc`
+/// # Errors
+/// - on failed npc lookup
 fn set_npc_mood(world: &mut AmbleWorld, npc_id: &Uuid, mood: NpcMood) -> Result<()> {
     if let Some(npc) = world.npcs.get_mut(npc_id) {
         npc.mood = mood;
@@ -495,6 +519,9 @@ fn set_npc_mood(world: &mut AmbleWorld, npc_id: &Uuid, mood: NpcMood) -> Result<
     }
 }
 
+/// Reveal or create a new exit from a `Room`
+/// # Errors
+/// - on invalid exit_from room uuid
 fn reveal_exit(
     world: &mut AmbleWorld,
     direction: &String,
@@ -513,6 +540,9 @@ fn reveal_exit(
     Ok(())
 }
 
+/// Move player to another `Room`
+/// # Errors
+/// - on failed room lookup
 fn push_player(world: &mut AmbleWorld, room_id: &Uuid) -> Result<()> {
     if world.rooms.contains_key(room_id) {
         world.player.location = Location::Room(*room_id);
@@ -523,6 +553,10 @@ fn push_player(world: &mut AmbleWorld, room_id: &Uuid) -> Result<()> {
     }
 }
 
+/// Lock an `Item`
+/// # Errors
+/// - if attempt to lock an item that isn't a container
+/// - if specified container is not found
 fn lock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     if let Some(item) = world.items.get_mut(item_id) {
         if item.container_state.is_some() {
@@ -540,6 +574,9 @@ fn lock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     }
 }
 
+/// Move an `Item` from an `Npc` to the player's inventory.
+/// # Errors
+/// - on failed item or npc lookup
 fn give_to_player(world: &mut AmbleWorld, npc_id: &Uuid, item_id: &Uuid) -> Result<()> {
     let npc = world
         .npcs
@@ -559,6 +596,10 @@ fn give_to_player(world: &mut AmbleWorld, npc_id: &Uuid, item_id: &Uuid) -> Resu
     }
 }
 
+/// Remove an `Item` from the world.
+/// Sets item location to "Nowhere" and removes it from wherever it was
+/// # Errors
+/// - on failed item lookup
 fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     let item = world
         .items
@@ -590,7 +631,7 @@ fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     Ok(())
 }
 
-/// notify player of the reason a Read(item) command was denied
+/// Notify player of the reason a Read(item) command was denied
 fn deny_read(reason: &String) {
     println!("You can't read that. {reason}");
     info!("└─ action: DenyRead(\"{reason}\")");

@@ -40,7 +40,7 @@ pub fn look_at_handler(world: &AmbleWorld, thing: &str) -> Result<()> {
         .chain(world.player.inventory.iter().copied())
         .collect();
     if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, thing) {
-        if let Some(item) = entity.clone().item() {
+        if let Some(item) = entity.item() {
             info!(
                 "{} looked at {} ({})",
                 world.player.name(),
@@ -48,8 +48,7 @@ pub fn look_at_handler(world: &AmbleWorld, thing: &str) -> Result<()> {
                 item.id()
             );
             item.show(world);
-        }
-        if let Some(npc) = entity.npc() {
+        } else if let Some(npc) = entity.npc() {
             info!(
                 "{} looked at {} ({})",
                 world.player.name(),
@@ -72,7 +71,12 @@ pub fn inv_handler(world: &AmbleWorld) -> Result<()> {
     if world.player.inventory.is_empty() {
         println!("\tYou have... nothing. Nothing at all.");
     } else {
-        println!("You have {} item(s):", world.player.inventory.len());
+        let item_count = world.player.inventory.len();
+        println!(
+            "You have {} item{}:",
+            item_count,
+            if item_count == 1 { "" } else { "s" }
+        );
         world
             .player
             .inventory
@@ -86,7 +90,7 @@ pub fn inv_handler(world: &AmbleWorld) -> Result<()> {
 /// Reads item, if it can be read.
 ///
 /// A DenyRead("reason") trigger action can be set to make reading an item conditional.
-/// Ex. TriggerCondition::UseItem{...read} + TriggerCondition::HasItem(magnifying_glass) -->
+/// Ex. TriggerCondition::UseItem{...read} + TriggerCondition::MissingItem(magnifying_glass) -->
 /// TriggerAction::DenyRead("The print is too small for you to read unaided.")
 pub fn read_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
@@ -99,7 +103,8 @@ pub fn read_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     // find the item from the search pattern and collect uuid;
     // log and tell player if there's nothing there to read
     let found_item_id = if let Some(item) =
-        find_world_object(&search_scope, &world.items, &world.npcs, pattern).and_then(|e| e.item())
+        find_world_object(&search_scope, &world.items, &world.npcs, pattern)
+            .and_then(super::WorldEntity::item)
     {
         if item.text.is_some() {
             Some(item.id())
@@ -141,7 +146,7 @@ pub fn read_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
                 .get(&item_id)
                 .with_context(|| format!("item_id ({item_id}) not found in world items"))?;
 
-            println!("You can read:\n");
+            println!("You can read the following:\n");
             println!(
                 "{}",
                 item.text

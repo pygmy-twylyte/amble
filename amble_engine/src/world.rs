@@ -12,7 +12,9 @@ use std::collections::HashMap;
 use uuid::Uuid;
 use variantly::Variantly;
 
-/// Kinds of places where a WorldObject may be located.
+/// Kinds of places where a `WorldObject` may be located.
+/// Because Rooms *are* the locations, their location is always `Nowhere`
+/// Unspawned/despawned items and NPCs are also located `Nowhere`
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Variantly, PartialEq, Eq)]
 pub enum Location {
     Item(Uuid),
@@ -38,7 +40,7 @@ pub struct AmbleWorld {
     pub items: HashMap<Uuid, Item>,
     pub triggers: Vec<Trigger>,
     pub player: Player,
-    #[serde(skip)] // these are hard-coded into source
+    #[serde(skip)] // these are hard-coded into spinners.rs
     pub spinners: HashMap<SpinnerType, Spinner<&'static str>>,
     pub npcs: HashMap<Uuid, Npc>,
     pub max_score: usize,
@@ -69,6 +71,8 @@ impl AmbleWorld {
     }
 
     /// Obtain a reference to the room the player occupies.
+    /// # Errors
+    /// - if player isn't in a Room or the Room's uuid is not found
     pub fn player_room_ref(&self) -> Result<&Room> {
         match self.player.location {
             Location::Room(uuid) => self
@@ -83,6 +87,8 @@ impl AmbleWorld {
     }
 
     /// Obtain a mutable reference to the room the player occupies.
+    /// # Errors
+    /// - if player is not in a room or room's UUID is not found
     pub fn player_room_mut(&mut self) -> Result<&mut Room> {
         match self.player.location {
             Location::Room(uuid) => self

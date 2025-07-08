@@ -52,6 +52,8 @@ pub struct RawExit {
 
 impl RawRoom {
     /// Converts `RawRoom` to a `Room` object.
+    /// # Errors
+    /// - on failed room lookup in symbol table
     pub fn to_room(&self, symbols: &mut SymbolTable) -> Result<Room> {
         let mut exit_map = HashMap::new();
         for (dir, raw_exit) in &self.exits {

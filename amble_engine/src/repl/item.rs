@@ -29,10 +29,10 @@ pub fn use_item_on_handler(
     // make sure we can find valid matches for tool and target items and notify player if not
     let items_nearby = &world.player_room_ref()?.contents;
     let target_scope: HashSet<_> = items_nearby.union(&world.player.inventory).collect();
-    let maybe_target =
-        find_world_object(target_scope, &world.items, &world.npcs, target).and_then(|e| e.item());
+    let maybe_target = find_world_object(target_scope, &world.items, &world.npcs, target)
+        .and_then(super::WorldEntity::item);
     let maybe_tool = find_world_object(&world.player.inventory, &world.items, &world.npcs, tool)
-        .and_then(|e| e.item());
+        .and_then(super::WorldEntity::item);
     if maybe_target.is_none() {
         println!("You don't see any {} nearby.", target.error_style());
         return Ok(());
@@ -45,9 +45,9 @@ pub fn use_item_on_handler(
     let target = maybe_target.unwrap();
     let tool = maybe_tool.unwrap();
     let target_name = target.name().to_string();
-    let target_id = target.id().clone();
+    let target_id = target.id();
     let tool_name = tool.name().to_string();
-    let tool_id = tool.id().clone();
+    let tool_id = tool.id();
 
     // check if these items can interact in this way
     if !interaction_requirement_met(interaction, target, tool) {
@@ -111,7 +111,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, item_pattern: &str) -> Result<()>
         &world.npcs,
         item_pattern,
     ) {
-        if let Some(item) = entity.clone().item() {
+        if let Some(item) = entity.item() {
             if item.abilities.contains(&ItemAbility::TurnOn) {
                 info!("Player switched on {} ({})", item.name(), item.id());
                 let sent_id = item.id();
@@ -192,12 +192,14 @@ pub fn open_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
             None => {
                 println!("The {} can't be opened.", target_item.name().item_style());
             }
-            Some(ContainerState::Locked) => println!(
-                "The {} is locked. You'll have to unlock it first.",
-                target_item.name().item_style()
-            ),
+            Some(ContainerState::Locked) => {
+                println!(
+                    "The {} is locked. You'll have to unlock it first.",
+                    target_item.name().item_style()
+                );
+            }
             Some(ContainerState::Open) => {
-                println!("The {} is already open.", target_item.name().item_style())
+                println!("The {} is already open.", target_item.name().item_style());
             }
             Some(ContainerState::Closed) => {
                 target_item.container_state = Some(ContainerState::Open);
@@ -243,7 +245,7 @@ pub fn close_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
             None => {
                 println!("The {} can't be closed.", target_item.name().item_style());
             }
-            Some(ContainerState::Closed) | Some(ContainerState::Locked) => {
+            Some(ContainerState::Closed | ContainerState::Locked) => {
                 println!("The {} is already closed.", target_item.name().item_style());
             }
             Some(ContainerState::Open) => {
@@ -285,7 +287,7 @@ pub fn lock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
             Some(ContainerState::Locked) => {
                 println!("The {} is already locked.", target_item.name().item_style());
             }
-            Some(ContainerState::Open) | Some(ContainerState::Closed) => {
+            Some(ContainerState::Open | ContainerState::Closed) => {
                 target_item.container_state = Some(ContainerState::Locked);
                 println!("You locked the {}.\n", target_item.name().item_style());
                 info!("{} locked the {} ({})", world.player.name(), name, uuid);
@@ -304,7 +306,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
         if let Some(item) = entity.item() {
             (item.id(), item.name().to_string())
         } else {
-            warn!("Command:Unlock({pattern}) matched a non-Item WorldEntity");
+            warn!("Command:Unlock({pattern}) matched a non-Item (NPC) WorldEntity");
             println!("You don't see a {} here to unlock.", pattern.error_style());
             return Ok(());
         }
@@ -329,7 +331,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
             None => {
                 println!("The {} can't be unlocked.", target_item.name().item_style());
             }
-            Some(ContainerState::Open) | Some(ContainerState::Closed) => {
+            Some(ContainerState::Open | ContainerState::Closed) => {
                 println!("The {} is isn't locked.", target_item.name().item_style());
             }
             Some(ContainerState::Locked) => {
