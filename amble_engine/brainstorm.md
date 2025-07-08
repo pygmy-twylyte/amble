@@ -1,14 +1,10 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
-- add ambient triggers checked each repl look in a check_ambient_triggers() function
-  - TriggerCondition::Ambient{ Option<room_uuid>, spinner_type }
-  - function runs at end of repl, finds and fires those Ambients related actions if the location matches (if specified)
 - need a call of some kind to check_triggers with any recognized command so state triggers can fire too?
 - dev commands to teleport (DONE), get items / achievs
 - add "clean" / "wipe" item interaction
 - spinner for when no destination matches on "go" command
-- more go synonyms that work with things like "ladder" or "trapdoor" (climb, go through, enter, etc.)
 - giveitemtoNPC should block (or reverse) transfer if there is no trigger for NPC response. "NPC doesn't want that." spinner.
 - trigger action to change the .read field on an item to update displays etc
 
