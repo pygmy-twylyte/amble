@@ -113,6 +113,7 @@ pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
         "turn" | "spin" | "twist" | "swivel" => Some(ItemInteractionType::Turn),
         "unlock" | "undo" | "open" => Some(ItemInteractionType::Unlock),
         "sharpen" | "hone" => Some(ItemInteractionType::Sharpen),
+        "clean" | "wipe" | "shine" | "buff" => Some(ItemInteractionType::Clean),
         _ => None,
     }
 }

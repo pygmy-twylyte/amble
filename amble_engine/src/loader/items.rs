@@ -22,6 +22,7 @@ use super::{SymbolTable, resolve_location};
 #[derive(Debug, Deserialize, PartialEq, Eq, Hash)]
 #[serde(tag = "type", content = "target")]
 pub enum RawItemAbility {
+    Clean,
     CutWood,
     Ignite,
     Insulate,
@@ -85,6 +86,7 @@ impl RawItem {
         let mut abilities = HashSet::new();
         for raw_ability in &self.abilities {
             let ability = match raw_ability {
+                RawItemAbility::Clean => ItemAbility::Clean,
                 RawItemAbility::CutWood => ItemAbility::CutWood,
                 RawItemAbility::Ignite => ItemAbility::Ignite,
                 RawItemAbility::Insulate => ItemAbility::Insulate,

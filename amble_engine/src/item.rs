@@ -20,6 +20,7 @@ pub trait ItemHolder {
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub enum ItemAbility {
+    Clean,
     CutWood,
     Ignite,
     Insulate,
@@ -36,18 +37,19 @@ pub enum ItemAbility {
 impl Display for ItemAbility {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ItemAbility::CutWood => write!(f, "cut wood"),
-            ItemAbility::Ignite => write!(f, "ignite"),
-            ItemAbility::Insulate => write!(f, "insulate"),
-            ItemAbility::Read => write!(f, "read"),
-            ItemAbility::Sharpen => write!(f, "sharpen"),
-            ItemAbility::TurnOn => write!(f, "turn on"),
-            ItemAbility::TurnOff => write!(f, "turn off"),
-            ItemAbility::Unlock(_) => write!(f, "unlock"),
-            ItemAbility::Use => write!(f, "use"),
-            ItemAbility::Pluck => write!(f, "pluck"),
-            ItemAbility::Pry => write!(f, "pry"),
-            ItemAbility::Smash => write!(f, "smash"),
+            Self::Clean => write!(f, "clean"),
+            Self::CutWood => write!(f, "cut wood"),
+            Self::Ignite => write!(f, "ignite"),
+            Self::Insulate => write!(f, "insulate"),
+            Self::Read => write!(f, "read"),
+            Self::Sharpen => write!(f, "sharpen"),
+            Self::TurnOn => write!(f, "turn on"),
+            Self::TurnOff => write!(f, "turn off"),
+            Self::Unlock(_) => write!(f, "unlock"),
+            Self::Use => write!(f, "use"),
+            Self::Pluck => write!(f, "pluck"),
+            Self::Pry => write!(f, "pry"),
+            Self::Smash => write!(f, "smash"),
         }
     }
 }
@@ -58,6 +60,7 @@ impl Display for ItemAbility {
 pub enum ItemInteractionType {
     Break,
     Burn,
+    Clean,
     Cover,
     Cut,
     Handle,
