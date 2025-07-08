@@ -533,22 +533,6 @@ target = "lost_and_found_box"
 
 # --------------------------------------------------------------------------
 [[items]]
-id = "dock_crate_key"
-name = "Small Brass Key"
-description = """
-A small brass key labeled 'Dock Crate'. Its teeth are worn, as if it’s been
-used many times before — or chewed on in boredom. There's a bit of ear wax
-on the tip as well.
-"""
-portable = true
-location = { Room = "guard-post" }
-
-[[items.abilities]]
-type = "Unlock"
-target = "security_crate"
-
-# --------------------------------------------------------------------------
-[[items]]
 id = "security_crate"
 name = "Security Supply Locker"
 description = """
