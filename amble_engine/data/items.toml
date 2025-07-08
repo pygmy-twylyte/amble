@@ -148,6 +148,9 @@ location = { Nowhere = "spawns@player when delivery_box is opened" }
 [[items.abilities]]
 type = "Insulate"
 
+[[items.abilities]]
+type = "Clean"
+
 # -----------------------------------------------------------------------------
 [[items]]
 id = "vogon_poetry_book"
@@ -275,6 +278,7 @@ intricate masonry of its pillar suggests utmost importance and profundity of
 its message."""
 portable = false
 location = { Room = "high-ridge" }
+interaction_requires.clean = "clean"
 text = """
 A common mistake that people make when trying to design something completely
 foolproof is to underestimate the ingenuity of complete fools.

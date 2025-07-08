@@ -382,25 +382,36 @@ promised dessert. The cake was a lie.
 ]
 
 [[triggers]]
-name = "Plaque 1: Need Towel to Read"
+name = "Plaque 1: Clean With Towel"
+only_once = true
+conditions = [
+    { type = "useItemOnItem", tool_id = "towel", target_id = "plaque_1", interaction = "clean" },
+]
+actions = [
+    { type = "addAchievement", achievement = "cleaned-plaque-1" },
+    { type = "awardPoints", amount = 3 },
+    { type = "showMessage", text = "With some effort, you're able to wipe most of the grime off the plaque." },
+]
+
+[[triggers]]
+name = "Plaque 1: Must Clean to Read"
 only_once = false
 conditions = [
     { type = "useItem", item_id = "plaque_1", ability = "read" },
-    { type = "missingItem", item_id = "towel" },
+    { type = "missingAchievement", achievement = "cleaned-plaque-1" },
 ]
 actions = [
     { type = "denyRead", reason = "It's too grimy. You need something to wipe it off." },
 ]
 
 [[triggers]]
-name = "Plaque 1: Towel Used"
+name = "Plaque 1: Read After Cleaning"
 only_once = true
 conditions = [
     { type = "useItem", item_id = "plaque_1", ability = "read" },
-    { type = "hasItem", item_id = "towel" },
+    { type = "hasAchievement", achievement = "cleaned-plaque-1" },
 ]
 actions = [
-    { type = "showMessage", text = "You used the towel to wipe the grime off the plaque." },
     { type = "addAchievement", achievement = "read-plaque-1" },
     { type = "awardPoints", amount = 5 },
 ]
