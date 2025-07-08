@@ -106,43 +106,53 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Res
         return Ok(());
     };
 
-    // set new location in NPC on world item
-    world
-        .get_item_mut(item_id)
-        .with_context(|| format!("looking up item {item_id}"))?
-        .set_location_npc(npc_id);
+    let fired_triggers = check_triggers(world, &[TriggerCondition::GiveToNpc { item_id, npc_id }])?;
+    let fired = fired_triggers.iter().any(|&trigger| {
+        trigger
+            .conditions
+            .iter()
+            .any(|cond| matches!(cond, TriggerCondition::GiveToNpc { .. }))
+    });
 
-    // add to npc inventory
-    world
-        .npcs
-        .get_mut(&npc_id)
-        .with_context(|| format!("looking up NPC {npc_id}"))?
-        .add_item(item_id);
+    if fired {
+        // set new location in NPC on world item
+        world
+            .get_item_mut(item_id)
+            .with_context(|| format!("looking up item {item_id}"))?
+            .set_location_npc(npc_id);
 
-    // remove from player inventory
-    world.player.remove_item(item_id);
+        // add to npc inventory
+        world
+            .npcs
+            .get_mut(&npc_id)
+            .with_context(|| format!("looking up NPC {npc_id}"))?
+            .add_item(item_id);
 
-    // report and log success
-    println!(
-        "You gave the {} to {}.\n",
-        item_name.item_style(),
-        npc_name.npc_style()
-    );
-    info!(
-        "{} gave {} ({}) to {} ({})",
-        world.player.name(),
-        item_name,
-        item_id,
-        npc_name,
-        npc_id
-    );
-    // check appropriate triggers
-    check_triggers(
-        world,
-        &[
-            TriggerCondition::Drop(item_id),
-            TriggerCondition::GiveToNpc { item_id, npc_id },
-        ],
-    )?;
+        // remove from player inventory
+        world.player.remove_item(item_id);
+        check_triggers(world, &[TriggerCondition::Drop(item_id)])?;
+
+        // report and log success
+        println!(
+            "You gave the {} to {}.\n",
+            item_name.item_style(),
+            npc_name.npc_style()
+        );
+        info!(
+            "{} gave {} ({}) to {} ({})",
+            world.player.name(),
+            item_name,
+            item_id,
+            npc_name,
+            npc_id
+        );
+    } else {
+        println!(
+            "{} has no use for {}, and won't hold it for you.",
+            npc_name.npc_style(),
+            item_name.item_style()
+        );
+        info!("{npc_name} ({npc_id}) refused a gift of {item_name} ({item_id})");
+    }
     Ok(())
 }
