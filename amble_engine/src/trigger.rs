@@ -521,7 +521,7 @@ fn set_npc_mood(world: &mut AmbleWorld, npc_id: &Uuid, mood: NpcMood) -> Result<
 
 /// Reveal or create a new exit from a `Room`
 /// # Errors
-/// - on invalid exit_from room uuid
+/// - on invalid `exit_from` room uuid
 fn reveal_exit(
     world: &mut AmbleWorld,
     direction: &String,

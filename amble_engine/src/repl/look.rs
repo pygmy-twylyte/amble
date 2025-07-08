@@ -90,8 +90,8 @@ pub fn inv_handler(world: &AmbleWorld) -> Result<()> {
 /// Reads item, if it can be read.
 ///
 /// A DenyRead("reason") trigger action can be set to make reading an item conditional.
-/// Ex. TriggerCondition::UseItem{...read} + TriggerCondition::MissingItem(magnifying_glass) -->
-/// TriggerAction::DenyRead("The print is too small for you to read unaided.")
+/// Ex. `TriggerCondition::UseItem{...read`} + `TriggerCondition::MissingItem(magnifying_glass)` -->
+/// `TriggerAction::DenyRead("The` print is too small for you to read unaided.")
 pub fn read_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
     // scope search to items in room + inventory

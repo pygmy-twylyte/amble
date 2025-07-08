@@ -221,8 +221,7 @@ fn validate_and_transfer_from_npc(
             (loot.id(), loot.name().to_string())
         } else {
             warn!(
-                "Non-item WorldEntity found inside NPC '{}' ({})",
-                vessel_name, vessel_id,
+                "Non-item WorldEntity found inside NPC '{vessel_name}' ({vessel_id})",
             );
             println!(
                 "{} shouldn't have that. You can't have it either.",
@@ -242,7 +241,7 @@ fn validate_and_transfer_from_npc(
         world,
         VesselType::Npc,
         vessel_id,
-        &vessel_name,
+        vessel_name,
         loot_id,
         &loot_name,
     );
@@ -299,7 +298,7 @@ fn validate_and_transfer_from_item(
         world,
         VesselType::Item,
         vessel_id,
-        &vessel_name,
+        vessel_name,
         loot_id,
         &loot_name,
     );
