@@ -695,3 +695,26 @@ conditions = [
     ] },
 ]
 actions = []
+
+[[triggers]]
+name = "Vogon Poetry: Vomit Upon Reading"
+only_once = false
+conditions = [
+    { type = "useItem", item_id = "vogon_poetry_book", ability = "read" },
+]
+actions = [
+    { type = "showMessage", text = "You get as far as the first poem before the vomiting begins..." },
+    { type = "addAchievement", achievement = "read-vogon-poetry" },
+    { type = "awardPoints", amount = -1 },
+]
+
+[[triggers]]
+name = "Receptionist: Comment if Poetry Read"
+only_once = true
+conditions = [
+    { type = "withNpc", npc_id = "b_a_receptionist" },
+    { type = "hasAchievement", achievement = "read-vogon-poetry" },
+]
+actions = [{ type = "npcSays", npc_id = "b_a_receptionist", quote = """
+You look ill. You didn't read that poetry book, did you? That won't
+look good on your evaluation.""" }]

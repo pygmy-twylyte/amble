@@ -154,7 +154,7 @@ type = "Clean"
 # -----------------------------------------------------------------------------
 [[items]]
 id = "vogon_poetry_book"
-name = "Selected Poems of the Largest Vogons"
+name = "Longest Poems of the Largest Vogons"
 description = """
 A bound volume of Vogon poetry, with the usual safety devices and locks removed.
 Looking inside is likely to cause brain damage and a permanent smell of boiling
@@ -162,11 +162,32 @@ cauliflower to haunt you, if you're lucky.
 """
 portable = true
 location = { Room = "vip-bathroom" }
+text = """
+"Oh freddled gruntbuggly,
+Thy micturations are to me
+As plurdled gabbleblotchits on a lurgid bee.
+Groop, I implore thee, my foonting turlingdromes,
+And hooptiously drangle me with crinkly bindlewurdles,
+Or I will rend thee in the gobberwarts
+With my blurglecruncheon, see if I don't!"
+
+"Bleem miserable venchit! Bleem
+forever mestinglish asunder frapt.
+Gashee morphousite,
+thou expungiest quoopisk!
+Fripping lyshus wimbgunts,
+awhilst moongrovenly kormzibs.
+Gerond withoutitude form into formless bloit,
+why not then? Moose."
+"""
+
+[[items.abilities]]
+type = "Read"
 # -----------------------------------------------------------------------------
 
 [[items]]
 id = "poetry_performer"
-name = "Poetry Performer"
+name = "Initech Poetry Performer"
 description = """
 In lieu of decades-old magazines, the office has installed this poetry recitation
 device. If poetic material is supplied, it is automatically performed in the voice
@@ -681,7 +702,7 @@ return to slicing up passers by.
 [[items]]
 id = "whetstone"
 name = "Belgian Coticule Whetstone"
-location = { Room = "two-sheds" }
+location = { Room = "snow-camp" }
 portable = true
 restricted = false
 description = """
@@ -692,3 +713,78 @@ annoyed afterward.
 
 [[items.abilities]]
 type = "Sharpen"
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "charred_journal"
+name = "Research Journal"
+location = { Room = "snow-camp" }
+portable = true
+restricted = false
+description = """
+A partly burned and soggy research journal marked "Antarctic Outpost 31" and
+"MacReady". Only the end of the final entry remains legible.
+"""
+text = """
+...got to the dogs first, then the others. Burn it all. Can't let it reach the
+building...
+"""
+
+[[items.abilities]]
+type = "Read"
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "spent_flamethrower"
+name = "Spent Flamethrower"
+location = { Room = "snow-camp" }
+portable = true
+restricted = false
+description = """
+A scorched and half-fused flamethrower, empty and broken beyond repair. The
+igniter’s casing is still warm. A faded label reads:
+            Weyland-Yutani: Thermal Unit / Antarctica Series
+"""
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "messiah_kit"
+name = "Messiah Starter Kit"
+location = { Room = "st-alfonzo-parish" }
+portable = true
+restricted = false
+description = """
+A masterfully handcrafted wooden box, with primitive bronze hardware and an
+ornately carved lid with the inscription:
+                          << MESSIAH STARTER KIT >>
+"""
+container_state = "closed"
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "messiah_gourd"
+name = "Gourd"
+location = { Chest = "messiah_kit" }
+portable = true
+restricted = false
+description = """
+A grapefruit-sized, tan gourd. It rattles a little when you shake it.
+"""
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "messiah_shoe"
+name = "Shoe"
+location = { Chest = "messiah_kit" }
+portable = true
+restricted = false
+description = """
+A single, worn leather sandal of untold age. Something appears to be scratched
+into the sole.
+"""
+text = """
+If found: Return to Brian of Nazareth
+"""
+
+[[items.abilities]]
+type = "Read"
