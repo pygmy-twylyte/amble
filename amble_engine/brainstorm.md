@@ -3,13 +3,13 @@
 ## CODING TODOs
 - need a call of some kind to check_triggers with any recognized command so state triggers can fire too?
 - dev commands to teleport (DONE), get items / achievs
-- add "clean" / "wipe" item interaction
+x add "clean" / "wipe" item interaction
 - spinner for when no destination matches on "go" command
-- giveitemtoNPC should block (or reverse) transfer if there is no trigger for NPC response. "NPC doesn't want that." spinner.
+x` giveitemtoNPC should block (or reverse) transfer if there is no trigger for NPC response. "NPC doesn't want that." spinner.
 - trigger action to change the .read field on an item to update displays etc
 
 ## FIXITs from runthroughs / CONTENT additions
-- remove key access to security suppy crate to avoid inventory problems if crate is destroyed after contents removed
+x remove key access to security suppy crate to avoid inventory problems if crate is destroyed after contents removed
 - make Vogon Poetry readable
 - make reservation book readable
 - rename abandoned game from Brains Anonymous: Pong Construction Set '84
