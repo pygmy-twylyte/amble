@@ -9,6 +9,7 @@ use std::path::PathBuf;
 
 use crate::spinners::default_spinners;
 use crate::style::GameStyle;
+use crate::trigger::TriggerAction;
 use crate::{AmbleWorld, WorldObject, repl::ReplControl, spinners::SpinnerType};
 
 use anyhow::{Context, Result};
@@ -35,7 +36,83 @@ pub fn quit_handler(world: &AmbleWorld) -> Result<ReplControl> {
         .filter_map(|uuid| world.items.get(uuid))
         .for_each(|i| info!("- {} ({})", i.name(), i.id()));
 
-    println!("{}", world.spin_spinner(SpinnerType::QuitMsg, "Goodbye."));
+    let percent = (world.player.score as f32 / world.max_score as f32) * 100.0;
+
+    let (rank, eval) = match percent {
+        p if p == 100.0 => (
+            "Quantum Overachiever",
+            "You saw the multiverse, understood it, then filed a bug report.",
+        ),
+        p if p >= 90.0 => (
+            "Senior Field Operative",
+            "A nearly flawless run. Someone give this candidate a promotion.",
+        ),
+        p if p >= 75.0 => (
+            "Licensed Reality Bender",
+            "Impressive grasp of nonlinear environments and cake-based paradoxes.",
+        ),
+        p if p >= 60.0 => (
+            "Rogue Intern, Level II",
+            "You got the job done, and only melted one small pocket universe.",
+        ),
+        p if p >= 45.0 => (
+            "Unpaid Research Assistant",
+            "Solid effort. Some concepts may have slipped through dimensional cracks.",
+        ),
+        p if p >= 30.0 => (
+            "Junior Sandwich Technician",
+            "Good instincts, questionable execution. Especially with condiments.",
+        ),
+        p if p >= 15.0 => (
+            "Volunteer Tour Guide",
+            "You wandered. You looked at stuff. It was something.",
+        ),
+        p if p >= 5.0 => (
+            "Mailbox Stuffing Trainee",
+            "You opened a box, tripped on a rug, and called it a day.",
+        ),
+        p if p >= 1.0 => (
+            "Accidental Hire",
+            "We're not sure how you got in. Please return your lanyard.",
+        ),
+        _ => (
+            "Amnesiac Test Subject",
+            "Did you… play? Were you even awake?",
+        ),
+    };
+
+    let visited = world.rooms.values().filter(|r| r.visited).count();
+    let max_achievements = world
+        .triggers
+        .iter()
+        .filter(|t| {
+            t.actions
+                .iter()
+                .any(|a| matches!(a, TriggerAction::AddAchievement(_)))
+        })
+        .count();
+
+    println!(
+        "\n{:^60}",
+        "Candidate Evaluation Report".black().bold().on_yellow()
+    );
+    println!("Rank:   {}", rank.bright_blue());
+    println!("Notes:  {}\n", eval.cyan().italic());
+    println!(
+        "Score: {}/{} ({:.1}%)",
+        world.player.score, world.max_score, percent
+    );
+    println!("Locations visited: {}/{}", visited, world.rooms.len());
+    println!(
+        "Achievements: {}/{}",
+        world.player.achievements.len(),
+        max_achievements
+    );
+
+    println!(
+        "\n{}\n",
+        world.spin_spinner(SpinnerType::QuitMsg, "Goodbye.")
+    );
     Ok(ReplControl::Quit)
 }
 
@@ -43,7 +120,7 @@ pub fn quit_handler(world: &AmbleWorld) -> Result<ReplControl> {
 pub fn help_handler() -> Result<()> {
     println!(
         r"
-Available commands:
+*Some* of the available commands:
   look
   look at <item>
   go/move <direction>
@@ -51,17 +128,24 @@ Available commands:
   take <item>
   drop <item>
   put <item> in <container>
-  take <item> from <container>
+  take <item> from <container or npc>
   open <container>
   close <container>
   lock <container>
   unlock <container>
   read <item>
-  turn <item> on
+  turn <item> on / start <item>
   talk to <npc>
   give <item> to <npc>
+  save <saved_game_name>
+  load <saved_game_name>
+  <some_verb> <item> with/using <item> (e.g. 'light candle with match')
   help
   quit
+
+  Note: item, NPC, and direction names are pattern-matched, so you can say:
+  'talk to rec' instead of 'receptionist', or 'go w' instead of 'go west', etc.
+
 "
     );
     Ok(())
