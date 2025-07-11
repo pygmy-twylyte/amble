@@ -5,15 +5,15 @@
 use std::collections::HashSet;
 
 use crate::{
-    AmbleWorld, ItemHolder, WorldObject,
-    item::ItemInteractionType,
+    AmbleWorld, ItemHolder, Location, WorldObject,
+    item::{ContainerState, ItemInteractionType},
     repl::{entity_not_found, find_world_object},
     spinners::SpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers},
 };
 
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result, anyhow, bail};
 use colored::Colorize;
 use log::{error, info, warn};
 use uuid::Uuid;
@@ -63,15 +63,34 @@ pub fn drop_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
         Ok(())
     }
 }
-
+/// Constructs a set of all potentially take-able item (uuids) in a room.
+/// Non-portable or restricted items not filtered here -- player discovers
+/// that on their own.
+fn nearby_reachable_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashSet<Uuid>> {
+    let current_room = world
+        .rooms
+        .get(&room_id)
+        .with_context(|| format!("{room_id} room id not found"))?;
+    let room_items = &current_room.contents;
+    let mut contained_items = HashSet::new();
+    for item_id in room_items {
+        if let Some(item) = world.items.get(&item_id)
+            && item.container_state == Some(ContainerState::Open)
+        {
+            item.contents
+                .iter()
+                .for_each(|&id| _ = contained_items.insert(id));
+        }
+    }
+    Ok(room_items.union(&contained_items).copied().collect())
+}
 /// Removes an item from current room and adds it to inventory.
 pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
     let take_verb = world.spin_spinner(SpinnerType::TakeVerb, "take");
-    let current_room = world.player_room_ref()?;
+    let room_id = world.player_room_ref()?.id();
+    let scope = nearby_reachable_items(world, room_id)?;
 
-    if let Some(entity) =
-        find_world_object(&current_room.contents, &world.items, &world.npcs, thing)
-    {
+    if let Some(entity) = find_world_object(&scope, &world.items, &world.npcs, thing) {
         if entity.is_not_item() {
             // entity found isn't an Item
             warn!("Player tried to take a non-Item from a room: {entity:?}");
@@ -95,10 +114,11 @@ pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
                 return Ok(());
             }
             if item.portable {
-                // extract item uuid
-                let uuid = item.id();
+                // extract item uuid & original location
+                let loot_id = item.id();
+                let orig_loc = item.location;
                 // update item location and copy to player inventory
-                if let Some(moved_item) = world.items.get_mut(&uuid) {
+                if let Some(moved_item) = world.items.get_mut(&loot_id) {
                     moved_item.set_location_inventory();
                     world.player.inventory.insert(moved_item.id());
                     println!("You {take_verb} the {}.\n", moved_item.name().item_style());
@@ -109,9 +129,27 @@ pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
                         moved_item.id()
                     );
                 }
-                // remove item from room
-                world.player_room_mut()?.contents.remove(&uuid);
-                check_triggers(world, &[TriggerCondition::Take(uuid)])?;
+                // remove item from original location
+                match orig_loc {
+                    Location::Item(container_id) => {
+                        if let Some(container) = world.items.get_mut(&container_id) {
+                            container.remove_item(loot_id);
+                        } else {
+                            bail!("container ({container_id}) not found during Take({loot_id})");
+                        }
+                    }
+                    Location::Room(room_id) => {
+                        if let Some(room) = world.rooms.get_mut(&room_id) {
+                            room.remove_item(loot_id);
+                        } else {
+                            bail!("room ({room_id}) not found during Take({loot_id})");
+                        }
+                    }
+                    _ => {
+                        warn!("'take' matched an item at {orig_loc:?}: shouldn't be in scope")
+                    }
+                }
+                check_triggers(world, &[TriggerCondition::Take(loot_id)])?;
             } else {
                 println!(
                     "You can't {take_verb} the {}. It's not portable.\n",
@@ -220,9 +258,7 @@ fn validate_and_transfer_from_npc(
             }
             (loot.id(), loot.name().to_string())
         } else {
-            warn!(
-                "Non-item WorldEntity found inside NPC '{vessel_name}' ({vessel_id})",
-            );
+            warn!("Non-item WorldEntity found inside NPC '{vessel_name}' ({vessel_id})",);
             println!(
                 "{} shouldn't have that. You can't have it either.",
                 vessel_name.npc_style()
