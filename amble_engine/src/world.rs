@@ -15,7 +15,7 @@ use variantly::Variantly;
 /// Kinds of places where a `WorldObject` may be located.
 /// Because Rooms *are* the locations, their location is always `Nowhere`
 /// Unspawned/despawned items and NPCs are also located `Nowhere`
-#[derive(Debug, Default, Clone, Serialize, Deserialize, Variantly, PartialEq, Eq)]
+#[derive(Copy, Debug, Default, Clone, Serialize, Deserialize, Variantly, PartialEq, Eq)]
 pub enum Location {
     Item(Uuid),
     Inventory,
