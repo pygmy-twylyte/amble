@@ -6,14 +6,15 @@ use std::collections::HashSet;
 
 use crate::{
     AmbleWorld, ItemHolder, Location, WorldObject,
-    item::{ContainerState, ItemInteractionType},
+    item::ItemInteractionType,
     repl::{entity_not_found, find_world_object},
     spinners::SpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers},
+    world::nearby_reachable_items,
 };
 
-use anyhow::{Context, Result, anyhow, bail};
+use anyhow::{Result, anyhow, bail};
 use colored::Colorize;
 use log::{error, info, warn};
 use uuid::Uuid;
@@ -62,27 +63,6 @@ pub fn drop_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
         entity_not_found(world, thing);
         Ok(())
     }
-}
-/// Constructs a set of all potentially take-able item (uuids) in a room.
-/// Non-portable or restricted items not filtered here -- player discovers
-/// that on their own.
-fn nearby_reachable_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashSet<Uuid>> {
-    let current_room = world
-        .rooms
-        .get(&room_id)
-        .with_context(|| format!("{room_id} room id not found"))?;
-    let room_items = &current_room.contents;
-    let mut contained_items = HashSet::new();
-    for item_id in room_items {
-        if let Some(item) = world.items.get(&item_id)
-            && item.container_state == Some(ContainerState::Open)
-        {
-            item.contents
-                .iter()
-                .for_each(|&id| _ = contained_items.insert(id));
-        }
-    }
-    Ok(room_items.union(&contained_items).copied().collect())
 }
 /// Removes an item from current room and adds it to inventory.
 pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {

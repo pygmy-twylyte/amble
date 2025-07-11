@@ -1,14 +1,15 @@
+use crate::item::ContainerState;
 use crate::npc::Npc;
 use crate::spinners::{SpinnerType, default_spinners};
 use crate::trigger::Trigger;
 use crate::{Item, Player, Room};
 
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result, anyhow};
 use gametools::Spinner;
 use log::info;
 use serde::{Deserialize, Serialize};
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 use variantly::Variantly;
 
@@ -106,4 +107,30 @@ impl AmbleWorld {
     pub fn get_item_mut(&mut self, item_id: Uuid) -> Option<&mut Item> {
         self.items.get_mut(&item_id)
     }
+}
+
+/// Constructs a set of all potentially take-able / viewable item (uuids) in a room.
+/// Non-portable or restricted items not filtered here -- player discovers
+/// that on their own. The scope includes items in room, and items in open containers.
+/// Items in closed or locked containers and NPCs are excluded.
+///
+/// # Errors
+/// - if supplied `room_id` is invalid
+pub fn nearby_reachable_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashSet<Uuid>> {
+    let current_room = world
+        .rooms
+        .get(&room_id)
+        .with_context(|| format!("{room_id} room id not found"))?;
+    let room_items = &current_room.contents;
+    let mut contained_items = HashSet::new();
+    for item_id in room_items {
+        if let Some(item) = world.items.get(&item_id)
+            && item.container_state == Some(ContainerState::Open)
+        {
+            item.contents
+                .iter()
+                .for_each(|&id| _ = contained_items.insert(id));
+        }
+    }
+    Ok(room_items.union(&contained_items).copied().collect())
 }

@@ -10,6 +10,7 @@ use crate::{
     repl::{entity_not_found, find_world_object},
     style::GameStyle,
     trigger::{TriggerAction, TriggerCondition, check_triggers},
+    world::nearby_reachable_items,
 };
 
 use anyhow::{Context, Result};
@@ -33,8 +34,8 @@ pub fn look_handler(world: &mut AmbleWorld) -> Result<()> {
 pub fn look_at_handler(world: &AmbleWorld, thing: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
     // scope = local items + npcs + player inventory
-    let search_scope: HashSet<Uuid> = current_room
-        .contents
+    let items_in_reach = nearby_reachable_items(world, current_room.id())?;
+    let search_scope: HashSet<Uuid> = items_in_reach
         .union(&current_room.npcs)
         .copied()
         .chain(world.player.inventory.iter().copied())
@@ -95,8 +96,8 @@ pub fn inv_handler(world: &AmbleWorld) -> Result<()> {
 pub fn read_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
     // scope search to items in room + inventory
-    let search_scope: HashSet<Uuid> = current_room
-        .contents
+    let items_in_reach = nearby_reachable_items(world, current_room.id())?;
+    let search_scope: HashSet<Uuid> = items_in_reach
         .union(&world.player.inventory)
         .copied()
         .collect();
