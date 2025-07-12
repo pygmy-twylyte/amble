@@ -15,7 +15,7 @@ name = "Global: Got-Towel"
 only_once = true
 conditions = [{ type = "take", item_id = "towel" }]
 actions = [
-    { type = "addAchievement", achievement = "got-towel" },
+    { type = "addFlag", flag = "got-towel" },
     { type = "awardPoints", amount = 2 },
     { type = "showMessage", text = """
 Now you're a frood who really knows where his towel is.
@@ -86,7 +86,7 @@ only_once = true
 conditions = [{ type = "take", item_id = "lebowski_rug" }]
 actions = [
     { type = "revealExit", direction = "trapdoor", exit_from = "lounge", exit_to = "portal-room" },
-    { type = "addAchievement", achievement = "found-portal-room" },
+    { type = "addFlag", flag = "found-portal-room" },
     { type = "awardPoints", amount = 3 },
     { type = "showMessage", text = """
 Light shines around the edges of a trapdoor revealed in the floor when you move
@@ -94,7 +94,7 @@ the rug.
 """ },
 ]
 
-# give portal_powered achievement when charged battery inserted
+# give portal_powered flag when charged battery inserted
 [[triggers]]
 name = "Portal-Room: Gun Powered"
 only_once = false
@@ -102,7 +102,7 @@ conditions = [
     { type = "insert", item_id = "charged_battery", container_id = "portal_gun" },
 ]
 actions = [
-    { type = "addAchievement", achievement = "portal-gun-powered" },
+    { type = "addFlag", flag = "portal-gun-powered" },
     { type = "awardPoints", amount = 5 },
     { type = "restrictItem", item_id = "charged_battery" },
     { type = "showMessage", text = """
@@ -118,7 +118,7 @@ name = "Portal-Room: Open Portal"
 only_once = true
 conditions = [
     { type = "useItem", item_id = "portal_gun", ability = "turnOn" },
-    { type = "hasAchievement", achievement = "portal-gun-powered" },
+    { type = "hasFlag", flag = "portal-gun-powered" },
 ]
 actions = [
     { type = "revealExit", direction = "portal", exit_from = "portal-room", exit_to = "aperture-lab" },
@@ -135,7 +135,7 @@ name = "Portal-Room: Can't Turn Gun On Without Power"
 only_once = false
 conditions = [
     { type = "useItem", item_id = "portal_gun", ability = "turnOn" },
-    { type = "missingAchievement", achievement = "portal-gun-powered" },
+    { type = "missingFlag", flag = "portal-gun-powered" },
 ]
 actions = [
     { type = "showMessage", text = "When you press the button, the power LED briefly flashes red, then goes dark." },
@@ -167,7 +167,7 @@ conditions = [
     { type = "useItem", item_id = "lab_printer", ability = "turnOn" },
 ]
 actions = [
-    { type = "addAchievement", achievement = "invitation-sans-ignition" },
+    { type = "addFlag", flag = "invitation-sans-ignition" },
     { type = "awardPoints", amount = 10 },
     { type = "despawnItem", item_id = "asbestos_sheet" },
     { type = "spawnItemInRoom", item_id = "invitation", room_id = "aperture-lab" },
@@ -181,7 +181,7 @@ floor.
 """ },
 ]
 
-# messages and achievement when invitation is acquired
+# messages and flag when invitation is acquired
 [[triggers]]
 name = "Aperture-Lab: Take Invitation Using Towel"
 only_once = true
@@ -191,7 +191,7 @@ conditions = [
 actions = [
     { type = "despawnItem", item_id = "invitation" },
     { type = "spawnItemInInventory", item_id = "invitation" },
-    { type = "addAchievement", achievement = "got-invitation" },
+    { type = "addFlag", flag = "got-invitation" },
     { type = "awardPoints", amount = 5 },
     { type = "showMessage", text = """
 Using the towel as a potholder, you are able to get the piping hot invitation
@@ -279,8 +279,8 @@ name = "Office: Snooty-Receptionist-If-No-Pass"
 only_once = false
 conditions = [
     { type = "withNpc", npc_id = "b_a_receptionist" },
-    { type = "missingAchievement", achievement = "got-visitor-pass" },
-    { type = "missingAchievement", achievement = "got-elevator-keycard" },
+    { type = "missingFlag", flag = "got-visitor-pass" },
+    { type = "missingFlag", flag = "got-elevator-keycard" },
 ]
 actions = [
     { type = "setNpcMood", npc_id = "b_a_receptionist", mood = "Normal" },
@@ -291,8 +291,8 @@ name = "Office: Helpful-Receptionist-If-Have-Pass"
 only_once = false
 conditions = [
     { type = "withNpc", npc_id = "b_a_receptionist" },
-    { type = "hasAchievement", achievement = "got-visitor-pass" },
-    { type = "missingAchievement", achievement = "got-elevator-keycard" },
+    { type = "hasFlag", flag = "got-visitor-pass" },
+    { type = "missingFlag", flag = "got-elevator-keycard" },
 ]
 actions = [{ type = "setNpcMood", npc_id = "b_a_receptionist", mood = "Happy" }]
 
@@ -303,7 +303,7 @@ conditions = [
     { type = "giveToNpc", item_id = "invitation", npc_id = "b_a_receptionist" },
 ]
 actions = [
-    { type = "addAchievement", achievement = "got-visitor-pass" },
+    { type = "addFlag", flag = "got-visitor-pass" },
     { type = "despawnItem", item_id = "invitation" },
     { type = "spawnItemInInventory", item_id = "visitor_pass" },
     { type = "awardPoints", amount = 5 },
@@ -350,7 +350,7 @@ actions = [
     { type = "showMessage", text = "The gonk totters and stands tall with pride." },
     { type = "restrictItem", item_id = "gonk_family_photo" },
     { type = "awardPoints", amount = 2 },
-    { type = "addAchievement", achievement = "proud-papa-gonk" },
+    { type = "addFlag", flag = "proud-papa-gonk" },
 ]
 
 [[triggers]]
@@ -402,7 +402,7 @@ conditions = [
     { type = "useItemOnItem", tool_id = "towel", target_id = "plaque_1", interaction = "clean" },
 ]
 actions = [
-    { type = "addAchievement", achievement = "cleaned-plaque-1" },
+    { type = "addFlag", flag = "cleaned-plaque-1" },
     { type = "awardPoints", amount = 3 },
     { type = "showMessage", text = "With some effort, you're able to wipe most of the grime off the plaque." },
 ]
@@ -412,7 +412,7 @@ name = "Plaque 1: Must Clean to Read"
 only_once = false
 conditions = [
     { type = "useItem", item_id = "plaque_1", ability = "read" },
-    { type = "missingAchievement", achievement = "cleaned-plaque-1" },
+    { type = "missingFlag", flag = "cleaned-plaque-1" },
 ]
 actions = [
     { type = "denyRead", reason = "It's too grimy. You need something to wipe it off." },
@@ -423,10 +423,10 @@ name = "Plaque 1: Read After Cleaning"
 only_once = true
 conditions = [
     { type = "useItem", item_id = "plaque_1", ability = "read" },
-    { type = "hasAchievement", achievement = "cleaned-plaque-1" },
+    { type = "hasFlag", flag = "cleaned-plaque-1" },
 ]
 actions = [
-    { type = "addAchievement", achievement = "read-plaque-1" },
+    { type = "addFlag", flag = "read-plaque-1" },
     { type = "awardPoints", amount = 5 },
 ]
 
@@ -436,7 +436,7 @@ only_once = true
 conditions = [{ type = "take", item_id = "elevator_keycard" }]
 actions = [
     { type = "setNpcMood", npc_id = "b_a_receptionist", mood = "Bored" },
-    { type = "addAchievement", achievement = "got-elevator-keycard" },
+    { type = "addFlag", flag = "got-elevator-keycard" },
 ]
 
 [[triggers]]
@@ -444,7 +444,7 @@ name = "Office: Acquire Lost and Found Key"
 only_once = true
 conditions = [
     { type = "enter", room_id = "b-a-office" },
-    { type = "hasAchievement", achievement = "got-elevator-keycard" },
+    { type = "hasFlag", flag = "got-elevator-keycard" },
     { type = "withNpc", npc_id = "b_a_receptionist" },
 ]
 actions = [
@@ -468,7 +468,7 @@ only_once = true
 conditions = [{ type = "unlock", item_id = "lost_and_found_box" }]
 actions = [
     { type = "awardPoints", amount = 5 },
-    { type = "addAchievement", achievement = "lost-and-found-opened" },
+    { type = "addFlag", flag = "lost-and-found-opened" },
 ]
 
 # START FALLEN TREE TRIGGERS
@@ -481,7 +481,7 @@ conditions = [
 actions = [
     { type = "showMessage", text = "You swing the axe with practiced heft, chopping through the tree in a shower of splinters." },
     { type = "despawnItem", item_id = "fallen_tree" },
-    { type = "addAchievement", achievement = "cleared-fallen-tree" },
+    { type = "addFlag", flag = "cleared-fallen-tree" },
     { type = "awardPoints", amount = 5 },
 ]
 
@@ -494,7 +494,7 @@ conditions = [
 actions = [
     { type = "despawnItem", item_id = "fallen_tree" },
     { type = "despawnItem", item_id = "flamethrower" },
-    { type = "addAchievement", achievement = "cleared-fallen-tree" },
+    { type = "addFlag", flag = "cleared-fallen-tree" },
     { type = "awardPoints", amount = 5 },
     { type = "showMessage", text = """
     You step back, aim, and squeeze the trigger... The device flares to life — and then
@@ -604,7 +604,7 @@ Then you wonder why you're thinking of Barney as a real person instead of a
 character in a game. Wait, he was just a fiction, right? Come to think of it,
 you feel a little unsure of reality, and it's worse the nearer you are to the
 building.""" },
-    { type = "addAchievement", achievement = "got-crowbar" },
+    { type = "addFlag", flag = "got-crowbar" },
     { type = "awardPoints", amount = 4 },
 ]
 
@@ -632,7 +632,7 @@ actions = [
     { type = "showMessage", text = """
 In almost no time, you hone the Black Knight's sword to a keen edge.
 """ },
-    { type = "addAchievement", achievement = "sword-sharpened" },
+    { type = "addFlag", flag = "sword-sharpened" },
     { type = "awardPoints", amount = 3 },
 ]
 
@@ -644,7 +644,7 @@ conditions = [
 ]
 actions = [
     { type = "restrictItem", item_id = "keen_longsword" },
-    { type = "addAchievement", achievement = "appeased-black-knight" },
+    { type = "addFlag", flag = "appeased-black-knight" },
     { type = "awardPoints", amount = 5 },
     { type = "setNpcMood", npc_id = "black_knight", mood = "Happy" },
     { type = "npcSays", npc_id = "black_knight", quote = """
@@ -719,7 +719,7 @@ conditions = [
 ]
 actions = [
     { type = "showMessage", text = "You get as far as the first poem before the vomiting begins..." },
-    { type = "addAchievement", achievement = "read-vogon-poetry" },
+    { type = "addFlag", flag = "read-vogon-poetry" },
     { type = "awardPoints", amount = -1 },
 ]
 
@@ -728,7 +728,7 @@ name = "Receptionist: Comment if Poetry Read"
 only_once = true
 conditions = [
     { type = "withNpc", npc_id = "b_a_receptionist" },
-    { type = "hasAchievement", achievement = "read-vogon-poetry" },
+    { type = "hasFlag", flag = "read-vogon-poetry" },
 ]
 actions = [{ type = "npcSays", npc_id = "b_a_receptionist", quote = """
 You look ill. You didn't read that poetry book, did you? That won't
@@ -740,10 +740,10 @@ name = "EMH: Cure Vogon Poetry"
 only_once = true
 conditions = [
     { type = "talkToNpc", npc_id = "emh" },
-    { type = "hasAchievement", achievement = "read-vogon-poetry" },
+    { type = "hasFlag", flag = "read-vogon-poetry" },
 ]
 actions = [
-    { type = "addAchievement", achievement = "cured-vogon-poetry" },
+    { type = "addFlag", flag = "cured-vogon-poetry" },
     { type = "awardPoints", amount = 3 },
     { type = "npcSays", npc_id = "emh", quote = "You poor fool, you look horrible. You've been reading Vogon poetry, hmmm? Here, this should help." },
     { type = "showMessage", text = "The EMH gives you a shot in the arm, and your lingering nausea subsides." },
