@@ -340,6 +340,20 @@ droid gives you a fully charged one, free of ... charge?
 ]
 
 [[triggers]]
+name = "Gonk: Give Photo Back"
+only_once = true
+conditions = [
+    { type = "giveToNpc", item_id = "gonk_family_photo", npc_id = "gonk_droid" },
+]
+actions = [
+    { type = "npcSays", npc_id = "gonk_droid", quote = "Gonk! Gonk." },
+    { type = "showMessage", text = "The gonk totters and stands tall with pride." },
+    { type = "restrictItem", item_id = "gonk_family_photo" },
+    { type = "awardPoints", amount = 2 },
+    { type = "addAchievement", achievement = "proud-papa-gonk" },
+]
+
+[[triggers]]
 name = "Patio: Sunglasses Required"
 only_once = false
 conditions = [
