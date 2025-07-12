@@ -127,9 +127,7 @@ pub fn nearby_reachable_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashS
         if let Some(item) = world.items.get(&item_id)
             && item.container_state == Some(ContainerState::Open)
         {
-            item.contents
-                .iter()
-                .for_each(|&id| _ = contained_items.insert(id));
+            contained_items.extend(&item.contents);
         }
     }
     Ok(room_items.union(&contained_items).copied().collect())
