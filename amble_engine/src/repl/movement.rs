@@ -20,7 +20,7 @@ use log::{info, warn};
 pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
     let player_name = world.player.name.clone();
     let travel_message = world.spin_spinner(SpinnerType::Movement, "You head that way...");
-    let leaving_id = world.player.location.clone().unwrap_room();
+    let leaving_id = world.player.location.unwrap_room();
     // let found_key;
     let destination_exit = {
         let current_room = world.player_room_ref()?;
@@ -29,13 +29,9 @@ pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
             .keys()
             .find(|dir| dir.to_lowercase().contains(input_dir));
         if let Some(exit_key) = destination {
-            // found_key = exit_key.to_string();
             current_room.exits.get(exit_key)
         } else {
-            println!(
-                "{}? Is that a destination or an Arcturan adverb?",
-                input_dir.error_style()
-            );
+            println!("Which way is {}?", input_dir.error_style());
             return Ok(());
         }
     };
@@ -115,10 +111,7 @@ pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
             );
         }
     } else {
-        println!(
-            "You stay put. You can't {travel_message} {}.\n",
-            input_dir.error_style()
-        );
+        println!("Which way is {}? You stay put.\n", input_dir.error_style());
     }
     Ok(())
 }
