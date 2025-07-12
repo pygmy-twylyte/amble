@@ -13,7 +13,7 @@ pub struct Player {
     pub description: String,
     pub location: Location,
     pub inventory: HashSet<Uuid>,
-    pub achievements: HashSet<String>,
+    pub flags: HashSet<String>,
     pub score: usize,
 }
 impl Default for Player {
@@ -24,7 +24,7 @@ impl Default for Player {
             description: "default".into(),
             location: Location::default(),
             inventory: HashSet::<Uuid>::default(),
-            achievements: HashSet::<String>::default(),
+            flags: HashSet::<String>::default(),
             score: 0,
         }
     }
