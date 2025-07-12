@@ -59,12 +59,12 @@ pub enum RawTriggerCondition {
     Enter { room_id: String, },
     GiveToNpc { item_id: String, npc_id: String, },
     HasItem { item_id: String, },
-    HasAchievement { achievement: String, },
+    HasFlag { flag: String, },
     HasVisited { room_id: String, },
     InRoom { room_id: String, },
     Insert { item_id: String, container_id: String, },
     Leave { room_id: String, },
-    MissingAchievement { achievement: String, },
+    MissingFlag { flag: String, },
     MissingItem { item_id: String, },
     NpcHasItem { npc_id: String, item_id: String, },
     NpcInMood { npc_id: String, mood: NpcMood, },
@@ -92,12 +92,8 @@ impl RawTriggerCondition {
                 container_id,
                 item_id,
             } => cook_container_has_item(symbols, container_id, item_id),
-            Self::MissingAchievement { achievement } => Ok(TriggerCondition::MissingAchievement(
-                achievement.to_string(),
-            )),
-            Self::HasAchievement { achievement } => {
-                Ok(TriggerCondition::HasAchievement(achievement.to_string()))
-            }
+            Self::MissingFlag { flag } => Ok(TriggerCondition::MissingFlag(flag.to_string())),
+            Self::HasFlag { flag } => Ok(TriggerCondition::HasFlag(flag.to_string())),
             Self::UseItem { item_id, ability } => cook_use_item(symbols, item_id, ability),
             Self::TakeFromNpc { item_id, npc_id } => cook_take_from_npc(symbols, item_id, npc_id),
             Self::Take { item_id } => cook_take(symbols, item_id),
@@ -383,8 +379,8 @@ fn cook_container_has_item(
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum RawTriggerAction {
-    AddAchievement {
-        achievement: String,
+    AddFlag {
+        flag: String,
     },
     AwardPoints {
         amount: isize,
@@ -459,9 +455,7 @@ impl RawTriggerAction {
             Self::RestrictItem { item_id } => cook_restrict_item(symbols, item_id),
             Self::NpcSaysRandom { npc_id } => cook_npc_says_random(symbols, npc_id),
             Self::NpcSays { npc_id, quote } => cook_npc_says(symbols, npc_id, quote),
-            Self::AddAchievement { achievement: task } => {
-                Ok(TriggerAction::AddAchievement(task.to_string()))
-            }
+            Self::AddFlag { flag } => Ok(TriggerAction::AddFlag(flag.to_string())),
             Self::AwardPoints { amount } => Ok(TriggerAction::AwardPoints(*amount)),
             Self::SpawnItemCurrentRoom { item_id } => {
                 cook_spawn_item_current_room(symbols, item_id)
