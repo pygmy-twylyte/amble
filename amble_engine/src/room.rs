@@ -9,7 +9,7 @@ pub struct Exit {
     pub to: Uuid,
     pub hidden: bool,
     pub locked: bool,
-    pub required_actions: HashSet<String>,
+    pub required_flags: HashSet<String>,
     pub required_items: HashSet<Uuid>,
     pub barred_message: Option<String>,
 }
@@ -19,7 +19,7 @@ impl Exit {
             to,
             hidden: false,
             locked: false,
-            required_actions: HashSet::new(),
+            required_flags: HashSet::new(),
             required_items: HashSet::new(),
             barred_message: None,
         }
