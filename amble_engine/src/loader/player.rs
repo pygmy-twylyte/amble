@@ -27,7 +27,7 @@ pub struct RawPlayer {
     #[serde(default)]
     pub inventory: HashMap<String, String>,
     #[serde(default)]
-    pub achievements: HashSet<String>,
+    pub flags: HashSet<String>,
     #[serde(default)]
     pub score: usize,
 }
@@ -53,7 +53,7 @@ impl RawPlayer {
             description: self.description.to_string(),
             location,
             inventory: HashSet::<Uuid>::default(),
-            achievements: HashSet::<String>::default(),
+            flags: HashSet::<String>::default(),
             score: self.score,
         };
         Ok(player)
