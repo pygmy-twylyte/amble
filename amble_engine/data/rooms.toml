@@ -101,7 +101,7 @@ visited = false
 
 [rooms.exits.up]
 to = "guard-post"
-required_actions = ["cleared-fallen-tree"]
+required_flags = ["cleared-fallen-tree"]
 barred_message = "You'll need to find a way to clear the tree from the path first."
 
 [rooms.exits.down]
@@ -207,7 +207,7 @@ visited = false
 
 [rooms.exits.north]
 to = "main-lobby"
-required_actions = ["got-towel"]
+required_flags = ["got-towel"]
 barred_message = "Not so fast. Do you know where your towel is?"
 
 [rooms.exits.south]
@@ -578,7 +578,7 @@ to = "lift-sublevel-1"
 
 [rooms.exits.west]
 to = "room-aa-3b"
-required_actions = ["nonexistent_achievement"]
+required_flags = ["nonexistent_flag"]
 barred_message = """
 Room AA-3B no longer exists at this location. If found, DO NOT ATTEMPT TO ENTER
 and notify the risk management office immediately!
@@ -586,13 +586,13 @@ and notify the risk management office immediately!
 
 [rooms.exits.east]
 to = "security-station"
-required_actions = ["appeased-black-knight"]
+required_flags = ["appeased-black-knight"]
 barred_message = """The Black Knight blocks your way.
 """
 
 [rooms.exits.south]
 to = "corridor"
-required_actions = ["appeased-black-knight"]
+required_flags = ["appeased-black-knight"]
 barred_message = """The Black Knight blocks your way.
 """
 
