@@ -46,10 +46,10 @@ pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
             return Ok(());
         }
 
-        // check for unmet actions (recorded as achievements) for this exit
+        // check for unmet actions (recorded as flags) for this exit
         let unmet_actions: HashSet<_> = destination_exit
-            .required_actions
-            .difference(&world.player.achievements)
+            .required_flags
+            .difference(&world.player.flags)
             .collect();
 
         let unmet_items: HashSet<_> = destination_exit
@@ -104,7 +104,7 @@ pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
                 .with_context(|| format!("accessing room {}", destination_exit.to))?
                 .name();
             info!(
-                "{} denied access to {dest_name}: missing items ({:?}) or achievements ({:?})",
+                "{} denied access to {dest_name}: missing items ({:?}) or flags ({:?})",
                 world.player.name(),
                 unmet_items,
                 unmet_actions,
