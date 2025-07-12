@@ -9,7 +9,7 @@ use std::path::PathBuf;
 
 use crate::spinners::default_spinners;
 use crate::style::GameStyle;
-use crate::trigger::TriggerAction;
+
 use crate::{AmbleWorld, WorldObject, repl::ReplControl, spinners::SpinnerType};
 
 use anyhow::{Context, Result};
