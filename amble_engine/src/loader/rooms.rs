@@ -43,7 +43,7 @@ pub struct RawExit {
     #[serde(default)]
     locked: bool,
     #[serde(default)]
-    required_actions: HashSet<String>,
+    required_flags: HashSet<String>,
     #[serde(default)]
     required_items: HashSet<String>,
     #[serde(default)]
@@ -78,7 +78,7 @@ impl RawRoom {
                     to: to_uuid,
                     hidden: raw_exit.hidden,
                     locked: raw_exit.locked,
-                    required_actions: raw_exit.required_actions.clone(),
+                    required_flags: raw_exit.required_flags.clone(),
                     required_items: required_items_uuids,
                     barred_message: raw_exit.barred_message.clone(),
                 },
