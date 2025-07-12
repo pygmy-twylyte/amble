@@ -51,87 +51,40 @@ impl RawTrigger {
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
+#[rustfmt::skip]
 pub enum RawTriggerCondition {
-    Ambient {
-        room_ids: Option<Vec<String>>,
-        spinner: SpinnerType,
-    },
-    ContainerHasItem {
-        container_id: String,
-        item_id: String,
-    },
-    Drop {
-        item_id: String,
-    },
-    Enter {
-        room_id: String,
-    },
-    GiveToNpc {
-        item_id: String,
-        npc_id: String,
-    },
-    HasItem {
-        item_id: String,
-    },
-    HasAchievement {
-        achievement: String,
-    },
-    HasVisited {
-        room_id: String,
-    },
-    InRoom {
-        room_id: String,
-    },
-    Insert {
-        item_id: String,
-        container_id: String,
-    },
-    Leave {
-        room_id: String,
-    },
-    MissingAchievement {
-        achievement: String,
-    },
-    MissingItem {
-        item_id: String,
-    },
-    NpcHasItem {
-        npc_id: String,
-        item_id: String,
-    },
-    NpcInMood {
-        npc_id: String,
-        mood: NpcMood,
-    },
-    Open {
-        item_id: String,
-    },
-    Take {
-        item_id: String,
-    },
-    TakeFromNpc {
-        item_id: String,
-        npc_id: String,
-    },
-    Unlock {
-        item_id: String,
-    },
-    UseItem {
-        item_id: String,
-        ability: ItemAbility,
-    },
+    Ambient { room_ids: Option<Vec<String>>, spinner: SpinnerType, },
+    ContainerHasItem { container_id: String, item_id: String, },
+    Drop { item_id: String, },
+    Enter { room_id: String, },
+    GiveToNpc { item_id: String, npc_id: String, },
+    HasItem { item_id: String, },
+    HasAchievement { achievement: String, },
+    HasVisited { room_id: String, },
+    InRoom { room_id: String, },
+    Insert { item_id: String, container_id: String, },
+    Leave { room_id: String, },
+    MissingAchievement { achievement: String, },
+    MissingItem { item_id: String, },
+    NpcHasItem { npc_id: String, item_id: String, },
+    NpcInMood { npc_id: String, mood: NpcMood, },
+    Open { item_id: String, },
+    Take { item_id: String, },
+    TakeFromNpc { item_id: String, npc_id: String, },
+    TalkToNpc { npc_id: String },
+    Unlock { item_id: String, },
+    UseItem { item_id: String, ability: ItemAbility, },
     UseItemOnItem {
         interaction: ItemInteractionType,
         target_id: String,
         tool_id: String,
     },
-    WithNpc {
-        npc_id: String,
-    },
+    WithNpc { npc_id: String, },
 }
 impl RawTriggerCondition {
     fn to_condition(&self, symbols: &SymbolTable) -> Result<TriggerCondition> {
         match self {
+            Self::TalkToNpc { npc_id } => cook_talk_to_npc(symbols, npc_id),
             Self::Ambient { room_ids, spinner } => {
                 cook_ambient(symbols, room_ids.as_ref(), *spinner)
             }
@@ -175,8 +128,17 @@ impl RawTriggerCondition {
 }
 
 //
-// "COOK" helper functions convert raw trigger components to "cooked" real instances
+// "COOK" helper functions convert raw trigger components to "cooked" real instances with
+// validated uuids.
 //
+fn cook_talk_to_npc(symbols: &SymbolTable, npc_symbol: &str) -> Result<TriggerCondition> {
+    if let Some(npc_uuid) = symbols.characters.get(npc_symbol) {
+        Ok(TriggerCondition::TalkToNpc(*npc_uuid))
+    } else {
+        bail!("converting raw condition TalkToNpc: npc symbol '{npc_symbol}' not found")
+    }
+}
+
 fn cook_ambient(
     symbols: &SymbolTable,
     room_symbols: Option<&Vec<String>>,

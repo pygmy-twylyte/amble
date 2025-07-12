@@ -64,6 +64,7 @@ pub enum TriggerCondition {
         item_id: Uuid,
         npc_id: Uuid,
     },
+    TalkToNpc(Uuid),
     UseItem {
         item_id: Uuid,
         ability: ItemAbility,
