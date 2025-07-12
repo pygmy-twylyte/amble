@@ -22,12 +22,8 @@ pub fn quit_handler(world: &AmbleWorld) -> Result<ReplControl> {
         world.player.name(),
         world.player.score
     );
-    info!("ending achievements:");
-    world
-        .player
-        .achievements
-        .iter()
-        .for_each(|i| info!("* {i}"));
+    info!("ending flags:");
+    world.player.flags.iter().for_each(|i| info!("* {i}"));
     info!("ending inventory:");
     world
         .player
@@ -82,32 +78,18 @@ pub fn quit_handler(world: &AmbleWorld) -> Result<ReplControl> {
     };
 
     let visited = world.rooms.values().filter(|r| r.visited).count();
-    let max_achievements = world
-        .triggers
-        .iter()
-        .filter(|t| {
-            t.actions
-                .iter()
-                .any(|a| matches!(a, TriggerAction::AddAchievement(_)))
-        })
-        .count();
 
     println!(
         "\n{:^60}",
         "Candidate Evaluation Report".black().bold().on_yellow()
     );
-    println!("Rank:   {}", rank.bright_blue());
+    println!("Rank:   {}", rank.blue().bold().on_white());
     println!("Notes:  {}\n", eval.cyan().italic());
     println!(
         "Score: {}/{} ({:.1}%)",
         world.player.score, world.max_score, percent
     );
     println!("Locations visited: {}/{}", visited, world.rooms.len());
-    println!(
-        "Achievements: {}/{}",
-        world.player.achievements.len(),
-        max_achievements
-    );
 
     println!(
         "\n{}\n",
