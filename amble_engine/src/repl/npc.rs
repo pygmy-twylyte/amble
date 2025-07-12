@@ -10,7 +10,7 @@ use crate::{
     repl::{entity_not_found, find_world_object},
     spinners::SpinnerType,
     style::GameStyle,
-    trigger::{TriggerCondition, check_triggers},
+    trigger::{TriggerCondition, check_triggers, triggers_contain_condition},
 };
 
 use anyhow::{Context, Result};
@@ -36,8 +36,22 @@ fn select_npc<'a>(
 /// Handles TalkTo(npc) commands
 pub fn talk_to_handler(world: &mut AmbleWorld, npc_name: &str) -> Result<()> {
     // find one that matches npc_name in present room
-    if let Some(npc) = select_npc(world.player.location(), &world.npcs, npc_name) {
-        // success -> call random dialogue
+    let sent_id = if let Some(npc) = select_npc(world.player.location(), &world.npcs, npc_name) {
+        npc.id()
+    } else {
+        entity_not_found(world, npc_name);
+        return Ok(());
+    };
+
+    // check for any condition-specific dialogue
+    let fired_triggers = check_triggers(world, &[TriggerCondition::TalkToNpc(sent_id)])?;
+    let dialogue_fired = triggers_contain_condition(&fired_triggers, |cond| match cond {
+        TriggerCondition::TalkToNpc(npc_id) => sent_id == *npc_id,
+        _ => false,
+    });
+
+    // if no dialogue was triggered, fire random response according to Npc's mood
+    if !dialogue_fired && let Some(npc) = world.npcs.get(&sent_id) {
         let stem = format!("{}", npc.name().npc_style());
         if let Some(ignore_spinner) = world.spinners.get(&SpinnerType::NpcIgnore) {
             let dialogue = npc.random_dialogue(ignore_spinner);
@@ -49,13 +63,18 @@ pub fn talk_to_handler(world: &mut AmbleWorld, npc_name: &str) -> Result<()> {
                 dialogue
             );
         }
-    } else {
-        entity_not_found(world, npc_name);
     }
+
     Ok(())
 }
 
-/// Gives an inventory item to an NPC
+/// Gives an inventory item to an NPC.
+///
+/// Transfer only occurs if there is a specific trigger causing the NPC to accept the item
+/// from the player. Otherwise, player is informed that the NPC won't accept it.
+///
+/// # Errors
+/// - on failed uuid lookups
 pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Result<()> {
     // find the target npc in the current room and collect metadata
     let current_room = world.player_room_ref()?;
@@ -114,6 +133,7 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Res
             .any(|cond| matches!(cond, TriggerCondition::GiveToNpc { .. }))
     });
 
+    // the trigger fired -- proceed with item transfer
     if fired {
         // set new location in NPC on world item
         world
@@ -146,6 +166,7 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Res
             npc_name,
             npc_id
         );
+    // trigger didn't fire, so NPC refuses the item
     } else {
         println!(
             "{} has no use for {}, and won't hold it for you.",
