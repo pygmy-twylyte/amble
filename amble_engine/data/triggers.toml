@@ -676,6 +676,7 @@ conditions = [
         "corridor",
         "observation-room",
         "security-station",
+        "med-bay",
     ] },
 ]
 actions = []
@@ -718,3 +719,18 @@ conditions = [
 actions = [{ type = "npcSays", npc_id = "b_a_receptionist", quote = """
 You look ill. You didn't read that poetry book, did you? That won't
 look good on your evaluation.""" }]
+
+# ------ EMH DIALOGUE TRIGGERS -------
+[[triggers]]
+name = "EMH: Cure Vogon Poetry"
+only_once = true
+conditions = [
+    { type = "talkToNpc", npc_id = "emh" },
+    { type = "hasAchievement", achievement = "read-vogon-poetry" },
+]
+actions = [
+    { type = "addAchievement", achievement = "cured-vogon-poetry" },
+    { type = "awardPoints", amount = 3 },
+    { type = "npcSays", npc_id = "emh", quote = "You poor fool, you look horrible. You've been reading Vogon poetry, hmmm? Here, this should help." },
+    { type = "showMessage", text = "The EMH gives you a shot in the arm, and your lingering nausea subsides." },
+]

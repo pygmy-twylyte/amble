@@ -655,6 +655,9 @@ to = "sublevel-1-entrance"
 [rooms.exits.west]
 to = "observation-room"
 
+[rooms.exits.east]
+to = "med-bay"
+
 # -----------------------------------------------------------------------------
 [[rooms]]
 id = "observation-room"
@@ -694,3 +697,18 @@ visited = false
 
 [rooms.exits.west]
 to = "sublevel-1-entrance"
+
+# -----------------------------------------------------------------------------
+[[rooms]]
+id = "med-bay"
+name = "Med Bay"
+location = "Nowhere"
+visited = false
+description = """
+A clean white infirmary with two bio-beds extending from the back wall, surrounded
+by a bevy of monitors and robotic surgical tools. One of the machines goes "Bing!"
+every few minutes. A small cleaning robot floats around the room disinfecting things.
+"""
+
+[rooms.exits.west]
+to = "corridor"
