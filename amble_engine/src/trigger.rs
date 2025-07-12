@@ -14,6 +14,7 @@ use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+/// A specified response to a particular set of game conditions.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trigger {
     pub name: String,
@@ -23,6 +24,7 @@ pub struct Trigger {
     pub fired: bool,
 }
 
+/// Game states and player actions that can be detected by a `Trigger`
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TriggerCondition {
     Ambient {
@@ -40,7 +42,7 @@ pub enum TriggerCondition {
         npc_id: Uuid,
     },
     HasItem(Uuid),
-    HasAchievement(String),
+    HasFlag(String),
     HasVisited(Uuid),
     InRoom(Uuid),
     Insert {
@@ -48,7 +50,7 @@ pub enum TriggerCondition {
         container: Uuid,
     },
     Leave(Uuid),
-    MissingAchievement(String),
+    MissingFlag(String),
     MissingItem(Uuid),
     NpcHasItem {
         npc_id: Uuid,
@@ -95,8 +97,8 @@ impl TriggerCondition {
                     false
                 }
             }
-            Self::HasAchievement(ach) => world.player.achievements.contains(ach),
-            Self::MissingAchievement(ach) => !world.player.achievements.contains(ach),
+            Self::HasFlag(flag) => world.player.flags.contains(flag),
+            Self::MissingFlag(flag) => !world.player.flags.contains(flag),
             Self::HasVisited(room_id) => world.rooms.get(room_id).is_some_and(|r| r.visited),
             Self::InRoom(room_id) => *room_id == world.player.location.clone().unwrap_room(),
             Self::NpcHasItem { npc_id, item_id } => world
@@ -120,7 +122,7 @@ impl TriggerCondition {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TriggerAction {
-    AddAchievement(String),
+    AddFlag(String),
     AwardPoints(isize),
     DenyRead(String),
     DespawnItem {
@@ -256,7 +258,7 @@ fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()>
             from_room,
             direction,
         } => lock_exit(world, from_room, direction)?,
-        TriggerAction::AddAchievement(task) => add_achievement(world, task),
+        TriggerAction::AddFlag(flag) => add_flag(world, flag),
         TriggerAction::AwardPoints(amount) => award_points(world, *amount),
     }
     Ok(())
@@ -307,10 +309,10 @@ pub fn award_points(world: &mut AmbleWorld, amount: isize) {
     info!("└─ action: AwardPoints({amount})");
 }
 
-/// Grant player with an achievement or task completion
-fn add_achievement(world: &mut AmbleWorld, task: &String) {
-    world.player.achievements.insert(task.to_string());
-    info!("└─ action: AddAchievement(\"{task}\")");
+/// Adds a status flag to the player
+fn add_flag(world: &mut AmbleWorld, flag: &String) {
+    world.player.flags.insert(flag.to_string());
+    info!("└─ action: AddFlag(\"{flag}\")");
 }
 
 /// lock an exit specified by room and direction
