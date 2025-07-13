@@ -23,11 +23,11 @@ Now you're a frood who really knows where his towel is.
 ]
 
 [[triggers]]
-name = "Inca Road: Spawn Special Delivery"
+name = "Loading-Dock: Spawn Special Delivery"
 only_once = true
-conditions = [{ type = "leave", room_id = "inca-road" }]
+conditions = [{ type = "leave", room_id = "loading-dock" }]
 actions = [
-    { type = "spawnItemInRoom", item_id = "delivery_box", room_id = "inca-road" },
+    { type = "spawnItemInRoom", item_id = "delivery_box", room_id = "loading-dock" },
     { type = "showMessage", text = """
 You hear a thud behind you, back toward the road, like something was just
 dropped off. You glimpse a drone flying away quickly, as if hoping not to
@@ -64,7 +64,10 @@ actions = [
 [[triggers]]
 name = "Global: Drop-Vogon-Poetry"
 only_once = false
-conditions = [{ type = "drop", item_id = "vogon_poetry_book" }]
+conditions = [
+    { type = "drop", item_id = "vogon_poetry_book" },
+    { type = "missingFlag", flag = "read-vogon-poetry" },
+]
 actions = [
     { type = "showMessage", text = "That greasy, queasy feeling subsides." },
 ]
@@ -712,7 +715,7 @@ conditions = [
 actions = []
 
 [[triggers]]
-name = "Vogon Poetry: Vomit Upon Reading"
+name = "Vogon Poetry: Nausea & Vomiting Upon Reading"
 only_once = false
 conditions = [
     { type = "useItem", item_id = "vogon_poetry_book", ability = "read" },
@@ -720,8 +723,15 @@ conditions = [
 actions = [
     { type = "showMessage", text = "You get as far as the first poem before the vomiting begins..." },
     { type = "addFlag", flag = "read-vogon-poetry" },
+    { type = "addFlag", flag = "status:nauseated" },
     { type = "awardPoints", amount = -1 },
 ]
+
+[[triggers]]
+name = "Status: Nauseated"
+only_once = false
+conditions = [{ type = "hasFlag", flag = "status:nauseated" }]
+actions = [{ type = "spinnerMessage", spinner = "nauseated" }]
 
 [[triggers]]
 name = "Receptionist: Comment if Poetry Read"
@@ -741,9 +751,11 @@ only_once = true
 conditions = [
     { type = "talkToNpc", npc_id = "emh" },
     { type = "hasFlag", flag = "read-vogon-poetry" },
+    { type = "hasFlag", flag = "status:nauseated" },
 ]
 actions = [
     { type = "addFlag", flag = "cured-vogon-poetry" },
+    { type = "removeFlag", flag = "status:nauseated" },
     { type = "awardPoints", amount = 3 },
     { type = "npcSays", npc_id = "emh", quote = "You poor fool, you look horrible. You've been reading Vogon poetry, hmmm? Here, this should help." },
     { type = "showMessage", text = "The EMH gives you a shot in the arm, and your lingering nausea subsides." },
