@@ -119,10 +119,11 @@ impl TriggerCondition {
         }
     }
 }
-
+/// Types of actions that can be fired by a `Trigger` based on a set of `TriggerConditions`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TriggerAction {
     AddFlag(String),
+    RemoveFlag(String),
     AwardPoints(isize),
     DenyRead(String),
     DespawnItem {
@@ -165,6 +166,9 @@ pub enum TriggerAction {
     SpawnItemInRoom {
         item_id: Uuid,
         room_id: Uuid,
+    },
+    SpinnerMessage {
+        spinner: SpinnerType,
     },
     UnlockExit {
         from_room: Uuid,
@@ -223,6 +227,7 @@ pub fn check_triggers<'a>(
 /// fires the matching trigger action by calling its handler function
 fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()> {
     match action {
+        TriggerAction::SpinnerMessage { spinner } => spinner_message(world, *spinner)?,
         TriggerAction::RestrictItem(item_id) => restrict_item(world, item_id)?,
         TriggerAction::NpcSaysRandom { npc_id } => npc_says_random(world, npc_id)?,
         TriggerAction::NpcSays { npc_id, quote } => npc_says(world, npc_id, quote)?,
@@ -259,9 +264,35 @@ fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()>
             direction,
         } => lock_exit(world, from_room, direction)?,
         TriggerAction::AddFlag(flag) => add_flag(world, flag),
+        TriggerAction::RemoveFlag(flag) => remove_flag(world, flag),
         TriggerAction::AwardPoints(amount) => award_points(world, *amount),
     }
     Ok(())
+}
+
+fn spinner_message(world: &mut AmbleWorld, spinner_type: SpinnerType) -> Result<()> {
+    if let Some(spinner) = world.spinners.get(&spinner_type) {
+        let msg = spinner.spin().unwrap_or_default();
+        if !msg.is_empty() {
+            println!(
+                "\n{} {}",
+                "❉".ambient_icon_style(),
+                msg.ambient_trig_style()
+            );
+        }
+        info!("└─ action: SpinnerMessage(\"{msg}\")");
+        Ok(())
+    } else {
+        bail!("action SpinnerMessage({spinner_type:?}): no spinner found for type");
+    }
+}
+
+fn remove_flag(world: &mut AmbleWorld, flag: &str) {
+    if world.player.flags.remove(flag) {
+        info!("└─ action: RemoveFlag(\"{flag}\")");
+    } else {
+        warn!("└─ action: RemoveFlag(\"{flag}\") - flag was not set")
+    }
 }
 /// Changes an item's status to restricted
 pub fn restrict_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
