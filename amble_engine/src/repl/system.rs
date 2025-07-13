@@ -80,10 +80,10 @@ pub fn quit_handler(world: &AmbleWorld) -> Result<ReplControl> {
     let visited = world.rooms.values().filter(|r| r.visited).count();
 
     println!(
-        "\n{:^60}",
+        "\n{:^60}\n",
         "Candidate Evaluation Report".black().bold().on_yellow()
     );
-    println!("Rank:   {}", rank.blue().bold().on_white());
+    println!("Rank:   {}", rank.blue().bold().underline());
     println!("Notes:  {}\n", eval.cyan().italic());
     println!(
         "Score: {}/{} ({:.1}%)",
