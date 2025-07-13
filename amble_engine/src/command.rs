@@ -14,6 +14,7 @@ pub enum Command {
         item: String,
         npc: String,
     },
+    Goals,
     Help,
     Inventory,
     Load(String),
@@ -51,6 +52,7 @@ pub fn parse_command(input: &str) -> Command {
     let words: Vec<&str> = input.split_whitespace().collect();
     match words.as_slice() {
         ["!port", room_toml_id] => Command::Teleport((*room_toml_id).to_string()),
+        ["goals"] | ["what", "now" | "next"] => Command::Goals,
         ["look"] => Command::Look,
         ["give", item, "to", npc] => Command::GiveToNpc {
             item: (*item).to_string(),

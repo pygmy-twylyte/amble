@@ -99,7 +99,7 @@ pub fn quit_handler(world: &AmbleWorld) -> Result<ReplControl> {
 }
 
 /// Show available commands.
-pub fn help_handler() -> Result<()> {
+pub fn help_handler() {
     println!(
         r"
 *Some* of the available commands:
@@ -130,7 +130,17 @@ pub fn help_handler() -> Result<()> {
 
 "
     );
-    Ok(())
+}
+
+/// Show current game game goals / status.
+pub fn goals_handler(world: &AmbleWorld) {
+    println!("{}", "Current Goals:".underline());
+    world
+        .goals
+        .iter()
+        .enumerate()
+        .for_each(|(i, g)| println!("{i}) {:#?}", g));
+    println!();
 }
 
 /// load game from a file

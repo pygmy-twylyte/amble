@@ -2,7 +2,7 @@ use crate::item::ContainerState;
 use crate::npc::Npc;
 use crate::spinners::{SpinnerType, default_spinners};
 use crate::trigger::Trigger;
-use crate::{Item, Player, Room};
+use crate::{Goal, Item, Player, Room};
 
 use anyhow::{Context, Result, anyhow};
 use gametools::Spinner;
@@ -45,6 +45,7 @@ pub struct AmbleWorld {
     pub spinners: HashMap<SpinnerType, Spinner<&'static str>>,
     pub npcs: HashMap<Uuid, Npc>,
     pub max_score: usize,
+    pub goals: Vec<Goal>,
 }
 impl AmbleWorld {
     /// Create a new empty world with a default player.
@@ -57,6 +58,7 @@ impl AmbleWorld {
             player: Player::default(),
             spinners: default_spinners(),
             max_score: 0,
+            goals: Vec::new(),
         };
         info!("new, empty 'AmbleWorld' created");
         info!("{} spinners added to 'AmbleWorld'", world.spinners.len());

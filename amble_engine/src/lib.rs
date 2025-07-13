@@ -3,6 +3,7 @@
 
 // Core modules
 pub mod command;
+pub mod goal;
 pub mod idgen;
 pub mod item;
 pub mod loader;
@@ -16,6 +17,7 @@ pub mod trigger;
 pub mod world;
 
 // Re-exports for convenience
+pub use goal::Goal;
 pub use item::{Item, ItemHolder};
 pub use loader::load_world;
 pub use player::Player;

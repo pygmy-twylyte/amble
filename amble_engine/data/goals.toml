@@ -1,0 +1,15 @@
+[[goals]]
+id = "reach-aa3b"
+name = "Investigate Room AA-3B"
+description = "Figure out what's behind the mysterious sealed door."
+group = { type = "sublevel1" }
+activate_when = { type = "hasFlag", flag = "entered-sublevel-1" }
+finished_when = { type = "reachedRoom", room_sym = "room-aa-3b" }
+
+[[goals]]
+id = "poetry-survivor"
+name = "Survive the Vogon Experience"
+description = "Recover from reading the galaxy's third worst poem."
+group = { type = "buildingMain" }
+activate_when = { type = "hasFlag", flag = "read-vogon-poetry" }
+finished_when = { type = "missingFlag", flag = "status:nauseated" }

@@ -1,9 +1,11 @@
+pub mod goals;
 pub mod items;
 pub mod npcs;
 pub mod player;
 pub mod rooms;
 pub mod triggers;
 
+use crate::loader::goals::{build_goals, load_raw_goals};
 use crate::loader::items::load_raw_items;
 use crate::loader::player::load_player;
 use crate::loader::rooms::load_raw_rooms;
@@ -85,6 +87,7 @@ pub fn load_world() -> Result<AmbleWorld> {
     let player_toml_path = Path::new("amble_engine/data/player.toml");
     let npc_toml_path = Path::new("amble_engine/data/npcs.toml");
     let trigger_toml_path = Path::new("amble_engine/data/triggers.toml");
+    let goal_toml_path = Path::new("amble_engine/data/goals.toml");
 
     let mut world = AmbleWorld::new_empty();
     let mut symbols = SymbolTable::default();
@@ -147,6 +150,11 @@ pub fn load_world() -> Result<AmbleWorld> {
             }
         }
     }
+
+    /* Load Goals */
+    let raw_goals = load_raw_goals(goal_toml_path).context("when loading goals from file")?;
+    world.goals = build_goals(&raw_goals, &symbols)?;
+    info!("{} goals added to AmbleWorld", world.goals.len());
 
     Ok(world)
 }
