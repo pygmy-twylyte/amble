@@ -91,7 +91,7 @@ pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
             )?;
         } else {
             if let Some(msg) = &destination_exit.barred_message {
-                println!("{}", msg.italic());
+                println!("{}", msg.italic().red());
             } else {
                 println!(
                     "{}",
