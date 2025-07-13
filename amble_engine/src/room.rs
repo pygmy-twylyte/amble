@@ -100,6 +100,7 @@ impl Room {
                         npc.description.description_style()
                     );
                 });
+            println!();
         }
     }
 
