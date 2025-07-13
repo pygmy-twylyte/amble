@@ -31,7 +31,7 @@ pub fn look_handler(world: &mut AmbleWorld) -> Result<()> {
 }
 
 /// Shows description of something (scoped to nearby items and npcs and inventory)
-pub fn look_at_handler(world: &AmbleWorld, thing: &str) -> Result<()> {
+pub fn look_at_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
     // scope = local items + npcs + player inventory
     let items_in_reach = nearby_reachable_items(world, current_room.id())?;
@@ -58,6 +58,7 @@ pub fn look_at_handler(world: &AmbleWorld, thing: &str) -> Result<()> {
             );
             npc.show(world)?;
         }
+        let _fired = check_triggers(world, &[]);
     } else {
         entity_not_found(world, thing);
     }
