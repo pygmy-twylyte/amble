@@ -6,16 +6,17 @@ use std::collections::HashMap;
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum SpinnerType {
-    Movement,
-    TakeVerb,
-    NpcIgnore,
-    EntityNotFound,
-    QuitMsg,
-    UnrecognizedCommand,
-    NoEffect,
-    AmbientWoodland,
     AmbientAA3B,
     AmbientInterior,
+    AmbientWoodland,
+    EntityNotFound,
+    Movement,
+    Nauseated,
+    NoEffect,
+    NpcIgnore,
+    QuitMsg,
+    TakeVerb,
+    UnrecognizedCommand,
 }
 
 pub trait SpinnerExt {
@@ -157,6 +158,17 @@ pub fn default_spinners() -> HashMap<SpinnerType, Spinner<&'static str>> {
             ("Somewhere behind the walls, gears grind and then stop abruptly.", 1),
             ("The lights flicker and buzz with a discordant hum.", 1),
             ("A gust of wind rushes through the corridor, but there are no open doors or windows.", 1),
+        ])),
+    );
+
+    #[rustfmt::skip]
+    spinners.insert(
+        SpinnerType::Nauseated,
+        Spinner::new(wedges_from_tuples(vec![
+            ("", 10),
+            ("Since reading the Vogon poetry, you can't shake a background queasiness.", 1 ),
+            ("You throw up a little in your mouth.", 1),
+            ("You regurgitate a bit of last night's dinner, but can't remember what it was.", 1,),
         ])),
     );
 
