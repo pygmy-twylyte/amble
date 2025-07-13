@@ -123,7 +123,7 @@ open it. One of the stickers reads "Fragile: Handle with Care!" and another is
 addressed to YOU at Amble Adventures headquarters.
 """
 portable = true
-location = { Nowhere = "spawns@inca-road after first leaving" }
+location = { Nowhere = "spawns@loading-dock after first leaving" }
 container_state = "closed"
 
 # -----------------------------------------------------------------------------
