@@ -382,6 +382,9 @@ pub enum RawTriggerAction {
     AddFlag {
         flag: String,
     },
+    RemoveFlag {
+        flag: String,
+    },
     AwardPoints {
         amount: isize,
     },
@@ -441,6 +444,9 @@ pub enum RawTriggerAction {
         item_id: String,
         room_id: String,
     },
+    SpinnerMessage {
+        spinner: SpinnerType,
+    },
     UnlockItem {
         item_id: String,
     },
@@ -452,10 +458,14 @@ pub enum RawTriggerAction {
 impl RawTriggerAction {
     fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
+            Self::SpinnerMessage { spinner } => {
+                Ok(TriggerAction::SpinnerMessage { spinner: *spinner })
+            }
             Self::RestrictItem { item_id } => cook_restrict_item(symbols, item_id),
             Self::NpcSaysRandom { npc_id } => cook_npc_says_random(symbols, npc_id),
             Self::NpcSays { npc_id, quote } => cook_npc_says(symbols, npc_id, quote),
             Self::AddFlag { flag } => Ok(TriggerAction::AddFlag(flag.to_string())),
+            Self::RemoveFlag { flag } => Ok(TriggerAction::RemoveFlag(flag.to_string())),
             Self::AwardPoints { amount } => Ok(TriggerAction::AwardPoints(*amount)),
             Self::SpawnItemCurrentRoom { item_id } => {
                 cook_spawn_item_current_room(symbols, item_id)
