@@ -15,6 +15,9 @@ pub static NAMESPACE_ITEM: LazyLock<Uuid> =
 pub static NAMESPACE_CHARACTER: LazyLock<Uuid> =
     LazyLock::new(|| Uuid::parse_str("99897a5d-4297-4bdc-832e-29df86925063").unwrap());
 
+/// Generate a v5 UUID for a given token id from the TOML data files.
+///
+/// Uses the namespaces above to separate rooms / items / characters.
 pub fn uuid_from_token(namespace: &Uuid, token: &str) -> Uuid {
     Uuid::new_v5(namespace, token.as_bytes())
 }
