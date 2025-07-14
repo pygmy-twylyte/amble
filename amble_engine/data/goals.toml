@@ -14,6 +14,22 @@ activate_when = { type = "goalComplete", goal_id = "get-oriented" }
 finished_when = { type = "reachedRoom", room_sym = "b-a-office" }
 
 [[goals]]
+id = "get-invited"
+name = "Get an Invitation"
+description = "The receptionist won't help you without an invitation; you'll need to get one somehow."
+group = { type = "required" }
+activate_when = { type = "goalComplete", goal_id = "find-the-office" }
+finished_when = { type = "hasItem", item_id = "invitation" }
+
+[[goals]]
+id = "get-visitor-pass"
+name = "Get a Visitor Pass"
+description = "Now that you have an invitation, maybe the receptionist will help you with this."
+group = { type = "required }
+activate_when = { type = "goalComplete", goal_id = "get-invited" }
+finished_when = { type = "hasItem", item_id = "visitor_pass" }
+
+[[goals]]
 id = "read-plaque-1"
 name = "Read the Plaque"
 description = "Find a way to clean the plaque at High Ridge so you can read it."
