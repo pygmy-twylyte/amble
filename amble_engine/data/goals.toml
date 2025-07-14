@@ -1,15 +1,46 @@
 [[goals]]
-id = "reach-aa3b"
-name = "Investigate Room AA-3B"
-description = "Figure out what's behind the mysterious sealed door."
-group = { type = "sublevel1" }
-activate_when = { type = "hasFlag", flag = "entered-sublevel-1" }
-finished_when = { type = "reachedRoom", room_sym = "room-aa-3b" }
+id = "get-oriented"
+name = "What the..?"
+description = "Look around to get some clue as to what's going on."
+group = { type = "required" }
+finished_when = { type = "hasFlag", flag = "read-scrawled-note" }
+
+[[goals]]
+id = "find-the-office"
+name = "Find the Office"
+description = "Apparently there's an office somewhere. You'll need to find it."
+group = { type = "required" }
+activate_when = { type = "goalComplete", goal_id = "get-oriented" }
+finished_when = { type = "reachedRoom", room_sym = "b-a-office" }
+
+[[goals]]
+id = "read-plaque-1"
+name = "Read the Plaque"
+description = "Find a way to clean the plaque at High Ridge so you can read it."
+group = { type = "optional" }
+activate_when = { type = "hasFlag", flag = "tried-read-plaque-1" }
+finished_when = { type = "hasFlag", flag = "read-plaque-1" }
+
+[[goals]]
+id = "clear-fallen-tree"
+name = "Clear the Path"
+description = "A fallen tree blocks your path -- you'll have to remove it somehow."
+group = { type = "required" }
+activate_when = { type = "reachedRoom", room_sym = "two-sheds-landing" }
+finished_when = { type = "hasFlag", flag = "cleared-fallen-tree" }
 
 [[goals]]
 id = "poetry-survivor"
 name = "Survive the Vogon Experience"
 description = "Recover from reading the galaxy's third worst poem."
-group = { type = "buildingMain" }
+group = { type = "status-effect" }
 activate_when = { type = "hasFlag", flag = "read-vogon-poetry" }
 finished_when = { type = "missingFlag", flag = "status:nauseated" }
+
+[[goals]]
+id = "reach-aa3b"
+name = "Investigate Room AA-3B"
+description = "Figure out what's behind the mysterious sealed door."
+group = { type = "required" }
+activate_when = { type = "hasFlag", flag = "entered-sublevel-1" }
+finished_when = { type = "reachedRoom", room_sym = "room-aa-3b" }

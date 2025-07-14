@@ -399,6 +399,12 @@ promised dessert. The cake was a lie.
 ]
 
 [[triggers]]
+name = "Scrawled Note: Flag as Read"
+only_once = true
+conditions = [{ type = "useItem", item_id = "scrawled_note", ability = "read" }]
+actions = [{ type = "addFlag", flag = "read-scrawled-note" }]
+
+[[triggers]]
 name = "Plaque 1: Clean With Towel"
 only_once = true
 conditions = [
@@ -419,6 +425,7 @@ conditions = [
 ]
 actions = [
     { type = "denyRead", reason = "It's too grimy. You need something to wipe it off." },
+    { type = "addFlag", flag = "tried-read-plaque-1" },
 ]
 
 [[triggers]]

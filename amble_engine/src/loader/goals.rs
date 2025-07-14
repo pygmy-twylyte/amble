@@ -21,6 +21,7 @@ pub struct RawGoal {
     pub group: GoalGroup,
     pub activate_when: Option<RawGoalCondition>, // None = always active / visible
     pub finished_when: RawGoalCondition,
+    pub failed_when: Option<RawGoalCondition>,
 }
 impl RawGoal {
     /// Converts a `RawGoal` from TOML to a `Goal`
@@ -32,7 +33,13 @@ impl RawGoal {
             .as_ref()
             .map(|raw| raw.to_goal_condition(symbols))
             .transpose()?;
+        let fail_when = self
+            .failed_when
+            .as_ref()
+            .map(|raw| raw.to_goal_condition(symbols))
+            .transpose()?;
         let done_when = self.finished_when.to_goal_condition(symbols)?;
+
         Ok(Goal {
             id: self.id.to_string(),
             name: self.name.to_string(),
@@ -40,6 +47,7 @@ impl RawGoal {
             group: self.group,
             activate_when: act_when,
             finished_when: done_when,
+            failed_when: fail_when,
         })
     }
 }

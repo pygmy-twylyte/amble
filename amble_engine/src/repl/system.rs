@@ -7,9 +7,11 @@ use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
 
+use crate::goal::GoalStatus;
 use crate::spinners::default_spinners;
 use crate::style::GameStyle;
 
+use crate::Goal;
 use crate::{AmbleWorld, WorldObject, repl::ReplControl, spinners::SpinnerType};
 
 use anyhow::{Context, Result};
@@ -135,12 +137,39 @@ pub fn help_handler() {
 /// Show current game game goals / status.
 pub fn goals_handler(world: &AmbleWorld) {
     println!("{}", "Current Goals:".underline());
+    println!("Active:");
+    filtered_goals(world, GoalStatus::Active)
+        .iter()
+        .for_each(|goal| {
+            println!(
+                "{} - {}",
+                goal.name.bright_purple(),
+                goal.description.description_style()
+            )
+        });
+    println!("Completed:");
+    filtered_goals(world, GoalStatus::Complete)
+        .iter()
+        .for_each(|goal| {
+            println!(
+                "{} - {}",
+                goal.name.purple(),
+                goal.description.description_style()
+            )
+        });
+    println!("Not Available Yet:");
+    filtered_goals(world, GoalStatus::Inactive)
+        .iter()
+        .for_each(|goal| println!("{}", goal.name.purple().dimmed(),));
+}
+
+/// Returns a list of game `Goals`, filtered by status
+pub fn filtered_goals<'a>(world: &'a AmbleWorld, status: GoalStatus) -> Vec<&'a Goal> {
     world
         .goals
         .iter()
-        .enumerate()
-        .for_each(|(i, g)| println!("{i}) {:#?}", g));
-    println!();
+        .filter(|goal| goal.status(world) == status)
+        .collect()
 }
 
 /// load game from a file
