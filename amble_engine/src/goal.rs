@@ -73,6 +73,7 @@ pub struct Goal {
     pub failed_when: Option<GoalCondition>,
 }
 impl Goal {
+    /// Determines and returns the current 'GoalStatus' for this goal.
     pub fn status(&self, world: &AmbleWorld) -> GoalStatus {
         if let Some(fail_condition) = &self.failed_when {
             if fail_condition.satisfied(world) {
