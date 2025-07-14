@@ -71,6 +71,7 @@ pub enum ItemInteractionType {
     Unlock,
 }
 
+/// All of the valid states a container can be in.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Variantly)]
 #[serde(rename_all = "camelCase")]
 pub enum ContainerState {
@@ -79,6 +80,8 @@ pub enum ContainerState {
     Locked,
 }
 
+/// Anything in 'AmbleWorld' that can be inspected or manipulated apart from NPCs.
+/// Some 'Items' can also act as containers for other items, if 'container_state' is 'Some(_)'. 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Item {
     pub id: Uuid,
@@ -135,7 +138,7 @@ impl Item {
     pub fn set_location_item(&mut self, container_id: Uuid) {
         self.location = Location::Item(container_id);
     }
-    /// Set location to player inventory by UUID
+    /// Set location to player inventory
     pub fn set_location_inventory(&mut self) {
         // once a restricted item has been obtained, must no longer be so
         // if given back to an NPC it can be optionally re-restricted using a trigger action
