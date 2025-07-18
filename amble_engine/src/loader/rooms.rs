@@ -92,7 +92,7 @@ impl RawRoom {
                 .ok_or_else(|| anyhow!("UUID for {} not found in symbols", self.id))?,
             name: self.name.clone(),
             description: self.description.clone(),
-            location: self.location.clone(),
+            location: self.location,
             visited: self.visited,
             exits: exit_map,
             contents: self.contents.clone(),

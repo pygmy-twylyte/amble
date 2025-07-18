@@ -1,4 +1,4 @@
-//! module loader::goals
+//! module `loader::goals`
 
 use std::{fs, path::Path};
 

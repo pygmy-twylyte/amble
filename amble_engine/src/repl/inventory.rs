@@ -126,7 +126,7 @@ pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
                         }
                     }
                     _ => {
-                        warn!("'take' matched an item at {orig_loc:?}: shouldn't be in scope")
+                        warn!("'take' matched an item at {orig_loc:?}: shouldn't be in scope");
                     }
                 }
                 check_triggers(world, &[TriggerCondition::Take(loot_id)])?;

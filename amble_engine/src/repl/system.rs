@@ -142,7 +142,7 @@ pub fn goals_handler(world: &AmbleWorld) {
     println!("{}", "Current Goals:".subheading_style());
     println!("Active:");
     if active.is_empty() {
-        println!("\t{}", "(nothing here - explore more!)".italic().dimmed())
+        println!("\t{}", "(nothing here - explore more!)".italic().dimmed());
     } else {
         for goal in &active {
             println!(

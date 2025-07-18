@@ -320,7 +320,7 @@ pub fn restrict_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
 /// Trigger random dialogue (based on mood) from NPC
 ///
 /// # Errors
-/// - on failed NPC or NpcIgnore spinner lookups
+/// - on failed NPC or `NpcIgnore` spinner lookups
 pub fn npc_says_random(world: &AmbleWorld, npc_id: &Uuid) -> Result<()> {
     let npc = world
         .npcs
