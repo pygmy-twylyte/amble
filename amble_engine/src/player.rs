@@ -1,7 +1,6 @@
 //! Player -- module for a player in Amble
-use crate::{ItemHolder, Location, WorldObject, world::AmbleWorld};
+use crate::{ItemHolder, Location, WorldObject};
 
-use log::error;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use uuid::Uuid;
@@ -44,18 +43,6 @@ impl WorldObject for Player {
 
     fn location(&self) -> &Location {
         &self.location
-    }
-}
-impl Player {
-    /// Return a string containing the name of the player's current location
-    pub fn location_name(&self, world: &AmbleWorld) -> String {
-        match world.player_room_ref() {
-            Ok(room) => room.name.to_string(),
-            Err(e) => {
-                error!("when looking up player location: {e}");
-                "<unknown>".to_string()
-            }
-        }
     }
 }
 impl ItemHolder for Player {

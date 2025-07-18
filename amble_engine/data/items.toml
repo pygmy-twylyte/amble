@@ -649,7 +649,7 @@ id = "shattered_vial"
 name = "Shattered Vial"
 description = """
 Some shards of glass that used to be a vial of liquid, but whatever what inside
-evaporated in the intense heat of the fire.
+has drained away.
 """
 location = { Nowhere = "may_spawn@loading-dock" }
 portable = false

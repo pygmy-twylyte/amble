@@ -56,7 +56,7 @@ pub fn look_at_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
                 npc.name(),
                 npc.id()
             );
-            npc.show(world)?;
+            npc.show(world);
         }
         let _fired = check_triggers(world, &[]);
     } else {

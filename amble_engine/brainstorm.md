@@ -1,11 +1,11 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
-- need a call of some kind to check_triggers with any recognized command so state triggers can fire too?
+- styles for goal entries / improved goals displays
+- style for subheadings
 - dev commands to teleport (DONE), get items / achievs
-x add "clean" / "wipe" item interaction
 - spinner for when no destination matches on "go" command
-x` giveitemtoNPC should block (or reverse) transfer if there is no trigger for NPC response. "NPC doesn't want that." spinner.
+- update giveToNpc to give more specific reasons for refusals.
 - trigger action to change the .read field on an item to update displays etc
 
 ## FIXITs from runthroughs / CONTENT additions
@@ -14,9 +14,7 @@ x remove key access to security suppy crate to avoid inventory problems if crate
 - make reservation book readable
 - rename abandoned game from Brains Anonymous: Pong Construction Set '84
 - A. Jackson needs a mailbox and something funny / lore-building inside it (jackson's landing)
-- add trigger so something happens if you sharpen the axe with the stone
 - maybe add river bank location south of inca-road (already mentioned in description) and put whetstone there
-- turn west of building into a snowfield?
 - add warning / instruction label to read on poetry performer, and make it Initech
 
 

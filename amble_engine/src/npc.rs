@@ -7,7 +7,6 @@ use std::{
     fmt::Display,
 };
 
-use anyhow::Result;
 use colored::Colorize;
 use gametools::Spinner;
 use rand::prelude::IndexedRandom;
@@ -16,6 +15,7 @@ use uuid::Uuid;
 
 use crate::{ItemHolder, Location, WorldObject, style::GameStyle, world::AmbleWorld};
 
+/// Represents the demeanor of an 'Npc', which may affect default dialogue and behavior
 #[derive(Copy, Clone, Debug, variantly::Variantly, PartialEq, Hash, Eq, Serialize, Deserialize)]
 pub enum NpcMood {
     Bored,
@@ -38,7 +38,7 @@ impl Display for NpcMood {
     }
 }
 
-/// A non-player character.
+/// A non-playable character.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Npc {
     pub id: Uuid,
@@ -69,7 +69,7 @@ impl Npc {
         }
     }
     /// Display NPC info to the player
-    pub fn show(&self, world: &AmbleWorld) -> Result<()> {
+    pub fn show(&self, world: &AmbleWorld) {
         println!(
             "{} {}",
             self.name().npc_style().bold(),
@@ -91,7 +91,6 @@ impl Npc {
                     }
                 });
         }
-        Ok(())
     }
 }
 impl WorldObject for Npc {

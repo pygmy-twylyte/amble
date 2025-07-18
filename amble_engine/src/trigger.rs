@@ -100,7 +100,7 @@ impl TriggerCondition {
             Self::HasFlag(flag) => world.player.flags.contains(flag),
             Self::MissingFlag(flag) => !world.player.flags.contains(flag),
             Self::HasVisited(room_id) => world.rooms.get(room_id).is_some_and(|r| r.visited),
-            Self::InRoom(room_id) => *room_id == world.player.location.clone().unwrap_room(),
+            Self::InRoom(room_id) => *room_id == world.player.location.unwrap_room(),
             Self::NpcHasItem { npc_id, item_id } => world
                 .npcs
                 .get(npc_id)
@@ -187,6 +187,9 @@ where
 }
 
 /// Determine which triggers meet conditions to fire now, fire them, and return a list of fired triggers.
+///
+/// # Errors
+/// - on any failed uuid lookup during trigger dispatch
 pub fn check_triggers<'a>(
     world: &'a mut AmbleWorld,
     events: &[TriggerCondition],
@@ -225,6 +228,9 @@ pub fn check_triggers<'a>(
 }
 
 /// fires the matching trigger action by calling its handler function
+///
+/// # Errors
+/// - on failed triggered actions due to bad uuids
 fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()> {
     match action {
         TriggerAction::SpinnerMessage { spinner } => spinner_message(world, *spinner)?,
@@ -270,6 +276,10 @@ fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()>
     Ok(())
 }
 
+/// Displays a triggered, randomized message (or sometimes none) from one of the world spinners.
+///
+/// # Errors
+/// - if requested spinner type isn't found
 fn spinner_message(world: &mut AmbleWorld, spinner_type: SpinnerType) -> Result<()> {
     if let Some(spinner) = world.spinners.get(&spinner_type) {
         let msg = spinner.spin().unwrap_or_default();
@@ -291,10 +301,13 @@ fn remove_flag(world: &mut AmbleWorld, flag: &str) {
     if world.player.flags.remove(flag) {
         info!("└─ action: RemoveFlag(\"{flag}\")");
     } else {
-        warn!("└─ action: RemoveFlag(\"{flag}\") - flag was not set")
+        warn!("└─ action: RemoveFlag(\"{flag}\") - flag was not set");
     }
 }
 /// Changes an item's status to restricted
+///
+/// # Errors
+/// - on failed item lookup
 pub fn restrict_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     if let Some(item) = world.items.get_mut(item_id) {
         item.restricted = true;
@@ -305,6 +318,9 @@ pub fn restrict_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     }
 }
 /// Trigger random dialogue (based on mood) from NPC
+///
+/// # Errors
+/// - on failed NPC or NpcIgnore spinner lookups
 pub fn npc_says_random(world: &AmbleWorld, npc_id: &Uuid) -> Result<()> {
     let npc = world
         .npcs

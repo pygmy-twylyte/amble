@@ -105,6 +105,7 @@ pub fn help_handler() {
     println!(
         r"
 *Some* of the available commands:
+  goals    <-- (show active / completed objectives)
   look
   look at <item>
   go/move <direction>
@@ -136,35 +137,33 @@ pub fn help_handler() {
 
 /// Show current game game goals / status.
 pub fn goals_handler(world: &AmbleWorld) {
-    println!("{}", "Current Goals:".underline());
+    let active = filtered_goals(world, GoalStatus::Active);
+    let complete = filtered_goals(world, GoalStatus::Complete);
+    println!("{}", "Current Goals:".subheading_style());
     println!("Active:");
-    filtered_goals(world, GoalStatus::Active)
-        .iter()
-        .for_each(|goal| {
+    if active.is_empty() {
+        println!("\t{}", "(nothing here - explore more!)".italic().dimmed())
+    } else {
+        for goal in &active {
             println!(
-                "{} - {}",
-                goal.name.bright_purple(),
+                "\t{} - {}",
+                goal.name.goal_active_style(),
                 goal.description.description_style()
-            )
-        });
-    println!("Completed:");
-    filtered_goals(world, GoalStatus::Complete)
-        .iter()
-        .for_each(|goal| {
-            println!(
-                "{} - {}",
-                goal.name.purple(),
-                goal.description.description_style()
-            )
-        });
-    println!("Not Available Yet:");
-    filtered_goals(world, GoalStatus::Inactive)
-        .iter()
-        .for_each(|goal| println!("{}", goal.name.purple().dimmed(),));
+            );
+        }
+    }
+    println!();
+    if !complete.is_empty() {
+        println!("Complete:");
+        for goal in &complete {
+            println!("\t{}", goal.name.goal_complete_style());
+        }
+        println!();
+    }
 }
 
 /// Returns a list of game `Goals`, filtered by status
-pub fn filtered_goals<'a>(world: &'a AmbleWorld, status: GoalStatus) -> Vec<&'a Goal> {
+pub fn filtered_goals(world: &AmbleWorld, status: GoalStatus) -> Vec<&Goal> {
     world
         .goals
         .iter()
@@ -172,8 +171,11 @@ pub fn filtered_goals<'a>(world: &'a AmbleWorld, status: GoalStatus) -> Vec<&'a 
         .collect()
 }
 
-/// load game from a file
-pub fn load_handler(world: &mut AmbleWorld, gamefile: &str) -> Result<()> {
+/// Loads a saved game.
+///
+/// # Errors
+/// - on save file not found or RON parsing error.
+pub fn load_handler(world: &mut AmbleWorld, gamefile: &str) {
     let load_path = PathBuf::from("saved_games").join(format!("amble-{gamefile}.ron"));
     if let Ok(world_ron) = fs::read_to_string(load_path.as_path()) {
         if let Ok(new_world) = ron::from_str::<AmbleWorld>(&world_ron) {
@@ -199,7 +201,6 @@ pub fn load_handler(world: &mut AmbleWorld, gamefile: &str) -> Result<()> {
             gamefile.error_style()
         );
     }
-    Ok(())
 }
 
 /// save game to a file

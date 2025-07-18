@@ -83,7 +83,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             Command::GiveToNpc { item, npc } => give_to_npc_handler(world, &item, &npc)?,
             Command::TurnOn(thing) => turn_on_handler(world, &thing)?,
             Command::Read(thing) => read_handler(world, &thing)?,
-            Command::Load(gamefile) => load_handler(world, &gamefile)?,
+            Command::Load(gamefile) => load_handler(world, &gamefile),
             Command::Save(gamefile) => save_handler(world, &gamefile)?,
             Command::UseItemOn { verb, tool, target } => {
                 use_item_on_handler(world, verb, &tool, &target)?;
@@ -95,6 +95,9 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
 }
 
 /// Check and fire any Ambient triggers that apply (run each time around the REPL loop)
+///
+/// # Errors
+/// - on failed lookup of player's location
 pub fn check_ambient_triggers(world: &mut AmbleWorld) -> Result<()> {
     let current_room_id = world.player_room_ref()?.id();
     for trigger in &mut world.triggers {

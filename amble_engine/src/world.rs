@@ -126,7 +126,7 @@ pub fn nearby_reachable_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashS
     let room_items = &current_room.contents;
     let mut contained_items = HashSet::new();
     for item_id in room_items {
-        if let Some(item) = world.items.get(&item_id)
+        if let Some(item) = world.items.get(item_id)
             && item.container_state == Some(ContainerState::Open)
         {
             contained_items.extend(&item.contents);

@@ -14,9 +14,21 @@ pub trait GameStyle {
     fn exit_locked_style(&self) -> ColoredString;
     fn exit_unvisited_style(&self) -> ColoredString;
     fn error_style(&self) -> ColoredString;
+    fn subheading_style(&self) -> ColoredString;
+    fn goal_active_style(&self) -> ColoredString;
+    fn goal_complete_style(&self) -> ColoredString;
 }
 
 impl GameStyle for &str {
+    fn subheading_style(&self) -> ColoredString {
+        self.underline()
+    }
+    fn goal_active_style(&self) -> ColoredString {
+        self.truecolor(220, 40, 220).bold()
+    }
+    fn goal_complete_style(&self) -> ColoredString {
+        self.truecolor(220, 40, 220).strikethrough()
+    }
     fn item_style(&self) -> ColoredString {
         self.truecolor(220, 180, 40)
     }
@@ -59,6 +71,15 @@ impl GameStyle for &str {
 }
 
 impl GameStyle for String {
+    fn goal_active_style(&self) -> ColoredString {
+        self.as_str().goal_active_style()
+    }
+    fn goal_complete_style(&self) -> ColoredString {
+        self.as_str().goal_complete_style()
+    }
+    fn subheading_style(&self) -> ColoredString {
+        self.as_str().subheading_style()
+    }
     fn item_style(&self) -> ColoredString {
         self.as_str().item_style()
     }
