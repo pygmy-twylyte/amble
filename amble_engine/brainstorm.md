@@ -1,8 +1,6 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
-- styles for goal entries / improved goals displays
-- style for subheadings
 - dev commands to teleport (DONE), get items / achievs
 - spinner for when no destination matches on "go" command
 - update giveToNpc to give more specific reasons for refusals.
