@@ -3,12 +3,14 @@ pub mod items;
 pub mod npcs;
 pub mod player;
 pub mod rooms;
+pub mod spinners;
 pub mod triggers;
 
 use crate::loader::goals::{build_goals, load_raw_goals};
 use crate::loader::items::load_raw_items;
 use crate::loader::player::load_player;
 use crate::loader::rooms::load_raw_rooms;
+use crate::loader::spinners::load_spinners;
 use crate::loader::triggers::load_raw_triggers;
 
 use crate::trigger::TriggerAction;
@@ -87,10 +89,15 @@ pub fn load_world() -> Result<AmbleWorld> {
     let player_toml_path = Path::new("amble_engine/data/player.toml");
     let npc_toml_path = Path::new("amble_engine/data/npcs.toml");
     let trigger_toml_path = Path::new("amble_engine/data/triggers.toml");
+    let spinners_toml_path = Path::new("amble_engine/data/spinners.toml");
     let goal_toml_path = Path::new("amble_engine/data/goals.toml");
 
     let mut world = AmbleWorld::new_empty();
     let mut symbols = SymbolTable::default();
+
+    /* Load Spinners */
+    world.spinners =
+        load_spinners(spinners_toml_path).context("while loading spinners from file")?;
 
     /* Load Empty Rooms */
     let raw_rooms = load_raw_rooms(room_toml_path).context("while loading rooms from file")?;
