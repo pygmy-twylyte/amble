@@ -1,6 +1,6 @@
 use crate::item::ContainerState;
 use crate::npc::Npc;
-use crate::spinners::{SpinnerType, default_spinners};
+use crate::spinners::SpinnerType;
 use crate::trigger::Trigger;
 use crate::{Goal, Item, Player, Room};
 
@@ -42,7 +42,7 @@ pub struct AmbleWorld {
     pub triggers: Vec<Trigger>,
     pub player: Player,
     #[serde(skip)] // these are hard-coded into spinners.rs
-    pub spinners: HashMap<SpinnerType, Spinner<&'static str>>,
+    pub spinners: HashMap<SpinnerType, Spinner<String>>,
     pub npcs: HashMap<Uuid, Npc>,
     pub max_score: usize,
     pub goals: Vec<Goal>,
@@ -56,7 +56,7 @@ impl AmbleWorld {
             items: HashMap::new(),
             triggers: Vec::new(),
             player: Player::default(),
-            spinners: default_spinners(),
+            spinners: HashMap::new(),
             max_score: 0,
             goals: Vec::new(),
         };
@@ -66,11 +66,11 @@ impl AmbleWorld {
     }
 
     /// Returns a random string (&'static str) from the selected spinner type, or a supplied default.
-    pub fn spin_spinner(&self, spin_type: SpinnerType, default: &'static str) -> &'static str {
+    pub fn spin_spinner(&self, spin_type: SpinnerType, default: &'static str) -> String {
         self.spinners
             .get(&spin_type)
             .and_then(gametools::Spinner::spin)
-            .unwrap_or(default)
+            .unwrap_or(default.to_string())
     }
 
     /// Obtain a reference to the room the player occupies.

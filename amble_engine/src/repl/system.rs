@@ -8,7 +8,6 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use crate::goal::GoalStatus;
-use crate::spinners::default_spinners;
 use crate::style::GameStyle;
 
 use crate::Goal;
@@ -180,7 +179,6 @@ pub fn load_handler(world: &mut AmbleWorld, gamefile: &str) {
     if let Ok(world_ron) = fs::read_to_string(load_path.as_path()) {
         if let Ok(new_world) = ron::from_str::<AmbleWorld>(&world_ron) {
             *world = new_world;
-            world.spinners = default_spinners();
             println!(
                 "Saved game {} loaded successfully. Sally forth.",
                 gamefile.underline().green()

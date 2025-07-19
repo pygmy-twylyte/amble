@@ -51,7 +51,7 @@ pub struct Npc {
 }
 impl Npc {
     /// Returns a random line of dialogue from within the NPCs current Mood.
-    pub fn random_dialogue(&self, ignore_spinner: &Spinner<&'static str>) -> String {
+    pub fn random_dialogue(&self, ignore_spinner: &Spinner<String>) -> String {
         if let Some(lines) = self.dialogue.get(&self.mood) {
             let mut rng = rand::rng();
             lines
@@ -65,7 +65,7 @@ impl Npc {
                 self.id(),
                 self.mood
             );
-            ignore_spinner.spin().unwrap_or("Ignores you.").to_string()
+            ignore_spinner.spin().unwrap_or("Ignores you.".to_string())
         }
     }
     /// Display NPC info to the player
