@@ -534,6 +534,7 @@ actions = [
     { type = "spawnItemInContainer", item_id = "security_log", container_id = "security_crate" },
     { type = "spawnItemInContainer", item_id = "glass_vial", container_id = "security_crate" },
     { type = "spawnItemInContainer", item_id = "initech_mug", container_id = "security_crate" },
+    { type = "addFlag", flag = "unlocked-security-crate" },
     { type = "showMessage", text = """
 The ear wax on the tip of the key eases it into the rusted lock, which snaps
 open with a satisfying clunk.
@@ -545,6 +546,7 @@ name = "Loading Dock: Open Security Crate (Cut Wood)"
 only_once = true
 conditions = [
     { type = "useItemOnItem", tool_id = "lumberjack_axe", target_id = "security_crate", interaction = "cut" },
+    { type = "missingFlag", flag = "unlocked-security-crate" },
 ]
 actions = [
     { type = "despawnItem", item_id = "security_crate" },
@@ -563,6 +565,7 @@ name = "Loading Dock: Open Security Crate (Break)"
 only_once = true
 conditions = [
     { type = "useItemOnItem", tool_id = "lumberjack_axe", target_id = "security_crate", interaction = "break" },
+    { type = "missingFlag", flag = "unlocked-security-crate" },
 ]
 actions = [
     { type = "despawnItem", item_id = "security_crate" },
@@ -582,6 +585,7 @@ name = "Loading Dock: Open Security Crate (Burn)"
 only_once = true
 conditions = [
     { type = "useItemOnItem", tool_id = "flamethrower", target_id = "security_crate", interaction = "burn" },
+    { type = "missingFlag", flag = "unlocked-security-crate" },
 ]
 actions = [
     { type = "despawnItem", item_id = "security_crate" },
