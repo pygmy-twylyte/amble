@@ -38,6 +38,14 @@ activate_when = { type = "goalComplete", goal_id = "get-visitor-pass" }
 finished_when = { type = "hasFlag", flag = "got-elevator-keycard" }
 
 [[goals]]
+id = "go-to-sublevel"
+name = "Go To Room AA-3B"
+description = "The receptionist said you should find Room AA-3B for the next step in your evaluation."
+group = { type = "required" }
+activate_when = { type = "goalComplete", goal_id = "get_elevator_keycard" }
+finished_when = { type = "reachedRoom", room_sym = "sublevel-1-entrance" }
+
+[[goals]]
 id = "read-plaque-1"
 name = "Read the Plaque"
 description = "Find a way to clean the plaque at High Ridge so you can read it."
