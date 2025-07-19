@@ -1,0 +1,138 @@
+[[spinners]]
+spinnerType = "quitMsg"
+values = ["Bye.", "Auf Wiedersehen.", "Later, 'gator!", "Aww. Come back soon."]
+
+[[spinners]]
+spinnerType = "movement"
+values = [
+    "Staying alert, you go on...",
+    "You move that direction...",
+    "Coolly, you roll ahead...",
+    "Heading that direction...",
+    "You saunter along...",
+    "Merrily, you traipse ahead...",
+    "You ramble on...",
+    "Cruising right along...",
+    "Your trek continues...",
+    "Strolling right along...",
+    "Roam, if you want to...",
+    "You amble ahead...",
+    "You practice your silly walk in that direction...",
+    "Your path decided, you tromp forth...",
+    "Your hike continues...",
+    "\"Why not jog?\", you think, as you plod along...",
+    "You shuffle onward...",
+    "You trot that way, like you have to poop...",
+    "Lightly, you skip forth...",
+    "Onward, you lope like a tauntaun...",
+    "You sally forth...",
+    "With no chance of an Uber here, you decide to hoof it...",
+]
+
+[[spinners]]
+spinnerType = "takeVerb"
+values = ["take", "grab", "get", "snag", "nab", "bag", "pocket"]
+
+[[spinners]]
+spinnerType = "npcIgnore"
+values = [
+    "Has nothing to say.",
+    "Ignores you.",
+    "Hums a tune, hoping you'll go away.",
+    "Stands mute.",
+    "Disregards you completely. Are you sure you said something out loud?",
+    "Isn't in the mood to talk.",
+]
+
+[[spinners]]
+spinnerType = "entityNotFound"
+values = [
+    "What's that?",
+    "You made that up.",
+    "Never heard of it.",
+    "You don't see that here.",
+    "404 Not Found - Try Again",
+    "I don't recognize that.",
+]
+
+[[spinners]]
+spinnerType = "unrecognizedCommand"
+values = [
+    "Syntax error. Please insert quarter and try again.",
+    "That command has been fed to a hungry goat and can no longer be retrieved.",
+    "The universe tilts its head, confused.",
+    "I'm sorry, Dave. I'm afraid I can't do that.",
+    "The parser emits a low, judgmental beep.",
+    "That seems like something you'd do in a *different* text adventure.",
+    "Your words echo into the void, unacknowledged.",
+    "Command not recognized. Try 'help', 'yell', or 'cry'.",
+    "That input caused a minor existential crisis in the REPL. It's fine now.",
+    "Unrecognized verb. Maybe try it in ALL CAPS for emphasis?",
+    "Snagrilfromp. I can make words up too.",
+    "Have you tried turning your syntax off and back on again?",
+]
+
+[[spinners]]
+spinnerType = "noEffect"
+values = [
+    "You try it. It doesn't seem to help.",
+    "The world shrugs.",
+    "You stare at the result. The result stares back.",
+    "Well... it *could* have worked.",
+    "Absolutely nothing happens. Not even a dramatic pause.",
+    "You feel a vague sense of anticlimax.",
+    "Somewhere, a cricket hesitates, then chirps once.",
+    "The laws of physics remain disappointingly unaltered.",
+    "Reality refuses to acknowledge your efforts.",
+    "No errors, no effect, no fanfare. Just... stillness.",
+    "That's another entry for the Journal of Failed Experiments.",
+]
+
+[[spinners]]
+spinnerType = "ambientWoodland"
+values = [
+    "",
+    "A bird sings warily: \"Poo-tee-weet?\"",
+    "A swallow flies past, carrying a coconut.",
+    "A hummingbird flies by, but gliding like an albatross on an unseen wind.",
+    "Something tromps through the leaves behind you, but stops when you turn around.",
+    "You hear a faint, echoing laugh from deep in the woods.",
+]
+widths = [16, 1, 1, 1, 1, 1]
+
+[[spinners]]
+spinnerType = "ambientAA3B"
+values = [
+    "",
+    "A shimmering blue police box flickers into existence for an instant, then vanishes.",
+    "A robed figure mutters in an unknown tongue before dissolving into mist.",
+    "For a moment, your surroundings flatten as if the world became two-dimensional.",
+    "A penguin waddles past, wearing a lab coat and muttering about a narrative malfunction.",
+    "A black obelisk taller than you shimmers into view, then fades as quickly as it appeared.",
+]
+widths = [15, 1, 1, 1, 1, 1]
+
+[[spinners]]
+spinnerType = "ambientInterior"
+values = [
+    "",
+    "The intercom crackles: \"Please return the time machine to the checkout desk.\"",
+    "A siren whoops twice, then cuts off mid-blare.",
+    "A calm female voice over the PA says: \"Welcome to Aperture Science. Enjoy your stay,\" followed by a beep.",
+    "Somewhere behind the walls, gears grind and then stop abruptly.",
+    "The lights flicker and buzz with a discordant hum.",
+    "A gust of wind rushes through the corridor, but there are no open doors or windows.",
+    "A faint voice says \"Testing in progress\" followed by a thump.",
+]
+widths = [20, 1, 1, 1, 1, 1, 1, 1]
+
+[[spinners]]
+spinnerType = "nauseated"
+values = [
+    "",
+    "Since reading the Vogon poetry, you can't shake a background queasiness.",
+    "You throw up a little in your mouth.",
+    "You regurgitate a bit of last night's dinner, but can't remember what it was.",
+    "Everything smells faintly of old tuna. Why?",
+]
+widths = [10, 1, 1, 1, 1]
