@@ -556,6 +556,29 @@ restricted = true
 type = "Unlock"
 target = "lost_and_found_box"
 
+# ------------------------------------------------------------------------------
+[[items]]
+id = "security_locker_key"
+name = "Brass Key"
+location = { Room = "security-station" }
+portable = true
+restricted = false
+description = """
+A small, nondescript brass key with what appears to be a small glob of ear wax
+on the tip. There's a rumpled label attached to the ring with a couple of
+letters worn off by greasy fingers.
+"""
+text = """
+_OCK _OCK_R
+"""
+
+[[items.abilities]]
+type = "Read"
+
+[[items.abilities]]
+type = "Unlock"
+target = "security_crate"
+
 # --------------------------------------------------------------------------
 [[items]]
 id = "security_crate"
