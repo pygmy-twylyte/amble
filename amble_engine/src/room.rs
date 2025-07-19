@@ -74,7 +74,7 @@ impl Room {
         println!("{}", self.description.description_style());
 
         if !self.contents.is_empty() {
-            println!("You see:");
+            println!("{}", "You see:".subheading_style());
             self.contents
                 .iter()
                 .filter_map(|item_id| world.items.get(item_id))
@@ -89,7 +89,7 @@ impl Room {
 
     pub fn show_npcs(&self, world: &AmbleWorld) {
         if !self.npcs.is_empty() {
-            println!("Others here:");
+            println!("{}", "Others here:".subheading_style());
             self.npcs
                 .iter()
                 .filter_map(|npc_id| world.npcs.get(npc_id))
@@ -105,7 +105,7 @@ impl Room {
     }
 
     pub fn show_exits(&self, world: &AmbleWorld) -> Result<()> {
-        println!("\nExits:");
+        println!("\n{}", "Exits:".subheading_style());
         for (direction, exit) in &self.exits {
             let target_room = world.rooms.get(&exit.to).ok_or(anyhow!(
                 "Room({}) not found ({} exit from Room({})",

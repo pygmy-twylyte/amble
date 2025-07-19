@@ -297,11 +297,12 @@ checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 
 [[package]]
 name = "gametools"
-version = "0.3.2"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7405db1b5dde8fe17af1406f75fe097b3fa337ca104fdb4a606896cc9468edf2"
+checksum = "6ce7e33568caa9eddfb56a2d3ac405116e19607dbc29c816f1cb5634f0a0c2ea"
 dependencies = [
  "rand",
+ "serde",
  "strum 0.27.1",
  "strum_macros 0.27.1",
 ]
