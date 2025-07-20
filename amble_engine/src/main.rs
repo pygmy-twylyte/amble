@@ -3,6 +3,7 @@
 //! ** Amble **
 //! Adventure game / engine project
 
+use amble_engine::style::GameStyle;
 use amble_engine::{WorldObject, load_world, run_repl};
 
 use anyhow::{Context, Result};
@@ -37,7 +38,7 @@ fn main() -> Result<()> {
     );
 
     let introduction = fs::read_to_string("amble_engine/data/intro.txt")?;
-    println!("{}", introduction.italic());
+    println!("{}", introduction.description_style());
 
     run_repl(&mut world)
 }
