@@ -29,6 +29,7 @@ impl Exit {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Room {
     pub id: Uuid,
+    pub symbol: String,
     pub name: String,
     pub description: String,
     pub location: Location,
@@ -41,7 +42,9 @@ impl WorldObject for Room {
     fn id(&self) -> Uuid {
         self.id
     }
-
+    fn symbol(&self) -> &str {
+        &self.symbol
+    }
     fn name(&self) -> &str {
         &self.name
     }

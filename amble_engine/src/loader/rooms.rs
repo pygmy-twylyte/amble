@@ -90,6 +90,7 @@ impl RawRoom {
                 .rooms
                 .get(&self.id)
                 .ok_or_else(|| anyhow!("UUID for {} not found in symbols", self.id))?,
+            symbol: self.id.to_string(),
             name: self.name.clone(),
             description: self.description.clone(),
             location: self.location,
