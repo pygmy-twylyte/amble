@@ -29,6 +29,7 @@ pub enum Location {
 /// Methods common to any object in the world.
 pub trait WorldObject {
     fn id(&self) -> Uuid;
+    fn symbol(&self) -> &str;
     fn name(&self) -> &str;
     fn description(&self) -> &str;
     fn location(&self) -> &Location;
