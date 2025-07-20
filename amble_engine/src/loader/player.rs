@@ -49,6 +49,7 @@ impl RawPlayer {
         };
         let player = Player {
             id,
+            symbol: self.id.to_string(),
             name: self.name.to_string(),
             description: self.description.to_string(),
             location,

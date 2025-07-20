@@ -8,6 +8,7 @@ use uuid::Uuid;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Player {
     pub id: Uuid,
+    pub symbol: String,
     pub name: String,
     pub description: String,
     pub location: Location,
@@ -19,7 +20,8 @@ impl Default for Player {
     fn default() -> Player {
         Self {
             id: Uuid::new_v4(),
-            name: "default".into(),
+            symbol: "the_candidate".into(),
+            name: "The Candidate".into(),
             description: "default".into(),
             location: Location::default(),
             inventory: HashSet::<Uuid>::default(),
@@ -32,15 +34,15 @@ impl WorldObject for Player {
     fn id(&self) -> Uuid {
         self.id
     }
-
+    fn symbol(&self) -> &str {
+        &self.symbol
+    }
     fn name(&self) -> &str {
         &self.name
     }
-
     fn description(&self) -> &str {
         &self.description
     }
-
     fn location(&self) -> &Location {
         &self.location
     }
