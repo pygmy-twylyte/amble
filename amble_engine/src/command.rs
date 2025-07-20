@@ -80,7 +80,7 @@ pub fn parse_command(input: &str) -> Command {
         ["talk" | "speak", "to" | "with", npc_name] => Command::TalkTo((*npc_name).to_string()),
         ["turn" | "switch", thing, "on"] | ["start", thing] => {
             Command::TurnOn((*thing).to_string())
-        }
+        },
         ["help" | "?"] => Command::Help,
         ["read", thing] => Command::Read((*thing).to_string()),
         ["load", gamefile] => Command::Load((*gamefile).to_string()),

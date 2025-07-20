@@ -5,7 +5,7 @@ use std::{collections::HashMap, path::Path};
 
 use anyhow::{Context, Result};
 use gametools::{Spinner, Wedge};
-use log::warn;
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 
 use crate::spinners::SpinnerType;
@@ -49,6 +49,7 @@ impl SpinnerFile {
                 );
             };
         }
+        info!("{} spinners built from TOML data", spinners.len());
         spinners
     }
 }
@@ -58,5 +59,6 @@ pub fn load_spinners(toml_path: &Path) -> Result<HashMap<SpinnerType, Spinner<St
         .with_context(|| format!("reading spinner data from {}", toml_path.display()))?;
     let spinner_file: SpinnerFile = toml::from_str(&file)
         .with_context(|| format!("parsing spinner data from {}", toml_path.display()))?;
+    info!("raw spinner data loaded from '{}'", toml_path.display());
     Ok(spinner_file.to_spinner_map())
 }

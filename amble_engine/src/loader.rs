@@ -98,6 +98,7 @@ pub fn load_world() -> Result<AmbleWorld> {
     /* Load Spinners */
     world.spinners =
         load_spinners(spinners_toml_path).context("while loading spinners from file")?;
+    info!("{} spinners added to AmbleWorld", world.spinners.len());
 
     /* Load Empty Rooms */
     let raw_rooms = load_raw_rooms(room_toml_path).context("while loading rooms from file")?;

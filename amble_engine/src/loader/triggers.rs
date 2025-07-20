@@ -87,7 +87,7 @@ impl RawTriggerCondition {
             Self::TalkToNpc { npc_id } => cook_talk_to_npc(symbols, npc_id),
             Self::Ambient { room_ids, spinner } => {
                 cook_ambient(symbols, room_ids.as_ref(), *spinner)
-            }
+            },
             Self::ContainerHasItem {
                 container_id,
                 item_id,
@@ -460,7 +460,7 @@ impl RawTriggerAction {
         match self {
             Self::SpinnerMessage { spinner } => {
                 Ok(TriggerAction::SpinnerMessage { spinner: *spinner })
-            }
+            },
             Self::RestrictItem { item_id } => cook_restrict_item(symbols, item_id),
             Self::NpcSaysRandom { npc_id } => cook_npc_says_random(symbols, npc_id),
             Self::NpcSays { npc_id, quote } => cook_npc_says(symbols, npc_id, quote),
@@ -469,11 +469,11 @@ impl RawTriggerAction {
             Self::AwardPoints { amount } => Ok(TriggerAction::AwardPoints(*amount)),
             Self::SpawnItemCurrentRoom { item_id } => {
                 cook_spawn_item_current_room(symbols, item_id)
-            }
+            },
             Self::PushPlayerTo { room_id } => cook_push_player_to(symbols, room_id),
             Self::GiveItemToPlayer { npc_id, item_id } => {
                 cook_give_item_to_player(symbols, npc_id, item_id)
-            }
+            },
             Self::SetNpcMood { npc_id, mood } => cook_set_npc_mood(symbols, npc_id, *mood),
             Self::ShowMessage { text } => Ok(TriggerAction::ShowMessage(text.to_string())),
             Self::RevealExit {
@@ -483,7 +483,7 @@ impl RawTriggerAction {
             } => cook_reveal_exit(symbols, exit_from, exit_to, direction),
             Self::SpawnItemInRoom { item_id, room_id } => {
                 cook_spawn_item_in_room(symbols, item_id, room_id)
-            }
+            },
             Self::SpawnItemInContainer {
                 item_id,
                 container_id,
@@ -497,7 +497,7 @@ impl RawTriggerAction {
             } => cook_lock_exit(symbols, from_room, direction),
             Self::SpawnItemInInventory { item_id } => {
                 cook_spawn_item_in_inventory(symbols, item_id)
-            }
+            },
             Self::UnlockExit {
                 from_room,
                 direction,

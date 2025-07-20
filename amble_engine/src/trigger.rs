@@ -216,7 +216,6 @@ pub fn check_triggers<'a>(
             trigger.fired = true;
         }
 
-        // clone needed here to satisfy borrow checker
         let actions = trigger.actions.clone();
         for action in actions {
             dispatch_action(world, &action)?;
@@ -280,7 +279,7 @@ fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()>
 ///
 /// # Errors
 /// - if requested spinner type isn't found
-fn spinner_message(world: &mut AmbleWorld, spinner_type: SpinnerType) -> Result<()> {
+pub fn spinner_message(world: &mut AmbleWorld, spinner_type: SpinnerType) -> Result<()> {
     if let Some(spinner) = world.spinners.get(&spinner_type) {
         let msg = spinner.spin().unwrap_or_default();
         if !msg.is_empty() {
@@ -297,7 +296,8 @@ fn spinner_message(world: &mut AmbleWorld, spinner_type: SpinnerType) -> Result<
     }
 }
 
-fn remove_flag(world: &mut AmbleWorld, flag: &str) {
+/// Remove a flag that's been applied to the player.
+pub fn remove_flag(world: &mut AmbleWorld, flag: &str) {
     if world.player.flags.remove(flag) {
         info!("└─ action: RemoveFlag(\"{flag}\")");
     } else {
@@ -683,6 +683,6 @@ fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
 
 /// Notify player of the reason a Read(item) command was denied
 fn deny_read(reason: &String) {
-    println!("You can't read that. {reason}");
+    println!("{}", reason.denied_style());
     info!("└─ action: DenyRead(\"{reason}\")");
 }

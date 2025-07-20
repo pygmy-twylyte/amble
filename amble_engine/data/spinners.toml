@@ -123,6 +123,7 @@ values = [
     "The lights flicker and buzz with a discordant hum.",
     "A gust of wind rushes through the corridor, but there are no open doors or windows.",
     "A faint voice says \"Testing in progress\" followed by a thump.",
+    "You hear a tone, then \"Fiction containment at 62%.\"",
 ]
 widths = [20, 1, 1, 1, 1, 1, 1, 1]
 

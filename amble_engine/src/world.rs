@@ -41,7 +41,6 @@ pub struct AmbleWorld {
     pub items: HashMap<Uuid, Item>,
     pub triggers: Vec<Trigger>,
     pub player: Player,
-    #[serde(skip)] // these are hard-coded into spinners.rs
     pub spinners: HashMap<SpinnerType, Spinner<String>>,
     pub npcs: HashMap<Uuid, Npc>,
     pub max_score: usize,
@@ -61,7 +60,6 @@ impl AmbleWorld {
             goals: Vec::new(),
         };
         info!("new, empty 'AmbleWorld' created");
-        info!("{} spinners added to 'AmbleWorld'", world.spinners.len());
         world
     }
 

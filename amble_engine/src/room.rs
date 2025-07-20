@@ -120,14 +120,14 @@ impl Room {
                         direction.exit_locked_style(),
                         target_room.name().room_style()
                     );
-                }
+                },
                 room if room.visited => {
                     println!(
                         "\t🡺 {} ({})",
                         direction.exit_visited_style(),
                         target_room.name().room_style()
                     );
-                }
+                },
                 _ if exit.locked => println!("\t🡺 {}", direction.exit_locked_style()),
                 _ => println!("\t🡺 {}", direction.exit_unvisited_style()),
             }

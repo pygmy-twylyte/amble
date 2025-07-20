@@ -39,14 +39,14 @@ impl GoalCondition {
                 } else {
                     false
                 }
-            }
+            },
             GoalCondition::GoalComplete { goal_id } => {
                 if let Some(goal) = world.goals.iter().find(|g| g.id == *goal_id) {
                     goal.status(world) == GoalStatus::Complete
                 } else {
                     false
                 }
-            }
+            },
         }
     }
 }

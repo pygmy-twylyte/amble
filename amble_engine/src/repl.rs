@@ -57,7 +57,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
                 if let ReplControl::Quit = quit_handler(world)? {
                     break;
                 }
-            }
+            },
             Command::Look => look_handler(world)?,
             Command::LookAt(thing) => look_at_handler(world, &thing)?,
             Command::MoveTo(direction) => move_to_handler(world, &direction)?,
@@ -77,7 +77,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
                         .spin_spinner(SpinnerType::UnrecognizedCommand, "Didn't quite catch that?")
                         .italic()
                 );
-            }
+            },
             Command::TalkTo(npc_name) => talk_to_handler(world, &npc_name)?,
             Command::Teleport(room_toml_id) => teleport_handler(world, &room_toml_id), // only for development
             Command::GiveToNpc { item, npc } => give_to_npc_handler(world, &item, &npc)?,
@@ -87,7 +87,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             Command::Save(gamefile) => save_handler(world, &gamefile)?,
             Command::UseItemOn { verb, tool, target } => {
                 use_item_on_handler(world, verb, &tool, &target)?;
-            }
+            },
         }
         check_ambient_triggers(world)?;
     }

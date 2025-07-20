@@ -45,7 +45,7 @@ impl RawPlayer {
                     "UUID for player ({}) not found in symbol table",
                     self.id
                 ));
-            }
+            },
         };
         let player = Player {
             id,

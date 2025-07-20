@@ -7,12 +7,9 @@
 - trigger action to change the .read field on an item to update displays etc
 
 ## FIXITs from runthroughs / CONTENT additions
-x remove key access to security suppy crate to avoid inventory problems if crate is destroyed after contents removed
-- make Vogon Poetry readable
-- make reservation book readable
-- rename abandoned game from Brains Anonymous: Pong Construction Set '84
-- A. Jackson needs a mailbox and something funny / lore-building inside it (jackson's landing)
-- maybe add river bank location south of inca-road (already mentioned in description) and put whetstone there
+- read denials should be red
+- initialize score at 1 and with high-ridge.visited = true
+- improve formatting of shed notice in mailbox
 - add warning / instruction label to read on poetry performer, and make it Initech
 
 

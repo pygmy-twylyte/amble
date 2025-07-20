@@ -81,7 +81,7 @@ pub enum ContainerState {
 }
 
 /// Anything in '`AmbleWorld`' that can be inspected or manipulated apart from NPCs.
-/// Some 'Items' can also act as containers for other items, if '`container_state`' is 'Some(_)'. 
+/// Some 'Items' can also act as containers for other items, if '`container_state`' is 'Some(_)'.
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Item {
     pub id: Uuid,

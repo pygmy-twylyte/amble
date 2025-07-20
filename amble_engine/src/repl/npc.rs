@@ -53,7 +53,7 @@ pub fn talk_to_handler(world: &mut AmbleWorld, npc_name: &str) -> Result<()> {
     // if no dialogue was triggered, fire random response according to Npc's mood
     if !dialogue_fired && let Some(npc) = world.npcs.get(&sent_id) {
         let stem = format!("{}", npc.name().npc_style());
-        if let Some(ignore_spinner) = world.spinners.get(&SpinnerType::NpcIgnore) {
+        if let Some(ignore_spinner) = dbg!(world.spinners.get(&SpinnerType::NpcIgnore)) {
             let dialogue = npc.random_dialogue(ignore_spinner);
             println!("{stem}: {dialogue}");
             info!(

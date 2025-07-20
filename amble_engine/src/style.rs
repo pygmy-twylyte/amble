@@ -17,6 +17,7 @@ pub trait GameStyle {
     fn subheading_style(&self) -> ColoredString;
     fn goal_active_style(&self) -> ColoredString;
     fn goal_complete_style(&self) -> ColoredString;
+    fn denied_style(&self) -> ColoredString;
 }
 
 impl GameStyle for &str {
@@ -68,9 +69,15 @@ impl GameStyle for &str {
     fn error_style(&self) -> ColoredString {
         self.underline().truecolor(230, 30, 30)
     }
+    fn denied_style(&self) -> ColoredString {
+        self.italic().truecolor(230, 30, 30)
+    }
 }
 
 impl GameStyle for String {
+    fn denied_style(&self) -> ColoredString {
+        self.as_str().denied_style()
+    }
     fn goal_active_style(&self) -> ColoredString {
         self.as_str().goal_active_style()
     }

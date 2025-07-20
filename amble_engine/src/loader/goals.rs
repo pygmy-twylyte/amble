@@ -84,14 +84,14 @@ impl RawGoalCondition {
                 } else {
                     bail!("converting RawGoalCondition::HasItem({item_sym}): symbol not found");
                 }
-            }
+            },
             Self::ReachedRoom { room_sym } => {
                 if let Some(uuid) = symbols.rooms.get(room_sym) {
                     Ok(GoalCondition::ReachedRoom { room_id: *uuid })
                 } else {
                     bail!("converting RawGoalCondition::ReachedRoom({room_sym}): symbol not found");
                 }
-            }
+            },
         }
     }
 }

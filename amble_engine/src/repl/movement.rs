@@ -21,16 +21,19 @@ pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
     let player_name = world.player.name.clone();
     let travel_message = world.spin_spinner(SpinnerType::Movement, "You head that way...");
     let leaving_id = world.player.location.unwrap_room();
-    // let found_key;
+
     let destination_exit = {
         let current_room = world.player_room_ref()?;
-        let destination = current_room
+        // find a direction (e.g. "up") in current room that matches user input
+        let direction = current_room
             .exits
             .keys()
             .find(|dir| dir.to_lowercase().contains(input_dir));
-        if let Some(exit_key) = destination {
+        // if valid direction found, return the associated Exit
+        if let Some(exit_key) = direction {
             current_room.exits.get(exit_key)
         } else {
+            // no valid direction matched -- report and return
             println!("Which way is {}?", input_dir.error_style());
             return Ok(());
         }
@@ -47,7 +50,7 @@ pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
         }
 
         // check for unmet actions (recorded as flags) for this exit
-        let unmet_actions: HashSet<_> = destination_exit
+        let unmet_flags: HashSet<_> = destination_exit
             .required_flags
             .difference(&world.player.flags)
             .collect();
@@ -57,7 +60,7 @@ pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
             .difference(&world.player.inventory)
             .collect();
 
-        if unmet_actions.is_empty() && unmet_items.is_empty() {
+        if unmet_flags.is_empty() && unmet_items.is_empty() {
             let destination_id = destination_exit.to;
             world.player.location = Location::Room(destination_id);
             let new_room = world
@@ -90,8 +93,9 @@ pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
                 ],
             )?;
         } else {
+            // the Exit is barred due to a missing item or flag
             if let Some(msg) = &destination_exit.barred_message {
-                println!("{}", msg.italic().red());
+                println!("{}", msg.denied_style());
             } else {
                 println!(
                     "{}",
@@ -107,11 +111,12 @@ pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
                 "{} denied access to {dest_name}: missing items ({:?}) or flags ({:?})",
                 world.player.name(),
                 unmet_items,
-                unmet_actions,
+                unmet_flags,
             );
         }
-    } else {
-        println!("Which way is {}? You stay put.\n", input_dir.error_style());
+        // don't think below is needed, since the case where destination_exit = None was already handled above
+        // } else {
+        //     println!("Which way is {}? You stay put.\n", input_dir.error_style());
     }
     Ok(())
 }

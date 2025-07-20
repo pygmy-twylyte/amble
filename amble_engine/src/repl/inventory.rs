@@ -117,17 +117,17 @@ pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
                         } else {
                             bail!("container ({container_id}) not found during Take({loot_id})");
                         }
-                    }
+                    },
                     Location::Room(room_id) => {
                         if let Some(room) = world.rooms.get_mut(&room_id) {
                             room.remove_item(loot_id);
                         } else {
                             bail!("room ({room_id}) not found during Take({loot_id})");
                         }
-                    }
+                    },
                     _ => {
                         warn!("'take' matched an item at {orig_loc:?}: shouldn't be in scope");
-                    }
+                    },
                 }
                 check_triggers(world, &[TriggerCondition::Take(loot_id)])?;
             } else {
@@ -203,10 +203,10 @@ pub fn take_from_handler(
     match vessel_type {
         VesselType::Item => {
             validate_and_transfer_from_item(world, item_pattern, vessel_id, &vessel_name)?;
-        }
+        },
         VesselType::Npc => {
             validate_and_transfer_from_npc(world, item_pattern, vessel_id, &vessel_name)?;
-        }
+        },
     }
     Ok(())
 }
@@ -342,12 +342,12 @@ pub fn transfer_to_player(
             if let Some(vessel) = world.get_item_mut(vessel_id) {
                 vessel.remove_item(loot_id);
             }
-        }
+        },
         VesselType::Npc => {
             if let Some(vessel) = world.npcs.get_mut(&vessel_id) {
                 vessel.remove_item(loot_id);
             }
-        }
+        },
     }
 
     // Add item to player inventory

@@ -315,15 +315,15 @@ actions = [
 The robotic receptionist initially glances at you with the disdain of someone
 who spends all day waiting on people who are waiting on someone else, but her
 demeanor and even appearance immediately become pleasant when she sees the
-invitation in your hand. She deftly takes it from you and examines it intently.
+invitation in your hand. She deftly takes it from you, scrutinizes it intently,
+and slips it into a desktop document vaporizer.
 
-With a grand gesture, she then hands you a laminated card on a lanyard. It
-appears blank, yet also appears to show a variety of credentials at the same
-time. She explains:
-
-"This is your visitor's pass. Certain areas will be inaccessible without it.
-So please take care not to lose it, share it, or smoke it. Treat it like a
-second towel."
+She then hands you a laminated card on a lanyard. It appears blank, yet also
+appears to show a variety of credentials at the same time.
+""" },
+    { type = "npcSays", npc_id = "b_a_receptionist", quote = """
+Here is your visitor pass. Much of the facility will be inaccessible without
+it, so treat it like a second towel.
 """ },
 ]
 

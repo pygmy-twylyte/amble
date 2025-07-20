@@ -80,7 +80,7 @@ impl RawItem {
                     self.id,
                     self.name
                 ));
-            }
+            },
         };
 
         let mut abilities = HashSet::new();
@@ -105,7 +105,7 @@ impl RawItem {
                         )
                     })?;
                     ItemAbility::Unlock(Some(*target))
-                }
+                },
                 RawItemAbility::Unlock(None) => ItemAbility::Unlock(None),
                 RawItemAbility::Use => ItemAbility::Use,
             };

@@ -84,7 +84,7 @@ pub fn use_item_on_handler(
             *interaction == sent_interaction
                 && *target_id == sent_target_id
                 && *tool_id == sent_tool_id
-        }
+        },
         _ => false,
     });
 
@@ -126,7 +126,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, item_pattern: &str) -> Result<()>
                     triggers_contain_condition(&fired_triggers, |cond| match cond {
                         TriggerCondition::UseItem { item_id, ability } => {
                             *item_id == sent_id && *ability == ItemAbility::TurnOn
-                        }
+                        },
                         _ => false,
                     });
                 if !sent_trigger_fired {
@@ -191,16 +191,16 @@ pub fn open_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
         match target_item.container_state {
             None => {
                 println!("The {} can't be opened.", target_item.name().item_style());
-            }
+            },
             Some(ContainerState::Locked) => {
                 println!(
                     "The {} is locked. You'll have to unlock it first.",
                     target_item.name().item_style()
                 );
-            }
+            },
             Some(ContainerState::Open) => {
                 println!("The {} is already open.", target_item.name().item_style());
-            }
+            },
             Some(ContainerState::Closed) => {
                 target_item.container_state = Some(ContainerState::Open);
                 println!("You opened the {}.\n", target_item.name().item_style());
@@ -211,7 +211,7 @@ pub fn open_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
                     container_id,
                 );
                 check_triggers(world, &[TriggerCondition::Open(container_id)])?;
-            }
+            },
         }
     }
     Ok(())
@@ -244,15 +244,15 @@ pub fn close_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
         match target_item.container_state {
             None => {
                 println!("The {} can't be closed.", target_item.name().item_style());
-            }
+            },
             Some(ContainerState::Closed | ContainerState::Locked) => {
                 println!("The {} is already closed.", target_item.name().item_style());
-            }
+            },
             Some(ContainerState::Open) => {
                 target_item.container_state = Some(ContainerState::Closed);
                 println!("You closed the {}.\n", target_item.name().item_style());
                 info!("{} closed the {} ({})", world.player.name(), name, uuid);
-            }
+            },
         }
     }
     Ok(())
@@ -283,15 +283,15 @@ pub fn lock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
                     "The {} isn't something that can be locked.",
                     target_item.name().item_style()
                 );
-            }
+            },
             Some(ContainerState::Locked) => {
                 println!("The {} is already locked.", target_item.name().item_style());
-            }
+            },
             Some(ContainerState::Open | ContainerState::Closed) => {
                 target_item.container_state = Some(ContainerState::Locked);
                 println!("You locked the {}.\n", target_item.name().item_style());
                 info!("{} locked the {} ({})", world.player.name(), name, uuid);
-            }
+            },
         }
     }
     Ok(())
@@ -330,10 +330,10 @@ pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
         match target_item.container_state {
             None => {
                 println!("The {} can't be unlocked.", target_item.name().item_style());
-            }
+            },
             Some(ContainerState::Open | ContainerState::Closed) => {
                 println!("The {} is isn't locked.", target_item.name().item_style());
-            }
+            },
             Some(ContainerState::Locked) => {
                 if has_valid_key {
                     target_item.container_state = Some(ContainerState::Closed);
@@ -351,7 +351,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
                         target_item.name().item_style()
                     );
                 }
-            }
+            },
         }
     }
     Ok(())

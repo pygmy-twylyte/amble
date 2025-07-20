@@ -113,7 +113,7 @@ pub fn place_npcs(world: &mut AmbleWorld) -> Result<()> {
                     npc.id(),
                     npc.location()
                 ));
-            }
+            },
         }
     }
     // add each NPC's UUID to their start room
