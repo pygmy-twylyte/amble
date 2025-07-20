@@ -7,6 +7,7 @@ pub enum SpinnerType {
     AmbientAA3B,
     AmbientInterior,
     AmbientWoodland,
+    DestinationUnknown,
     EntityNotFound,
     Movement,
     Nauseated,

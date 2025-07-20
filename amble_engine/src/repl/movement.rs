@@ -34,7 +34,11 @@ pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
             current_room.exits.get(exit_key)
         } else {
             // no valid direction matched -- report and return
-            println!("Which way is {}?", input_dir.error_style());
+            println!(
+                "{}? {}",
+                input_dir.error_style(),
+                world.spin_spinner(SpinnerType::DestinationUnknown, "Which way is that?")
+            );
             return Ok(());
         }
     };

@@ -56,6 +56,27 @@ values = [
 ]
 
 [[spinners]]
+spinnerType = "destinationUnknown"
+values = [
+    "Let me MapQuest that real quick...",
+    "Can't get there from here.",
+    "Nobody wants to go there.",
+    "Is that by the In-N-Out Burger?",
+    "Is that near the corner of Nope and Nah?",
+    "Sure. Just keep walking until reality breaks.",
+    "Your feet refuse to obey such nonsense.",
+    "You strain your eyes in that direction, but see only confusion.",
+    "That direction folds in on itself and vanishes.",
+    "An ancient voice whispers, ‘Not today.’",
+    "Quantum parser collapsed that possibility.",
+    "Not even the map believes in that.",
+    "If you walk that way, you’ll need a packed lunch and several paradox waivers.",
+    "You boldly go nowhere in particular.",
+    "That direction has been repossessed by the Guild of Pathfinders.",
+    "The local gods of misdirection hold a brief conference and vote no.",
+]
+
+[[spinners]]
 spinnerType = "unrecognizedCommand"
 values = [
     "Syntax error. Please insert quarter and try again.",
@@ -97,8 +118,9 @@ values = [
     "A hummingbird flies by, but gliding like an albatross on an unseen wind.",
     "Something tromps through the leaves behind you, but stops when you turn around.",
     "You hear a faint, echoing laugh from deep in the woods.",
+    "A cloud of gnats drifts by, holding the distinct shape of a question mark.",
 ]
-widths = [16, 1, 1, 1, 1, 1]
+widths = [18, 1, 1, 1, 1, 1, 1]
 
 [[spinners]]
 spinnerType = "ambientAA3B"
@@ -109,8 +131,10 @@ values = [
     "For a moment, your surroundings flatten as if the world became two-dimensional.",
     "A penguin waddles past, wearing a lab coat and muttering about a narrative malfunction.",
     "A black obelisk taller than you shimmers into view, then fades as quickly as it appeared.",
+    "Someone appears above you, shouts \"The enemy gate is DOWN!\", and then fades to nothing.",
+    "For a flash, you see the word \"REDRUM\" splashed in red across the wall in front of you.",
 ]
-widths = [15, 1, 1, 1, 1, 1]
+widths = [17, 1, 1, 1, 1, 1, 1]
 
 [[spinners]]
 spinnerType = "ambientInterior"
@@ -123,7 +147,7 @@ values = [
     "The lights flicker and buzz with a discordant hum.",
     "A gust of wind rushes through the corridor, but there are no open doors or windows.",
     "A faint voice says \"Testing in progress\" followed by a thump.",
-    "You hear a tone, then \"Fiction containment at 62%.\"",
+    "You hear a tone, then \"Fiction containment at 42%.\"",
 ]
 widths = [20, 1, 1, 1, 1, 1, 1, 1]
 
