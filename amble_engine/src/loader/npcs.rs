@@ -49,6 +49,7 @@ impl RawNpc {
                 .characters
                 .get(&self.id)
                 .ok_or_else(|| anyhow!("UUID for ({}) not found in character symbols", self.id))?,
+            symbol: self.id.to_string(),
             name: self.name.to_string(),
             description: self.description.to_string(),
             location: start_room,

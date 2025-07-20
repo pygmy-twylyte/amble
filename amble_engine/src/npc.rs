@@ -42,6 +42,7 @@ impl Display for NpcMood {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Npc {
     pub id: Uuid,
+    pub symbol: String,
     pub name: String,
     pub description: String,
     pub location: Location,
@@ -97,15 +98,15 @@ impl WorldObject for Npc {
     fn id(&self) -> Uuid {
         self.id
     }
-
+    fn symbol(&self) -> &str {
+        &self.symbol
+    }
     fn name(&self) -> &str {
         &self.name
     }
-
     fn description(&self) -> &str {
         &self.description
     }
-
     fn location(&self) -> &Location {
         &self.location
     }
