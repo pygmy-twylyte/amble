@@ -2,7 +2,6 @@
 
 ## CODING TODOs
 - dev commands to teleport (DONE), get items / achievs
-- spinner for when no destination matches on "go" command
 - update giveToNpc to give more specific reasons for refusals.
 - trigger action to change the .read field on an item to update displays etc
 
