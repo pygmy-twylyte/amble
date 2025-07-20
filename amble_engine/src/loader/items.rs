@@ -72,7 +72,7 @@ impl RawItem {
     /// - if the `RawItem`s is not found in the symbol table
     pub fn to_item(&self, symbols: &SymbolTable) -> Result<Item> {
         let loc = resolve_location(&self.location, symbols)?;
-        let item_id = match symbols.items.get(&self.id) {
+        let item_uuid = match symbols.items.get(&self.id) {
             Some(id) => *id,
             None => {
                 return Err(anyhow!(
@@ -113,7 +113,8 @@ impl RawItem {
         }
 
         let real_item = Item {
-            id: item_id,
+            id: item_uuid,
+            symbol: self.id.to_string(),
             name: self.name.to_string(),
             description: self.description.to_string(),
             location: loc,

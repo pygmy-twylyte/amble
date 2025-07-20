@@ -85,6 +85,7 @@ pub enum ContainerState {
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Item {
     pub id: Uuid,
+    pub symbol: String,
     pub name: String,
     pub description: String,
     pub location: Location,
@@ -99,6 +100,9 @@ pub struct Item {
 impl WorldObject for Item {
     fn id(&self) -> Uuid {
         self.id
+    }
+    fn symbol(&self) -> &str {
+        &self.symbol
     }
     fn name(&self) -> &str {
         &self.name
@@ -193,15 +197,15 @@ impl Item {
             Some(ContainerState::Closed) => {
                 let reason = format!("The {} is {}.", self.name().item_style(), "closed".bold());
                 Some(reason)
-            }
+            },
             Some(ContainerState::Locked) => {
                 let reason = format!("The {} is {}.", self.name().item_style(), "locked".bold());
                 Some(reason)
-            }
+            },
             None => {
                 let reason = format!("The {} isn't a container.", self.name().item_style());
                 Some(reason)
-            }
+            },
         }
     }
 }
