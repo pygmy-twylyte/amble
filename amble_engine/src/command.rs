@@ -59,8 +59,9 @@ pub fn parse_command(input: &str) -> Command {
             npc: (*npc).to_string(),
         },
         ["look", "at" | "in", thing] => Command::LookAt((*thing).to_string()),
-        ["go" | "climb", "to" | "up" | "down" | "through", dir]
-        | ["move" | "go" | "enter" | "climb", dir] => Command::MoveTo((*dir).to_string()),
+        ["go" | "climb", "to" | "up" | "down" | "through", dir] | ["move" | "go" | "enter" | "climb", dir] => {
+            Command::MoveTo((*dir).to_string())
+        },
         ["take", thing] => Command::Take((*thing).to_string()),
         ["take" | "remove", thing, "from", container] => Command::TakeFrom {
             item: (*thing).to_string(),
@@ -78,19 +79,14 @@ pub fn parse_command(input: &str) -> Command {
         ["quit" | "exit"] => Command::Quit,
         ["drop", thing] => Command::Drop((*thing).to_string()),
         ["talk" | "speak", "to" | "with", npc_name] => Command::TalkTo((*npc_name).to_string()),
-        ["turn" | "switch", thing, "on"] | ["start", thing] => {
-            Command::TurnOn((*thing).to_string())
-        },
+        ["turn" | "switch", thing, "on"] | ["start", thing] => Command::TurnOn((*thing).to_string()),
         ["help" | "?"] => Command::Help,
         ["read", thing] => Command::Read((*thing).to_string()),
         ["load", gamefile] => Command::Load((*gamefile).to_string()),
         ["save", gamefile] => Command::Save((*gamefile).to_string()),
         [verb, target, "with" | "using", tool] => parse_interaction_type(verb).map_or_else(
             || {
-                println!(
-                    "I don't understand {} in this context.",
-                    (*verb).error_style()
-                );
+                println!("I don't understand {} in this context.", (*verb).error_style());
                 Command::Unknown
             },
             |interaction| Command::UseItemOn {

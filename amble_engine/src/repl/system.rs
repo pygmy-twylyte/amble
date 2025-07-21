@@ -18,11 +18,7 @@ use log::info;
 
 /// Quit the game.
 pub fn quit_handler(world: &AmbleWorld) -> Result<ReplControl> {
-    info!(
-        "{} quit with a score of {}",
-        world.player.name(),
-        world.player.score
-    );
+    info!("{} quit with a score of {}", world.player.name(), world.player.score);
     info!("ending flags:");
     world.player.flags.iter().for_each(|i| info!("* {i}"));
     info!("ending inventory:");
@@ -72,30 +68,18 @@ pub fn quit_handler(world: &AmbleWorld) -> Result<ReplControl> {
             "Accidental Hire",
             "We're not sure how you got in. Please return your lanyard.",
         ),
-        _ => (
-            "Amnesiac Test Subject",
-            "Did you… play? Were you even awake?",
-        ),
+        _ => ("Amnesiac Test Subject", "Did you… play? Were you even awake?"),
     };
 
     let visited = world.rooms.values().filter(|r| r.visited).count();
 
-    println!(
-        "\n{:^60}\n",
-        "Candidate Evaluation Report".black().bold().on_yellow()
-    );
+    println!("\n{:^60}\n", "Candidate Evaluation Report".black().bold().on_yellow());
     println!("Rank:   {}", rank.blue().bold().underline());
     println!("Notes:  {}\n", eval.cyan().italic());
-    println!(
-        "Score: {}/{} ({:.1}%)",
-        world.player.score, world.max_score, percent
-    );
+    println!("Score: {}/{} ({:.1}%)", world.player.score, world.max_score, percent);
     println!("Locations visited: {}/{}", visited, world.rooms.len());
 
-    println!(
-        "\n{}\n",
-        world.spin_spinner(SpinnerType::QuitMsg, "Goodbye.")
-    );
+    println!("\n{}\n", world.spin_spinner(SpinnerType::QuitMsg, "Goodbye."));
     Ok(ReplControl::Quit)
 }
 
@@ -163,11 +147,7 @@ pub fn goals_handler(world: &AmbleWorld) {
 
 /// Returns a list of game `Goals`, filtered by status
 pub fn filtered_goals(world: &AmbleWorld, status: GoalStatus) -> Vec<&Goal> {
-    world
-        .goals
-        .iter()
-        .filter(|goal| goal.status(world) == status)
-        .collect()
+    world.goals.iter().filter(|goal| goal.status(world) == status).collect()
 }
 
 /// Loads a saved game.
@@ -183,10 +163,7 @@ pub fn load_handler(world: &mut AmbleWorld, gamefile: &str) {
                 "Saved game {} loaded successfully. Sally forth.",
                 gamefile.underline().green()
             );
-            info!(
-                "Player reloaded AmbleWorld from file '{}'",
-                load_path.display()
-            );
+            info!("Player reloaded AmbleWorld from file '{}'", load_path.display());
         } else {
             println!(
                 "Unable to parse the {} save. World structure may have changed since it was created.",
@@ -194,27 +171,23 @@ pub fn load_handler(world: &mut AmbleWorld, gamefile: &str) {
             );
         }
     } else {
-        println!(
-            "Unable to find {} save file. Load aborted.",
-            gamefile.error_style()
-        );
+        println!("Unable to find {} save file. Load aborted.", gamefile.error_style());
     }
 }
 
 /// save game to a file
 pub fn save_handler(world: &AmbleWorld, gamefile: &str) -> Result<()> {
     // serialize the current AmbleWorld state to RON format
-    let world_ron = ron::ser::to_string(world)
-        .with_context(|| "error converting AmbleWorld to 'ron' format".to_string())?;
+    let world_ron =
+        ron::ser::to_string(world).with_context(|| "error converting AmbleWorld to 'ron' format".to_string())?;
 
     // create save dir if doesn't exist
-    fs::create_dir_all("saved_games")
-        .with_context(|| "error creating saved_games folder".to_string())?;
+    fs::create_dir_all("saved_games").with_context(|| "error creating saved_games folder".to_string())?;
 
     // create save file
     let save_path = PathBuf::from("saved_games").join(format!("amble-{gamefile}.ron"));
-    let mut save_file = fs::File::create(save_path.as_path())
-        .with_context(|| format!("creating file '{}'", save_path.display()))?;
+    let mut save_file =
+        fs::File::create(save_path.as_path()).with_context(|| format!("creating file '{}'", save_path.display()))?;
 
     // write world to file
     save_file

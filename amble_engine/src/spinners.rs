@@ -1,4 +1,10 @@
-use gametools::spinners::{Spinner, Wedge};
+//! module: spinners
+//!
+//! Amble uses the `gametools` crate's `Spinner` module to provide variety
+//! in user feedback and intermittent ambient events. The types of spinners
+//! used in the game are defined here; the actual spinner data is in the
+//! `spinners.toml` file and the spinners are built from that data in the
+//! loader::spinners module.
 use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -16,14 +22,4 @@ pub enum SpinnerType {
     QuitMsg,
     TakeVerb,
     UnrecognizedCommand,
-}
-
-pub trait SpinnerExt {
-    fn from_strs(words: &[&'static str]) -> Self;
-}
-impl SpinnerExt for Spinner<&'static str> {
-    fn from_strs(words: &[&'static str]) -> Self {
-        let wedges = words.iter().map(|w| Wedge::new(*w)).collect::<Vec<_>>();
-        Spinner::new(wedges)
-    }
 }

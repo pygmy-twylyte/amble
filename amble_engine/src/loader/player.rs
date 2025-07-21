@@ -41,10 +41,7 @@ impl RawPlayer {
         let id = match symbols.characters.get(&self.id) {
             Some(id) => *id,
             None => {
-                return Err(anyhow!(
-                    "UUID for player ({}) not found in symbol table",
-                    self.id
-                ));
+                return Err(anyhow!("UUID for player ({}) not found in symbol table", self.id));
             },
         };
         let player = Player {
@@ -65,10 +62,10 @@ impl RawPlayer {
 /// # Errors
 /// - if unable to read the player.toml file or unable to parse it
 pub fn load_player(toml_path: &Path) -> Result<RawPlayer> {
-    let player_file = fs::read_to_string(toml_path)
-        .with_context(|| format!("reading player data from '{}'", toml_path.display()))?;
-    let raw_player: RawPlayer = toml::from_str(&player_file)
-        .with_context(|| format!("parsing player data from '{}'", toml_path.display()))?;
+    let player_file =
+        fs::read_to_string(toml_path).with_context(|| format!("reading player data from '{}'", toml_path.display()))?;
+    let raw_player: RawPlayer =
+        toml::from_str(&player_file).with_context(|| format!("parsing player data from '{}'", toml_path.display()))?;
     Ok(raw_player)
 }
 

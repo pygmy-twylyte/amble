@@ -35,18 +35,10 @@ impl SpinnerFile {
                 .values
                 .iter()
                 .enumerate()
-                .map(|(i, val)| {
-                    Wedge::new_weighted(val.to_string(), *spin_data.widths.get(i).unwrap_or(&1))
-                })
+                .map(|(i, val)| Wedge::new_weighted(val.to_string(), *spin_data.widths.get(i).unwrap_or(&1)))
                 .collect();
-            if spinners
-                .insert(spin_data.spinner_type, Spinner::new(wedges))
-                .is_some()
-            {
-                warn!(
-                    "duplicate entry for spinner type {:?}",
-                    spin_data.spinner_type
-                );
+            if spinners.insert(spin_data.spinner_type, Spinner::new(wedges)).is_some() {
+                warn!("duplicate entry for spinner type {:?}", spin_data.spinner_type);
             };
         }
         info!("{} spinners built from TOML data", spinners.len());
@@ -57,8 +49,8 @@ impl SpinnerFile {
 pub fn load_spinners(toml_path: &Path) -> Result<HashMap<SpinnerType, Spinner<String>>> {
     let file = std::fs::read_to_string(toml_path)
         .with_context(|| format!("reading spinner data from {}", toml_path.display()))?;
-    let spinner_file: SpinnerFile = toml::from_str(&file)
-        .with_context(|| format!("parsing spinner data from {}", toml_path.display()))?;
+    let spinner_file: SpinnerFile =
+        toml::from_str(&file).with_context(|| format!("parsing spinner data from {}", toml_path.display()))?;
     info!("raw spinner data loaded from '{}'", toml_path.display());
     Ok(spinner_file.to_spinner_map())
 }

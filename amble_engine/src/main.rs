@@ -27,9 +27,7 @@ fn main() -> Result<()> {
 
     println!(
         "{:^84}",
-        "AMBLE: AN ADVENTURE IN THE ABSURD"
-            .bright_yellow()
-            .underline()
+        "AMBLE: AN ADVENTURE IN THE ABSURD".bright_yellow().underline()
     );
     println!(
         "\nYou are {}, {}\n",

@@ -29,10 +29,10 @@ pub fn use_item_on_handler(
     // make sure we can find valid matches for tool and target items and notify player if not
     let items_nearby = &world.player_room_ref()?.contents;
     let target_scope: HashSet<_> = items_nearby.union(&world.player.inventory).collect();
-    let maybe_target = find_world_object(target_scope, &world.items, &world.npcs, target)
-        .and_then(super::WorldEntity::item);
-    let maybe_tool = find_world_object(&world.player.inventory, &world.items, &world.npcs, tool)
-        .and_then(super::WorldEntity::item);
+    let maybe_target =
+        find_world_object(target_scope, &world.items, &world.npcs, target).and_then(super::WorldEntity::item);
+    let maybe_tool =
+        find_world_object(&world.player.inventory, &world.items, &world.npcs, tool).and_then(super::WorldEntity::item);
     if maybe_target.is_none() {
         println!("You don't see any {} nearby.", target.error_style());
         return Ok(());
@@ -80,37 +80,23 @@ pub fn use_item_on_handler(
             interaction,
             target_id,
             tool_id,
-        } => {
-            *interaction == sent_interaction
-                && *target_id == sent_target_id
-                && *tool_id == sent_tool_id
-        },
+        } => *interaction == sent_interaction && *target_id == sent_target_id && *tool_id == sent_tool_id,
         _ => false,
     });
 
     if !reaction_fired {
         println!(
             "{}",
-            world.spin_spinner(
-                SpinnerType::NoEffect,
-                "That appears to have had no effect, Captain.",
-            )
+            world.spin_spinner(SpinnerType::NoEffect, "That appears to have had no effect, Captain.",)
         );
-        warn!(
-            "No matching trigger for {interaction:?} {target_name} ({target_id}) with {tool_name} ({tool_id})"
-        );
+        warn!("No matching trigger for {interaction:?} {target_name} ({target_id}) with {tool_name} ({tool_id})");
     }
     Ok(())
 }
 /// Turns something on, if it can be turned on
 pub fn turn_on_handler(world: &mut AmbleWorld, item_pattern: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
-    if let Some(entity) = find_world_object(
-        &current_room.contents,
-        &world.items,
-        &world.npcs,
-        item_pattern,
-    ) {
+    if let Some(entity) = find_world_object(&current_room.contents, &world.items, &world.npcs, item_pattern) {
         if let Some(item) = entity.item() {
             if item.abilities.contains(&ItemAbility::TurnOn) {
                 info!("Player switched on {} ({})", item.name(), item.id());
@@ -122,18 +108,14 @@ pub fn turn_on_handler(world: &mut AmbleWorld, item_pattern: &str) -> Result<()>
                         ability: ItemAbility::TurnOn,
                     }],
                 )?;
-                let sent_trigger_fired =
-                    triggers_contain_condition(&fired_triggers, |cond| match cond {
-                        TriggerCondition::UseItem { item_id, ability } => {
-                            *item_id == sent_id && *ability == ItemAbility::TurnOn
-                        },
-                        _ => false,
-                    });
+                let sent_trigger_fired = triggers_contain_condition(&fired_triggers, |cond| match cond {
+                    TriggerCondition::UseItem { item_id, ability } => {
+                        *item_id == sent_id && *ability == ItemAbility::TurnOn
+                    },
+                    _ => false,
+                });
                 if !sent_trigger_fired {
-                    println!(
-                        "{}",
-                        "You hear a clicking sound and then... nothing happens.".italic()
-                    );
+                    println!("{}", "You hear a clicking sound and then... nothing happens.".italic());
                 }
             } else {
                 info!(
@@ -144,15 +126,8 @@ pub fn turn_on_handler(world: &mut AmbleWorld, item_pattern: &str) -> Result<()>
                 println!("The {} can't be turned on.", item.name().item_style());
             }
         } else if let Some(npc) = entity.npc() {
-            info!(
-                "Player tried to turn on an NPC {} ({})",
-                npc.name(),
-                npc.id()
-            );
-            println!(
-                "{} is impervious to your attempt at seduction.",
-                npc.name().npc_style()
-            );
+            info!("Player tried to turn on an NPC {} ({})", npc.name(), npc.id());
+            println!("{} is impervious to your attempt at seduction.", npc.name().npc_style());
         }
     } else {
         entity_not_found(world, item_pattern);
@@ -164,28 +139,20 @@ pub fn turn_on_handler(world: &mut AmbleWorld, item_pattern: &str) -> Result<()>
 pub fn open_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     // search player's location for an item matching search
     let room = world.player_room_ref()?;
-    let search_scope: HashSet<Uuid> = room
-        .contents
-        .union(&world.player.inventory)
-        .copied()
-        .collect();
-    let (container_id, name) = if let Some(entity) =
-        find_world_object(&search_scope, &world.items, &world.npcs, pattern)
-    {
-        if let Some(item) = entity.item() {
-            (item.id(), item.name().to_string())
+    let search_scope: HashSet<Uuid> = room.contents.union(&world.player.inventory).copied().collect();
+    let (container_id, name) =
+        if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, pattern) {
+            if let Some(item) = entity.item() {
+                (item.id(), item.name().to_string())
+            } else {
+                warn!("Player attempted to open a non-Item WorldEntity by searching ({pattern})");
+                println!("{} isn't an item. You can't open it.", pattern.error_style());
+                return Ok(());
+            }
         } else {
-            warn!("Player attempted to open a non-Item WorldEntity by searching ({pattern})");
-            println!(
-                "{} isn't an item. You can't open it.",
-                pattern.error_style()
-            );
+            entity_not_found(world, pattern);
             return Ok(());
-        }
-    } else {
-        entity_not_found(world, pattern);
-        return Ok(());
-    };
+        };
 
     if let Some(target_item) = world.get_item_mut(container_id) {
         match target_item.container_state {
@@ -204,12 +171,7 @@ pub fn open_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
             Some(ContainerState::Closed) => {
                 target_item.container_state = Some(ContainerState::Open);
                 println!("You opened the {}.\n", target_item.name().item_style());
-                info!(
-                    "{} opened the {} ({})",
-                    world.player.name(),
-                    name,
-                    container_id,
-                );
+                info!("{} opened the {} ({})", world.player.name(), name, container_id,);
                 check_triggers(world, &[TriggerCondition::Open(container_id)])?;
             },
         }
@@ -220,14 +182,8 @@ pub fn open_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
 /// Closes a container item nearby.
 pub fn close_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     let room = world.player_room_ref()?;
-    let search_scope: HashSet<Uuid> = room
-        .contents
-        .union(&world.player.inventory)
-        .copied()
-        .collect();
-    let (uuid, name) = if let Some(entity) =
-        find_world_object(&search_scope, &world.items, &world.npcs, pattern)
-    {
+    let search_scope: HashSet<Uuid> = room.contents.union(&world.player.inventory).copied().collect();
+    let (uuid, name) = if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, pattern) {
         if let Some(item) = entity.item() {
             (item.id(), item.name().to_string())
         } else {
@@ -261,9 +217,7 @@ pub fn close_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
 /// Locks a container item nearby.
 pub fn lock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     let room = world.player_room_ref()?;
-    let (uuid, name) = if let Some(entity) =
-        find_world_object(&room.contents, &world.items, &world.npcs, pattern)
-    {
+    let (uuid, name) = if let Some(entity) = find_world_object(&room.contents, &world.items, &world.npcs, pattern) {
         if let Some(item) = entity.item() {
             (item.id(), item.name().to_string())
         } else {
@@ -300,20 +254,19 @@ pub fn lock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
 /// Unlocks and opens an item nearby.
 pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     let room = world.player_room_ref()?;
-    let (container_id, container_name) = if let Some(entity) =
-        find_world_object(&room.contents, &world.items, &world.npcs, pattern)
-    {
-        if let Some(item) = entity.item() {
-            (item.id(), item.name().to_string())
+    let (container_id, container_name) =
+        if let Some(entity) = find_world_object(&room.contents, &world.items, &world.npcs, pattern) {
+            if let Some(item) = entity.item() {
+                (item.id(), item.name().to_string())
+            } else {
+                warn!("Command:Unlock({pattern}) matched a non-Item (NPC) WorldEntity");
+                println!("You don't see a {} here to unlock.", pattern.error_style());
+                return Ok(());
+            }
         } else {
-            warn!("Command:Unlock({pattern}) matched a non-Item (NPC) WorldEntity");
-            println!("You don't see a {} here to unlock.", pattern.error_style());
+            entity_not_found(world, pattern);
             return Ok(());
-        }
-    } else {
-        entity_not_found(world, pattern);
-        return Ok(());
-    };
+        };
 
     // Check player inventory for valid key
     let has_valid_key = world.player.inventory.iter().any(|id| {

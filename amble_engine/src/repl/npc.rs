@@ -19,11 +19,7 @@ use log::{info, warn};
 use uuid::Uuid;
 
 /// Selects an NPC in given location by first partial name match.
-fn select_npc<'a>(
-    location: &Location,
-    world_npcs: &'a HashMap<Uuid, Npc>,
-    query: &str,
-) -> Option<&'a Npc> {
+fn select_npc<'a>(location: &Location, world_npcs: &'a HashMap<Uuid, Npc>, query: &str) -> Option<&'a Npc> {
     let npcs_in_room = world_npcs
         .values()
         .filter(|npc| npc.location() == location)
@@ -56,12 +52,7 @@ pub fn talk_to_handler(world: &mut AmbleWorld, npc_name: &str) -> Result<()> {
         if let Some(ignore_spinner) = dbg!(world.spinners.get(&SpinnerType::NpcIgnore)) {
             let dialogue = npc.random_dialogue(ignore_spinner);
             println!("{stem}: {dialogue}");
-            info!(
-                "NPC \"{}\" ({}) said \"{}\"",
-                npc.name(),
-                npc.id(),
-                dialogue
-            );
+            info!("NPC \"{}\" ({}) said \"{}\"", npc.name(), npc.id(), dialogue);
         }
     }
 
@@ -78,8 +69,7 @@ pub fn talk_to_handler(world: &mut AmbleWorld, npc_name: &str) -> Result<()> {
 pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Result<()> {
     // find the target npc in the current room and collect metadata
     let current_room = world.player_room_ref()?;
-    let (npc_id, npc_name) = if let Some(entity) =
-        find_world_object(&current_room.npcs, &world.items, &world.npcs, npc)
+    let (npc_id, npc_name) = if let Some(entity) = find_world_object(&current_room.npcs, &world.items, &world.npcs, npc)
     {
         if let Some(npc) = entity.npc() {
             (npc.id(), npc.name.to_string())
@@ -98,32 +88,27 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Res
     };
 
     // find the target item in inventory, ensure it's portable, collect metadata
-    let (item_id, item_name) = if let Some(entity) =
-        find_world_object(&world.player.inventory, &world.items, &world.npcs, item)
-    {
-        if let Some(item) = entity.item() {
-            if !item.portable {
-                info!(
-                    "player tried to move fixed item {} ({})",
-                    item.name(),
-                    item.id()
+    let (item_id, item_name) =
+        if let Some(entity) = find_world_object(&world.player.inventory, &world.items, &world.npcs, item) {
+            if let Some(item) = entity.item() {
+                if !item.portable {
+                    info!("player tried to move fixed item {} ({})", item.name(), item.id());
+                    println!("Sorry, the {} isn't portable.", item.name().error_style());
+                    return Ok(());
+                }
+                (item.id(), item.name().to_string())
+            } else {
+                warn!("non-Item entity matching '{item}' found in inventory");
+                println!(
+                    "{} matched an entity that shouldn't exist in inventory. Let's pretend this never happened.",
+                    item.error_style()
                 );
-                println!("Sorry, the {} isn't portable.", item.name().error_style());
                 return Ok(());
             }
-            (item.id(), item.name().to_string())
         } else {
-            warn!("non-Item entity matching '{item}' found in inventory");
-            println!(
-                "{} matched an entity that shouldn't exist in inventory. Let's pretend this never happened.",
-                item.error_style()
-            );
+            entity_not_found(world, item);
             return Ok(());
-        }
-    } else {
-        entity_not_found(world, item);
-        return Ok(());
-    };
+        };
 
     let fired_triggers = check_triggers(world, &[TriggerCondition::GiveToNpc { item_id, npc_id }])?;
     let fired = fired_triggers.iter().any(|&trigger| {
@@ -153,11 +138,7 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Res
         check_triggers(world, &[TriggerCondition::Drop(item_id)])?;
 
         // report and log success
-        println!(
-            "You gave the {} to {}.\n",
-            item_name.item_style(),
-            npc_name.npc_style()
-        );
+        println!("You gave the {} to {}.\n", item_name.item_style(), npc_name.npc_style());
         info!(
             "{} gave {} ({}) to {} ({})",
             world.player.name(),

@@ -43,10 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .split(f.size());
 
             // Left sidebar: list of item names
-            let list_items: Vec<ListItem> = items
-                .iter()
-                .map(|item| ListItem::new(item.name.as_str()))
-                .collect();
+            let list_items: Vec<ListItem> = items.iter().map(|item| ListItem::new(item.name.as_str())).collect();
 
             let list = List::new(list_items)
                 .block(Block::default().title("Items").borders(Borders::ALL))
@@ -59,14 +56,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // Right panel: item detail
             let detail = format!(
                 "Name: {}\nUUID: {}\nDescription: {}\nLocation: {:?}",
-                items[selected].name,
-                items[selected].id,
-                items[selected].description,
-                items[selected].location
+                items[selected].name, items[selected].id, items[selected].description, items[selected].location
             );
 
-            let paragraph = Paragraph::new(detail)
-                .block(Block::default().title("Detail").borders(Borders::ALL));
+            let paragraph = Paragraph::new(detail).block(Block::default().title("Detail").borders(Borders::ALL));
             f.render_widget(paragraph, chunks[1]);
         })?;
 
@@ -77,11 +70,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     KeyCode::Char('q') => break,
                     KeyCode::Down => {
                         selected = (selected + 1).min(items.len().saturating_sub(1));
-                    }
+                    },
                     KeyCode::Up => {
                         selected = selected.saturating_sub(1);
-                    }
-                    _ => {}
+                    },
+                    _ => {},
                 }
             }
         }
@@ -89,11 +82,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Restore terminal state
     disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen, DisableMouseCapture)?;
     terminal.show_cursor()?;
 
     Ok(())

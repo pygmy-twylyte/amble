@@ -87,28 +87,21 @@ impl TriggerCondition {
 
     fn is_ongoing(&self, world: &AmbleWorld) -> bool {
         match self {
-            Self::ContainerHasItem {
-                container_id,
-                item_id,
-            } => {
+            Self::ContainerHasItem { container_id, item_id } => {
                 if let Some(item) = world.items.get(item_id) {
                     item.location == Location::Item(*container_id)
                 } else {
                     false
                 }
-            }
+            },
             Self::HasFlag(flag) => world.player.flags.contains(flag),
             Self::MissingFlag(flag) => !world.player.flags.contains(flag),
             Self::HasVisited(room_id) => world.rooms.get(room_id).is_some_and(|r| r.visited),
             Self::InRoom(room_id) => *room_id == world.player.location.unwrap_room(),
-            Self::NpcHasItem { npc_id, item_id } => world
-                .npcs
-                .get(npc_id)
-                .is_some_and(|npc| npc.contains_item(*item_id)),
-            Self::NpcInMood { npc_id, mood } => world
-                .npcs
-                .get(npc_id)
-                .is_some_and(|npc| dbg!(npc.mood) == dbg!(*mood)),
+            Self::NpcHasItem { npc_id, item_id } => {
+                world.npcs.get(npc_id).is_some_and(|npc| npc.contains_item(*item_id))
+            },
+            Self::NpcInMood { npc_id, mood } => world.npcs.get(npc_id).is_some_and(|npc| dbg!(npc.mood) == dbg!(*mood)),
             Self::HasItem(item_id) => world.player.contains_item(*item_id),
             Self::MissingItem(item_id) => !world.player.contains_item(*item_id),
             Self::WithNpc(npc_id) => world
@@ -126,54 +119,23 @@ pub enum TriggerAction {
     RemoveFlag(String),
     AwardPoints(isize),
     DenyRead(String),
-    DespawnItem {
-        item_id: Uuid,
-    },
-    GiveItemToPlayer {
-        npc_id: Uuid,
-        item_id: Uuid,
-    },
-    LockExit {
-        from_room: Uuid,
-        direction: String,
-    },
+    DespawnItem { item_id: Uuid },
+    GiveItemToPlayer { npc_id: Uuid, item_id: Uuid },
+    LockExit { from_room: Uuid, direction: String },
     LockItem(Uuid),
-    NpcSays {
-        npc_id: Uuid,
-        quote: String,
-    },
-    NpcSaysRandom {
-        npc_id: Uuid,
-    },
+    NpcSays { npc_id: Uuid, quote: String },
+    NpcSaysRandom { npc_id: Uuid },
     PushPlayerTo(Uuid),
     RestrictItem(Uuid),
-    RevealExit {
-        exit_from: Uuid,
-        exit_to: Uuid,
-        direction: String,
-    },
-    SetNPCMood {
-        npc_id: Uuid,
-        mood: NpcMood,
-    },
+    RevealExit { exit_from: Uuid, exit_to: Uuid, direction: String },
+    SetNPCMood { npc_id: Uuid, mood: NpcMood },
     ShowMessage(String),
     SpawnItemCurrentRoom(Uuid),
-    SpawnItemInContainer {
-        item_id: Uuid,
-        container_id: Uuid,
-    },
+    SpawnItemInContainer { item_id: Uuid, container_id: Uuid },
     SpawnItemInInventory(Uuid),
-    SpawnItemInRoom {
-        item_id: Uuid,
-        room_id: Uuid,
-    },
-    SpinnerMessage {
-        spinner: SpinnerType,
-    },
-    UnlockExit {
-        from_room: Uuid,
-        direction: String,
-    },
+    SpawnItemInRoom { item_id: Uuid, room_id: Uuid },
+    SpinnerMessage { spinner: SpinnerType },
+    UnlockExit { from_room: Uuid, direction: String },
     UnlockItem(Uuid),
 }
 
@@ -190,10 +152,7 @@ where
 ///
 /// # Errors
 /// - on any failed uuid lookup during trigger dispatch
-pub fn check_triggers<'a>(
-    world: &'a mut AmbleWorld,
-    events: &[TriggerCondition],
-) -> Result<Vec<&'a Trigger>> {
+pub fn check_triggers<'a>(world: &'a mut AmbleWorld, events: &[TriggerCondition]) -> Result<Vec<&'a Trigger>> {
     // collect map of indices to triggers that should fire now
     let to_fire: Vec<_> = world
         .triggers
@@ -240,7 +199,7 @@ fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()>
         TriggerAction::DespawnItem { item_id } => despawn_item(world, item_id)?,
         TriggerAction::GiveItemToPlayer { npc_id, item_id } => {
             give_to_player(world, npc_id, item_id)?;
-        }
+        },
         TriggerAction::LockItem(item_id) => lock_item(world, item_id)?,
         TriggerAction::PushPlayerTo(room_id) => push_player(world, room_id)?,
         TriggerAction::RevealExit {
@@ -250,24 +209,17 @@ fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()>
         } => reveal_exit(world, direction, exit_from, exit_to)?,
         TriggerAction::SetNPCMood { npc_id, mood } => set_npc_mood(world, npc_id, *mood)?,
         TriggerAction::ShowMessage(text) => show_message(text),
-        TriggerAction::SpawnItemInContainer {
-            item_id,
-            container_id,
-        } => spawn_item_in_container(world, item_id, container_id)?,
+        TriggerAction::SpawnItemInContainer { item_id, container_id } => {
+            spawn_item_in_container(world, item_id, container_id)?
+        },
         TriggerAction::SpawnItemInInventory(item_id) => spawn_item_in_inventory(world, item_id)?,
         TriggerAction::SpawnItemCurrentRoom(item_id) => spawn_item_in_current_room(world, item_id)?,
         TriggerAction::SpawnItemInRoom { item_id, room_id } => {
             spawn_item_in_specific_room(world, item_id, room_id)?;
-        }
+        },
         TriggerAction::UnlockItem(item_id) => unlock_item(world, item_id)?,
-        TriggerAction::UnlockExit {
-            from_room,
-            direction,
-        } => unlock_exit(world, from_room, direction)?,
-        TriggerAction::LockExit {
-            from_room,
-            direction,
-        } => lock_exit(world, from_room, direction)?,
+        TriggerAction::UnlockExit { from_room, direction } => unlock_exit(world, from_room, direction)?,
+        TriggerAction::LockExit { from_room, direction } => lock_exit(world, from_room, direction)?,
         TriggerAction::AddFlag(flag) => add_flag(world, flag),
         TriggerAction::RemoveFlag(flag) => remove_flag(world, flag),
         TriggerAction::AwardPoints(amount) => award_points(world, *amount),
@@ -283,11 +235,7 @@ pub fn spinner_message(world: &mut AmbleWorld, spinner_type: SpinnerType) -> Res
     if let Some(spinner) = world.spinners.get(&spinner_type) {
         let msg = spinner.spin().unwrap_or_default();
         if !msg.is_empty() {
-            println!(
-                "\n{} {}",
-                "❉".ambient_icon_style(),
-                msg.ambient_trig_style()
-            );
+            println!("\n{} {}", "❉".ambient_icon_style(), msg.ambient_trig_style());
         }
         info!("└─ action: SpinnerMessage(\"{msg}\")");
         Ok(())
@@ -383,11 +331,7 @@ fn lock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Re
 /// # Errors
 /// - on invalid room or exit direction
 fn unlock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Result<()> {
-    if let Some(exit) = world
-        .rooms
-        .get_mut(from_room)
-        .and_then(|r| r.exits.get_mut(direction))
-    {
+    if let Some(exit) = world.rooms.get_mut(from_room).and_then(|r| r.exits.get_mut(direction)) {
         exit.locked = false;
         info!("└─ action: UnlockExit({direction}, from {from_room})");
         Ok(())
@@ -405,12 +349,9 @@ fn unlock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
             Some(ContainerState::Locked) => {
                 item.container_state = Some(ContainerState::Open);
                 info!("└─ action: UnlockItem({item_id}) '{}'", item.name());
-            }
+            },
             Some(_) => warn!("action UnlockItem({item_id}): item wasn't locked"),
-            None => warn!(
-                "action UnlockItem({item_id}): item '{}' isn't a container",
-                item.name()
-            ),
+            None => warn!("action UnlockItem({item_id}): item '{}' isn't a container", item.name()),
         }
         Ok(())
     } else {
@@ -421,11 +362,7 @@ fn unlock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
 /// Spawn an `Item` in a specific `Room`
 /// # Errors
 /// - on failed item or room lookup
-fn spawn_item_in_specific_room(
-    world: &mut AmbleWorld,
-    item_id: &Uuid,
-    room_id: &Uuid,
-) -> Result<()> {
+fn spawn_item_in_specific_room(world: &mut AmbleWorld, item_id: &Uuid, room_id: &Uuid) -> Result<()> {
     // warn and remove item from world if it's already somewhere to avoid dups
     if let Some(item) = world.items.get(item_id)
         && item.location.is_not_nowhere()
@@ -516,11 +453,7 @@ fn spawn_item_in_inventory(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()>
 /// Spawn an `Item` within a container `Item`
 /// # Errors
 /// - on failed item or container lookup
-fn spawn_item_in_container(
-    world: &mut AmbleWorld,
-    item_id: &Uuid,
-    container_id: &Uuid,
-) -> Result<()> {
+fn spawn_item_in_container(world: &mut AmbleWorld, item_id: &Uuid, container_id: &Uuid) -> Result<()> {
     // if item is already in-world, warn and remove it to avoid duplications / inconsistent state
     if let Some(item) = world.items.get(item_id)
         && item.location.is_not_nowhere()
@@ -572,12 +505,7 @@ fn set_npc_mood(world: &mut AmbleWorld, npc_id: &Uuid, mood: NpcMood) -> Result<
 /// Reveal or create a new exit from a `Room`
 /// # Errors
 /// - on invalid `exit_from` room uuid
-fn reveal_exit(
-    world: &mut AmbleWorld,
-    direction: &String,
-    exit_from: &Uuid,
-    exit_to: &Uuid,
-) -> Result<()> {
+fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &Uuid, exit_to: &Uuid) -> Result<()> {
     let exit = world
         .rooms
         .get_mut(exit_from)
@@ -613,10 +541,7 @@ fn lock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
             item.container_state = Some(ContainerState::Locked);
             info!("└─ action: LockItem({item_id})");
         } else {
-            warn!(
-                "action LockItem({item_id}): '{}' is not a container",
-                item.name()
-            );
+            warn!("action LockItem({item_id}): '{}' is not a container", item.name());
         }
         Ok(())
     } else {
@@ -633,9 +558,10 @@ fn give_to_player(world: &mut AmbleWorld, npc_id: &Uuid, item_id: &Uuid) -> Resu
         .get_mut(npc_id)
         .with_context(|| format!("NPC {npc_id} not found"))?;
     if npc.contains_item(*item_id) {
-        let item = world.items.get_mut(item_id).with_context(|| {
-            format!("item {item_id} in NPC inventory but missing from world.items")
-        })?;
+        let item = world
+            .items
+            .get_mut(item_id)
+            .with_context(|| format!("item {item_id} in NPC inventory but missing from world.items"))?;
         item.set_location_inventory();
         npc.remove_item(*item_id);
         world.player.add_item(*item_id);
@@ -661,21 +587,21 @@ fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
             if let Some(r) = world.rooms.get_mut(&id) {
                 r.remove_item(*item_id);
             }
-        }
+        },
         Location::Item(id) => {
             if let Some(c) = world.items.get_mut(&id) {
                 c.remove_item(*item_id);
             }
-        }
+        },
         Location::Npc(id) => {
             if let Some(n) = world.npcs.get_mut(&id) {
                 n.remove_item(*item_id);
             }
-        }
+        },
         Location::Inventory => {
             world.player.remove_item(*item_id);
-        }
-        Location::Nowhere => {}
+        },
+        Location::Nowhere => {},
     }
     info!("└─ action: DespawnItem({item_id})");
     Ok(())

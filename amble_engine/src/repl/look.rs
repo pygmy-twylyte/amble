@@ -22,10 +22,7 @@ use uuid::Uuid;
 pub fn look_handler(world: &mut AmbleWorld) -> Result<()> {
     let room = world.player_room_ref()?;
     room.show(world)?;
-    info!(
-        "{} looked around {} ({})",
-        world.player.name, room.name, room.id
-    );
+    info!("{} looked around {} ({})", world.player.name, room.name, room.id);
     let _fired = check_triggers(world, &[]);
     Ok(())
 }
@@ -42,20 +39,10 @@ pub fn look_at_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
         .collect();
     if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, thing) {
         if let Some(item) = entity.item() {
-            info!(
-                "{} looked at {} ({})",
-                world.player.name(),
-                item.name(),
-                item.id()
-            );
+            info!("{} looked at {} ({})", world.player.name(), item.name(), item.id());
             item.show(world);
         } else if let Some(npc) = entity.npc() {
-            info!(
-                "{} looked at {} ({})",
-                world.player.name(),
-                npc.name(),
-                npc.id()
-            );
+            info!("{} looked at {} ({})", world.player.name(), npc.name(), npc.id());
             npc.show(world);
         }
         let _fired = check_triggers(world, &[]);
@@ -98,23 +85,16 @@ pub fn read_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
     // scope search to items in room + inventory
     let items_in_reach = nearby_reachable_items(world, current_room.id())?;
-    let search_scope: HashSet<Uuid> = items_in_reach
-        .union(&world.player.inventory)
-        .copied()
-        .collect();
+    let search_scope: HashSet<Uuid> = items_in_reach.union(&world.player.inventory).copied().collect();
     // find the item from the search pattern and collect uuid;
     // log and tell player if there's nothing there to read
     let found_item_id = if let Some(item) =
-        find_world_object(&search_scope, &world.items, &world.npcs, pattern)
-            .and_then(super::WorldEntity::item)
+        find_world_object(&search_scope, &world.items, &world.npcs, pattern).and_then(super::WorldEntity::item)
     {
         if item.text.is_some() {
             Some(item.id())
         } else {
-            println!(
-                "You see nothing legible on the {}.",
-                item.name().item_style()
-            );
+            println!("You see nothing legible on the {}.", item.name().item_style());
             info!(
                 "{} tried to read textless item {} ({})",
                 world.player.name(),
@@ -156,12 +136,7 @@ pub fn read_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
                     .expect("item.text already known to be Some() here")
                     .description_style()
             );
-            info!(
-                "{} read '{}' ({})",
-                world.player.name(),
-                item.name(),
-                item.id()
-            );
+            info!("{} read '{}' ({})", world.player.name(), item.name(), item.id());
         }
     }
     Ok(())

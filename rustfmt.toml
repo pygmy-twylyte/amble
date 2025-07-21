@@ -1,20 +1,6 @@
 edition = "2024"
 style_edition = "2024"
-imports_granularity = "Crate"
-unstable_features = true
 
-blank_lines_lower_bound = 1
-blank_lines_upper_bound = 2
-enum_discrim_align_threshold = 30
-
-fn_single_line = true
-format_macro_matchers = true
-format_strings = true
-imports_indent = "Visual"
+max_width = 120
 match_block_trailing_comma = true
-newline_style = "Unix"
-normalize_comments = true
-overflow_delimited_expr = true
-reorder_impl_items = true
-struct_field_align_threshold = 30
-wrap_comments = true
+struct_variant_width = 50

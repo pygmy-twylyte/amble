@@ -112,8 +112,8 @@ pub struct RawRoomFile {
 /// # Errors
 /// - if unable to read or parse the rooms.toml file
 pub fn load_raw_rooms(toml_path: &Path) -> Result<Vec<RawRoom>> {
-    let room_file = fs::read_to_string(toml_path)
-        .with_context(|| format!("reading room data from '{}'", toml_path.display()))?;
+    let room_file =
+        fs::read_to_string(toml_path).with_context(|| format!("reading room data from '{}'", toml_path.display()))?;
     let wrapper: RawRoomFile = toml::from_str(&room_file)?;
     info!(
         "{} raw rooms successfully loaded from '{}'",
@@ -128,15 +128,11 @@ pub fn load_raw_rooms(toml_path: &Path) -> Result<Vec<RawRoom>> {
 /// - if symbol table lookup fails when building room instances
 pub fn build_rooms(raw_rooms: &[RawRoom], symbols: &mut SymbolTable) -> Result<Vec<Room>> {
     for rr in raw_rooms {
-        symbols.rooms.insert(
-            rr.id.clone(),
-            Uuid::new_v5(&NAMESPACE_ROOM, rr.id.as_bytes()),
-        );
+        symbols
+            .rooms
+            .insert(rr.id.clone(), Uuid::new_v5(&NAMESPACE_ROOM, rr.id.as_bytes()));
     }
-    let rooms: Vec<Room> = raw_rooms
-        .iter()
-        .map(|rr| rr.to_room(symbols))
-        .collect::<Result<_>>()?;
+    let rooms: Vec<Room> = raw_rooms.iter().map(|rr| rr.to_room(symbols)).collect::<Result<_>>()?;
     info!("{} rooms built from raw_rooms", rooms.len());
     Ok(rooms)
 }

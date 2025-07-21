@@ -85,13 +85,8 @@ impl RawTriggerCondition {
     fn to_condition(&self, symbols: &SymbolTable) -> Result<TriggerCondition> {
         match self {
             Self::TalkToNpc { npc_id } => cook_talk_to_npc(symbols, npc_id),
-            Self::Ambient { room_ids, spinner } => {
-                cook_ambient(symbols, room_ids.as_ref(), *spinner)
-            },
-            Self::ContainerHasItem {
-                container_id,
-                item_id,
-            } => cook_container_has_item(symbols, container_id, item_id),
+            Self::Ambient { room_ids, spinner } => cook_ambient(symbols, room_ids.as_ref(), *spinner),
+            Self::ContainerHasItem { container_id, item_id } => cook_container_has_item(symbols, container_id, item_id),
             Self::MissingFlag { flag } => Ok(TriggerCondition::MissingFlag(flag.to_string())),
             Self::HasFlag { flag } => Ok(TriggerCondition::HasFlag(flag.to_string())),
             Self::UseItem { item_id, ability } => cook_use_item(symbols, item_id, ability),
@@ -101,10 +96,7 @@ impl RawTriggerCondition {
             Self::GiveToNpc { item_id, npc_id } => cook_give_to_npc(symbols, item_id, npc_id),
             Self::Leave { room_id } => cook_leave(symbols, room_id),
             Self::Drop { item_id } => cook_drop(symbols, item_id),
-            Self::Insert {
-                item_id,
-                container_id,
-            } => cook_insert(symbols, item_id, container_id),
+            Self::Insert { item_id, container_id } => cook_insert(symbols, item_id, container_id),
             Self::Unlock { item_id } => cook_unlock(symbols, item_id),
             Self::Open { item_id } => cook_open(symbols, item_id),
             Self::HasItem { item_id } => cook_has_item(symbols, item_id),
@@ -143,9 +135,10 @@ fn cook_ambient(
     let mut room_ids = HashSet::new();
     if let Some(syms) = room_symbols {
         for sym in syms {
-            let uuid = symbols.rooms.get(sym).with_context(|| {
-                format!("converting raw condition Ambient: room symbol '{sym}' not found")
-            })?;
+            let uuid = symbols
+                .rooms
+                .get(sym)
+                .with_context(|| format!("converting raw condition Ambient: room symbol '{sym}' not found"))?;
             room_ids.insert(*uuid);
         }
     }
@@ -171,11 +164,7 @@ fn cook_use_item_on_item(
     }
 }
 
-fn cook_npc_in_mood(
-    symbols: &SymbolTable,
-    npc_id: &String,
-    mood: NpcMood,
-) -> Result<TriggerCondition> {
+fn cook_npc_in_mood(symbols: &SymbolTable, npc_id: &String, mood: NpcMood) -> Result<TriggerCondition> {
     if let Some(npc_uuid) = symbols.characters.get(npc_id) {
         Ok(TriggerCondition::NpcInMood {
             npc_id: *npc_uuid,
@@ -186,11 +175,7 @@ fn cook_npc_in_mood(
     }
 }
 
-fn cook_npc_has_item(
-    symbols: &SymbolTable,
-    npc_id: &String,
-    item_id: &String,
-) -> Result<TriggerCondition> {
+fn cook_npc_has_item(symbols: &SymbolTable, npc_id: &String, item_id: &String) -> Result<TriggerCondition> {
     if let Some(npc_uuid) = symbols.characters.get(npc_id)
         && let Some(item_uuid) = symbols.items.get(item_id)
     {
@@ -259,11 +244,7 @@ fn cook_unlock(symbols: &SymbolTable, item_id: &String) -> Result<TriggerConditi
     }
 }
 
-fn cook_insert(
-    symbols: &SymbolTable,
-    item_id: &String,
-    container_id: &String,
-) -> Result<TriggerCondition> {
+fn cook_insert(symbols: &SymbolTable, item_id: &String, container_id: &String) -> Result<TriggerCondition> {
     if let Some(item_uuid) = symbols.items.get(item_id)
         && let Some(container_uuid) = symbols.items.get(container_id)
     {
@@ -292,11 +273,7 @@ fn cook_leave(symbols: &SymbolTable, room_id: &String) -> Result<TriggerConditio
     }
 }
 
-fn cook_give_to_npc(
-    symbols: &SymbolTable,
-    item_id: &String,
-    npc_id: &String,
-) -> Result<TriggerCondition> {
+fn cook_give_to_npc(symbols: &SymbolTable, item_id: &String, npc_id: &String) -> Result<TriggerCondition> {
     if let Some(item_uuid) = symbols.items.get(item_id)
         && let Some(npc_uuid) = symbols.characters.get(npc_id)
     {
@@ -325,11 +302,7 @@ fn cook_take(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition
     }
 }
 
-fn cook_take_from_npc(
-    symbols: &SymbolTable,
-    item_id: &String,
-    npc_id: &String,
-) -> Result<TriggerCondition> {
+fn cook_take_from_npc(symbols: &SymbolTable, item_id: &String, npc_id: &String) -> Result<TriggerCondition> {
     if let Some(item_uuid) = symbols.items.get(item_id)
         && let Some(npc_uuid) = symbols.characters.get(npc_id)
     {
@@ -342,11 +315,7 @@ fn cook_take_from_npc(
     }
 }
 
-fn cook_use_item(
-    symbols: &SymbolTable,
-    item_id: &String,
-    ability: &ItemAbility,
-) -> Result<TriggerCondition> {
+fn cook_use_item(symbols: &SymbolTable, item_id: &String, ability: &ItemAbility) -> Result<TriggerCondition> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
         Ok(TriggerCondition::UseItem {
             item_id: *item_uuid,
@@ -357,11 +326,7 @@ fn cook_use_item(
     }
 }
 
-fn cook_container_has_item(
-    symbols: &SymbolTable,
-    container_id: &String,
-    item_id: &String,
-) -> Result<TriggerCondition> {
+fn cook_container_has_item(symbols: &SymbolTable, container_id: &String, item_id: &String) -> Result<TriggerCondition> {
     if let Some(item_uuid) = symbols.items.get(item_id)
         && let Some(container_uuid) = symbols.items.get(container_id)
     {
@@ -370,9 +335,7 @@ fn cook_container_has_item(
             item_id: *item_uuid,
         })
     } else {
-        bail!(
-            "raw condition ContainerHasItem({container_id},{item_id}): item token not in symbols"
-        );
+        bail!("raw condition ContainerHasItem({container_id},{item_id}): item token not in symbols");
     }
 }
 
@@ -458,22 +421,16 @@ pub enum RawTriggerAction {
 impl RawTriggerAction {
     fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
-            Self::SpinnerMessage { spinner } => {
-                Ok(TriggerAction::SpinnerMessage { spinner: *spinner })
-            },
+            Self::SpinnerMessage { spinner } => Ok(TriggerAction::SpinnerMessage { spinner: *spinner }),
             Self::RestrictItem { item_id } => cook_restrict_item(symbols, item_id),
             Self::NpcSaysRandom { npc_id } => cook_npc_says_random(symbols, npc_id),
             Self::NpcSays { npc_id, quote } => cook_npc_says(symbols, npc_id, quote),
             Self::AddFlag { flag } => Ok(TriggerAction::AddFlag(flag.to_string())),
             Self::RemoveFlag { flag } => Ok(TriggerAction::RemoveFlag(flag.to_string())),
             Self::AwardPoints { amount } => Ok(TriggerAction::AwardPoints(*amount)),
-            Self::SpawnItemCurrentRoom { item_id } => {
-                cook_spawn_item_current_room(symbols, item_id)
-            },
+            Self::SpawnItemCurrentRoom { item_id } => cook_spawn_item_current_room(symbols, item_id),
             Self::PushPlayerTo { room_id } => cook_push_player_to(symbols, room_id),
-            Self::GiveItemToPlayer { npc_id, item_id } => {
-                cook_give_item_to_player(symbols, npc_id, item_id)
-            },
+            Self::GiveItemToPlayer { npc_id, item_id } => cook_give_item_to_player(symbols, npc_id, item_id),
             Self::SetNpcMood { npc_id, mood } => cook_set_npc_mood(symbols, npc_id, *mood),
             Self::ShowMessage { text } => Ok(TriggerAction::ShowMessage(text.to_string())),
             Self::RevealExit {
@@ -481,27 +438,16 @@ impl RawTriggerAction {
                 exit_to,
                 direction,
             } => cook_reveal_exit(symbols, exit_from, exit_to, direction),
-            Self::SpawnItemInRoom { item_id, room_id } => {
-                cook_spawn_item_in_room(symbols, item_id, room_id)
+            Self::SpawnItemInRoom { item_id, room_id } => cook_spawn_item_in_room(symbols, item_id, room_id),
+            Self::SpawnItemInContainer { item_id, container_id } => {
+                cook_spawn_item_in_container(symbols, item_id, container_id)
             },
-            Self::SpawnItemInContainer {
-                item_id,
-                container_id,
-            } => cook_spawn_item_in_container(symbols, item_id, container_id),
             Self::DespawnItem { item_id } => cook_despawn_item(symbols, item_id),
             Self::LockItem { item_id } => cook_lock_item(symbols, item_id),
             Self::UnlockItem { item_id } => cook_unlock_item(symbols, item_id),
-            Self::LockExit {
-                from_room,
-                direction,
-            } => cook_lock_exit(symbols, from_room, direction),
-            Self::SpawnItemInInventory { item_id } => {
-                cook_spawn_item_in_inventory(symbols, item_id)
-            },
-            Self::UnlockExit {
-                from_room,
-                direction,
-            } => cook_unlock_exit(symbols, from_room, direction),
+            Self::LockExit { from_room, direction } => cook_lock_exit(symbols, from_room, direction),
+            Self::SpawnItemInInventory { item_id } => cook_spawn_item_in_inventory(symbols, item_id),
+            Self::UnlockExit { from_room, direction } => cook_unlock_exit(symbols, from_room, direction),
             Self::DenyRead { reason } => Ok(TriggerAction::DenyRead(reason.to_string())),
         }
     }
@@ -568,10 +514,7 @@ fn cook_lock_exit(
     }
 }
 
-fn cook_lock_item(
-    symbols: &SymbolTable,
-    item_id: &String,
-) -> std::result::Result<TriggerAction, anyhow::Error> {
+fn cook_lock_item(symbols: &SymbolTable, item_id: &String) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
         Ok(TriggerAction::LockItem(*item_uuid))
     } else {
@@ -579,14 +522,9 @@ fn cook_lock_item(
     }
 }
 
-fn cook_despawn_item(
-    symbols: &SymbolTable,
-    item_id: &String,
-) -> std::result::Result<TriggerAction, anyhow::Error> {
+fn cook_despawn_item(symbols: &SymbolTable, item_id: &String) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
-        Ok(TriggerAction::DespawnItem {
-            item_id: *item_uuid,
-        })
+        Ok(TriggerAction::DespawnItem { item_id: *item_uuid })
     } else {
         bail!("raw action DespawnItem({item_id}): token not in symbol table");
     }
@@ -605,9 +543,7 @@ fn cook_spawn_item_in_container(
             container_id: *room_uuid,
         })
     } else {
-        bail!(
-            "raw action SpawnItemInContainer({item_id},{container_id}): token not in symbol table"
-        );
+        bail!("raw action SpawnItemInContainer({item_id},{container_id}): token not in symbol table");
     }
 }
 
@@ -647,10 +583,7 @@ fn cook_reveal_exit(
     }
 }
 
-fn cook_unlock_item(
-    symbols: &SymbolTable,
-    target: &String,
-) -> std::result::Result<TriggerAction, anyhow::Error> {
+fn cook_unlock_item(symbols: &SymbolTable, target: &String) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(target_id) = symbols.items.get(target) {
         Ok(TriggerAction::UnlockItem(*target_id))
     } else {
@@ -690,10 +623,7 @@ fn cook_give_item_to_player(
     }
 }
 
-fn cook_push_player_to(
-    symbols: &SymbolTable,
-    room_id: &String,
-) -> std::result::Result<TriggerAction, anyhow::Error> {
+fn cook_push_player_to(symbols: &SymbolTable, room_id: &String) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(room_uuid) = symbols.rooms.get(room_id) {
         Ok(TriggerAction::PushPlayerTo(*room_uuid))
     } else {
@@ -731,8 +661,8 @@ fn cook_npc_says(
 /// # Errors
 /// - on failed file access or TOML parsing
 pub fn load_raw_triggers(toml_path: &Path) -> Result<Vec<RawTrigger>> {
-    let trigger_file = fs::read_to_string(toml_path)
-        .with_context(|| format!("reading triggers from \"{}\"", toml_path.display()))?;
+    let trigger_file =
+        fs::read_to_string(toml_path).with_context(|| format!("reading triggers from \"{}\"", toml_path.display()))?;
     let wrapper: RawTriggerFile = toml::from_str(&trigger_file)?;
     info!(
         "{} raw triggers loaded from '{}'",

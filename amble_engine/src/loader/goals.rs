@@ -72,12 +72,8 @@ impl RawGoalCondition {
             Self::GoalComplete { goal_id } => Ok(GoalCondition::GoalComplete {
                 goal_id: goal_id.to_string(),
             }),
-            Self::HasFlag { flag } => Ok(GoalCondition::HasFlag {
-                flag: flag.to_string(),
-            }),
-            Self::MissingFlag { flag } => Ok(GoalCondition::MissingFlag {
-                flag: flag.to_string(),
-            }),
+            Self::HasFlag { flag } => Ok(GoalCondition::HasFlag { flag: flag.to_string() }),
+            Self::MissingFlag { flag } => Ok(GoalCondition::MissingFlag { flag: flag.to_string() }),
             Self::HasItem { item_sym } => {
                 if let Some(uuid) = symbols.items.get(item_sym) {
                     Ok(GoalCondition::HasItem { item_id: *uuid })
@@ -107,8 +103,8 @@ pub struct RawGoalFile {
 /// - on failed read of file indicated in `toml_path`
 /// - on error parsing the file
 pub fn load_raw_goals(toml_path: &Path) -> Result<Vec<RawGoal>> {
-    let goal_file = fs::read_to_string(toml_path)
-        .with_context(|| format!("reading goal data from '{}'", toml_path.display()))?;
+    let goal_file =
+        fs::read_to_string(toml_path).with_context(|| format!("reading goal data from '{}'", toml_path.display()))?;
     let wrapper: RawGoalFile = toml::from_str(&goal_file)?;
     info!(
         "{} raw goals loaded from '{}'",

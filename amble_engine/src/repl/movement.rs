@@ -71,12 +71,7 @@ pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
                 .rooms
                 .get(&destination_id)
                 .ok_or_else(|| anyhow!("invalid move destination ({})", destination_id))?;
-            info!(
-                "{} moved to {} ({})",
-                player_name,
-                new_room.name(),
-                new_room.id()
-            );
+            info!("{} moved to {} ({})", player_name, new_room.name(), new_room.id());
             println!("{travel_message}\n");
             if new_room.visited {
                 println!("{}", new_room.name().room_style().underline());
@@ -101,10 +96,7 @@ pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
             if let Some(msg) = &destination_exit.barred_message {
                 println!("{}", msg.denied_style());
             } else {
-                println!(
-                    "{}",
-                    "You can't go that way because... \"reasons\"".italic()
-                );
+                println!("{}", "You can't go that way because... \"reasons\"".italic());
             }
             let dest_name = world
                 .rooms

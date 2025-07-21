@@ -97,11 +97,7 @@ impl Room {
                 .iter()
                 .filter_map(|npc_id| world.npcs.get(npc_id))
                 .for_each(|npc| {
-                    println!(
-                        "\t{} - {}",
-                        npc.name.npc_style(),
-                        npc.description.description_style()
-                    );
+                    println!("\t{} - {}", npc.name.npc_style(), npc.description.description_style());
                 });
             println!();
         }

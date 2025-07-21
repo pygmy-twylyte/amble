@@ -37,20 +37,14 @@ pub struct SymbolTable {
 /// Converts the TOML table representation of location into a proper Location
 /// # Errors
 /// - if room or container token cannot be found in the symbol table
-pub fn resolve_location(
-    table: &HashMap<String, String>,
-    symbols: &SymbolTable,
-) -> Result<Location> {
+pub fn resolve_location(table: &HashMap<String, String>, symbols: &SymbolTable) -> Result<Location> {
     if table.contains_key("Inventory") {
         Ok(Location::Inventory)
     } else if let Some(room_token) = table.get("Room") {
         symbols.rooms.get(room_token).map_or_else(
             || {
                 error!("room token '{room_token}' not found in symbol table");
-                Err(anyhow!(
-                    "room token '{}' not found in symbol table",
-                    room_token
-                ))
+                Err(anyhow!("room token '{}' not found in symbol table", room_token))
             },
             |uuid| Ok(Location::Room(*uuid)),
         )
@@ -58,10 +52,7 @@ pub fn resolve_location(
         symbols.items.get(chest_token).map_or_else(
             || {
                 error!("container item token '{chest_token}' not found in symbol table");
-                Err(anyhow!(
-                    "chest_token '{}' not found in symbol table",
-                    chest_token
-                ))
+                Err(anyhow!("chest_token '{}' not found in symbol table", chest_token))
             },
             |uuid| Ok(Location::Item(*uuid)),
         )
@@ -69,10 +60,7 @@ pub fn resolve_location(
         symbols.characters.get(npc_token).map_or_else(
             || {
                 error!("Npc item token '{npc_token}' not found in symbol table");
-                Err(anyhow!(
-                    "npc token '{}' not found in symbol table",
-                    npc_token
-                ))
+                Err(anyhow!("npc token '{}' not found in symbol table", npc_token))
             },
             |uuid| Ok(Location::Npc(*uuid)),
         )
@@ -96,14 +84,12 @@ pub fn load_world() -> Result<AmbleWorld> {
     let mut symbols = SymbolTable::default();
 
     /* Load Spinners */
-    world.spinners =
-        load_spinners(spinners_toml_path).context("while loading spinners from file")?;
+    world.spinners = load_spinners(spinners_toml_path).context("while loading spinners from file")?;
     info!("{} spinners added to AmbleWorld", world.spinners.len());
 
     /* Load Empty Rooms */
     let raw_rooms = load_raw_rooms(room_toml_path).context("while loading rooms from file")?;
-    let rooms =
-        build_rooms(&raw_rooms, &mut symbols).context("while building rooms from raw_rooms")?;
+    let rooms = build_rooms(&raw_rooms, &mut symbols).context("while building rooms from raw_rooms")?;
     for rm in rooms {
         world.rooms.insert(rm.id(), rm);
     }
@@ -116,8 +102,7 @@ pub fn load_world() -> Result<AmbleWorld> {
         .location
         .get("Room")
         .ok_or_else(|| anyhow!("failed extraction of start room token id"))?;
-    world.player =
-        build_player(&raw_player, &mut symbols).context("while building player from raw player")?;
+    world.player = build_player(&raw_player, &mut symbols).context("while building player from raw player")?;
     info!(
         "player \"{}\" added to AmbleWorld at {}",
         world.player.name(),
@@ -135,8 +120,7 @@ pub fn load_world() -> Result<AmbleWorld> {
 
     /* Load Items */
     let raw_items = load_raw_items(item_toml_path).context("while loading raw items from file")?;
-    let items =
-        build_items(&raw_items, &mut symbols).context("while building items from raw items")?;
+    let items = build_items(&raw_items, &mut symbols).context("while building items from raw items")?;
     for item in items {
         world.items.insert(item.id(), item);
     }
@@ -144,8 +128,7 @@ pub fn load_world() -> Result<AmbleWorld> {
     () = place_items(&mut world)?;
 
     /* Load Triggers */
-    let raw_triggers =
-        load_raw_triggers(trigger_toml_path).context("when loading triggers from file")?;
+    let raw_triggers = load_raw_triggers(trigger_toml_path).context("when loading triggers from file")?;
     world.triggers = build_triggers(&raw_triggers, &symbols)?;
     info!("{} triggers added to AmbleWorld", world.triggers.len());
 

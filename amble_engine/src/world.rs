@@ -81,10 +81,7 @@ impl AmbleWorld {
                 .rooms
                 .get(&uuid)
                 .ok_or_else(|| anyhow!("player's room UUID ({}) not found in world", uuid)),
-            _ => Err(anyhow!(
-                "player not in a room - located at {:?}",
-                self.player.location
-            )),
+            _ => Err(anyhow!("player not in a room - located at {:?}", self.player.location)),
         }
     }
 
@@ -97,10 +94,7 @@ impl AmbleWorld {
                 .rooms
                 .get_mut(&uuid)
                 .ok_or_else(|| anyhow!("player's room UUID ({}) not found in world", uuid)),
-            _ => Err(anyhow!(
-                "player not in a room - located at {:?}",
-                self.player.location
-            )),
+            _ => Err(anyhow!("player not in a room - located at {:?}", self.player.location)),
         }
     }
 

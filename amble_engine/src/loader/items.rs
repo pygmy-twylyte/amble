@@ -75,11 +75,7 @@ impl RawItem {
         let item_uuid = match symbols.items.get(&self.id) {
             Some(id) => *id,
             None => {
-                return Err(anyhow!(
-                    "item {} ({}) not found in symbol table",
-                    self.id,
-                    self.name
-                ));
+                return Err(anyhow!("item {} ({}) not found in symbol table", self.id, self.name));
             },
         };
 
@@ -137,11 +133,7 @@ pub struct RawItemFile {
 }
 
 /// Determine whether an item meets requirements for a particular interaction
-pub fn interaction_requirement_met(
-    interaction: ItemInteractionType,
-    target: &Item,
-    tool: &Item,
-) -> bool {
+pub fn interaction_requirement_met(interaction: ItemInteractionType, target: &Item, tool: &Item) -> bool {
     if let Some(requirement) = target.interaction_requires.get(&interaction) {
         tool.abilities.contains(requirement)
     } else {
@@ -153,8 +145,8 @@ pub fn interaction_requirement_met(
 /// # Errors
 /// - if unable to read or parse the items.toml file
 pub fn load_raw_items(toml_path: &Path) -> Result<Vec<RawItem>> {
-    let item_file = fs::read_to_string(toml_path)
-        .with_context(|| format!("reading item data from '{}'", toml_path.display()))?;
+    let item_file =
+        fs::read_to_string(toml_path).with_context(|| format!("reading item data from '{}'", toml_path.display()))?;
     let wrapper: RawItemFile = toml::from_str(&item_file)?;
     info!(
         "{} raw items successfully loaded from '{}'",
@@ -181,10 +173,9 @@ pub fn build_items(raw_items: &[RawItem], symbols: &mut SymbolTable) -> Result<V
 
     // rebuild item symbol table from items.toml data
     for ri in raw_items {
-        symbols.items.insert(
-            ri.id.clone(),
-            uuid_from_token(&NAMESPACE_ITEM, ri.id.as_str()),
-        );
+        symbols
+            .items
+            .insert(ri.id.clone(), uuid_from_token(&NAMESPACE_ITEM, ri.id.as_str()));
     }
     // make sure pre-inserted items are in symbols built from items.toml
     for (token_id, preloaded_uuid) in &early_inserts {
@@ -203,10 +194,7 @@ pub fn build_items(raw_items: &[RawItem], symbols: &mut SymbolTable) -> Result<V
             );
         }
     }
-    info!(
-        "verified existence of all {} pre-registered items",
-        early_inserts.len()
-    );
+    info!("verified existence of all {} pre-registered items", early_inserts.len());
 
     // build items from raw_items
     let items: Vec<Item> = raw_items
@@ -256,10 +244,7 @@ pub fn place_items(world: &mut AmbleWorld) -> Result<()> {
         room.contents.insert(item_id);
     }
 
-    info!(
-        "placing {} items into NPC inventories",
-        npc_placements.len()
-    );
+    info!("placing {} items into NPC inventories", npc_placements.len());
     for (npc_id, item_id) in npc_placements {
         let npc = world
             .npcs

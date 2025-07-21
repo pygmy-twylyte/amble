@@ -109,18 +109,10 @@ pub fn check_ambient_triggers(world: &mut AmbleWorld) -> Result<()> {
             if let TriggerCondition::Ambient { room_ids, spinner } = cond {
                 // empty = applies globally
                 if room_ids.is_empty() || room_ids.contains(&current_room_id) {
-                    let message = world
-                        .spinners
-                        .get(spinner)
-                        .and_then(Spinner::spin)
-                        .unwrap_or_default();
+                    let message = world.spinners.get(spinner).and_then(Spinner::spin).unwrap_or_default();
                     if !message.is_empty() {
                         trigger.fired = true;
-                        println!(
-                            "\n{} {}",
-                            "❉".ambient_icon_style(),
-                            message.ambient_trig_style()
-                        );
+                        println!("\n{} {}", "❉".ambient_icon_style(), message.ambient_trig_style());
                     }
                 }
             }
