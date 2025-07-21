@@ -145,11 +145,12 @@ values = [
     "A calm female voice over the PA says: \"Welcome to Aperture Science. Enjoy your stay,\" followed by a beep.",
     "Somewhere behind the walls, gears grind and then stop abruptly.",
     "The lights flicker and buzz with a discordant hum.",
-    "A gust of wind rushes through the corridor, but there are no open doors or windows.",
+    "A gust of wind rushes through the room, but there are no open doors or windows.",
     "A faint voice says \"Testing in progress\" followed by a thump.",
     "You hear a tone, then \"Fiction containment at 42%.\"",
+    "The building shudders violently for a moment. Nobody seems to notice.",
 ]
-widths = [20, 1, 1, 1, 1, 1, 1, 1]
+widths = [20, 1, 1, 1, 1, 1, 1, 1, 1]
 
 [[spinners]]
 spinnerType = "nauseated"
@@ -159,5 +160,6 @@ values = [
     "You throw up a little in your mouth.",
     "You regurgitate a bit of last night's dinner, but can't remember what it was.",
     "Everything smells faintly of old tuna. Why?",
+    "Your stomach roils, like that time you stayed up all night drinking mezcal with Ruben",
 ]
 widths = [10, 1, 1, 1, 1]

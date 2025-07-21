@@ -591,7 +591,7 @@ barred_message = """The Black Knight blocks your way.
 """
 
 [rooms.exits.south]
-to = "corridor"
+to = "corridor-north"
 required_flags = ["appeased-black-knight"]
 barred_message = """The Black Knight blocks your way.
 """
@@ -634,8 +634,8 @@ to = "sublevel-1-entrance"
 
 # -----------------------------------------------------------------------------
 [[rooms]]
-id = "corridor"
-name = "Research Corridor"
+id = "corridor-north"
+name = "Research Corridor (North)"
 description = """
 A dimly lit concrete hallway stretches out, lined with emergency lights that
 flicker like they're deciding whether to stay on. Faint scratching sounds echo
@@ -658,6 +658,9 @@ to = "observation-room"
 [rooms.exits.east]
 to = "med-bay"
 
+[rooms.exits.south]
+to = "corridor-south"
+
 # -----------------------------------------------------------------------------
 [[rooms]]
 id = "observation-room"
@@ -676,7 +679,7 @@ location = "Nowhere"
 visited = false
 
 [rooms.exits.east]
-to = "corridor"
+to = "corridor-north"
 
 # ------------------------------------------------------------------------------
 [[rooms]]
@@ -711,4 +714,36 @@ every few minutes. A small cleaning robot floats around the room disinfecting th
 """
 
 [rooms.exits.west]
-to = "corridor"
+to = "corridor-north"
+
+# -----------------------------------------------------------------------------
+
+[[rooms]]
+id = "corridor-south"
+name = "Research Corridor (South)"
+location = "Nowhere"
+visited = false
+description = """
+<description needed; continuation of corridor-north>
+"""
+
+[rooms.exits.north]
+to = "corridor-north"
+
+[rooms.exits.west]
+to = "monolith-room"
+
+# -----------------------------------------------------------------------------
+[[rooms]]
+id = "monolith-room"
+name = "Monolith Room"
+location = "Nowhere"
+visited = false
+description = """
+<description needed; largely empty room except for the imposing 2001 monolith
+and floodlights. Perhaps a new NPC (HAL-9000) here? Ultimately getting in here
+(gated by some sort of puzzle TBD) will allow touching the monolith, which will
+imbue the player with the mental capacity to enter Room AA-3B.>"""
+
+[rooms.exits.east]
+to = "corridor-south"
