@@ -4,6 +4,10 @@
 - dev commands to teleport (DONE), get items / achievs
 - update giveToNpc to give more specific reasons for refusals.
 - trigger action to change the .read field on an item to update displays etc
+- idea: monolith room has HAL, but HAL is deactivated due to missing (removed) memory modules. Just sings "Daisy" over and over. Must find modules and replace them to talk to HAL and get access to the monolith
+- monolith will induce higher intelligence state or paradox acceptance ability that will allow AA-3B access
+- mechanism like window or portal -- where one can look outside the current room into another?
+- ROOM OVERLAYS: descriptions that change based on flags / items / other conditions.
 
 ## FIXITs from runthroughs / CONTENT additions
 - read denials should be red
