@@ -23,7 +23,7 @@ use super::SymbolTable;
 pub struct RawRoom {
     id: String,
     name: String,
-    description: String,
+    base_description: String,
     location: Location,
     #[serde(default)]
     visited: bool,
@@ -92,7 +92,7 @@ impl RawRoom {
                 .ok_or_else(|| anyhow!("UUID for {} not found in symbols", self.id))?,
             symbol: self.id.to_string(),
             name: self.name.clone(),
-            description: self.description.clone(),
+            base_description: self.base_description.clone(),
             location: self.location,
             visited: self.visited,
             exits: exit_map,

@@ -3,8 +3,8 @@
 # [[rooms]]
 # id = "token_id"
 # name = "room_name"
-# description = """
-# multi-line_description
+# base_description = """
+# multi-line_base_description
 # """
 # location = "Nowhere"
 # visited = false
@@ -26,7 +26,7 @@
 [[rooms]]
 id = "high-ridge"
 name = "High Isolated Ridge"
-description = """
+base_description = """
 A small, flat ridge in the midst of a steeply sloped wooded area. Probably
 west of something, depending on how you're oriented.
 
@@ -42,7 +42,7 @@ to = "parish-landing"
 [[rooms]]
 id = "parish-landing"
 name = "Parish Landing"
-description = """
+base_description = """
 A small plateau carved into the hillside, marked by an old wooden sign that reads:
 'Pilgrims Welcome – Pancakes Served Daily (Terms and Conditions Apply)'. A faded
 poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a
@@ -67,7 +67,7 @@ to = "two-sheds-landing"
 id = "st-alfonzo-parish"
 name = "Parish of Saint Alfonzo"
 
-description = """
+base_description = """
 The parish resembles a half-abandoned diner and half-absolved church, complete
 with stained glass windows depicting breakfast foods in heroic poses. The air
 smells faintly of syrup and tobacco.
@@ -88,7 +88,7 @@ to = "parish-landing"
 id = "two-sheds-landing"
 name = "Jackson's Landing"
 
-description = """
+base_description = """
 A quiet landing tucked along the slope, with a rusted mailbox labeled 'A. Jackson'
 standing to one side. A trail sign points east toward something optimistically named
 'Two Sheds'. Underneath, someone has scratched in: 'Technically One.'
@@ -115,7 +115,7 @@ to = "two-sheds"
 id = "two-sheds"
 name = "Two Sheds"
 
-description = """
+base_description = """
 A modest wooden shed stands alone in the clearing. It appears freshly painted and
 surprisingly well cared for. A plaque on the door reads:
 
@@ -138,7 +138,7 @@ to = "two-sheds-landing"
 id = "guard-post"
 name = "Guard Post"
 
-description = """
+base_description = """
 A small stone guard post clings to the side of the trail, complete with a creaky
 wooden chair and a megaphone labeled 'USE ONLY IF VERY SURE'.
 
@@ -164,7 +164,7 @@ to = "two-sheds-landing"
 id = "inca-road"
 name = "Inca Road"
 
-description = """
+base_description = """
 An ancient road of broken and uneven stones winds precariously along the mountainside,
 half-swallowed by time and weeds. South of here, a river's rocky rapid rushes westward
 through the gorge.
@@ -187,7 +187,7 @@ to = "guard-post"
 id = "front-entrance"
 name = "Front Entrance"
 
-description = """
+base_description = """
 Potted plants flank a plain, darkened glass door on the front of the building
 to the north. As you approach the door, the LED on a security camera mounted
 above it flashes green and red in alternation as it scans you. A sign above
@@ -224,7 +224,7 @@ to = "east-of-building"
 id = "snowfield"
 name = "Desolate Snowfield"
 
-description = """
+base_description = """
 You find yourself in a wide, desolate snowfield west of the main building --
 which is odd, because you still see summery woodlands just yards away, with a
 clean line separating the two climates. Wind howls across the ice, and powdery
@@ -248,7 +248,7 @@ to = "snow-camp"
 [[rooms]]
 id = "snow-camp"
 name = "Abandoned Campsite"
-description = """
+base_description = """
 The remains of a temporary shelter are dug into a snowbank here. The tent has
 collapsed, half-fused to a scorched sled. The river — or some frozen remnant
 of it — glistens beyond.
@@ -264,7 +264,7 @@ to = "snowfield"
 id = "loading-dock"
 name = "Useless Loading Dock"
 
-description = """
+base_description = """
 The so-called loading dock juts ten feet *above* the ground, with no ramp, stairs,
 or apparent means of access and a loading door thirty feet wide and ten inches tall.
 A conveyor belt runs from the building wall to the edge of the dock, then loops
@@ -291,7 +291,7 @@ to = "snowfield"
 id = "east-of-building"
 name = "East of Building"
 
-description = """
+base_description = """
 You’re east of the building now, facing a patch of ornamental gravel and a
 struggling yucca plant. The air here smells faintly of ozone and buttered
 lobster, though the source is unclear.
@@ -319,7 +319,7 @@ to = "front-entrance"
 [[rooms]]
 id = "main-lobby"
 name = "Main Lobby"
-description = """
+base_description = """
 The lobby is clinically clean in a way that feels suspicious. A slightly humming
 vending machine stands beside an empty receptionist's desk bearing a dusty nameplate
 that reads, in Comic Sans: 'WELCOME TEMPORARY LIFEFORM'. A softly glowing sign on
@@ -345,7 +345,7 @@ to = "b-a-office"
 [[rooms]]
 id = "b-a-office"
 name = "Amble Adventures Office"
-description = """
+base_description = """
 The office of Amble Adventures, a wholly disowned subsidiary of Brains Anonymous™,
 is a shrine to barely-funded creativity. Faded posters of games that were never
 released adorn the walls, including one titled 'PONG Construction Set 3000'. A
@@ -367,7 +367,7 @@ to = "supply-closet"
 [[rooms]]
 id = "lift-bank-main"
 name = "Elevator Bank"
-description = """
+base_description = """
 A bank of elevators waits here, none of which seem eager to go anywhere. One of
 them is labeled 'MAIN LIFT' in glowing teal Comic Sans. A card reader is mounted
 next to it, and scans you in a way that manages to be both judgmental and slightly
@@ -390,7 +390,7 @@ to = "main-lobby"
 [[rooms]]
 id = "lift-main"
 name = "Elevator (Ground Floor)"
-description = """
+base_description = """
 The elevator interior is surprisingly luxurious—polished chrome panels, soft
 lighting, and a faint scent of something that might be vanilla or data corruption.
 Only two buttons appear on the control panel, faintly pulsing.
@@ -411,7 +411,7 @@ That button is disabled. Visitor pass and proximity card required for access."""
 [[rooms]]
 id = "lounge"
 name = "Lounge"
-description = """
+base_description = """
 A small space to relax, with a sofa, a few magazines, and part of a jigsaw
 puzzle. A tarry substance slowly bubbles in the bottom of a coffee carafe.
 There's an ornate maroon rug on the floor. It really ties the room together.
@@ -426,7 +426,7 @@ to = "lift-bank-main"
 [[rooms]]
 id = "portal-room"
 name = "Portal Room"
-description = """
+base_description = """
 A bare white room. In the center, a black and white Portal gun is affixed to
 a stand, aimed at a bullseye on the wall.
 
@@ -443,7 +443,7 @@ to = "lounge"
 id = "aperture-lab"
 name = "Aperture Science Laboratory"
 
-description = """
+base_description = """
 The lab is unnaturally white—walls, floor, ceiling, even the air feels overexposed.
 Everything here hums at a frequency designed to encourage compliance. A single
 console blinks on a table beside a dormant printer labeled "Aperture Science
@@ -460,7 +460,7 @@ to = "portal-room"
 [[rooms]]
 id = "restaurant"
 name = "Restaurant at the End of the Universe"
-description = """
+base_description = """
 Soft jazz wafts through invisible speakers, accompanied by the occasional sound
 of imploding galaxies. A tasteful sign declares this to be the Restaurant at the
 End of the Universe, though it appears to be between dinner rushes. Tables float
@@ -494,7 +494,7 @@ forced by programming not to let you in without a visitor's pass."""
 [[rooms]]
 id = "vip-bathroom"
 name = "VIP Bathroom"
-description = """
+base_description = """
 Blinding white tile and pristine mirrors make it almost seem like this
 pan-gender, pan-species bathroom has never been used, but a lingering asparagus
 odor suggests otherwise.
@@ -509,7 +509,7 @@ to = "restaurant"
 [[rooms]]
 id = "patio"
 name = "Restaurant Patio"
-description = """
+base_description = """
 The patio overlooks nothing in particular—just an endless starfield gently swirling
 beyond a transparent force field. A few metal tables are bolted to the floor, and
 one of them has a half-empty cocktail glass slowly un-drinking itself. A sign near
@@ -526,7 +526,7 @@ to = "restaurant"
 [[rooms]]
 id = "poetry-panic"
 name = "Poetry Panic Room"
-description = """
+base_description = """
 A concrete and titanium vacuum-sealed room equipped with noise generators, active
 voice-cancelling harmonics and Cone of Silence technology. A seal by the door
 proudly states that the chamber is almost completely Vogon poetry-proof.
@@ -542,7 +542,7 @@ to = "b-a-office"
 [[rooms]]
 id = "lift-sublevel-1"
 name = "Elevator (Sublevel 1)"
-description = """
+base_description = """
 After dropping for what seems like two or three minutes, the elevator arrives
 at a deep sublevel with a "ding!", THUNK and a wobble. The muzak version of
 "The Sound of Muzak" continues to play softly from a tinny overhead speaker,
@@ -563,7 +563,7 @@ to = "sublevel-1-entrance"
 [[rooms]]
 id = "sublevel-1-entrance"
 name = "Entrance to Sublevel One"
-description = """
+base_description = """
 A small landing area covered in dust. Buckets, tools, and debris are strewn
 about the floor. The door to the west is labeled with a sign:
 
@@ -600,7 +600,7 @@ barred_message = """The Black Knight blocks your way.
 [[rooms]]
 id = "supply-closet"
 name = "Supply Closet"
-description = """
+base_description = """
 A small closet lit by a bare bulb being repeatedly rammed by a fluttering moth.
 Crowded shelves offer paper products, bottles of toner, staples, and other
 office... ... staples.
@@ -615,7 +615,7 @@ to = "b-a-office"
 [[rooms]]
 id = "room-aa-3b"
 name = "Room AA-3B"
-description = """
+base_description = """
 The door opens into a swirling mass of static and fractured reality. Flickering
 projections of impossible geometries ripple through the darkness. Objects seem
 to vanish halfway through existing. A guttural voice whispers paradoxes from
@@ -636,7 +636,7 @@ to = "sublevel-1-entrance"
 [[rooms]]
 id = "corridor-north"
 name = "Research Corridor (North)"
-description = """
+base_description = """
 A dimly lit concrete hallway stretches out, lined with emergency lights that
 flicker like they're deciding whether to stay on. Faint scratching sounds echo
 through the walls at irregular intervals.
@@ -665,7 +665,7 @@ to = "corridor-south"
 [[rooms]]
 id = "observation-room"
 name = "Field Observation Room"
-description = """
+base_description = """
 Thick observation windows, long since spiderwebbed with cracks, overlook what
 should be Room AA-3B—but only darkness and occasional flashes of unreality
 appear beyond. Abandoned swivel chairs and battered clipboards litter the room.
@@ -685,7 +685,7 @@ to = "corridor-north"
 [[rooms]]
 id = "security-station"
 name = "AA-3 Security Station"
-description = """
+base_description = """
 A compact but well-equipped station with reinforced blast doors, a wall of
 cracked CRT monitors, and a steel locker emblazoned with 'IN CASE OF EMERGENCY,
 RUN FASTER.' Paperwork is scattered across the floor, including an ominous
@@ -707,7 +707,7 @@ id = "med-bay"
 name = "Med Bay"
 location = "Nowhere"
 visited = false
-description = """
+base_description = """
 A clean white infirmary with two bio-beds extending from the back wall, surrounded
 by a bevy of monitors and robotic surgical tools. One of the machines goes "Bing!"
 every few minutes. A small cleaning robot floats around the room disinfecting things.
@@ -723,8 +723,8 @@ id = "corridor-south"
 name = "Research Corridor (South)"
 location = "Nowhere"
 visited = false
-description = """
-<description needed; continuation of corridor-north>
+base_description = """
+<base_description needed; continuation of corridor-north>
 """
 
 [rooms.exits.north]
@@ -739,8 +739,8 @@ id = "monolith-room"
 name = "Monolith Room"
 location = "Nowhere"
 visited = false
-description = """
-<description needed; largely empty room except for the imposing 2001 monolith
+base_description = """
+<base_description needed; largely empty room except for the imposing 2001 monolith
 and floodlights. Perhaps a new NPC (HAL-9000) here? Ultimately getting in here
 (gated by some sort of puzzle TBD) will allow touching the monolith, which will
 imbue the player with the mental capacity to enter Room AA-3B.>"""

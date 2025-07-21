@@ -26,12 +26,13 @@ impl Exit {
     }
 }
 
+/// Any visitable location in the game world.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Room {
     pub id: Uuid,
     pub symbol: String,
     pub name: String,
-    pub description: String,
+    pub base_description: String,
     pub location: Location,
     pub visited: bool,
     pub exits: HashMap<String, Exit>,
@@ -50,7 +51,7 @@ impl WorldObject for Room {
     }
 
     fn description(&self) -> &str {
-        &self.description
+        &self.base_description
     }
 
     fn location(&self) -> &Location {
@@ -74,7 +75,7 @@ impl Room {
     pub fn show(&self, world: &AmbleWorld) -> Result<()> {
         let banner = self.name.room_titlebar_style();
         println!("{banner:^80}");
-        println!("{}", self.description.description_style());
+        println!("{}", self.base_description.description_style());
 
         if !self.contents.is_empty() {
             println!("{}", "You see:".subheading_style());
