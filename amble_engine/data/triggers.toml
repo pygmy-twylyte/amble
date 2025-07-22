@@ -492,6 +492,7 @@ actions = [
     { type = "showMessage", text = "You swing the axe with practiced heft, chopping through the tree in a shower of splinters." },
     { type = "despawnItem", item_id = "fallen_tree" },
     { type = "addFlag", flag = "cleared-fallen-tree" },
+    { type = "addFlag", flag = "chopped-fallen-tree" },
     { type = "awardPoints", amount = 5 },
 ]
 
@@ -505,6 +506,7 @@ actions = [
     { type = "despawnItem", item_id = "fallen_tree" },
     { type = "despawnItem", item_id = "flamethrower" },
     { type = "addFlag", flag = "cleared-fallen-tree" },
+    { type = "addFlag", flag = "burned-fallen-tree"},
     { type = "awardPoints", amount = 5 },
     { type = "showMessage", text = """
     You step back, aim, and squeeze the trigger... The device flares to life — and then

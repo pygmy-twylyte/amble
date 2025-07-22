@@ -87,17 +87,25 @@ to = "parish-landing"
 [[rooms]]
 id = "two-sheds-landing"
 name = "Jackson's Landing"
-
 base_description = """
 A quiet landing tucked along the slope, with a rusted mailbox labeled 'A. Jackson'
 standing to one side. A trail sign points east toward something optimistically named
 'Two Sheds'. Underneath, someone has scratched in: 'Technically One.'
-
-Faint hammering sounds echo from up the trail.
 """
-
 location = "Nowhere"
 visited = false
+
+[[rooms.overlays]]
+condition = {type = "itemPresent", item_id = "fallen_tree"}
+text = "A huge tangle of limbs and branches from a fallen tree block the path continuing upward."
+
+[[rooms.overlays]]
+condition = { type = "flagSet", flag = "chopped-fallen-tree" }
+text = "Cut branches of a fallen tree are piled to the side of the path upward."
+
+[[rooms.overlays]]
+condition = { type = "flagSet", flag = "burned-fallen-tree" }
+text = "Charred twigs and smoldering ash are all that remain of the fallen tree."
 
 [rooms.exits.up]
 to = "guard-post"
