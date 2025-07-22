@@ -1,5 +1,7 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::must_use_candidate)]
+#![allow(clippy::missing_errors_doc)]
+
 //! ** Amble **
 //! Adventure game / engine project
 
