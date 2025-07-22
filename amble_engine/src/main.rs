@@ -14,9 +14,12 @@ use log::info;
 use std::fs;
 use std::io::Write;
 
+const AMBLE_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 fn main() -> Result<()> {
     env_logger::init();
-    info!("Start: loading Amble world...");
+    info!("Starting Amble (version {AMBLE_VERSION})");
+    info!("Start: loading 'AmbleWorld' from files");
     let mut world = load_world().context("while loading AmbleWorld")?;
     info!("AmbleWorld loaded successfully.");
 
