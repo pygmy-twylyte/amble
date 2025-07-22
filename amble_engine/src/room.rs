@@ -26,6 +26,40 @@ impl Exit {
     }
 }
 
+/// Conditional text that may be part of a room description, depending on some state.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoomOverlay {
+    pub condition: OverlayCondition,
+    pub text: String,
+}
+impl RoomOverlay {
+    /// Returns true if an overlay's condition is met.
+    pub fn applies(&self, room_id: Uuid, world: &AmbleWorld) -> bool {
+        match &self.condition {
+            OverlayCondition::FlagSet { flag } => world.player.flags.contains(flag),
+            OverlayCondition::FlagUnset { flag } => !world.player.flags.contains(flag),
+            OverlayCondition::ItemPresent { item_id } => world.items.get(item_id).map_or(
+                false,
+                |item| matches!(item.location, Location::Room(id) if id == room_id),
+            ),
+            OverlayCondition::ItemAbsent { item_id } => world.items.get(item_id).map_or(
+                true,
+                |item| !matches!(item.location, Location::Room(id) if id == room_id),
+            ),
+        }
+    }
+}
+
+/// Types of conditions that may enable room overlays
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum OverlayCondition {
+    FlagSet { flag: String },
+    FlagUnset { flag: String },
+    ItemPresent { item_id: Uuid },
+    ItemAbsent { item_id: Uuid },
+}
+
 /// Any visitable location in the game world.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Room {
@@ -33,6 +67,7 @@ pub struct Room {
     pub symbol: String,
     pub name: String,
     pub base_description: String,
+    pub overlays: Vec<RoomOverlay>,
     pub location: Location,
     pub visited: bool,
     pub exits: HashMap<String, Exit>,
@@ -72,10 +107,12 @@ impl ItemHolder for Room {
     }
 }
 impl Room {
+    /// Displays full description, exit, and NPC information for the `Room`.
     pub fn show(&self, world: &AmbleWorld) -> Result<()> {
         let banner = self.name.room_titlebar_style();
         println!("{banner:^80}");
         println!("{}", self.base_description.description_style());
+        self.show_overlays(world);
 
         if !self.contents.is_empty() {
             println!("{}", "You see:".subheading_style());
@@ -91,6 +128,17 @@ impl Room {
         Ok(())
     }
 
+    /// Displays any applicable description overlays.
+    pub fn show_overlays(&self, world: &AmbleWorld) {
+        for overlay in &self.overlays {
+            if overlay.applies(self.id(), world) {
+                println!("{}", overlay.text.description_style());
+                println!();
+            }
+        }
+    }
+
+    /// Displays list of NPCs present in the `Room`
     pub fn show_npcs(&self, world: &AmbleWorld) {
         if !self.npcs.is_empty() {
             println!("{}", "Others here:".subheading_style());
@@ -104,6 +152,7 @@ impl Room {
         }
     }
 
+    /// Displays list of available exits from the Room.
     pub fn show_exits(&self, world: &AmbleWorld) -> Result<()> {
         println!("\n{}", "Exits:".subheading_style());
         for (direction, exit) in &self.exits {

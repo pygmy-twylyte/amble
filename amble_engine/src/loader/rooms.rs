@@ -12,7 +12,7 @@ use uuid::Uuid;
 use crate::{
     Location,
     idgen::{NAMESPACE_ITEM, NAMESPACE_ROOM, uuid_from_token},
-    room::{Exit, Room},
+    room::{Exit, OverlayCondition, Room, RoomOverlay},
 };
 
 use super::SymbolTable;
@@ -26,6 +26,8 @@ pub struct RawRoom {
     base_description: String,
     location: Location,
     #[serde(default)]
+    overlays: Vec<RawRoomOverlay>,
+    #[serde(default)]
     visited: bool,
     #[serde(default)]
     exits: HashMap<String, RawExit>,
@@ -33,6 +35,21 @@ pub struct RawRoom {
     contents: HashSet<Uuid>,
     #[serde(default)]
     npcs: HashSet<Uuid>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct RawRoomOverlay {
+    condition: RawOverlayCondition,
+    text: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum RawOverlayCondition {
+    FlagSet { flag: String },
+    FlagUnset { flag: String },
+    ItemPresent { item_id: String },
+    ItemAbsent { item_id: String },
 }
 
 #[derive(Debug, Deserialize)]
@@ -55,6 +72,7 @@ impl RawRoom {
     /// # Errors
     /// - on failed room lookup in symbol table
     pub fn to_room(&self, symbols: &mut SymbolTable) -> Result<Room> {
+        // convert raw exits to real ones in a map
         let mut exit_map = HashMap::new();
         for (dir, raw_exit) in &self.exits {
             // look destination room uuid up in symbol table using token id
@@ -65,6 +83,7 @@ impl RawRoom {
 
             // items are not loaded until after rooms, so we can't look them up in the symbol table yet
             // we'll generate their UUIDs and add them to the symbol table here as we go
+            // (these items are later verified to exist by the item loader)
             let mut required_items_uuids = HashSet::<Uuid>::new();
             for required in &raw_exit.required_items {
                 let item_uuid = uuid_from_token(&NAMESPACE_ITEM, required);
@@ -85,6 +104,31 @@ impl RawRoom {
             );
         }
 
+        // create overlay vector from raw ones; like with exits, we must
+        // reference items that aren't loaded yet so we add them to the symbol
+        // table here, and they're verified to exist later when items are loaded
+        let mut overlays = Vec::new();
+        for raw_overlay in &self.overlays {
+            let condition = match &raw_overlay.condition {
+                RawOverlayCondition::FlagSet { flag } => OverlayCondition::FlagSet { flag: flag.to_string() },
+                RawOverlayCondition::FlagUnset { flag } => OverlayCondition::FlagUnset { flag: flag.to_string() },
+                RawOverlayCondition::ItemPresent { item_id } => {
+                    let uuid = uuid_from_token(&NAMESPACE_ITEM, item_id);
+                    symbols.items.insert(item_id.to_string(), uuid);
+                    OverlayCondition::ItemPresent { item_id: uuid }
+                },
+                RawOverlayCondition::ItemAbsent { item_id } => {
+                    let uuid = uuid_from_token(&NAMESPACE_ITEM, item_id);
+                    symbols.items.insert(item_id.to_string(), uuid);
+                    OverlayCondition::ItemAbsent { item_id: uuid }
+                },
+            };
+            overlays.push(RoomOverlay {
+                condition,
+                text: raw_overlay.text.to_string(),
+            })
+        }
+
         Ok(Room {
             id: *symbols
                 .rooms
@@ -93,6 +137,7 @@ impl RawRoom {
             symbol: self.id.to_string(),
             name: self.name.clone(),
             base_description: self.base_description.clone(),
+            overlays,
             location: self.location,
             visited: self.visited,
             exits: exit_map,
