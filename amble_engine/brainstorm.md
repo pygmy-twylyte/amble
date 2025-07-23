@@ -9,6 +9,7 @@
 - mechanism like window or portal -- where one can look outside the current room into another?
 - ROOM OVERLAYS: descriptions that change based on flags / items / other conditions.
 - add version info to world and saves/loads
+- ambient spinner for elevators with Muzak
 
 ## FIXITs from runthroughs / CONTENT additions
 - read denials should be red
