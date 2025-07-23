@@ -8,6 +8,7 @@
 - monolith will induce higher intelligence state or paradox acceptance ability that will allow AA-3B access
 - mechanism like window or portal -- where one can look outside the current room into another?
 - ROOM OVERLAYS: descriptions that change based on flags / items / other conditions.
+- add overlay conditions for player (!)has item, npc in mood (can describe NPC actions / attitudes in different states)
 - add version info to world and saves/loads
 - ambient spinner for elevators with Muzak
 
