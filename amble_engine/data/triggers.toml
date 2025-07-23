@@ -236,6 +236,7 @@ conditions = [
 ]
 actions = [
     { type = "despawnItem", item_id = "vogon_poetry_book" },
+    { type = "addFlag", flag = "panic-room-open" },
     { type = "revealExit", direction = "west", exit_from = "b-a-office", exit_to = "poetry-panic" },
     { type = "showMessage", text = """
 The machine begins to whine at a high pitch and gives off a noxious odor of
@@ -506,7 +507,7 @@ actions = [
     { type = "despawnItem", item_id = "fallen_tree" },
     { type = "despawnItem", item_id = "flamethrower" },
     { type = "addFlag", flag = "cleared-fallen-tree" },
-    { type = "addFlag", flag = "burned-fallen-tree"},
+    { type = "addFlag", flag = "burned-fallen-tree" },
     { type = "awardPoints", amount = 5 },
     { type = "showMessage", text = """
     You step back, aim, and squeeze the trigger... The device flares to life — and then
