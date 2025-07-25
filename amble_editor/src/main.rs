@@ -56,6 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     f.render_stateful_widget(list, chunks[0], &mut state);
 
                     let room = rooms[selected_room];
+
                     let detail = vec![
                         Line::from(vec![
                             Span::styled("Name: ", Style::default().fg(Color::Cyan)),
@@ -84,6 +85,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ];
                     let paragraph = Paragraph::new(detail)
                         .block(Block::default().title("Detail").borders(Borders::ALL));
+
                     f.render_widget(paragraph, chunks[1]);
                 },
                 ViewMode::Items => {
@@ -98,6 +100,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     f.render_stateful_widget(list, chunks[0], &mut state);
 
                     let item = items[selected_item];
+
                     let detail = vec![
                         Line::from(vec![
                             Span::styled("Name: ", Style::default().fg(Color::Cyan)),
@@ -122,6 +125,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ];
                     let paragraph = Paragraph::new(detail)
                         .block(Block::default().title("Detail").borders(Borders::ALL));
+
                     f.render_widget(paragraph, chunks[1]);
                 },
                 ViewMode::Npcs => {
@@ -135,6 +139,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     f.render_stateful_widget(list, chunks[0], &mut state);
 
                     let npc = npcs[selected_npc];
+
                     let detail = vec![
                         Line::from(vec![
                             Span::styled("Name: ", Style::default().fg(Color::Cyan)),
@@ -163,6 +168,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ];
                     let paragraph = Paragraph::new(detail)
                         .block(Block::default().title("Detail").borders(Borders::ALL));
+
                     f.render_widget(paragraph, chunks[1]);
                 },
             }
