@@ -1,4 +1,4 @@
-use crate::{ItemHolder, Location, WorldObject, style::GameStyle, world::AmbleWorld};
+use crate::{ItemHolder, Location, WorldObject, npc::NpcMood, style::GameStyle, world::AmbleWorld};
 use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -46,6 +46,13 @@ impl RoomOverlay {
                 true,
                 |item| !matches!(item.location, Location::Room(id) if id == room_id),
             ),
+            OverlayCondition::PlayerHasItem { item_id } => world.player.contains_item(*item_id),
+            OverlayCondition::PlayerMissingItem { item_id } => !world.player.contains_item(*item_id),
+            OverlayCondition::NpcInMood { npc_id, mood } => world.npcs.get(npc_id).is_some_and(|npc| npc.mood == *mood),
+            OverlayCondition::ItemInRoom { item_id, room_id } => world
+                .items
+                .get(item_id)
+                .is_some_and(|item| matches!(item.location, Location::Room(id) if id == *room_id)),
         }
     }
 }
@@ -58,6 +65,10 @@ pub enum OverlayCondition {
     FlagUnset { flag: String },
     ItemPresent { item_id: Uuid },
     ItemAbsent { item_id: Uuid },
+    PlayerHasItem { item_id: Uuid },
+    PlayerMissingItem { item_id: Uuid },
+    NpcInMood { npc_id: Uuid, mood: NpcMood },
+    ItemInRoom { item_id: Uuid, room_id: Uuid },
 }
 
 /// Any visitable location in the game world.
@@ -141,7 +152,7 @@ impl Room {
     /// Displays list of NPCs present in the `Room`
     pub fn show_npcs(&self, world: &AmbleWorld) {
         if !self.npcs.is_empty() {
-            println!("{}", "Others here:".subheading_style());
+            println!("\n{}", "Others here:".subheading_style());
             self.npcs
                 .iter()
                 .filter_map(|npc_id| world.npcs.get(npc_id))

@@ -11,7 +11,8 @@ use uuid::Uuid;
 
 use crate::{
     Location,
-    idgen::{NAMESPACE_ITEM, NAMESPACE_ROOM, uuid_from_token},
+    idgen::{NAMESPACE_CHARACTER, NAMESPACE_ITEM, NAMESPACE_ROOM, uuid_from_token},
+    npc::NpcMood,
     room::{Exit, OverlayCondition, Room, RoomOverlay},
 };
 
@@ -50,6 +51,10 @@ pub enum RawOverlayCondition {
     FlagUnset { flag: String },
     ItemPresent { item_id: String },
     ItemAbsent { item_id: String },
+    PlayerHasItem { item_id: String },
+    PlayerMissingItem { item_id: String },
+    NpcInMood { npc_id: String, mood: NpcMood },
+    ItemInRoom { item_id: String, room_id: String },
 }
 
 #[derive(Debug, Deserialize)]
@@ -105,22 +110,35 @@ impl RawRoom {
         }
 
         // create overlay vector from raw ones; like with exits, we must
-        // reference items that aren't loaded yet so we add them to the symbol
-        // table here, and they're verified to exist later when items are loaded
+        // reference items and NPCs that aren't loaded yet so we add them to the symbol
+        // table here, and they're verified to exist later when items are loaded (
+        // Room UUIDs should already be in symbol table when this is called, though)
         let mut overlays = Vec::new();
         for raw_overlay in &self.overlays {
             let condition = match &raw_overlay.condition {
                 RawOverlayCondition::FlagSet { flag } => OverlayCondition::FlagSet { flag: flag.to_string() },
                 RawOverlayCondition::FlagUnset { flag } => OverlayCondition::FlagUnset { flag: flag.to_string() },
-                RawOverlayCondition::ItemPresent { item_id } => {
-                    let uuid = uuid_from_token(&NAMESPACE_ITEM, item_id);
-                    symbols.items.insert(item_id.to_string(), uuid);
-                    OverlayCondition::ItemPresent { item_id: uuid }
+                RawOverlayCondition::ItemPresent { item_id } => OverlayCondition::ItemPresent {
+                    item_id: register_item(symbols, item_id),
                 },
-                RawOverlayCondition::ItemAbsent { item_id } => {
-                    let uuid = uuid_from_token(&NAMESPACE_ITEM, item_id);
-                    symbols.items.insert(item_id.to_string(), uuid);
-                    OverlayCondition::ItemAbsent { item_id: uuid }
+                RawOverlayCondition::ItemAbsent { item_id } => OverlayCondition::ItemAbsent {
+                    item_id: register_item(symbols, item_id),
+                },
+                RawOverlayCondition::PlayerHasItem { item_id } => OverlayCondition::PlayerHasItem {
+                    item_id: register_item(symbols, item_id),
+                },
+                RawOverlayCondition::PlayerMissingItem { item_id } => OverlayCondition::PlayerMissingItem {
+                    item_id: register_item(symbols, item_id),
+                },
+                RawOverlayCondition::NpcInMood { npc_id, mood } => OverlayCondition::NpcInMood {
+                    npc_id: register_npc(symbols, npc_id),
+                    mood: *mood,
+                },
+                RawOverlayCondition::ItemInRoom { item_id, room_id } => OverlayCondition::ItemInRoom {
+                    item_id: register_item(symbols, item_id),
+                    room_id: *symbols.rooms.get(room_id).ok_or_else(|| {
+                        anyhow!("OverlayCondition::ItemInRoom(_,{room_id}) - room not in symbol table")
+                    })?,
                 },
             };
             overlays.push(RoomOverlay {
@@ -145,6 +163,20 @@ impl RawRoom {
             npcs: self.npcs.clone(),
         })
     }
+}
+
+/// Pre-registers an item symbol during room loading and returns the corresponding UUID
+pub fn register_item(symbols: &mut SymbolTable, item_symbol: &str) -> Uuid {
+    let uuid = uuid_from_token(&NAMESPACE_ITEM, item_symbol);
+    symbols.items.insert(item_symbol.to_string(), uuid);
+    uuid
+}
+
+/// Pre-registers an NPC symbol during room loading and returns the corresponding UUID
+pub fn register_npc(symbols: &mut SymbolTable, npc_symbol: &str) -> Uuid {
+    let uuid = uuid_from_token(&NAMESPACE_CHARACTER, npc_symbol);
+    symbols.characters.insert(npc_symbol.to_string(), uuid);
+    uuid
 }
 
 #[derive(Deserialize)]
