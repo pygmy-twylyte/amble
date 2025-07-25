@@ -48,8 +48,13 @@ pub enum Command {
 }
 
 /// Parses an input string and returns a corresponding `Command` if recognized.
+///
+/// The parser is case-insensitive; the input is converted to lowercase before
+/// being tokenized and matched against known commands.
 pub fn parse_command(input: &str) -> Command {
-    let words: Vec<&str> = input.split_whitespace().collect();
+    // normalize user input to lowercase so commands are case-insensitive
+    let lc_input = input.to_lowercase();
+    let words: Vec<&str> = lc_input.split_whitespace().collect();
     match words.as_slice() {
         ["!port", room_toml_id] => Command::Teleport((*room_toml_id).to_string()),
         ["goals"] | ["what", "now" | "next"] => Command::Goals,
@@ -99,7 +104,10 @@ pub fn parse_command(input: &str) -> Command {
     }
 }
 
-/// Takes a verb from user input and returns a matching `ItemInteractionType` if any determined
+/// Takes a verb from user input and returns a matching `ItemInteractionType` if any.
+///
+/// The provided verb should be lowercase; [`parse_command`] handles lowering
+/// player input before delegating here.
 pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
     match verb {
         "break" | "smash" | "crack" | "shatter" => Some(ItemInteractionType::Break),
