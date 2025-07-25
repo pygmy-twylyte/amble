@@ -37,12 +37,16 @@ pub enum ReplControl {
 /// Run the main command loop for the game.
 /// # Errors
 /// - Returns an error if unable to resolve the location (Room) of the player
+/// - Returns an error if unable to flush stdout
+///
 /// # Panics
-/// - Could panic if unable to flush stdout for some reason
+/// This function does not expect to panic.
 pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     loop {
         print!("\n[Score: {}/{}]> ", world.player.score, world.max_score);
-        io::stdout().flush().unwrap();
+        io::stdout()
+            .flush()
+            .expect("failed to flush stdout before reading input");
         let mut input = String::new();
         if io::stdin().read_line(&mut input).is_err() {
             println!("{}", "Failed to read input. Try again.".red());

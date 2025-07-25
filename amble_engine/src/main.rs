@@ -25,7 +25,9 @@ fn main() -> Result<()> {
 
     // clear the screen
     print!("\x1B[2J\x1B[H");
-    std::io::stdout().flush().unwrap();
+    std::io::stdout()
+        .flush()
+        .expect("failed to flush stdout after clearing the screen");
     info!("Starting the game!");
 
     println!(
