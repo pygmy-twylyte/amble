@@ -1,19 +1,13 @@
 //! ** idgen module **
 //! Contains namespaces and helpers for generating stable v5 uuids for loaded `WorldObjects`.
 //! Dynamically generated / named `WorldObjects` use v4 (random) UUIDs instead.
-use std::sync::LazyLock;
 use uuid::Uuid;
 
-// Note: can't use "from_bytes" or "parse_str" in const expressions, so we use lazily
-// evaluated static variables instead.
-pub static NAMESPACE_ROOM: LazyLock<Uuid> =
-    LazyLock::new(|| Uuid::parse_str("26dc1968-c645-4f5c-915a-400e06bd361c").unwrap());
+pub const NAMESPACE_ROOM: Uuid = uuid::uuid!("26dc1968-c645-4f5c-915a-400e06bd361c");
 
-pub static NAMESPACE_ITEM: LazyLock<Uuid> =
-    LazyLock::new(|| Uuid::parse_str("47d2aad8-22cc-4dd4-bf9f-b9eddc4fe2cf").unwrap());
+pub const NAMESPACE_ITEM: Uuid = uuid::uuid!("47d2aad8-22cc-4dd4-bf9f-b9eddc4fe2cf");
 
-pub static NAMESPACE_CHARACTER: LazyLock<Uuid> =
-    LazyLock::new(|| Uuid::parse_str("99897a5d-4297-4bdc-832e-29df86925063").unwrap());
+pub const NAMESPACE_CHARACTER: Uuid = uuid::uuid!("99897a5d-4297-4bdc-832e-29df86925063");
 
 /// Generate a v5 UUID for a given token id from the TOML data files.
 ///
