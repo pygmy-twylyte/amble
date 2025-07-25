@@ -1,6 +1,8 @@
 use std::{io, time::Duration};
 
+
 use amble_engine::{item::Item, load_world, npc::Npc, room::Room, trigger::Trigger};
+
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
@@ -12,6 +14,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
     text::{Line, Span},
+
     widgets::{Block, Borders, List, ListItem, Paragraph},
 };
 
@@ -19,6 +22,7 @@ enum ViewMode {
     Rooms,
     Items,
     Npcs,
+
     Triggers,
 }
 
@@ -31,6 +35,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut selected_item = 0usize;
     let mut selected_npc = 0usize;
     let mut selected_trigger = 0usize;
+
 
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -57,6 +62,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let mut state = ratatui::widgets::ListState::default();
                     state.select(Some(selected_room));
                     f.render_stateful_widget(list, chunks[0], &mut state);
+
 
                     let room = rooms[selected_room];
                     let mut detail = vec![
@@ -270,6 +276,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     let paragraph =
                         Paragraph::new(detail).block(Block::default().title("Detail").borders(Borders::ALL));
+
                     f.render_widget(paragraph, chunks[1]);
                 },
             }
@@ -281,6 +288,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     KeyCode::Char('q') => break,
                     KeyCode::Char('r') => {
                         mode = ViewMode::Rooms;
+
                     },
                     KeyCode::Char('i') => {
                         mode = ViewMode::Items;
@@ -291,6 +299,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     KeyCode::Char('t') => {
                         mode = ViewMode::Triggers;
                     },
+
                     KeyCode::Down => match mode {
                         ViewMode::Rooms => {
                             let len = world.rooms.len();
@@ -310,12 +319,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 selected_npc = (selected_npc + 1).min(len - 1);
                             }
                         },
+
                         ViewMode::Triggers => {
                             let len = world.triggers.len();
                             if len > 0 {
                                 selected_trigger = (selected_trigger + 1).min(len - 1);
                             }
                         },
+
                     },
                     KeyCode::Up => match mode {
                         ViewMode::Rooms => {
@@ -327,9 +338,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ViewMode::Npcs => {
                             selected_npc = selected_npc.saturating_sub(1);
                         },
+
                         ViewMode::Triggers => {
                             selected_trigger = selected_trigger.saturating_sub(1);
                         },
+
                     },
                     _ => {},
                 }
