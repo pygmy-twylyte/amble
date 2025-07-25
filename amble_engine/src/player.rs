@@ -26,7 +26,7 @@ impl Default for Player {
             location: Location::default(),
             inventory: HashSet::<Uuid>::default(),
             flags: HashSet::<String>::default(),
-            score: 0,
+            score: 1,
         }
     }
 }

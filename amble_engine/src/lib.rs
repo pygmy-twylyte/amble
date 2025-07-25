@@ -1,6 +1,8 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::must_use_candidate)]
 
+pub const AMBLE_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 // Core modules
 pub mod command;
 pub mod goal;

@@ -6,7 +6,7 @@
 //! Adventure game / engine project
 
 use amble_engine::style::GameStyle;
-use amble_engine::{WorldObject, load_world, run_repl};
+use amble_engine::{AMBLE_VERSION, WorldObject, load_world, run_repl};
 
 use anyhow::{Context, Result};
 use colored::Colorize;
@@ -15,8 +15,6 @@ use log::info;
 
 use std::fs;
 use std::io::Write;
-
-const AMBLE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() -> Result<()> {
     env_logger::init();

@@ -1,3 +1,4 @@
+use crate::AMBLE_VERSION;
 use crate::item::ContainerState;
 use crate::npc::Npc;
 use crate::spinners::SpinnerType;
@@ -46,6 +47,7 @@ pub struct AmbleWorld {
     pub npcs: HashMap<Uuid, Npc>,
     pub max_score: usize,
     pub goals: Vec<Goal>,
+    pub version: String,
 }
 impl AmbleWorld {
     /// Create a new empty world with a default player.
@@ -59,6 +61,7 @@ impl AmbleWorld {
             spinners: HashMap::new(),
             max_score: 0,
             goals: Vec::new(),
+            version: AMBLE_VERSION.to_string(),
         };
         info!("new, empty 'AmbleWorld' created");
         world

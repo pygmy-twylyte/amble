@@ -10,11 +10,11 @@ use std::path::PathBuf;
 use crate::goal::GoalStatus;
 use crate::style::GameStyle;
 
-use crate::Goal;
+use crate::{AMBLE_VERSION, Goal};
 use crate::{AmbleWorld, WorldObject, repl::ReplControl, spinners::SpinnerType};
 
 use anyhow::{Context, Result};
-use log::info;
+use log::{info, warn};
 
 /// Quit the game.
 pub fn quit_handler(world: &AmbleWorld) -> Result<ReplControl> {
@@ -158,6 +158,17 @@ pub fn load_handler(world: &mut AmbleWorld, gamefile: &str) {
     let load_path = PathBuf::from("saved_games").join(format!("amble-{gamefile}.ron"));
     if let Ok(world_ron) = fs::read_to_string(load_path.as_path()) {
         if let Ok(new_world) = ron::from_str::<AmbleWorld>(&world_ron) {
+            if new_world.version != AMBLE_VERSION {
+                warn!(
+                    "player loaded '{gamefile}' (v{}), current version is v{AMBLE_VERSION}",
+                    new_world.version
+                );
+                println!(
+                    "{}: '{gamefile}' version is v{} -- does not match current game (v{AMBLE_VERSION}).",
+                    "WARNING".bold().yellow(),
+                    new_world.version.error_style(),
+                );
+            }
             *world = new_world;
             println!(
                 "Saved game {} loaded successfully. Sally forth.",
@@ -166,9 +177,10 @@ pub fn load_handler(world: &mut AmbleWorld, gamefile: &str) {
             info!("Player reloaded AmbleWorld from file '{}'", load_path.display());
         } else {
             println!(
-                "Unable to parse the {} save. World structure may have changed since it was created.",
+                "Unable to load the {} save file. The Amble engine may have changed since it was created.",
                 gamefile.error_style()
             );
+            warn!("player attempted to load '{gamefile}': failed to parse, likely version conflict");
         }
     } else {
         println!("Unable to find {} save file. Load aborted.", gamefile.error_style());
