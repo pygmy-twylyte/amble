@@ -7,8 +7,7 @@ conditions = [
 ]
 actions = [{ type = "showMessage", text = """
 You pause here, realizing with increasing concern that you are traveling in
-a strange land without a towel.
-""" }]
+a strange land without a towel.""" }]
 
 [[triggers]]
 name = "Global: Got-Towel"
@@ -18,8 +17,7 @@ actions = [
     { type = "addFlag", flag = "got-towel" },
     { type = "awardPoints", amount = 2 },
     { type = "showMessage", text = """
-Now you're a frood who really knows where his towel is.
-""" },
+Now you're a frood who really knows where his towel is.""" },
 ]
 
 [[triggers]]
@@ -31,8 +29,7 @@ actions = [
     { type = "showMessage", text = """
 You hear a thud behind you, back toward the dock, like something was just
 dropped off. You glimpse a drone flying away quickly, as if hoping not to
-be seen. Was that an Initech logo on the side?
-""" },
+be seen. Was that an Initech logo on the side?""" },
 ]
 
 [[triggers]]
@@ -88,13 +85,12 @@ name = "Lounge: Found Portal Room"
 only_once = true
 conditions = [{ type = "take", item_id = "lebowski_rug" }]
 actions = [
-    { type = "revealExit", direction = "trapdoor", exit_from = "lounge", exit_to = "portal-room" },
+    { type = "revealExit", direction = "down", exit_from = "lounge", exit_to = "portal-room" },
     { type = "addFlag", flag = "found-portal-room" },
     { type = "awardPoints", amount = 3 },
     { type = "showMessage", text = """
 Light shines around the edges of a trapdoor revealed in the floor when you move
-the rug.
-""" },
+the rug.""" },
 ]
 
 # give portal_powered flag when charged battery inserted
@@ -111,8 +107,7 @@ actions = [
     { type = "showMessage", text = """
 Arcing wildly as you insert it, the fully charged 20 KV battery fuses itself
 to the contacts inside the portal gun -- when then emits a quick high-pitched
-whine. The POWER indicator lights a steady green.
-""" },
+whine. The POWER indicator lights a steady green.""" },
 ]
 
 # turn on: if gun powered, open portal exit to Aperture Science Laboratory
@@ -128,8 +123,7 @@ actions = [
     { type = "showMessage", text = """
 A loud \"Squip!\" comes from the gun. The wall in front of it sizzles for a
 moment, and then a crackling oval blue portal expands on the wall to reveal a
-laboratory space on the other side.
-""" },
+laboratory space on the other side.""" },
 ]
 
 # turn on: fail, gun not powered yet
@@ -154,12 +148,12 @@ conditions = [
 ]
 actions = [
     { type = "despawnItem", item_id = "printer_paper" },
+    { type = "addFlag", flag = "burned-invitation" },
     { type = "spawnItemInRoom", item_id = "burnt_invitation", room_id = "aperture-lab" },
     { type = "showMessage", text = "The paper ignites with a flash, and the PlasmaJet spits it onto the floor." },
     { type = "showMessage", text = """
 A nearby smoke detector alarms briefly, then quits with an exasperated sigh
-when it sees you using the printer.
-""" },
+when it sees you using the printer.""" },
 ]
 
 [[triggers]]
@@ -176,12 +170,10 @@ actions = [
     { type = "spawnItemInRoom", item_id = "invitation", room_id = "aperture-lab" },
     { type = "showMessage", text = """
 The PlasmaJet emits a blinding flash of light, leaving a printer-shaped purple
-blob in your visual field for a few moments.
-""" },
+blob in your visual field for a few moments.""" },
     { type = "showMessage", text = """
 When your vision clears, you see a slightly glowing printed invitation on the
-floor.
-""" },
+floor.""" },
 ]
 
 # messages and flag when invitation is acquired
