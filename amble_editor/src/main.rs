@@ -11,6 +11,7 @@ use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
+    text::{Span, Line},
     widgets::{Block, Borders, List, ListItem, Paragraph},
 };
 
@@ -55,12 +56,36 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     f.render_stateful_widget(list, chunks[0], &mut state);
 
                     let room = rooms[selected_room];
-                    let detail = format!(
-                        "Name: {}\nSymbol: {}\nUUID: {}\nVisited: {}\nDescription: {}\nLocation: {:?}",
-                        room.name, room.symbol, room.id, room.visited, room.base_description, room.location
-                    );
-                    let paragraph =
-                        Paragraph::new(detail).block(Block::default().title("Detail").borders(Borders::ALL));
+
+                    let detail = vec![
+                        Line::from(vec![
+                            Span::styled("Name: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(room.name.clone()),
+                        ]),
+                        Line::from(vec![
+                            Span::styled("Symbol: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(room.symbol.clone()),
+                        ]),
+                        Line::from(vec![
+                            Span::styled("UUID: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(room.id.to_string()),
+                        ]),
+                        Line::from(vec![
+                            Span::styled("Visited: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(room.visited.to_string()),
+                        ]),
+                        Line::from(vec![
+                            Span::styled("Description: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(room.base_description.clone()),
+                        ]),
+                        Line::from(vec![
+                            Span::styled("Location: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(format!("{:?}", room.location)),
+                        ]),
+                    ];
+                    let paragraph = Paragraph::new(detail)
+                        .block(Block::default().title("Detail").borders(Borders::ALL));
+
                     f.render_widget(paragraph, chunks[1]);
                 },
                 ViewMode::Items => {
@@ -75,12 +100,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     f.render_stateful_widget(list, chunks[0], &mut state);
 
                     let item = items[selected_item];
-                    let detail = format!(
-                        "Name: {}\nSymbol: {}\nUUID: {}\nDescription: {}\nLocation: {:?}",
-                        item.name, item.symbol, item.id, item.description, item.location
-                    );
-                    let paragraph =
-                        Paragraph::new(detail).block(Block::default().title("Detail").borders(Borders::ALL));
+
+                    let detail = vec![
+                        Line::from(vec![
+                            Span::styled("Name: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(item.name.clone()),
+                        ]),
+                        Line::from(vec![
+                            Span::styled("Symbol: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(item.symbol.clone()),
+                        ]),
+                        Line::from(vec![
+                            Span::styled("UUID: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(item.id.to_string()),
+                        ]),
+                        Line::from(vec![
+                            Span::styled("Description: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(item.description.clone()),
+                        ]),
+                        Line::from(vec![
+                            Span::styled("Location: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(format!("{:?}", item.location)),
+                        ]),
+                    ];
+                    let paragraph = Paragraph::new(detail)
+                        .block(Block::default().title("Detail").borders(Borders::ALL));
+
                     f.render_widget(paragraph, chunks[1]);
                 },
                 ViewMode::Npcs => {
@@ -94,12 +139,36 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     f.render_stateful_widget(list, chunks[0], &mut state);
 
                     let npc = npcs[selected_npc];
-                    let detail = format!(
-                        "Name: {}\nSymbol: {}\nUUID: {}\nMood: {:?}\nDescription: {}\nLocation: {:?}",
-                        npc.name, npc.symbol, npc.id, npc.mood, npc.description, npc.location
-                    );
-                    let paragraph =
-                        Paragraph::new(detail).block(Block::default().title("Detail").borders(Borders::ALL));
+
+                    let detail = vec![
+                        Line::from(vec![
+                            Span::styled("Name: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(npc.name.clone()),
+                        ]),
+                        Line::from(vec![
+                            Span::styled("Symbol: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(npc.symbol.clone()),
+                        ]),
+                        Line::from(vec![
+                            Span::styled("UUID: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(npc.id.to_string()),
+                        ]),
+                        Line::from(vec![
+                            Span::styled("Mood: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(format!("{:?}", npc.mood)),
+                        ]),
+                        Line::from(vec![
+                            Span::styled("Description: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(npc.description.clone()),
+                        ]),
+                        Line::from(vec![
+                            Span::styled("Location: ", Style::default().fg(Color::Cyan)),
+                            Span::raw(format!("{:?}", npc.location)),
+                        ]),
+                    ];
+                    let paragraph = Paragraph::new(detail)
+                        .block(Block::default().title("Detail").borders(Borders::ALL));
+
                     f.render_widget(paragraph, chunks[1]);
                 },
             }
