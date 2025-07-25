@@ -37,7 +37,7 @@ impl GameStyle for &str {
         self.truecolor(13, 130, 60).underline()
     }
     fn room_style(&self) -> ColoredString {
-        self.truecolor(223, 77, 10).bold()
+        self.truecolor(223, 77, 10)
     }
     fn room_titlebar_style(&self) -> ColoredString {
         self.truecolor(223, 77, 10).on_truecolor(0, 0, 30)
