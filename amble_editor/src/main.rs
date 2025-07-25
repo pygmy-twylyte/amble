@@ -1,6 +1,5 @@
 use std::{io, time::Duration};
 
-
 use amble_engine::{item::Item, load_world, npc::Npc, room::Room, trigger::Trigger};
 
 use crossterm::{
@@ -14,8 +13,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
     text::{Line, Span},
-
-    widgets::{Block, Borders, List, ListItem, Paragraph},
+    widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
 };
 
 enum ViewMode {
@@ -35,7 +33,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut selected_item = 0usize;
     let mut selected_npc = 0usize;
     let mut selected_trigger = 0usize;
-
 
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -62,7 +59,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let mut state = ratatui::widgets::ListState::default();
                     state.select(Some(selected_room));
                     f.render_stateful_widget(list, chunks[0], &mut state);
-
 
                     let room = rooms[selected_room];
                     let mut detail = vec![
@@ -117,8 +113,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             detail.push(Line::from(Span::raw(format!("  if {:?} => {}", ov.condition, ov.text))));
                         }
                     }
-                    let paragraph =
-                        Paragraph::new(detail).block(Block::default().title("Detail").borders(Borders::ALL));
+                    let paragraph = Paragraph::new(detail)
+                        .wrap(Wrap { trim: true })
+                        .block(Block::default().title("Detail").borders(Borders::ALL));
                     f.render_widget(paragraph, chunks[1]);
                 },
                 ViewMode::Items => {
@@ -174,8 +171,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         }
                     }
-                    let paragraph =
-                        Paragraph::new(detail).block(Block::default().title("Detail").borders(Borders::ALL));
+                    let paragraph = Paragraph::new(detail)
+                        .wrap(Wrap { trim: true })
+                        .block(Block::default().title("Detail").borders(Borders::ALL));
                     f.render_widget(paragraph, chunks[1]);
                 },
                 ViewMode::Npcs => {
@@ -227,8 +225,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         }
                     }
-                    let paragraph =
-                        Paragraph::new(detail).block(Block::default().title("Detail").borders(Borders::ALL));
+                    let paragraph = Paragraph::new(detail)
+                        .wrap(Wrap { trim: true })
+                        .block(Block::default().title("Detail").borders(Borders::ALL));
                     f.render_widget(paragraph, chunks[1]);
                 },
                 ViewMode::Triggers => {
@@ -274,8 +273,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     for act in &trg.actions {
                         detail.push(Line::from(Span::raw(format!("  {:?}", act))));
                     }
-                    let paragraph =
-                        Paragraph::new(detail).block(Block::default().title("Detail").borders(Borders::ALL));
+                    let paragraph = Paragraph::new(detail)
+                        .wrap(Wrap { trim: true })
+                        .block(Block::default().title("Detail").borders(Borders::ALL));
 
                     f.render_widget(paragraph, chunks[1]);
                 },
@@ -288,7 +288,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     KeyCode::Char('q') => break,
                     KeyCode::Char('r') => {
                         mode = ViewMode::Rooms;
-
                     },
                     KeyCode::Char('i') => {
                         mode = ViewMode::Items;
@@ -326,7 +325,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 selected_trigger = (selected_trigger + 1).min(len - 1);
                             }
                         },
-
                     },
                     KeyCode::Up => match mode {
                         ViewMode::Rooms => {
@@ -342,7 +340,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ViewMode::Triggers => {
                             selected_trigger = selected_trigger.saturating_sub(1);
                         },
-
                     },
                     _ => {},
                 }
