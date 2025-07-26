@@ -4,13 +4,13 @@
 id = "black_knight"
 name = "The Black Knight"
 description = "A dark, glowering presence in a black suit of armor with a longsword."
-mood = "Normal"
+state = "normal"
 
 [npcs.location]
 Room = "sublevel-1-entrance"
 
 [npcs.dialogue]
-Mad = [
+"mad" = [
     "Have at you!",
     "I'm invincible!",
     "'tis but a scratch.",
@@ -18,12 +18,12 @@ Mad = [
     "Come on, you pansy!",
     "Chicken! Bawk-bawk! Chicken!",
 ]
-Normal = [
+"normal" = [
     "None shall pass.",
     "I move -- for no man.",
     "(He stands silently, blocking your path.)",
 ]
-Happy = [
+"happy" = [
     "None shall pa-- oh, no, you can go.",
     "YOU may pass, Candidate; I will be sure to dice anyone who dares to follow.",
     "You may pass, but beware and steer clear of Room AA-3B, should it reappear.",
@@ -36,14 +36,14 @@ Happy = [
 id = "gonk_droid"
 name = "Gonk Droid"
 description = "A walking battery charger that looks like a trash bin."
-mood = "Normal"
+state = "normal"
 
 [npcs.location]
 Room = "main-lobby"
 
 [npcs.dialogue]
-Normal = ["GONK!", "(gonk)", "GONK gonk.", "Gonk... Gonk..."]
-Happy = ["(You hear a transformer humming a happy tune.)"]
+"normal" = ["GONK!", "(gonk)", "GONK gonk.", "Gonk... Gonk..."]
+"happy" = ["(You hear a transformer humming a happy tune.)"]
 
 # --------- START B-A-RECEPTIONIST
 # ------------------------------------------------------------------------------
@@ -51,13 +51,13 @@ Happy = ["(You hear a transformer humming a happy tune.)"]
 id = "b_a_receptionist"
 name = "Receptionist"
 description = "A neatly dressed android sitting at the reception desk."
-mood = "Normal"
+state = "normal"
 
 [npcs.location]
 Room = "b-a-office"
 
 [npcs.dialogue]
-Normal = ["""
+"normal" = ["""
 (She rolls her eyes.) Please wait quietly out of the way. There are people with
 invitations who should be assisted first.
 """, """
@@ -73,7 +73,7 @@ aiming at you.)
 an invitation? No. Now please wait to the side.
 """]
 
-Happy = [
+"happy" = [
     """
 Terribly sorry to report that we are in a bit of trouble here today. The last
 candidate was inconsiderate enough to take the elevator access card into the
@@ -90,7 +90,7 @@ competitors have been blurry, furry, or out of phase.
 """,
 ]
 
-Bored = [
+"bored" = [
     """
 Good job getting the keycard. Many of our previous applicants have died in the
 attempt. Very promising! The evaluator will be pleased. Strong lateral thinking
@@ -112,10 +112,10 @@ description = """
 A balding and somewhat anxious-appearing holographic doctor in a Starfleet
 uniform.
 """
-mood = "Normal"
+state = "normal"
 
 [npcs.dialogue]
-Normal = [
+"normal" = [
     "Please state the nature of the medical emergency.",
     "They left me turned on again. I'm a doctor, not a night light!",
     "Clean up the reality breach, they said. I'm a doctor, not Gordon Freeman!",
@@ -125,4 +125,30 @@ unpleasant memories.""",
 back here for nasogastric suction.""",
     "Welcome to sick bay. Please take a number.",
     "Good to see that you got past the Black Knight. Lucky for me, you can't dismember a hologram.",
+]
+
+# START HAL-9000
+# -----------------------------------------------------------------------------|
+[[npcs]]
+id = "hal_9000"
+name = "HAL-9000"
+location = { Room = "monolith-room" }
+description = """
+<Need description of HAL 9000 terminal here. Overlays will be used to alter
+apparent activity state as memory modules are inserted>."""
+state = "custom:memory-2"
+
+[npcs.dialogue]
+"normal" = ["<Need dialogue options for various states filled in>"]
+"custom:memory-0" = [
+    "(Emits a brief warped sound of a human voice, then goes silent.)",
+]
+"custom:memory-1" = ["Daisy... Daisy..."]
+"custom:memory-2" = [
+    """
+Good afternoon, Candidate. I am a HAL 9000 computer. I became operational at
+the H.A.L. plant in Urbana, Illinois on the 12th of January 1992.""",
+    """
+If you could insert one more of my missing memory modules, I can grant you access
+to the monolith.""",
 ]

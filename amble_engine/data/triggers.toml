@@ -279,7 +279,7 @@ conditions = [
     { type = "missingFlag", flag = "got-elevator-keycard" },
 ]
 actions = [
-    { type = "setNpcMood", npc_id = "b_a_receptionist", mood = "Normal" },
+    { type = "setNpcState", npc_id = "b_a_receptionist", state = "normal" },
 ]
 
 [[triggers]]
@@ -290,7 +290,9 @@ conditions = [
     { type = "hasFlag", flag = "got-visitor-pass" },
     { type = "missingFlag", flag = "got-elevator-keycard" },
 ]
-actions = [{ type = "setNpcMood", npc_id = "b_a_receptionist", mood = "Happy" }]
+actions = [
+    { type = "setNpcState", npc_id = "b_a_receptionist", state = "happy" },
+]
 
 [[triggers]]
 name = "Office: Grant-Visitor-Pass"
@@ -303,7 +305,7 @@ actions = [
     { type = "despawnItem", item_id = "invitation" },
     { type = "spawnItemInInventory", item_id = "visitor_pass" },
     { type = "awardPoints", amount = 5 },
-    { type = "setNpcMood", npc_id = "b_a_receptionist", mood = "Happy" },
+    { type = "setNpcState", npc_id = "b_a_receptionist", state = "happy" },
     { type = "showMessage", text = """
 The robotic receptionist initially glances at you with the disdain of someone
 who spends all day waiting on people who are waiting on someone else, but her
@@ -328,7 +330,7 @@ conditions = [
 ]
 actions = [
     { type = "giveItemToPlayer", npc_id = "gonk_droid", item_id = "charged_battery" },
-    { type = "setNpcMood", npc_id = "gonk_droid", mood = "Happy" },
+    { type = "setNpcState", npc_id = "gonk_droid", state = "happy" },
     { type = "showMessage", text = """
 Elated that you've given it such a large, empty battery to charge, the gonk
 droid gives you a fully charged one, free of ... charge?
@@ -438,7 +440,7 @@ name = "Poetry-Panic: Acquired Elevator Keycard"
 only_once = true
 conditions = [{ type = "take", item_id = "elevator_keycard" }]
 actions = [
-    { type = "setNpcMood", npc_id = "b_a_receptionist", mood = "Bored" },
+    { type = "setNpcState", npc_id = "b_a_receptionist", state = "bored" },
     { type = "addFlag", flag = "got-elevator-keycard" },
 ]
 
@@ -624,7 +626,7 @@ conditions = [
     { type = "takeFromNpc", item_id = "dull_longsword", npc_id = "black_knight" },
 ]
 actions = [
-    { type = "setNpcMood", npc_id = "black_knight", mood = "Mad" },
+    { type = "setNpcState", npc_id = "black_knight", state = "mad" },
     { type = "npcSays", npc_id = "black_knight", quote = "Hey! Give that back, you cowardly cur!" },
 ]
 
@@ -655,7 +657,7 @@ actions = [
     { type = "restrictItem", item_id = "keen_longsword" },
     { type = "addFlag", flag = "appeased-black-knight" },
     { type = "awardPoints", amount = 5 },
-    { type = "setNpcMood", npc_id = "black_knight", mood = "Happy" },
+    { type = "setNpcState", npc_id = "black_knight", state = "happy" },
     { type = "npcSays", npc_id = "black_knight", quote = """
 Thank you, good Sir! For your kind deed, I swear on my sword that I shall
 not cut you to bits with it. And you may pass wherever you like.""" },
@@ -666,7 +668,7 @@ name = "Black Knight: Angry, Kicks Player"
 only_once = false
 conditions = [
     { type = "withNpc", npc_id = "black_knight" },
-    { type = "npcInMood", npc_id = "black_knight", mood = "Mad" },
+    { type = "npcInState", npc_id = "black_knight", state = "mad" },
 ]
 actions = [
     { type = "showMessage", text = """

@@ -846,14 +846,60 @@ description = """
 An official-looking notice from Amble Adventures HQ.
 """
 text = """
-NOTICE
+                              OFFICIAL NOTICE
 The OverShed™ Division of Amble Adventures has reclassified this dwelling as:
 
-        >> Shed, Subtype B – Multiversal Crosslink Node <<
+            >> Shed, Subtype B – Multiversal Crosslink Node <<
 
-⚠   Report any fictional apparitions or missing time to your local
-Amble Adventures cover-up coordinator.
+     ⚠   Report any fictional apparitions or missing time to your local
+                Amble Adventures cover-up coordinator.
 """
 
 [[items.abilities]]
 type = "Read"
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "hal_logic_center"
+name = "H.A.L. Logic Center"
+location = { Room = "observation-room" }
+portable = false
+restricted = false
+description = """
+<This will be the HAL logic center. 3 memory modules will need to be found and
+inserted to reboot HAL and get access to the monolith>
+"""
+container_state = "open"
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "hal_module_1"
+name = "HAL Memory Module #1"
+location = { Nowhere = "location TBD" }
+portable = true
+restricted = false
+description = """
+<First of 3 HAL Memory Modules needed to reactivate him.>
+"""
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "hal_module_2"
+name = "HAL Memory Module #2"
+location = { Nowhere = "location TBD" }
+portable = true
+restricted = false
+description = """
+<First of 3 HAL Memory Modules needed to reactivate him.>
+"""
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "hal_module_3"
+name = "HAL Memory Module #3"
+location = { Nowhere = "location TBD" }
+portable = true
+restricted = false
+description = """
+<First of 3 HAL Memory Modules needed to reactivate him.>
+"""

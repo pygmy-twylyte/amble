@@ -350,11 +350,11 @@ walls point toward other destinations with little enthusiasm.
 """
 
 [[rooms.overlays]]
-condition = { type = "npcInMood", npc_id = "gonk_droid", mood = "Normal" }
+condition = { type = "npcInState", npc_id = "gonk_droid", state = "normal" }
 text = "A gonk droid stands idle in the corner, muttering to itself."
 
 [[rooms.overlays]]
-condition = { type = "npcInMood", npc_id = "gonk_droid", mood = "Happy" }
+condition = { type = "npcInState", npc_id = "gonk_droid", state = "happy" }
 text = "The gonk droid gonks a happy tune in the corner, charging the battery you gave it."
 
 [rooms.exits.north]
