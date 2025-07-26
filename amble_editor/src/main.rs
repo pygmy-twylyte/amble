@@ -202,7 +202,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         ]),
                         Line::from(vec![
                             Span::styled("Mood: ", Style::default().fg(Color::Blue)),
-                            Span::raw(format!("{:?}", npc.mood)),
+                            Span::raw(format!("{:?}", npc.state)),
                         ]),
                         Line::from(vec![
                             Span::styled("Description: ", Style::default().fg(Color::Blue)),
