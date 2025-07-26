@@ -256,19 +256,6 @@ As you approach, the keycard in your pack chirps twice and the elevator springs
 to life. A Muzak version of Porcupine Tree's "The Sound of Muzak" plays softly.
 """ }]
 
-[[triggers]]
-name = "Lobby: First Gonk Encounter"
-only_once = true
-conditions = [
-    { type = "enter", room_id = "main-lobby" },
-    { type = "withNpc", npc_id = "gonk_droid" },
-    { type = "hasItem", item_id = "towel" },
-]
-actions = [{ type = "showMessage", text = """
-A gonk droid clomps around the room, muttering. You can never find one
-when you need one. Your towel is fully charged, of course.
-""" }]
-
 # B-A Receptionist Triggers
 [[triggers]]
 name = "Office: Snooty-Receptionist-If-No-Pass"
@@ -753,7 +740,8 @@ actions = [{ type = "npcSays", npc_id = "b_a_receptionist", quote = """
 You look ill. You didn't read that poetry book, did you? That won't
 look good on your evaluation.""" }]
 
-# ------ EMH DIALOGUE TRIGGERS -------
+# ------ EMH CURES VOGON POETRY NAUSEA  -------
+# player must have read the poetry before talking to EMH
 [[triggers]]
 name = "EMH: Cure Vogon Poetry"
 only_once = true
@@ -769,3 +757,5 @@ actions = [
     { type = "npcSays", npc_id = "emh", quote = "You poor fool, you look horrible. You've been reading Vogon poetry, hmmm? Here, this should help." },
     { type = "showMessage", text = "The EMH gives you a shot in the arm, and your lingering nausea subsides." },
 ]
+
+# --------------------------------

@@ -136,7 +136,7 @@ location = { Room = "monolith-room" }
 description = """
 <Need description of HAL 9000 terminal here. Overlays will be used to alter
 apparent activity state as memory modules are inserted>."""
-state = "custom:memory-2"
+state = "custom:memory-0"
 
 [npcs.dialogue]
 "normal" = ["<Need dialogue options for various states filled in>"]
