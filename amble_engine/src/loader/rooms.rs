@@ -12,7 +12,7 @@ use uuid::Uuid;
 use crate::{
     Location,
     idgen::{NAMESPACE_CHARACTER, NAMESPACE_ITEM, NAMESPACE_ROOM, uuid_from_token},
-    npc::NpcMood,
+    npc::NpcState,
     room::{Exit, OverlayCondition, Room, RoomOverlay},
 };
 
@@ -53,7 +53,7 @@ pub enum RawOverlayCondition {
     ItemAbsent { item_id: String },
     PlayerHasItem { item_id: String },
     PlayerMissingItem { item_id: String },
-    NpcInMood { npc_id: String, mood: NpcMood },
+    NpcInState { npc_id: String, state: NpcState },
     ItemInRoom { item_id: String, room_id: String },
 }
 
@@ -130,9 +130,9 @@ impl RawRoom {
                 RawOverlayCondition::PlayerMissingItem { item_id } => OverlayCondition::PlayerMissingItem {
                     item_id: register_item(symbols, item_id),
                 },
-                RawOverlayCondition::NpcInMood { npc_id, mood } => OverlayCondition::NpcInMood {
+                RawOverlayCondition::NpcInState { npc_id, state: mood } => OverlayCondition::NpcInMood {
                     npc_id: register_npc(symbols, npc_id),
-                    mood: *mood,
+                    mood: mood.clone(),
                 },
                 RawOverlayCondition::ItemInRoom { item_id, room_id } => OverlayCondition::ItemInRoom {
                     item_id: register_item(symbols, item_id),

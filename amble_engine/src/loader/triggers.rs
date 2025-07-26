@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::{
     item::{ItemAbility, ItemInteractionType},
-    npc::NpcMood,
+    npc::NpcState,
     spinners::SpinnerType,
     trigger::{Trigger, TriggerAction, TriggerCondition},
 };
@@ -67,7 +67,7 @@ pub enum RawTriggerCondition {
     MissingFlag { flag: String, },
     MissingItem { item_id: String, },
     NpcHasItem { npc_id: String, item_id: String, },
-    NpcInMood { npc_id: String, mood: NpcMood, },
+    NpcInState { npc_id: String, state: NpcState, },
     Open { item_id: String, },
     Take { item_id: String, },
     TakeFromNpc { item_id: String, npc_id: String, },
@@ -105,7 +105,7 @@ impl RawTriggerCondition {
             Self::HasVisited { room_id } => cook_has_visited(symbols, room_id),
             Self::InRoom { room_id } => cook_in_room(symbols, room_id),
             Self::NpcHasItem { npc_id, item_id } => cook_npc_has_item(symbols, npc_id, item_id),
-            Self::NpcInMood { npc_id, mood } => cook_npc_in_mood(symbols, npc_id, *mood),
+            Self::NpcInState { npc_id, state } => cook_npc_in_state(symbols, npc_id, state.clone()),
             Self::UseItemOnItem {
                 interaction,
                 target_id,
@@ -164,9 +164,9 @@ fn cook_use_item_on_item(
     }
 }
 
-fn cook_npc_in_mood(symbols: &SymbolTable, npc_id: &String, mood: NpcMood) -> Result<TriggerCondition> {
+fn cook_npc_in_state(symbols: &SymbolTable, npc_id: &String, mood: NpcState) -> Result<TriggerCondition> {
     if let Some(npc_uuid) = symbols.characters.get(npc_id) {
-        Ok(TriggerCondition::NpcInMood {
+        Ok(TriggerCondition::NpcInState {
             npc_id: *npc_uuid,
             mood,
         })
@@ -386,9 +386,9 @@ pub enum RawTriggerAction {
         exit_to: String,
         direction: String,
     },
-    SetNpcMood {
+    SetNpcState {
         npc_id: String,
-        mood: NpcMood,
+        state: NpcState,
     },
     ShowMessage {
         text: String,
@@ -431,7 +431,7 @@ impl RawTriggerAction {
             Self::SpawnItemCurrentRoom { item_id } => cook_spawn_item_current_room(symbols, item_id),
             Self::PushPlayerTo { room_id } => cook_push_player_to(symbols, room_id),
             Self::GiveItemToPlayer { npc_id, item_id } => cook_give_item_to_player(symbols, npc_id, item_id),
-            Self::SetNpcMood { npc_id, mood } => cook_set_npc_mood(symbols, npc_id, *mood),
+            Self::SetNpcState { npc_id, state } => cook_set_npc_mood(symbols, npc_id, state.clone()),
             Self::ShowMessage { text } => Ok(TriggerAction::ShowMessage(text.to_string())),
             Self::RevealExit {
                 exit_from,
@@ -594,15 +594,15 @@ fn cook_unlock_item(symbols: &SymbolTable, target: &String) -> std::result::Resu
 fn cook_set_npc_mood(
     symbols: &SymbolTable,
     npc_id: &String,
-    mood: NpcMood,
+    state: NpcState,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(npc_uuid) = symbols.characters.get(npc_id) {
-        Ok(TriggerAction::SetNPCMood {
+        Ok(TriggerAction::SetNPCState {
             npc_id: *npc_uuid,
-            mood,
+            state,
         })
     } else {
-        bail!("raw action SetNpcMood({npc_id}, {mood}): token not found in symbols");
+        bail!("raw action SetNpcMood({npc_id}, {state}): token not found in symbols");
     }
 }
 

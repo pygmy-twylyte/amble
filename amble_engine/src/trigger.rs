@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use crate::{
     AmbleWorld, ItemHolder, Location, WorldObject,
     item::{ContainerState, ItemAbility, ItemInteractionType},
-    npc::NpcMood,
+    npc::NpcState,
     room::Exit,
     spinners::SpinnerType,
     style::GameStyle,
@@ -56,9 +56,9 @@ pub enum TriggerCondition {
         npc_id: Uuid,
         item_id: Uuid,
     },
-    NpcInMood {
+    NpcInState {
         npc_id: Uuid,
-        mood: NpcMood,
+        mood: NpcState,
     },
     Open(Uuid),
     Take(Uuid),
@@ -101,7 +101,7 @@ impl TriggerCondition {
             Self::NpcHasItem { npc_id, item_id } => {
                 world.npcs.get(npc_id).is_some_and(|npc| npc.contains_item(*item_id))
             },
-            Self::NpcInMood { npc_id, mood } => world.npcs.get(npc_id).is_some_and(|npc| dbg!(npc.mood) == dbg!(*mood)),
+            Self::NpcInState { npc_id, mood } => world.npcs.get(npc_id).is_some_and(|npc| npc.state == *mood),
             Self::HasItem(item_id) => world.player.contains_item(*item_id),
             Self::MissingItem(item_id) => !world.player.contains_item(*item_id),
             Self::WithNpc(npc_id) => world
@@ -128,7 +128,7 @@ pub enum TriggerAction {
     PushPlayerTo(Uuid),
     RestrictItem(Uuid),
     RevealExit { exit_from: Uuid, exit_to: Uuid, direction: String },
-    SetNPCMood { npc_id: Uuid, mood: NpcMood },
+    SetNPCState { npc_id: Uuid, state: NpcState },
     ShowMessage(String),
     SpawnItemCurrentRoom(Uuid),
     SpawnItemInContainer { item_id: Uuid, container_id: Uuid },
@@ -207,7 +207,7 @@ fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()>
             exit_from,
             exit_to,
         } => reveal_exit(world, direction, exit_from, exit_to)?,
-        TriggerAction::SetNPCMood { npc_id, mood } => set_npc_mood(world, npc_id, *mood)?,
+        TriggerAction::SetNPCState { npc_id, state } => set_npc_state(world, npc_id, state)?,
         TriggerAction::ShowMessage(text) => show_message(text),
         TriggerAction::SpawnItemInContainer { item_id, container_id } => {
             spawn_item_in_container(world, item_id, container_id)?
@@ -492,10 +492,10 @@ fn show_message(text: &String) {
 /// Set the mood of a specified `Npc`
 /// # Errors
 /// - on failed npc lookup
-fn set_npc_mood(world: &mut AmbleWorld, npc_id: &Uuid, mood: NpcMood) -> Result<()> {
+fn set_npc_state(world: &mut AmbleWorld, npc_id: &Uuid, state: &NpcState) -> Result<()> {
     if let Some(npc) = world.npcs.get_mut(npc_id) {
-        npc.mood = mood;
-        info!("└─ action: SetNPCMood({npc_id}, {mood:?})");
+        npc.state = state.clone();
+        info!("└─ action: SetNPCMood({npc_id}, {state:?})");
         Ok(())
     } else {
         bail!("SetNpcMood({npc_id},_): unknown NPC id");

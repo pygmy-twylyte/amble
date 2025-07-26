@@ -1,4 +1,4 @@
-use crate::{ItemHolder, Location, WorldObject, npc::NpcMood, style::GameStyle, world::AmbleWorld};
+use crate::{ItemHolder, Location, WorldObject, npc::NpcState, style::GameStyle, world::AmbleWorld};
 use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -48,7 +48,7 @@ impl RoomOverlay {
             ),
             OverlayCondition::PlayerHasItem { item_id } => world.player.contains_item(*item_id),
             OverlayCondition::PlayerMissingItem { item_id } => !world.player.contains_item(*item_id),
-            OverlayCondition::NpcInMood { npc_id, mood } => world.npcs.get(npc_id).is_some_and(|npc| npc.mood == *mood),
+            OverlayCondition::NpcInMood { npc_id, mood } => world.npcs.get(npc_id).is_some_and(|npc| npc.state == *mood),
             OverlayCondition::ItemInRoom { item_id, room_id } => world
                 .items
                 .get(item_id)
@@ -67,7 +67,7 @@ pub enum OverlayCondition {
     ItemAbsent { item_id: Uuid },
     PlayerHasItem { item_id: Uuid },
     PlayerMissingItem { item_id: Uuid },
-    NpcInMood { npc_id: Uuid, mood: NpcMood },
+    NpcInMood { npc_id: Uuid, mood: NpcState },
     ItemInRoom { item_id: Uuid, room_id: Uuid },
 }
 

@@ -14,7 +14,7 @@ use uuid::Uuid;
 use crate::{
     Location, WorldObject,
     idgen::{self, NAMESPACE_CHARACTER},
-    npc::{Npc, NpcMood},
+    npc::{Npc, NpcState},
     world::AmbleWorld,
 };
 
@@ -35,8 +35,8 @@ pub struct RawNpc {
     pub location: HashMap<String, String>,
     #[serde(default)]
     pub inventory: HashSet<String>,
-    pub dialogue: HashMap<NpcMood, Vec<String>>,
-    pub mood: NpcMood,
+    pub dialogue: HashMap<String, Vec<String>>,
+    pub state: String,
 }
 impl RawNpc {
     /// Converts this `RawNpc` to a real `Npc`
@@ -44,6 +44,12 @@ impl RawNpc {
     /// - on failure to resolve location or look up NPC in symbol table
     pub fn to_npc(&self, symbols: &SymbolTable) -> Result<Npc> {
         let start_room = resolve_location(&self.location, symbols)?;
+        let mut processed_dialogue = HashMap::new();
+        for (state_key, lines) in &self.dialogue {
+            let state = NpcState::from_key(&state_key);
+            processed_dialogue.insert(state, lines.clone());
+        }
+
         Ok(Npc {
             id: *symbols
                 .characters
@@ -54,8 +60,8 @@ impl RawNpc {
             description: self.description.to_string(),
             location: start_room,
             inventory: HashSet::new(),
-            dialogue: self.dialogue.clone(),
-            mood: self.mood,
+            dialogue: processed_dialogue,
+            state: NpcState::from_key(&self.state),
         })
     }
 }

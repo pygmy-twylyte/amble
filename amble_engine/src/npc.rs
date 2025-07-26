@@ -16,24 +16,56 @@ use uuid::Uuid;
 use crate::{ItemHolder, Location, WorldObject, style::GameStyle, world::AmbleWorld};
 
 /// Represents the demeanor of an 'Npc', which may affect default dialogue and behavior
-#[derive(Copy, Clone, Debug, variantly::Variantly, PartialEq, Hash, Eq, Serialize, Deserialize)]
-pub enum NpcMood {
+#[derive(Clone, Debug, variantly::Variantly, PartialEq, Hash, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum NpcState {
     Bored,
     Happy,
     Mad,
     Normal,
     Sad,
     Tired,
+    Custom(String),
 }
-impl Display for NpcMood {
+impl Display for NpcState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            NpcMood::Bored => write!(f, "Bored"),
-            NpcMood::Happy => write!(f, "Happy"),
-            NpcMood::Mad => write!(f, "Mad"),
-            NpcMood::Normal => write!(f, "Normal"),
-            NpcMood::Sad => write!(f, "Sad"),
-            NpcMood::Tired => write!(f, "Tired"),
+            Self::Happy => write!(f, "Happy"),
+            Self::Bored => write!(f, "Bored"),
+            Self::Mad => write!(f, "Mad"),
+            Self::Normal => write!(f, "Normal"),
+            Self::Sad => write!(f, "Sad"),
+            Self::Tired => write!(f, "Tired"),
+            Self::Custom(_) => write!(f, "Custom"),
+        }
+    }
+}
+impl NpcState {
+    pub fn from_key(key: &str) -> Self {
+        match key {
+            "sad" => NpcState::Sad,
+            "bored" => NpcState::Bored,
+            "normal" => NpcState::Normal,
+            "happy" => NpcState::Happy,
+            "mad" => NpcState::Mad,
+            "tired" => NpcState::Tired,
+            other if other.starts_with("custom:") => NpcState::Custom(other.trim_start_matches("custom:").to_string()),
+            _ => {
+                warn!("Unknown NpcState key in dialogue map: {}", key);
+                NpcState::Normal
+            },
+        }
+    }
+
+    pub fn as_key(&self) -> String {
+        match self {
+            NpcState::Sad => "sad".into(),
+            NpcState::Bored => "bored".into(),
+            NpcState::Normal => "normal".into(),
+            NpcState::Happy => "happy".into(),
+            NpcState::Mad => "mad".into(),
+            NpcState::Tired => "tired".into(),
+            NpcState::Custom(s) => format!("custom:{}", s),
         }
     }
 }
@@ -47,13 +79,13 @@ pub struct Npc {
     pub description: String,
     pub location: Location,
     pub inventory: HashSet<Uuid>,
-    pub dialogue: HashMap<NpcMood, Vec<String>>,
-    pub mood: NpcMood,
+    pub dialogue: HashMap<NpcState, Vec<String>>,
+    pub state: NpcState,
 }
 impl Npc {
     /// Returns a random line of dialogue from within the NPCs current Mood.
     pub fn random_dialogue(&self, ignore_spinner: &Spinner<String>) -> String {
-        if let Some(lines) = self.dialogue.get(&self.mood) {
+        if let Some(lines) = self.dialogue.get(&self.state) {
             let mut rng = rand::rng();
             lines
                 .choose(&mut rng)
@@ -64,7 +96,7 @@ impl Npc {
                 "Npc {}({}): failed dialogue lookup for mood: {:?}",
                 self.name(),
                 self.id(),
-                self.mood
+                self.state
             );
             ignore_spinner.spin().unwrap_or("Ignores you.".to_string())
         }
@@ -74,7 +106,7 @@ impl Npc {
         println!(
             "{} {}",
             self.name().npc_style().bold(),
-            format!("({})", self.mood).italic().dimmed()
+            format!("({})", self.state).italic().dimmed()
         );
         println!("{}\n", self.description().description_style());
         println!("{}", "Inventory".item_style().underline().bold());
