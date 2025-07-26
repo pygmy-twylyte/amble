@@ -35,9 +35,10 @@ pub struct RoomOverlay {
 impl RoomOverlay {
     /// Returns true if an overlay's condition is met.
     pub fn applies(&self, room_id: Uuid, world: &AmbleWorld) -> bool {
+        let flag_is_set = |flag_str: &str| world.player.flags.iter().any(|f| f.value() == *flag_str);
         match &self.condition {
-            OverlayCondition::FlagSet { flag } => world.player.flags.contains(flag),
-            OverlayCondition::FlagUnset { flag } => !world.player.flags.contains(flag),
+            OverlayCondition::FlagSet { flag } => flag_is_set(flag),
+            OverlayCondition::FlagUnset { flag } => !flag_is_set(flag),
             OverlayCondition::ItemPresent { item_id } => world.items.get(item_id).map_or(
                 false,
                 |item| matches!(item.location, Location::Room(id) if id == room_id),
@@ -48,7 +49,9 @@ impl RoomOverlay {
             ),
             OverlayCondition::PlayerHasItem { item_id } => world.player.contains_item(*item_id),
             OverlayCondition::PlayerMissingItem { item_id } => !world.player.contains_item(*item_id),
-            OverlayCondition::NpcInMood { npc_id, mood } => world.npcs.get(npc_id).is_some_and(|npc| npc.state == *mood),
+            OverlayCondition::NpcInMood { npc_id, mood } => {
+                world.npcs.get(npc_id).is_some_and(|npc| npc.state == *mood)
+            },
             OverlayCondition::ItemInRoom { item_id, room_id } => world
                 .items
                 .get(item_id)
