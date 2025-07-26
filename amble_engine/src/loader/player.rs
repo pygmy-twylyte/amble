@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 use crate::{
     idgen::{NAMESPACE_CHARACTER, uuid_from_token},
-    player::Player,
+    player::{Flag, Player},
 };
 
 use super::{SymbolTable, resolve_location};
@@ -51,7 +51,7 @@ impl RawPlayer {
             description: self.description.to_string(),
             location,
             inventory: HashSet::<Uuid>::default(),
-            flags: HashSet::<String>::default(),
+            flags: HashSet::<Flag>::default(),
             score: self.score,
         };
         Ok(player)
