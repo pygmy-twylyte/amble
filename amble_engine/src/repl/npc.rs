@@ -55,7 +55,6 @@ pub fn talk_to_handler(world: &mut AmbleWorld, npc_name: &str) -> Result<()> {
             info!("NPC \"{}\" ({}) said \"{}\"", npc.name(), npc.id(), dialogue);
         }
     }
-
     Ok(())
 }
 
