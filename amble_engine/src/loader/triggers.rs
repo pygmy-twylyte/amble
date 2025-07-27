@@ -7,6 +7,7 @@ use serde::Deserialize;
 use crate::{
     item::{ItemAbility, ItemInteractionType},
     npc::NpcState,
+    player::Flag,
     spinners::SpinnerType,
     trigger::{Trigger, TriggerAction, TriggerCondition},
 };
@@ -343,7 +344,7 @@ fn cook_container_has_item(symbols: &SymbolTable, container_id: &String, item_id
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum RawTriggerAction {
     AddFlag {
-        flag: String,
+        flag: Flag,
     },
     RemoveFlag {
         flag: String,
@@ -425,13 +426,13 @@ impl RawTriggerAction {
             Self::RestrictItem { item_id } => cook_restrict_item(symbols, item_id),
             Self::NpcSaysRandom { npc_id } => cook_npc_says_random(symbols, npc_id),
             Self::NpcSays { npc_id, quote } => cook_npc_says(symbols, npc_id, quote),
-            Self::AddFlag { flag } => Ok(TriggerAction::AddFlag(flag.to_string())),
+            Self::AddFlag { flag } => Ok(TriggerAction::AddFlag(flag.clone())),
             Self::RemoveFlag { flag } => Ok(TriggerAction::RemoveFlag(flag.to_string())),
             Self::AwardPoints { amount } => Ok(TriggerAction::AwardPoints(*amount)),
             Self::SpawnItemCurrentRoom { item_id } => cook_spawn_item_current_room(symbols, item_id),
             Self::PushPlayerTo { room_id } => cook_push_player_to(symbols, room_id),
             Self::GiveItemToPlayer { npc_id, item_id } => cook_give_item_to_player(symbols, npc_id, item_id),
-            Self::SetNpcState { npc_id, state } => cook_set_npc_mood(symbols, npc_id, state.clone()),
+            Self::SetNpcState { npc_id, state } => cook_set_npc_state(symbols, npc_id, state.clone()),
             Self::ShowMessage { text } => Ok(TriggerAction::ShowMessage(text.to_string())),
             Self::RevealExit {
                 exit_from,
@@ -591,7 +592,7 @@ fn cook_unlock_item(symbols: &SymbolTable, target: &String) -> std::result::Resu
     }
 }
 
-fn cook_set_npc_mood(
+fn cook_set_npc_state(
     symbols: &SymbolTable,
     npc_id: &String,
     state: NpcState,

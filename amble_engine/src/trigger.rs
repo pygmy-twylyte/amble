@@ -4,6 +4,7 @@ use crate::{
     AmbleWorld, ItemHolder, Location, WorldObject,
     item::{ContainerState, ItemAbility, ItemInteractionType},
     npc::NpcState,
+    player::Flag,
     room::Exit,
     spinners::SpinnerType,
     style::GameStyle,
@@ -86,6 +87,7 @@ impl TriggerCondition {
     }
 
     fn is_ongoing(&self, world: &AmbleWorld) -> bool {
+        let player_flag_set = |flag_str: &str| world.player.flags.iter().any(|f| f.value() == *flag_str);
         match self {
             Self::ContainerHasItem { container_id, item_id } => {
                 if let Some(item) = world.items.get(item_id) {
@@ -94,8 +96,8 @@ impl TriggerCondition {
                     false
                 }
             },
-            Self::HasFlag(flag) => world.player.flags.contains(flag),
-            Self::MissingFlag(flag) => !world.player.flags.contains(flag),
+            Self::HasFlag(flag) => player_flag_set(flag),
+            Self::MissingFlag(flag) => !player_flag_set(flag),
             Self::HasVisited(room_id) => world.rooms.get(room_id).is_some_and(|r| r.visited),
             Self::InRoom(room_id) => *room_id == world.player.location.unwrap_room(),
             Self::NpcHasItem { npc_id, item_id } => {
@@ -115,7 +117,7 @@ impl TriggerCondition {
 /// Types of actions that can be fired by a `Trigger` based on a set of `TriggerConditions`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TriggerAction {
-    AddFlag(String),
+    AddFlag(Flag),
     RemoveFlag(String),
     AwardPoints(isize),
     DenyRead(String),
@@ -246,7 +248,8 @@ pub fn spinner_message(world: &mut AmbleWorld, spinner_type: SpinnerType) -> Res
 
 /// Remove a flag that's been applied to the player.
 pub fn remove_flag(world: &mut AmbleWorld, flag: &str) {
-    if world.player.flags.remove(flag) {
+    let target = Flag::simple(flag);
+    if world.player.flags.remove(&target) {
         info!("└─ action: RemoveFlag(\"{flag}\")");
     } else {
         warn!("└─ action: RemoveFlag(\"{flag}\") - flag was not set");
@@ -305,8 +308,8 @@ pub fn award_points(world: &mut AmbleWorld, amount: isize) {
 }
 
 /// Adds a status flag to the player
-fn add_flag(world: &mut AmbleWorld, flag: &String) {
-    world.player.flags.insert(flag.to_string());
+fn add_flag(world: &mut AmbleWorld, flag: &Flag) {
+    world.player.flags.insert(flag.clone());
     info!("└─ action: AddFlag(\"{flag}\")");
 }
 
