@@ -29,10 +29,11 @@ pub enum GoalCondition {
 impl GoalCondition {
     /// Returns true if the condition has been satisfied.
     pub fn satisfied(&self, world: &AmbleWorld) -> bool {
+        let flag_is_set = |flag_str: &str| world.player.flags.iter().any(|f| f.value() == *flag_str);
         match self {
             GoalCondition::HasItem { item_id } => world.player.contains_item(*item_id),
-            GoalCondition::HasFlag { flag } => world.player.flags.contains(flag),
-            GoalCondition::MissingFlag { flag } => !world.player.flags.contains(flag),
+            GoalCondition::HasFlag { flag } => flag_is_set(flag),
+            GoalCondition::MissingFlag { flag } => !flag_is_set(flag),
             GoalCondition::ReachedRoom { room_id } => {
                 if let Some(room) = world.rooms.get(room_id) {
                     room.visited
