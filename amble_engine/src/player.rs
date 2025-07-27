@@ -37,6 +37,11 @@ impl Player {
     pub fn advance_flag(&mut self, name: &str) {
         self.update_flag(name, |f| f.advance());
     }
+
+    /// Reset a sequence flag to the first step.
+    pub fn reset_flag(&mut self, name: &str) {
+        self.update_flag(name, |f| f.reset());
+    }
 }
 impl Default for Player {
     fn default() -> Player {
