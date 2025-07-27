@@ -13,6 +13,7 @@ use crate::{
     Location,
     idgen::{NAMESPACE_CHARACTER, NAMESPACE_ITEM, NAMESPACE_ROOM, uuid_from_token},
     npc::NpcState,
+    player::Flag,
     room::{Exit, OverlayCondition, Room, RoomOverlay},
 };
 
@@ -65,7 +66,7 @@ pub struct RawExit {
     #[serde(default)]
     locked: bool,
     #[serde(default)]
-    required_flags: HashSet<String>,
+    required_flags: HashSet<Flag>,
     #[serde(default)]
     required_items: HashSet<String>,
     #[serde(default)]

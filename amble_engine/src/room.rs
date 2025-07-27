@@ -1,4 +1,4 @@
-use crate::{ItemHolder, Location, WorldObject, npc::NpcState, style::GameStyle, world::AmbleWorld};
+use crate::{ItemHolder, Location, WorldObject, npc::NpcState, player::Flag, style::GameStyle, world::AmbleWorld};
 use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -9,7 +9,7 @@ pub struct Exit {
     pub to: Uuid,
     pub hidden: bool,
     pub locked: bool,
-    pub required_flags: HashSet<String>,
+    pub required_flags: HashSet<Flag>,
     pub required_items: HashSet<Uuid>,
     pub barred_message: Option<String>,
 }
