@@ -41,7 +41,7 @@ dependencies = [
 
 [[package]]
 name = "amble_engine"
-version = "0.23.0"
+version = "0.24.0"
 dependencies = [
  "anyhow",
  "colored",
