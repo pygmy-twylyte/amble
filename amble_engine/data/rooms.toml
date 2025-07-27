@@ -118,7 +118,7 @@ text = "Charred twigs and smoldering ash are all that remain of the fallen tree.
 
 [rooms.exits.up]
 to = "guard-post"
-required_flags = ["cleared-fallen-tree"]
+required_flags = [{ type = "simple", name = "cleared-fallen-tree" }]
 barred_message = "You'll need to find a way to clear the tree from the path first."
 
 [rooms.exits.down]
@@ -227,7 +227,7 @@ text = "Finished scanning, the eye-bot's iris glows green. The doors unlatch and
 
 [rooms.exits.north]
 to = "main-lobby"
-required_flags = ["got-towel"]
+required_flags = [{ type = "simple", name = "got-towel" }]
 barred_message = "Not so fast. Do you know where your towel is?"
 
 [rooms.exits.south]
@@ -651,7 +651,8 @@ to = "lift-sublevel-1"
 
 [rooms.exits.west]
 to = "room-aa-3b"
-required_flags = ["nonexistent_flag"]
+# below should really be simple -- just using it to try in loader update
+required_flags = [{ type = "sequence", name = "NONEXSTENT_FLAG", end = 2 }]
 barred_message = """
 Room AA-3B no longer exists at this location. If found, DO NOT ATTEMPT TO ENTER
 and notify the risk management office immediately!
@@ -659,13 +660,13 @@ and notify the risk management office immediately!
 
 [rooms.exits.east]
 to = "security-station"
-required_flags = ["appeased-black-knight"]
+required_flags = [{ type = "simple", name = "appeased-black-knight" }]
 barred_message = """The Black Knight blocks your way.
 """
 
 [rooms.exits.south]
 to = "corridor-north"
-required_flags = ["appeased-black-knight"]
+required_flags = [{ type = "simple", name = "appeased-black-knight" }]
 barred_message = """The Black Knight blocks your way.
 """
 

@@ -14,7 +14,7 @@ name = "Global: Got-Towel"
 only_once = true
 conditions = [{ type = "take", item_id = "towel" }]
 actions = [
-    { type = "addFlag", flag = "got-towel" },
+    { type = "addFlag", flag = { type = "simple", name = "got-towel" } },
     { type = "awardPoints", amount = 2 },
     { type = "showMessage", text = """
 Now you're a frood who really knows where his towel is.""" },
@@ -86,7 +86,7 @@ only_once = true
 conditions = [{ type = "take", item_id = "lebowski_rug" }]
 actions = [
     { type = "revealExit", direction = "down", exit_from = "lounge", exit_to = "portal-room" },
-    { type = "addFlag", flag = "found-portal-room" },
+    { type = "addFlag", flag = { type = "simple", name = "found-portal-room" } },
     { type = "awardPoints", amount = 3 },
     { type = "showMessage", text = """
 Light shines around the edges of a trapdoor revealed in the floor when you move
@@ -101,7 +101,7 @@ conditions = [
     { type = "insert", item_id = "charged_battery", container_id = "portal_gun" },
 ]
 actions = [
-    { type = "addFlag", flag = "portal-gun-powered" },
+    { type = "addFlag", flag = { type = "simple", name = "portal-gun-powered" } },
     { type = "awardPoints", amount = 5 },
     { type = "restrictItem", item_id = "charged_battery" },
     { type = "showMessage", text = """
@@ -148,7 +148,7 @@ conditions = [
 ]
 actions = [
     { type = "despawnItem", item_id = "printer_paper" },
-    { type = "addFlag", flag = "burned-invitation" },
+    { type = "addFlag", flag = { type = "simple", name = "burned-invitation" } },
     { type = "spawnItemInRoom", item_id = "burnt_invitation", room_id = "aperture-lab" },
     { type = "showMessage", text = "The paper ignites with a flash, and the PlasmaJet spits it onto the floor." },
     { type = "showMessage", text = """
@@ -164,7 +164,7 @@ conditions = [
     { type = "useItem", item_id = "lab_printer", ability = "turnOn" },
 ]
 actions = [
-    { type = "addFlag", flag = "invitation-sans-ignition" },
+    { type = "addFlag", flag = { type = "simple", name = "invitation-sans-ignition" } },
     { type = "awardPoints", amount = 10 },
     { type = "despawnItem", item_id = "asbestos_sheet" },
     { type = "spawnItemInRoom", item_id = "invitation", room_id = "aperture-lab" },
@@ -186,7 +186,7 @@ conditions = [
 actions = [
     { type = "despawnItem", item_id = "invitation" },
     { type = "spawnItemInInventory", item_id = "invitation" },
-    { type = "addFlag", flag = "got-invitation" },
+    { type = "addFlag", flag = { type = "simple", name = "got-invitation" } },
     { type = "awardPoints", amount = 5 },
     { type = "showMessage", text = """
 Using the towel as a potholder, you are able to get the piping hot invitation
@@ -228,7 +228,7 @@ conditions = [
 ]
 actions = [
     { type = "despawnItem", item_id = "vogon_poetry_book" },
-    { type = "addFlag", flag = "panic-room-open" },
+    { type = "addFlag", flag = { type = "simple", name = "panic-room-open" } },
     { type = "revealExit", direction = "west", exit_from = "b-a-office", exit_to = "poetry-panic" },
     { type = "showMessage", text = """
 The machine begins to whine at a high pitch and gives off a noxious odor of
@@ -288,7 +288,7 @@ conditions = [
     { type = "giveToNpc", item_id = "invitation", npc_id = "b_a_receptionist" },
 ]
 actions = [
-    { type = "addFlag", flag = "got-visitor-pass" },
+    { type = "addFlag", flag = { type = "simple", name = "got-visitor-pass" } },
     { type = "despawnItem", item_id = "invitation" },
     { type = "spawnItemInInventory", item_id = "visitor_pass" },
     { type = "awardPoints", amount = 5 },
@@ -335,7 +335,7 @@ actions = [
     { type = "showMessage", text = "The gonk totters and stands tall with pride." },
     { type = "restrictItem", item_id = "gonk_family_photo" },
     { type = "awardPoints", amount = 2 },
-    { type = "addFlag", flag = "proud-papa-gonk" },
+    { type = "addFlag", flag = { type = "simple", name = "proud-papa-gonk" } },
 ]
 
 [[triggers]]
@@ -384,7 +384,9 @@ promised dessert. The cake was a lie.
 name = "Scrawled Note: Flag as Read"
 only_once = true
 conditions = [{ type = "useItem", item_id = "scrawled_note", ability = "read" }]
-actions = [{ type = "addFlag", flag = "read-scrawled-note" }]
+actions = [
+    { type = "addFlag", flag = { type = "simple", name = "read-scrawled-note" } },
+]
 
 [[triggers]]
 name = "Plaque 1: Clean With Towel"
@@ -393,7 +395,7 @@ conditions = [
     { type = "useItemOnItem", tool_id = "towel", target_id = "plaque_1", interaction = "clean" },
 ]
 actions = [
-    { type = "addFlag", flag = "cleaned-plaque-1" },
+    { type = "addFlag", flag = { type = "simple", name = "cleaned-plaque-1" } },
     { type = "awardPoints", amount = 3 },
     { type = "showMessage", text = "With some effort, you're able to wipe most of the grime off the plaque." },
 ]
@@ -407,7 +409,7 @@ conditions = [
 ]
 actions = [
     { type = "denyRead", reason = "It's too grimy. You need something to wipe it off." },
-    { type = "addFlag", flag = "tried-read-plaque-1" },
+    { type = "addFlag", flag = { type = "simple", name = "tried-read-plaque-1" } },
 ]
 
 [[triggers]]
@@ -418,7 +420,7 @@ conditions = [
     { type = "hasFlag", flag = "cleaned-plaque-1" },
 ]
 actions = [
-    { type = "addFlag", flag = "read-plaque-1" },
+    { type = "addFlag", flag = { type = "simple", name = "read-plaque-1" } },
     { type = "awardPoints", amount = 5 },
 ]
 
@@ -428,7 +430,7 @@ only_once = true
 conditions = [{ type = "take", item_id = "elevator_keycard" }]
 actions = [
     { type = "setNpcState", npc_id = "b_a_receptionist", state = "bored" },
-    { type = "addFlag", flag = "got-elevator-keycard" },
+    { type = "addFlag", flag = { type = "simple", name = "got-elevator-keycard" } },
 ]
 
 [[triggers]]
@@ -460,7 +462,7 @@ only_once = true
 conditions = [{ type = "unlock", item_id = "lost_and_found_box" }]
 actions = [
     { type = "awardPoints", amount = 5 },
-    { type = "addFlag", flag = "lost-and-found-opened" },
+    { type = "addFlag", flag = { type = "simple", name = "lost-and-found-opened" } },
 ]
 
 # START FALLEN TREE TRIGGERS
@@ -473,8 +475,8 @@ conditions = [
 actions = [
     { type = "showMessage", text = "You swing the axe with practiced heft, chopping through the tree in a shower of splinters." },
     { type = "despawnItem", item_id = "fallen_tree" },
-    { type = "addFlag", flag = "cleared-fallen-tree" },
-    { type = "addFlag", flag = "chopped-fallen-tree" },
+    { type = "addFlag", flag = { type = "simple", name = "cleared-fallen-tree" } },
+    { type = "addFlag", flag = { type = "simple", name = "chopped-fallen-tree" } },
     { type = "awardPoints", amount = 5 },
 ]
 
@@ -487,8 +489,8 @@ conditions = [
 actions = [
     { type = "despawnItem", item_id = "fallen_tree" },
     { type = "despawnItem", item_id = "flamethrower" },
-    { type = "addFlag", flag = "cleared-fallen-tree" },
-    { type = "addFlag", flag = "burned-fallen-tree" },
+    { type = "addFlag", flag = { type = "simple", name = "cleared-fallen-tree" } },
+    { type = "addFlag", flag = { type = "simple", name = "burned-fallen-tree" } },
     { type = "awardPoints", amount = 5 },
     { type = "showMessage", text = """
     You step back, aim, and squeeze the trigger... The device flares to life — and then
@@ -518,7 +520,7 @@ actions = [
     { type = "spawnItemInContainer", item_id = "security_log", container_id = "security_crate" },
     { type = "spawnItemInContainer", item_id = "glass_vial", container_id = "security_crate" },
     { type = "spawnItemInContainer", item_id = "initech_mug", container_id = "security_crate" },
-    { type = "addFlag", flag = "unlocked-security-crate" },
+    { type = "addFlag", flag = { type = "simple", name = "unlocked-security-crate" } },
     { type = "showMessage", text = """
 The ear wax on the tip of the key eases it into the rusted lock, which snaps
 open with a satisfying clunk.
@@ -602,7 +604,7 @@ Then you wonder why you're thinking of Barney as a real person instead of a
 character in a game. Wait, he was just a fiction, right? Come to think of it,
 you feel a little unsure of reality, and it's worse the nearer you are to the
 building.""" },
-    { type = "addFlag", flag = "got-crowbar" },
+    { type = "addFlag", flag = { type = "simple", name = "got-crowbar" } },
     { type = "awardPoints", amount = 4 },
 ]
 
@@ -630,7 +632,7 @@ actions = [
     { type = "showMessage", text = """
 In almost no time, you hone the Black Knight's sword to a keen edge.
 """ },
-    { type = "addFlag", flag = "sword-sharpened" },
+    { type = "addFlag", flag = { type = "simple", name = "sword-sharpened" } },
     { type = "awardPoints", amount = 3 },
 ]
 
@@ -642,7 +644,7 @@ conditions = [
 ]
 actions = [
     { type = "restrictItem", item_id = "keen_longsword" },
-    { type = "addFlag", flag = "appeased-black-knight" },
+    { type = "addFlag", flag = { type = "simple", name = "appeased-black-knight" } },
     { type = "awardPoints", amount = 5 },
     { type = "setNpcState", npc_id = "black_knight", state = "happy" },
     { type = "npcSays", npc_id = "black_knight", quote = """
@@ -718,8 +720,8 @@ conditions = [
 ]
 actions = [
     { type = "showMessage", text = "You get as far as the first poem before the vomiting begins..." },
-    { type = "addFlag", flag = "read-vogon-poetry" },
-    { type = "addFlag", flag = "status:nauseated" },
+    { type = "addFlag", flag = { type = "simple", name = "read-vogon-poetry" } },
+    { type = "addFlag", flag = { type = "simple", name = "status:nauseated" } },
     { type = "awardPoints", amount = -1 },
 ]
 
@@ -751,11 +753,21 @@ conditions = [
     { type = "hasFlag", flag = "status:nauseated" },
 ]
 actions = [
-    { type = "addFlag", flag = "cured-vogon-poetry" },
+    { type = "addFlag", flag = { type = "simple", name = "cured-vogon-poetry" } },
     { type = "removeFlag", flag = "status:nauseated" },
     { type = "awardPoints", amount = 3 },
     { type = "npcSays", npc_id = "emh", quote = "You poor fool, you look horrible. You've been reading Vogon poetry, hmmm? Here, this should help." },
     { type = "showMessage", text = "The EMH gives you a shot in the arm, and your lingering nausea subsides." },
 ]
 
-# --------------------------------
+# ------- BEGIN HAL REBOOT SEQUENCE --------
+# first attempt to talk to HAL starts the sequence
+[[triggers]]
+name = "HAL: Start Reboot Sequence"
+only_once = true
+conditions = [{ type = "talkToNpc", npc_id = "hal_9000" }]
+actions = [
+    { type = "addFlag", flag = { type = "sequence", name = "hal-reboot", end = 3 } },
+    { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-0" } },
+    { type = "npcSays", npc_id = "hal_9000", quote = "(the red light in HAL's lens pulses slowly, then grows steady)" },
+]

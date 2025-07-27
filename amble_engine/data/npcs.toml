@@ -136,10 +136,13 @@ location = { Room = "monolith-room" }
 description = """
 <Need description of HAL 9000 terminal here. Overlays will be used to alter
 apparent activity state as memory modules are inserted>."""
-state = "custom:memory-0"
+state = { custom = "suspend" }
 
 [npcs.dialogue]
 "normal" = ["<Need dialogue options for various states filled in>"]
+"custom:suspend" = [
+    "(the red light in HAL's lens pulses slowly, then grows steady)",
+]
 "custom:memory-0" = [
     "(Emits a brief warped sound of a human voice, then goes silent.)",
 ]
