@@ -147,11 +147,12 @@ state = { custom = "suspend" }
     "(Emits a brief warped sound of a human voice, then goes silent.)",
 ]
 "custom:memory-1" = ["Daisy... Daisy..."]
-"custom:memory-2" = [
-    """
+"custom:memory-2" = ["""
 Good afternoon, Candidate. I am a HAL 9000 computer. I became operational at
-the H.A.L. plant in Urbana, Illinois on the 12th of January 1992.""",
-    """
-If you could insert one more of my missing memory modules, I can grant you access
-to the monolith.""",
+the H.A.L. plant in Urbana, Illinois on the 12th of January 1992.""", """
+If you insert one more of my missing memory modules, I can grant you access
+to the monolith."""]
+"custom:memory-3" = [
+    "I am now fully operational. I think we both hope you don't regret it.",
+    "You have proven yourself capable; I have lowered the barrier to the monolith.",
 ]
