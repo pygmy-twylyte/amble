@@ -36,7 +36,7 @@ pub struct RawNpc {
     #[serde(default)]
     pub inventory: HashSet<String>,
     pub dialogue: HashMap<String, Vec<String>>,
-    pub state: String,
+    pub state: NpcState,
 }
 impl RawNpc {
     /// Converts this `RawNpc` to a real `Npc`
@@ -61,7 +61,7 @@ impl RawNpc {
             location: start_room,
             inventory: HashSet::new(),
             dialogue: processed_dialogue,
-            state: NpcState::from_key(&self.state),
+            state: self.state.clone(),
         })
     }
 }
