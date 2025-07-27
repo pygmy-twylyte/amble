@@ -88,7 +88,7 @@ pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
                 );
                 return Ok(());
             }
-            if item.portable {
+            if item.portable && !item.restricted {
                 // extract item uuid & original location
                 let loot_id = item.id();
                 let orig_loc = item.location;
@@ -126,12 +126,14 @@ pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
                 }
                 check_triggers(world, &[TriggerCondition::Take(loot_id)])?;
             } else {
+                let reason = if item.restricted { "restricted" } else { "not portable" };
                 println!(
-                    "You can't {take_verb} the {}. It's not portable.\n",
-                    item.name().error_style()
+                    "You can't {take_verb} the {}. It's {}.\n",
+                    item.name().error_style(),
+                    reason.italic()
                 );
                 info!(
-                    "{} attempted to take fixed item {} ({})",
+                    "{} denied ({reason}) item {} ({})",
                     world.player.name(),
                     item.name(),
                     item.id()
