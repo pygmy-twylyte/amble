@@ -1,0 +1,225 @@
+use amble_engine as ae;
+use ae::*;
+use ae::style::GameStyle;
+
+#[test]
+fn test_command_parse() {
+    use ae::command::*;
+    assert!(matches!(parse_command("look"), Command::Look));
+    assert_eq!(parse_interaction_type("burn"), Some(item::ItemInteractionType::Burn));
+}
+
+#[test]
+fn test_goal_condition_flag() {
+    use ae::goal::GoalCondition;
+    use ae::player::Flag;
+    let mut world = world::AmbleWorld::new_empty();
+    assert!(!GoalCondition::HasFlag { flag: "a".into() }.satisfied(&world));
+    world.player.flags.insert(Flag::simple("a"));
+    assert!(GoalCondition::HasFlag { flag: "a".into() }.satisfied(&world));
+}
+
+#[test]
+fn test_idgen_uuid_deterministic() {
+    let u1 = idgen::uuid_from_token(&idgen::NAMESPACE_ROOM, "test");
+    let u2 = idgen::uuid_from_token(&idgen::NAMESPACE_ROOM, "test");
+    assert_eq!(u1, u2);
+}
+
+#[test]
+fn test_item_accessible() {
+    use ae::item::{Item, ContainerState};
+    let item = Item { id: uuid::Uuid::new_v4(), symbol: "i".into(), name: "Box".into(), description: String::new(), location: world::Location::Nowhere, portable: false, container_state: Some(ContainerState::Open), restricted: false, contents: Default::default(), abilities: Default::default(), interaction_requires: Default::default(), text: None };
+    assert!(item.is_accessible());
+}
+
+#[test]
+fn test_lib_version() {
+    assert!(!ae::AMBLE_VERSION.is_empty());
+}
+
+#[test]
+fn test_resolve_location_inventory() {
+    let symbols = loader::SymbolTable::default();
+    let mut table = std::collections::HashMap::new();
+    table.insert("Inventory".to_string(), String::new());
+    assert!(matches!(loader::resolve_location(&table, &symbols).unwrap(), world::Location::Inventory));
+}
+
+#[test]
+fn test_npc_state_keys() {
+    use ae::npc::NpcState;
+    let custom = NpcState::from_key("custom:foo");
+    assert_eq!(custom.as_key(), "custom:foo");
+}
+
+#[test]
+fn test_player_flag_sequence() {
+    use ae::player::Flag;
+    let mut flag = Flag::sequence("quest", Some(2));
+    flag.advance();
+    assert_eq!(flag.value(), ae::player::format_sequence_value("quest", 1));
+}
+
+#[test]
+fn test_find_world_object() {
+    use std::collections::HashMap;
+    let id = uuid::Uuid::new_v4();
+    let item = ae::item::Item { id, symbol: "i".into(), name: "Foo".into(), description: String::new(), location: world::Location::Inventory, portable: true, container_state: None, restricted: false, contents: Default::default(), abilities: Default::default(), interaction_requires: Default::default(), text: None };
+    let mut items = HashMap::new();
+    items.insert(id, item);
+    let mut npcs = HashMap::new();
+    let res = ae::repl::find_world_object(std::iter::once(&id), &items, &npcs, "foo");
+    assert!(res.is_some());
+}
+
+#[test]
+fn test_room_overlay_applies_flag() {
+    use ae::room::{RoomOverlay, OverlayCondition};
+    use ae::player::Flag;
+    let mut world = world::AmbleWorld::new_empty();
+    world.player.flags.insert(Flag::simple("x"));
+    let overlay = RoomOverlay { condition: OverlayCondition::FlagSet { flag: "x".into() }, text: String::new() };
+    assert!(overlay.applies(uuid::Uuid::new_v4(), &world));
+}
+
+#[test]
+fn test_spinner_type_serde() {
+    use ae::spinners::SpinnerType;
+    let ty = SpinnerType::Movement;
+    let s = serde_json::to_string(&ty).unwrap();
+    let back: SpinnerType = serde_json::from_str(&s).unwrap();
+    assert_eq!(ty, back);
+}
+
+#[test]
+fn test_style_item() {
+    let styled = "hi".item_style();
+    let out = styled.to_string();
+    assert!(out.contains("\u{1b}"));
+}
+
+#[test]
+fn test_trigger_award_points() {
+    let mut world = world::AmbleWorld::new_empty();
+    trigger::award_points(&mut world, 5);
+    assert_eq!(world.player.score, 6); // default 1 + 5
+}
+
+#[test]
+fn test_world_new_empty_version() {
+    let world = world::AmbleWorld::new_empty();
+    assert_eq!(world.version, ae::AMBLE_VERSION);
+}
+
+#[test]
+fn test_loader_goals_to_goal() {
+    use ae::loader::goals::{RawGoal, RawGoalCondition};
+    let mut symbols = loader::SymbolTable::default();
+    let goal_id = "g".to_string();
+    let raw = RawGoal { id: goal_id.clone(), name: "name".into(), description: String::new(), group: ae::goal::GoalGroup::Required, activate_when: None, finished_when: RawGoalCondition::HasFlag { flag: "f".into() }, failed_when: None };
+    let goal = raw.to_goal(&symbols).unwrap();
+    assert_eq!(goal.id, goal_id);
+}
+
+#[test]
+fn test_interaction_requirement_met() {
+    use ae::item::{Item, ItemInteractionType, ItemAbility};
+    let tool = Item { id: uuid::Uuid::new_v4(), symbol:"t".into(), name:"tool".into(), description:String::new(), location:world::Location::Nowhere, portable:true, container_state:None, restricted:false, contents:Default::default(), abilities:[ItemAbility::Clean].into_iter().collect(), interaction_requires:Default::default(), text:None };
+    let target = Item { id: uuid::Uuid::new_v4(), symbol:"x".into(), name:"target".into(), description:String::new(), location:world::Location::Nowhere, portable:true, container_state:None, restricted:false, contents:Default::default(), abilities:Default::default(), interaction_requires:std::iter::once((ItemInteractionType::Clean, ItemAbility::Clean)).collect(), text:None };
+    assert!(ae::loader::items::interaction_requirement_met(ItemInteractionType::Clean, &target, &tool));
+}
+
+#[test]
+fn test_raw_npc_to_npc() {
+    use ae::loader::npcs::RawNpc;
+    use std::collections::{HashMap, HashSet};
+    let mut symbols = loader::SymbolTable::default();
+    ae::loader::rooms::register_npc(&mut symbols, "npc");
+    let raw = RawNpc { id:"npc".into(), name:"Npc".into(), description:String::new(), location:HashMap::new(), inventory:HashSet::new(), dialogue:HashMap::new(), state: ae::npc::NpcState::Normal };
+    let npc = raw.to_npc(&symbols).unwrap();
+    assert_eq!(npc.name, "Npc");
+}
+
+#[test]
+fn test_raw_player_to_player() {
+    use ae::loader::player::{RawPlayer, build_player};
+    use std::collections::{HashMap, HashSet};
+    let mut symbols = loader::SymbolTable::default();
+    let raw = RawPlayer { id:"player".into(), name:"P".into(), description:String::new(), location:{ let mut m=HashMap::new(); m.insert("Inventory".into(), String::new()); m }, inventory:HashMap::new(), flags:HashSet::new(), score:0 };
+    let player = build_player(&raw, &mut symbols).unwrap();
+    assert_eq!(player.name, "P");
+}
+
+#[test]
+fn test_register_item() {
+    let mut symbols = loader::SymbolTable::default();
+    let id = ae::loader::rooms::register_item(&mut symbols, "item");
+    let again = ae::loader::rooms::register_item(&mut symbols, "item");
+    assert_eq!(id, again);
+}
+
+#[test]
+fn test_spinner_file_to_map() {
+    use ae::loader::spinners::{SpinnerFile, RawSpinnerData};
+    use ae::spinners::SpinnerType;
+    let file = SpinnerFile { entries: vec![RawSpinnerData { spinner_type: SpinnerType::Movement, values: vec!["go".into()], widths: vec![1] }] };
+    let map = file.to_spinner_map();
+    assert!(map.contains_key(&SpinnerType::Movement));
+}
+
+#[test]
+fn test_build_triggers_empty() {
+    let triggers = ae::loader::triggers::build_triggers(&[], &loader::SymbolTable::default()).unwrap();
+    assert!(triggers.is_empty());
+}
+
+#[test]
+fn test_inventory_vessel_type() {
+    use ae::repl::inventory::VesselType;
+    assert!(matches!(VesselType::Item, VesselType::Item));
+}
+
+#[test]
+fn test_item_open_handler_error() {
+    let mut world = world::AmbleWorld::new_empty();
+    let result = ae::repl::item::open_handler(&mut world, "x");
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_inv_handler_empty() {
+    let world = world::AmbleWorld::new_empty();
+    assert!(ae::repl::look::inv_handler(&world).is_ok());
+}
+
+#[test]
+fn test_move_to_handler_simple() {
+    use ae::room::{Room, Exit};
+    use std::collections::{HashMap, HashSet};
+    let mut world = world::AmbleWorld::new_empty();
+    let r1 = uuid::Uuid::new_v4();
+    let r2 = uuid::Uuid::new_v4();
+    let mut room1 = Room { id:r1, symbol:"r1".into(), name:"R1".into(), base_description:String::new(), overlays:vec![], location:world::Location::Nowhere, visited:true, exits:HashMap::new(), contents:HashSet::new(), npcs:HashSet::new() };
+    room1.exits.insert("north".into(), Exit { to:r2, hidden:false, locked:false, required_flags:HashSet::new(), required_items:HashSet::new(), barred_message:None });
+    let room2 = Room { id:r2, symbol:"r2".into(), name:"R2".into(), base_description:String::new(), overlays:vec![], location:world::Location::Nowhere, visited:false, exits:HashMap::new(), contents:HashSet::new(), npcs:HashSet::new() };
+    world.rooms.insert(r1, room1);
+    world.rooms.insert(r2, room2);
+    world.player.location = world::Location::Room(r1);
+    assert!(ae::repl::movement::move_to_handler(&mut world, "north").is_ok());
+    assert!(matches!(world.player.location, world::Location::Room(id) if id == r2));
+}
+
+#[test]
+fn test_talk_to_handler_no_npc() {
+    let mut world = world::AmbleWorld::new_empty();
+    assert!(ae::repl::npc::talk_to_handler(&mut world, "n").is_ok());
+}
+
+#[test]
+fn test_filtered_goals_empty() {
+    let world = world::AmbleWorld::new_empty();
+    let list = ae::repl::system::filtered_goals(&world, goal::GoalStatus::Active);
+    assert!(list.is_empty());
+}
+
