@@ -346,6 +346,9 @@ pub enum RawTriggerAction {
     AddFlag {
         flag: Flag,
     },
+    AdvanceFlag {
+        flag: String,
+    },
     RemoveFlag {
         flag: String,
     },
@@ -422,6 +425,7 @@ pub enum RawTriggerAction {
 impl RawTriggerAction {
     fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
+            Self::AdvanceFlag { flag } => Ok(TriggerAction::AdvanceFlag(flag.to_string())),
             Self::SpinnerMessage { spinner } => Ok(TriggerAction::SpinnerMessage { spinner: *spinner }),
             Self::RestrictItem { item_id } => cook_restrict_item(symbols, item_id),
             Self::NpcSaysRandom { npc_id } => cook_npc_says_random(symbols, npc_id),
