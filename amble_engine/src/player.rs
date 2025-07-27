@@ -17,6 +17,27 @@ pub struct Player {
     pub flags: HashSet<Flag>,
     pub score: usize,
 }
+impl Player {
+    /// Updates one of the existing flags. Emits a warning if the flag isn't found.
+    pub fn update_flag<F>(&mut self, name: &str, updater: F)
+    where
+        F: FnOnce(&mut Flag),
+    {
+        let target = Flag::Simple { name: name.to_string() };
+        if let Some(mut flag) = self.flags.take(&target) {
+            updater(&mut flag);
+            info!("player flag updated: '{flag}'");
+            self.flags.insert(flag);
+        } else {
+            warn!("update_flag: flag '{name}' not set");
+        }
+    }
+
+    /// Advances a sequence flag to the next step.
+    pub fn advance_flag(&mut self, name: &str) {
+        self.update_flag(name, |f| f.advance());
+    }
+}
 impl Default for Player {
     fn default() -> Player {
         Self {
@@ -89,12 +110,10 @@ impl Flag {
     /// Advances to next step of a sequence
     ///
     /// Logs a warning and does nothing if called on a simple flag.
-    /// Returns the resulting sequence number or None
-    pub fn advance(&mut self) -> Option<u8> {
+    pub fn advance(&mut self) {
         match self {
             Flag::Simple { name, .. } => {
                 warn!("advance() called on non-sequence flag '{name}'");
-                None
             },
             Flag::Sequence { name, step, end } => {
                 if let Some(final_step) = end {
@@ -103,7 +122,6 @@ impl Flag {
                     *step += 1;
                 }
                 info!("sequence '{name}' advanced to step {step}");
-                Some(*step)
             },
         }
     }
