@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::{
-    AmbleWorld, ItemHolder, Location, WorldObject,
+    AmbleWorld, ItemHolder, Location, Player, WorldObject,
     item::{ContainerState, ItemAbility, ItemInteractionType},
     npc::NpcState,
     player::Flag,
@@ -118,6 +118,7 @@ impl TriggerCondition {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TriggerAction {
     AddFlag(Flag),
+    AdvanceFlag(String),
     RemoveFlag(String),
     AwardPoints(isize),
     DenyRead(String),
@@ -193,6 +194,7 @@ pub fn check_triggers<'a>(world: &'a mut AmbleWorld, events: &[TriggerCondition]
 /// - on failed triggered actions due to bad uuids
 fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()> {
     match action {
+        TriggerAction::AdvanceFlag(flag_name) => advance_flag(&mut world.player, flag_name),
         TriggerAction::SpinnerMessage { spinner } => spinner_message(world, *spinner)?,
         TriggerAction::RestrictItem(item_id) => restrict_item(world, item_id)?,
         TriggerAction::NpcSaysRandom { npc_id } => npc_says_random(world, npc_id)?,
@@ -227,6 +229,13 @@ fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()>
         TriggerAction::AwardPoints(amount) => award_points(world, *amount),
     }
     Ok(())
+}
+
+/// Advance a sequence flag to the next step.
+///
+pub fn advance_flag(player: &mut Player, flag_name: &str) {
+    info!("└─ action: AdvanceFlag(\"{flag_name}\")");
+    player.advance_flag(flag_name);
 }
 
 /// Displays a triggered, randomized message (or sometimes none) from one of the world spinners.
@@ -498,10 +507,10 @@ fn show_message(text: &String) {
 fn set_npc_state(world: &mut AmbleWorld, npc_id: &Uuid, state: &NpcState) -> Result<()> {
     if let Some(npc) = world.npcs.get_mut(npc_id) {
         npc.state = state.clone();
-        info!("└─ action: SetNPCMood({npc_id}, {state:?})");
+        info!("└─ action: SetNpcState({npc_id}, {state:?})");
         Ok(())
     } else {
-        bail!("SetNpcMood({npc_id},_): unknown NPC id");
+        bail!("SetNpcState({npc_id},_): unknown NPC id");
     }
 }
 
