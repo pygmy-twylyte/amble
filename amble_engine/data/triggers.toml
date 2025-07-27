@@ -771,3 +771,65 @@ actions = [
     { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-0" } },
     { type = "npcSays", npc_id = "hal_9000", quote = "(the red light in HAL's lens pulses slowly, then grows steady)" },
 ]
+
+# inserting each module advances the sequence to steps 1,2,3
+[[triggers]]
+name = "HAL: Module #1 Inserted"
+only_once = true
+conditions = [
+    { type = "insert", item_id = "hal_module_1", container_id = "hal_logic_center" },
+]
+actions = [
+    { type = "advanceFlag", flag = "hal-reboot" },
+    { type = "restrictItem", item_id = "hal_module_1" },
+    { type = "showMessage", text = "Memory module #1 magnetically locks into place and lights up." },
+]
+
+[[triggers]]
+name = "HAL: Module #2 Inserted"
+only_once = true
+conditions = [
+    { type = "insert", item_id = "hal_module_2", container_id = "hal_logic_center" },
+]
+actions = [
+    { type = "advanceFlag", flag = "hal-reboot" },
+    { type = "restrictItem", item_id = "hal_module_2" },
+    { type = "showMessage", text = "Memory module #2 magnetically locks into place and lights up." },
+]
+
+[[triggers]]
+name = "HAL: Module #3 Inserted"
+only_once = true
+conditions = [
+    { type = "insert", item_id = "hal_module_3", container_id = "hal_logic_center" },
+]
+actions = [
+    { type = "advanceFlag", flag = "hal-reboot" },
+    { type = "restrictItem", item_id = "hal_module_3" },
+    { type = "showMessage", text = "Memory module #3 magnetically locks into place and lights up." },
+]
+
+[[triggers]]
+name = "HAL: Update State (1 Module)"
+only_once = true
+conditions = [{ type = "hasFlag", flag = "hal-reboot#1" }]
+actions = [
+    { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-1" } },
+]
+
+[[triggers]]
+name = "HAL: Update State (2 Modules)"
+only_once = true
+conditions = [{ type = "hasFlag", flag = "hal-reboot#2" }]
+actions = [
+    { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-2" } },
+]
+
+[[triggers]]
+name = "HAL: Update State (3 Modules)"
+only_once = true
+conditions = [{ type = "hasFlag", flag = "hal-reboot#3" }]
+actions = [
+    { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-3" } },
+    { type = "showMessage", text = "All memory now restored, HAL-9000 finishes rebooting." },
+]
