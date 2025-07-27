@@ -875,7 +875,7 @@ container_state = "open"
 [[items]]
 id = "hal_module_1"
 name = "HAL Memory Module #1"
-location = { Nowhere = "location TBD" }
+location = { Room = "observation-room" }
 portable = true
 restricted = false
 description = """
@@ -886,20 +886,20 @@ description = """
 [[items]]
 id = "hal_module_2"
 name = "HAL Memory Module #2"
-location = { Nowhere = "location TBD" }
+location = { Room = "observation-room" }
 portable = true
 restricted = false
 description = """
-<First of 3 HAL Memory Modules needed to reactivate him.>
+<Second of 3 HAL Memory Modules needed to reactivate him.>
 """
 
 # ------------------------------------------------------------------------------
 [[items]]
 id = "hal_module_3"
 name = "HAL Memory Module #3"
-location = { Nowhere = "location TBD" }
+location = { Room = "observation-room" }
 portable = true
 restricted = false
 description = """
-<First of 3 HAL Memory Modules needed to reactivate him.>
+<Third of 3 HAL Memory Modules needed to reactivate him.>
 """
