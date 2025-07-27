@@ -63,7 +63,7 @@ impl ItemHolder for Player {
 }
 
 /// Flags that can be applied to the player
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum Flag {
     Simple {
@@ -147,6 +147,21 @@ impl std::fmt::Display for Flag {
             Flag::Simple { name } => write!(f, "{name}"),
             Flag::Sequence { name, step, .. } => write!(f, "{}#{}", name, step),
         }
+    }
+}
+use std::hash::{Hash, Hasher};
+
+impl PartialEq for Flag {
+    fn eq(&self, other: &Self) -> bool {
+        self.name() == other.name()
+    }
+}
+
+impl Eq for Flag {}
+
+impl Hash for Flag {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.name().hash(state)
     }
 }
 
