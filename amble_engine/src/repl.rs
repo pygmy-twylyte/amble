@@ -1,3 +1,8 @@
+//! REPL and command handling utilities.
+//!
+//! The game runs in a read-eval-print loop. This module and its submodules
+//! implement the various command handlers that manipulate the [`AmbleWorld`].
+
 pub mod inventory;
 pub mod item;
 pub mod look;

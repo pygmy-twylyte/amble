@@ -1,3 +1,8 @@
+//! Loading logic for [`Item`] definitions.
+//!
+//! Items are first parsed into [`RawItem`] structures and later converted into
+//! fully linked [`Item`] instances during world initialization.
+
 use std::{
     collections::{HashMap, HashSet},
     fs,

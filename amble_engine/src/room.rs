@@ -5,6 +5,9 @@ use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
+/// An exit from one room to another.
+///
+/// Additional flags and items may be required to traverse it.
 pub struct Exit {
     pub to: Uuid,
     pub hidden: bool,
@@ -14,6 +17,7 @@ pub struct Exit {
     pub barred_message: Option<String>,
 }
 impl Exit {
+    /// Create a basic exit leading to the room with the given UUID.
     pub fn new(to: Uuid) -> Self {
         Self {
             to,

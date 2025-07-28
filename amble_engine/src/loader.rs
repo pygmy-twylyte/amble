@@ -1,3 +1,8 @@
+//! Loader utilities for building an `AmbleWorld` from TOML files.
+//!
+//! Each submodule handles parsing and conversion of one data type such as rooms
+//! or items. The main [`load_world`] function ties them all together.
+
 pub mod goals;
 pub mod items;
 pub mod npcs;
