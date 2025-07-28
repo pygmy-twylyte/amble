@@ -1,5 +1,12 @@
+//! Styling helpers for terminal output.
+//!
+//! The [`GameStyle`] trait provides a set of convenience methods for applying
+//! ANSI styling via the `colored` crate. Implementations for `&str` and
+//! `String` are provided so string literals can be styled directly.
+
 use colored::{ColoredString, Colorize};
 
+/// Convenience trait for applying color and style to text output.
 pub trait GameStyle {
     fn item_style(&self) -> ColoredString;
     fn npc_style(&self) -> ColoredString;

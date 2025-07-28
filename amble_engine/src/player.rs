@@ -6,6 +6,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use uuid::Uuid;
 
+/// The player-controlled character.
+///
+/// This struct tracks the player's state, such as inventory, score and flags.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Player {
     pub id: Uuid,

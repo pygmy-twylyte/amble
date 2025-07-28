@@ -1,3 +1,9 @@
+//! Item types and related helpers.
+//!
+//! Items represent objects the player can interact with. Some may act as
+//! containers for other items. Functions here handle display logic and
+//! movement between locations.
+
 use crate::{Location, WorldObject, style::GameStyle, world::AmbleWorld};
 
 use colored::Colorize;

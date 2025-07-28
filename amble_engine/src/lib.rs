@@ -1,6 +1,12 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::must_use_candidate)]
 
+//! Amble game engine library.
+//!
+//! This crate contains the core data structures and logic that power the
+//! command line adventure game. It exposes a small API used by the binary
+//! in `main.rs` and by tooling.
+
 pub const AMBLE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // Core modules

@@ -1,3 +1,8 @@
+//! Room loading logic.
+//!
+//! Rooms are pre-registered in the symbol table and later populated with exits
+//! and overlays once all referenced objects are known.
+
 use std::{
     collections::{HashMap, HashSet},
     fs,

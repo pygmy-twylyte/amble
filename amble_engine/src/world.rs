@@ -1,3 +1,8 @@
+//! Data structures representing the game world.
+//!
+//! This module defines [`AmbleWorld`] and related types used at runtime to
+//! track the current state of the adventure.
+
 use crate::AMBLE_VERSION;
 use crate::item::ContainerState;
 use crate::npc::Npc;
@@ -36,7 +41,11 @@ pub trait WorldObject {
     fn location(&self) -> &Location;
 }
 
-/// The Amble world.
+/// Complete state of the running game.
+///
+/// `AmbleWorld` contains every room, item, NPC and trigger currently active, as
+/// well as the player character. It is created during loading and then mutated
+/// throughout gameplay.
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct AmbleWorld {
     pub rooms: HashMap<Uuid, Room>,

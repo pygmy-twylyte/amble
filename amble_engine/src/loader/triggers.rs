@@ -1,3 +1,9 @@
+//! Helpers for loading [`Trigger`] definitions from TOML.
+//!
+//! Triggers combine game conditions with actions. This module converts the raw
+//! text representation into fully linked structures that the engine can
+//! evaluate at runtime.
+
 use std::{collections::HashSet, fs, path::Path};
 
 use anyhow::{Context, Result, bail};

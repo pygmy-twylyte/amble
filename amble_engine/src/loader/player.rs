@@ -1,3 +1,8 @@
+//! Player loading helpers.
+//!
+//! The player character is described in `player.toml`. This module reads the
+//! file and converts the raw representation into a [`Player`] instance.
+
 use std::{
     collections::{HashMap, HashSet},
     fs,
