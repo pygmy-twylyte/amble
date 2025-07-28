@@ -1,17 +1,17 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
+- dev commands to teleport (DONE), get items / achievs
 - TriggerAction to reset sequence flaq
 - TriggerAction to add spinner wedges
 - TriggerCondition / OverlayCondition / Flag method to detect is sequence complete
-- dev commands to teleport (DONE), get items / achievs
 - update giveToNpc to give more specific reasons for refusals.
 - trigger action to change the .read field on an item to update displays etc
-- monolith will induce higher intelligence state or paradox acceptance ability that will allow AA-3B access
 - mechanism like window or portal -- where one can look outside the current room into another?
-- ambient spinner for elevators with Muzak
 
 ## FIXITs from runthroughs / CONTENT additions
+- ambient spinner for elevators with Muzak
+- monolith will induce higher intelligence state or paradox acceptance ability that will allow AA-3B access
 - HAL: monolith room has HAL, but HAL is deactivated due to missing (removed) memory modules. Must replace them to get access to the monolith.
 - HAL module locations:
   * #1: EMH knows hidden location. EMH can only show player once player finds / repairs his mobile emitter.

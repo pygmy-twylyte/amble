@@ -6,7 +6,6 @@ use std::collections::HashSet;
 
 use crate::{
     AmbleWorld, Location, WorldObject,
-    idgen::{NAMESPACE_ROOM, uuid_from_token},
     spinners::SpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers},
@@ -14,7 +13,7 @@ use crate::{
 
 use anyhow::{Context, Result, anyhow};
 use colored::Colorize;
-use log::{info, warn};
+use log::info;
 
 /// Move the player to a neighboring location, if all exit conditions are met.
 pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
@@ -115,22 +114,4 @@ pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
         //     println!("Which way is {}? You stay put.\n", input_dir.error_style());
     }
     Ok(())
-}
-
-/// Instantly transport player elsewhere, if you know the id from the TOML file.
-/// This is for development purposes only.
-pub fn teleport_handler(world: &mut AmbleWorld, room_toml_id: &str) {
-    let room_uuid = uuid_from_token(&NAMESPACE_ROOM, room_toml_id);
-    if let Some(room) = world.rooms.get(&room_uuid) {
-        world.player.location = Location::Room(room_uuid);
-        warn!(
-            "DEV only command used: Teleported player to {} ({})",
-            room.name(),
-            room.id()
-        );
-        println!("You teleported...");
-        let _ = room.show(world);
-    } else {
-        println!("Teleport failed. Lookup of '{room_toml_id}' failed.");
-    }
 }

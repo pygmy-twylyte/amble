@@ -8,9 +8,11 @@
 //! in `main.rs` and by tooling.
 
 pub const AMBLE_VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const DEV_MODE: bool = true;
 
 // Core modules
 pub mod command;
+pub mod dev_command;
 pub mod goal;
 pub mod idgen;
 pub mod item;

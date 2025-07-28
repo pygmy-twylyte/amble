@@ -3,6 +3,7 @@
 //! The game runs in a read-eval-print loop. This module and its submodules
 //! implement the various command handlers that manipulate the [`AmbleWorld`].
 
+pub mod dev;
 pub mod inventory;
 pub mod item;
 pub mod look;
@@ -10,6 +11,7 @@ pub mod movement;
 pub mod npc;
 pub mod system;
 
+pub use dev::*;
 use gametools::Spinner;
 pub use inventory::*;
 pub use item::*;
@@ -88,7 +90,8 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
                 );
             },
             Command::TalkTo(npc_name) => talk_to_handler(world, &npc_name)?,
-            Command::Teleport(room_toml_id) => teleport_handler(world, &room_toml_id), // only for development
+            Command::Teleport(room_symbol) => dev_teleport_handler(world, &room_symbol),
+            Command::SpawnItem(item_symbol) => dev_spawn_item_handler(world, &item_symbol),
             Command::GiveToNpc { item, npc } => give_to_npc_handler(world, &item, &npc)?,
             Command::TurnOn(thing) => turn_on_handler(world, &thing)?,
             Command::Read(thing) => read_handler(world, &thing)?,
@@ -97,6 +100,10 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             Command::UseItemOn { verb, tool, target } => {
                 use_item_on_handler(world, verb, &tool, &target)?;
             },
+            Command::AdvanceSeq(seq_name) => dev_advance_seq_handler(world, &seq_name),
+            Command::ResetSeq(seq_name) => dev_reset_seq_handler(world, &seq_name),
+            Command::SetFlag(flag_name) => dev_set_flag_handler(world, &flag_name),
+            Command::StartSeq { seq_name, end } => dev_start_seq_handler(world, &seq_name, &end),
         }
         check_ambient_triggers(world)?;
     }

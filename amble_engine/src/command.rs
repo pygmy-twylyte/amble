@@ -3,11 +3,12 @@
 //! Describes possible commands used during gameplay.
 use variantly;
 
-use crate::{item::ItemInteractionType, style::GameStyle};
+use crate::{dev_command::parse_dev_command, item::ItemInteractionType, style::GameStyle};
 
 /// Commands that can be executed by the player.
 #[derive(Debug, variantly::Variantly)]
 pub enum Command {
+    AdvanceSeq(String), // DEV_MODE only
     Close(String),
     Drop(String),
     GiveToNpc {
@@ -29,14 +30,22 @@ pub enum Command {
     },
     Quit,
     Read(String),
+    ResetSeq(String), // DEV_MODE only
     Save(String),
+    SetFlag(String),   // DEV_MODE only
+    SpawnItem(String), // DEV_MODE only
+    StartSeq {
+        // DEV_MODE only
+        seq_name: String,
+        end: String,
+    },
     Take(String),
     TakeFrom {
         item: String,
         container: String,
     },
     TalkTo(String),
-    Teleport(String),
+    Teleport(String), // DEV_MODE only
     TurnOn(String),
     Unknown,
     UnlockItem(String),
@@ -54,9 +63,14 @@ pub enum Command {
 pub fn parse_command(input: &str) -> Command {
     // normalize user input to lowercase so commands are case-insensitive
     let lc_input = input.to_lowercase();
+
+    // check for and parse developer commands if available
+    if let Some(command) = parse_dev_command(input) {
+        return command;
+    }
+
     let words: Vec<&str> = lc_input.split_whitespace().collect();
     match words.as_slice() {
-        ["!port", room_toml_id] => Command::Teleport((*room_toml_id).to_string()),
         ["goals"] | ["what", "now" | "next"] => Command::Goals,
         ["look"] => Command::Look,
         ["give", item, "to", npc] => Command::GiveToNpc {

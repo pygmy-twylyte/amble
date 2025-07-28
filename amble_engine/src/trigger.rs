@@ -317,7 +317,7 @@ pub fn award_points(world: &mut AmbleWorld, amount: isize) {
 }
 
 /// Adds a status flag to the player
-fn add_flag(world: &mut AmbleWorld, flag: &Flag) {
+pub fn add_flag(world: &mut AmbleWorld, flag: &Flag) {
     world.player.flags.insert(flag.clone());
     info!("└─ action: AddFlag(\"{flag}\")");
 }
@@ -440,7 +440,7 @@ fn spawn_item_in_current_room(world: &mut AmbleWorld, item_id: &Uuid) -> Result<
 /// Spawn an `Item` in player's inventory
 /// # Errors
 /// - on failed item lookup
-fn spawn_item_in_inventory(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
+pub fn spawn_item_in_inventory(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     // warn and remove item from world if it's already somewhere to avoid dups
     if let Some(item) = world.items.get(item_id)
         && item.location.is_not_nowhere()
