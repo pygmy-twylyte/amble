@@ -352,6 +352,11 @@ pub enum RawTriggerAction {
     AddFlag {
         flag: Flag,
     },
+    AddSpinnerWedge {
+        spinner: SpinnerType,
+        text: String,
+        width: usize,
+    },
     AdvanceFlag {
         flag: String,
     },
@@ -387,6 +392,9 @@ pub enum RawTriggerAction {
     },
     PushPlayerTo {
         room_id: String,
+    },
+    ResetFlag {
+        flag: String,
     },
     RestrictItem {
         item_id: String,
@@ -431,6 +439,12 @@ pub enum RawTriggerAction {
 impl RawTriggerAction {
     fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
+            Self::AddSpinnerWedge { spinner, text, width } => Ok(TriggerAction::AddSpinnerWedge {
+                spinner: *spinner,
+                text: text.clone(),
+                width: *width,
+            }),
+            Self::ResetFlag { flag } => Ok(TriggerAction::ResetFlag(flag.to_string())),
             Self::AdvanceFlag { flag } => Ok(TriggerAction::AdvanceFlag(flag.to_string())),
             Self::SpinnerMessage { spinner } => Ok(TriggerAction::SpinnerMessage { spinner: *spinner }),
             Self::RestrictItem { item_id } => cook_restrict_item(symbols, item_id),

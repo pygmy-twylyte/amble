@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::{
     AmbleWorld, ItemHolder, Location, Player, WorldObject,
@@ -11,6 +11,7 @@ use crate::{
 };
 use anyhow::{Context, Result, anyhow, bail};
 
+use gametools::{Spinner, Wedge};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -118,6 +119,7 @@ impl TriggerCondition {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TriggerAction {
     AddFlag(Flag),
+    AddSpinnerWedge { spinner: SpinnerType, text: String, width: usize },
     AdvanceFlag(String),
     RemoveFlag(String),
     AwardPoints(isize),
@@ -129,6 +131,7 @@ pub enum TriggerAction {
     NpcSays { npc_id: Uuid, quote: String },
     NpcSaysRandom { npc_id: Uuid },
     PushPlayerTo(Uuid),
+    ResetFlag(String),
     RestrictItem(Uuid),
     RevealExit { exit_from: Uuid, exit_to: Uuid, direction: String },
     SetNPCState { npc_id: Uuid, state: NpcState },
@@ -194,6 +197,10 @@ pub fn check_triggers<'a>(world: &'a mut AmbleWorld, events: &[TriggerCondition]
 /// - on failed triggered actions due to bad uuids
 fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()> {
     match action {
+        TriggerAction::AddSpinnerWedge { spinner, text, width } => {
+            add_spinner_wedge(&mut world.spinners, *spinner, text, *width)?
+        },
+        TriggerAction::ResetFlag(flag_name) => reset_flag(&mut world.player, flag_name),
         TriggerAction::AdvanceFlag(flag_name) => advance_flag(&mut world.player, flag_name),
         TriggerAction::SpinnerMessage { spinner } => spinner_message(world, *spinner)?,
         TriggerAction::RestrictItem(item_id) => restrict_item(world, item_id)?,
@@ -231,8 +238,31 @@ fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()>
     Ok(())
 }
 
-/// Advance a sequence flag to the next step.
+/// Add a wedge to one of the spinners.
 ///
+/// # Errors
+/// - if spinner type is not found
+pub fn add_spinner_wedge(
+    spinners: &mut HashMap<SpinnerType, Spinner<String>>,
+    spin_type: SpinnerType,
+    text: &str,
+    width: usize,
+) -> Result<()> {
+    let wedge = Wedge::new_weighted(text.to_string(), width);
+    let spinref = spinners
+        .get_mut(&spin_type)
+        .with_context(|| format!("add_spinner_wedge(_, {spin_type:?}, _, _): spinner not found"))?;
+    *spinref = spinref.add_wedge(wedge);
+    Ok(())
+}
+
+/// Reset a sequence flag to the first step (0).
+pub fn reset_flag(player: &mut Player, flag_name: &str) {
+    info!("└─ action: ResetFlag(\"{flag_name}\")");
+    player.reset_flag(flag_name);
+}
+
+/// Advance a sequence flag to the next step.
 pub fn advance_flag(player: &mut Player, flag_name: &str) {
     info!("└─ action: AdvanceFlag(\"{flag_name}\")");
     player.advance_flag(flag_name);
