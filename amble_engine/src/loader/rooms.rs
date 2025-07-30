@@ -150,7 +150,7 @@ impl RawRoom {
             overlays.push(RoomOverlay {
                 condition,
                 text: raw_overlay.text.to_string(),
-            })
+            });
         }
 
         Ok(Room {

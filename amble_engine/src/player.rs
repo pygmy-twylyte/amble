@@ -39,12 +39,12 @@ impl Player {
 
     /// Advances a sequence flag to the next step.
     pub fn advance_flag(&mut self, name: &str) {
-        self.update_flag(name, |f| f.advance());
+        self.update_flag(name, Flag::advance);
     }
 
     /// Reset a sequence flag to the first step.
     pub fn reset_flag(&mut self, name: &str) {
-        self.update_flag(name, |f| f.reset());
+        self.update_flag(name, Flag::reset);
     }
 }
 impl Default for Player {
@@ -143,7 +143,7 @@ impl Flag {
             Flag::Simple { name } => warn!("reset() called on non-sequence flag '{name}'"),
             Flag::Sequence { name, step, .. } => {
                 *step = 0;
-                info!("sequence '{name}' reset to step '{step}'")
+                info!("sequence '{name}' reset to step '{step}'");
             },
         }
     }
@@ -183,7 +183,7 @@ impl std::fmt::Display for Flag {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Flag::Simple { name } => write!(f, "{name}"),
-            Flag::Sequence { name, step, .. } => write!(f, "{}#{}", name, step),
+            Flag::Sequence { name, step, .. } => write!(f, "{name}#{step}"),
         }
     }
 }
@@ -200,13 +200,13 @@ impl Eq for Flag {}
 
 impl Hash for Flag {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.name().hash(state)
+        self.name().hash(state);
     }
 }
 
 /// Formats a sequence-type flag into a string value
 ///
-/// Format is <name>#<step>, e.g. "hal_reboot#2"
+/// Format is <name>#<step>, e.g. "`hal_reboot#2`"
 pub fn format_sequence_value(name: &str, step: u8) -> String {
     format!("{name}#{step}")
 }

@@ -1,4 +1,4 @@
-//! loader::spinners module
+//! `loader::spinners` module
 //!
 //! This module implements the loading of spinner data from TOML.
 use std::{collections::HashMap, path::Path};
@@ -39,7 +39,7 @@ impl SpinnerFile {
                 .collect();
             if spinners.insert(spin_data.spinner_type, Spinner::new(wedges)).is_some() {
                 warn!("duplicate entry for spinner type {:?}", spin_data.spinner_type);
-            };
+            }
         }
         info!("{} spinners built from TOML data", spinners.len());
         spinners

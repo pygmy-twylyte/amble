@@ -1,6 +1,6 @@
 //! repl/dev.rs
 //!
-//! Handlers for DEV_MODE commands
+//! Handlers for `DEV_MODE` commands
 
 use log::{info, warn};
 
@@ -13,7 +13,7 @@ use crate::{
 };
 
 /// Spawn an item in inventory, removing it from elsewhere if necessary (does not duplicate).
-/// DEV_MODE only.
+/// `DEV_MODE` only.
 pub fn dev_spawn_item_handler(world: &mut AmbleWorld, symbol: &str) {
     let item_id = uuid_from_token(&NAMESPACE_ITEM, symbol);
     if world.items.contains_key(&item_id) {
@@ -74,7 +74,7 @@ pub fn dev_advance_seq_handler(world: &mut AmbleWorld, seq_name: &str) {
             "DEV_MODE AdvanceSeq used: '{}' advanced to [{}].",
             flag.name(),
             flag.value()
-        )
+        );
     }
 }
 
@@ -84,6 +84,6 @@ pub fn dev_reset_seq_handler(world: &mut AmbleWorld, seq_name: &str) {
     let target = Flag::simple(seq_name);
     if let Some(flag) = world.player.flags.get(&target) {
         println!("Sequence '{}' reset to [{}].", flag.name(), flag.value());
-        warn!("DEV_MODE ResetSeq used: '{}' reset to [{}].", flag.name(), flag.value())
+        warn!("DEV_MODE ResetSeq used: '{}' reset to [{}].", flag.name(), flag.value());
     }
 }

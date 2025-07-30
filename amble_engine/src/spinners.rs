@@ -4,7 +4,7 @@
 //! in user feedback and intermittent ambient events. The types of spinners
 //! used in the game are defined here; the actual spinner data is in the
 //! `spinners.toml` file and the spinners are built from that data in the
-//! loader::spinners module.
+//! `loader::spinners` module.
 use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]

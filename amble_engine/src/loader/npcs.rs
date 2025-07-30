@@ -46,7 +46,7 @@ impl RawNpc {
         let start_room = resolve_location(&self.location, symbols)?;
         let mut processed_dialogue = HashMap::new();
         for (state_key, lines) in &self.dialogue {
-            let state = NpcState::from_key(&state_key);
+            let state = NpcState::from_key(state_key);
             processed_dialogue.insert(state, lines.clone());
         }
 

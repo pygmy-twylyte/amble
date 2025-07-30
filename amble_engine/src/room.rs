@@ -43,12 +43,10 @@ impl RoomOverlay {
         match &self.condition {
             OverlayCondition::FlagSet { flag } => flag_is_set(flag),
             OverlayCondition::FlagUnset { flag } => !flag_is_set(flag),
-            OverlayCondition::ItemPresent { item_id } => world.items.get(item_id).map_or(
-                false,
+            OverlayCondition::ItemPresent { item_id } => world.items.get(item_id).is_some_and(
                 |item| matches!(item.location, Location::Room(id) if id == room_id),
             ),
-            OverlayCondition::ItemAbsent { item_id } => world.items.get(item_id).map_or(
-                true,
+            OverlayCondition::ItemAbsent { item_id } => world.items.get(item_id).is_none_or(
                 |item| !matches!(item.location, Location::Room(id) if id == room_id),
             ),
             OverlayCondition::PlayerHasItem { item_id } => world.player.contains_item(*item_id),

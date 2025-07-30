@@ -1,7 +1,7 @@
 //! Trigger module --
 //!
 //! Upon each run through the REPL loop, world Triggers are checked.
-//! If all of a Trigger's TriggerConditions are met, a series of TriggerActions are fired.
+//! If all of a Trigger's `TriggerConditions` are met, a series of `TriggerActions` are fired.
 
 pub mod action;
 pub mod condition;

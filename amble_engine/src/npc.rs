@@ -51,7 +51,7 @@ impl NpcState {
             "tired" => NpcState::Tired,
             other if other.starts_with("custom:") => NpcState::Custom(other.trim_start_matches("custom:").to_string()),
             _ => {
-                warn!("Unknown NpcState key in dialogue map: {}", key);
+                warn!("Unknown NpcState key in dialogue map: {key}");
                 NpcState::Normal
             },
         }
@@ -65,7 +65,7 @@ impl NpcState {
             NpcState::Happy => "happy".into(),
             NpcState::Mad => "mad".into(),
             NpcState::Tired => "tired".into(),
-            NpcState::Custom(s) => format!("custom:{}", s),
+            NpcState::Custom(s) => format!("custom:{s}"),
         }
     }
 }

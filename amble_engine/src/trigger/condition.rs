@@ -1,7 +1,7 @@
-//! condition.rs -- TriggerCondition Module
+//! condition.rs -- `TriggerCondition` Module
 //!
 //! Implements various player actions and game state that can be detected
-//! by a Trigger, resulting in some TriggerActions firing.
+//! by a Trigger, resulting in some `TriggerActions` firing.
 
 use std::collections::HashSet;
 

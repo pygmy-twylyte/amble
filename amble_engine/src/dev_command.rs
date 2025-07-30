@@ -1,4 +1,4 @@
-//! dev_command.rs
+//! `dev_command.rs`
 //!
 //! Implements commands only to be used in developer mode.
 
@@ -6,7 +6,7 @@ use log::warn;
 
 use crate::{DEV_MODE, command::Command, style::GameStyle};
 
-/// Parse developer-only commands if 'DEV_MODE' is true.
+/// Parse developer-only commands if '`DEV_MODE`' is true.
 pub fn parse_dev_command(input: &str) -> Option<Command> {
     if input.starts_with(':') {
         let words: Vec<&str> = input.trim_start_matches(':').split_whitespace().collect();

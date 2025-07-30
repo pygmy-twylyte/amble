@@ -51,7 +51,7 @@ pub enum TriggerAction {
 pub fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()> {
     match action {
         TriggerAction::AddSpinnerWedge { spinner, text, width } => {
-            add_spinner_wedge(&mut world.spinners, *spinner, text, *width)?
+            add_spinner_wedge(&mut world.spinners, *spinner, text, *width)?;
         },
         TriggerAction::ResetFlag(flag_name) => reset_flag(&mut world.player, flag_name),
         TriggerAction::AdvanceFlag(flag_name) => advance_flag(&mut world.player, flag_name),
@@ -74,7 +74,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result
         TriggerAction::SetNPCState { npc_id, state } => set_npc_state(world, npc_id, state)?,
         TriggerAction::ShowMessage(text) => show_message(text),
         TriggerAction::SpawnItemInContainer { item_id, container_id } => {
-            spawn_item_in_container(world, item_id, container_id)?
+            spawn_item_in_container(world, item_id, container_id)?;
         },
         TriggerAction::SpawnItemInInventory(item_id) => spawn_item_in_inventory(world, item_id)?,
         TriggerAction::SpawnItemCurrentRoom(item_id) => spawn_item_in_current_room(world, item_id)?,
