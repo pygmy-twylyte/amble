@@ -355,7 +355,7 @@ pub fn add_flag(world: &mut AmbleWorld, flag: &Flag) {
 /// lock an exit specified by room and direction
 /// # Errors
 /// - on invalid room or exit direction
-fn lock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Result<()> {
+pub fn lock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Result<()> {
     if let Some(exit) = world
         .rooms
         .get_mut(from_room)
@@ -372,7 +372,7 @@ fn lock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Re
 /// unlock an exit specified by room and direction
 /// # Errors
 /// - on invalid room or exit direction
-fn unlock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Result<()> {
+pub fn unlock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Result<()> {
     if let Some(exit) = world.rooms.get_mut(from_room).and_then(|r| r.exits.get_mut(direction)) {
         exit.locked = false;
         info!("└─ action: UnlockExit({direction}, from {from_room})");
@@ -385,7 +385,7 @@ fn unlock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> 
 /// Unlock an item
 /// # Errors
 /// - on invalid item uuid
-fn unlock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
+pub fn unlock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     if let Some(item) = world.items.get_mut(item_id) {
         match item.container_state {
             Some(ContainerState::Locked) => {
@@ -404,7 +404,7 @@ fn unlock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
 /// Spawn an `Item` in a specific `Room`
 /// # Errors
 /// - on failed item or room lookup
-fn spawn_item_in_specific_room(world: &mut AmbleWorld, item_id: &Uuid, room_id: &Uuid) -> Result<()> {
+pub fn spawn_item_in_specific_room(world: &mut AmbleWorld, item_id: &Uuid, room_id: &Uuid) -> Result<()> {
     // warn and remove item from world if it's already somewhere to avoid dups
     if let Some(item) = world.items.get(item_id)
         && item.location.is_not_nowhere()
@@ -434,7 +434,7 @@ fn spawn_item_in_specific_room(world: &mut AmbleWorld, item_id: &Uuid, room_id: 
 /// Spawn an `Item` in the `Room` the player currently occupies
 /// # Errors
 /// - on failed item or room lookup
-fn spawn_item_in_current_room(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
+pub fn spawn_item_in_current_room(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     // warn and remove item from world if it's already somewhere to avoid dups
     if let Some(item) = world.items.get(item_id)
         && item.location.is_not_nowhere()
@@ -495,7 +495,7 @@ pub fn spawn_item_in_inventory(world: &mut AmbleWorld, item_id: &Uuid) -> Result
 /// Spawn an `Item` within a container `Item`
 /// # Errors
 /// - on failed item or container lookup
-fn spawn_item_in_container(world: &mut AmbleWorld, item_id: &Uuid, container_id: &Uuid) -> Result<()> {
+pub fn spawn_item_in_container(world: &mut AmbleWorld, item_id: &Uuid, container_id: &Uuid) -> Result<()> {
     // if item is already in-world, warn and remove it to avoid duplications / inconsistent state
     if let Some(item) = world.items.get(item_id)
         && item.location.is_not_nowhere()
@@ -523,7 +523,7 @@ fn spawn_item_in_container(world: &mut AmbleWorld, item_id: &Uuid, container_id:
 }
 
 /// Show a message to the player.
-fn show_message(text: &String) {
+pub fn show_message(text: &String) {
     println!("{} {}", "✦".trig_icon_style(), text.triggered_style());
     info!(
         "└─ action: ShowMessage(\"{}...\")",
@@ -531,10 +531,10 @@ fn show_message(text: &String) {
     );
 }
 
-/// Set the mood of a specified `Npc`
+/// Set the state of a specified `Npc`
 /// # Errors
 /// - on failed npc lookup
-fn set_npc_state(world: &mut AmbleWorld, npc_id: &Uuid, state: &NpcState) -> Result<()> {
+pub fn set_npc_state(world: &mut AmbleWorld, npc_id: &Uuid, state: &NpcState) -> Result<()> {
     if let Some(npc) = world.npcs.get_mut(npc_id) {
         npc.state = state.clone();
         info!("└─ action: SetNpcState({npc_id}, {state:?})");
@@ -547,7 +547,7 @@ fn set_npc_state(world: &mut AmbleWorld, npc_id: &Uuid, state: &NpcState) -> Res
 /// Reveal or create a new exit from a `Room`
 /// # Errors
 /// - on invalid `exit_from` room uuid
-fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &Uuid, exit_to: &Uuid) -> Result<()> {
+pub fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &Uuid, exit_to: &Uuid) -> Result<()> {
     let exit = world
         .rooms
         .get_mut(exit_from)
@@ -563,7 +563,7 @@ fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &Uuid, exi
 /// Move player to another `Room`
 /// # Errors
 /// - on failed room lookup
-fn push_player(world: &mut AmbleWorld, room_id: &Uuid) -> Result<()> {
+pub fn push_player(world: &mut AmbleWorld, room_id: &Uuid) -> Result<()> {
     if world.rooms.contains_key(room_id) {
         world.player.location = Location::Room(*room_id);
         info!("└─ action: PushPlayerTo({room_id})");
@@ -577,7 +577,7 @@ fn push_player(world: &mut AmbleWorld, room_id: &Uuid) -> Result<()> {
 /// # Errors
 /// - if attempt to lock an item that isn't a container
 /// - if specified container is not found
-fn lock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
+pub fn lock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     if let Some(item) = world.items.get_mut(item_id) {
         if item.container_state.is_some() {
             item.container_state = Some(ContainerState::Locked);
@@ -594,7 +594,7 @@ fn lock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
 /// Move an `Item` from an `Npc` to the player's inventory.
 /// # Errors
 /// - on failed item or npc lookup
-fn give_to_player(world: &mut AmbleWorld, npc_id: &Uuid, item_id: &Uuid) -> Result<()> {
+pub fn give_to_player(world: &mut AmbleWorld, npc_id: &Uuid, item_id: &Uuid) -> Result<()> {
     let npc = world
         .npcs
         .get_mut(npc_id)
@@ -618,7 +618,7 @@ fn give_to_player(world: &mut AmbleWorld, npc_id: &Uuid, item_id: &Uuid) -> Resu
 /// Sets item location to "Nowhere" and removes it from wherever it was
 /// # Errors
 /// - on failed item lookup
-fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
+pub fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     let item = world
         .items
         .get_mut(item_id)
@@ -650,7 +650,7 @@ fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
 }
 
 /// Notify player of the reason a Read(item) command was denied
-fn deny_read(reason: &String) {
+pub fn deny_read(reason: &String) {
     println!("{}", reason.denied_style());
     info!("└─ action: DenyRead(\"{reason}\")");
 }
