@@ -1,8 +1,6 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
-- dev commands to teleport (DONE), get items / achievs
-- TriggerAction to reset sequence flaq
 - TriggerAction to add spinner wedges
 - TriggerCondition / OverlayCondition / Flag method to detect is sequence complete
 - update giveToNpc to give more specific reasons for refusals.
