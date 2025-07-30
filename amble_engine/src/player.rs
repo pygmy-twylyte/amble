@@ -5,6 +5,7 @@ use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use uuid::Uuid;
+use variantly::Variantly;
 
 /// The player-controlled character.
 ///
@@ -92,7 +93,7 @@ impl ItemHolder for Player {
 }
 
 /// Flags that can be applied to the player
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Variantly)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum Flag {
     Simple {
@@ -108,6 +109,8 @@ pub enum Flag {
 }
 impl Flag {
     /// Return string value of the flag.
+    /// For 'Simple' this is "<name>".
+    /// For "Sequence" this is "<name>#<step>".
     pub fn value(&self) -> String {
         match self {
             Self::Simple { name } => name.to_string(),
@@ -145,6 +148,15 @@ impl Flag {
         }
     }
 
+    /// Returns true if a sequence is complete, or if called on a simple flag.
+    pub fn is_complete(&self) -> bool {
+        match self {
+            Self::Simple { .. } => true,
+            Self::Sequence { end, .. } if end.is_none() => false,
+            Self::Sequence { step, end, .. } => *step == end.expect("end must be Some(u8) if we reach this arm"),
+        }
+    }
+
     /// Create a new simple flag
     pub fn simple(name: &str) -> Flag {
         Flag::Simple { name: name.to_string() }
@@ -178,6 +190,7 @@ impl std::fmt::Display for Flag {
 use std::hash::{Hash, Hasher};
 
 impl PartialEq for Flag {
+    /// Defines equality of two flags as based on name only (not step).
     fn eq(&self, other: &Self) -> bool {
         self.name() == other.name()
     }
