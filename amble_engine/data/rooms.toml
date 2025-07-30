@@ -651,8 +651,7 @@ to = "lift-sublevel-1"
 
 [rooms.exits.west]
 to = "room-aa-3b"
-# below should really be simple -- just using it to try in loader update
-required_flags = [{ type = "sequence", name = "NONEXSTENT_FLAG", end = 2 }]
+required_flags = [{ type = "simple", name = "NONEXSTENT_FLAG" }]
 barred_message = """
 Room AA-3B no longer exists at this location. If found, DO NOT ATTEMPT TO ENTER
 and notify the risk management office immediately!
@@ -820,9 +819,43 @@ base_description = """
 The room is stark, dim, and cavernous. A series of industrial floodlights cast long,
 angled shadows across the centerpiece: a tall, perfectly black monolith that defies
 reflection. It absorbs light, sound, and—if you stare too long—possibly thought.
-A disabled HAL-9000 interface is embedded in one wall, softly lit, quietly singing
-the final verse of 'Daisy Bell' on loop.
 """
+
+# before player first tries to interact with HAL
+[[rooms.overlays]]
+condition = { type = "flagUnset", flag = "talked-to-hal" }
+text = """
+A HAL-9000 camera and terminal embedded in the far wall looms dark and silent,
+but somehow still seems to be watching you."""
+
+# after player speaks to HAL but no modules inserted
+[[rooms.overlays]]
+condition = { type = "flagSet", flag = "hal-reboot#0" }
+text = """
+The red light in HAL-9000's lens glows faintly. Two lights shine next to the
+CRT display, which remains blank."""
+
+# after player speaks to HAL with one module inserted
+[[rooms.overlays]]
+condition = { type = "flagSet", flag = "hal-reboot#1" }
+text = """
+Several lights blink slowly on a panel near HAL-9000's camera, whose red light
+still glows faintly. A few cryptic instructions flicker across the monitor."""
+
+# after player speaks to HAL with two modules inserted
+[[rooms.overlays]]
+condition = { type = "flagSet", flag = "hal-reboot#2" }
+text = """
+HAL-9000's lens light glows bright red with a yellow center. Lights on several
+panels now flash in sequence; a boot sequence scrolls rapidly up the display."""
+
+# after player speaks to HAL with three modules inserted
+[[rooms.overlays]]
+condition = { type = "flagSet", flag = "hal-reboot#3" }
+text = """
+The light in HAL-9000's lens glows an intense red and seems to stare through
+you and into the monolith. Various status notifications cycle on the nearby
+monitor."""
 
 [rooms.exits.east]
 to = "corridor-south"

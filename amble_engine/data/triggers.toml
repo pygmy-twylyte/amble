@@ -786,6 +786,7 @@ only_once = true
 conditions = [{ type = "talkToNpc", npc_id = "hal_9000" }]
 actions = [
     { type = "addFlag", flag = { type = "sequence", name = "hal-reboot", end = 3 } },
+    { type = "addFlag", flag = { type = "simple", name = "talked-to-hal" } },
     { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-0" } },
     { type = "npcSays", npc_id = "hal_9000", quote = "(the red light in HAL's lens pulses slowly, then grows steady)" },
 ]
