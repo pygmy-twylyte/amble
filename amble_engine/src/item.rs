@@ -214,4 +214,19 @@ impl Item {
             },
         }
     }
+
+    /// Returns the reason an item can't be taken into inventory, if any
+    pub fn take_denied_reason(&self) -> Option<String> {
+        match (self.portable, self.restricted) {
+            (false, _) => Some(format!(
+                "The {} isn't portable, you can't transfer it anywhere.",
+                self.name().item_style()
+            )),
+            (_, false) => Some(format!(
+                "You can't take the {}, but it may become available later.",
+                self.name().item_style()
+            )),
+            _ => None,
+        }
+    }
 }

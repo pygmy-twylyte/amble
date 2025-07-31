@@ -7,7 +7,7 @@ use std::collections::HashSet;
 use crate::{
     AmbleWorld, ItemHolder, Location, WorldObject,
     item::ItemInteractionType,
-    repl::{entity_not_found, find_world_object},
+    repl::{WorldEntity, entity_not_found, find_world_object},
     spinners::SpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers},
@@ -50,8 +50,10 @@ pub fn drop_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
             }
             Ok(())
         } else {
-            // entity is not an item
-            println!("{}? That's not a thing that one can drop.", thing.error_style());
+            unexpected_entity(
+                entity,
+                &format!("{}? That's not a item that one can drop.", thing.error_style()),
+            );
             Ok(())
         }
     } else {
@@ -67,11 +69,12 @@ pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
 
     if let Some(entity) = find_world_object(&scope, &world.items, &world.npcs, thing) {
         if entity.is_not_item() {
-            // entity found isn't an Item
-            warn!("Player tried to take a non-Item from a room: {entity:?}");
-            println!(
-                "That's not an item. You can't {} it.",
-                world.spin_spinner(SpinnerType::TakeVerb, "take")
+            unexpected_entity(
+                entity,
+                &format!(
+                    "That's not an item. You can't {} it.",
+                    world.spin_spinner(SpinnerType::TakeVerb, "take")
+                ),
             );
         }
         if let Some(item) = entity.item() {
@@ -163,22 +166,18 @@ pub fn take_from_handler(world: &mut AmbleWorld, item_pattern: &str, vessel_patt
     let (vessel_id, vessel_name, vessel_type) =
         if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, vessel_pattern) {
             if let Some(vessel) = entity.item() {
-                if vessel.is_accessible() {
-                    // it's a container and it's open
-                    (vessel.id(), vessel.name().to_string(), VesselType::Item)
-                } else {
-                    // tell player why vessel can't be accessed
-                    if let Some(reason) = vessel.access_denied_reason() {
-                        println!("{reason} You can't take anything from it.");
-                    }
+                if let Some(reason) = vessel.access_denied_reason() {
+                    println!("{reason} You can't take anything from it.");
                     return Ok(());
+                } else {
+                    (vessel.id(), vessel.name().to_string(), VesselType::Item)
                 }
             } else if let Some(npc) = entity.npc() {
                 (npc.id(), npc.name().to_string(), VesselType::Npc)
             } else {
-                println!(
-                    "{} isn't an nearby item or NPC. You can't take anything from it.",
-                    vessel_pattern.error_style()
+                unexpected_entity(
+                    entity,
+                    &format!("\"{vessel_pattern}\" isn't a nearby item or NPC that you can take from."),
                 );
                 return Ok(());
             }
@@ -212,20 +211,16 @@ fn validate_and_transfer_from_npc(
     let (loot_id, loot_name) =
         if let Some(entity) = find_world_object(&container.inventory, &world.items, &world.npcs, item_pattern) {
             if let Some(loot) = entity.item() {
-                if loot.restricted {
-                    println!(
-                        "Sorry, you can't take {} from {}.\n(But it may be given to you under the right conditions.)",
-                        loot.name().item_style(),
-                        vessel_name.npc_style()
-                    );
+                if let Some(reason) = loot.take_denied_reason() {
+                    println!("{reason}");
                     return Ok(());
+                } else {
+                    (loot.id(), loot.name().to_string())
                 }
-                (loot.id(), loot.name().to_string())
             } else {
-                warn!("Non-item WorldEntity found inside NPC '{vessel_name}' ({vessel_id})",);
-                println!(
-                    "{} shouldn't have that. You can't have it either.",
-                    vessel_name.npc_style()
+                unexpected_entity(
+                    entity,
+                    &format!("\"{item_pattern}\" matches an NPC. That would be kidnapping."),
                 );
                 return Ok(());
             }
@@ -264,17 +259,17 @@ fn validate_and_transfer_from_item(
     let (loot_id, loot_name) =
         if let Some(entity) = find_world_object(&container.contents, &world.items, &world.npcs, item_pattern) {
             if let Some(loot) = entity.item() {
-                if loot.portable && !loot.restricted {
-                    (loot.id(), loot.name().to_string())
-                } else {
-                    println!("Sorry, the {} can't be removed.", loot.name().item_style());
-                    return Ok(());
+                match loot.take_denied_reason() {
+                    Some(reason) => {
+                        println!("{reason}");
+                        return Ok(());
+                    },
+                    None => (loot.id(), loot.name().to_string()),
                 }
             } else {
-                warn!("NPC WorldEntity found inside container '{vessel_name}' ({vessel_id})");
-                println!(
-                    "That shouldn't be in the {} and can't be taken. Just ignore it.",
-                    vessel_name.item_style()
+                unexpected_entity(
+                    entity,
+                    &format!("\"{item_pattern}\" matches an NPC. That would be kidnapping."),
                 );
                 return Ok(());
             }
@@ -341,19 +336,14 @@ pub fn put_in_handler(world: &mut AmbleWorld, item: &str, container: &str) -> Re
     let (item_id, item_name) =
         if let Some(entity) = find_world_object(&world.player.inventory, &world.items, &world.npcs, item) {
             if let Some(item) = entity.item() {
-                if item.portable {
-                    (item.id(), item.name().to_string())
-                } else {
-                    println!("You can't take the {}; it isn't portable.", item.name().item_style());
-                    info!(
-                        "The Candidate tried to take fixed item '{}' ({})",
-                        item.name(),
-                        item.id()
-                    );
+                if let Some(reason) = item.take_denied_reason() {
+                    println!("{reason}");
                     return Ok(());
+                } else {
+                    (item.id(), item.name().to_string())
                 }
             } else {
-                println!("Nothing in inventory matches {}.", item.error_style());
+                unexpected_entity(entity, &format!("No item in inventory matches \"{item}\"."));
                 return Ok(());
             }
         } else {
@@ -371,12 +361,10 @@ pub fn put_in_handler(world: &mut AmbleWorld, item: &str, container: &str) -> Re
                 }
                 (vessel.id(), vessel.name().to_string())
             } else {
-                error!(
-                    "a non-item (= NPC) WorldEntity was found in contents of room '{}' ({})",
-                    room.name(),
-                    room.id()
+                unexpected_entity(
+                    entity,
+                    &format!("You don't see a container matching \"{container}\" here."),
                 );
-                println!("You don't see a container by the name {}", container.error_style());
                 return Ok(());
             }
         } else {
@@ -418,4 +406,15 @@ pub fn put_in_handler(world: &mut AmbleWorld, item: &str, container: &str) -> Re
         ],
     )?;
     Ok(())
+}
+
+/// Handle situation where an NPC uuid is found where only items should be.
+/// (Typically when find_world_object matches an NPC when an item is expected.)
+pub fn unexpected_entity(entity: WorldEntity, denial_msg: &str) {
+    let (entity_name, entity_id, entity_loc) = match entity {
+        WorldEntity::Item(item) => (item.name(), item.id(), item.location()),
+        WorldEntity::Npc(npc) => (npc.name(), npc.id(), npc.location()),
+    };
+    println!("{}", denial_msg.denied_style());
+    error!("entity '{entity_name}' ({entity_id}) found in unexpected location {entity_loc:?}")
 }
