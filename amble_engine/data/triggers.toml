@@ -627,6 +627,15 @@ building.""" },
 ]
 
 [[triggers]]
+name = "Black Knight: First Meeting"
+only_once = true
+conditions = [{ type = "talkToNpc", npc_id = "black_knight" }]
+actions = [
+    { type = "addFlag", flag = { type = "simple", name = "talked-to-knight" } },
+    { type = "npcSays", npc_id = "black_knight", quote = "You shall not pass. This wing is closed... and may not exist at all." },
+]
+
+[[triggers]]
 name = "Black Knight: Taking Sword Angers Knight"
 only_once = false
 conditions = [

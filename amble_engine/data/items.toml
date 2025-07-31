@@ -346,11 +346,11 @@ name = "Scrawled Note"
 portable = false
 location = { Room = "high-ridge" }
 description = """
-A note scrawled in red permanent marker, nailed to a post at the bottow of
+A note scrawled in red permanent marker, nailed to a post at the bottom of
 the stone steps."""
 text = """
 CANDIDATES: PROCEED TO OFFICE TO OBTAIN VISITOR PASS
-           MUST SHOW VALID INVITATION
+           * MUST SHOW VALID INVITATION *
 """
 [[items.abilities]]
 type = "Read"

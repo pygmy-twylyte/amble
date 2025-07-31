@@ -46,6 +46,22 @@ activate_when = { type = "goalComplete", goal_id = "get_elevator_keycard" }
 finished_when = { type = "reachedRoom", room_sym = "sublevel-1-entrance" }
 
 [[goals]]
+id = "get-past-knight"
+name = "Get Past the Black Knight"
+description = "Find a way past the Black Knight to the rest of the sublevel."
+group = { type = "required" }
+activate_when = { type = "hasFlag", flag = "talked-to-knight" }
+finished_when = { type = "hasFlag", flag = "appeased-black-knight" }
+
+[[goals]]
+id = "reboot-hal"
+name = "Reactivate HAL-9000"
+description = "Reactivate HAL-9000 by reinstalling his 3 missing memory modules."
+group = { type = "status-effect" }
+activate_when = { type = "reachedRoom", room_sym = "monolith-room" }
+finished_when = { type = "flagComplete", flag = "hal-reboot" }
+
+[[goals]]
 id = "read-plaque-1"
 name = "Read the Plaque"
 description = "Find a way to clean the plaque at High Ridge so you can read it."

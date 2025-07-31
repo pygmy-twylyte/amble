@@ -61,6 +61,7 @@ pub enum RawGoalCondition {
     MissingFlag { flag: String },
     ReachedRoom { room_sym: String },
     GoalComplete { goal_id: String }, // for activating a goal after another is done
+    FlagComplete { flag: String },    // for determining whether a sequence is at end
 }
 
 impl RawGoalCondition {
@@ -69,6 +70,7 @@ impl RawGoalCondition {
     /// - on failed symbol lookup
     pub fn to_goal_condition(&self, symbols: &SymbolTable) -> Result<GoalCondition> {
         match self {
+            Self::FlagComplete { flag } => Ok(GoalCondition::FlagComplete { flag: flag.to_string() }),
             Self::GoalComplete { goal_id } => Ok(GoalCondition::GoalComplete {
                 goal_id: goal_id.to_string(),
             }),

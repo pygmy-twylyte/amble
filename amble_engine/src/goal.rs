@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use variantly::Variantly;
 
-use crate::{AmbleWorld, ItemHolder};
+use crate::{AmbleWorld, ItemHolder, player::Flag};
 
 /// Groups that goals can be assigned to.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -20,33 +20,38 @@ pub enum GoalGroup {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum GoalCondition {
+    FlagComplete { flag: String },    // for checking if sequence-type flags are at end
+    GoalComplete { goal_id: String }, // for activating a goal after another is done
     HasItem { item_id: Uuid },
     HasFlag { flag: String },
     MissingFlag { flag: String },
     ReachedRoom { room_id: Uuid },
-    GoalComplete { goal_id: String }, // for activating a goal after another is done
 }
 impl GoalCondition {
     /// Returns true if the condition has been satisfied.
     pub fn satisfied(&self, world: &AmbleWorld) -> bool {
         let flag_is_set = |flag_str: &str| world.player.flags.iter().any(|f| f.value() == *flag_str);
         match self {
-            GoalCondition::HasItem { item_id } => world.player.contains_item(*item_id),
-            GoalCondition::HasFlag { flag } => flag_is_set(flag),
-            GoalCondition::MissingFlag { flag } => !flag_is_set(flag),
-            GoalCondition::ReachedRoom { room_id } => {
+            Self::HasItem { item_id } => world.player.contains_item(*item_id),
+            Self::HasFlag { flag } => flag_is_set(flag),
+            Self::MissingFlag { flag } => !flag_is_set(flag),
+            Self::ReachedRoom { room_id } => {
                 if let Some(room) = world.rooms.get(room_id) {
                     room.visited
                 } else {
                     false
                 }
             },
-            GoalCondition::GoalComplete { goal_id } => {
+            Self::GoalComplete { goal_id } => {
                 if let Some(goal) = world.goals.iter().find(|g| g.id == *goal_id) {
                     goal.status(world) == GoalStatus::Complete
                 } else {
                     false
                 }
+            },
+            Self::FlagComplete { flag } => {
+                let target = Flag::simple(flag);
+                world.player.flags.get(&target).is_some_and(Flag::is_complete)
             },
         }
     }
