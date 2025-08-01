@@ -12,6 +12,7 @@ use crate::{
     AmbleWorld, ItemHolder, Location,
     item::{ItemAbility, ItemInteractionType},
     npc::NpcState,
+    player::Flag,
     spinners::SpinnerType,
 };
 
@@ -34,6 +35,7 @@ pub enum TriggerCondition {
     },
     HasItem(Uuid),
     HasFlag(String),
+    FlagComplete(String),
     HasVisited(Uuid),
     InRoom(Uuid),
     Insert {
@@ -79,15 +81,17 @@ impl TriggerCondition {
     pub fn is_ongoing(&self, world: &AmbleWorld) -> bool {
         let player_flag_set = |flag_str: &str| world.player.flags.iter().any(|f| f.value() == *flag_str);
         match self {
-            Self::ContainerHasItem { container_id, item_id } => {
-                if let Some(item) = world.items.get(item_id) {
-                    item.location == Location::Item(*container_id)
-                } else {
-                    false
-                }
-            },
+            Self::ContainerHasItem { container_id, item_id } => world
+                .items
+                .get(item_id)
+                .is_some_and(|item| item.location == Location::Item(*container_id)),
             Self::HasFlag(flag) => player_flag_set(flag),
             Self::MissingFlag(flag) => !player_flag_set(flag),
+            Self::FlagComplete(flag) => world
+                .player
+                .flags
+                .get(&Flag::Simple { name: flag.into() })
+                .is_some_and(Flag::is_complete),
             Self::HasVisited(room_id) => world.rooms.get(room_id).is_some_and(|r| r.visited),
             Self::InRoom(room_id) => *room_id == world.player.location.unwrap_room(),
             Self::NpcHasItem { npc_id, item_id } => {
