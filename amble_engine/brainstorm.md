@@ -1,7 +1,8 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
-- TriggerAction to add spinner wedges
+- tests (meh)
+- make sure pre-registered NPCs are verified (like items) during loading
 - TriggerCondition / OverlayCondition / Flag method to detect is sequence complete
 - update giveToNpc to give more specific reasons for refusals.
 - trigger action to change the .read field on an item to update displays etc
