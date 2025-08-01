@@ -856,7 +856,7 @@ actions = [
 [[triggers]]
 name = "HAL: Update State (3 Modules)"
 only_once = true
-conditions = [{ type = "hasFlag", flag = "hal-reboot#3" }]
+conditions = [{ type = "flagComplete", flag = "hal-reboot" }]
 actions = [
     { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-3" } },
     { type = "showMessage", text = "All memory now restored, HAL-9000 finishes rebooting." },
