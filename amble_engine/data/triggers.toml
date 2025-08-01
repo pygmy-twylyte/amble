@@ -787,6 +787,21 @@ actions = [
     { type = "showMessage", text = "The EMH gives you a shot in the arm, and your lingering nausea subsides." },
 ]
 
+# ------- EMH / HAL Module #1 Triggers
+# first time player encounters EMH after hal-reboot is in progress
+[[triggers]]
+name = "EMH: Player Met HAL"
+only_once = true
+conditions = [
+    { type = "withNpc", npc_id = "emh" },
+    { type = "flagInProgress", flag = "hal-reboot" },
+]
+actions = [
+    { type = "npcSays", npc_id = "emh", quote = """
+Word is, you've seen HAL. If you want to get him working again -- and I'm not
+sure I'd advise it -- I may be able to get one of those memory modules for you.""" },
+]
+
 # ------- BEGIN HAL REBOOT SEQUENCE --------
 # first attempt to talk to HAL starts the sequence
 [[triggers]]

@@ -35,6 +35,7 @@ pub enum TriggerCondition {
     },
     HasItem(Uuid),
     HasFlag(String),
+    FlagInProgress(String),
     FlagComplete(String),
     HasVisited(Uuid),
     InRoom(Uuid),
@@ -87,6 +88,11 @@ impl TriggerCondition {
                 .is_some_and(|item| item.location == Location::Item(*container_id)),
             Self::HasFlag(flag) => player_flag_set(flag),
             Self::MissingFlag(flag) => !player_flag_set(flag),
+            Self::FlagInProgress(flag) => world
+                .player
+                .flags
+                .get(&Flag::Simple { name: flag.into() })
+                .is_some_and(|f| !f.is_complete()),
             Self::FlagComplete(flag) => world
                 .player
                 .flags
