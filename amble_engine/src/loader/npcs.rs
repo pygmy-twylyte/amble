@@ -6,7 +6,7 @@ use std::{
     path::Path,
 };
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, anyhow, bail};
 use log::info;
 use serde::Deserialize;
 use uuid::Uuid;
@@ -80,15 +80,33 @@ pub fn load_raw_npcs(toml_path: &Path) -> Result<Vec<RawNpc>> {
 
 /// Builds full NPCs from a vector of `RawNpcs`
 /// # Errors
+/// - if a pre-registered NPC (during room loading) isn't found in the NPC data file.
 /// - on failure to convert any `RawNpc` to `Npc`.
 pub fn build_npcs(raw_npcs: &[RawNpc], symbols: &mut SymbolTable) -> Result<Vec<Npc>> {
-    // add npcs to character symbol table - follows pattern of others, but necessary?
+    // save any pre-registered NPCs and clear them from the symbol table
+    let early_inserts = symbols.characters.clone();
+    symbols.characters.clear();
+    info!(
+        "found {} NPC(s) that were pre-registered while loading rooms",
+        early_inserts.len()
+    );
+
+    // add npcs from npcs.toml to character symbol table
     for rnpc in raw_npcs {
         symbols.characters.insert(
             rnpc.id.to_string(),
             idgen::uuid_from_token(&NAMESPACE_CHARACTER, &rnpc.id),
         );
     }
+
+    // make sure each pre-registered NPC exists in loaded data and UUID is correct
+    for (npc_symbol, npc_id) in &early_inserts {
+        if !symbols.characters.get(npc_symbol).is_some_and(|id| id == npc_id) {
+            bail!("error while loading pre-registered NPC '{npc_symbol}': symbol not found or uuid mismatch");
+        }
+    }
+    info!("existence of {} pre-registered NPC(s) verified", early_inserts.len());
+
     // build them
     let npcs: Vec<Npc> = raw_npcs
         .iter()
