@@ -53,6 +53,7 @@ pub struct RawRoomOverlay {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum RawOverlayCondition {
+    FlagComplete { flag: String },
     FlagSet { flag: String },
     FlagUnset { flag: String },
     ItemPresent { item_id: String },
@@ -118,35 +119,10 @@ impl RawRoom {
         // create overlay vector from raw ones; like with exits, we must
         // reference items and NPCs that aren't loaded yet so we add them to the symbol
         // table here, and they're verified to exist later when items are loaded (
-        // Room UUIDs should already be in symbol table when this is called, though)
+        // Room UUIDs should already be in symbol table when this is called, though.)
         let mut overlays = Vec::new();
         for raw_overlay in &self.overlays {
-            let condition = match &raw_overlay.condition {
-                RawOverlayCondition::FlagSet { flag } => OverlayCondition::FlagSet { flag: flag.to_string() },
-                RawOverlayCondition::FlagUnset { flag } => OverlayCondition::FlagUnset { flag: flag.to_string() },
-                RawOverlayCondition::ItemPresent { item_id } => OverlayCondition::ItemPresent {
-                    item_id: register_item(symbols, item_id),
-                },
-                RawOverlayCondition::ItemAbsent { item_id } => OverlayCondition::ItemAbsent {
-                    item_id: register_item(symbols, item_id),
-                },
-                RawOverlayCondition::PlayerHasItem { item_id } => OverlayCondition::PlayerHasItem {
-                    item_id: register_item(symbols, item_id),
-                },
-                RawOverlayCondition::PlayerMissingItem { item_id } => OverlayCondition::PlayerMissingItem {
-                    item_id: register_item(symbols, item_id),
-                },
-                RawOverlayCondition::NpcInState { npc_id, state: mood } => OverlayCondition::NpcInMood {
-                    npc_id: register_npc(symbols, npc_id),
-                    mood: mood.clone(),
-                },
-                RawOverlayCondition::ItemInRoom { item_id, room_id } => OverlayCondition::ItemInRoom {
-                    item_id: register_item(symbols, item_id),
-                    room_id: *symbols.rooms.get(room_id).ok_or_else(|| {
-                        anyhow!("OverlayCondition::ItemInRoom(_,{room_id}) - room not in symbol table")
-                    })?,
-                },
-            };
+            let condition = convert_overlay_condition(&raw_overlay.condition, symbols)?;
             overlays.push(RoomOverlay {
                 condition,
                 text: raw_overlay.text.to_string(),
@@ -169,6 +145,42 @@ impl RawRoom {
             npcs: self.npcs.clone(),
         })
     }
+}
+
+/// Convert a RawOverlayCondition to an OverlayCondition
+pub fn convert_overlay_condition(
+    raw_condition: &RawOverlayCondition,
+    symbols: &mut SymbolTable,
+) -> Result<OverlayCondition> {
+    let condition = match raw_condition {
+        RawOverlayCondition::FlagComplete { flag } => OverlayCondition::FlagComplete { flag: flag.to_string() },
+        RawOverlayCondition::FlagSet { flag } => OverlayCondition::FlagSet { flag: flag.to_string() },
+        RawOverlayCondition::FlagUnset { flag } => OverlayCondition::FlagUnset { flag: flag.to_string() },
+        RawOverlayCondition::ItemPresent { item_id } => OverlayCondition::ItemPresent {
+            item_id: register_item(symbols, item_id),
+        },
+        RawOverlayCondition::ItemAbsent { item_id } => OverlayCondition::ItemAbsent {
+            item_id: register_item(symbols, item_id),
+        },
+        RawOverlayCondition::PlayerHasItem { item_id } => OverlayCondition::PlayerHasItem {
+            item_id: register_item(symbols, item_id),
+        },
+        RawOverlayCondition::PlayerMissingItem { item_id } => OverlayCondition::PlayerMissingItem {
+            item_id: register_item(symbols, item_id),
+        },
+        RawOverlayCondition::NpcInState { npc_id, state: mood } => OverlayCondition::NpcInMood {
+            npc_id: register_npc(symbols, npc_id),
+            mood: mood.clone(),
+        },
+        RawOverlayCondition::ItemInRoom { item_id, room_id } => OverlayCondition::ItemInRoom {
+            item_id: register_item(symbols, item_id),
+            room_id: *symbols
+                .rooms
+                .get(room_id)
+                .ok_or_else(|| anyhow!("OverlayCondition::ItemInRoom(_,{room_id}) - room not in symbol table"))?,
+        },
+    };
+    Ok(condition)
 }
 
 /// Pre-registers an item symbol during room loading and returns the corresponding UUID

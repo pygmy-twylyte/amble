@@ -41,14 +41,21 @@ impl RoomOverlay {
     pub fn applies(&self, room_id: Uuid, world: &AmbleWorld) -> bool {
         let flag_is_set = |flag_str: &str| world.player.flags.iter().any(|f| f.value() == *flag_str);
         match &self.condition {
+            OverlayCondition::FlagComplete { flag } => world
+                .player
+                .flags
+                .get(&Flag::Simple { name: flag.into() })
+                .is_some_and(Flag::is_complete),
             OverlayCondition::FlagSet { flag } => flag_is_set(flag),
             OverlayCondition::FlagUnset { flag } => !flag_is_set(flag),
-            OverlayCondition::ItemPresent { item_id } => world.items.get(item_id).is_some_and(
-                |item| matches!(item.location, Location::Room(id) if id == room_id),
-            ),
-            OverlayCondition::ItemAbsent { item_id } => world.items.get(item_id).is_none_or(
-                |item| !matches!(item.location, Location::Room(id) if id == room_id),
-            ),
+            OverlayCondition::ItemPresent { item_id } => world
+                .items
+                .get(item_id)
+                .is_some_and(|item| matches!(item.location, Location::Room(id) if id == room_id)),
+            OverlayCondition::ItemAbsent { item_id } => world
+                .items
+                .get(item_id)
+                .is_none_or(|item| !matches!(item.location, Location::Room(id) if id == room_id)),
             OverlayCondition::PlayerHasItem { item_id } => world.player.contains_item(*item_id),
             OverlayCondition::PlayerMissingItem { item_id } => !world.player.contains_item(*item_id),
             OverlayCondition::NpcInMood { npc_id, mood } => {
@@ -66,6 +73,7 @@ impl RoomOverlay {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum OverlayCondition {
+    FlagComplete { flag: String },
     FlagSet { flag: String },
     FlagUnset { flag: String },
     ItemPresent { item_id: Uuid },
