@@ -163,18 +163,16 @@ pub fn load_raw_items(toml_path: &Path) -> Result<Vec<RawItem>> {
 
 /// Build `Items` from raw items.
 /// # Errors
-/// - if an item pre-registered during room loading is not found it items loaded from file
+/// - if an item pre-registered during room loading is not found in items loaded from file
 /// - if there is a failed lookup in the symbol table during raw item conversion
 pub fn build_items(raw_items: &[RawItem], symbols: &mut SymbolTable) -> Result<Vec<Item>> {
-    // copy items pre-inserted during Room loading (to verify they actually exist in items.toml)
+    // save any pre-registered items and clear them from the symbol table
     let early_inserts = symbols.items.clone();
+    symbols.items.clear();
     info!(
-        "found {} items pre-registered in symbol table by room loader",
+        "found {} items that were pre-registered while loading rooms",
         early_inserts.len()
     );
-
-    // clear pre-inserted items from the symbol table
-    symbols.items.clear();
 
     // rebuild item symbol table from items.toml data
     for ri in raw_items {
@@ -182,21 +180,11 @@ pub fn build_items(raw_items: &[RawItem], symbols: &mut SymbolTable) -> Result<V
             .items
             .insert(ri.id.clone(), uuid_from_token(&NAMESPACE_ITEM, ri.id.as_str()));
     }
-    // make sure pre-inserted items are in symbols built from items.toml
-    for (token_id, preloaded_uuid) in &early_inserts {
-        if symbols.items.contains_key(token_id) {
-            if let Some(item_uuid) = symbols.items.get(token_id) {
-                if item_uuid != preloaded_uuid {
-                    bail!(
-                        "pre-registered ({preloaded_uuid}) and final ({item_uuid}) UUIDs for '{token_id}' don't match"
-                    );
-                }
-            }
-        } else {
-            bail!(
-                "item ({}) pre-registered by room loader absent from loaded raw items",
-                token_id
-            );
+
+    // make sure pre-inserted items are in data loaded from items.toml
+    for (item_symbol, item_uuid) in &early_inserts {
+        if !symbols.items.get(item_symbol).is_some_and(|id| id == item_uuid) {
+            bail!("error while loading pre-registered item '{item_symbol}': symbol not found or uuid mismatch")
         }
     }
     info!("verified existence of all {} pre-registered items", early_inserts.len());
