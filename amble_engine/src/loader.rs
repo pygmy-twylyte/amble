@@ -101,6 +101,15 @@ pub fn load_world() -> Result<AmbleWorld> {
     world.max_score += world.rooms.len();
     info!("{} rooms added to AmbleWorld", world.rooms.len());
 
+    /* Load NPCs */
+    let raw_npcs = load_raw_npcs(npc_toml_path).context("while loading raw npcs from file")?;
+    let npcs = build_npcs(&raw_npcs, &mut symbols).context("while building npcs from raw npcs")?;
+    for npc in npcs {
+        world.npcs.insert(npc.id(), npc);
+    }
+    info!("{} NPCs added to AmbleWorld", world.npcs.len());
+    () = place_npcs(&mut world)?;
+
     /* Load Player */
     let raw_player = load_player(player_toml_path).context("while loading player from file")?;
     let start_room_token = raw_player
@@ -113,15 +122,6 @@ pub fn load_world() -> Result<AmbleWorld> {
         world.player.name(),
         start_room_token
     );
-
-    /* Load NPCs */
-    let raw_npcs = load_raw_npcs(npc_toml_path).context("while loading raw npcs from file")?;
-    let npcs = build_npcs(&raw_npcs, &mut symbols).context("while building npcs from raw npcs")?;
-    for npc in npcs {
-        world.npcs.insert(npc.id(), npc);
-    }
-    info!("{} NPCs added to AmbleWorld", world.npcs.len());
-    () = place_npcs(&mut world)?;
 
     /* Load Items */
     let raw_items = load_raw_items(item_toml_path).context("while loading raw items from file")?;
