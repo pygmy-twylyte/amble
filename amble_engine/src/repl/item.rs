@@ -309,3 +309,247 @@ pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        item::{ContainerState, Item, ItemAbility, ItemInteractionType},
+        room::Room,
+        trigger::{Trigger, TriggerAction, TriggerCondition},
+        world::{AmbleWorld, Location},
+    };
+    use std::collections::{HashMap, HashSet};
+    use uuid::Uuid;
+
+    fn build_world() -> (AmbleWorld, Uuid, Uuid, Uuid, Uuid) {
+        let mut world = AmbleWorld::new_empty();
+        let room_id = Uuid::new_v4();
+        let room = Room {
+            id: room_id,
+            symbol: "r".into(),
+            name: "Room".into(),
+            base_description: String::new(),
+            overlays: Vec::new(),
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+        world.rooms.insert(room_id, room);
+        world.player.location = Location::Room(room_id);
+
+        let container_id = Uuid::new_v4();
+        let mut container = Item {
+            id: container_id,
+            symbol: "c".into(),
+            name: "chest".into(),
+            description: String::new(),
+            location: Location::Room(room_id),
+            portable: true,
+            container_state: Some(ContainerState::Locked),
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+        container
+            .interaction_requires
+            .insert(ItemInteractionType::Open, ItemAbility::Pry);
+        world.rooms.get_mut(&room_id).unwrap().contents.insert(container_id);
+        world.items.insert(container_id, container);
+
+        let tool_id = Uuid::new_v4();
+        let tool = Item {
+            id: tool_id,
+            symbol: "t".into(),
+            name: "crowbar".into(),
+            description: String::new(),
+            location: Location::Inventory,
+            portable: true,
+            container_state: None,
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: [ItemAbility::Pry].into_iter().collect(),
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+        world.player.inventory.insert(tool_id);
+        world.items.insert(tool_id, tool);
+
+        let lamp_id = Uuid::new_v4();
+        let lamp = Item {
+            id: lamp_id,
+            symbol: "l".into(),
+            name: "lamp".into(),
+            description: String::new(),
+            location: Location::Room(room_id),
+            portable: false,
+            container_state: None,
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: [ItemAbility::TurnOn].into_iter().collect(),
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+        world.rooms.get_mut(&room_id).unwrap().contents.insert(lamp_id);
+        world.items.insert(lamp_id, lamp);
+
+        let key_id = Uuid::new_v4();
+        let key = Item {
+            id: key_id,
+            symbol: "k".into(),
+            name: "key".into(),
+            description: String::new(),
+            location: Location::Inventory,
+            portable: true,
+            container_state: None,
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: [ItemAbility::Unlock(Some(container_id))].into_iter().collect(),
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+        world.player.inventory.insert(key_id);
+        world.items.insert(key_id, key);
+
+        (world, container_id, tool_id, lamp_id, key_id)
+    }
+
+    #[test]
+    fn use_item_on_handler_unlocks_container() {
+        let (mut world, container_id, tool_id, _, _) = build_world();
+        world.triggers.push(Trigger {
+            name: "open".into(),
+            conditions: vec![TriggerCondition::UseItemOnItem {
+                interaction: ItemInteractionType::Open,
+                target_id: container_id,
+                tool_id,
+            }],
+            actions: vec![TriggerAction::UnlockItem(container_id)],
+            only_once: false,
+            fired: false,
+        });
+        assert_eq!(
+            world.items.get(&container_id).unwrap().container_state,
+            Some(ContainerState::Locked)
+        );
+        use_item_on_handler(&mut world, ItemInteractionType::Open, "crowbar", "chest").unwrap();
+        assert_eq!(
+            world.items.get(&container_id).unwrap().container_state,
+            Some(ContainerState::Open)
+        );
+    }
+
+    #[test]
+    fn use_item_on_handler_without_ability_does_nothing() {
+        let (mut world, container_id, tool_id, _, _) = build_world();
+        world.items.get_mut(&tool_id).unwrap().abilities.clear();
+        world.triggers.push(Trigger {
+            name: "open".into(),
+            conditions: vec![TriggerCondition::UseItemOnItem {
+                interaction: ItemInteractionType::Open,
+                target_id: container_id,
+                tool_id,
+            }],
+            actions: vec![TriggerAction::UnlockItem(container_id)],
+            only_once: false,
+            fired: false,
+        });
+        use_item_on_handler(&mut world, ItemInteractionType::Open, "crowbar", "chest").unwrap();
+        assert_eq!(
+            world.items.get(&container_id).unwrap().container_state,
+            Some(ContainerState::Locked)
+        );
+    }
+
+    #[test]
+    fn turn_on_handler_triggers_unlock() {
+        let (mut world, container_id, _, lamp_id, _) = build_world();
+        world.triggers.push(Trigger {
+            name: "light".into(),
+            conditions: vec![TriggerCondition::UseItem {
+                item_id: lamp_id,
+                ability: ItemAbility::TurnOn,
+            }],
+            actions: vec![TriggerAction::UnlockItem(container_id)],
+            only_once: false,
+            fired: false,
+        });
+        assert_eq!(
+            world.items.get(&container_id).unwrap().container_state,
+            Some(ContainerState::Locked)
+        );
+        turn_on_handler(&mut world, "lamp").unwrap();
+        assert_eq!(
+            world.items.get(&container_id).unwrap().container_state,
+            Some(ContainerState::Open)
+        );
+    }
+
+    #[test]
+    fn open_handler_opens_closed_container() {
+        let (mut world, container_id, _, _, _) = build_world();
+        world.items.get_mut(&container_id).unwrap().container_state = Some(ContainerState::Closed);
+        open_handler(&mut world, "chest").unwrap();
+        assert_eq!(
+            world.items.get(&container_id).unwrap().container_state,
+            Some(ContainerState::Open)
+        );
+    }
+
+    #[test]
+    fn open_handler_locked_container_stays_locked() {
+        let (mut world, container_id, _, _, _) = build_world();
+        open_handler(&mut world, "chest").unwrap();
+        assert_eq!(
+            world.items.get(&container_id).unwrap().container_state,
+            Some(ContainerState::Locked)
+        );
+    }
+
+    #[test]
+    fn close_handler_closes_open_container() {
+        let (mut world, container_id, _, _, _) = build_world();
+        world.items.get_mut(&container_id).unwrap().container_state = Some(ContainerState::Open);
+        close_handler(&mut world, "chest").unwrap();
+        assert_eq!(
+            world.items.get(&container_id).unwrap().container_state,
+            Some(ContainerState::Closed)
+        );
+    }
+
+    #[test]
+    fn lock_handler_locks_container() {
+        let (mut world, container_id, _, _, _) = build_world();
+        world.items.get_mut(&container_id).unwrap().container_state = Some(ContainerState::Closed);
+        lock_handler(&mut world, "chest").unwrap();
+        assert_eq!(
+            world.items.get(&container_id).unwrap().container_state,
+            Some(ContainerState::Locked)
+        );
+    }
+
+    #[test]
+    fn unlock_handler_with_key_unlocks_container() {
+        let (mut world, container_id, _, _, _) = build_world();
+        unlock_handler(&mut world, "chest").unwrap();
+        assert_eq!(
+            world.items.get(&container_id).unwrap().container_state,
+            Some(ContainerState::Closed)
+        );
+    }
+
+    #[test]
+    fn unlock_handler_without_key_does_not_unlock() {
+        let (mut world, container_id, _, _, key_id) = build_world();
+        world.player.inventory.remove(&key_id);
+        unlock_handler(&mut world, "chest").unwrap();
+        assert_eq!(
+            world.items.get(&container_id).unwrap().container_state,
+            Some(ContainerState::Locked)
+        );
+    }
+}
