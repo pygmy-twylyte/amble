@@ -126,6 +126,7 @@ fn test_spinner_type_serde() {
 
 #[test]
 fn test_style_item() {
+    colored::control::set_override(true);
     let styled = "hi".item_style();
     let out = styled.to_string();
     assert!(out.contains("\u{1b}"));
