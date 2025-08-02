@@ -198,7 +198,7 @@ pub fn take_from_handler(world: &mut AmbleWorld, item_pattern: &str, vessel_patt
     Ok(())
 }
 
-fn validate_and_transfer_from_npc(
+pub(crate) fn validate_and_transfer_from_npc(
     world: &mut AmbleWorld,
     item_pattern: &str,
     vessel_id: Uuid,
@@ -246,7 +246,7 @@ fn validate_and_transfer_from_npc(
     Ok(())
 }
 
-fn validate_and_transfer_from_item(
+pub(crate) fn validate_and_transfer_from_item(
     world: &mut AmbleWorld,
     item_pattern: &str,
     vessel_id: Uuid,
