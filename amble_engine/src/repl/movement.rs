@@ -115,3 +115,142 @@ pub fn move_to_handler(world: &mut AmbleWorld, input_dir: &str) -> Result<()> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::player::Flag;
+    use crate::room::{Exit, Room};
+    use crate::world::{AmbleWorld, Location};
+    use std::collections::{HashMap, HashSet};
+    use uuid::Uuid;
+
+    fn build_test_world() -> (AmbleWorld, Uuid, Uuid) {
+        let mut world = AmbleWorld::new_empty();
+        let start = Uuid::new_v4();
+        let dest = Uuid::new_v4();
+        let mut start_room = Room {
+            id: start,
+            symbol: "start".into(),
+            name: "Start".into(),
+            base_description: String::new(),
+            overlays: vec![],
+            location: Location::Nowhere,
+            visited: true,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+        start_room.exits.insert("north".into(), Exit::new(dest));
+        let dest_room = Room {
+            id: dest,
+            symbol: "dest".into(),
+            name: "Dest".into(),
+            base_description: String::new(),
+            overlays: vec![],
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+        world.rooms.insert(start, start_room);
+        world.rooms.insert(dest, dest_room);
+        world.player.location = Location::Room(start);
+        (world, start, dest)
+    }
+
+    #[test]
+    fn move_to_hidden_exit_allowed() {
+        let (mut world, start, dest) = build_test_world();
+        {
+            world
+                .rooms
+                .get_mut(&start)
+                .unwrap()
+                .exits
+                .get_mut("north")
+                .unwrap()
+                .hidden = true;
+        }
+        let initial = world.player.score;
+        assert!(move_to_handler(&mut world, "north").is_ok());
+        assert!(matches!(world.player.location, Location::Room(id) if id == dest));
+        assert_eq!(world.player.score, initial + 1);
+        assert!(world.rooms.get(&dest).unwrap().visited);
+    }
+
+    #[test]
+    fn move_to_locked_exit_blocked() {
+        let (mut world, start, dest) = build_test_world();
+        world
+            .rooms
+            .get_mut(&start)
+            .unwrap()
+            .exits
+            .get_mut("north")
+            .unwrap()
+            .locked = true;
+        let initial = world.player.score;
+        assert!(move_to_handler(&mut world, "north").is_ok());
+        assert!(matches!(world.player.location, Location::Room(id) if id == start));
+        assert_eq!(world.player.score, initial);
+        assert!(!world.rooms.get(&dest).unwrap().visited);
+    }
+
+    #[test]
+    fn move_requires_item() {
+        let (mut world, start, dest) = build_test_world();
+        let item_id = Uuid::new_v4();
+        world
+            .rooms
+            .get_mut(&start)
+            .unwrap()
+            .exits
+            .get_mut("north")
+            .unwrap()
+            .required_items
+            .insert(item_id);
+
+        let initial = world.player.score;
+        assert!(move_to_handler(&mut world, "north").is_ok());
+        assert!(matches!(world.player.location, Location::Room(id) if id == start));
+        assert_eq!(world.player.score, initial);
+        assert!(!world.rooms.get(&dest).unwrap().visited);
+
+        world.player.inventory.insert(item_id);
+        let initial = world.player.score;
+        assert!(move_to_handler(&mut world, "north").is_ok());
+        assert!(matches!(world.player.location, Location::Room(id) if id == dest));
+        assert_eq!(world.player.score, initial + 1);
+        assert!(world.rooms.get(&dest).unwrap().visited);
+    }
+
+    #[test]
+    fn move_requires_flag() {
+        let (mut world, start, dest) = build_test_world();
+        let flag = Flag::simple("alpha");
+        world
+            .rooms
+            .get_mut(&start)
+            .unwrap()
+            .exits
+            .get_mut("north")
+            .unwrap()
+            .required_flags
+            .insert(flag.clone());
+
+        let initial = world.player.score;
+        assert!(move_to_handler(&mut world, "north").is_ok());
+        assert!(matches!(world.player.location, Location::Room(id) if id == start));
+        assert_eq!(world.player.score, initial);
+        assert!(!world.rooms.get(&dest).unwrap().visited);
+
+        world.player.flags.insert(flag);
+        let initial = world.player.score;
+        assert!(move_to_handler(&mut world, "north").is_ok());
+        assert!(matches!(world.player.location, Location::Room(id) if id == dest));
+        assert_eq!(world.player.score, initial + 1);
+        assert!(world.rooms.get(&dest).unwrap().visited);
+    }
+}
