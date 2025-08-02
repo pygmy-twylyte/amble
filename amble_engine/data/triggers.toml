@@ -800,6 +800,7 @@ actions = [
     { type = "npcSays", npc_id = "emh", quote = """
 Word is, you've seen HAL. If you want to get him working again -- and I'm not
 sure I'd advise it -- I may be able to get one of those memory modules for you.""" },
+    { type = "setNpcState", npc_id = "emh", state = { custom = "want-emitter" } },
 ]
 
 # ------- BEGIN HAL REBOOT SEQUENCE --------
