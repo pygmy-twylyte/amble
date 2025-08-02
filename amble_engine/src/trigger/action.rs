@@ -507,3 +507,260 @@ pub fn deny_read(reason: &String) {
     println!("{}", reason.denied_style());
     info!("└─ action: DenyRead(\"{reason}\")");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        item::{ContainerState, Item},
+        npc::{Npc, NpcState},
+        player::Flag,
+        room::Room,
+        world::{AmbleWorld, Location},
+    };
+    use std::collections::{HashMap, HashSet};
+    use uuid::Uuid;
+
+    fn build_test_world() -> (AmbleWorld, Uuid, Uuid) {
+        let mut world = AmbleWorld::new_empty();
+        let room1_id = Uuid::new_v4();
+        let room2_id = Uuid::new_v4();
+
+        let room1 = Room {
+            id: room1_id,
+            symbol: "r1".into(),
+            name: "Room1".into(),
+            base_description: "Room1".into(),
+            overlays: Vec::new(),
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+        let room2 = Room {
+            id: room2_id,
+            symbol: "r2".into(),
+            name: "Room2".into(),
+            base_description: "Room2".into(),
+            overlays: Vec::new(),
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+        world.rooms.insert(room1_id, room1);
+        world.rooms.insert(room2_id, room2);
+        world.player.location = Location::Room(room1_id);
+        (world, room1_id, room2_id)
+    }
+
+    fn make_item(id: Uuid, location: Location, container_state: Option<ContainerState>) -> Item {
+        Item {
+            id,
+            symbol: "it".into(),
+            name: "Item".into(),
+            description: "".into(),
+            location,
+            portable: true,
+            container_state,
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+        }
+    }
+
+    fn make_npc(id: Uuid, location: Location, state: NpcState) -> Npc {
+        Npc {
+            id,
+            symbol: "n".into(),
+            name: "Npc".into(),
+            description: "".into(),
+            location,
+            inventory: HashSet::new(),
+            dialogue: HashMap::new(),
+            state,
+        }
+    }
+
+    #[test]
+    fn push_player_moves_player_to_room() {
+        let (mut world, _start, dest) = build_test_world();
+        assert!(push_player(&mut world, &dest).is_ok());
+        assert_eq!(world.player.location, Location::Room(dest));
+    }
+
+    #[test]
+    fn push_player_errors_with_invalid_room() {
+        let (mut world, _, _) = build_test_world();
+        let bad_room = Uuid::new_v4();
+        assert!(push_player(&mut world, &bad_room).is_err());
+    }
+
+    #[test]
+    fn add_and_remove_flag_updates_player_flags() {
+        let (mut world, _, _) = build_test_world();
+        let flag = Flag::simple("test");
+        add_flag(&mut world, &flag);
+        assert!(world.player.flags.contains(&flag));
+        remove_flag(&mut world, "test");
+        assert!(!world.player.flags.contains(&flag));
+    }
+
+    #[test]
+    fn reset_and_advance_flag_modifies_sequence() {
+        let (mut world, _, _) = build_test_world();
+        let flag = Flag::sequence("quest", Some(2));
+        world.player.flags.insert(flag);
+        advance_flag(&mut world.player, "quest");
+        assert!(
+            world
+                .player
+                .flags
+                .iter()
+                .any(|f| matches!(f, Flag::Sequence { name, step, .. } if name == "quest" && *step == 1))
+        );
+        reset_flag(&mut world.player, "quest");
+        assert!(
+            world
+                .player
+                .flags
+                .iter()
+                .any(|f| matches!(f, Flag::Sequence { name, step, .. } if name == "quest" && *step == 0))
+        );
+    }
+
+    #[test]
+    fn award_points_modifies_player_score() {
+        let (mut world, _, _) = build_test_world();
+        award_points(&mut world, 5);
+        assert_eq!(world.player.score, 6);
+        award_points(&mut world, -3);
+        assert_eq!(world.player.score, 3);
+    }
+
+    #[test]
+    fn restrict_item_sets_restricted_flag() {
+        let (mut world, room_id, _) = build_test_world();
+        let item_id = Uuid::new_v4();
+        let item = make_item(item_id, Location::Room(room_id), None);
+        world.items.insert(item_id, item);
+        restrict_item(&mut world, &item_id).unwrap();
+        assert!(world.items.get(&item_id).unwrap().restricted);
+    }
+
+    #[test]
+    fn lock_and_unlock_item_changes_state() {
+        let (mut world, room_id, _) = build_test_world();
+        let item_id = Uuid::new_v4();
+        let item = make_item(item_id, Location::Room(room_id), Some(ContainerState::Open));
+        world.items.insert(item_id, item);
+        lock_item(&mut world, &item_id).unwrap();
+        assert_eq!(
+            world.items.get(&item_id).unwrap().container_state,
+            Some(ContainerState::Locked)
+        );
+        unlock_item(&mut world, &item_id).unwrap();
+        assert_eq!(
+            world.items.get(&item_id).unwrap().container_state,
+            Some(ContainerState::Open)
+        );
+    }
+
+    #[test]
+    fn lock_and_unlock_exit_changes_state() {
+        let (mut world, room1_id, room2_id) = build_test_world();
+        world
+            .rooms
+            .get_mut(&room1_id)
+            .unwrap()
+            .exits
+            .insert("north".into(), Exit::new(room2_id));
+        lock_exit(&mut world, &room1_id, &"north".into()).unwrap();
+        assert!(world.rooms[&room1_id].exits["north"].locked);
+        unlock_exit(&mut world, &room1_id, &"north".into()).unwrap();
+        assert!(!world.rooms[&room1_id].exits["north"].locked);
+    }
+
+    #[test]
+    fn spawn_item_in_specific_room_places_item() {
+        let (mut world, _room1, room2) = build_test_world();
+        let item_id = Uuid::new_v4();
+        let item = make_item(item_id, Location::Nowhere, None);
+        world.items.insert(item_id, item);
+        spawn_item_in_specific_room(&mut world, &item_id, &room2).unwrap();
+        assert_eq!(world.items[&item_id].location, Location::Room(room2));
+        assert!(world.rooms[&room2].contents.contains(&item_id));
+    }
+
+    #[test]
+    fn spawn_item_in_current_room_places_item() {
+        let (mut world, room1, _room2) = build_test_world();
+        let item_id = Uuid::new_v4();
+        world.items.insert(item_id, make_item(item_id, Location::Nowhere, None));
+        spawn_item_in_current_room(&mut world, &item_id).unwrap();
+        assert_eq!(world.items[&item_id].location, Location::Room(room1));
+        assert!(world.rooms[&room1].contents.contains(&item_id));
+    }
+
+    #[test]
+    fn spawn_item_in_inventory_adds_to_player() {
+        let (mut world, _, _) = build_test_world();
+        let item_id = Uuid::new_v4();
+        let mut item = make_item(item_id, Location::Nowhere, None);
+        item.restricted = true;
+        world.items.insert(item_id, item);
+        spawn_item_in_inventory(&mut world, &item_id).unwrap();
+        assert_eq!(world.items[&item_id].location, Location::Inventory);
+        assert!(world.player.inventory.contains(&item_id));
+        assert!(!world.items[&item_id].restricted);
+    }
+
+    #[test]
+    fn spawn_item_in_container_places_item_inside() {
+        let (mut world, room1, _) = build_test_world();
+        let container_id = Uuid::new_v4();
+        let container = make_item(container_id, Location::Room(room1), Some(ContainerState::Open));
+        world.items.insert(container_id, container);
+        world.rooms.get_mut(&room1).unwrap().contents.insert(container_id);
+        let item_id = Uuid::new_v4();
+        world.items.insert(item_id, make_item(item_id, Location::Nowhere, None));
+        spawn_item_in_container(&mut world, &item_id, &container_id).unwrap();
+        assert_eq!(world.items[&item_id].location, Location::Item(container_id));
+        assert!(world.items[&container_id].contents.contains(&item_id));
+    }
+
+    #[test]
+    fn despawn_item_removes_item_from_world() {
+        let (mut world, room1, _) = build_test_world();
+        let item_id = Uuid::new_v4();
+        world
+            .items
+            .insert(item_id, make_item(item_id, Location::Room(room1), None));
+        world.rooms.get_mut(&room1).unwrap().contents.insert(item_id);
+        despawn_item(&mut world, &item_id).unwrap();
+        assert_eq!(world.items[&item_id].location, Location::Nowhere);
+        assert!(!world.rooms[&room1].contents.contains(&item_id));
+    }
+
+    #[test]
+    fn give_to_player_transfers_item_from_npc() {
+        let (mut world, room1, _) = build_test_world();
+        let npc_id = Uuid::new_v4();
+        let npc = make_npc(npc_id, Location::Room(room1), NpcState::Normal);
+        world.rooms.get_mut(&room1).unwrap().npcs.insert(npc_id);
+        world.npcs.insert(npc_id, npc);
+        let item_id = Uuid::new_v4();
+        world
+            .items
+            .insert(item_id, make_item(item_id, Location::Npc(npc_id), None));
+        world.npcs.get_mut(&npc_id).unwrap().inventory.insert(item_id);
+        give_to_player(&mut world, &npc_id, &item_id).unwrap();
+        assert_eq!(world.items[&item_id].location, Location::Inventory);
+        assert!(world.player.inventory.contains(&item_id));
+        assert!(!world.npcs[&npc_id].inventory.contains(&item_id));
+    }
+}

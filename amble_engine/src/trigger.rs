@@ -70,3 +70,102 @@ pub fn check_triggers<'a>(world: &'a mut AmbleWorld, events: &[TriggerCondition]
     let fired_triggers: Vec<&Trigger> = to_fire.iter().map(|i| &world.triggers[*i]).collect();
     Ok(fired_triggers)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        room::Room,
+        world::{AmbleWorld, Location},
+    };
+    use std::collections::{HashMap, HashSet};
+    use uuid::Uuid;
+
+    fn build_test_world() -> (AmbleWorld, Uuid, Uuid) {
+        let mut world = AmbleWorld::new_empty();
+        let room1_id = Uuid::new_v4();
+        let room2_id = Uuid::new_v4();
+
+        let room1 = Room {
+            id: room1_id,
+            symbol: "r1".into(),
+            name: "Room1".into(),
+            base_description: "Room1".into(),
+            overlays: Vec::new(),
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+        let room2 = Room {
+            id: room2_id,
+            symbol: "r2".into(),
+            name: "Room2".into(),
+            base_description: "Room2".into(),
+            overlays: Vec::new(),
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+        world.rooms.insert(room1_id, room1);
+        world.rooms.insert(room2_id, room2);
+        world.player.location = Location::Room(room1_id);
+        (world, room1_id, room2_id)
+    }
+
+    #[test]
+    fn check_triggers_moves_player_and_marks_trigger() {
+        let (mut world, start_id, dest_id) = build_test_world();
+        let trigger = Trigger {
+            name: "move".into(),
+            conditions: vec![TriggerCondition::Enter(start_id)],
+            actions: vec![TriggerAction::PushPlayerTo(dest_id)],
+            only_once: true,
+            fired: false,
+        };
+        world.triggers.push(trigger);
+        let events = vec![TriggerCondition::Enter(start_id)];
+        let fired = check_triggers(&mut world, &events).expect("check_triggers failed");
+        assert_eq!(fired.len(), 1);
+        assert!(triggers_contain_condition(
+            &fired,
+            |c| matches!(c, TriggerCondition::Enter(id) if *id == start_id)
+        ));
+        drop(fired);
+        assert_eq!(world.player.location, Location::Room(dest_id));
+        assert!(world.triggers[0].fired);
+    }
+
+    #[test]
+    fn triggers_contain_condition_finds_matches() {
+        let (mut world, room1_id, room2_id) = build_test_world();
+        let trigger1 = Trigger {
+            name: "t1".into(),
+            conditions: vec![TriggerCondition::Enter(room1_id)],
+            actions: vec![],
+            only_once: false,
+            fired: false,
+        };
+        let trigger2 = Trigger {
+            name: "t2".into(),
+            conditions: vec![TriggerCondition::Enter(room2_id)],
+            actions: vec![],
+            only_once: false,
+            fired: false,
+        };
+        world.triggers.push(trigger1);
+        world.triggers.push(trigger2);
+        let refs: Vec<&Trigger> = world.triggers.iter().collect();
+        assert!(triggers_contain_condition(
+            &refs,
+            |c| matches!(c, TriggerCondition::Enter(id) if *id == room1_id)
+        ));
+        assert!(!triggers_contain_condition(
+            &refs,
+            |c| matches!(c, TriggerCondition::Enter(id) if *id == Uuid::new_v4())
+        ));
+    }
+}

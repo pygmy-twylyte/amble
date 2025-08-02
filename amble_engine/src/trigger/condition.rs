@@ -114,3 +114,195 @@ impl TriggerCondition {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        item::{ContainerState, Item},
+        npc::{Npc, NpcState},
+        player::Flag,
+        room::Room,
+        world::{AmbleWorld, Location},
+    };
+    use std::collections::{HashMap, HashSet};
+    use uuid::Uuid;
+
+    fn build_test_world() -> (AmbleWorld, Uuid, Uuid) {
+        let mut world = AmbleWorld::new_empty();
+        let room1_id = Uuid::new_v4();
+        let room2_id = Uuid::new_v4();
+
+        let room1 = Room {
+            id: room1_id,
+            symbol: "r1".into(),
+            name: "Room1".into(),
+            base_description: "Room1".into(),
+            overlays: Vec::new(),
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+        let room2 = Room {
+            id: room2_id,
+            symbol: "r2".into(),
+            name: "Room2".into(),
+            base_description: "Room2".into(),
+            overlays: Vec::new(),
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+        world.rooms.insert(room1_id, room1);
+        world.rooms.insert(room2_id, room2);
+        world.player.location = Location::Room(room1_id);
+        (world, room1_id, room2_id)
+    }
+
+    fn make_item(id: Uuid, location: Location, container_state: Option<ContainerState>) -> Item {
+        Item {
+            id,
+            symbol: "it".into(),
+            name: "Item".into(),
+            description: "".into(),
+            location,
+            portable: true,
+            container_state,
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+        }
+    }
+
+    fn make_npc(id: Uuid, location: Location, state: NpcState) -> Npc {
+        Npc {
+            id,
+            symbol: "n".into(),
+            name: "Npc".into(),
+            description: "".into(),
+            location,
+            inventory: HashSet::new(),
+            dialogue: HashMap::new(),
+            state,
+        }
+    }
+
+    #[test]
+    fn matches_event_in_detects_matching_event() {
+        let (_, room1_id, room2_id) = build_test_world();
+        let events = vec![TriggerCondition::Enter(room1_id)];
+        assert!(TriggerCondition::Enter(room1_id).matches_event_in(&events));
+        assert!(!TriggerCondition::Enter(room2_id).matches_event_in(&events));
+    }
+
+    #[test]
+    fn is_ongoing_detects_player_location() {
+        let (world, room1_id, room2_id) = build_test_world();
+        assert!(TriggerCondition::InRoom(room1_id).is_ongoing(&world));
+        assert!(!TriggerCondition::InRoom(room2_id).is_ongoing(&world));
+    }
+
+    #[test]
+    fn flag_conditions_reflect_player_flags() {
+        let mut world = build_test_world().0;
+        world.player.flags.insert(Flag::simple("a"));
+        assert!(TriggerCondition::HasFlag("a".into()).is_ongoing(&world));
+        assert!(!TriggerCondition::MissingFlag("a".into()).is_ongoing(&world));
+        assert!(TriggerCondition::MissingFlag("b".into()).is_ongoing(&world));
+    }
+
+    #[test]
+    fn sequence_flag_progress_and_complete() {
+        let mut world = build_test_world().0;
+        world.player.flags.insert(Flag::sequence("quest", Some(2)));
+        world.player.advance_flag("quest");
+        assert!(TriggerCondition::FlagInProgress("quest".into()).is_ongoing(&world));
+        world.player.advance_flag("quest");
+        assert!(TriggerCondition::FlagComplete("quest".into()).is_ongoing(&world));
+    }
+
+    #[test]
+    fn has_visited_detects_room_visits() {
+        let (mut world, room1_id, room2_id) = build_test_world();
+        world.rooms.get_mut(&room1_id).unwrap().visited = true;
+        assert!(TriggerCondition::HasVisited(room1_id).is_ongoing(&world));
+        assert!(!TriggerCondition::HasVisited(room2_id).is_ongoing(&world));
+    }
+
+    #[test]
+    fn npc_item_and_state_conditions() {
+        let (mut world, room1_id, _) = build_test_world();
+        let npc_id = Uuid::new_v4();
+        let item_id = Uuid::new_v4();
+        let mut npc = make_npc(npc_id, Location::Room(room1_id), NpcState::Happy);
+        npc.inventory.insert(item_id);
+        world.npcs.insert(npc_id, npc);
+        world
+            .items
+            .insert(item_id, make_item(item_id, Location::Npc(npc_id), None));
+        assert!(TriggerCondition::NpcHasItem { npc_id, item_id }.is_ongoing(&world));
+        assert!(
+            TriggerCondition::NpcInState {
+                npc_id,
+                mood: NpcState::Happy
+            }
+            .is_ongoing(&world)
+        );
+        assert!(
+            !TriggerCondition::NpcInState {
+                npc_id,
+                mood: NpcState::Mad
+            }
+            .is_ongoing(&world)
+        );
+    }
+
+    #[test]
+    fn player_inventory_item_conditions() {
+        let (mut world, _, _) = build_test_world();
+        let item_id = Uuid::new_v4();
+        world
+            .items
+            .insert(item_id, make_item(item_id, Location::Inventory, None));
+        world.player.inventory.insert(item_id);
+        assert!(TriggerCondition::HasItem(item_id).is_ongoing(&world));
+        assert!(!TriggerCondition::MissingItem(item_id).is_ongoing(&world));
+        let other_id = Uuid::new_v4();
+        world
+            .items
+            .insert(other_id, make_item(other_id, Location::Nowhere, None));
+        assert!(TriggerCondition::MissingItem(other_id).is_ongoing(&world));
+    }
+
+    #[test]
+    fn with_npc_condition_detects_presence() {
+        let (mut world, room1_id, _) = build_test_world();
+        let npc_id = Uuid::new_v4();
+        world.rooms.get_mut(&room1_id).unwrap().npcs.insert(npc_id);
+        world
+            .npcs
+            .insert(npc_id, make_npc(npc_id, Location::Room(room1_id), NpcState::Normal));
+        assert!(TriggerCondition::WithNpc(npc_id).is_ongoing(&world));
+    }
+
+    #[test]
+    fn container_has_item_condition_detects_item() {
+        let (mut world, room1_id, _) = build_test_world();
+        let container_id = Uuid::new_v4();
+        let item_id = Uuid::new_v4();
+        let mut container = make_item(container_id, Location::Room(room1_id), Some(ContainerState::Open));
+        container.contents.insert(item_id);
+        world.items.insert(container_id, container);
+        world.rooms.get_mut(&room1_id).unwrap().contents.insert(container_id);
+        world
+            .items
+            .insert(item_id, make_item(item_id, Location::Item(container_id), None));
+        assert!(TriggerCondition::ContainerHasItem { container_id, item_id }.is_ongoing(&world));
+    }
+}
