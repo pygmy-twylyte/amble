@@ -126,6 +126,15 @@ back here for nasogastric suction.""",
     "Welcome to sick bay. Please take a number.",
     "Good to see that you got past the Black Knight. Lucky for me, you can't dismember a hologram.",
 ]
+"custom:want-emitter" = [
+    """I think I know where to find one of HAL's missing modules, but I can't leave
+med bay without my mobile emitter.""",
+    """I'd be happy to help you find HAL's memory module, but I can't leave the med
+bay without my mobile emitter.""",
+    """I was visiting a colleague at the restaurant on the main level when I last
+had my mobile emitter. There was a brilliant flash of electromagnetic radiation...
+and next thing I knew I was back here in the sick bay.""",
+]
 
 # START HAL-9000
 # -----------------------------------------------------------------------------|
