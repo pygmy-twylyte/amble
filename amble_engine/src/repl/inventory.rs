@@ -418,3 +418,385 @@ pub fn unexpected_entity(entity: WorldEntity, denial_msg: &str) {
     println!("{}", denial_msg.denied_style());
     error!("entity '{entity_name}' ({entity_id}) found in unexpected location {entity_loc:?}")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        item::{ContainerState, Item},
+        npc::{Npc, NpcState},
+        room::Room,
+        ItemHolder,
+    };
+    use std::collections::{HashMap, HashSet};
+    use uuid::Uuid;
+
+    struct TestWorld {
+        world: AmbleWorld,
+        room_id: Uuid,
+        inv_item_id: Uuid,
+        room_item_id: Uuid,
+        chest_id: Uuid,
+        gem_id: Uuid,
+        npc_id: Uuid,
+        npc_item_id: Uuid,
+    }
+
+    fn build_world() -> TestWorld {
+        let mut world = AmbleWorld::new_empty();
+
+        // set up room
+        let room_id = Uuid::new_v4();
+        let room = Room {
+            id: room_id,
+            symbol: "room".into(),
+            name: "Test Room".into(),
+            base_description: "".into(),
+            overlays: vec![],
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+        world.rooms.insert(room_id, room);
+        world.player.location = Location::Room(room_id);
+
+        // item in inventory
+        let inv_item_id = Uuid::new_v4();
+        let inv_item = Item {
+            id: inv_item_id,
+            symbol: "apple".into(),
+            name: "Apple".into(),
+            description: "".into(),
+            location: Location::Inventory,
+            portable: true,
+            container_state: None,
+            restricted: true,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+        world.items.insert(inv_item_id, inv_item);
+        world.player.inventory.insert(inv_item_id);
+
+        // item in room
+        let room_item_id = Uuid::new_v4();
+        let room_item = Item {
+            id: room_item_id,
+            symbol: "rock".into(),
+            name: "Rock".into(),
+            description: "".into(),
+            location: Location::Room(room_id),
+            portable: true,
+            container_state: None,
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+        world.items.insert(room_item_id, room_item);
+        world.rooms.get_mut(&room_id).unwrap().add_item(room_item_id);
+
+        // container item with loot
+        let chest_id = Uuid::new_v4();
+        let mut chest = Item {
+            id: chest_id,
+            symbol: "chest".into(),
+            name: "Chest".into(),
+            description: "".into(),
+            location: Location::Room(room_id),
+            portable: true,
+            container_state: Some(ContainerState::Open),
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+        let gem_id = Uuid::new_v4();
+        let gem = Item {
+            id: gem_id,
+            symbol: "gem".into(),
+            name: "Gem".into(),
+            description: "".into(),
+            location: Location::Item(chest_id),
+            portable: true,
+            container_state: None,
+            restricted: true,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+        chest.add_item(gem_id);
+        world.items.insert(gem_id, gem);
+        world.items.insert(chest_id, chest);
+        world.rooms.get_mut(&room_id).unwrap().add_item(chest_id);
+
+        // npc with item
+        let npc_id = Uuid::new_v4();
+        let mut npc = Npc {
+            id: npc_id,
+            symbol: "bob".into(),
+            name: "Bob".into(),
+            description: "".into(),
+            location: Location::Room(room_id),
+            inventory: HashSet::new(),
+            dialogue: HashMap::new(),
+            state: NpcState::Normal,
+        };
+        let npc_item_id = Uuid::new_v4();
+        let npc_item = Item {
+            id: npc_item_id,
+            symbol: "coin".into(),
+            name: "Coin".into(),
+            description: "".into(),
+            location: Location::Npc(npc_id),
+            portable: true,
+            container_state: None,
+            restricted: true,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+        npc.add_item(npc_item_id);
+        world.items.insert(npc_item_id, npc_item);
+        world.npcs.insert(npc_id, npc);
+        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
+
+        TestWorld {
+            world,
+            room_id,
+            inv_item_id,
+            room_item_id,
+            chest_id,
+            gem_id,
+            npc_id,
+            npc_item_id,
+        }
+    }
+
+    #[test]
+    fn drop_handler_drops_item_into_room() {
+        let mut tw = build_world();
+        let item_id = tw.inv_item_id;
+        let room_id = tw.room_id;
+        drop_handler(&mut tw.world, "apple").unwrap();
+        assert!(!tw.world.player.inventory.contains(&item_id));
+        assert!(tw
+            .world
+            .rooms
+            .get(&room_id)
+            .unwrap()
+            .contents
+            .contains(&item_id));
+        assert_eq!(
+            tw.world.items.get(&item_id).unwrap().location(),
+            &Location::Room(room_id)
+        );
+    }
+
+    #[test]
+    fn take_handler_moves_item_to_inventory() {
+        let mut tw = build_world();
+        let item_id = tw.room_item_id;
+        let room_id = tw.room_id;
+        take_handler(&mut tw.world, "rock").unwrap();
+        assert!(tw.world.player.inventory.contains(&item_id));
+        assert!(!tw
+            .world
+            .rooms
+            .get(&room_id)
+            .unwrap()
+            .contents
+            .contains(&item_id));
+        assert_eq!(
+            tw.world.items.get(&item_id).unwrap().location(),
+            &Location::Inventory
+        );
+    }
+
+    #[test]
+    fn take_from_handler_from_item() {
+        let mut tw = build_world();
+        let chest_id = tw.chest_id;
+        let gem_id = tw.gem_id;
+        take_from_handler(&mut tw.world, "gem", "chest").unwrap();
+        assert!(tw.world.player.inventory.contains(&gem_id));
+        assert!(!tw
+            .world
+            .items
+            .get(&chest_id)
+            .unwrap()
+            .contents
+            .contains(&gem_id));
+        assert_eq!(
+            tw.world.items.get(&gem_id).unwrap().location(),
+            &Location::Inventory
+        );
+    }
+
+    #[test]
+    fn take_from_handler_from_npc() {
+        let mut tw = build_world();
+        let npc_id = tw.npc_id;
+        let coin_id = tw.npc_item_id;
+        take_from_handler(&mut tw.world, "coin", "bob").unwrap();
+        assert!(tw.world.player.inventory.contains(&coin_id));
+        assert!(!tw
+            .world
+            .npcs
+            .get(&npc_id)
+            .unwrap()
+            .inventory
+            .contains(&coin_id));
+        assert_eq!(
+            tw.world.items.get(&coin_id).unwrap().location(),
+            &Location::Inventory
+        );
+    }
+
+    #[test]
+    fn validate_and_transfer_from_item_moves_loot() {
+        let mut tw = build_world();
+        let chest_id = tw.chest_id;
+        let gem_id = tw.gem_id;
+        validate_and_transfer_from_item(&mut tw.world, "gem", chest_id, "Chest").unwrap();
+        assert!(tw.world.player.inventory.contains(&gem_id));
+        assert!(!tw
+            .world
+            .items
+            .get(&chest_id)
+            .unwrap()
+            .contents
+            .contains(&gem_id));
+        assert_eq!(
+            tw.world.items.get(&gem_id).unwrap().location(),
+            &Location::Inventory
+        );
+    }
+
+    #[test]
+    fn validate_and_transfer_from_npc_moves_loot() {
+        let mut tw = build_world();
+        let npc_id = tw.npc_id;
+        let coin_id = tw.npc_item_id;
+        validate_and_transfer_from_npc(&mut tw.world, "coin", npc_id, "Bob").unwrap();
+        assert!(tw.world.player.inventory.contains(&coin_id));
+        assert!(!tw
+            .world
+            .npcs
+            .get(&npc_id)
+            .unwrap()
+            .inventory
+            .contains(&coin_id));
+        assert_eq!(
+            tw.world.items.get(&coin_id).unwrap().location(),
+            &Location::Inventory
+        );
+    }
+
+    #[test]
+    fn transfer_to_player_updates_world_from_item() {
+        let mut tw = build_world();
+        transfer_to_player(
+            &mut tw.world,
+            VesselType::Item,
+            tw.chest_id,
+            "Chest",
+            tw.gem_id,
+            "Gem",
+        );
+        assert!(tw.world.player.inventory.contains(&tw.gem_id));
+        assert_eq!(
+            tw.world.items.get(&tw.gem_id).unwrap().location(),
+            &Location::Inventory
+        );
+        assert!(!tw
+            .world
+            .items
+            .get(&tw.chest_id)
+            .unwrap()
+            .contents
+            .contains(&tw.gem_id));
+    }
+
+    #[test]
+    fn transfer_to_player_updates_world_from_npc() {
+        let mut tw = build_world();
+        transfer_to_player(
+            &mut tw.world,
+            VesselType::Npc,
+            tw.npc_id,
+            "Bob",
+            tw.npc_item_id,
+            "Coin",
+        );
+        assert!(tw.world.player.inventory.contains(&tw.npc_item_id));
+        assert_eq!(
+            tw.world
+                .items
+                .get(&tw.npc_item_id)
+                .unwrap()
+                .location(),
+            &Location::Inventory
+        );
+        assert!(!tw
+            .world
+            .npcs
+            .get(&tw.npc_id)
+            .unwrap()
+            .inventory
+            .contains(&tw.npc_item_id));
+    }
+
+    #[test]
+    fn put_in_handler_moves_item_into_container() {
+        let mut tw = build_world();
+        put_in_handler(&mut tw.world, "apple", "chest").unwrap();
+        assert!(!tw.world.player.inventory.contains(&tw.inv_item_id));
+        assert!(tw
+            .world
+            .items
+            .get(&tw.chest_id)
+            .unwrap()
+            .contents
+            .contains(&tw.inv_item_id));
+        assert_eq!(
+            tw.world
+                .items
+                .get(&tw.inv_item_id)
+                .unwrap()
+                .location(),
+            &Location::Item(tw.chest_id)
+        );
+    }
+
+    #[test]
+    fn unexpected_entity_does_not_change_world() {
+        let tw = build_world();
+        let before = tw
+            .world
+            .npcs
+            .get(&tw.npc_id)
+            .unwrap()
+            .location()
+            .clone();
+        {
+            let npc_ref = tw.world.npcs.get(&tw.npc_id).unwrap();
+            unexpected_entity(WorldEntity::Npc(npc_ref), "nope");
+        }
+        let after = tw
+            .world
+            .npcs
+            .get(&tw.npc_id)
+            .unwrap()
+            .location()
+            .clone();
+        assert_eq!(before, after);
+    }
+}
