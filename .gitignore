@@ -8,6 +8,8 @@ Cargo.lock
 # VSCode and Zed config (if applicable)
 .vscode/
 .zed/
+!.zed/snippets/
+!.zed/snippets/toml.json
 
 # Ignore saved game files
 saved_games/
