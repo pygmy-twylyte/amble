@@ -10,7 +10,7 @@ use crate::{
     repl::{entity_not_found, find_world_object},
     spinners::SpinnerType,
     style::GameStyle,
-    trigger::{TriggerCondition, check_triggers, triggers_contain_condition},
+    trigger::{TriggerAction, TriggerCondition, check_triggers, triggers_contain_condition},
 };
 
 use anyhow::{Context, Result};
@@ -117,8 +117,14 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Res
             .any(|cond| matches!(cond, TriggerCondition::GiveToNpc { .. }))
     });
 
-    // the trigger fired -- proceed with item transfer
-    if fired {
+    let refused = fired_triggers.iter().any(|t| {
+        t.actions
+            .iter()
+            .any(|a| matches!(a, TriggerAction::NpcRefuseItem { .. }))
+    });
+
+    // the trigger fired -- proceed with item transfer if it wasn't a refusal
+    if fired && !refused {
         // set new location in NPC on world item
         world
             .get_item_mut(item_id)
@@ -148,11 +154,14 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Res
         );
     // trigger didn't fire, so NPC refuses the item
     } else {
-        println!(
-            "{} has no use for {}, and won't hold it for you.",
-            npc_name.npc_style(),
-            item_name.item_style()
-        );
+        // show a default message if there wasn't a specific refusal trigger fired to do it
+        if !fired {
+            println!(
+                "{} has no use for {}, and won't hold it for you.",
+                npc_name.npc_style(),
+                item_name.item_style()
+            );
+        }
         info!("{npc_name} ({npc_id}) refused a gift of {item_name} ({item_id})");
     }
     Ok(())
