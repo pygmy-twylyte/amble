@@ -51,9 +51,9 @@ fn main() -> io::Result<()> {
 
     // Top-level blocks
     snippets.insert(
-        "trigger-new".into(),
+        "triggerNew".into(),
         json!({
-            "prefix": "trigger-new",
+            "prefix": "triggerNew",
             "description": "New trigger block",
             "body": [
                 "[[triggers]]",
@@ -70,9 +70,9 @@ fn main() -> io::Result<()> {
     );
 
     snippets.insert(
-        "item-new".into(),
+        "itemNew".into(),
         json!({
-            "prefix": "item-new",
+            "prefix": "itemNew",
             "description": "New item block",
             "body": [
                 "[[items]]",
@@ -87,9 +87,9 @@ fn main() -> io::Result<()> {
     );
 
     snippets.insert(
-        "room-new".into(),
+        "roomNew".into(),
         json!({
-            "prefix": "room-new",
+            "prefix": "roomNew",
             "description": "New room block",
             "body": [
                 "[[rooms]]",
@@ -105,9 +105,9 @@ fn main() -> io::Result<()> {
     );
 
     snippets.insert(
-        "npc-new".into(),
+        "npcNew".into(),
         json!({
-            "prefix": "npc-new",
+            "prefix": "npcNew",
             "description": "New NPC block",
             "body": [
                 "[[npcs]]",
@@ -125,9 +125,9 @@ fn main() -> io::Result<()> {
     );
 
     snippets.insert(
-        "goal-new".into(),
+        "goalNew".into(),
         json!({
-            "prefix": "goal-new",
+            "prefix": "goalNew",
             "description": "New goal block",
             "body": [
                 "[[goals]]",
