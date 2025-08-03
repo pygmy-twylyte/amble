@@ -1,401 +1,517 @@
 {
-  "goal-group-optional": {
-    "body": [
-      "group = { type = \"Optional\" }"
-    ],
-    "description": "Goal group type: Optional",
-    "prefix": "goal-group-optional"
-  },
-  "goal-group-required": {
-    "body": [
-      "group = { type = \"Required\" }"
-    ],
-    "description": "Goal group type: Required",
-    "prefix": "goal-group-required"
-  },
-  "goal-group-statuseffect": {
-    "body": [
-      "group = { type = \"StatusEffect\" }"
-    ],
-    "description": "Goal group type: StatusEffect",
-    "prefix": "goal-group-statuseffect"
-  },
-  "goal-new": {
-    "body": [
-      "[[goals]]",
-      "id = \"${{1:goal-id}}\"",
-      "name = \"${{2:Goal name}}\"",
-      "description = \"${{3:Goal description}}\"",
-      "group = { type = \"${{4:required}}\" }",
-      "activate_when = { type = \"${{5:hasFlag}}\", flag = \"${{6:flag}}\" }",
-      "finished_when = { type = \"${{7:hasFlag}}\", flag = \"${{8:flag}}\" }"
-    ],
-    "description": "New goal block",
-    "prefix": "goal-new"
-  },
-  "item-ability-clean": {
-    "body": [
-      "[[items.abilities]]",
-      "type = \"Clean\""
-    ],
-    "description": "Item ability: Clean",
-    "prefix": "item-ability-clean"
-  },
-  "item-ability-cutwood": {
-    "body": [
-      "[[items.abilities]]",
-      "type = \"CutWood\""
-    ],
-    "description": "Item ability: CutWood",
-    "prefix": "item-ability-cutwood"
-  },
-  "item-ability-ignite": {
-    "body": [
-      "[[items.abilities]]",
-      "type = \"Ignite\""
-    ],
-    "description": "Item ability: Ignite",
-    "prefix": "item-ability-ignite"
-  },
-  "item-ability-insulate": {
-    "body": [
-      "[[items.abilities]]",
-      "type = \"Insulate\""
-    ],
-    "description": "Item ability: Insulate",
-    "prefix": "item-ability-insulate"
-  },
-  "item-ability-pluck": {
-    "body": [
-      "[[items.abilities]]",
-      "type = \"Pluck\""
-    ],
-    "description": "Item ability: Pluck",
-    "prefix": "item-ability-pluck"
-  },
-  "item-ability-pry": {
-    "body": [
-      "[[items.abilities]]",
-      "type = \"Pry\""
-    ],
-    "description": "Item ability: Pry",
-    "prefix": "item-ability-pry"
-  },
-  "item-ability-read": {
-    "body": [
-      "[[items.abilities]]",
-      "type = \"Read\""
-    ],
-    "description": "Item ability: Read",
-    "prefix": "item-ability-read"
-  },
-  "item-ability-sharpen": {
-    "body": [
-      "[[items.abilities]]",
-      "type = \"Sharpen\""
-    ],
-    "description": "Item ability: Sharpen",
-    "prefix": "item-ability-sharpen"
-  },
-  "item-ability-smash": {
-    "body": [
-      "[[items.abilities]]",
-      "type = \"Smash\""
-    ],
-    "description": "Item ability: Smash",
-    "prefix": "item-ability-smash"
-  },
-  "item-ability-turnoff": {
-    "body": [
-      "[[items.abilities]]",
-      "type = \"TurnOff\""
-    ],
-    "description": "Item ability: TurnOff",
-    "prefix": "item-ability-turnoff"
-  },
-  "item-ability-turnon": {
-    "body": [
-      "[[items.abilities]]",
-      "type = \"TurnOn\""
-    ],
-    "description": "Item ability: TurnOn",
-    "prefix": "item-ability-turnon"
-  },
-  "item-ability-unlock(option<uuid>)": {
-    "body": [
-      "[[items.abilities]]",
-      "type = \"Unlock(Option<Uuid>)\""
-    ],
-    "description": "Item ability: Unlock(Option<Uuid>)",
-    "prefix": "item-ability-unlock(option<uuid>)"
-  },
-  "item-ability-use": {
-    "body": [
-      "[[items.abilities]]",
-      "type = \"Use\""
-    ],
-    "description": "Item ability: Use",
-    "prefix": "item-ability-use"
-  },
-  "item-new": {
-    "body": [
-      "[[items]]",
-      "id = \"${{1:item-id}}\"",
-      "name = \"${{2:Item name}}\"",
-      "description = \"\"\"",
-      "${{3:Item description}}",
-      "\"\"\"",
-      "container = ${{4:false}}"
-    ],
-    "description": "New item block",
-    "prefix": "item-new"
-  },
-  "npc-new": {
-    "body": [
-      "[[npcs]]",
-      "id = \"${{1:npc-id}}\"",
-      "name = \"${{2:Name}}\"",
-      "description = \"\"\"",
-      "${{3:NPC description}}",
-      "\"\"\"",
-      "state = \"${{4:normal}}\"",
-      "",
-      "[npcs.location]",
-      "Room = \"${{5:room-id}}\""
-    ],
-    "description": "New NPC block",
-    "prefix": "npc-new"
-  },
-  "room-new": {
-    "body": [
-      "[[rooms]]",
-      "id = \"${{1:room-id}}\"",
-      "name = \"${{2:Room name}}\"",
-      "base_description = \"\"\"",
-      "${{3:Room description}}",
-      "\"\"\"",
-      "location = \"${{4:Nowhere}}\"",
-      "visited = ${{5:false}}"
-    ],
-    "description": "New room block",
-    "prefix": "room-new"
-  },
-  "ta-addflag": {
-    "body": [
-      "{ type = \"AddFlag\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerAction: AddFlag",
-    "prefix": "ta-addflag"
-  },
-  "ta-flag: flag": {
-    "body": [
-      "{ type = \"flag: Flag\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerAction: flag: Flag",
-    "prefix": "ta-flag: flag"
-  },
-  "tc-ambient": {
-    "body": [
-      "{ type = \"Ambient\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: Ambient",
-    "prefix": "tc-ambient"
-  },
-  "tc-containerhasitem": {
-    "body": [
-      "{ type = \"ContainerHasItem\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: ContainerHasItem",
-    "prefix": "tc-containerhasitem"
-  },
-  "tc-drop": {
-    "body": [
-      "{ type = \"Drop\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: Drop",
-    "prefix": "tc-drop"
-  },
-  "tc-enter": {
-    "body": [
-      "{ type = \"Enter\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: Enter",
-    "prefix": "tc-enter"
-  },
-  "tc-flagcomplete": {
-    "body": [
-      "{ type = \"FlagComplete\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: FlagComplete",
-    "prefix": "tc-flagcomplete"
-  },
-  "tc-flaginprogress": {
-    "body": [
-      "{ type = \"FlagInProgress\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: FlagInProgress",
-    "prefix": "tc-flaginprogress"
-  },
-  "tc-givetonpc": {
-    "body": [
-      "{ type = \"GiveToNpc\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: GiveToNpc",
-    "prefix": "tc-givetonpc"
-  },
-  "tc-hasflag": {
-    "body": [
-      "{ type = \"HasFlag\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: HasFlag",
-    "prefix": "tc-hasflag"
-  },
-  "tc-hasitem": {
-    "body": [
-      "{ type = \"HasItem\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: HasItem",
-    "prefix": "tc-hasitem"
-  },
-  "tc-hasvisited": {
-    "body": [
-      "{ type = \"HasVisited\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: HasVisited",
-    "prefix": "tc-hasvisited"
-  },
-  "tc-inroom": {
-    "body": [
-      "{ type = \"InRoom\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: InRoom",
-    "prefix": "tc-inroom"
-  },
-  "tc-insert": {
-    "body": [
-      "{ type = \"Insert\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: Insert",
-    "prefix": "tc-insert"
-  },
-  "tc-interaction: iteminteractiontype": {
-    "body": [
-      "{ type = \"interaction: ItemInteractionType\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: interaction: ItemInteractionType",
-    "prefix": "tc-interaction: iteminteractiontype"
-  },
-  "tc-leave": {
-    "body": [
-      "{ type = \"Leave\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: Leave",
-    "prefix": "tc-leave"
-  },
-  "tc-missingflag": {
-    "body": [
-      "{ type = \"MissingFlag\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: MissingFlag",
-    "prefix": "tc-missingflag"
-  },
-  "tc-missingitem": {
-    "body": [
-      "{ type = \"MissingItem\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: MissingItem",
-    "prefix": "tc-missingitem"
-  },
-  "tc-npchasitem": {
-    "body": [
-      "{ type = \"NpcHasItem\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: NpcHasItem",
-    "prefix": "tc-npchasitem"
-  },
-  "tc-npcinstate": {
-    "body": [
-      "{ type = \"NpcInState\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: NpcInState",
-    "prefix": "tc-npcinstate"
-  },
-  "tc-open": {
-    "body": [
-      "{ type = \"Open\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: Open",
-    "prefix": "tc-open"
-  },
-  "tc-take": {
-    "body": [
-      "{ type = \"Take\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: Take",
-    "prefix": "tc-take"
-  },
-  "tc-takefromnpc": {
-    "body": [
-      "{ type = \"TakeFromNpc\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: TakeFromNpc",
-    "prefix": "tc-takefromnpc"
-  },
-  "tc-talktonpc": {
-    "body": [
-      "{ type = \"TalkToNpc\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: TalkToNpc",
-    "prefix": "tc-talktonpc"
-  },
-  "tc-target_id: string": {
-    "body": [
-      "{ type = \"target_id: String\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: target_id: String",
-    "prefix": "tc-target_id: string"
-  },
-  "tc-tool_id: string": {
-    "body": [
-      "{ type = \"tool_id: String\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: tool_id: String",
-    "prefix": "tc-tool_id: string"
-  },
-  "tc-unlock": {
-    "body": [
-      "{ type = \"Unlock\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: Unlock",
-    "prefix": "tc-unlock"
-  },
-  "tc-useitem": {
-    "body": [
-      "{ type = \"UseItem\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: UseItem",
-    "prefix": "tc-useitem"
-  },
-  "tc-useitemonitem": {
-    "body": [
-      "{ type = \"UseItemOnItem\", key = \"${1:value}\" }"
-    ],
-    "description": "TriggerCondition: UseItemOnItem",
-    "prefix": "tc-useitemonitem"
-  },
   "trigger-new": {
+    "prefix": "trigger-new",
+    "description": "New full trigger block",
     "body": [
       "[[triggers]]",
-      "name = \"${{1:Trigger name}}\"",
-      "only_once = ${{2:true}}",
+      "name = \"${1:Trigger Name}\"",
+      "only_once = ${2:true}",
       "conditions = [",
-      "    ${{3}}",
+      "    ${3}",
       "]",
       "actions = [",
-      "    ${{4}}",
+      "    ${4}",
       "]"
-    ],
-    "description": "New trigger block",
-    "prefix": "trigger-new"
+    ]
+  },
+  "tc-enter": {
+    "prefix": "tc-enter",
+    "description": "Condition: enter room",
+    "body": ["{ type = \"enter\", room_id = \"${1:room-id}\" }"]
+  },
+  "tc-leave": {
+    "prefix": "tc-leave",
+    "description": "Condition: leave room",
+    "body": ["{ type = \"leave\", room_id = \"${1:room-id}\" }"]
+  },
+  "tc-hasItem": {
+    "prefix": "tc-has-item",
+    "description": "Condition: has item",
+    "body": ["{ type = \"hasItem\", item_id = \"${1:item-id}\" }"]
+  },
+  "tc-missingItem": {
+    "prefix": "tc-missing-item",
+    "description": "Condition: missing item",
+    "body": ["{ type = \"missingItem\", item_id = \"${1:item-id}\" }"]
+  },
+  "tc-hasFlag": {
+    "prefix": "tc-has-flag",
+    "description": "Condition: has flag",
+    "body": ["{ type = \"hasFlag\", flag = \"${1:flag-name}\" }"]
+  },
+  "tc-missingFlag": {
+    "prefix": "tc-missing-flag",
+    "description": "Condition: missing flag",
+    "body": ["{ type = \"missingFlag\", flag = \"${1:flag-name}\" }"]
+  },
+  "tc-flagInProgress": {
+    "prefix": "tc-flag-in-progress",
+    "description": "Condition: flag in progress",
+    "body": ["{ type = \"flagInProgress\", flag = \"${1:sequence-flag}\" }"]
+  },
+  "tc-flagComplete": {
+    "prefix": "tc-flag-complete",
+    "description": "Condition: flag complete",
+    "body": ["{ type = \"flagComplete\", flag = \"${1:sequence-flag}\" }"]
+  },
+  "tc-talkToNpc": {
+    "prefix": "tc-talk-to-npc",
+    "description": "Condition: talk to NPC",
+    "body": ["{ type = \"talkToNpc\", npc_id = \"${1:npc-id}\" }"]
+  },
+  "tc-withNpc": {
+    "prefix": "tc-with-npc",
+    "description": "Condition: with NPC",
+    "body": ["{ type = \"withNpc\", npc_id = \"${1:npc-id}\" }"]
+  },
+  "tc-npcInState": {
+    "prefix": "tc-npc-in-state",
+    "description": "Condition: NPC in state",
+    "body": [
+      "{ type = \"npcInState\", npc_id = \"${1:npc-id}\", state = \"${2:state}\" }"
+    ]
+  },
+  "tc-take": {
+    "prefix": "tc-take",
+    "description": "Condition: take item",
+    "body": ["{ type = \"take\", item_id = \"${1:item-id}\" }"]
+  },
+  "tc-drop": {
+    "prefix": "tc-drop",
+    "description": "Condition: drop item",
+    "body": ["{ type = \"drop\", item_id = \"${1:item-id}\" }"]
+  },
+  "tc-useItem": {
+    "prefix": "tc-use-item",
+    "description": "Condition: use item ability",
+    "body": [
+      "{ type = \"useItem\", item_id = \"${1:item-id}\", ability = \"${2:ability}\" }"
+    ]
+  },
+  "tc-useItemOnItem": {
+    "prefix": "tc-use-item-on-item",
+    "description": "Condition: use item on item",
+    "body": [
+      "{ type = \"useItemOnItem\", tool_id = \"${1:tool-id}\", target_id = \"${2:target-id}\", interaction = \"${3:interaction}\" }"
+    ]
+  },
+  "tc-insert": {
+    "prefix": "tc-insert",
+    "description": "Condition: insert item into container",
+    "body": [
+      "{ type = \"insert\", item_id = \"${1:item-id}\", container_id = \"${2:container-id}\" }"
+    ]
+  },
+  "tc-containerHasItem": {
+    "prefix": "tc-container-has-item",
+    "description": "Condition: container has item",
+    "body": [
+      "{ type = \"containerHasItem\", container_id = \"${1:container-id}\", item_id = \"${2:item-id}\" }"
+    ]
+  },
+  "tc-unlock": {
+    "prefix": "tc-unlock",
+    "description": "Condition: unlock container",
+    "body": ["{ type = \"unlock\", item_id = \"${1:item-id}\" }"]
+  },
+  "tc-giveToNpc": {
+    "prefix": "tc-give-to-npc",
+    "description": "Condition: give item to NPC",
+    "body": [
+      "{ type = \"giveToNpc\", item_id = \"${1:item-id}\", npc_id = \"${2:npc-id}\" }"
+    ]
+  },
+  "tc-hasVisited": {
+    "prefix": "tc-has-visited",
+    "description": "Condition: has visited room",
+    "body": ["{ type = \"hasVisited\", room_id = \"${1:room-id}\" }"]
+  },
+  "tc-takeFromNpc": {
+    "prefix": "tc-take-from-npc",
+    "description": "Condition: take from NPC",
+    "body": [
+      "{ type = \"takeFromNpc\", item_id = \"${1:item-id}\", npc_id = \"${2:npc-id}\" }"
+    ]
+  },
+  "tc-ambient": {
+    "prefix": "tc-ambient",
+    "description": "Condition: ambient spinner",
+    "body": [
+      "{ type = \"ambient\", spinner = \"${1:spinner-id}\", room_ids = [ \"${2:room-id}\" ] }"
+    ]
+  },
+  "ta-showMessage": {
+    "prefix": "ta-show-message",
+    "description": "Action: show message",
+    "body": ["{ type = \"showMessage\", text = \"\"\"${1:message}\"\"\" }"]
+  },
+  "ta-awardPoints": {
+    "prefix": "ta-award-points",
+    "description": "Action: award points",
+    "body": ["{ type = \"awardPoints\", amount = ${1:5} }"]
+  },
+  "ta-addFlag": {
+    "prefix": "ta-add-flag",
+    "description": "Action: add flag",
+    "body": [
+      "{ type = \"addFlag\", flag = { type = \"simple\", name = \"${1:flag-name}\" } }"
+    ]
+  },
+  "ta-removeFlag": {
+    "prefix": "ta-remove-flag",
+    "description": "Action: remove flag",
+    "body": ["{ type = \"removeFlag\", flag = \"${1:flag-name}\" }"]
+  },
+  "ta-advanceFlag": {
+    "prefix": "ta-advance-flag",
+    "description": "Action: advance sequence flag",
+    "body": ["{ type = \"advanceFlag\", flag = \"${1:flag-name}\" }"]
+  },
+  "ta-revealExit": {
+    "prefix": "ta-reveal-exit",
+    "description": "Action: reveal exit",
+    "body": [
+      "{ type = \"revealExit\", direction = \"${1:dir}\", exit_from = \"${2:room-id}\", exit_to = \"${3:room-id}\" }"
+    ]
+  },
+  "ta-setNpcState": {
+    "prefix": "ta-set-npc-state",
+    "description": "Action: set NPC state",
+    "body": [
+      "{ type = \"setNpcState\", npc_id = \"${1:npc-id}\", state = \"${2:state}\" }"
+    ]
+  },
+  "ta-npcSays": {
+    "prefix": "ta-npc-says",
+    "description": "Action: NPC says fixed quote",
+    "body": [
+      "{ type = \"npcSays\", npc_id = \"${1:npc-id}\", quote = \"\"\"${2:quote}\"\"\" }"
+    ]
+  },
+  "ta-npcSaysRandom": {
+    "prefix": "ta-npc-says-random",
+    "description": "Action: NPC says random quote",
+    "body": ["{ type = \"npcSaysRandom\", npc_id = \"${1:npc-id}\" }"]
+  },
+  "ta-despawnItem": {
+    "prefix": "ta-despawn-item",
+    "description": "Action: despawn item",
+    "body": ["{ type = \"despawnItem\", item_id = \"${1:item-id}\" }"]
+  },
+  "ta-spawnItemInRoom": {
+    "prefix": "ta-spawn-in-room",
+    "description": "Action: spawn item in room",
+    "body": [
+      "{ type = \"spawnItemInRoom\", item_id = \"${1:item-id}\", room_id = \"${2:room-id}\" }"
+    ]
+  },
+  "ta-spawnItemCurrentRoom": {
+    "prefix": "ta-spawn-current-room",
+    "description": "Action: spawn item in current room",
+    "body": ["{ type = \"spawnItemCurrentRoom\", item_id = \"${1:item-id}\" }"]
+  },
+  "ta-spawnItemInInventory": {
+    "prefix": "ta-spawn-inventory",
+    "description": "Action: spawn item in inventory",
+    "body": ["{ type = \"spawnItemInInventory\", item_id = \"${1:item-id}\" }"]
+  },
+  "ta-giveItemToPlayer": {
+    "prefix": "ta-give-to-player",
+    "description": "Action: NPC gives item to player",
+    "body": [
+      "{ type = \"giveItemToPlayer\", npc_id = \"${1:npc-id}\", item_id = \"${2:item-id}\" }"
+    ]
+  },
+  "ta-spawnItemInContainer": {
+    "prefix": "ta-spawn-container",
+    "description": "Action: spawn item in container",
+    "body": [
+      "{ type = \"spawnItemInContainer\", item_id = \"${1:item-id}\", container_id = \"${2:container-id}\" }"
+    ]
+  },
+  "ta-restrictItem": {
+    "prefix": "ta-restrict-item",
+    "description": "Action: restrict item after use",
+    "body": ["{ type = \"restrictItem\", item_id = \"${1:item-id}\" }"]
+  },
+  "ta-pushPlayerTo": {
+    "prefix": "ta-push-player",
+    "description": "Action: move player to room",
+    "body": ["{ type = \"pushPlayerTo\", room_id = \"${1:room-id}\" }"]
+  },
+  "ta-denyRead": {
+    "prefix": "ta-deny-read",
+    "description": "Action: deny reading an item",
+    "body": ["{ type = \"denyRead\", reason = \"${1:reason}\" }"]
+  },
+  "ta-spinnerMessage": {
+    "prefix": "ta-spinner-message",
+    "description": "Action: show spinner message",
+    "body": ["{ type = \"spinnerMessage\", spinner = \"${1:spinner-id}\" }"]
+  },
+  "ta-addSpinnerWedge": {
+    "prefix": "ta-add-spinner",
+    "description": "Action: add message to spinner",
+    "body": [
+      "{ type = \"addSpinnerWedge\", spinner = \"${1:spinner-id}\", width = ${2:1}, text = \"\"\"",
+      "${3:spinner message}",
+      "\"\"\" }"
+    ]
+  },
+  "item-new": {
+    "prefix": "item-new",
+    "description": "New full item block",
+    "body": [
+      "[[items]]",
+      "id = \"${1:item-id}\"",
+      "name = \"${2:Item Name}\"",
+      "description = \"\"\"",
+      "${3:Description text here.}",
+      "\"\"\"",
+      "portable = ${4:true}",
+      "location = { Room = \"${5:room-id}\" }"
+    ]
+  },
+  "item-location-room": {
+    "prefix": "item-loc-room",
+    "description": "Location: Room",
+    "body": ["location = { Room = \"${1:room-id}\" }"]
+  },
+  "item-location-nowhere": {
+    "prefix": "item-loc-nowhere",
+    "description": "Location: Nowhere (spawning logic)",
+    "body": ["location = { Nowhere = \"${1:spawning-description}\" }"]
+  },
+  "item-location-inventory": {
+    "prefix": "item-loc-inv",
+    "description": "Location: Player inventory",
+    "body": ["location = { Inventory = \"player\" }"]
+  },
+  "item-location-npc": {
+    "prefix": "item-loc-npc",
+    "description": "Location: Carried by NPC",
+    "body": ["location = { Npc = \"${1:npc-id}\" }"]
+  },
+  "item-location-chest": {
+    "prefix": "item-loc-chest",
+    "description": "Location: Inside container item",
+    "body": ["location = { Chest = \"${1:container-id}\" }"]
+  },
+  "item-ability-read": {
+    "prefix": "item-ability-read",
+    "description": "Ability: Read",
+    "body": ["[[items.abilities]]", "type = \"Read\""]
+  },
+  "item-ability-unlock": {
+    "prefix": "item-ability-unlock",
+    "description": "Ability: Unlock something",
+    "body": [
+      "[[items.abilities]]",
+      "type = \"Unlock\"",
+      "target = \"${1:target-id}\""
+    ]
+  },
+  "item-ability-custom": {
+    "prefix": "item-ability-custom",
+    "description": "Ability: Custom type",
+    "body": ["[[items.abilities]]", "type = \"${1:CustomAbility}\""]
+  },
+  "item-container-open": {
+    "prefix": "item-container-open",
+    "description": "Container state: open",
+    "body": ["container_state = \"open\""]
+  },
+  "item-container-closed": {
+    "prefix": "item-container-closed",
+    "description": "Container state: closed",
+    "body": ["container_state = \"closed\""]
+  },
+  "item-container-locked": {
+    "prefix": "item-container-locked",
+    "description": "Container state: locked",
+    "body": ["container_state = \"locked\""]
+  },
+  "item-req-burn": {
+    "prefix": "item-req-burn",
+    "description": "Interaction requirement: burn",
+    "body": ["interaction_requires.burn = \"ignite\""]
+  },
+  "item-req-cut": {
+    "prefix": "item-req-cut",
+    "description": "Interaction requirement: cut",
+    "body": ["interaction_requires.cut = \"cutWood\""]
+  },
+  "item-req-break": {
+    "prefix": "item-req-break",
+    "description": "Interaction requirement: break",
+    "body": ["interaction_requires.break = \"smash\""]
+  },
+  "item-req-clean": {
+    "prefix": "item-req-clean",
+    "description": "Interaction requirement: clean",
+    "body": ["interaction_requires.clean = \"clean\""]
+  },
+  "item-ability-ignite": {
+    "prefix": "item-ability-ignite",
+    "description": "Ability: Ignite",
+    "body": ["[[items.abilities]]", "type = \"Ignite\""]
+  },
+  "item-ability-clean": {
+    "prefix": "item-ability-clean",
+    "description": "Ability: Clean",
+    "body": ["[[items.abilities]]", "type = \"Clean\""]
+  },
+  "item-ability-cutwood": {
+    "prefix": "item-ability-cutwood",
+    "description": "Ability: CutWood",
+    "body": ["[[items.abilities]]", "type = \"CutWood\""]
+  },
+  "item-ability-smash": {
+    "prefix": "item-ability-smash",
+    "description": "Ability: Smash",
+    "body": ["[[items.abilities]]", "type = \"Smash\""]
+  },
+  "item-ability-pry": {
+    "prefix": "item-ability-pry",
+    "description": "Ability: Pry",
+    "body": ["[[items.abilities]]", "type = \"Pry\""]
+  },
+  "item-ability-sharpen": {
+    "prefix": "item-ability-sharpen",
+    "description": "Ability: Sharpen",
+    "body": ["[[items.abilities]]", "type = \"Sharpen\""]
+  },
+  "item-ability-insulate": {
+    "prefix": "item-ability-insulate",
+    "description": "Ability: Insulate",
+    "body": ["[[items.abilities]]", "type = \"Insulate\""]
+  },
+  "item-ability-use": {
+    "prefix": "item-ability-use",
+    "description": "Ability: Use",
+    "body": ["[[items.abilities]]", "type = \"Use\""]
+  },
+  "item-ability-turnon": {
+    "prefix": "item-ability-turnon",
+    "description": "Ability: TurnOn",
+    "body": ["[[items.abilities]]", "type = \"TurnOn\""]
+  },
+  "room-new": {
+    "prefix": "room-new",
+    "description": "New full room block",
+    "body": [
+      "[[rooms]]",
+      "id = \"${1:room-id}\"",
+      "name = \"${2:Room Name}\"",
+      "base_description = \"\"\"",
+      "${3:Room description here.}",
+      "\"\"\"",
+      "location = \"${4:Nowhere}\"",
+      "visited = ${5:false}"
+    ]
+  },
+  "room-exit": {
+    "prefix": "room-exit",
+    "description": "Exit definition",
+    "body": ["[rooms.exits.${1:direction}]", "to = \"${2:room-id}\""]
+  },
+  "room-exit-req-flag": {
+    "prefix": "room-exit-flag",
+    "description": "Exit with required flag and barred message",
+    "body": [
+      "[rooms.exits.${1:direction}]",
+      "to = \"${2:room-id}\"",
+      "required_flags = [{ type = \"simple\", name = \"${3:flag-name}\" }]",
+      "barred_message = \"${4:Access denied message}\""
+    ]
+  },
+  "room-overlay": {
+    "prefix": "room-overlay",
+    "description": "Room overlay with flag condition",
+    "body": [
+      "[[rooms.overlays]]",
+      "condition = { type = \"${1:flagSet}\", flag = \"${2:flag-name}\" }",
+      "text = \"\"\"",
+      "${3:Overlay text}",
+      "\"\"\""
+    ]
+  },
+  "npc-new": {
+    "prefix": "npc-new",
+    "description": "New full NPC block",
+    "body": [
+      "[[npcs]]",
+      "id = \"${1:npc-id}\"",
+      "name = \"${2:Name}\"",
+      "description = \"\"\"",
+      "${3:NPC description here.}",
+      "\"\"\"",
+      "state = \"${4:normal}\"",
+      "",
+      "[npcs.location]",
+      "Room = \"${5:room-id}\""
+    ]
+  },
+  "npc-dialogue": {
+    "prefix": "npc-dialogue",
+    "description": "Dialogue list for mood or custom state",
+    "body": [
+      "[npcs.dialogue.\"${1:state-or-custom}\"]",
+      "\"${2:First line}\",",
+      "\"${3:Second line}\""
+    ]
+  },
+  "goal-new": {
+    "prefix": "goal-new",
+    "description": "New goal block",
+    "body": [
+      "[[goals]]",
+      "id = \"${1:goal-id}\"",
+      "name = \"${2:Goal Name}\"",
+      "description = \"${3:Goal description}\"",
+      "group = { type = \"${4:required}\" }",
+      "activate_when = { type = \"${5:hasFlag}\", flag = \"${6:some-flag}\" }",
+      "finished_when = { type = \"${7:hasFlag}\", flag = \"${8:done-flag}\" }"
+    ]
+  },
+  "goal-finished-flag": {
+    "prefix": "goal-finished-flag",
+    "description": "Finished when: has flag",
+    "body": [
+      "finished_when = { type = \"hasFlag\", flag = \"${1:flag-name}\" }"
+    ]
+  },
+  "goal-finished-room": {
+    "prefix": "goal-finished-room",
+    "description": "Finished when: reached room",
+    "body": [
+      "finished_when = { type = \"reachedRoom\", room_sym = \"${1:room-id}\" }"
+    ]
+  },
+  "goal-finished-sequence": {
+    "prefix": "goal-finished-sequence",
+    "description": "Finished when: sequence flag complete",
+    "body": [
+      "finished_when = { type = \"flagComplete\", flag = \"${1:sequence-flag}\" }"
+    ]
+  },
+  "goal-activate-flag": {
+    "prefix": "goal-activate-flag",
+    "description": "Activate when: has flag",
+    "body": [
+      "activate_when = { type = \"hasFlag\", flag = \"${1:flag-name}\" }"
+    ]
+  },
+  "goal-activate-complete": {
+    "prefix": "goal-activate-complete",
+    "description": "Activate when: another goal complete",
+    "body": [
+      "activate_when = { type = \"goalComplete\", goal_id = \"${1:goal-id}\" }"
+    ]
+  },
+  "goal-group": {
+    "prefix": "goal-group",
+    "description": "Goal group type",
+    "body": ["group = { type = \"${1:required}\" }"]
   }
 }
