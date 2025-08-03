@@ -27,6 +27,7 @@ pub enum TriggerAction {
     GiveItemToPlayer { npc_id: Uuid, item_id: Uuid },
     LockExit { from_room: Uuid, direction: String },
     LockItem(Uuid),
+    NpcRefuseItem { npc_id: Uuid, reason: String },
     NpcSays { npc_id: Uuid, quote: String },
     NpcSaysRandom { npc_id: Uuid },
     PushPlayerTo(Uuid),
@@ -57,6 +58,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result
         TriggerAction::AdvanceFlag(flag_name) => advance_flag(&mut world.player, flag_name),
         TriggerAction::SpinnerMessage { spinner } => spinner_message(world, *spinner)?,
         TriggerAction::RestrictItem(item_id) => restrict_item(world, item_id)?,
+        TriggerAction::NpcRefuseItem { npc_id, reason } => npc_refuse_item(world, *npc_id, reason)?,
         TriggerAction::NpcSaysRandom { npc_id } => npc_says_random(world, npc_id)?,
         TriggerAction::NpcSays { npc_id, quote } => npc_says(world, npc_id, quote)?,
         TriggerAction::DenyRead(reason) => deny_read(reason),
@@ -88,6 +90,20 @@ pub fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result
         TriggerAction::RemoveFlag(flag) => remove_flag(world, flag),
         TriggerAction::AwardPoints(amount) => award_points(world, *amount),
     }
+    Ok(())
+}
+
+/// Make NPC refuse a specific item for a specific reason.
+/// # Errors
+///
+pub fn npc_refuse_item(world: &mut AmbleWorld, npc_id: Uuid, reason: &str) -> Result<()> {
+    npc_says(world, &npc_id, reason)?;
+    let npc_name = world
+        .npcs
+        .get(&npc_id)
+        .with_context(|| "looking up NPC {npc_id} during item refusal")?
+        .name();
+    println!("{} returns it to you.", npc_name.npc_style());
     Ok(())
 }
 

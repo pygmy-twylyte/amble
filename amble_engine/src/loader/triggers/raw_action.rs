@@ -42,6 +42,10 @@ pub enum RawTriggerAction {
         from_room: String,
         direction: String,
     },
+    NpcRefuseItem {
+        npc_id: String,
+        reason: String,
+    },
     NpcSays {
         npc_id: String,
         quote: String,
@@ -108,6 +112,7 @@ impl RawTriggerAction {
             Self::AdvanceFlag { flag } => Ok(TriggerAction::AdvanceFlag(flag.to_string())),
             Self::SpinnerMessage { spinner } => Ok(TriggerAction::SpinnerMessage { spinner: *spinner }),
             Self::RestrictItem { item_id } => cook_restrict_item(symbols, item_id),
+            Self::NpcRefuseItem { npc_id, reason } => cook_npc_refuse_item(symbols, npc_id, reason),
             Self::NpcSaysRandom { npc_id } => cook_npc_says_random(symbols, npc_id),
             Self::NpcSays { npc_id, quote } => cook_npc_says(symbols, npc_id, quote),
             Self::AddFlag { flag } => Ok(TriggerAction::AddFlag(flag.clone())),
@@ -141,6 +146,16 @@ impl RawTriggerAction {
 /*
  * "Cook" functions below convert RawTriggerActions to TriggerActions
  */
+fn cook_npc_refuse_item(symbols: &SymbolTable, npc_symbol: &String, reason: &String) -> Result<TriggerAction> {
+    if let Some(npc_id) = symbols.characters.get(npc_symbol) {
+        Ok(TriggerAction::NpcRefuseItem {
+            npc_id: *npc_id,
+            reason: reason.to_string(),
+        })
+    } else {
+        bail!("raw action NpcRefuseItem({npc_symbol}, _): npc not found in symbols");
+    }
+}
 
 fn cook_restrict_item(symbols: &SymbolTable, item_id: &String) -> Result<TriggerAction> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
