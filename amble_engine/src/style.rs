@@ -25,9 +25,13 @@ pub trait GameStyle {
     fn goal_active_style(&self) -> ColoredString;
     fn goal_complete_style(&self) -> ColoredString;
     fn denied_style(&self) -> ColoredString;
+    fn overlay_style(&self) -> ColoredString;
 }
 
 impl GameStyle for &str {
+    fn overlay_style(&self) -> ColoredString {
+        self.truecolor(125, 180, 250)
+    }
     fn subheading_style(&self) -> ColoredString {
         self.underline()
     }
@@ -47,7 +51,7 @@ impl GameStyle for &str {
         self.truecolor(223, 77, 10)
     }
     fn room_titlebar_style(&self) -> ColoredString {
-        self.truecolor(223, 77, 10).on_truecolor(0, 0, 30)
+        self.truecolor(223, 77, 10).underline()
     }
     fn description_style(&self) -> ColoredString {
         self.italic().truecolor(102, 208, 250)
@@ -82,6 +86,9 @@ impl GameStyle for &str {
 }
 
 impl GameStyle for String {
+    fn overlay_style(&self) -> ColoredString {
+        self.as_str().overlay_style()
+    }
     fn denied_style(&self) -> ColoredString {
         self.as_str().denied_style()
     }

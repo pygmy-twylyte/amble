@@ -156,7 +156,7 @@ impl Room {
     pub fn show_overlays(&self, world: &AmbleWorld) {
         for overlay in &self.overlays {
             if overlay.applies(self.id(), world) {
-                println!("{}", overlay.text.description_style());
+                println!("{}", overlay.text.overlay_style());
                 println!();
             }
         }
