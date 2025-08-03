@@ -134,6 +134,7 @@ pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
         "unlock" | "undo" | "open" => Some(ItemInteractionType::Unlock),
         "sharpen" | "hone" => Some(ItemInteractionType::Sharpen),
         "clean" | "wipe" | "shine" | "buff" => Some(ItemInteractionType::Clean),
+        "repair" | "fix" => Some(ItemInteractionType::Repair),
         _ => None,
     }
 }
