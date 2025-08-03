@@ -33,6 +33,7 @@ pub enum ItemAbility {
     Pluck,
     Pry,
     Read,
+    Repair,
     Sharpen,
     Smash,
     TurnOn,
@@ -48,6 +49,7 @@ impl Display for ItemAbility {
             Self::Ignite => write!(f, "ignite"),
             Self::Insulate => write!(f, "insulate"),
             Self::Read => write!(f, "read"),
+            Self::Repair => write!(f, "repair"),
             Self::Sharpen => write!(f, "sharpen"),
             Self::TurnOn => write!(f, "turn on"),
             Self::TurnOff => write!(f, "turn off"),
@@ -72,6 +74,7 @@ pub enum ItemInteractionType {
     Handle,
     Move,
     Open,
+    Repair,
     Sharpen,
     Turn,
     Unlock,
@@ -219,10 +222,10 @@ impl Item {
     pub fn take_denied_reason(&self) -> Option<String> {
         match (self.portable, self.restricted) {
             (false, _) => Some(format!(
-                "The {} isn't portable, you can't transfer it anywhere.",
+                "The {} isn't portable, you can't move it anywhere.",
                 self.name().item_style()
             )),
-            (_, false) => Some(format!(
+            (_, true) => Some(format!(
                 "You can't take the {}, but it may become available later.",
                 self.name().item_style()
             )),
