@@ -21,6 +21,7 @@ pub enum GoalGroup {
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum GoalCondition {
     FlagComplete { flag: String },    // for checking if sequence-type flags are at end
+    FlagInProgress { flag: String },  // check if a sequence flag not yet at end
     GoalComplete { goal_id: String }, // for activating a goal after another is done
     HasItem { item_id: Uuid },
     HasFlag { flag: String },
@@ -49,6 +50,11 @@ impl GoalCondition {
                     false
                 }
             },
+            Self::FlagInProgress { flag } => world
+                .player
+                .flags
+                .get(&Flag::Simple { name: flag.into() })
+                .is_some_and(|f| !f.is_complete()),
             Self::FlagComplete { flag } => {
                 let target = Flag::simple(flag);
                 world.player.flags.get(&target).is_some_and(Flag::is_complete)
