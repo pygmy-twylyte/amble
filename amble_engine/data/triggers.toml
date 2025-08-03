@@ -787,7 +787,8 @@ actions = [
     { type = "showMessage", text = "The EMH gives you a shot in the arm, and your lingering nausea subsides." },
 ]
 
-# ------- EMH / HAL Module #1 Triggers
+# --------------------------------------------------------------------------------------------------------------------------------
+# ------- EMH / HAL Module #1 Triggers ------------------------
 # first time player encounters EMH after hal-reboot is in progress
 [[triggers]]
 name = "EMH: Player Met HAL"
@@ -801,9 +802,104 @@ actions = [
 Word is, you've seen HAL. If you want to get him working again -- and I'm not
 sure I'd advise it -- I may be able to get one of those memory modules for you.""" },
     { type = "setNpcState", npc_id = "emh", state = { custom = "want-emitter" } },
+    { type = "spawnItemInContainer", item_id = "broken_emitter", container_id = "lost_and_found_box" },
+    { type = "addFlag", flag = { type = "sequence", name = "mobilize-emh", end = 3 } },
+    # mobilize-emh#0 -- first tasked with getting emitter, not found yet
+    # mobilize-emh#1 -- obtained broken emitter
+    # mobilize-emh#2 -- fixed broken emitter
+    # mobilize-emh#3 -- fixed emitter given to EMH; EMH mobile
 ]
 
-# ------- BEGIN HAL REBOOT SEQUENCE --------
+# first time player enters the office after EMH starts seeking the emitter
+[[triggers]]
+name = "Office: Hint - Check L&F for HAL Module"
+only_once = true
+conditions = [
+    { type = "withNpc", npc_id = "b_a_receptionist" },
+    { type = "hasFlag", flag = "mobilize-emh#0" },
+]
+actions = [{ type = "npcSays", npc_id = "b_a_receptionist", quote = """
+I hear the EMH lost his emitter again. One has been turned into the Lost and
+Found, but I'm not sure how much good it will do you. Or him.""" }]
+
+# advance sequence to #1 when broken emitter obtained
+[[triggers]]
+name = "EMH: Obtained Broken Emitter"
+only_once = true
+conditions = [{ type = "take", item_id = "broken_emitter" }]
+actions = [{ type = "advanceFlag", flag = "mobilize-emh" }]
+
+# EMH immediately gives the broken emitter back if you try to give it to him
+[[triggers]]
+name = "EMH: Refuse Broken Emitter"
+only_once = false
+conditions = [
+    { type = "giveToNpc", item_id = "broken_emitter", npc_id = "emh" },
+]
+actions = [{ type = "npcRefuseItem", npc_id = "emh", reason = """
+That's my mobile emitter all right, but it's broken. You'll need to find a way
+to repair it before I can help you with HAL.""" }]
+
+# enable repair of the broken_emitter using the sonic_screwdriver's repair ability
+[[triggers]]
+name = "EMH: Repair Emitter with Sonic"
+only_once = true
+conditions = [
+    { type = "useItemOnItem", tool_id = "sonic_screwdriver", target_id = "broken_emitter", interaction = "repair" },
+]
+actions = [
+    { type = "despawnItem", item_id = "broken_emitter" },
+    { type = "spawnItemInInventory", item_id = "working_emitter" },
+    { type = "showMessage", text = """
+After a few electric whirring noises and a pass or two of the sonic, the
+emitter lights up and reboots, passing all self-tests.""" },
+]
+
+# advance sequence to #2 when broken emitter repaired (working one in inventory)
+[[triggers]]
+name = "EMH: Repaired Emitter"
+only_once = true
+conditions = [{ type = "hasItem", item_id = "working_emitter" }]
+actions = [{ type = "advanceFlag", flag = "mobilize-emh" }]
+
+# advance sequence to #3 (end) when working emitter given to EMH
+[[triggers]]
+name = "EMH: Goin' Mobile!"
+only_once = true
+conditions = [
+    { type = "giveToNpc", item_id = "working_emitter", npc_id = "emh" },
+]
+actions = [
+    { type = "restrictItem", item_id = "working_emitter" },
+    { type = "advanceFlag", flag = "mobilize-emh" },
+    { type = "setNpcState", npc_id = "emh", state = "happy" },
+    { type = "npcSays", npc_id = "emh", quote = """Looks like it's working properly! Let me take it for a spin.""" },
+    { type = "showMessage", text = """The EMH flickers, then vanishes in a flash. He reappears a few moments later.""" },
+    { type = "npcSays", npc_id = "emh", quote = """
+All seems to be in order. As promised, I retrieved one of HAL's modules. I
+dropped it off in the observation room across the hall, but insert it at your
+own peril.""" },
+    { type = "spawnItemInRoom", item_id = "hal_module_1", room_id = "observation-room" },
+]
+
+# first time player encounters EMH after HAL is fully rebooted
+[[triggers]]
+name = "EMH: HAL Reboot Finished"
+only_once = true
+conditions = [
+    { type = "withNpc", npc_id = "emh" },
+    { type = "flagComplete", flag = "hal-reboot" },
+]
+actions = [
+    { type = "setNpcState", npc_id = "emh", state = "normal" },
+    { type = "npcSays", npc_id = "emh", quote = """
+Well, now you've done it. HAL is opeerational again. We'll surely regret it --
+or at least *you* will.""" },
+]
+
+
+# -------------------------------------------------------------------------------------------------------------------------------
+#                                                   ------- BEGIN HAL REBOOT SEQUENCE --------
 # first attempt to talk to HAL starts the sequence
 [[triggers]]
 name = "HAL: Start Reboot Sequence"

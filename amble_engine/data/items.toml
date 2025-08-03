@@ -875,7 +875,7 @@ container_state = "open"
 [[items]]
 id = "hal_module_1"
 name = "HAL Memory Module #1"
-location = { Room = "observation-room" }
+location = { Nowhere = "spawns@observation-room after EMH mobilized" }
 portable = true
 restricted = false
 description = """
@@ -903,3 +903,37 @@ restricted = false
 description = """
 <Third of 3 HAL Memory Modules needed to reactivate him.>
 """
+# ------------------------------------------------------------------------------
+
+[[items]]
+id = "broken_emitter"
+name = "Mobile Emitter (Broken)"
+description = """
+<Need description of EMH's broken emitter here -- should be broken but not beyond repair.>
+"""
+portable = true
+location = { Nowhere = "spawns@lost_and_found_box when mobilize-emh sequence starts" }
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "working_emitter"
+name = "Mobile Emitter (Repaired)"
+description = """
+<Description of EMH's newly repaired emitter.>
+"""
+portable = true
+location = { Nowhere = "spawns@inventory after broken_emitter repaired" }
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "sonic_screwdriver"
+name = "Sonic Screwdriver"
+description = """
+<The Doctor's sonic screwdriver description. It can fix almost anything, but
+doesn't work on wood.>
+"""
+portable = true
+location = { Inventory = "player" }
+
+[[items.abilities]]
+type = "Repair"

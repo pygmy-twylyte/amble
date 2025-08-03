@@ -126,6 +126,11 @@ back here for nasogastric suction.""",
     "Welcome to sick bay. Please take a number.",
     "Good to see that you got past the Black Knight. Lucky for me, you can't dismember a hologram.",
 ]
+"happy" = [
+    """Yes! I can roam free again. But where will I go?""",
+    """It's nice to be mobile again, but I'll never go back to that restaurant.
+You'd think they'd install some magnetic shielding.""",
+]
 "custom:want-emitter" = [
     """I think I know where to find one of HAL's missing modules, but I can't leave
 med bay without my mobile emitter.""",
@@ -134,6 +139,8 @@ bay without my mobile emitter.""",
     """I was visiting a colleague at the restaurant on the main level when I last
 had my mobile emitter. There was a brilliant flash of electromagnetic radiation...
 and next thing I knew I was back here in the sick bay.""",
+    """It must have been the EM pulse in the restaurant that reset my emitter.
+If it wasn't completely destroyed, someone might have turned it in at the office.""",
 ]
 
 # START HAL-9000

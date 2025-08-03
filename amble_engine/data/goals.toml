@@ -92,3 +92,14 @@ description = "Figure out what's behind the mysterious sealed door."
 group = { type = "required" }
 activate_when = { type = "hasFlag", flag = "entered-sublevel-1" }
 finished_when = { type = "reachedRoom", room_sym = "room-aa-3b" }
+
+[[goals]]
+id = "hal-module-1"
+name = "Retrieve HAL Memory Module #1"
+description = """
+The EMH has offered to help restore HAL, but only if you can repair and return
+his mobile emitter. Assist him and retrieve the first of HAL's memory modules.
+"""
+group = { type = "required" }
+activate_when = { type = "flagInProgress", flag = "mobilize-emh" }
+finished_when = { type = "hasItem", item_sym = "hal_module_1" }
