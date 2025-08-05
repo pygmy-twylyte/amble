@@ -2,14 +2,11 @@
 
 ## CODING TODOs
 - tests (meh)
-- make sure pre-registered NPCs are verified (like items) during loading
-- TriggerCondition / OverlayCondition / Flag method to detect is sequence complete
-- update giveToNpc to give more specific reasons for refusals.
 - trigger action to change the .read field on an item to update displays etc
 - mechanism like window or portal -- where one can look outside the current room into another?
 
 ## FIXITs from runthroughs / CONTENT additions
-- ambient spinner for elevators with Muzak
+- plaque 2 in snowfield or camp, encased in ice, can be removed by melting or breaking the ice to read it
 - monolith will induce higher intelligence state or paradox acceptance ability that will allow AA-3B access
 - HAL: monolith room has HAL, but HAL is deactivated due to missing (removed) memory modules. Must replace them to get access to the monolith.
 - HAL module locations:
