@@ -51,7 +51,7 @@ pub fn talk_to_handler(world: &mut AmbleWorld, npc_name: &str) -> Result<()> {
         let stem = format!("{}", npc.name().npc_style());
         if let Some(ignore_spinner) = world.spinners.get(&SpinnerType::NpcIgnore) {
             let dialogue = npc.random_dialogue(ignore_spinner);
-            println!("{stem}: {dialogue}");
+            println!("{stem}:\n{dialogue}");
             info!("NPC \"{}\" ({}) said \"{}\"", npc.name(), npc.id(), dialogue);
         }
     }
