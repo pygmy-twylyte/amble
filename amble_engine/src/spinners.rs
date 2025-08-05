@@ -16,6 +16,7 @@ pub enum SpinnerType {
     DestinationUnknown,
     EntityNotFound,
     Movement,
+    Muzak,
     Nauseated,
     NoEffect,
     NpcIgnore,
