@@ -190,7 +190,7 @@ pub fn npc_says_random(world: &AmbleWorld, npc_id: &Uuid) -> Result<()> {
         .get(&SpinnerType::NpcIgnore)
         .with_context(|| "failed lookup of NpcIgnore spinner".to_string())?;
     let line = npc.random_dialogue(ignore_spinner);
-    println!("{}: {line}", npc.name().npc_style());
+    println!("{}:\n{line}", npc.name().npc_style());
     info!("└─ action: NpcSays({}, \"{line}\")", npc.name());
     Ok(())
 }
@@ -204,7 +204,7 @@ pub fn npc_says(world: &AmbleWorld, npc_id: &Uuid, quote: &str) -> Result<()> {
         .get(npc_id)
         .with_context(|| format!("action NpcSays({npc_id},_): npc not found"))?
         .name();
-    println!("{}: {quote}", npc_name.npc_style());
+    println!("{}:\n{quote}", npc_name.npc_style());
     info!("└─ action: NpcSays({npc_name}, \"{quote}\")");
     Ok(())
 }
