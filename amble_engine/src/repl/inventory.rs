@@ -81,8 +81,12 @@ pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
             // check to make sure special handling isn't necessary
             if let Some(ability) = item.requires_capability_for(ItemInteractionType::Handle) {
                 println!(
-                    "You can't pick it up barehanded. Use something to {} it.",
-                    ability.to_string().bold()
+                    "{}",
+                    format!(
+                        "You can't pick it up barehanded. Use something to {} it.",
+                        ability.to_string().bold()
+                    )
+                    .denied_style()
                 );
                 info!(
                     "Blocked attempt to take {} ({}) without item that can \"{ability}\"",
@@ -423,10 +427,10 @@ pub fn unexpected_entity(entity: WorldEntity, denial_msg: &str) {
 mod tests {
     use super::*;
     use crate::{
+        ItemHolder,
         item::{ContainerState, Item},
         npc::{Npc, NpcState},
         room::Room,
-        ItemHolder,
     };
     use std::collections::{HashMap, HashSet};
     use uuid::Uuid;
@@ -587,13 +591,7 @@ mod tests {
         let room_id = tw.room_id;
         drop_handler(&mut tw.world, "apple").unwrap();
         assert!(!tw.world.player.inventory.contains(&item_id));
-        assert!(tw
-            .world
-            .rooms
-            .get(&room_id)
-            .unwrap()
-            .contents
-            .contains(&item_id));
+        assert!(tw.world.rooms.get(&room_id).unwrap().contents.contains(&item_id));
         assert_eq!(
             tw.world.items.get(&item_id).unwrap().location(),
             &Location::Room(room_id)
@@ -607,17 +605,8 @@ mod tests {
         let room_id = tw.room_id;
         take_handler(&mut tw.world, "rock").unwrap();
         assert!(tw.world.player.inventory.contains(&item_id));
-        assert!(!tw
-            .world
-            .rooms
-            .get(&room_id)
-            .unwrap()
-            .contents
-            .contains(&item_id));
-        assert_eq!(
-            tw.world.items.get(&item_id).unwrap().location(),
-            &Location::Inventory
-        );
+        assert!(!tw.world.rooms.get(&room_id).unwrap().contents.contains(&item_id));
+        assert_eq!(tw.world.items.get(&item_id).unwrap().location(), &Location::Inventory);
     }
 
     #[test]
@@ -627,17 +616,8 @@ mod tests {
         let gem_id = tw.gem_id;
         take_from_handler(&mut tw.world, "gem", "chest").unwrap();
         assert!(tw.world.player.inventory.contains(&gem_id));
-        assert!(!tw
-            .world
-            .items
-            .get(&chest_id)
-            .unwrap()
-            .contents
-            .contains(&gem_id));
-        assert_eq!(
-            tw.world.items.get(&gem_id).unwrap().location(),
-            &Location::Inventory
-        );
+        assert!(!tw.world.items.get(&chest_id).unwrap().contents.contains(&gem_id));
+        assert_eq!(tw.world.items.get(&gem_id).unwrap().location(), &Location::Inventory);
     }
 
     #[test]
@@ -647,17 +627,8 @@ mod tests {
         let coin_id = tw.npc_item_id;
         take_from_handler(&mut tw.world, "coin", "bob").unwrap();
         assert!(tw.world.player.inventory.contains(&coin_id));
-        assert!(!tw
-            .world
-            .npcs
-            .get(&npc_id)
-            .unwrap()
-            .inventory
-            .contains(&coin_id));
-        assert_eq!(
-            tw.world.items.get(&coin_id).unwrap().location(),
-            &Location::Inventory
-        );
+        assert!(!tw.world.npcs.get(&npc_id).unwrap().inventory.contains(&coin_id));
+        assert_eq!(tw.world.items.get(&coin_id).unwrap().location(), &Location::Inventory);
     }
 
     #[test]
@@ -667,17 +638,8 @@ mod tests {
         let gem_id = tw.gem_id;
         validate_and_transfer_from_item(&mut tw.world, "gem", chest_id, "Chest").unwrap();
         assert!(tw.world.player.inventory.contains(&gem_id));
-        assert!(!tw
-            .world
-            .items
-            .get(&chest_id)
-            .unwrap()
-            .contents
-            .contains(&gem_id));
-        assert_eq!(
-            tw.world.items.get(&gem_id).unwrap().location(),
-            &Location::Inventory
-        );
+        assert!(!tw.world.items.get(&chest_id).unwrap().contents.contains(&gem_id));
+        assert_eq!(tw.world.items.get(&gem_id).unwrap().location(), &Location::Inventory);
     }
 
     #[test]
@@ -687,71 +649,36 @@ mod tests {
         let coin_id = tw.npc_item_id;
         validate_and_transfer_from_npc(&mut tw.world, "coin", npc_id, "Bob").unwrap();
         assert!(tw.world.player.inventory.contains(&coin_id));
-        assert!(!tw
-            .world
-            .npcs
-            .get(&npc_id)
-            .unwrap()
-            .inventory
-            .contains(&coin_id));
-        assert_eq!(
-            tw.world.items.get(&coin_id).unwrap().location(),
-            &Location::Inventory
-        );
+        assert!(!tw.world.npcs.get(&npc_id).unwrap().inventory.contains(&coin_id));
+        assert_eq!(tw.world.items.get(&coin_id).unwrap().location(), &Location::Inventory);
     }
 
     #[test]
     fn transfer_to_player_updates_world_from_item() {
         let mut tw = build_world();
-        transfer_to_player(
-            &mut tw.world,
-            VesselType::Item,
-            tw.chest_id,
-            "Chest",
-            tw.gem_id,
-            "Gem",
-        );
+        transfer_to_player(&mut tw.world, VesselType::Item, tw.chest_id, "Chest", tw.gem_id, "Gem");
         assert!(tw.world.player.inventory.contains(&tw.gem_id));
-        assert_eq!(
-            tw.world.items.get(&tw.gem_id).unwrap().location(),
-            &Location::Inventory
-        );
-        assert!(!tw
-            .world
-            .items
-            .get(&tw.chest_id)
-            .unwrap()
-            .contents
-            .contains(&tw.gem_id));
+        assert_eq!(tw.world.items.get(&tw.gem_id).unwrap().location(), &Location::Inventory);
+        assert!(!tw.world.items.get(&tw.chest_id).unwrap().contents.contains(&tw.gem_id));
     }
 
     #[test]
     fn transfer_to_player_updates_world_from_npc() {
         let mut tw = build_world();
-        transfer_to_player(
-            &mut tw.world,
-            VesselType::Npc,
-            tw.npc_id,
-            "Bob",
-            tw.npc_item_id,
-            "Coin",
-        );
+        transfer_to_player(&mut tw.world, VesselType::Npc, tw.npc_id, "Bob", tw.npc_item_id, "Coin");
         assert!(tw.world.player.inventory.contains(&tw.npc_item_id));
         assert_eq!(
-            tw.world
-                .items
-                .get(&tw.npc_item_id)
-                .unwrap()
-                .location(),
+            tw.world.items.get(&tw.npc_item_id).unwrap().location(),
             &Location::Inventory
         );
-        assert!(!tw
-            .world
-            .npcs
-            .get(&tw.npc_id)
-            .unwrap()
-            .inventory
-            .contains(&tw.npc_item_id));
+        assert!(
+            !tw.world
+                .npcs
+                .get(&tw.npc_id)
+                .unwrap()
+                .inventory
+                .contains(&tw.npc_item_id)
+        );
     }
 
     #[test]
@@ -759,19 +686,16 @@ mod tests {
         let mut tw = build_world();
         put_in_handler(&mut tw.world, "apple", "chest").unwrap();
         assert!(!tw.world.player.inventory.contains(&tw.inv_item_id));
-        assert!(tw
-            .world
-            .items
-            .get(&tw.chest_id)
-            .unwrap()
-            .contents
-            .contains(&tw.inv_item_id));
-        assert_eq!(
+        assert!(
             tw.world
                 .items
-                .get(&tw.inv_item_id)
+                .get(&tw.chest_id)
                 .unwrap()
-                .location(),
+                .contents
+                .contains(&tw.inv_item_id)
+        );
+        assert_eq!(
+            tw.world.items.get(&tw.inv_item_id).unwrap().location(),
             &Location::Item(tw.chest_id)
         );
     }
@@ -779,24 +703,12 @@ mod tests {
     #[test]
     fn unexpected_entity_does_not_change_world() {
         let tw = build_world();
-        let before = tw
-            .world
-            .npcs
-            .get(&tw.npc_id)
-            .unwrap()
-            .location()
-            .clone();
+        let before = tw.world.npcs.get(&tw.npc_id).unwrap().location().clone();
         {
             let npc_ref = tw.world.npcs.get(&tw.npc_id).unwrap();
             unexpected_entity(WorldEntity::Npc(npc_ref), "nope");
         }
-        let after = tw
-            .world
-            .npcs
-            .get(&tw.npc_id)
-            .unwrap()
-            .location()
-            .clone();
+        let after = tw.world.npcs.get(&tw.npc_id).unwrap().location().clone();
         assert_eq!(before, after);
     }
 }
