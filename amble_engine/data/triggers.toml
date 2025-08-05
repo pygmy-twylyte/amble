@@ -1,8 +1,8 @@
 [[triggers]]
-name = "Inca-Road: Traveling Without Towel"
+name = "Guard-Post: Traveling Without Towel"
 only_once = true
 conditions = [
-    { type = "enter", room_id = "inca-road" },
+    { type = "enter", room_id = "guard-post" },
     { type = "missingItem", item_id = "towel" },
 ]
 actions = [{ type = "showMessage", text = """
@@ -120,6 +120,7 @@ conditions = [
 ]
 actions = [
     { type = "revealExit", direction = "portal", exit_from = "portal-room", exit_to = "aperture-lab" },
+    { type = "addFlag", flag = { type = "simple", name = "portal-opened" } },
     { type = "showMessage", text = """
 A loud \"Squip!\" comes from the gun. The wall in front of it sizzles for a
 moment, and then a crackling oval blue portal expands on the wall to reveal a
@@ -619,9 +620,9 @@ You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?
 """ },
     { type = "showMessage", text = """
 Then you wonder why you're thinking of Barney as a real person instead of a
-character in a game. Wait, he was just a fiction, right? Come to think of it,
-you feel a little unsure of reality, and it's worse the nearer you are to the
-building.""" },
+character in a game. And Gordon, for that matter.Wait, he was just fiction,
+right? Come to think of it, you feel a little unsure of reality, and it's
+worse the nearer you are to the building.""" },
     { type = "addFlag", flag = { type = "simple", name = "got-crowbar" } },
     { type = "awardPoints", amount = 4 },
 ]
@@ -632,7 +633,7 @@ only_once = true
 conditions = [{ type = "talkToNpc", npc_id = "black_knight" }]
 actions = [
     { type = "addFlag", flag = { type = "simple", name = "talked-to-knight" } },
-    { type = "npcSays", npc_id = "black_knight", quote = "You shall not pass. This wing is closed... and may not exist at all." },
+    { type = "npcSays", npc_id = "black_knight", quote = "You shall not pass. This wing is closed... and may not exist at all. Begone!" },
 ]
 
 [[triggers]]
@@ -646,6 +647,14 @@ actions = [
     { type = "npcSays", npc_id = "black_knight", quote = "Hey! Give that back, you cowardly cur!" },
 ]
 
+# Black Knight reverts to original blocking state if you give him the sword back without sharpening first
+[[triggers]]
+name = "Black Knight: Return Dull Sword"
+only_once = true
+conditions = [
+    { type = "giveToNpc", item_id = "dull_longsword", npc_id = "black_knight" },
+]
+actions = [{ type = "setNpcState", npc_id = "black_knight", state = "normal" }]
 
 [[triggers]]
 name = "Black Knight: Sharpened Sword"
@@ -685,10 +694,11 @@ only_once = false
 conditions = [
     { type = "withNpc", npc_id = "black_knight" },
     { type = "npcInState", npc_id = "black_knight", state = "mad" },
+    { type = "missingFlag", flag = "appeased_black_knight" },
 ]
 actions = [
     { type = "showMessage", text = """
-The Black Knight continues dodging about the room, occasionally trying to kick you in the shin.
+The Black Knight dodges about the room, occasionally trying to kick you in the shin.
 """ },
     { type = "npcSaysRandom", npc_id = "black_knight" },
 ]
@@ -703,6 +713,17 @@ conditions = [
         "two-sheds-landing",
         "two-sheds",
         "guard-post",
+    ] },
+]
+actions = []
+
+[[triggers]]
+name = "Ambient: Elevator Muzak"
+only_once = false
+conditions = [
+    { type = "ambient", spinner = "muzak", room_ids = [
+        "lift-main",
+        "lift-sublevel-1",
     ] },
 ]
 actions = []
@@ -752,6 +773,7 @@ actions = [
     { type = "awardPoints", amount = -1 },
 ]
 
+# shows intermittent message from nausea spinner while status in effect
 [[triggers]]
 name = "Status: Nauseated"
 only_once = false
@@ -799,8 +821,9 @@ conditions = [
 ]
 actions = [
     { type = "npcSays", npc_id = "emh", quote = """
-Word is, you've seen HAL. If you want to get him working again -- and I'm not
-sure I'd advise it -- I may be able to get one of those memory modules for you.""" },
+Ah -- I hoped I would catch you.Word is, you've seen HAL, or what remains of
+him. If you want to get him working again -- and I'm not sure I'd advise it --
+I may be able to get one of those memory modules for you.""" },
     { type = "setNpcState", npc_id = "emh", state = { custom = "want-emitter" } },
     { type = "spawnItemInContainer", item_id = "broken_emitter", container_id = "lost_and_found_box" },
     { type = "addFlag", flag = { type = "sequence", name = "mobilize-emh", end = 3 } },
@@ -880,6 +903,14 @@ All seems to be in order. As promised, I retrieved one of HAL's modules. I
 dropped it off in the observation room across the hall, but insert it at your
 own peril.""" },
     { type = "spawnItemInRoom", item_id = "hal_module_1", room_id = "observation-room" },
+    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """
+Heard overhead: "Will the E.M.H. please return to sick bay? There's been a
+yellow snow blinding incident."
+    """ },
+    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """
+Over the PA: E.M.H and sanitation, please report to the lunch room.
+Mr. Creosote ate a tiny, wafer thin mint again.
+    """ },
 ]
 
 # first time player encounters EMH after HAL is fully rebooted
@@ -917,7 +948,7 @@ actions = [
 name = "HAL: Module #1 Inserted"
 only_once = true
 conditions = [
-    { type = "insert", item_id = "hal_module_1", container_id = "hal_logic_center" },
+    { type = "insert", item_id = "hal_module_1", container_id = "hal_memory_bank" },
 ]
 actions = [
     { type = "advanceFlag", flag = "hal-reboot" },
@@ -929,7 +960,7 @@ actions = [
 name = "HAL: Module #2 Inserted"
 only_once = true
 conditions = [
-    { type = "insert", item_id = "hal_module_2", container_id = "hal_logic_center" },
+    { type = "insert", item_id = "hal_module_2", container_id = "hal_memory_bank" },
 ]
 actions = [
     { type = "advanceFlag", flag = "hal-reboot" },
@@ -941,7 +972,7 @@ actions = [
 name = "HAL: Module #3 Inserted"
 only_once = true
 conditions = [
-    { type = "insert", item_id = "hal_module_3", container_id = "hal_logic_center" },
+    { type = "insert", item_id = "hal_module_3", container_id = "hal_memory_bank" },
 ]
 actions = [
     { type = "advanceFlag", flag = "hal-reboot" },
@@ -971,5 +1002,5 @@ only_once = true
 conditions = [{ type = "flagComplete", flag = "hal-reboot" }]
 actions = [
     { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-3" } },
-    { type = "showMessage", text = "All memory now restored, HAL-9000 finishes rebooting." },
+    { type = "showMessage", text = "All memory now restored, HAL-9000 finishes rebooting and is fully operational." },
 ]

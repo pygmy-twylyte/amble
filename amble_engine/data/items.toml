@@ -150,7 +150,7 @@ location = { Nowhere = "spawns@player when delivery_box opened" }
 [[items]]
 id = "towel"
 name = "Towel"
-description = "A plain white bath towel with plooksilk stiching, fully charged."
+description = "A plain, white nuclear bath towel with plooksilk stitching, fully charged."
 portable = true
 location = { Nowhere = "spawns@player when delivery_box is opened" }
 
@@ -429,7 +429,8 @@ name = "Initech Arson-Aid"
 location = { Room = "two-sheds" }
 description = """
 A small personal flamethrower, for use in home and garden -- just not your own,
-if you know what's good for you."""
+if you know what's good for you. Instructions for use are labeled on the side.
+"""
 portable = true
 text = """
 Instructions:
@@ -500,7 +501,7 @@ type = "Read"
 [[items]]
 id = "foamsafe-x17"
 name = "Initech FoamSafe™ X-17"
-location = { Nowhere = "????????" } # To be determined!
+location = { Room = "aperture-lab" }
 description = """
 A fire extinguisher-like device with the words "Initech FoamSafe™ X-17" proudly
 emblazoned on its side. Its label promises peace of mind in emergencies — though
@@ -713,7 +714,7 @@ id = "dull_longsword"
 name = "Dull Longsword"
 description = """
 The Black Knight's masterfully forged longsword, dulled from years of hacking up
-those who insist upon passing.
+those who absolutelyinsist upon passing.
 """
 location = { Npc = "black_knight" }
 portable = true
@@ -851,7 +852,7 @@ The OverShed™ Division of Amble Adventures has reclassified this dwelling as:
 
             >> Shed, Subtype B – Multiversal Crosslink Node <<
 
-     ⚠   Report any fictional apparitions or missing time to your local
+       Report any fictional apparitions or missing time to your local
                 Amble Adventures cover-up coordinator.
 """
 
@@ -860,14 +861,16 @@ type = "Read"
 
 # ------------------------------------------------------------------------------
 [[items]]
-id = "hal_logic_center"
-name = "H.A.L. Logic Center"
+id = "hal_memory_bank"
+name = "H.A.L. Memory Bank"
 location = { Room = "observation-room" }
 portable = false
 restricted = false
 description = """
-<This will be the HAL logic center. 3 memory modules will need to be found and
-inserted to reboot HAL and get access to the monolith>
+A sleek, matte-black monolith of its own, this memory bank houses the core logic
+center of the HAL-9000 system. Three memory modules must be located and reinserted
+to complete the reboot sequence. The recessed slots flicker faintly, as if HAL is
+dreaming electric dreams.
 """
 container_state = "open"
 
@@ -879,7 +882,9 @@ location = { Nowhere = "spawns@observation-room after EMH mobilized" }
 portable = true
 restricted = false
 description = """
-<First of 3 HAL Memory Modules needed to reactivate him.>
+The first of HAL’s missing memory modules. It's a small, rectangular prism etched
+with faint circuitry—and possibly resentment. Warm to the touch, but that might just
+be your imagination.
 """
 
 # ------------------------------------------------------------------------------
@@ -890,8 +895,10 @@ location = { Room = "observation-room" }
 portable = true
 restricted = false
 description = """
-<Second of 3 HAL Memory Modules needed to reactivate him.>
+Second in the trio of HAL’s memory modules. Its red LED pulses gently, like a
+heartbeat—or a warning. It hums when held, and you could swear it whispered your name.
 """
+
 
 # ------------------------------------------------------------------------------
 [[items]]
@@ -901,15 +908,20 @@ location = { Room = "observation-room" }
 portable = true
 restricted = false
 description = """
-<Third of 3 HAL Memory Modules needed to reactivate him.>
+The final piece of HAL’s fragmented mind. The outer shell is pristine, but
+something about it feels... watchful. Once inserted, the full system may awaken—
+and then things might get complicated.
 """
+
 # ------------------------------------------------------------------------------
 
 [[items]]
 id = "broken_emitter"
 name = "Mobile Emitter (Broken)"
 description = """
-<Need description of EMH's broken emitter here -- should be broken but not beyond repair.>
+A palm-sized, silvery device scorched and warped by a violent electromagnetic
+flare. It may not beyond repair, though a few panels are cracked and the core
+oscillator is rattling suspiciously. Smells faintly of ozone and regret.
 """
 portable = true
 location = { Nowhere = "spawns@lost_and_found_box when mobilize-emh sequence starts" }
@@ -919,7 +931,9 @@ location = { Nowhere = "spawns@lost_and_found_box when mobilize-emh sequence sta
 id = "working_emitter"
 name = "Mobile Emitter (Repaired)"
 description = """
-<Description of EMH's newly repaired emitter.>
+Freshly repaired and gleaming with diagnostic confidence, this mobile emitter is once
+again capable of projecting the Emergency Medical Hologram beyond the confines of
+Med Bay. It's surprisingly lightweight—and slightly smug about it.
 """
 portable = true
 location = { Nowhere = "spawns@inventory after broken_emitter repaired" }
@@ -929,8 +943,9 @@ location = { Nowhere = "spawns@inventory after broken_emitter repaired" }
 id = "sonic_screwdriver"
 name = "Sonic Screwdriver"
 description = """
-<The Doctor's sonic screwdriver description. It can fix almost anything, but
-doesn't work on wood.>
+A multipurpose marvel of alien engineering, capable of repairing complex machinery,
+unlocking sealed doors, and occasionally shorting out bureaucracies. Ineffective
+against wood, emotions, and existential dread.
 """
 portable = true
 location = { Inventory = "player" }

@@ -496,17 +496,35 @@ to = "lift-bank-main"
 [[rooms]]
 id = "portal-room"
 name = "Portal Room"
-base_description = """
-A bare white room. In the center, a black and white Portal gun is affixed to
-a stand, aimed at a bullseye on the wall.
-
-A ladder leads back up through the trap door in the ceiling.
-"""
 location = "Nowhere"
 visited = false
+base_description = """
+A bare white room with a white tile floor. A ladder leads back up through the
+trap door in the ceiling. Three of the four walls are used as whiteboards,
+littered with obscure diagrams and equations. In the center, a black and
+white Portal gun is affixed to a pedestal and aimed squarely at the fourth
+wall.
+"""
+
+[[rooms.overlays]]
+condition = { type = "flagUnset", flag = "portal-opened" }
+text = """
+A bullseye adorns the fourth, otherwise blank wall. A photo of a watch-sized
+computer attached to a potato battery is taped in the center, for some reason.
+"""
+
+[[rooms.overlays]]
+condition = { type = "flagSet", flag = "portal-opened" }
+text = """
+There is a sparkling blue portal in the fourth wall, with a view to a
+laboratory space beyond. A bit of smoke drifts in from the portal.
+"""
 
 [rooms.exits.ladder]
 to = "lounge"
+
+# exit to aperture-lab created here after the portal gun is fired
+
 
 # ---------------------------------------------------------------------------
 [[rooms]]
@@ -636,6 +654,8 @@ to = "sublevel-1-entrance"
 [[rooms]]
 id = "sublevel-1-entrance"
 name = "Entrance to Sublevel One"
+location = "Nowhere"
+visited = false
 base_description = """
 A small landing area covered in dust. Buckets, tools, and debris are strewn
 about the floor. The door to the west is labeled with a sign:
@@ -643,8 +663,27 @@ about the floor. The door to the west is labeled with a sign:
                         🚧 ROOM AA-3B 🚧
                  FICTIONAL UNIVERSE CONTAINMENT
 """
-location = "Nowhere"
-visited = false
+
+[[rooms.overlays]]
+condition = { type = "npcInState", npc_id = "black_knight", state = "normal" }
+text = """
+The Black Knight stands in your path, staring you down, leaning on his battered
+longsword.
+"""
+
+[[rooms.overlays]]
+condition = { type = "npcInState", npc_id = "black_knight", state = "mad" }
+text = """
+Agitated, the Black Knight sidesteps around the room, occasionally lunging
+at you to grab at his sword or kick you in the shin.
+"""
+
+[[rooms.overlays]]
+condition = { type = "npcInState", npc_id = "black_knight", state = "happy" }
+text = """
+The Black Knight stands in a corner, helmet off, gleefully plucking hairs from
+his beard and splitting them with his sword.
+"""
 
 [rooms.exits.north]
 to = "lift-sublevel-1"

@@ -103,3 +103,13 @@ his mobile emitter. Assist him and retrieve the first of HAL's memory modules.
 group = { type = "required" }
 activate_when = { type = "flagInProgress", flag = "mobilize-emh" }
 finished_when = { type = "hasItem", item_sym = "hal_module_1" }
+
+[[goals]]
+id = "get-a-towel"
+name = "Find a Towel"
+description = """
+No traveler should ever be without one. The security system at the entrance to
+the building seems adamant that find one before you go inside."""
+group = { type = "required" }
+activate_when = { type = "reachedRoom", room_sym = "front-entrance" }
+finished_when = { type = "hasFlag", flag = "got-towel" }

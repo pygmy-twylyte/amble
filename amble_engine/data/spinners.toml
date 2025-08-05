@@ -53,6 +53,8 @@ values = [
     "You don't see that here.",
     "404 Not Found - Try Again",
     "I don't recognize that.",
+    "It's gotta be here somewhere. Let me look again.",
+    "What language is that?",
 ]
 
 [[spinners]]
@@ -91,6 +93,7 @@ values = [
     "Unrecognized verb. Maybe try it in ALL CAPS for emphasis?",
     "Snagrilfromp. I can make words up too.",
     "Have you tried turning your syntax off and back on again?",
+    "I don't think your fingers are working right. Are you having a stroke?",
 ]
 
 [[spinners]]
@@ -107,6 +110,8 @@ values = [
     "Reality refuses to acknowledge your efforts.",
     "No errors, no effect, no fanfare. Just... stillness.",
     "That's another entry for the Journal of Failed Experiments.",
+    "It *seemed* like a great idea, but no, it wasn't.",
+    "That didn't work. Maybe if you type it faster, or in all caps?",
 ]
 
 [[spinners]]
@@ -119,8 +124,13 @@ values = [
     "Something tromps through the leaves behind you, but stops when you turn around.",
     "You hear a faint, echoing laugh from deep in the woods.",
     "A cloud of gnats drifts by, holding the distinct shape of a question mark.",
+    "A Yeti walks in the distance. It's blurry.",
+    "The stone steps briefly appear to be made of yellow bricks, just for a moment.",
+    "Were those trees there before? They seem to be rearranging themselves when you're not looking.",
+    "The woods go eerily quiet. Your footsteps don't even make a sound.",
+    "A fire-breathing dragonfly blows smoke rings as it flies past.",
 ]
-widths = [18, 1, 1, 1, 1, 1, 1]
+widths = [25, 1, 1, 1, 1, 1, 1]
 
 [[spinners]]
 spinnerType = "ambientAA3B"
@@ -133,8 +143,13 @@ values = [
     "A black obelisk taller than you shimmers into view, then fades as quickly as it appeared.",
     "Someone appears above you, shouts \"The enemy gate is DOWN!\", and then fades to nothing.",
     "For a flash, you see the word \"REDRUM\" splashed in red across the wall in front of you.",
+    "Suddenly, tribbles cover every flat surface around you... and then they're gone.",
+    "A kid rides by on a BMX bike, yelling \"Give me my TWO DOLLARS!\"",
+    "A couple of robots nearby heatedly debate the Zeroth Law of Robotics.",
+    "You see a Borg drone repeatedly walking into a wall, disconnected from the collective.",
+    "Around the corner, someone shouts \"Push the button, Frank!\"",
 ]
-widths = [17, 1, 1, 1, 1, 1, 1]
+widths = [20, 1, 1, 1, 1, 1, 1]
 
 [[spinners]]
 spinnerType = "ambientInterior"
@@ -149,8 +164,12 @@ values = [
     "A faint voice says \"Testing in progress\" followed by a thump.",
     "You hear a tone, then \"Fiction containment at 42%.\"",
     "The building shudders violently for a moment. Nobody seems to notice.",
+    "All of the fire doors in the building suddenly close.",
+    "Someone in the distance yells: \"Hey, who turned out the lights?!\"",
+    "You can hear the \"Underdog\" through the wall from an adjacent room.",
+    "Paperwork and supplies pass by through a pneumatic tube overhead, along with an occasional piece of cake.",
 ]
-widths = [20, 1, 1, 1, 1, 1, 1, 1, 1]
+widths = [25, 1, 1, 1, 1, 1, 1, 1, 1]
 
 [[spinners]]
 spinnerType = "nauseated"
@@ -161,5 +180,18 @@ values = [
     "You regurgitate a bit of last night's dinner, but can't remember what it was.",
     "Everything smells faintly of old tuna. Why?",
     "Your stomach roils, like that time you stayed up all night drinking mezcal with Ruben",
+    "You stop by the nearest wastebin for a few dry heaves.",
 ]
 widths = [10, 1, 1, 1, 1]
+
+[[spinners]]
+spinnerType = "muzak"
+values = [
+    """A Muzak version of Porcupine Tree's \"The Sound of Muzak\" plays softly over the elevator
+speaker.""",
+    "Another version of \"The Sound of Muzak\" plays, this time with a pan flute playing the melody.",
+    "\"The Sound of Muzak\" plays louder now, with a tuba playing the bass part.",
+    "The Muzak version of \"The Sound of Muzak\" crescendos leading up to the guitar -- I mean harp -- solo.",
+    "The Muzak pauses, and you hear the sound of someone flipping over a cassette tape.",
+    "The Muzak \"The Sound of Muzak\" grows to intense volume. Sticking your towel in your ears doesn't help.",
+]
