@@ -444,6 +444,8 @@ mod tests {
         gem_id: Uuid,
         npc_id: Uuid,
         npc_item_id: Uuid,
+        restr_chest_item_id: Uuid,
+        restr_npc_item_id: Uuid,
     }
 
     fn build_world() -> TestWorld {
@@ -476,7 +478,7 @@ mod tests {
             location: Location::Inventory,
             portable: true,
             container_state: None,
-            restricted: true,
+            restricted: false,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
@@ -529,6 +531,21 @@ mod tests {
             location: Location::Item(chest_id),
             portable: true,
             container_state: None,
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+        let restricted_chest_item_id = Uuid::new_v4();
+        let restricted_chest_item = Item {
+            id: restricted_chest_item_id,
+            symbol: "rci".into(),
+            name: "Restricted Chest Item".into(),
+            description: "".into(),
+            location: Location::Item(chest_id),
+            portable: true,
+            container_state: None,
             restricted: true,
             contents: HashSet::new(),
             abilities: HashSet::new(),
@@ -536,8 +553,10 @@ mod tests {
             text: None,
         };
         chest.add_item(gem_id);
+        chest.add_item(restricted_chest_item_id);
         world.items.insert(gem_id, gem);
         world.items.insert(chest_id, chest);
+        world.items.insert(restricted_chest_item_id, restricted_chest_item);
         world.rooms.get_mut(&room_id).unwrap().add_item(chest_id);
 
         // npc with item
@@ -561,6 +580,21 @@ mod tests {
             location: Location::Npc(npc_id),
             portable: true,
             container_state: None,
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+        let restricted_npc_item_id = Uuid::new_v4();
+        let restricted_npc_item = Item {
+            id: restricted_npc_item_id,
+            symbol: "key".into(),
+            name: "Restricted NPC Item".into(),
+            description: "".into(),
+            location: Location::Npc(npc_id),
+            portable: true,
+            container_state: None,
             restricted: true,
             contents: HashSet::new(),
             abilities: HashSet::new(),
@@ -568,7 +602,10 @@ mod tests {
             text: None,
         };
         npc.add_item(npc_item_id);
+        npc.add_item(restricted_npc_item_id);
         world.items.insert(npc_item_id, npc_item);
+        world.items.insert(restricted_npc_item_id, restricted_npc_item);
+
         world.npcs.insert(npc_id, npc);
         world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
 
@@ -581,6 +618,8 @@ mod tests {
             gem_id,
             npc_id,
             npc_item_id,
+            restr_chest_item_id: restricted_chest_item_id,
+            restr_npc_item_id: restricted_npc_item_id,
         }
     }
 
@@ -621,6 +660,20 @@ mod tests {
     }
 
     #[test]
+    fn take_restricted_item_from_item_blocked() {
+        let mut tw = build_world();
+        let chest_id = tw.chest_id;
+        let item_id = tw.restr_chest_item_id;
+        take_from_handler(&mut tw.world, "restricted", "bob").unwrap();
+        assert!(!tw.world.player.inventory.contains(&item_id));
+        assert!(tw.world.items.get(&chest_id).unwrap().contents.contains(&item_id));
+        assert_eq!(
+            tw.world.items.get(&item_id).unwrap().location(),
+            &Location::Item(chest_id)
+        );
+    }
+
+    #[test]
     fn take_from_handler_from_npc() {
         let mut tw = build_world();
         let npc_id = tw.npc_id;
@@ -629,6 +682,17 @@ mod tests {
         assert!(tw.world.player.inventory.contains(&coin_id));
         assert!(!tw.world.npcs.get(&npc_id).unwrap().inventory.contains(&coin_id));
         assert_eq!(tw.world.items.get(&coin_id).unwrap().location(), &Location::Inventory);
+    }
+
+    #[test]
+    fn take_restricted_item_from_npc_blocked() {
+        let mut tw = build_world();
+        let npc_id = tw.npc_id;
+        let item_id = tw.restr_npc_item_id;
+        take_from_handler(&mut tw.world, "restricted", "bob").unwrap();
+        assert!(!tw.world.player.inventory.contains(&item_id));
+        assert!(tw.world.npcs.get(&npc_id).unwrap().inventory.contains(&item_id));
+        assert_eq!(tw.world.items.get(&item_id).unwrap().location(), &Location::Npc(npc_id));
     }
 
     #[test]
