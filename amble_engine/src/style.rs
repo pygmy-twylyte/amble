@@ -30,7 +30,7 @@ pub trait GameStyle {
 
 impl GameStyle for &str {
     fn overlay_style(&self) -> ColoredString {
-        self.truecolor(150, 180, 255)
+        self.italic().truecolor(75, 180, 255)
     }
     fn subheading_style(&self) -> ColoredString {
         self.underline()

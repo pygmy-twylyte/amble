@@ -5,7 +5,7 @@
 use std::collections::HashSet;
 
 use crate::{
-    AmbleWorld, WorldObject,
+    AmbleWorld, View, ViewItem, WorldObject,
     item::ItemAbility,
     repl::{entity_not_found, find_world_object},
     style::GameStyle,
@@ -19,9 +19,14 @@ use log::info;
 use uuid::Uuid;
 
 /// Shows description of surroundings.
-pub fn look_handler(world: &mut AmbleWorld) -> Result<()> {
+pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let room = world.player_room_ref()?;
-    room.show(world)?;
+    room.show(world, view)?;
+    // view.push(ViewItem::RoomDescription {
+    //     name: room.name.to_string(),
+    //     description: room.description().to_string(),
+    //     visited: room.visited,
+    // });
     info!("{} looked around {} ({})", world.player.name, room.name, room.id);
     let _fired = check_triggers(world, &[]);
     Ok(())

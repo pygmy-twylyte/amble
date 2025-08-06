@@ -1,4 +1,7 @@
-use crate::{ItemHolder, Location, WorldObject, npc::NpcState, player::Flag, style::GameStyle, world::AmbleWorld};
+use crate::{
+    ItemHolder, Location, View, ViewItem, WorldObject, npc::NpcState, player::Flag, style::GameStyle, view::ExitLine,
+    world::AmbleWorld,
+};
 use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -132,34 +135,40 @@ impl ItemHolder for Room {
 }
 impl Room {
     /// Displays full description, exit, and NPC information for the `Room`.
-    pub fn show(&self, world: &AmbleWorld) -> Result<()> {
+    pub fn show(&self, world: &AmbleWorld, view: &mut View) -> Result<()> {
         let banner = self.name.room_titlebar_style();
         println!("{banner:^80}");
         println!("{}", self.base_description.description_style());
-        self.show_overlays(world);
+        view.push(ViewItem::RoomDescription {
+            name: self.name.to_string(),
+            description: self.description().to_string(),
+            visited: self.visited,
+        });
+        self.show_overlays(world, view);
 
         if !self.contents.is_empty() {
-            println!("{}", "You see:".subheading_style());
-            self.contents
+            let item_names: Vec<_> = self
+                .contents
                 .iter()
-                .filter_map(|item_id| world.items.get(item_id))
-                .enumerate()
-                .for_each(|(n, item)| println!("    {}) {}", n + 1, item.name.item_style()));
+                .filter_map(|id| world.items.get(id).map(|item| item.name().to_string()))
+                .collect();
+            view.push(ViewItem::RoomItems(item_names));
         }
-        self.show_exits(world)?;
+        self.show_exits(world, view)?;
         self.show_npcs(world);
         println!();
         Ok(())
     }
 
     /// Displays any applicable description overlays.
-    pub fn show_overlays(&self, world: &AmbleWorld) {
-        for overlay in &self.overlays {
-            if overlay.applies(self.id(), world) {
-                println!("{}", overlay.text.overlay_style());
-                println!();
-            }
-        }
+    pub fn show_overlays(&self, world: &AmbleWorld, view: &mut View) {
+        let overlay_text: Vec<String> = self
+            .overlays
+            .iter()
+            .filter(|o| o.applies(self.id(), world))
+            .map(|o| o.text.clone())
+            .collect();
+        view.push(ViewItem::RoomOverlays(overlay_text));
     }
 
     /// Displays list of NPCs present in the `Room`
@@ -177,8 +186,9 @@ impl Room {
     }
 
     /// Displays list of available exits from the Room.
-    pub fn show_exits(&self, world: &AmbleWorld) -> Result<()> {
+    pub fn show_exits(&self, world: &AmbleWorld, view: &mut View) -> Result<()> {
         println!("\n{}", "Exits:".subheading_style());
+        let mut exit_lines = Vec::new();
         for (direction, exit) in &self.exits {
             let target_room = world.rooms.get(&exit.to).ok_or(anyhow!(
                 "Room({}) not found ({} exit from Room({})",
@@ -186,25 +196,14 @@ impl Room {
                 direction,
                 self.id
             ))?;
-            match target_room {
-                room if room.visited && exit.locked => {
-                    println!(
-                        "\t🡺 {} ({})",
-                        direction.exit_locked_style(),
-                        target_room.name().room_style()
-                    );
-                },
-                room if room.visited => {
-                    println!(
-                        "\t🡺 {} ({})",
-                        direction.exit_visited_style(),
-                        target_room.name().room_style()
-                    );
-                },
-                _ if exit.locked => println!("\t🡺 {}", direction.exit_locked_style()),
-                _ => println!("\t🡺 {}", direction.exit_unvisited_style()),
-            }
+            exit_lines.push(ExitLine {
+                direction: direction.to_string(),
+                destination: target_room.name().to_string(),
+                exit_locked: exit.locked,
+                dest_visited: target_room.visited,
+            });
         }
+        view.push(ViewItem::RoomExits(exit_lines));
         Ok(())
     }
 }

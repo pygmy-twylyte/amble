@@ -26,7 +26,7 @@ use crate::spinners::SpinnerType;
 use crate::style::GameStyle;
 use crate::trigger::TriggerCondition;
 use crate::world::AmbleWorld;
-use crate::{Item, WorldObject};
+use crate::{Item, View, ViewItem, WorldObject};
 
 use anyhow::Result;
 use colored::Colorize;
@@ -49,7 +49,10 @@ pub enum ReplControl {
 /// # Panics
 /// This function does not expect to panic.
 pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
+    let mut view = View::new();
+
     loop {
+        view.clear();
         print!("\n[Score: {}/{}]> ", world.player.score, world.max_score);
         io::stdout()
             .flush()
@@ -69,9 +72,9 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
                     break;
                 }
             },
-            Command::Look => look_handler(world)?,
+            Command::Look => look_handler(world, &mut view)?,
             Command::LookAt(thing) => look_at_handler(world, &thing)?,
-            Command::MoveTo(direction) => move_to_handler(world, &direction)?,
+            Command::MoveTo(direction) => move_to_handler(world, &mut view, &direction)?,
             Command::Take(thing) => take_handler(world, &thing)?,
             Command::TakeFrom { item, container } => take_from_handler(world, &item, &container)?,
             Command::Drop(thing) => drop_handler(world, &thing)?,
@@ -90,7 +93,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
                 );
             },
             Command::TalkTo(npc_name) => talk_to_handler(world, &npc_name)?,
-            Command::Teleport(room_symbol) => dev_teleport_handler(world, &room_symbol),
+            Command::Teleport(room_symbol) => dev_teleport_handler(world, &mut view, &room_symbol),
             Command::SpawnItem(item_symbol) => dev_spawn_item_handler(world, &item_symbol),
             Command::GiveToNpc { item, npc } => give_to_npc_handler(world, &item, &npc)?,
             Command::TurnOn(thing) => turn_on_handler(world, &thing)?,
@@ -106,6 +109,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             Command::StartSeq { seq_name, end } => dev_start_seq_handler(world, &seq_name, &end),
         }
         check_ambient_triggers(world)?;
+        view.flush();
     }
     Ok(())
 }

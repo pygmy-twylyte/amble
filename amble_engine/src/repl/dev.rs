@@ -5,7 +5,7 @@
 use log::{info, warn};
 
 use crate::{
-    AmbleWorld, Location, WorldObject,
+    AmbleWorld, Location, View, WorldObject,
     idgen::{NAMESPACE_ITEM, NAMESPACE_ROOM, uuid_from_token},
     player::Flag,
     style::GameStyle,
@@ -27,7 +27,7 @@ pub fn dev_spawn_item_handler(world: &mut AmbleWorld, symbol: &str) {
 
 /// Instantly transport player elsewhere, if you know the id from the TOML file.
 /// This is for development purposes only.
-pub fn dev_teleport_handler(world: &mut AmbleWorld, room_toml_id: &str) {
+pub fn dev_teleport_handler(world: &mut AmbleWorld, view: &mut View, room_toml_id: &str) {
     let room_uuid = uuid_from_token(&NAMESPACE_ROOM, room_toml_id);
     if let Some(room) = world.rooms.get(&room_uuid) {
         world.player.location = Location::Room(room_uuid);
@@ -37,7 +37,7 @@ pub fn dev_teleport_handler(world: &mut AmbleWorld, room_toml_id: &str) {
             room.id()
         );
         println!("You teleported...");
-        let _ = room.show(world);
+        let _ = room.show(world, view);
     } else {
         println!("Teleport failed. Lookup of '{room_toml_id}' failed.");
     }

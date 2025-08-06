@@ -292,6 +292,7 @@ fn test_inv_handler_empty() {
 
 #[test]
 fn test_move_to_handler_simple() {
+    use ae::View;
     use ae::room::{Exit, Room};
     use std::collections::{HashMap, HashSet};
     let mut world = world::AmbleWorld::new_empty();
@@ -335,7 +336,8 @@ fn test_move_to_handler_simple() {
     world.rooms.insert(r1, room1);
     world.rooms.insert(r2, room2);
     world.player.location = world::Location::Room(r1);
-    assert!(ae::repl::movement::move_to_handler(&mut world, "north").is_ok());
+    let mut view = View::new();
+    assert!(ae::repl::movement::move_to_handler(&mut world, &mut view, "north").is_ok());
     assert!(matches!(world.player.location, world::Location::Room(id) if id == r2));
 }
 
