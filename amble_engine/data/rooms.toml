@@ -28,21 +28,15 @@ id = "high-ridge"
 name = "High Isolated Ridge"
 location = "Nowhere"
 visited = true
-base_description = """
-A small, flat ridge in the midst of a steeply sloped wooded area. Probably
-west of something, depending on how you're oriented.
+base_description = "A small, flat ridge in the midst of a steeply sloped wooded area. Probably west of something, depending on how you're oriented.\n\nSome rough stairs carved into the slope curve upward into the trees."
 
-Some rough stairs carved into the slope curve upward into the trees.
-"""
 [[rooms.overlays]]
 condition = { type = "flagUnset", flag = "cleaned-plaque-1" }
-text = """Near the bottom of the stairs stands an impressive, intricately sculpted pillar
-bearing a plaque tarnished with age and forest grime."""
+text = "Near the bottom of the stairs stands an impressive, intricately sculpted pillar bearing a plaque tarnished with age and forest grime."
 
 [[rooms.overlays]]
 condition = { type = "flagSet", flag = "cleaned-plaque-1" }
-text = """You're occasionally blinded by a flash of sunlight reflected from the freshly
-cleaned plaque."""
+text = "You're occasionally blinded by a flash of sunlight reflected from the freshly cleaned plaque."
 
 [rooms.exits.up]
 to = "parish-landing"
