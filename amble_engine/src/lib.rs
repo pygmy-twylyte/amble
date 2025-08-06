@@ -24,6 +24,7 @@ pub mod room;
 pub mod spinners;
 pub mod style;
 pub mod trigger;
+pub mod view;
 pub mod world;
 
 // Re-exports for convenience
@@ -33,4 +34,5 @@ pub use loader::load_world;
 pub use player::Player;
 pub use repl::run_repl;
 pub use room::Room;
+pub use view::{View, ViewItem};
 pub use world::{AmbleWorld, Location, WorldObject};
