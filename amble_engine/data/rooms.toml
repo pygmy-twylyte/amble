@@ -1,27 +1,3 @@
-# ROOM ENTRY TEMPLATE START
-# # ---------------------------------------------------------------------------
-# [[rooms]]
-# id = "token_id"
-# name = "room_name"
-# base_description = """
-# multi-line_base_description
-# """
-# location = "Nowhere"
-# visited = false
-
-# [rooms.exits.north]
-# to = ""
-#
-# [rooms.exits.south]
-# to = ""
-#
-# [rooms.exits.east]
-# to = ""
-#
-# [rooms.exits.west]
-# to = ""
-
-# ---------------------------------------------------------------------------
 # EXTERIOR START AREA "ROOMS"
 [[rooms]]
 id = "high-ridge"
@@ -45,15 +21,7 @@ to = "parish-landing"
 [[rooms]]
 id = "parish-landing"
 name = "Parish Landing"
-base_description = """
-A small plateau carved into the hillside, marked by an old wooden sign that reads:
-'Pilgrims Welcome – Pancakes Served Daily (Terms and Conditions Apply)'. A faded
-poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a
-holy relic.
-
-From here, the steps curve gently upward to another distant landing. A modest trail
-leads west toward a nearby parish.
-"""
+base_description = "A small plateau carved into the hillside, marked by an old wooden sign that reads: 'Pilgrims Welcome – Pancakes Served Daily (Terms and Conditions Apply)'. A faded poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a holy relic.\n\nFrom here, the steps curve gently upward to another distant landing. A modest trail leads west toward a nearby parish."
 location = "Nowhere"
 
 [rooms.exits.down]
@@ -70,15 +38,7 @@ to = "two-sheds-landing"
 id = "st-alfonzo-parish"
 name = "Parish of Saint Alfonzo"
 
-base_description = """
-The parish resembles a half-abandoned diner and half-absolved church, complete
-with stained glass windows depicting breakfast foods in heroic poses. The air
-smells faintly of syrup and tobacco.
-
-A refrigerated pedestal in the corner hums solemnly. On it rests a lone tub of
-margarine bearing the label: 'Nanook's Finest'. A hymn board near the door
-lists this week’s sermon: 'On the Sanctity of the Short Stack.'
-"""
+base_description = "The parish resembles a half-abandoned diner and half-absolved church, complete with stained glass windows depicting breakfast foods in heroic poses. The air smells faintly of syrup and tobacco.\n\nA refrigerated pedestal in the corner hums solemnly. On it rests a lone tub of margarine bearing the label: 'Nanook's Finest'. A hymn board near the door lists this week’s sermon: 'On the Sanctity of the Short Stack.'"
 
 location = "Nowhere"
 visited = false
@@ -90,11 +50,7 @@ to = "parish-landing"
 [[rooms]]
 id = "two-sheds-landing"
 name = "Jackson's Landing"
-base_description = """
-A quiet landing tucked along the slope, with a rusted mailbox labeled 'A. Jackson'
-standing to one side. A trail sign points east toward something optimistically named
-'Two Sheds'. Underneath, someone has scratched in: 'Technically One.'
-"""
+base_description = "A quiet landing tucked along the slope, with a rusted mailbox labeled 'A. Jackson' standing to one side. A trail sign points east toward something optimistically named 'Two Sheds'. Underneath, someone has scratched in: 'Technically One.'"
 location = "Nowhere"
 visited = false
 
@@ -126,17 +82,7 @@ to = "two-sheds"
 id = "two-sheds"
 name = "Two Sheds"
 
-base_description = """
-A modest wooden shed stands alone in the clearing. It appears freshly painted and
-surprisingly well cared for. A plaque on the door reads:
-
-        'ARTHUR "TWO SHEDS" JACKSON
-         Philosopher, Composer, Owner of One Shed'
-
-A second, smaller foundation lies nearby, overgrown with weeds. A broken signpost
-beside it reads: 'Future Site of Shed #2 – Delayed Indefinitely.' A few forgotten
-tools sit on the ground nearby.
-"""
+base_description = "A modest wooden shed stands alone in the clearing. It appears freshly painted and surprisingly well cared for. A plaque on the door reads:\n\n        'ARTHUR \"TWO SHEDS\" JACKSON\n         Philosopher, Composer, Owner of One Shed'\n\nA second, smaller foundation lies nearby, overgrown with weeds. A broken signpost beside it reads: 'Future Site of Shed #2 – Delayed Indefinitely.' A few forgotten tools sit on the ground nearby."
 
 location = "Nowhere"
 visited = false
@@ -149,17 +95,7 @@ to = "two-sheds-landing"
 id = "guard-post"
 name = "Guard Post"
 
-base_description = """
-A small stone guard post clings to the side of the trail, complete with a creaky
-wooden chair and a megaphone labeled 'USE ONLY IF VERY SURE'.
-
-A faded official-looking placard reads:
-
-        'NOTICE: Passage beyond this point may lead to anachronism.'
-
-It seems no one’s been stationed here in quite some time. The trail continues upward,
-leading to what appears to be an ancient road—and a distinctly non-ancient office park.
-"""
+base_description = "A small stone guard post clings to the side of the trail, complete with a creaky wooden chair and a megaphone labeled 'USE ONLY IF VERY SURE'. A faded official-looking placard reads:\n\n        'NOTICE: Passage beyond this point may lead to anachronism.'\n\nIt seems no one’s been stationed here in quite some time. The trail continues upward, leading to what appears to be an ancient road—and a distinctly non-ancient office park."
 
 location = "Nowhere"
 visited = false
@@ -175,14 +111,7 @@ to = "two-sheds-landing"
 id = "inca-road"
 name = "Inca Road"
 
-base_description = """
-An ancient road of broken and uneven stones winds precariously along the mountainside,
-half-swallowed by time and weeds. South of here, a river's rocky rapid rushes westward
-through the gorge.
-
-To the north lies a trim, modern lawn with an improbably square footprint. It leads up
-to a squat commercial building that seems to have landed here by accident.
-"""
+base_description = "An ancient road of broken and uneven stones winds precariously along the mountainside, half-swallowed by time and weeds. South of here, a river's rocky rapid rushes westward through the gorge.\n\nTo the north lies a trim, modern lawn with an improbably square footprint. It leads up to a squat commercial building that seems to have landed here by accident."
 
 location = "Nowhere"
 
@@ -200,15 +129,7 @@ name = "Front Entrance"
 location = "Nowhere"
 visited = false
 
-base_description = """
-Potted plants flank a plain, darkened glass door on the front of the building
-to the north. As you approach the door, a security eye-bot mounted above it
-mutters judgementally as it scans you. A sign above it reads:
-
-                       "Always Know Where Your Towel Is"
-
-Paved paths lead around the building to the east and west.
-"""
+base_description = "Potted plants flank a plain, darkened glass door on the front of the building to the north. As you approach the door, a security eye-bot mounted above it mutters judgementally as it scans you. A sign above it reads:\n\n                       \"Always Know Where Your Towel Is\"\n\nPaved paths lead around the building to the east and west."
 
 [[rooms.overlays]]
 condition = { type = "flagUnset", flag = "got-towel" }
@@ -238,13 +159,7 @@ to = "east-of-building"
 id = "snowfield"
 name = "Desolate Snowfield"
 
-base_description = """
-You find yourself in a wide, desolate snowfield west of the main building --
-which is odd, because you still see summery woodlands just yards away, with a
-clean line separating the two climates. Wind howls across the ice, and powdery
-drifts swirl around a dark pit. Nearby, a large husky dog watches you intently.
-It doesn’t growl, but it doesn’t blink either.
-"""
+base_description = "You find yourself in a wide, desolate snowfield west of the main building -- which is odd, because you still see summery woodlands just yards away, with a clean line separating the two climates. Wind howls across the ice, and powdery drifts swirl around a dark pit. Nearby, a large husky dog watches you intently. It doesn’t growl, but it doesn’t blink either."
 
 location = "Nowhere"
 visited = false
@@ -262,11 +177,7 @@ to = "snow-camp"
 [[rooms]]
 id = "snow-camp"
 name = "Abandoned Campsite"
-base_description = """
-The remains of a temporary shelter are dug into a snowbank here. The tent has
-collapsed, half-fused to a scorched sled. The river — or some frozen remnant
-of it — glistens beyond.
-"""
+base_description = "The remains of a temporary shelter are dug into a snowbank here. The tent has collapsed, half-fused to a scorched sled. The river — or some frozen remnant of it — glistens beyond."
 location = "Nowhere"
 visited = false
 
@@ -278,18 +189,7 @@ to = "snowfield"
 id = "loading-dock"
 name = "Useless Loading Dock"
 
-base_description = """
-The so-called loading dock juts ten feet *above* the ground, with no ramp, stairs,
-or apparent means of access and a loading door thirty feet wide and ten inches tall.
-A conveyor belt runs from the building wall to the edge of the dock, then loops
-straight back in again without touching anything.
-
-A bronze plaque proudly identifies this as a **Bloody Stupid Johnson** project:
-> 'Winner of the 3rd Prize for Architectural Enthusiasm, 1873.'
-
-It's unclear what this office ever needed to load—or who would deliver to the side
-of a remote building halfway up a mountain.
-"""
+base_description = "The so-called loading dock juts ten feet *above* the ground, with no ramp, stairs, or apparent means of access and a loading door thirty feet wide and ten inches tall. A conveyor belt runs from the building wall to the edge of the dock, then loops straight back in again without touching anything.\n\nA bronze plaque proudly identifies this as a **Bloody Stupid Johnson** project:\n> 'Winner of the 3rd Prize for Architectural Enthusiasm, 1873.'\n\nIt's unclear what this office ever needed to load—or who would deliver to the side of a remote building halfway up a mountain."
 
 location = "Nowhere"
 visited = false
@@ -305,18 +205,7 @@ to = "snowfield"
 id = "east-of-building"
 name = "East of Building"
 
-base_description = """
-You’re east of the building now, facing a patch of ornamental gravel and a
-struggling yucca plant. The air here smells faintly of ozone and buttered
-lobster, though the source is unclear.
-
-The side of the building appears to be a normal wall, but you keep glimpsing
-something that looks like -- patio umbrellas? -- from the corner of your
-eye. You briefly wonder if the building is bending space or if your sense of
-geography is just feeling shy.
-
-The walkway wraps around the building to the northwest and southwest.
-"""
+base_description = "You’re east of the building now, facing a patch of ornamental gravel and a struggling yucca plant. The air here smells faintly of ozone and buttered lobster, though the source is unclear.\n\nThe side of the building appears to be a normal wall, but you keep glimpsing something that looks like -- patio umbrellas? -- from the corner of your eye. You briefly wonder if the building is bending space or if your sense of geography is just feeling shy.\n\nThe walkway wraps around the building to the northwest and southwest."
 
 location = "Nowhere"
 visited = false
@@ -335,13 +224,7 @@ id = "main-lobby"
 name = "Main Lobby"
 location = "Nowhere"
 visited = false
-base_description = """
-The lobby is clinically clean in a way that feels suspicious. A slightly humming
-vending machine stands beside an empty receptionist's desk bearing a dusty nameplate
-that reads, in Comic Sans: 'WELCOME TEMPORARY LIFEFORM'. A softly glowing sign on
-the north wall reads 'Elevator Access', while arrows on the east and west
-walls point toward other destinations with little enthusiasm.
-"""
+base_description = "The lobby is clinically clean in a way that feels suspicious. A slightly humming vending machine stands beside an empty receptionist's desk bearing a dusty nameplate that reads, in Comic Sans: 'WELCOME TEMPORARY LIFEFORM'. A softly glowing sign on the north wall reads 'Elevator Access', while arrows on the east and west walls point toward other destinations with little enthusiasm."
 
 [[rooms.overlays]]
 condition = { type = "npcInState", npc_id = "gonk_droid", state = "normal" }
@@ -369,13 +252,7 @@ id = "b-a-office"
 name = "Amble Adventures Office"
 location = "Nowhere"
 visited = false
-base_description = """
-The office of Amble Adventures, a wholly disowned subsidiary of Brains Anonymous™,
-is a shrine to barely-funded creativity. Faded posters of games that were never
-released adorn the walls, including one titled 'PONG Construction Set 3000'. A
-sagging ficus looms in the corner like it’s been through something. An Initech™
-Poetry Performer plays possum in another corner, hoping you don't notice it.
-"""
+base_description = "The office of Amble Adventures, a wholly disowned subsidiary of Brains Anonymous™, is a shrine to barely-funded creativity. Faded posters of games that were never released adorn the walls, including one titled 'PONG Construction Set 3000'. A sagging ficus looms in the corner like it’s been through something. An Initech™ Poetry Performer plays possum in another corner, hoping you don't notice it."
 [[rooms.overlays]]
 condition = { type = "flagUnset", flag = "panic-room-open" }
 text = """A floor-to-ceiling whiteboard on the west wall boasts an impressive flowchart
@@ -411,11 +288,7 @@ id = "lift-bank-main"
 name = "Elevator Bank"
 location = "Nowhere"
 visited = false
-base_description = """
-A bank of elevators waits here, none of which seem eager to go anywhere. One
-of them is open and labeled 'MAIN LIFT' in glowing teal script.  To the east,
-a door marked 'LOUNGE' is just slightly ajar, as if luring you to come in.
-"""
+base_description = "A bank of elevators waits here, none of which seem eager to go anywhere. One of them is open and labeled 'MAIN LIFT' in glowing teal script.  To the east, a door marked 'LOUNGE' is just slightly ajar, as if luring you to come in."
 
 [[rooms.overlays]]
 condition = { type = "flagUnset", flag = "got-elevator-keycard" }
@@ -442,11 +315,7 @@ id = "lift-main"
 name = "Elevator (Ground Floor)"
 location = "Nowhere"
 visited = false
-base_description = """
-The elevator interior is surprisingly luxurious -- polished chrome panels,
-soft lighting, and a faint scent of something that might be vanilla or data
-corruption.
-"""
+base_description = "The elevator interior is surprisingly luxurious -- polished chrome panels, soft lighting, and a faint scent of something that might be vanilla or data corruption."
 
 [[rooms.overlays]]
 condition = { type = "flagUnset", flag = "got-elevator-keycard" }
@@ -471,10 +340,7 @@ id = "lounge"
 name = "Lounge"
 location = "Nowhere"
 visited = false
-base_description = """
-A small space to relax, with a sofa, a few magazines, and part of a jigsaw
-puzzle. A tarry substance slowly bubbles in the bottom of a coffee carafe.
-"""
+base_description = "A small space to relax, with a sofa, a few magazines, and part of a jigsaw puzzle. A tarry substance slowly bubbles in the bottom of a coffee carafe."
 [[rooms.overlays]]
 condition = { type = "flagSet", flag = "found-portal-room" }
 text = "A trap door in the floor reveals a ladder down to a room below."
@@ -492,13 +358,7 @@ id = "portal-room"
 name = "Portal Room"
 location = "Nowhere"
 visited = false
-base_description = """
-A bare white room with a white tile floor. A ladder leads back up through the
-trap door in the ceiling. Three of the four walls are used as whiteboards,
-littered with obscure diagrams and equations. In the center, a black and
-white Portal gun is affixed to a pedestal and aimed squarely at the fourth
-wall.
-"""
+base_description = "A bare white room with a white tile floor. A ladder leads back up through the trap door in the ceiling. Three of the four walls are used as whiteboards, littered with obscure diagrams and equations. In the center, a black and white Portal gun is affixed to a pedestal and aimed squarely at the fourth wall."
 
 [[rooms.overlays]]
 condition = { type = "flagUnset", flag = "portal-opened" }
@@ -527,12 +387,7 @@ name = "Aperture Science Laboratory"
 location = "Nowhere"
 visited = false
 
-base_description = """
-The unnaturally white—walls, floor, ceiling, even the air here feels clinical
-and overexposed. Everything hums at a frequency designed to encourage strict
-compliance. A single console blinks on a table beside a highly over-engineered
-printer labeled "Aperture Science Hospitality Generator."
-"""
+base_description = "The unnaturally white—walls, floor, ceiling, even the air here feels clinical and overexposed. Everything hums at a frequency designed to encourage strict compliance. A single console blinks on a table beside a highly over-engineered printer labeled \"Aperture Science Hospitality Generator.\""
 
 [[rooms.overlays]]
 condition = { type = "flagSet", flag = "burned-invitation" }
@@ -545,19 +400,7 @@ to = "portal-room"
 [[rooms]]
 id = "restaurant"
 name = "Restaurant at the End of the Universe"
-base_description = """
-Soft jazz wafts through invisible speakers, accompanied by the occasional sound
-of imploding galaxies. A tasteful sign declares this to be the Restaurant at the
-End of the Universe, though it appears to be between dinner rushes. Tables float
-slightly above the ground and rearrange themselves when you're not looking. A
-host's podium displays a reservation list. Restrooms lie to the south bearing
-a sign in fancy script reading:
-
-                             VIP PAN-SPECIES RESTROOM
-                       (must possess visitor pass to enter)
-
-Patio seating stretches farther east.
-"""
+base_description = "Soft jazz wafts through invisible speakers, accompanied by the occasional sound of imploding galaxies. A tasteful sign declares this to be the Restaurant at the End of the Universe, though it appears to be between dinner rushes. Tables float slightly above the ground and rearrange themselves when you're not looking. A host's podium displays a reservation list. Restrooms lie to the south bearing a sign in fancy script reading:\n\n                             VIP PAN-SPECIES RESTROOM\n                       (must possess visitor pass to enter)\n\nPatio seating stretches farther east."
 
 location = "Nowhere"
 visited = false
@@ -579,11 +422,7 @@ forced by programming not to let you in without a visitor's pass."""
 [[rooms]]
 id = "vip-bathroom"
 name = "VIP Bathroom"
-base_description = """
-Blinding white tile and pristine mirrors make it almost seem like this
-pan-gender, pan-species bathroom has never been used, but a lingering asparagus
-odor suggests otherwise.
-"""
+base_description = "Blinding white tile and pristine mirrors make it almost seem like this pan-gender, pan-species bathroom has never been used, but a lingering asparagus odor suggests otherwise."
 location = "Nowhere"
 visited = false
 
@@ -594,12 +433,7 @@ to = "restaurant"
 [[rooms]]
 id = "patio"
 name = "Restaurant Patio"
-base_description = """
-The patio overlooks nothing in particular—just an endless starfield gently swirling
-beyond a transparent force field. A few metal tables are bolted to the floor, and
-one of them has a half-empty cocktail glass slowly un-drinking itself. A sign near
-the edge reads: 'No Leaning Beyond This Point. You have been warned.'
-"""
+base_description = "The patio overlooks nothing in particular—just an endless starfield gently swirling beyond a transparent force field. A few metal tables are bolted to the floor, and one of them has a half-empty cocktail glass slowly un-drinking itself. A sign near the edge reads: 'No Leaning Beyond This Point. You have been warned.'"
 
 location = "Nowhere"
 visited = false
@@ -611,11 +445,7 @@ to = "restaurant"
 [[rooms]]
 id = "poetry-panic"
 name = "Poetry Panic Room"
-base_description = """
-A concrete and titanium vacuum-sealed room equipped with noise generators, active
-voice-cancelling harmonics and Cone of Silence technology. A seal by the door
-proudly states that the chamber is almost completely Vogon poetry-proof.
-"""
+base_description = "A concrete and titanium vacuum-sealed room equipped with noise generators, active voice-cancelling harmonics and Cone of Silence technology. A seal by the door proudly states that the chamber is almost completely Vogon poetry-proof."
 
 location = "Nowhere"
 visited = false
@@ -627,13 +457,7 @@ to = "b-a-office"
 [[rooms]]
 id = "lift-sublevel-1"
 name = "Elevator (Sublevel 1)"
-base_description = """
-The elevator sits open at the end of the corridor, but its appearance is…
-altered. What was once a sleek, polished carriage now seems borrowed from
-another world entirely. Gilded scrollwork curls along the walls where none
-existed before, and the ceiling flickers between brass panels and a starlit
-void. It hums with potential—and something less easily named.
-"""
+base_description = "The elevator sits open at the end of the corridor, but its appearance is… altered. What was once a sleek, polished carriage now seems borrowed from another world entirely. Gilded scrollwork curls along the walls where none existed before, and the ceiling flickers between brass panels and a starlit void. It hums with potential—and something less easily named."
 
 location = "Nowhere"
 visited = false
@@ -650,13 +474,7 @@ id = "sublevel-1-entrance"
 name = "Entrance to Sublevel One"
 location = "Nowhere"
 visited = false
-base_description = """
-A small landing area covered in dust. Buckets, tools, and debris are strewn
-about the floor. The door to the west is labeled with a sign:
-
-                        🚧 ROOM AA-3B 🚧
-                 FICTIONAL UNIVERSE CONTAINMENT
-"""
+base_description = "A small landing area covered in dust. Buckets, tools, and debris are strewn about the floor. The door to the west is labeled with a sign:\n\n                        🚧 ROOM AA-3B 🚧\n                 FICTIONAL UNIVERSE CONTAINMENT"
 
 [[rooms.overlays]]
 condition = { type = "npcInState", npc_id = "black_knight", state = "normal" }
@@ -706,11 +524,7 @@ barred_message = """The Black Knight blocks your way.
 [[rooms]]
 id = "supply-closet"
 name = "Supply Closet"
-base_description = """
-A small closet lit by a bare bulb being repeatedly rammed by a fluttering moth.
-Crowded shelves offer paper products, bottles of toner, staples, and other
-office... ... staples.
-"""
+base_description = "A small closet lit by a bare bulb being repeatedly rammed by a fluttering moth. Crowded shelves offer paper products, bottles of toner, staples, and other office... ... staples."
 location = "Nowhere"
 visited = false
 
@@ -721,16 +535,7 @@ to = "b-a-office"
 [[rooms]]
 id = "room-aa-3b"
 name = "Room AA-3B"
-base_description = """
-The door opens into a swirling mass of static and fractured reality. Flickering
-projections of impossible geometries ripple through the darkness. Objects seem
-to vanish halfway through existing. A guttural voice whispers paradoxes from
-the walls themselves. Anyone with a sense of self-preservation should probably
-leave immediately.
-
-A small sign by the entrance reads: 'Amble Adventures assumes no responsibility
-for ontological damage incurred within.'
-"""
+base_description = "The door opens into a swirling mass of static and fractured reality. Flickering projections of impossible geometries ripple through the darkness. Objects seem to vanish halfway through existing. A guttural voice whispers paradoxes from the walls themselves. Anyone with a sense of self-preservation should probably leave immediately.\n\nA small sign by the entrance reads: 'Amble Adventures assumes no responsibility for ontological damage incurred within.'"
 
 location = "Nowhere"
 visited = false
@@ -742,15 +547,7 @@ to = "sublevel-1-entrance"
 [[rooms]]
 id = "corridor-north"
 name = "Research Corridor (North)"
-base_description = """
-A dimly lit concrete hallway stretches out, lined with emergency lights that
-flicker like they're deciding whether to stay on. Faint scratching sounds echo
-through the walls at irregular intervals.
-
-Graffiti on one wall reads: 'THEY NEVER LEFT AA-3B.' A maintenance hatch rattles
-occasionally, as if something on the other side is trying to remember how to
-use a doorknob.
-"""
+base_description = "A dimly lit concrete hallway stretches out, lined with emergency lights that flicker like they're deciding whether to stay on. Faint scratching sounds echo through the walls at irregular intervals.\n\nGraffiti on one wall reads: 'THEY NEVER LEFT AA-3B.' A maintenance hatch rattles occasionally, as if something on the other side is trying to remember how to use a doorknob."
 
 location = "Nowhere"
 visited = false
@@ -771,15 +568,7 @@ to = "corridor-south"
 [[rooms]]
 id = "observation-room"
 name = "Field Observation Room"
-base_description = """
-Thick observation windows, long since spiderwebbed with cracks, overlook what
-should be Room AA-3B—but only darkness and occasional flashes of unreality
-appear beyond. Abandoned swivel chairs and battered clipboards litter the room.
-A faint smell of burnt ozone hangs in the air.
-
-A console near the glass flickers with a repeating message: 'CONTAINMENT BREACH
-LOGGED – STATUS: UNRESOLVED.'
-"""
+base_description = "Thick observation windows, long since spiderwebbed with cracks, overlook what should be Room AA-3B—but only darkness and occasional flashes of unreality appear beyond. Abandoned swivel chairs and battered clipboards litter the room. A faint smell of burnt ozone hangs in the air.\n\nA console near the glass flickers with a repeating message: 'CONTAINMENT BREACH LOGGED – STATUS: UNRESOLVED.'"
 
 location = "Nowhere"
 visited = false
@@ -791,15 +580,7 @@ to = "corridor-north"
 [[rooms]]
 id = "security-station"
 name = "AA-3 Security Station"
-base_description = """
-A compact but well-equipped station with reinforced blast doors, a wall of
-cracked CRT monitors, and a steel locker emblazoned with 'IN CASE OF EMERGENCY,
-RUN FASTER.' Paperwork is scattered across the floor, including an ominous
-memo titled 'AA-3B: Risk Management Recommendations.'
-
-A blinking red light on the central console indicates the sublevel is still in
-lockdown.
-"""
+base_description = "A compact but well-equipped station with reinforced blast doors, a wall of cracked CRT monitors, and a steel locker emblazoned with 'IN CASE OF EMERGENCY, RUN FASTER.' Paperwork is scattered across the floor, including an ominous memo titled 'AA-3B: Risk Management Recommendations.'\n\nA blinking red light on the central console indicates the sublevel is still in lockdown."
 
 location = "Nowhere"
 visited = false
@@ -813,11 +594,7 @@ id = "med-bay"
 name = "Med Bay"
 location = "Nowhere"
 visited = false
-base_description = """
-A clean white infirmary with two bio-beds extending from the back wall, surrounded
-by a bevy of monitors and robotic surgical tools. One of the machines goes "Bing!"
-every few minutes. A small cleaning robot floats around the room disinfecting things.
-"""
+base_description = "A clean white infirmary with two bio-beds extending from the back wall, surrounded by a bevy of monitors and robotic surgical tools. One of the machines goes \"Bing!\" every few minutes. A small cleaning robot floats around the room disinfecting things."
 
 [rooms.exits.west]
 to = "corridor-north"
@@ -829,12 +606,7 @@ id = "corridor-south"
 name = "Research Corridor (South)"
 location = "Nowhere"
 visited = false
-base_description = """
-The research corridor continues here, though the walls are noticeably more patched
-and hastily reinforced. Warning stripes mark a sealed door to the west, and faint
-heat shimmers pulse across the floor, as if reality itself is running a fever.
-Somewhere far too close, a light flickers in time with your heartbeat.
-"""
+base_description = "The research corridor continues here, though the walls are noticeably more patched and hastily reinforced. Warning stripes mark a sealed door to the west, and faint heat shimmers pulse across the floor, as if reality itself is running a fever. Somewhere far too close, a light flickers in time with your heartbeat."
 
 [rooms.exits.north]
 to = "corridor-north"
@@ -848,11 +620,7 @@ id = "monolith-room"
 name = "Monolith Room"
 location = "Nowhere"
 visited = false
-base_description = """
-The room is stark, dim, and cavernous. A series of industrial floodlights cast long,
-angled shadows across the centerpiece: a tall, perfectly black monolith that defies
-reflection. It absorbs light, sound, and—if you stare too long—possibly thought.
-"""
+base_description = "The room is stark, dim, and cavernous. A series of industrial floodlights cast long, angled shadows across the centerpiece: a tall, perfectly black monolith that defies reflection. It absorbs light, sound, and—if you stare too long—possibly thought."
 
 # before player first tries to interact with HAL
 [[rooms.overlays]]
