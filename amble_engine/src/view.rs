@@ -22,7 +22,7 @@ impl View {
     pub fn new() -> Self {
         Self {
             width: 80,
-            mode: ViewMode::Verbose,
+            mode: ViewMode::Brief,
             items: Vec::new(),
         }
     }
@@ -32,36 +32,40 @@ impl View {
         self.items.push(item);
     }
 
+    /// Compose and diplay all message contents in the current frame / turn.
     pub fn flush(&mut self) {
         // Section 1A: Room Description
         if let Some(ViewItem::RoomDescription {
             name,
             description,
             visited,
+            force_mode,
         }) = self
             .items
             .iter()
             .find(|i| matches!(i, ViewItem::RoomDescription { .. }))
         {
-            if self.mode == ViewMode::ClearVerbose {
+            // Use the forced display mode if there is one, otherwise use current setting
+            let display_mode = force_mode.unwrap_or(self.mode);
+            if display_mode == ViewMode::ClearVerbose {
                 // clear the screen
                 print!("\x1B[2J\x1B[H");
             }
             println!("{:^80}", name.room_titlebar_style());
-            if self.mode != ViewMode::Brief || !visited {
+            if display_mode != ViewMode::Brief || !visited {
                 println!("{}", fill(description, self.width).description_style());
                 println!();
             }
         }
 
         // Section 1B: Room Overlays
-        if self.mode != ViewMode::Brief {
-            if let Some(ViewItem::RoomOverlays(ovl)) =
-                self.items.iter().find(|i| matches!(i, ViewItem::RoomOverlays(_)))
-            {
-                ovl.iter()
-                    .for_each(|line| println!("{}", fill(line, self.width).overlay_style()));
-                println!();
+        if let Some(ViewItem::RoomOverlays { text, force_mode }) =
+            self.items.iter().find(|i| matches!(i, ViewItem::RoomOverlays { .. }))
+        {
+            let display_mode = force_mode.unwrap_or(self.mode);
+            if display_mode != ViewMode::Brief {
+                text.iter()
+                    .for_each(|line| println!("{}\n", fill(line, self.width).overlay_style()));
             }
         }
 
@@ -94,11 +98,24 @@ impl View {
             }
             println!();
         }
+
+        // Section 1E: Room NPC list
+        if let Some(ViewItem::RoomNpcs(npcs)) = self.items.iter().find(|i| matches!(i, ViewItem::RoomNpcs(_))) {
+            println!("{}", "Others:".subheading_style());
+            npcs.iter()
+                .for_each(|npc| println!("   {} - {}", npc.name.npc_style(), npc.description.description_style()));
+            println!();
+        }
     }
 
     /// Clears the View's buffer but does not reset the mode.
-    pub fn clear(&mut self) {
+    pub fn reset(&mut self) {
         self.items.clear();
+    }
+
+    /// Sets a ViewMode and returns the previously set mode.
+    pub fn set_mode(&mut self, mode: ViewMode) -> ViewMode {
+        std::mem::replace(&mut self.mode, mode)
     }
 }
 
@@ -113,16 +130,34 @@ pub enum ViewMode {
 /// ViewItems are each of the various types of information / messages that may be displayed to the player.
 #[derive(Debug, Clone, PartialEq, Eq, Variantly)]
 pub enum ViewItem {
-    RoomDescription { name: String, description: String, visited: bool },
-    RoomOverlays(Vec<String>),
+    RoomDescription {
+        name: String,
+        description: String,
+        visited: bool,
+        force_mode: Option<ViewMode>,
+    },
+    RoomOverlays {
+        text: Vec<String>,
+        force_mode: Option<ViewMode>,
+    },
     RoomItems(Vec<String>),
     RoomExits(Vec<ExitLine>),
     RoomNpcs(Vec<NpcLine>),
-    ItemDescription { name: String, descripton: String },
+    ItemDescription {
+        name: String,
+        descripton: String,
+    },
     ItemText(String),
     ItemContents(Vec<String>),
-    NpcDescription { name: String, description: String },
-    NpcSpeech { speaker: String, quote: String },
+    NpcDescription {
+        name: String,
+        description: String,
+    },
+    NpcInventory(Vec<String>),
+    NpcSpeech {
+        speaker: String,
+        quote: String,
+    },
     AmbientEvent(String),
     TriggeredEvent(String),
     ActionResult(String),

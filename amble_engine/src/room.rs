@@ -1,5 +1,8 @@
 use crate::{
-    ItemHolder, Location, View, ViewItem, WorldObject, npc::NpcState, player::Flag, style::GameStyle, view::ExitLine,
+    ItemHolder, Location, View, ViewItem, WorldObject,
+    npc::NpcState,
+    player::Flag,
+    view::{ExitLine, NpcLine, ViewMode},
     world::AmbleWorld,
 };
 use anyhow::{Result, anyhow};
@@ -135,16 +138,14 @@ impl ItemHolder for Room {
 }
 impl Room {
     /// Displays full description, exit, and NPC information for the `Room`.
-    pub fn show(&self, world: &AmbleWorld, view: &mut View) -> Result<()> {
-        let banner = self.name.room_titlebar_style();
-        println!("{banner:^80}");
-        println!("{}", self.base_description.description_style());
+    pub fn show(&self, world: &AmbleWorld, view: &mut View, force_mode: Option<ViewMode>) -> Result<()> {
         view.push(ViewItem::RoomDescription {
             name: self.name.to_string(),
             description: self.description().to_string(),
             visited: self.visited,
+            force_mode,
         });
-        self.show_overlays(world, view);
+        self.show_overlays(world, view, force_mode);
 
         if !self.contents.is_empty() {
             let item_names: Vec<_> = self
@@ -155,39 +156,43 @@ impl Room {
             view.push(ViewItem::RoomItems(item_names));
         }
         self.show_exits(world, view)?;
-        self.show_npcs(world);
+        self.show_npcs(world, view);
         println!();
         Ok(())
     }
 
     /// Displays any applicable description overlays.
-    pub fn show_overlays(&self, world: &AmbleWorld, view: &mut View) {
+    pub fn show_overlays(&self, world: &AmbleWorld, view: &mut View, force_mode: Option<ViewMode>) {
         let overlay_text: Vec<String> = self
             .overlays
             .iter()
             .filter(|o| o.applies(self.id(), world))
             .map(|o| o.text.clone())
             .collect();
-        view.push(ViewItem::RoomOverlays(overlay_text));
+        view.push(ViewItem::RoomOverlays {
+            text: overlay_text,
+            force_mode,
+        });
     }
 
     /// Displays list of NPCs present in the `Room`
-    pub fn show_npcs(&self, world: &AmbleWorld) {
+    pub fn show_npcs(&self, world: &AmbleWorld, view: &mut View) {
         if !self.npcs.is_empty() {
-            println!("\n{}", "Others here:".subheading_style());
-            self.npcs
+            let npc_lines: Vec<NpcLine> = self
+                .npcs
                 .iter()
                 .filter_map(|npc_id| world.npcs.get(npc_id))
-                .for_each(|npc| {
-                    println!("\t{} - {}", npc.name.npc_style(), npc.description.description_style());
-                });
-            println!();
+                .map(|npc| NpcLine {
+                    name: npc.name.clone(),
+                    description: npc.description.clone(),
+                })
+                .collect();
+            view.push(ViewItem::RoomNpcs(npc_lines));
         }
     }
 
     /// Displays list of available exits from the Room.
     pub fn show_exits(&self, world: &AmbleWorld, view: &mut View) -> Result<()> {
-        println!("\n{}", "Exits:".subheading_style());
         let mut exit_lines = Vec::new();
         for (direction, exit) in &self.exits {
             let target_room = world.rooms.get(&exit.to).ok_or(anyhow!(

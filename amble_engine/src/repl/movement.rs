@@ -9,6 +9,7 @@ use crate::{
     spinners::SpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers},
+    view::ViewMode,
 };
 
 use anyhow::{Context, Result, anyhow};
@@ -72,13 +73,11 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
                 .ok_or_else(|| anyhow!("invalid move destination ({})", destination_id))?;
             info!("{} moved to {} ({})", player_name, new_room.name(), new_room.id());
             println!("{travel_message}\n");
-            if new_room.visited {
-                println!("{}", new_room.name().room_style().underline());
-                new_room.show_exits(world, view)?;
-                new_room.show_npcs(world);
-            } else {
+            if !new_room.visited {
                 world.player.score = world.player.score.saturating_add(1);
-                new_room.show(world, view)?;
+                new_room.show(world, view, Some(ViewMode::Verbose))?;
+            } else {
+                new_room.show(world, view, None)?;
             }
             if let Some(new_room) = world.rooms.get_mut(&destination_id) {
                 new_room.visited = true;
@@ -109,9 +108,6 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
                 unmet_flags,
             );
         }
-        // don't think below is needed, since the case where destination_exit = None was already handled above
-        // } else {
-        //     println!("Which way is {}? You stay put.\n", input_dir.error_style());
     }
     Ok(())
 }
@@ -121,7 +117,6 @@ mod tests {
     use super::*;
     use crate::player::Flag;
     use crate::room::{Exit, Room};
-    use crate::view;
     use crate::world::{AmbleWorld, Location};
     use std::collections::{HashMap, HashSet};
     use uuid::Uuid;

@@ -26,7 +26,7 @@ use crate::spinners::SpinnerType;
 use crate::style::GameStyle;
 use crate::trigger::TriggerCondition;
 use crate::world::AmbleWorld;
-use crate::{Item, View, ViewItem, WorldObject};
+use crate::{Item, View, WorldObject};
 
 use anyhow::Result;
 use colored::Colorize;
@@ -52,7 +52,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     let mut view = View::new();
 
     loop {
-        view.clear();
+        view.reset();
         print!("\n[Score: {}/{}]> ", world.player.score, world.max_score);
         io::stdout()
             .flush()

@@ -37,7 +37,7 @@ pub fn dev_teleport_handler(world: &mut AmbleWorld, view: &mut View, room_toml_i
             room.id()
         );
         println!("You teleported...");
-        let _ = room.show(world, view);
+        let _ = room.show(world, view, None);
     } else {
         println!("Teleport failed. Lookup of '{room_toml_id}' failed.");
     }
