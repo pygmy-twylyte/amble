@@ -166,7 +166,7 @@ values = [
     "The building shudders violently for a moment. Nobody seems to notice.",
     "All of the fire doors in the building suddenly close.",
     "Someone in the distance yells: \"Hey, who turned out the lights?!\"",
-    "You can hear the \"Underdog\" through the wall from an adjacent room.",
+    "You hear the \"Underdog\" theme through the wall from an adjacent room.",
     "Paperwork and supplies pass by through a pneumatic tube overhead, along with an occasional piece of cake.",
 ]
 widths = [25, 1, 1, 1, 1, 1, 1, 1, 1]
