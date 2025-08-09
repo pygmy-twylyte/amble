@@ -79,11 +79,11 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             Command::TakeFrom { item, container } => take_from_handler(world, &mut view, &item, &container)?,
             Command::Drop(thing) => drop_handler(world, &mut view, &thing)?,
             Command::PutIn { item, container } => put_in_handler(world, &mut view, &item, &container)?,
-            Command::Open(thing) => open_handler(world, &thing)?,
-            Command::Close(thing) => close_handler(world, &thing)?,
-            Command::LockItem(thing) => lock_handler(world, &thing)?,
-            Command::UnlockItem(thing) => unlock_handler(world, &thing)?,
-            Command::Inventory => inv_handler(world)?,
+            Command::Open(thing) => open_handler(world, &mut view, &thing)?,
+            Command::Close(thing) => close_handler(world, &mut view, &thing)?,
+            Command::LockItem(thing) => lock_handler(world, &mut view, &thing)?,
+            Command::UnlockItem(thing) => unlock_handler(world, &mut view, &thing)?,
+            Command::Inventory => inv_handler(world, &mut view)?,
             Command::Unknown => {
                 println!(
                     "{}",
@@ -96,12 +96,12 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             Command::Teleport(room_symbol) => dev_teleport_handler(world, &mut view, &room_symbol),
             Command::SpawnItem(item_symbol) => dev_spawn_item_handler(world, &mut view, &item_symbol),
             Command::GiveToNpc { item, npc } => give_to_npc_handler(world, &item, &npc)?,
-            Command::TurnOn(thing) => turn_on_handler(world, &thing)?,
+            Command::TurnOn(thing) => turn_on_handler(world, &mut view, &thing)?,
             Command::Read(thing) => read_handler(world, &mut view, &thing)?,
             Command::Load(gamefile) => load_handler(world, &gamefile),
             Command::Save(gamefile) => save_handler(world, &gamefile)?,
             Command::UseItemOn { verb, tool, target } => {
-                use_item_on_handler(world, verb, &tool, &target)?;
+                use_item_on_handler(world, &mut view, verb, &tool, &target)?;
             },
             Command::AdvanceSeq(seq_name) => dev_advance_seq_handler(world, &mut view, &seq_name),
             Command::ResetSeq(seq_name) => dev_reset_seq_handler(world, &mut view, &seq_name),
