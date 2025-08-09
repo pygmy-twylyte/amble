@@ -13,7 +13,7 @@ use rand::prelude::IndexedRandom;
 
 use uuid::Uuid;
 
-use crate::{ItemHolder, Location, WorldObject, style::GameStyle, world::AmbleWorld};
+use crate::{ItemHolder, Location, View, ViewItem, WorldObject, view::ContentLine, world::AmbleWorld};
 
 /// Represents the demeanor of an 'Npc', which may affect default dialogue and behavior
 #[derive(Clone, Debug, variantly::Variantly, PartialEq, Hash, Eq, Serialize, Deserialize)]
@@ -102,28 +102,21 @@ impl Npc {
         }
     }
     /// Display NPC info to the player
-    pub fn show(&self, world: &AmbleWorld) {
-        println!(
-            "{} {}",
-            self.name().npc_style().bold(),
-            format!("({})", self.state).italic().dimmed()
-        );
-        println!("{}\n", self.description().description_style());
-        println!("{}", "Inventory".item_style().underline().bold());
-        if self.inventory.is_empty() {
-            println!("{}", "No items available.".italic().dimmed());
-        } else {
+    pub fn show(&self, world: &AmbleWorld, view: &mut View) {
+        view.push(ViewItem::NpcDescription {
+            name: self.name.clone(),
+            description: self.description.clone(),
+        });
+        view.push(ViewItem::NpcInventory(
             self.inventory
                 .iter()
                 .filter_map(|id| world.items.get(id))
-                .for_each(|item| {
-                    if item.restricted {
-                        println!("\t{}🔒", item.name().item_style());
-                    } else {
-                        println!("\t{}", item.name().item_style());
-                    }
-                });
-        }
+                .map(|item| ContentLine {
+                    item_name: item.name.clone(),
+                    restricted: item.restricted,
+                })
+                .collect(),
+        ));
     }
 }
 impl WorldObject for Npc {
