@@ -10,12 +10,11 @@ use crate::{
     repl::{entity_not_found, find_world_object},
     style::GameStyle,
     trigger::{TriggerAction, TriggerCondition, check_triggers},
-    view::ViewMode,
+    view::{ContentLine, ViewMode},
     world::nearby_reachable_items,
 };
 
 use anyhow::{Context, Result};
-use colored::Colorize;
 use log::info;
 use uuid::Uuid;
 
@@ -54,26 +53,20 @@ pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> 
 }
 
 /// Shows list of items held in inventory.
-pub fn inv_handler(world: &AmbleWorld) -> Result<()> {
+pub fn inv_handler(world: &AmbleWorld, view: &mut View) -> Result<()> {
     info!("{} checked inventory.", world.player.name());
-    let banner = "Inventory".item_style().underline().bold();
-    println!("{banner}");
-    if world.player.inventory.is_empty() {
-        println!("\tYou have... nothing. Nothing at all.");
-    } else {
-        let item_count = world.player.inventory.len();
-        println!(
-            "You have {} item{}:",
-            item_count,
-            if item_count == 1 { "" } else { "s" }
-        );
+    view.push(ViewItem::Inventory(
         world
             .player
             .inventory
             .iter()
             .filter_map(|item_id| world.items.get(item_id))
-            .for_each(|item| println!("\t{}", item.name.item_style()));
-    }
+            .map(|item| ContentLine {
+                item_name: item.name.clone(),
+                restricted: false,
+            })
+            .collect(),
+    ));
     Ok(())
 }
 
@@ -81,7 +74,7 @@ pub fn inv_handler(world: &AmbleWorld) -> Result<()> {
 ///
 /// A DenyRead("reason") trigger action can be set to make reading an item conditional.
 /// Ex. `TriggerCondition::UseItem{...read`} + `TriggerCondition::MissingItem(magnifying_glass)` -->
-/// `TriggerAction::DenyRead("The` print is too small for you to read unaided.")
+/// `TriggerAction::DenyRead("The` text is too small for you to read unaided.")
 pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
     // scope search to items in room + inventory
@@ -95,7 +88,10 @@ pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
         if item.text.is_some() {
             Some(item.id())
         } else {
-            println!("You see nothing legible on the {}.", item.name().item_style());
+            view.push(ViewItem::ActionFailure(format!(
+                "You see nothing legible on the {}.",
+                item.name().item_style()
+            )));
             info!(
                 "{} tried to read textless item {} ({})",
                 world.player.name(),
