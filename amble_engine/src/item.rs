@@ -4,7 +4,7 @@
 //! containers for other items. Functions here handle display logic and
 //! movement between locations.
 
-use crate::{Location, WorldObject, style::GameStyle, world::AmbleWorld};
+use crate::{Location, View, ViewItem, WorldObject, style::GameStyle, view::ContentLine, world::AmbleWorld};
 
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
@@ -163,25 +163,26 @@ impl Item {
         self.location = Location::Npc(npc_id);
     }
     /// Show item description (and any contents if a container and open).
-    pub fn show(&self, world: &AmbleWorld) {
-        println!("{}", self.name().item_style().underline());
-        println!("{}", self.description().description_style());
+    pub fn show(&self, world: &AmbleWorld, view: &mut View) {
+        view.push(ViewItem::ItemDescription {
+            name: self.name.clone(),
+            description: self.description.clone(),
+        });
         if self.container_state.is_some() {
-            println!("{}", "Contents:".bold());
             if self.is_accessible() {
                 if self.contents.is_empty() {
-                    println!("{}", "\tEmpty".italic().dimmed());
+                    view.push(ViewItem::ItemContents(Vec::new()));
                 } else {
-                    self.contents
-                        .iter()
-                        .filter_map(|item_id| world.items.get(item_id))
-                        .for_each(|item| {
-                            if item.restricted {
-                                println!("\t{}🔒", item.name().item_style());
-                            } else {
-                                println!("\t{}", item.name().item_style());
-                            }
-                        });
+                    view.push(ViewItem::ItemContents(
+                        self.contents
+                            .iter()
+                            .filter_map(|id| world.items.get(id))
+                            .map(|i| ContentLine {
+                                item_name: i.name.clone(),
+                                restricted: i.restricted,
+                            })
+                            .collect(),
+                    ));
                 }
             } else {
                 let action = if self.container_state.is_some_and(|cs| cs.is_locked()) {
