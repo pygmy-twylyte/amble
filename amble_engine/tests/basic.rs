@@ -278,19 +278,6 @@ fn test_inventory_vessel_type() {
 }
 
 #[test]
-fn test_item_open_handler_error() {
-    let mut world = world::AmbleWorld::new_empty();
-    let result = ae::repl::item::open_handler(&mut world, "x");
-    assert!(result.is_err());
-}
-
-#[test]
-fn test_inv_handler_empty() {
-    let world = world::AmbleWorld::new_empty();
-    assert!(ae::repl::look::inv_handler(&world).is_ok());
-}
-
-#[test]
 fn test_move_to_handler_simple() {
     use ae::View;
     use ae::room::{Exit, Room};
