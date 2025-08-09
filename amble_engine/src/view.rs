@@ -65,6 +65,7 @@ impl View {
         self.item_detail();
         self.npc_detail();
         self.item_text();
+        self.inventory();
 
         // successes / failures
         self.action_success();
@@ -74,6 +75,20 @@ impl View {
 
     fn world_reaction(&mut self) {}
     fn ambience(&mut self) {}
+
+    fn inventory(&mut self) {
+        if let Some(ViewItem::Inventory(item_lines)) = self.items.iter().find(|i| matches!(i, ViewItem::Inventory(..)))
+        {
+            println!("{}:", "Inventory".subheading_style());
+            if item_lines.is_empty() {
+                println!("   {}", "You have... nothing at all.".italic().dimmed());
+            } else {
+                item_lines
+                    .iter()
+                    .for_each(|line| println!("   {}", line.item_name.item_style()));
+            }
+        }
+    }
 
     fn action_success(&mut self) {
         let messages: Vec<_> = self
@@ -313,6 +328,7 @@ pub enum ViewItem {
     ActionSuccess(String),
     ActionFailure(String),
     Error(String),
+    Inventory(Vec<ContentLine>),
 }
 /// Information needed to display a contents list for an item correctly
 #[derive(Debug, Clone, PartialEq, Eq)]
