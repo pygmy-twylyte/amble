@@ -5,7 +5,7 @@
 use std::collections::HashSet;
 
 use crate::{
-    AmbleWorld, View, WorldObject,
+    AmbleWorld, View, ViewItem, WorldObject,
     item::ItemAbility,
     repl::{entity_not_found, find_world_object},
     style::GameStyle,
@@ -29,7 +29,7 @@ pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
 }
 
 /// Shows description of something (scoped to nearby items and npcs and inventory)
-pub fn look_at_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
+pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
     // scope = local items + npcs + player inventory
     let items_in_reach = nearby_reachable_items(world, current_room.id())?;
@@ -41,10 +41,10 @@ pub fn look_at_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
     if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, thing) {
         if let Some(item) = entity.item() {
             info!("{} looked at {} ({})", world.player.name(), item.name(), item.id());
-            item.show(world);
+            item.show(world, view);
         } else if let Some(npc) = entity.npc() {
             info!("{} looked at {} ({})", world.player.name(), npc.name(), npc.id());
-            npc.show(world);
+            npc.show(world, view);
         }
         let _fired = check_triggers(world, &[]);
     } else {
@@ -82,7 +82,7 @@ pub fn inv_handler(world: &AmbleWorld) -> Result<()> {
 /// A DenyRead("reason") trigger action can be set to make reading an item conditional.
 /// Ex. `TriggerCondition::UseItem{...read`} + `TriggerCondition::MissingItem(magnifying_glass)` -->
 /// `TriggerAction::DenyRead("The` print is too small for you to read unaided.")
-pub fn read_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
+pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
     // scope search to items in room + inventory
     let items_in_reach = nearby_reachable_items(world, current_room.id())?;
@@ -129,14 +129,9 @@ pub fn read_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
                 .get(&item_id)
                 .with_context(|| format!("item_id ({item_id}) not found in world items"))?;
 
-            println!("You can read the following:\n");
-            println!(
-                "{}",
-                item.text
-                    .as_deref()
-                    .expect("item.text already known to be Some() here")
-                    .description_style()
-            );
+            view.push(ViewItem::ItemText(
+                item.text.clone().unwrap_or("(Nothing legible.)".to_string()),
+            ));
             info!("{} read '{}' ({})", world.player.name(), item.name(), item.id());
         }
     }
