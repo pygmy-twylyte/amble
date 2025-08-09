@@ -5,7 +5,7 @@
 use std::collections::HashSet;
 
 use crate::{
-    AmbleWorld, WorldObject,
+    AmbleWorld, View, ViewItem, WorldObject,
     item::{ContainerState, ItemAbility, ItemInteractionType},
     loader::items::interaction_requirement_met,
     repl::{entity_not_found, find_world_object},
@@ -22,6 +22,7 @@ use uuid::Uuid;
 /// Use one item on another item in a specific way
 pub fn use_item_on_handler(
     world: &mut AmbleWorld,
+    view: &mut View,
     interaction: ItemInteractionType,
     tool: &str,
     target: &str,
@@ -34,11 +35,17 @@ pub fn use_item_on_handler(
     let maybe_tool =
         find_world_object(&world.player.inventory, &world.items, &world.npcs, tool).and_then(super::WorldEntity::item);
     if maybe_target.is_none() {
-        println!("You don't see any {} nearby.", target.error_style());
+        view.push(ViewItem::ActionFailure(format!(
+            "You don't see any {} nearby.",
+            target.error_style()
+        )));
         return Ok(());
     }
     if maybe_tool.is_none() {
-        println!("You don't have any {} in inventory.", tool.error_style());
+        view.push(ViewItem::ActionFailure(format!(
+            "You don't have any {} in inventory.",
+            tool.error_style()
+        )));
         return Ok(());
     }
     // unwrap OK here because we just checked for None above
@@ -51,7 +58,10 @@ pub fn use_item_on_handler(
 
     // check if these items can interact in this way
     if !interaction_requirement_met(interaction, target, tool) {
-        println!("You can't do that with a {}!", tool.name().item_style(),);
+        view.push(ViewItem::ActionFailure(format!(
+            "You can't do that with a {}!",
+            tool.name().item_style(),
+        )));
         info!(
             "Player tried to {:?} {} ({}) with {} ({})",
             interaction,
@@ -85,16 +95,16 @@ pub fn use_item_on_handler(
     });
 
     if !reaction_fired {
-        println!(
+        view.push(ViewItem::ActionFailure(format!(
             "{}",
             world.spin_spinner(SpinnerType::NoEffect, "That appears to have had no effect, Captain.",)
-        );
+        )));
         warn!("No matching trigger for {interaction:?} {target_name} ({target_id}) with {tool_name} ({tool_id})");
     }
     Ok(())
 }
 /// Turns something on, if it can be turned on
-pub fn turn_on_handler(world: &mut AmbleWorld, item_pattern: &str) -> Result<()> {
+pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
     if let Some(entity) = find_world_object(&current_room.contents, &world.items, &world.npcs, item_pattern) {
         if let Some(item) = entity.item() {
@@ -115,7 +125,10 @@ pub fn turn_on_handler(world: &mut AmbleWorld, item_pattern: &str) -> Result<()>
                     _ => false,
                 });
                 if !sent_trigger_fired {
-                    println!("{}", "You hear a clicking sound and then... nothing happens.".italic());
+                    view.push(ViewItem::ActionFailure(format!(
+                        "{}",
+                        "You hear a clicking sound and then... nothing happens.".italic()
+                    )));
                 }
             } else {
                 info!(
@@ -123,11 +136,17 @@ pub fn turn_on_handler(world: &mut AmbleWorld, item_pattern: &str) -> Result<()>
                     item.name(),
                     item.id()
                 );
-                println!("The {} can't be turned on.", item.name().item_style());
+                view.push(ViewItem::ActionFailure(format!(
+                    "The {} can't be turned on.",
+                    item.name().item_style()
+                )));
             }
         } else if let Some(npc) = entity.npc() {
             info!("Player tried to turn on an NPC {} ({})", npc.name(), npc.id());
-            println!("{} is impervious to your attempt at seduction.", npc.name().npc_style());
+            view.push(ViewItem::ActionFailure(format!(
+                "{} is impervious to your attempt at seduction.",
+                npc.name().npc_style()
+            )));
         }
     } else {
         entity_not_found(world, item_pattern);
@@ -136,7 +155,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, item_pattern: &str) -> Result<()>
 }
 
 /// Opens an item if it is a closed, unlocked container.
-pub fn open_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
+pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     // search player's location for an item matching search
     let room = world.player_room_ref()?;
     let search_scope: HashSet<Uuid> = room.contents.union(&world.player.inventory).copied().collect();
@@ -146,7 +165,10 @@ pub fn open_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
                 (item.id(), item.name().to_string())
             } else {
                 warn!("Player attempted to open a non-Item WorldEntity by searching ({pattern})");
-                println!("{} isn't an item. You can't open it.", pattern.error_style());
+                view.push(ViewItem::Error(format!(
+                    "{} isn't an item. You can't open it.",
+                    pattern.error_style()
+                )));
                 return Ok(());
             }
         } else {
@@ -157,20 +179,29 @@ pub fn open_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     if let Some(target_item) = world.get_item_mut(container_id) {
         match target_item.container_state {
             None => {
-                println!("The {} can't be opened.", target_item.name().item_style());
+                view.push(ViewItem::ActionFailure(format!(
+                    "The {} can't be opened.",
+                    target_item.name().item_style()
+                )));
             },
             Some(ContainerState::Locked) => {
-                println!(
+                view.push(ViewItem::ActionFailure(format!(
                     "The {} is locked. You'll have to unlock it first.",
                     target_item.name().item_style()
-                );
+                )));
             },
             Some(ContainerState::Open) => {
-                println!("The {} is already open.", target_item.name().item_style());
+                view.push(ViewItem::ActionSuccess(format!(
+                    "The {} is already open.",
+                    target_item.name().item_style()
+                )));
             },
             Some(ContainerState::Closed) => {
                 target_item.container_state = Some(ContainerState::Open);
-                println!("You opened the {}.\n", target_item.name().item_style());
+                view.push(ViewItem::ActionSuccess(format!(
+                    "You opened the {}.\n",
+                    target_item.name().item_style()
+                )));
                 info!("{} opened the {} ({})", world.player.name(), name, container_id,);
                 check_triggers(world, &[TriggerCondition::Open(container_id)])?;
             },
@@ -180,7 +211,7 @@ pub fn open_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
 }
 
 /// Closes a container item nearby.
-pub fn close_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
+pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     let room = world.player_room_ref()?;
     let search_scope: HashSet<Uuid> = room.contents.union(&world.player.inventory).copied().collect();
     let (uuid, name) = if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, pattern) {
@@ -188,7 +219,10 @@ pub fn close_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
             (item.id(), item.name().to_string())
         } else {
             warn!("Command:Close({pattern}) matched a non-Item WorldEntity");
-            println!("You do not see a {} to close.", pattern.error_style());
+            view.push(ViewItem::Error(format!(
+                "You do not see a {} to close.",
+                pattern.error_style()
+            )));
             return Ok(());
         }
     } else {
@@ -199,14 +233,23 @@ pub fn close_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     if let Some(target_item) = world.get_item_mut(uuid) {
         match target_item.container_state {
             None => {
-                println!("The {} can't be closed.", target_item.name().item_style());
+                view.push(ViewItem::ActionFailure(format!(
+                    "The {} can't be closed.",
+                    target_item.name().item_style()
+                )));
             },
             Some(ContainerState::Closed | ContainerState::Locked) => {
-                println!("The {} is already closed.", target_item.name().item_style());
+                view.push(ViewItem::ActionSuccess(format!(
+                    "The {} is already closed.",
+                    target_item.name().item_style()
+                )));
             },
             Some(ContainerState::Open) => {
                 target_item.container_state = Some(ContainerState::Closed);
-                println!("You closed the {}.\n", target_item.name().item_style());
+                view.push(ViewItem::ActionSuccess(format!(
+                    "You closed the {}.\n",
+                    target_item.name().item_style()
+                )));
                 info!("{} closed the {} ({})", world.player.name(), name, uuid);
             },
         }
@@ -215,14 +258,17 @@ pub fn close_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
 }
 
 /// Locks a container item nearby.
-pub fn lock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
+pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     let room = world.player_room_ref()?;
     let (uuid, name) = if let Some(entity) = find_world_object(&room.contents, &world.items, &world.npcs, pattern) {
         if let Some(item) = entity.item() {
             (item.id(), item.name().to_string())
         } else {
             warn!("Command:Lock({pattern}) matched a non-Item WorldEntity");
-            println!("You don't see a {} here to lock.", pattern.error_style());
+            view.push(ViewItem::Error(format!(
+                "You don't see a {} here to lock.",
+                pattern.error_style()
+            )));
             return Ok(());
         }
     } else {
@@ -233,17 +279,23 @@ pub fn lock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     if let Some(target_item) = world.get_item_mut(uuid) {
         match target_item.container_state {
             None => {
-                println!(
+                view.push(ViewItem::ActionFailure(format!(
                     "The {} isn't something that can be locked.",
                     target_item.name().item_style()
-                );
+                )));
             },
             Some(ContainerState::Locked) => {
-                println!("The {} is already locked.", target_item.name().item_style());
+                view.push(ViewItem::ActionSuccess(format!(
+                    "The {} is already locked.",
+                    target_item.name().item_style()
+                )));
             },
             Some(ContainerState::Open | ContainerState::Closed) => {
                 target_item.container_state = Some(ContainerState::Locked);
-                println!("You locked the {}.\n", target_item.name().item_style());
+                view.push(ViewItem::ActionSuccess(format!(
+                    "You locked the {}.\n",
+                    target_item.name().item_style()
+                )));
                 info!("{} locked the {} ({})", world.player.name(), name, uuid);
             },
         }
@@ -252,7 +304,7 @@ pub fn lock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
 }
 
 /// Unlocks and opens an item nearby.
-pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
+pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     let room = world.player_room_ref()?;
     let (container_id, container_name) =
         if let Some(entity) = find_world_object(&room.contents, &world.items, &world.npcs, pattern) {
@@ -260,7 +312,10 @@ pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
                 (item.id(), item.name().to_string())
             } else {
                 warn!("Command:Unlock({pattern}) matched a non-Item (NPC) WorldEntity");
-                println!("You don't see a {} here to unlock.", pattern.error_style());
+                view.push(ViewItem::Error(format!(
+                    "You don't see a {} here to unlock.",
+                    pattern.error_style()
+                )));
                 return Ok(());
             }
         } else {
@@ -282,15 +337,24 @@ pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
     if let Some(target_item) = world.get_item_mut(container_id) {
         match target_item.container_state {
             None => {
-                println!("The {} can't be unlocked.", target_item.name().item_style());
+                view.push(ViewItem::ActionFailure(format!(
+                    "The {} doesn't have a lock.",
+                    target_item.name().item_style()
+                )));
             },
             Some(ContainerState::Open | ContainerState::Closed) => {
-                println!("The {} is isn't locked.", target_item.name().item_style());
+                view.push(ViewItem::ActionSuccess(format!(
+                    "The {} is already unlocked.",
+                    target_item.name().item_style()
+                )));
             },
             Some(ContainerState::Locked) => {
                 if has_valid_key {
                     target_item.container_state = Some(ContainerState::Closed);
-                    println!("You unlocked the {}.\n", target_item.name().item_style());
+                    view.push(ViewItem::ActionSuccess(format!(
+                        "You unlocked the {}.\n",
+                        target_item.name().item_style()
+                    )));
                     info!(
                         "{} unlocked the {} ({})",
                         world.player.name(),
@@ -299,10 +363,10 @@ pub fn unlock_handler(world: &mut AmbleWorld, pattern: &str) -> Result<()> {
                     );
                     check_triggers(world, &[TriggerCondition::Unlock(container_id)])?;
                 } else {
-                    println!(
+                    view.push(ViewItem::ActionFailure(format!(
                         "You don't have anything that can unlock the {}.",
                         target_item.name().item_style()
-                    );
+                    )));
                 }
             },
         }
@@ -322,7 +386,7 @@ mod tests {
     use std::collections::{HashMap, HashSet};
     use uuid::Uuid;
 
-    fn build_world() -> (AmbleWorld, Uuid, Uuid, Uuid, Uuid) {
+    fn build_world() -> (AmbleWorld, View, Uuid, Uuid, Uuid, Uuid) {
         let mut world = AmbleWorld::new_empty();
         let room_id = Uuid::new_v4();
         let room = Room {
@@ -414,13 +478,14 @@ mod tests {
         };
         world.player.inventory.insert(key_id);
         world.items.insert(key_id, key);
+        let view = View::new();
 
-        (world, container_id, tool_id, lamp_id, key_id)
+        (world, view, container_id, tool_id, lamp_id, key_id)
     }
 
     #[test]
     fn use_item_on_handler_unlocks_container() {
-        let (mut world, container_id, tool_id, _, _) = build_world();
+        let (mut world, mut view, container_id, tool_id, _, _) = build_world();
         world.triggers.push(Trigger {
             name: "open".into(),
             conditions: vec![TriggerCondition::UseItemOnItem {
@@ -436,7 +501,7 @@ mod tests {
             world.items.get(&container_id).unwrap().container_state,
             Some(ContainerState::Locked)
         );
-        use_item_on_handler(&mut world, ItemInteractionType::Open, "crowbar", "chest").unwrap();
+        use_item_on_handler(&mut world, &mut view, ItemInteractionType::Open, "crowbar", "chest").unwrap();
         assert_eq!(
             world.items.get(&container_id).unwrap().container_state,
             Some(ContainerState::Open)
@@ -445,7 +510,7 @@ mod tests {
 
     #[test]
     fn use_item_on_handler_without_ability_does_nothing() {
-        let (mut world, container_id, tool_id, _, _) = build_world();
+        let (mut world, mut view, container_id, tool_id, _, _) = build_world();
         world.items.get_mut(&tool_id).unwrap().abilities.clear();
         world.triggers.push(Trigger {
             name: "open".into(),
@@ -458,7 +523,7 @@ mod tests {
             only_once: false,
             fired: false,
         });
-        use_item_on_handler(&mut world, ItemInteractionType::Open, "crowbar", "chest").unwrap();
+        use_item_on_handler(&mut world, &mut view, ItemInteractionType::Open, "crowbar", "chest").unwrap();
         assert_eq!(
             world.items.get(&container_id).unwrap().container_state,
             Some(ContainerState::Locked)
@@ -467,7 +532,7 @@ mod tests {
 
     #[test]
     fn turn_on_handler_triggers_unlock() {
-        let (mut world, container_id, _, lamp_id, _) = build_world();
+        let (mut world, mut view, container_id, _, lamp_id, _) = build_world();
         world.triggers.push(Trigger {
             name: "light".into(),
             conditions: vec![TriggerCondition::UseItem {
@@ -482,7 +547,7 @@ mod tests {
             world.items.get(&container_id).unwrap().container_state,
             Some(ContainerState::Locked)
         );
-        turn_on_handler(&mut world, "lamp").unwrap();
+        turn_on_handler(&mut world, &mut view, "lamp").unwrap();
         assert_eq!(
             world.items.get(&container_id).unwrap().container_state,
             Some(ContainerState::Open)
@@ -491,9 +556,9 @@ mod tests {
 
     #[test]
     fn open_handler_opens_closed_container() {
-        let (mut world, container_id, _, _, _) = build_world();
+        let (mut world, mut view, container_id, _, _, _) = build_world();
         world.items.get_mut(&container_id).unwrap().container_state = Some(ContainerState::Closed);
-        open_handler(&mut world, "chest").unwrap();
+        open_handler(&mut world, &mut view, "chest").unwrap();
         assert_eq!(
             world.items.get(&container_id).unwrap().container_state,
             Some(ContainerState::Open)
@@ -502,8 +567,8 @@ mod tests {
 
     #[test]
     fn open_handler_locked_container_stays_locked() {
-        let (mut world, container_id, _, _, _) = build_world();
-        open_handler(&mut world, "chest").unwrap();
+        let (mut world, mut view, container_id, _, _, _) = build_world();
+        open_handler(&mut world, &mut view, "chest").unwrap();
         assert_eq!(
             world.items.get(&container_id).unwrap().container_state,
             Some(ContainerState::Locked)
@@ -512,9 +577,9 @@ mod tests {
 
     #[test]
     fn close_handler_closes_open_container() {
-        let (mut world, container_id, _, _, _) = build_world();
+        let (mut world, mut view, container_id, _, _, _) = build_world();
         world.items.get_mut(&container_id).unwrap().container_state = Some(ContainerState::Open);
-        close_handler(&mut world, "chest").unwrap();
+        close_handler(&mut world, &mut view, "chest").unwrap();
         assert_eq!(
             world.items.get(&container_id).unwrap().container_state,
             Some(ContainerState::Closed)
@@ -523,9 +588,9 @@ mod tests {
 
     #[test]
     fn lock_handler_locks_container() {
-        let (mut world, container_id, _, _, _) = build_world();
+        let (mut world, mut view, container_id, _, _, _) = build_world();
         world.items.get_mut(&container_id).unwrap().container_state = Some(ContainerState::Closed);
-        lock_handler(&mut world, "chest").unwrap();
+        lock_handler(&mut world, &mut view, "chest").unwrap();
         assert_eq!(
             world.items.get(&container_id).unwrap().container_state,
             Some(ContainerState::Locked)
@@ -534,8 +599,8 @@ mod tests {
 
     #[test]
     fn unlock_handler_with_key_unlocks_container() {
-        let (mut world, container_id, _, _, _) = build_world();
-        unlock_handler(&mut world, "chest").unwrap();
+        let (mut world, mut view, container_id, _, _, _) = build_world();
+        unlock_handler(&mut world, &mut view, "chest").unwrap();
         assert_eq!(
             world.items.get(&container_id).unwrap().container_state,
             Some(ContainerState::Closed)
@@ -544,9 +609,9 @@ mod tests {
 
     #[test]
     fn unlock_handler_without_key_does_not_unlock() {
-        let (mut world, container_id, _, _, key_id) = build_world();
+        let (mut world, mut view, container_id, _, _, key_id) = build_world();
         world.player.inventory.remove(&key_id);
-        unlock_handler(&mut world, "chest").unwrap();
+        unlock_handler(&mut world, &mut view, "chest").unwrap();
         assert_eq!(
             world.items.get(&container_id).unwrap().container_state,
             Some(ContainerState::Locked)
