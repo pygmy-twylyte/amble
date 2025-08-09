@@ -5,7 +5,7 @@
 use std::collections::HashSet;
 
 use crate::{
-    AmbleWorld, ItemHolder, Location, WorldObject,
+    AmbleWorld, ItemHolder, Location, View, ViewItem, WorldObject,
     item::ItemInteractionType,
     repl::{WorldEntity, entity_not_found, find_world_object},
     spinners::SpinnerType,
@@ -20,7 +20,7 @@ use log::{error, info, warn};
 use uuid::Uuid;
 
 /// Drops an item from inventory in the current room.
-pub fn drop_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
+pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     if let Some(entity) = find_world_object(&world.player.inventory, &world.items, &world.npcs, thing) {
         if let Some(item) = entity.item() {
             let item_id = item.id();
@@ -40,18 +40,25 @@ pub fn drop_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
                         );
                     }
                     world.player.remove_item(item_id);
-                    println!("You dropped the {}.\n", dropped.name().item_style());
+                    view.push(ViewItem::ActionSuccess(format!(
+                        "You dropped the {}.",
+                        dropped.name().item_style()
+                    )));
                     check_triggers(world, &[TriggerCondition::Drop(item_id)])?;
                 }
             } else {
                 // item not portable
-                println!("You can't drop the {}.", item.name().item_style());
+                view.push(ViewItem::ActionFailure(format!(
+                    "You can't drop the {}. It's not transferrable.",
+                    item.name().item_style()
+                )));
                 return Ok(());
             }
             Ok(())
         } else {
             unexpected_entity(
                 entity,
+                view,
                 &format!("{}? That's not a item that one can drop.", thing.error_style()),
             );
             Ok(())
@@ -62,7 +69,7 @@ pub fn drop_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
     }
 }
 /// Removes an item from current room and adds it to inventory.
-pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
+pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     let take_verb = world.spin_spinner(SpinnerType::TakeVerb, "take");
     let room_id = world.player_room_ref()?.id();
     let scope = nearby_reachable_items(world, room_id)?;
@@ -71,6 +78,7 @@ pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
         if entity.is_not_item() {
             unexpected_entity(
                 entity,
+                view,
                 &format!(
                     "That's not an item. You can't {} it.",
                     world.spin_spinner(SpinnerType::TakeVerb, "take")
@@ -80,14 +88,14 @@ pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
         if let Some(item) = entity.item() {
             // check to make sure special handling isn't necessary
             if let Some(ability) = item.requires_capability_for(ItemInteractionType::Handle) {
-                println!(
+                view.push(ViewItem::ActionFailure(format!(
                     "{}",
                     format!(
                         "You can't pick it up barehanded. Use something to {} it.",
                         ability.to_string().bold()
                     )
                     .denied_style()
-                );
+                )));
                 info!(
                     "Blocked attempt to take {} ({}) without item that can \"{ability}\"",
                     item.name(),
@@ -103,7 +111,10 @@ pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
                 if let Some(moved_item) = world.items.get_mut(&loot_id) {
                     moved_item.set_location_inventory();
                     world.player.inventory.insert(moved_item.id());
-                    println!("You {take_verb} the {}.\n", moved_item.name().item_style());
+                    view.push(ViewItem::ActionSuccess(format!(
+                        "You {take_verb} the {}.",
+                        moved_item.name().item_style()
+                    )));
                     info!(
                         "{} took the {} ({})",
                         world.player.name,
@@ -134,11 +145,11 @@ pub fn take_handler(world: &mut AmbleWorld, thing: &str) -> Result<()> {
                 check_triggers(world, &[TriggerCondition::Take(loot_id)])?;
             } else {
                 let reason = if item.restricted { "restricted" } else { "not portable" };
-                println!(
+                view.push(ViewItem::ActionFailure(format!(
                     "You can't {take_verb} the {}. It's {}.\n",
                     item.name().error_style(),
                     reason.italic()
-                );
+                )));
                 info!(
                     "{} denied ({reason}) item {} ({})",
                     world.player.name(),
@@ -161,7 +172,12 @@ pub enum VesselType {
 }
 
 /// Removes an item from a vessel (NPC or container item) and adds to inventory.
-pub fn take_from_handler(world: &mut AmbleWorld, item_pattern: &str, vessel_pattern: &str) -> Result<()> {
+pub fn take_from_handler(
+    world: &mut AmbleWorld,
+    view: &mut View,
+    item_pattern: &str,
+    vessel_pattern: &str,
+) -> Result<()> {
     // find vessel id from containers and NPCs in room
     let current_room = world.player_room_ref()?;
     let search_scope: HashSet<Uuid> = current_room.contents.union(&current_room.npcs).copied().collect();
@@ -171,7 +187,9 @@ pub fn take_from_handler(world: &mut AmbleWorld, item_pattern: &str, vessel_patt
         if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, vessel_pattern) {
             if let Some(vessel) = entity.item() {
                 if let Some(reason) = vessel.access_denied_reason() {
-                    println!("{reason} You can't take anything from it.");
+                    view.push(ViewItem::ActionFailure(format!(
+                        "{reason} You can't take anything from it."
+                    )));
                     return Ok(());
                 } else {
                     (vessel.id(), vessel.name().to_string(), VesselType::Item)
@@ -181,6 +199,7 @@ pub fn take_from_handler(world: &mut AmbleWorld, item_pattern: &str, vessel_patt
             } else {
                 unexpected_entity(
                     entity,
+                    view,
                     &format!("\"{vessel_pattern}\" isn't a nearby item or NPC that you can take from."),
                 );
                 return Ok(());
@@ -193,10 +212,10 @@ pub fn take_from_handler(world: &mut AmbleWorld, item_pattern: &str, vessel_patt
     // Validate and execute transfer of loot from container item or NPC
     match vessel_type {
         VesselType::Item => {
-            validate_and_transfer_from_item(world, item_pattern, vessel_id, &vessel_name)?;
+            validate_and_transfer_from_item(world, view, item_pattern, vessel_id, &vessel_name)?;
         },
         VesselType::Npc => {
-            validate_and_transfer_from_npc(world, item_pattern, vessel_id, &vessel_name)?;
+            validate_and_transfer_from_npc(world, view, item_pattern, vessel_id, &vessel_name)?;
         },
     }
     Ok(())
@@ -204,6 +223,7 @@ pub fn take_from_handler(world: &mut AmbleWorld, item_pattern: &str, vessel_patt
 
 pub(crate) fn validate_and_transfer_from_npc(
     world: &mut AmbleWorld,
+    view: &mut View,
     item_pattern: &str,
     vessel_id: Uuid,
     vessel_name: &str,
@@ -216,7 +236,7 @@ pub(crate) fn validate_and_transfer_from_npc(
         if let Some(entity) = find_world_object(&container.inventory, &world.items, &world.npcs, item_pattern) {
             if let Some(loot) = entity.item() {
                 if let Some(reason) = loot.take_denied_reason() {
-                    println!("{reason}");
+                    view.push(ViewItem::ActionFailure(format!("{reason}")));
                     return Ok(());
                 } else {
                     (loot.id(), loot.name().to_string())
@@ -224,19 +244,28 @@ pub(crate) fn validate_and_transfer_from_npc(
             } else {
                 unexpected_entity(
                     entity,
+                    view,
                     &format!("\"{item_pattern}\" matches an NPC. That would be kidnapping."),
                 );
                 return Ok(());
             }
         } else {
-            println!(
+            view.push(ViewItem::ActionFailure(format!(
                 "{} doesn't have any {} to take.",
                 vessel_name.npc_style(),
                 item_pattern.error_style(),
-            );
+            )));
             return Ok(());
         };
-    transfer_to_player(world, VesselType::Npc, vessel_id, vessel_name, loot_id, &loot_name);
+    transfer_to_player(
+        world,
+        view,
+        VesselType::Npc,
+        vessel_id,
+        vessel_name,
+        loot_id,
+        &loot_name,
+    );
     check_triggers(
         world,
         &[
@@ -252,6 +281,7 @@ pub(crate) fn validate_and_transfer_from_npc(
 
 pub(crate) fn validate_and_transfer_from_item(
     world: &mut AmbleWorld,
+    view: &mut View,
     item_pattern: &str,
     vessel_id: Uuid,
     vessel_name: &str,
@@ -265,7 +295,7 @@ pub(crate) fn validate_and_transfer_from_item(
             if let Some(loot) = entity.item() {
                 match loot.take_denied_reason() {
                     Some(reason) => {
-                        println!("{reason}");
+                        view.push(ViewItem::ActionFailure(reason));
                         return Ok(());
                     },
                     None => (loot.id(), loot.name().to_string()),
@@ -273,19 +303,28 @@ pub(crate) fn validate_and_transfer_from_item(
             } else {
                 unexpected_entity(
                     entity,
+                    view,
                     &format!("\"{item_pattern}\" matches an NPC. That would be kidnapping."),
                 );
                 return Ok(());
             }
         } else {
-            println!(
+            view.push(ViewItem::ActionFailure(format!(
                 "You don't see any {} in the {} to take.",
                 item_pattern.error_style(),
                 vessel_name.item_style()
-            );
+            )));
             return Ok(());
         };
-    transfer_to_player(world, VesselType::Item, vessel_id, vessel_name, loot_id, &loot_name);
+    transfer_to_player(
+        world,
+        view,
+        VesselType::Item,
+        vessel_id,
+        vessel_name,
+        loot_id,
+        &loot_name,
+    );
     check_triggers(world, &[TriggerCondition::Take(loot_id)])?;
     Ok(())
 }
@@ -293,6 +332,7 @@ pub(crate) fn validate_and_transfer_from_item(
 /// Update world state to move item from a vessel (NPC or container item) into inventory.
 pub fn transfer_to_player(
     world: &mut AmbleWorld,
+    view: &mut View,
     vessel_type: VesselType,
     vessel_id: Uuid,
     vessel_name: &str,
@@ -323,7 +363,10 @@ pub fn transfer_to_player(
 
     // Report and log success
     let take_verb = world.spin_spinner(SpinnerType::TakeVerb, "take");
-    println!("You {take_verb} the {}.\n", loot_name.item_style());
+    view.push(ViewItem::ActionSuccess(format!(
+        "You {take_verb} the {}.",
+        loot_name.item_style()
+    )));
     info!(
         "{} took {} ({}) from {} ({})",
         world.player.name(),
@@ -335,19 +378,19 @@ pub fn transfer_to_player(
 }
 
 /// Removes an item from inventory and places it in a nearby container.
-pub fn put_in_handler(world: &mut AmbleWorld, item: &str, container: &str) -> Result<()> {
+pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, container: &str) -> Result<()> {
     // get uuid of item and container
     let (item_id, item_name) =
         if let Some(entity) = find_world_object(&world.player.inventory, &world.items, &world.npcs, item) {
             if let Some(item) = entity.item() {
                 if let Some(reason) = item.take_denied_reason() {
-                    println!("{reason}");
+                    view.push(ViewItem::ActionFailure(reason));
                     return Ok(());
                 } else {
                     (item.id(), item.name().to_string())
                 }
             } else {
-                unexpected_entity(entity, &format!("No item in inventory matches \"{item}\"."));
+                unexpected_entity(entity, view, &format!("No item in inventory matches \"{item}\"."));
                 return Ok(());
             }
         } else {
@@ -360,13 +403,16 @@ pub fn put_in_handler(world: &mut AmbleWorld, item: &str, container: &str) -> Re
         if let Some(entity) = find_world_object(&room.contents, &world.items, &world.npcs, container) {
             if let Some(vessel) = entity.item() {
                 if let Some(reason) = vessel.access_denied_reason() {
-                    println!("{reason} You can't put anything in it.");
+                    view.push(ViewItem::ActionFailure(format!(
+                        "{reason} You can't put anything in it."
+                    )));
                     return Ok(());
                 }
                 (vessel.id(), vessel.name().to_string())
             } else {
                 unexpected_entity(
                     entity,
+                    view,
                     &format!("You don't see a container matching \"{container}\" here."),
                 );
                 return Ok(());
@@ -386,11 +432,11 @@ pub fn put_in_handler(world: &mut AmbleWorld, item: &str, container: &str) -> Re
     // remove item from inventory
     world.player.inventory.remove(&item_id);
     // report and log success
-    println!(
-        "You put the {} in the {}.\n",
+    view.push(ViewItem::ActionSuccess(format!(
+        "You put the {} in the {}.",
         item_name.item_style(),
         vessel_name.item_style()
-    );
+    )));
     info!(
         "{} put {} ({}) into {} ({})",
         world.player.name(),
@@ -414,12 +460,12 @@ pub fn put_in_handler(world: &mut AmbleWorld, item: &str, container: &str) -> Re
 
 /// Handle situation where an NPC uuid is found where only items should be.
 /// (Typically when find_world_object matches an NPC when an item is expected.)
-pub fn unexpected_entity(entity: WorldEntity, denial_msg: &str) {
+pub fn unexpected_entity(entity: WorldEntity, view: &mut View, denial_msg: &str) {
     let (entity_name, entity_id, entity_loc) = match entity {
         WorldEntity::Item(item) => (item.name(), item.id(), item.location()),
         WorldEntity::Npc(npc) => (npc.name(), npc.id(), npc.location()),
     };
-    println!("{}", denial_msg.denied_style());
+    view.push(ViewItem::Error(denial_msg.to_string()));
     error!("entity '{entity_name}' ({entity_id}) found in unexpected location {entity_loc:?}")
 }
 
@@ -437,6 +483,7 @@ mod tests {
 
     struct TestWorld {
         world: AmbleWorld,
+        view: View,
         room_id: Uuid,
         inv_item_id: Uuid,
         room_item_id: Uuid,
@@ -608,9 +655,11 @@ mod tests {
 
         world.npcs.insert(npc_id, npc);
         world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
+        let view = View::new();
 
         TestWorld {
             world,
+            view,
             room_id,
             inv_item_id,
             room_item_id,
@@ -628,7 +677,7 @@ mod tests {
         let mut tw = build_world();
         let item_id = tw.inv_item_id;
         let room_id = tw.room_id;
-        drop_handler(&mut tw.world, "apple").unwrap();
+        drop_handler(&mut tw.world, &mut tw.view, "apple").unwrap();
         assert!(!tw.world.player.inventory.contains(&item_id));
         assert!(tw.world.rooms.get(&room_id).unwrap().contents.contains(&item_id));
         assert_eq!(
@@ -642,7 +691,7 @@ mod tests {
         let mut tw = build_world();
         let item_id = tw.room_item_id;
         let room_id = tw.room_id;
-        take_handler(&mut tw.world, "rock").unwrap();
+        take_handler(&mut tw.world, &mut tw.view, "rock").unwrap();
         assert!(tw.world.player.inventory.contains(&item_id));
         assert!(!tw.world.rooms.get(&room_id).unwrap().contents.contains(&item_id));
         assert_eq!(tw.world.items.get(&item_id).unwrap().location(), &Location::Inventory);
@@ -653,7 +702,7 @@ mod tests {
         let mut tw = build_world();
         let chest_id = tw.chest_id;
         let gem_id = tw.gem_id;
-        take_from_handler(&mut tw.world, "gem", "chest").unwrap();
+        take_from_handler(&mut tw.world, &mut tw.view, "gem", "chest").unwrap();
         assert!(tw.world.player.inventory.contains(&gem_id));
         assert!(!tw.world.items.get(&chest_id).unwrap().contents.contains(&gem_id));
         assert_eq!(tw.world.items.get(&gem_id).unwrap().location(), &Location::Inventory);
@@ -664,7 +713,7 @@ mod tests {
         let mut tw = build_world();
         let chest_id = tw.chest_id;
         let item_id = tw.restr_chest_item_id;
-        take_from_handler(&mut tw.world, "restricted", "bob").unwrap();
+        take_from_handler(&mut tw.world, &mut tw.view, "restricted", "bob").unwrap();
         assert!(!tw.world.player.inventory.contains(&item_id));
         assert!(tw.world.items.get(&chest_id).unwrap().contents.contains(&item_id));
         assert_eq!(
@@ -678,7 +727,7 @@ mod tests {
         let mut tw = build_world();
         let npc_id = tw.npc_id;
         let coin_id = tw.npc_item_id;
-        take_from_handler(&mut tw.world, "coin", "bob").unwrap();
+        take_from_handler(&mut tw.world, &mut tw.view, "coin", "bob").unwrap();
         assert!(tw.world.player.inventory.contains(&coin_id));
         assert!(!tw.world.npcs.get(&npc_id).unwrap().inventory.contains(&coin_id));
         assert_eq!(tw.world.items.get(&coin_id).unwrap().location(), &Location::Inventory);
@@ -689,7 +738,7 @@ mod tests {
         let mut tw = build_world();
         let npc_id = tw.npc_id;
         let item_id = tw.restr_npc_item_id;
-        take_from_handler(&mut tw.world, "restricted", "bob").unwrap();
+        take_from_handler(&mut tw.world, &mut tw.view, "restricted", "bob").unwrap();
         assert!(!tw.world.player.inventory.contains(&item_id));
         assert!(tw.world.npcs.get(&npc_id).unwrap().inventory.contains(&item_id));
         assert_eq!(tw.world.items.get(&item_id).unwrap().location(), &Location::Npc(npc_id));
@@ -700,7 +749,7 @@ mod tests {
         let mut tw = build_world();
         let chest_id = tw.chest_id;
         let gem_id = tw.gem_id;
-        validate_and_transfer_from_item(&mut tw.world, "gem", chest_id, "Chest").unwrap();
+        validate_and_transfer_from_item(&mut tw.world, &mut tw.view, "gem", chest_id, "Chest").unwrap();
         assert!(tw.world.player.inventory.contains(&gem_id));
         assert!(!tw.world.items.get(&chest_id).unwrap().contents.contains(&gem_id));
         assert_eq!(tw.world.items.get(&gem_id).unwrap().location(), &Location::Inventory);
@@ -711,7 +760,7 @@ mod tests {
         let mut tw = build_world();
         let npc_id = tw.npc_id;
         let coin_id = tw.npc_item_id;
-        validate_and_transfer_from_npc(&mut tw.world, "coin", npc_id, "Bob").unwrap();
+        validate_and_transfer_from_npc(&mut tw.world, &mut tw.view, "coin", npc_id, "Bob").unwrap();
         assert!(tw.world.player.inventory.contains(&coin_id));
         assert!(!tw.world.npcs.get(&npc_id).unwrap().inventory.contains(&coin_id));
         assert_eq!(tw.world.items.get(&coin_id).unwrap().location(), &Location::Inventory);
@@ -720,7 +769,15 @@ mod tests {
     #[test]
     fn transfer_to_player_updates_world_from_item() {
         let mut tw = build_world();
-        transfer_to_player(&mut tw.world, VesselType::Item, tw.chest_id, "Chest", tw.gem_id, "Gem");
+        transfer_to_player(
+            &mut tw.world,
+            &mut tw.view,
+            VesselType::Item,
+            tw.chest_id,
+            "Chest",
+            tw.gem_id,
+            "Gem",
+        );
         assert!(tw.world.player.inventory.contains(&tw.gem_id));
         assert_eq!(tw.world.items.get(&tw.gem_id).unwrap().location(), &Location::Inventory);
         assert!(!tw.world.items.get(&tw.chest_id).unwrap().contents.contains(&tw.gem_id));
@@ -729,7 +786,15 @@ mod tests {
     #[test]
     fn transfer_to_player_updates_world_from_npc() {
         let mut tw = build_world();
-        transfer_to_player(&mut tw.world, VesselType::Npc, tw.npc_id, "Bob", tw.npc_item_id, "Coin");
+        transfer_to_player(
+            &mut tw.world,
+            &mut tw.view,
+            VesselType::Npc,
+            tw.npc_id,
+            "Bob",
+            tw.npc_item_id,
+            "Coin",
+        );
         assert!(tw.world.player.inventory.contains(&tw.npc_item_id));
         assert_eq!(
             tw.world.items.get(&tw.npc_item_id).unwrap().location(),
@@ -748,7 +813,7 @@ mod tests {
     #[test]
     fn put_in_handler_moves_item_into_container() {
         let mut tw = build_world();
-        put_in_handler(&mut tw.world, "apple", "chest").unwrap();
+        put_in_handler(&mut tw.world, &mut tw.view, "apple", "chest").unwrap();
         assert!(!tw.world.player.inventory.contains(&tw.inv_item_id));
         assert!(
             tw.world
@@ -766,11 +831,11 @@ mod tests {
 
     #[test]
     fn unexpected_entity_does_not_change_world() {
-        let tw = build_world();
+        let mut tw = build_world();
         let before = tw.world.npcs.get(&tw.npc_id).unwrap().location().clone();
         {
             let npc_ref = tw.world.npcs.get(&tw.npc_id).unwrap();
-            unexpected_entity(WorldEntity::Npc(npc_ref), "nope");
+            unexpected_entity(WorldEntity::Npc(npc_ref), &mut tw.view, "nope");
         }
         let after = tw.world.npcs.get(&tw.npc_id).unwrap().location().clone();
         assert_eq!(before, after);
