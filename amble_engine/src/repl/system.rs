@@ -10,14 +10,14 @@ use std::path::PathBuf;
 use crate::goal::GoalStatus;
 use crate::style::GameStyle;
 
-use crate::{AMBLE_VERSION, Goal};
-use crate::{AmbleWorld, WorldObject, repl::ReplControl, spinners::SpinnerType};
+use crate::{AMBLE_VERSION, Goal, View, ViewItem};
+use crate::{AmbleWorld, WorldObject, repl::ReplControl};
 
 use anyhow::{Context, Result};
 use log::{info, warn};
 
 /// Quit the game.
-pub fn quit_handler(world: &AmbleWorld) -> Result<ReplControl> {
+pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> {
     info!("{} quit with a score of {}", world.player.name(), world.player.score);
     info!("ending flags:");
     world.player.flags.iter().for_each(|i| info!("* {i}"));
@@ -73,49 +73,21 @@ pub fn quit_handler(world: &AmbleWorld) -> Result<ReplControl> {
 
     let visited = world.rooms.values().filter(|r| r.visited).count();
 
-    println!("\n{:^60}\n", "Candidate Evaluation Report".black().bold().on_yellow());
-    println!("Rank:   {}", rank.blue().bold().underline());
-    println!("Notes:  {}\n", eval.cyan().italic());
-    println!("Score: {}/{} ({:.1}%)", world.player.score, world.max_score, percent);
-    println!("Locations visited: {}/{}", visited, world.rooms.len());
+    view.push(ViewItem::QuitSummary {
+        rank: rank.to_string(),
+        notes: eval.to_string(),
+        score: world.player.score,
+        max_score: world.max_score,
+        visited,
+        max_visited: world.rooms.len(),
+    });
 
-    println!("\n{}\n", world.spin_spinner(SpinnerType::QuitMsg, "Goodbye."));
     Ok(ReplControl::Quit)
 }
 
 /// Show available commands.
-pub fn help_handler() {
-    println!(
-        r"
-*Some* of the available commands:
-  goals    <-- (show active / completed objectives)
-  look
-  look at <item>
-  go/move <direction>
-  inventory/inv
-  take <item>
-  drop <item>
-  put <item> in <container>
-  take <item> from <container or npc>
-  open <container>
-  close <container>
-  lock <container>
-  unlock <container>
-  read <item>
-  turn <item> on / start <item>
-  talk to <npc>
-  give <item> to <npc>
-  save <saved_game_name>
-  load <saved_game_name>
-  <some_verb> <item> with/using <item> (e.g. 'light candle with match')
-  help
-  quit
-
-  Note: item, NPC, and direction names are pattern-matched, so you can say:
-  'talk to rec' instead of 'receptionist', or 'go w' instead of 'go west', etc.
-
-"
-    );
+pub fn help_handler(view: &mut View) {
+    view.push(ViewItem::Help);
 }
 
 /// Show current game game goals / status.
