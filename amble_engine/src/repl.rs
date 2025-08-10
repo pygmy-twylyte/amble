@@ -99,8 +99,8 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             Command::GiveToNpc { item, npc } => give_to_npc_handler(world, &mut view, &item, &npc)?,
             Command::TurnOn(thing) => turn_on_handler(world, &mut view, &thing)?,
             Command::Read(thing) => read_handler(world, &mut view, &thing)?,
-            Command::Load(gamefile) => load_handler(world, &gamefile),
-            Command::Save(gamefile) => save_handler(world, &gamefile)?,
+            Command::Load(gamefile) => load_handler(world, &mut view, &gamefile),
+            Command::Save(gamefile) => save_handler(world, &mut view, &gamefile)?,
             Command::UseItemOn { verb, tool, target } => {
                 use_item_on_handler(world, &mut view, verb, &tool, &target)?;
             },
