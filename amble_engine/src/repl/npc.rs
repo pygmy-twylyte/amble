@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    AmbleWorld, ItemHolder, Location, WorldObject,
+    AmbleWorld, ItemHolder, Location, View, ViewItem, WorldObject,
     npc::Npc,
     repl::{entity_not_found, find_world_object},
     spinners::SpinnerType,
@@ -30,7 +30,7 @@ fn select_npc<'a>(location: &Location, world_npcs: &'a HashMap<Uuid, Npc>, query
         .find(|&npc| npc.name().to_lowercase().contains(&query))
 }
 /// Handles TalkTo(npc) commands
-pub fn talk_to_handler(world: &mut AmbleWorld, npc_name: &str) -> Result<()> {
+pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) -> Result<()> {
     // find one that matches npc_name in present room
     let sent_id = if let Some(npc) = select_npc(world.player.location(), &world.npcs, npc_name) {
         npc.id()
@@ -48,10 +48,12 @@ pub fn talk_to_handler(world: &mut AmbleWorld, npc_name: &str) -> Result<()> {
 
     // if no dialogue was triggered, fire random response according to Npc's mood
     if !dialogue_fired && let Some(npc) = world.npcs.get(&sent_id) {
-        let stem = format!("{}", npc.name().npc_style());
         if let Some(ignore_spinner) = world.spinners.get(&SpinnerType::NpcIgnore) {
             let dialogue = npc.random_dialogue(ignore_spinner);
-            println!("{stem}:\n{dialogue}");
+            view.push(ViewItem::NpcSpeech {
+                speaker: npc.name.clone(),
+                quote: dialogue.clone(),
+            });
             info!("NPC \"{}\" ({}) said \"{}\"", npc.name(), npc.id(), dialogue);
         }
     }
@@ -65,7 +67,7 @@ pub fn talk_to_handler(world: &mut AmbleWorld, npc_name: &str) -> Result<()> {
 ///
 /// # Errors
 /// - on failed uuid lookups
-pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Result<()> {
+pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, npc: &str) -> Result<()> {
     // find the target npc in the current room and collect metadata
     let current_room = world.player_room_ref()?;
     let (npc_id, npc_name) = if let Some(entity) = find_world_object(&current_room.npcs, &world.items, &world.npcs, npc)
@@ -73,12 +75,12 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Res
         if let Some(npc) = entity.npc() {
             (npc.id(), npc.name.to_string())
         } else {
-            println!(
+            view.push(ViewItem::Error(format!(
                 "{} matches an item. Did you mean 'put {} in {}'?",
                 npc.error_style(),
                 item.italic(),
                 npc.italic()
-            );
+            )));
             return Ok(());
         }
     } else {
@@ -92,16 +94,19 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Res
             if let Some(item) = entity.item() {
                 if !item.portable {
                     info!("player tried to move fixed item {} ({})", item.name(), item.id());
-                    println!("Sorry, the {} isn't portable.", item.name().error_style());
+                    view.push(ViewItem::ActionFailure(format!(
+                        "Sorry, the {} isn't portable.",
+                        item.name().error_style()
+                    )));
                     return Ok(());
                 }
                 (item.id(), item.name().to_string())
             } else {
                 warn!("non-Item entity matching '{item}' found in inventory");
-                println!(
+                view.push(ViewItem::Error(format!(
                     "{} matched an entity that shouldn't exist in inventory. Let's pretend this never happened.",
                     item.error_style()
-                );
+                )));
                 return Ok(());
             }
         } else {
@@ -143,7 +148,11 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Res
         check_triggers(world, &[TriggerCondition::Drop(item_id)])?;
 
         // report and log success
-        println!("You gave the {} to {}.\n", item_name.item_style(), npc_name.npc_style());
+        view.push(ViewItem::ActionSuccess(format!(
+            "You gave the {} to {}.",
+            item_name.item_style(),
+            npc_name.npc_style()
+        )));
         info!(
             "{} gave {} ({}) to {} ({})",
             world.player.name(),
@@ -156,11 +165,11 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, item: &str, npc: &str) -> Res
     } else {
         // show a default message if there wasn't a specific refusal trigger fired to do it
         if !fired {
-            println!(
+            view.push(ViewItem::ActionFailure(format!(
                 "{} has no use for {}, and won't hold it for you.",
                 npc_name.npc_style(),
                 item_name.item_style()
-            );
+            )));
         }
         info!("{npc_name} ({npc_id}) refused a gift of {item_name} ({item_id})");
     }
