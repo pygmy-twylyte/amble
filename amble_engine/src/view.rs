@@ -83,8 +83,8 @@ impl View {
     fn direct_results(&mut self) {
         // direct inspection (read, look_at) results
         self.item_detail();
-        self.npc_detail();
         self.item_text();
+        self.npc_detail();
         self.inventory();
         self.goals();
 
@@ -99,10 +99,27 @@ impl View {
 
     fn system(&mut self) {
         self.show_help();
+        self.load_or_save();
         self.quit_summary();
     }
 
     // INDIVIDUAL VIEW ITEM HANDLERS START HERE -------------------------------
+    fn load_or_save(&mut self) {
+        if let Some(ViewItem::GameSaved { save_slot, save_file }) =
+            self.items.iter().find(|i| matches!(i, ViewItem::GameSaved { .. }))
+        {
+            println!("{}: \"{}\" ({})", "Game Saved".green().bold(), save_slot, save_file);
+            println!("{}", format!("Type \"load {save_slot}\" to reload it.").italic());
+            println!();
+        }
+        if let Some(ViewItem::GameLoaded { save_slot, save_file }) =
+            self.items.iter().find(|i| matches!(i, ViewItem::GameLoaded { .. }))
+        {
+            println!("{}: \"{}\" ({})", "Game Loaded".green().bold(), save_slot, save_file);
+            println!();
+        }
+    }
+
     fn goals(&mut self) {
         let active: Vec<_> = self
             .items
@@ -454,6 +471,14 @@ pub enum ViewItem {
         name: String,
         description: String,
     },
+    GameLoaded {
+        save_slot: String,
+        save_file: String,
+    },
+    GameSaved {
+        save_slot: String,
+        save_file: String,
+    },
 }
 impl ViewItem {
     pub fn section(&self) -> Section {
@@ -476,7 +501,10 @@ impl ViewItem {
             | ViewItem::CompleteGoal { .. } => Section::DirectResult,
             ViewItem::NpcSpeech { .. } | ViewItem::TriggeredEvent(_) => Section::WorldResponse,
             ViewItem::AmbientEvent(_) => Section::Ambient,
-            ViewItem::QuitSummary { .. } | ViewItem::Help => Section::System,
+            ViewItem::QuitSummary { .. }
+            | ViewItem::Help
+            | ViewItem::GameLoaded { .. }
+            | ViewItem::GameSaved { .. } => Section::System,
         }
     }
 }
