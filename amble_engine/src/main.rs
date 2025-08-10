@@ -30,12 +30,9 @@ fn main() -> Result<()> {
         .expect("failed to flush stdout after clearing the screen");
     info!("Starting the game!");
 
+    println!("{:^80}", "AMBLE: AN ADVENTURE".bright_yellow().underline());
     println!(
-        "{:^84}",
-        "AMBLE: AN ADVENTURE IN THE ABSURD".bright_yellow().underline()
-    );
-    println!(
-        "\nYou are {}, {}\n",
+        "\nYou are {}.\n{}\n",
         world.player.name().bold().bright_blue(),
         world.player.description()
     );
