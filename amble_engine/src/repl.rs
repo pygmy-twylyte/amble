@@ -65,7 +65,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         println!();
 
         match parse_command(&input) {
-            Command::Goals => goals_handler(world),
+            Command::Goals => goals_handler(world, &mut view),
             Command::Help => help_handler(&mut view),
             Command::Quit => {
                 if let ReplControl::Quit = quit_handler(world, &mut view)? {
