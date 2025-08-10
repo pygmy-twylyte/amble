@@ -83,7 +83,7 @@ impl GameStyle for &str {
         self.truecolor(150, 230, 30).dimmed()
     }
     fn error_style(&self) -> ColoredString {
-        self.underline().truecolor(230, 30, 30)
+        self.truecolor(230, 30, 30)
     }
     fn denied_style(&self) -> ColoredString {
         self.italic().truecolor(230, 30, 30)
