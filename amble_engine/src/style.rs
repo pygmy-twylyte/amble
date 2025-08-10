@@ -41,7 +41,7 @@ impl GameStyle for &str {
         self.underline()
     }
     fn goal_active_style(&self) -> ColoredString {
-        self.truecolor(220, 40, 220).bold()
+        self.truecolor(220, 40, 220)
     }
     fn goal_complete_style(&self) -> ColoredString {
         self.truecolor(220, 40, 220).strikethrough()
