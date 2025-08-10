@@ -11,6 +11,7 @@ use crate::style::GameStyle;
 
 const ICON_SUCCESS: &str = "\u{2714}"; // ✔
 const ICON_FAILURE: &str = "\u{2716}"; // ✖
+pub const HELP_TEXT: &str = include_str!("../data/help.txt");
 
 /// View aggregates information to be displayed on each pass through the REPL and then organizes
 /// and displays the result.
@@ -58,7 +59,11 @@ impl View {
             println!("{:.>80}\n", "situation".section_style());
             self.ambience();
         }
-        // Fifth Section: System Commands (dev commands, load/save, help, etc)
+        // Fifth Section: System Commands (load/save, help, quit etc)
+        if self.items.iter().any(|item| item.section() == Section::System) {
+            println!("{:.>80}\n", "game".section_style());
+            self.system();
+        }
 
         // clear the buffer for the next turn
         self.items.clear();
@@ -91,7 +96,40 @@ impl View {
     fn world_reaction(&mut self) {}
     fn ambience(&mut self) {}
 
+    fn system(&mut self) {
+        self.show_help();
+        self.quit_summary();
+    }
+
     // INDIVIDUAL VIEW ITEM HANDLERS START HERE -------------------------------
+    fn show_help(&mut self) {
+        if let Some(ViewItem::Help) = self.items.iter().find(|item| matches!(item, ViewItem::Help)) {
+            println!("{}", HELP_TEXT.italic().yellow());
+        }
+    }
+
+    fn quit_summary(&mut self) {
+        if let Some(ViewItem::QuitSummary {
+            rank,
+            notes,
+            score,
+            max_score,
+            visited,
+            max_visited,
+        }) = self
+            .items
+            .iter()
+            .find(|item| matches!(item, ViewItem::QuitSummary { .. }))
+        {
+            let score_pct = 100.0 * (*score as f32 / *max_score as f32);
+            let visit_pct = 100.0 * (*visited as f32 / *max_visited as f32);
+            println!("{:^80}", "CANDIDATE EVALUATION REPORT".black().on_yellow());
+            println!("{:10} {}", "Rank:", rank.bright_cyan());
+            println!("{:10} {}", "Notes:", notes.description_style());
+            println!("{:10} {}/{} ({:.2})", "Score:", score, max_score, score_pct);
+            println!("{:10} {}/{} ({:.2})", "Visited:", visited, max_visited, visit_pct);
+        }
+    }
 
     fn inventory(&mut self) {
         if let Some(ViewItem::Inventory(item_lines)) = self.items.iter().find(|i| matches!(i, ViewItem::Inventory(..)))
@@ -356,6 +394,15 @@ pub enum ViewItem {
     ActionFailure(String),
     Error(String),
     Inventory(Vec<ContentLine>),
+    QuitSummary {
+        rank: String,
+        notes: String,
+        score: usize,
+        max_score: usize,
+        visited: usize,
+        max_visited: usize,
+    },
+    Help,
 }
 impl ViewItem {
     pub fn section(&self) -> Section {
@@ -376,6 +423,7 @@ impl ViewItem {
             | ViewItem::Inventory(_) => Section::DirectResult,
             ViewItem::NpcSpeech { .. } | ViewItem::TriggeredEvent(_) => Section::WorldResponse,
             ViewItem::AmbientEvent(_) => Section::Ambient,
+            ViewItem::QuitSummary { .. } | ViewItem::Help => Section::System,
         }
     }
 }
