@@ -5,7 +5,7 @@
 use std::collections::HashSet;
 
 use crate::{
-    AmbleWorld, Location, View, WorldObject,
+    AmbleWorld, Location, View, ViewItem, WorldObject,
     spinners::SpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers},
@@ -13,7 +13,6 @@ use crate::{
 };
 
 use anyhow::{Context, Result, anyhow};
-use colored::Colorize;
 use log::info;
 
 /// Move the player to a neighboring location, if all exit conditions are met.
@@ -34,21 +33,21 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
             current_room.exits.get(exit_key)
         } else {
             // no valid direction matched -- report and return
-            println!(
+            view.push(ViewItem::Error(format!(
                 "{}? {}",
                 input_dir.error_style(),
                 world.spin_spinner(SpinnerType::DestinationUnknown, "Which way is that?")
-            );
+            )));
             return Ok(());
         }
     };
 
     if let Some(destination_exit) = destination_exit {
         if destination_exit.locked {
-            println!(
+            view.push(ViewItem::ActionFailure(format!(
                 "You can't go that way ({}) -- it's locked.",
                 input_dir.exit_locked_style()
-            );
+            )));
             info!("{} tried to enter locked exit.", world.player.name());
             return Ok(());
         }
@@ -72,7 +71,7 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
                 .get(&destination_id)
                 .ok_or_else(|| anyhow!("invalid move destination ({})", destination_id))?;
             info!("{} moved to {} ({})", player_name, new_room.name(), new_room.id());
-            println!("{travel_message}\n");
+            view.push(ViewItem::ActionSuccess(travel_message));
             if !new_room.visited {
                 world.player.score = world.player.score.saturating_add(1);
                 new_room.show(world, view, Some(ViewMode::Verbose))?;
@@ -92,9 +91,11 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
         } else {
             // the Exit is barred due to a missing item or flag
             if let Some(msg) = &destination_exit.barred_message {
-                println!("{}", msg.denied_style());
+                view.push(ViewItem::ActionFailure((*msg).to_string()));
             } else {
-                println!("{}", "You can't go that way because... \"reasons\"".italic());
+                view.push(ViewItem::ActionFailure(
+                    "You can't go that way because... \"reasons\"".to_string(),
+                ));
             }
             let dest_name = world
                 .rooms
