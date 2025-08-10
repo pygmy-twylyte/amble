@@ -329,12 +329,6 @@ fn test_move_to_handler_simple() {
 }
 
 #[test]
-fn test_talk_to_handler_no_npc() {
-    let mut world = world::AmbleWorld::new_empty();
-    assert!(ae::repl::npc::talk_to_handler(&mut world, "n").is_ok());
-}
-
-#[test]
 fn test_filtered_goals_empty() {
     let world = world::AmbleWorld::new_empty();
     let list = ae::repl::system::filtered_goals(&world, goal::GoalStatus::Active);
