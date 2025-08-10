@@ -92,19 +92,21 @@ pub fn help_handler(view: &mut View) {
 
 /// Show current game game goals / status.
 pub fn goals_handler(world: &AmbleWorld, view: &mut View) {
-    filtered_goals(world, GoalStatus::Active).iter().for_each(|goal| {
-        view.push(ViewItem::ActiveGoal {
+    filtered_goals(world, GoalStatus::Active)
+        .iter()
+        .map(|goal| ViewItem::ActiveGoal {
             name: goal.name.clone(),
             description: goal.description.clone(),
         })
-    });
+        .for_each(|goal_item| view.push(goal_item));
 
-    filtered_goals(world, GoalStatus::Complete).iter().for_each(|goal| {
-        view.push(ViewItem::CompleteGoal {
+    filtered_goals(world, GoalStatus::Complete)
+        .iter()
+        .map(|goal| ViewItem::CompleteGoal {
             name: goal.name.clone(),
             description: goal.description.clone(),
         })
-    });
+        .for_each(|goal_item| view.push(goal_item));
 }
 
 /// Returns a list of game `Goals`, filtered by status
@@ -116,8 +118,8 @@ pub fn filtered_goals(world: &AmbleWorld, status: GoalStatus) -> Vec<&Goal> {
 ///
 /// # Errors
 /// - on save file not found or RON parsing error.
-pub fn load_handler(world: &mut AmbleWorld, gamefile: &str) {
-    let load_path = PathBuf::from("saved_games").join(format!("amble-{gamefile}.ron"));
+pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) {
+    let load_path = PathBuf::from("saved_games").join(format!("{gamefile}-amble-{AMBLE_VERSION}.ron"));
     if let Ok(world_ron) = fs::read_to_string(load_path.as_path()) {
         if let Ok(new_world) = ron::from_str::<AmbleWorld>(&world_ron) {
             if new_world.version != AMBLE_VERSION {
@@ -125,32 +127,39 @@ pub fn load_handler(world: &mut AmbleWorld, gamefile: &str) {
                     "player loaded '{gamefile}' (v{}), current version is v{AMBLE_VERSION}",
                     new_world.version
                 );
-                println!(
+                view.push(ViewItem::Error(format!(
                     "{}: '{gamefile}' version is v{} -- does not match current game (v{AMBLE_VERSION}).",
                     "WARNING".bold().yellow(),
                     new_world.version.error_style(),
-                );
+                )));
             }
             *world = new_world;
-            println!(
+            view.push(ViewItem::ActionSuccess(format!(
                 "Saved game {} loaded successfully. Sally forth.",
                 gamefile.underline().green()
-            );
+            )));
+            view.push(ViewItem::GameLoaded {
+                save_slot: gamefile.to_string(),
+                save_file: load_path.to_string_lossy().to_string(),
+            });
             info!("Player reloaded AmbleWorld from file '{}'", load_path.display());
         } else {
-            println!(
+            view.push(ViewItem::ActionFailure(format!(
                 "Unable to load the {} save file. The Amble engine may have changed since it was created.",
                 gamefile.error_style()
-            );
+            )));
             warn!("player attempted to load '{gamefile}': failed to parse, likely version conflict");
         }
     } else {
-        println!("Unable to find {} save file. Load aborted.", gamefile.error_style());
+        view.push(ViewItem::Error(format!(
+            "Unable to find {} save file. Load aborted.",
+            gamefile.error_style()
+        )));
     }
 }
 
 /// save game to a file
-pub fn save_handler(world: &AmbleWorld, gamefile: &str) -> Result<()> {
+pub fn save_handler(world: &AmbleWorld, view: &mut View, gamefile: &str) -> Result<()> {
     // serialize the current AmbleWorld state to RON format
     let world_ron =
         ron::ser::to_string(world).with_context(|| "error converting AmbleWorld to 'ron' format".to_string())?;
@@ -159,7 +168,7 @@ pub fn save_handler(world: &AmbleWorld, gamefile: &str) -> Result<()> {
     fs::create_dir_all("saved_games").with_context(|| "error creating saved_games folder".to_string())?;
 
     // create save file
-    let save_path = PathBuf::from("saved_games").join(format!("amble-{gamefile}.ron"));
+    let save_path = PathBuf::from("saved_games").join(format!("{gamefile}-amble-{AMBLE_VERSION}.ron"));
     let mut save_file =
         fs::File::create(save_path.as_path()).with_context(|| format!("creating file '{}'", save_path.display()))?;
 
@@ -169,7 +178,14 @@ pub fn save_handler(world: &AmbleWorld, gamefile: &str) -> Result<()> {
         .with_context(|| "failed to write AmbleWorld to .ron file".to_string())?;
 
     // disco!
-    println!("Game saved as {}", gamefile.underline());
+    view.push(ViewItem::GameSaved {
+        save_slot: gamefile.to_string(),
+        save_file: save_path.to_string_lossy().to_string(),
+    });
+    view.push(ViewItem::ActionSuccess(format!(
+        "Game saved to slot {} successfully. Amble on...",
+        gamefile.underline().green()
+    )));
     info!("Player saved game to \"{gamefile}\"");
     Ok(())
 }
