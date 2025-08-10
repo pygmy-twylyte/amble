@@ -39,17 +39,32 @@ impl View {
     /// Compose and diplay all message contents in the current frame / turn.
     pub fn flush(&mut self) {
         // First Section: Environment / Frame of Reference
-        self.environment();
+        if self.items.iter().any(|item| item.section() == Section::Environment) {
+            println!("{:.>80}\n", "scene".section_style());
+            self.environment();
+        }
         // Second Section: Immediate/ direct results of player command
-        self.direct_results();
+        if self.items.iter().any(|item| item.section() == Section::DirectResult) {
+            println!("{:.>80}\n", "results".section_style());
+            self.direct_results();
+        }
         // Third Section: Triggered World / NPC reaction to Command
-        self.world_reaction();
-        // Fourth Section: Messages not related to last command / action (ambients, etc.)
-        self.ambience();
+        if self.items.iter().any(|item| item.section() == Section::WorldResponse) {
+            println!("{:.>80}\n", "responses".section_style());
+            self.world_reaction();
+        }
+        // Fourth Section: Messages not related to last command / action (ambients, goals, etc.)
+        if self.items.iter().any(|item| item.section() == Section::Ambient) {
+            println!("{:.>80}\n", "situation".section_style());
+            self.ambience();
+        }
+        // Fifth Section: System Commands (dev commands, load/save, help, etc)
 
         // clear the buffer for the next turn
         self.items.clear();
     }
+
+    // SECTION AGGREGATORS START HERE --------------------
 
     fn environment(&mut self) {
         // Show overview of room/area
@@ -75,6 +90,8 @@ impl View {
 
     fn world_reaction(&mut self) {}
     fn ambience(&mut self) {}
+
+    // INDIVIDUAL VIEW ITEM HANDLERS START HERE -------------------------------
 
     fn inventory(&mut self) {
         if let Some(ViewItem::Inventory(item_lines)) = self.items.iter().find(|i| matches!(i, ViewItem::Inventory(..)))
@@ -284,6 +301,16 @@ impl View {
     }
 }
 
+/// Subsections of the output.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Section {
+    Environment,
+    DirectResult,
+    WorldResponse,
+    Ambient,
+    System,
+}
+
 /// ViewMode alters the way that each "frame" is rendered.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ViewMode {
@@ -329,6 +356,28 @@ pub enum ViewItem {
     ActionFailure(String),
     Error(String),
     Inventory(Vec<ContentLine>),
+}
+impl ViewItem {
+    pub fn section(&self) -> Section {
+        match self {
+            ViewItem::RoomDescription { .. }
+            | ViewItem::RoomOverlays { .. }
+            | ViewItem::RoomItems(_)
+            | ViewItem::RoomExits(_)
+            | ViewItem::RoomNpcs(_) => Section::Environment,
+            ViewItem::ActionSuccess(_)
+            | ViewItem::ActionFailure(_)
+            | ViewItem::Error(_)
+            | ViewItem::ItemDescription { .. }
+            | ViewItem::ItemText(_)
+            | ViewItem::ItemContents(_)
+            | ViewItem::NpcDescription { .. }
+            | ViewItem::NpcInventory(_)
+            | ViewItem::Inventory(_) => Section::DirectResult,
+            ViewItem::NpcSpeech { .. } | ViewItem::TriggeredEvent(_) => Section::WorldResponse,
+            ViewItem::AmbientEvent(_) => Section::Ambient,
+        }
+    }
 }
 /// Information needed to display a contents list for an item correctly
 #[derive(Debug, Clone, PartialEq, Eq)]

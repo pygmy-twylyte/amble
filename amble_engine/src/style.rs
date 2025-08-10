@@ -26,9 +26,14 @@ pub trait GameStyle {
     fn goal_complete_style(&self) -> ColoredString;
     fn denied_style(&self) -> ColoredString;
     fn overlay_style(&self) -> ColoredString;
+    fn section_style(&self) -> ColoredString;
 }
 
 impl GameStyle for &str {
+    fn section_style(&self) -> ColoredString {
+        let bracketed = format!("[{}]", self);
+        bracketed.truecolor(75, 80, 75)
+    }
     fn overlay_style(&self) -> ColoredString {
         self.italic().truecolor(75, 180, 255)
     }
@@ -86,6 +91,9 @@ impl GameStyle for &str {
 }
 
 impl GameStyle for String {
+    fn section_style(&self) -> ColoredString {
+        self.as_str().section_style()
+    }
     fn overlay_style(&self) -> ColoredString {
         self.as_str().overlay_style()
     }
