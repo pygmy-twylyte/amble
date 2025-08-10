@@ -66,9 +66,10 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
 
         match parse_command(&input) {
             Command::Goals => goals_handler(world),
-            Command::Help => help_handler(),
+            Command::Help => help_handler(&mut view),
             Command::Quit => {
-                if let ReplControl::Quit = quit_handler(world)? {
+                if let ReplControl::Quit = quit_handler(world, &mut view)? {
+                    view.flush();
                     break;
                 }
             },
@@ -92,10 +93,10 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
                         .italic()
                 );
             },
-            Command::TalkTo(npc_name) => talk_to_handler(world, &npc_name)?,
+            Command::TalkTo(npc_name) => talk_to_handler(world, &mut view, &npc_name)?,
             Command::Teleport(room_symbol) => dev_teleport_handler(world, &mut view, &room_symbol),
             Command::SpawnItem(item_symbol) => dev_spawn_item_handler(world, &mut view, &item_symbol),
-            Command::GiveToNpc { item, npc } => give_to_npc_handler(world, &item, &npc)?,
+            Command::GiveToNpc { item, npc } => give_to_npc_handler(world, &mut view, &item, &npc)?,
             Command::TurnOn(thing) => turn_on_handler(world, &mut view, &thing)?,
             Command::Read(thing) => read_handler(world, &mut view, &thing)?,
             Command::Load(gamefile) => load_handler(world, &gamefile),
