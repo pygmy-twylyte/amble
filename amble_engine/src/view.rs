@@ -86,6 +86,7 @@ impl View {
         self.npc_detail();
         self.item_text();
         self.inventory();
+        self.goals();
 
         // successes / failures
         self.action_success();
@@ -102,6 +103,48 @@ impl View {
     }
 
     // INDIVIDUAL VIEW ITEM HANDLERS START HERE -------------------------------
+    fn goals(&mut self) {
+        let active: Vec<_> = self
+            .items
+            .iter()
+            .filter(|i| matches!(i, ViewItem::ActiveGoal { .. }))
+            .collect();
+
+        let complete: Vec<_> = self
+            .items
+            .iter()
+            .filter(|i| matches!(i, ViewItem::CompleteGoal { .. }))
+            .collect();
+        if !active.is_empty() | !complete.is_empty() {
+            println!("{}:", "Active Goals".subheading_style());
+            if active.is_empty() {
+                println!("   {}", "Nothing here - explore more!".italic().dimmed());
+            } else {
+                for goal in active {
+                    if let ViewItem::ActiveGoal { name, description } = goal {
+                        println!(
+                            "{}",
+                            fill(
+                                format!("{} - {}", name.goal_active_style(), description.description_style()).as_str(),
+                                self.width
+                            )
+                        );
+                    }
+                }
+            }
+            println!();
+
+            if !complete.is_empty() {
+                println!("{}:", "Completed Goals".subheading_style());
+                for goal in complete {
+                    if let ViewItem::CompleteGoal { name, .. } = goal {
+                        println!("{}", name.goal_complete_style());
+                    }
+                }
+            }
+        }
+    }
+
     fn show_help(&mut self) {
         if let Some(ViewItem::Help) = self.items.iter().find(|item| matches!(item, ViewItem::Help)) {
             println!("{}", HELP_TEXT.italic().yellow());
@@ -403,6 +446,14 @@ pub enum ViewItem {
         max_visited: usize,
     },
     Help,
+    ActiveGoal {
+        name: String,
+        description: String,
+    },
+    CompleteGoal {
+        name: String,
+        description: String,
+    },
 }
 impl ViewItem {
     pub fn section(&self) -> Section {
@@ -420,7 +471,9 @@ impl ViewItem {
             | ViewItem::ItemContents(_)
             | ViewItem::NpcDescription { .. }
             | ViewItem::NpcInventory(_)
-            | ViewItem::Inventory(_) => Section::DirectResult,
+            | ViewItem::Inventory(_)
+            | ViewItem::ActiveGoal { .. }
+            | ViewItem::CompleteGoal { .. } => Section::DirectResult,
             ViewItem::NpcSpeech { .. } | ViewItem::TriggeredEvent(_) => Section::WorldResponse,
             ViewItem::AmbientEvent(_) => Section::Ambient,
             ViewItem::QuitSummary { .. } | ViewItem::Help => Section::System,
