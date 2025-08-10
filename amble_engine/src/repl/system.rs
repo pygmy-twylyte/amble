@@ -91,30 +91,20 @@ pub fn help_handler(view: &mut View) {
 }
 
 /// Show current game game goals / status.
-pub fn goals_handler(world: &AmbleWorld) {
-    let active = filtered_goals(world, GoalStatus::Active);
-    let complete = filtered_goals(world, GoalStatus::Complete);
-    println!("{}", "Current Goals:".subheading_style());
-    println!("Active:");
-    if active.is_empty() {
-        println!("\t{}", "(nothing here - explore more!)".italic().dimmed());
-    } else {
-        for goal in &active {
-            println!(
-                "\t{} - {}",
-                goal.name.goal_active_style(),
-                goal.description.description_style()
-            );
-        }
-    }
-    println!();
-    if !complete.is_empty() {
-        println!("Complete:");
-        for goal in &complete {
-            println!("\t{}", goal.name.goal_complete_style());
-        }
-        println!();
-    }
+pub fn goals_handler(world: &AmbleWorld, view: &mut View) {
+    filtered_goals(world, GoalStatus::Active).iter().for_each(|goal| {
+        view.push(ViewItem::ActiveGoal {
+            name: goal.name.clone(),
+            description: goal.description.clone(),
+        })
+    });
+
+    filtered_goals(world, GoalStatus::Complete).iter().for_each(|goal| {
+        view.push(ViewItem::CompleteGoal {
+            name: goal.name.clone(),
+            description: goal.description.clone(),
+        })
+    });
 }
 
 /// Returns a list of game `Goals`, filtered by status
