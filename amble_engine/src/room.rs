@@ -157,7 +157,6 @@ impl Room {
         }
         self.show_exits(world, view)?;
         self.show_npcs(world, view);
-        println!();
         Ok(())
     }
 

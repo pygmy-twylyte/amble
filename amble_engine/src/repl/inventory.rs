@@ -7,10 +7,10 @@ use std::collections::HashSet;
 use crate::{
     AmbleWorld, ItemHolder, Location, View, ViewItem, WorldObject,
     item::ItemInteractionType,
-    repl::{WorldEntity, entity_not_found, find_world_object},
+    repl::{entity_not_found, find_world_object, WorldEntity},
     spinners::SpinnerType,
     style::GameStyle,
-    trigger::{TriggerCondition, check_triggers},
+    trigger::{check_triggers, TriggerCondition},
     world::nearby_reachable_items,
 };
 
@@ -44,7 +44,7 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                         "You dropped the {}.",
                         dropped.name().item_style()
                     )));
-                    check_triggers(world, &[TriggerCondition::Drop(item_id)])?;
+                    check_triggers(world, view, &[TriggerCondition::Drop(item_id)])?;
                 }
             } else {
                 // item not portable
@@ -64,7 +64,7 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
             Ok(())
         }
     } else {
-        entity_not_found(world, thing);
+        entity_not_found(world, view, thing);
         Ok(())
     }
 }
@@ -142,7 +142,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                         warn!("'take' matched an item at {orig_loc:?}: shouldn't be in scope");
                     },
                 }
-                check_triggers(world, &[TriggerCondition::Take(loot_id)])?;
+                check_triggers(world, view, &[TriggerCondition::Take(loot_id)])?;
             } else {
                 let reason = if item.restricted { "restricted" } else { "not portable" };
                 view.push(ViewItem::ActionFailure(format!(
@@ -159,7 +159,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
             }
         }
     } else {
-        entity_not_found(world, thing);
+        entity_not_found(world, view, thing);
     }
     Ok(())
 }
@@ -205,7 +205,7 @@ pub fn take_from_handler(
                 return Ok(());
             }
         } else {
-            entity_not_found(world, vessel_pattern);
+            entity_not_found(world, view, vessel_pattern);
             return Ok(());
         };
 
@@ -268,6 +268,7 @@ pub(crate) fn validate_and_transfer_from_npc(
     );
     check_triggers(
         world,
+        view,
         &[
             TriggerCondition::Take(loot_id),
             TriggerCondition::TakeFromNpc {
@@ -325,7 +326,7 @@ pub(crate) fn validate_and_transfer_from_item(
         loot_id,
         &loot_name,
     );
-    check_triggers(world, &[TriggerCondition::Take(loot_id)])?;
+    check_triggers(world, view, &[TriggerCondition::Take(loot_id)])?;
     Ok(())
 }
 
@@ -394,7 +395,7 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
                 return Ok(());
             }
         } else {
-            entity_not_found(world, item);
+            entity_not_found(world, view, item);
             return Ok(());
         };
 
@@ -418,7 +419,7 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
                 return Ok(());
             }
         } else {
-            entity_not_found(world, container);
+            entity_not_found(world, view, container);
             return Ok(());
         };
 
@@ -447,6 +448,7 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
     );
     check_triggers(
         world,
+        view,
         &[
             TriggerCondition::Insert {
                 item: item_id,

@@ -5,7 +5,9 @@ use amble_engine as ae;
 #[test]
 fn test_command_parse() {
     use ae::command::*;
-    assert!(matches!(parse_command("look"), Command::Look));
+    use ae::View;
+    let mut view = View::new();
+    assert!(matches!(parse_command("look", &mut view), Command::Look));
     assert_eq!(parse_interaction_type("burn"), Some(item::ItemInteractionType::Burn));
 }
 

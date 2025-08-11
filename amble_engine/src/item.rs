@@ -190,7 +190,9 @@ impl Item {
                 } else {
                     "open".bold().green()
                 };
-                println!("You'll have to {action} it first.");
+                view.push(ViewItem::ActionFailure(format!(
+                    "You'll have to {action} it first."
+                )));
             }
         }
     }
