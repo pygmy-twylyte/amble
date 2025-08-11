@@ -247,8 +247,8 @@ impl View {
             );
             println!("{:10} {}", "Rank:", rank.bright_cyan());
             println!("{:10} {}", "Notes:", notes.description_style());
-            println!("{:10} {}/{} ({:.2})", "Score:", score, max_score, score_pct);
-            println!("{:10} {}/{} ({:.2})", "Visited:", visited, max_visited, visit_pct);
+            println!("{:10} {}/{} ({:.1}%)", "Score:", score, max_score, score_pct);
+            println!("{:10} {}/{} ({:.1}%)", "Visited:", visited, max_visited, visit_pct);
         }
     }
 
