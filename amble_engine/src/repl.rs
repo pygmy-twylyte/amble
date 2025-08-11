@@ -20,7 +20,7 @@ pub use movement::*;
 pub use npc::*;
 pub use system::*;
 
-use crate::command::{parse_command, Command};
+use crate::command::{Command, parse_command};
 use crate::npc::Npc;
 use crate::spinners::SpinnerType;
 use crate::style::GameStyle;
@@ -52,7 +52,6 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     let mut view = View::new();
 
     loop {
-        view.reset();
         print!("\n[Score: {}/{}]> ", world.player.score, world.max_score);
         io::stdout()
             .flush()
