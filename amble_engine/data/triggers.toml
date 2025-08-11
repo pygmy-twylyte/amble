@@ -88,7 +88,7 @@ conditions = [
 ]
 actions = [
     { type = "addFlag", flag = { type = "simple", name = "portal-gun-powered" } },
-    { type = "awardPoints", amount = 5 },
+    { type = "awardPoints", amount = 3 },
     { type = "restrictItem", item_id = "charged_battery" },
     { type = "showMessage", text = """Arcing wildly as you insert it, the fully charged 20 KV battery fuses itself to the contacts inside the portal gun -- when then emits a quick high-pitched whine. The POWER indicator lights a steady green.""" },
 ]
@@ -102,6 +102,7 @@ conditions = [
     { type = "hasFlag", flag = "portal-gun-powered" },
 ]
 actions = [
+{ type = "awardPoints", amount = 5 },
     { type = "revealExit", direction = "portal", exit_from = "portal-room", exit_to = "aperture-lab" },
     { type = "addFlag", flag = { type = "simple", name = "portal-opened" } },
     { type = "showMessage", text = """A loud \"Squip!\" comes from the gun. The wall in front of it sizzles for a moment, and then a crackling oval blue portal expands on the wall to reveal a laboratory space on the other side.""" },
@@ -199,6 +200,7 @@ conditions = [
     { type = "insert", item_id = "vogon_poetry_book", container_id = "poetry_performer" },
 ]
 actions = [
+    { type = "awardPoints", amount = 5 },
     { type = "despawnItem", item_id = "vogon_poetry_book" },
     { type = "addFlag", flag = { type = "simple", name = "panic-room-open" } },
     { type = "revealExit", direction = "west", exit_from = "b-a-office", exit_to = "poetry-panic" },
@@ -217,6 +219,7 @@ conditions = [
     { type = "hasItem", item_id = "elevator_keycard" },
 ]
 actions = [
+{ type = "awardPoints", amount = 3 },
     { type = "showMessage", text = """As you approach, the keycard in your pack chirps twice and the elevator springs to life. A Muzak version of Porcupine Tree's "The Sound of Muzak" plays softly.""" },
 ]
 
@@ -268,6 +271,7 @@ conditions = [
     { type = "giveToNpc", item_id = "empty_battery", npc_id = "gonk_droid" },
 ]
 actions = [
+{ type = "awardPoints", amount = 2 },
     { type = "giveItemToPlayer", npc_id = "gonk_droid", item_id = "charged_battery" },
     { type = "setNpcState", npc_id = "gonk_droid", state = "happy" },
     { type = "showMessage", text = """Elated that you've given it such a large, empty battery to charge, the gonk droid gives you a fully charged one, free of ... charge?""" },
@@ -510,7 +514,7 @@ actions = [
     { type = "showMessage", text = """You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?""" },
     { type = "showMessage", text = """Then you wonder why you're thinking of Barney as a real person instead of a character in a game. And Gordon, for that matter.Wait, he was just fiction, right? Come to think of it, you feel a little unsure of reality, and it's worse the nearer you are to the building.""" },
     { type = "addFlag", flag = { type = "simple", name = "got-crowbar" } },
-    { type = "awardPoints", amount = 4 },
+    { type = "awardPoints", amount = 3 },
 ]
 
 [[triggers]]
@@ -865,6 +869,7 @@ name = "HAL: Update State (3 Modules)"
 only_once = true
 conditions = [{ type = "flagComplete", flag = "hal-reboot" }]
 actions = [
+{ type = "awardPoints", amount = 10 },
     { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-3" } },
     { type = "showMessage", text = "All memory now restored, HAL-9000 finishes rebooting and is fully operational." },
 ]
