@@ -27,7 +27,7 @@ impl View {
     pub fn new() -> Self {
         Self {
             width: 80,
-            mode: ViewMode::ClearVerbose,
+            mode: ViewMode::Verbose,
             items: Vec::new(),
         }
     }
@@ -41,27 +41,27 @@ impl View {
     pub fn flush(&mut self) {
         // First Section: Environment / Frame of Reference
         if self.items.iter().any(|item| item.section() == Section::Environment) {
-            println!("{:.>80}\n", "scene".section_style());
+            println!("{:.>width$}\n", "scene".section_style(), width = self.width);
             self.environment();
         }
         // Second Section: Immediate/ direct results of player command
         if self.items.iter().any(|item| item.section() == Section::DirectResult) {
-            println!("{:.>80}\n", "results".section_style());
+            println!("{:.>width$}\n", "results".section_style(), width = self.width);
             self.direct_results();
         }
         // Third Section: Triggered World / NPC reaction to Command
         if self.items.iter().any(|item| item.section() == Section::WorldResponse) {
-            println!("{:.>80}\n", "responses".section_style());
+            println!("{:.>width$}\n", "responses".section_style(), width = self.width);
             self.world_reaction();
         }
         // Fourth Section: Messages not related to last command / action (ambients, goals, etc.)
         if self.items.iter().any(|item| item.section() == Section::Ambient) {
-            println!("{:.>80}\n", "situation".section_style());
+            println!("{:.>width$}\n", "situation".section_style(), width = self.width);
             self.ambience();
         }
         // Fifth Section: System Commands (load/save, help, quit etc)
         if self.items.iter().any(|item| item.section() == Section::System) {
-            println!("{:.>80}\n", "game".section_style());
+            println!("{:.>width$}\n", "game".section_style(), width = self.width);
             self.system();
         }
 
@@ -380,7 +380,7 @@ impl View {
                 // clear the screen
                 print!("\x1B[2J\x1B[H");
             }
-            println!("{:^80}", name.room_titlebar_style());
+            println!("{:^width$}", name.room_titlebar_style(), width = self.width);
             if display_mode != ViewMode::Brief || !visited {
                 println!("{}", fill(description, self.width).description_style());
                 println!();
