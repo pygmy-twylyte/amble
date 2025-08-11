@@ -15,6 +15,8 @@ const ICON_FAILURE: &str = "\u{2716}"; // ✖
 const ICON_ERROR: &str = "⚠︎"; // U+26A0 U+FE0E
 const ICON_TRIGGER: &str = "⚡︎"; // U+26A1 U+FE0E
 const ICON_AMBIENT: &str = "…";
+const ICON_NEGATIVE: &str = "➖";
+const ICON_POSITIVE: &str = "➕";
 
 /// View aggregates information to be displayed on each pass through the REPL and then organizes
 /// and displays the result.
@@ -112,6 +114,7 @@ impl View {
     fn world_reaction(&mut self) {
         self.triggered_event();
         self.npc_speech();
+        self.points_awarded();
     }
 
     fn ambience(&mut self) {
@@ -125,6 +128,29 @@ impl View {
     }
 
     // INDIVIDUAL VIEW ITEM HANDLERS START HERE -------------------------------
+    fn points_awarded(&mut self) {
+        let point_msgs = self.items.iter().filter(|i| i.is_points_awarded());
+        for msg in point_msgs {
+            if let ViewItem::PointsAwarded(amount) = msg {
+                if amount.is_negative() {
+                    println!(
+                        "{:<4}You were penalized {} point{}.",
+                        ICON_NEGATIVE.bright_red(),
+                        amount.abs(),
+                        if *amount == 1 { "" } else { "s" }
+                    )
+                } else {
+                    println!(
+                        "{:<4}You were awarded {} point{}.",
+                        ICON_POSITIVE.bright_green(),
+                        amount,
+                        if *amount == 1 { "" } else { "s" }
+                    )
+                }
+            }
+        }
+    }
+
     fn ambient_event(&mut self) {
         let trig_messages = self.items.iter().filter(|i| matches!(i, ViewItem::AmbientEvent(_)));
         for msg in trig_messages {
@@ -518,6 +544,7 @@ pub enum ViewMode {
 /// ViewItems are each of the various types of information / messages that may be displayed to the player.
 #[derive(Debug, Clone, PartialEq, Eq, Variantly)]
 pub enum ViewItem {
+    PointsAwarded(isize),
     TransitionMessage(String),
     RoomDescription {
         name: String,
@@ -598,7 +625,9 @@ impl ViewItem {
             | ViewItem::Inventory(_)
             | ViewItem::ActiveGoal { .. }
             | ViewItem::CompleteGoal { .. } => Section::DirectResult,
-            ViewItem::NpcSpeech { .. } | ViewItem::TriggeredEvent(_) => Section::WorldResponse,
+            ViewItem::NpcSpeech { .. } | ViewItem::TriggeredEvent(_) | ViewItem::PointsAwarded(_) => {
+                Section::WorldResponse
+            },
             ViewItem::AmbientEvent(_) => Section::Ambient,
             ViewItem::QuitSummary { .. }
             | ViewItem::Help
