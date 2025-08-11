@@ -4,10 +4,10 @@
 //! to be organized and displayed at the end of the turn.
 
 use colored::Colorize;
-use textwrap::fill;
+use textwrap::wrap;
 use variantly::Variantly;
 
-use crate::style::GameStyle;
+use crate::style::{GameStyle, indented_block, normal_block};
 
 const ICON_SUCCESS: &str = "\u{2714}"; // ✔
 const ICON_FAILURE: &str = "\u{2716}"; // ✖
@@ -139,13 +139,11 @@ impl View {
             } else {
                 for goal in active {
                     if let ViewItem::ActiveGoal { name, description } = goal {
-                        println!(
-                            "{}",
-                            fill(
-                                format!("{} - {}", name.goal_active_style(), description.description_style()).as_str(),
-                                self.width
-                            )
-                        );
+                        println!("{}", name.goal_active_style());
+                        let descr_text = wrap(description.as_str(), indented_block(self.width));
+                        descr_text
+                            .iter()
+                            .for_each(|line| println!("{}", line.to_string().description_style()));
                     }
                 }
             }
@@ -258,7 +256,10 @@ impl View {
             self.items.iter().find(|i| matches!(i, ViewItem::NpcDescription { .. }))
         {
             println!("{}", name.npc_style().underline());
-            println!("{}", fill(description, self.width).description_style());
+            let descr_text = wrap(description.as_str(), indented_block(self.width));
+            descr_text
+                .iter()
+                .for_each(|line| println!("{}", line.to_string().description_style()));
             println!();
         }
         if let Some(ViewItem::NpcInventory(content_lines)) =
@@ -286,7 +287,10 @@ impl View {
             .find(|i| matches!(i, ViewItem::ItemDescription { .. }))
         {
             println!("{}", name.item_style().underline());
-            println!("{}", fill(description, self.width).description_style());
+            let descr_text = wrap(description, indented_block(self.width));
+            descr_text
+                .iter()
+                .for_each(|line| println!("{}", line.to_string().description_style()));
             println!();
         }
 
@@ -356,8 +360,13 @@ impl View {
         {
             let display_mode = force_mode.unwrap_or(self.mode);
             if display_mode != ViewMode::Brief {
-                text.iter()
-                    .for_each(|line| println!("{}\n", fill(line, self.width).overlay_style()));
+                for ovl in text {
+                    let wrapped = wrap(ovl, normal_block(self.width));
+                    wrapped
+                        .iter()
+                        .for_each(|line| println!("{}", line.to_string().overlay_style()));
+                }
+                println!();
             }
         }
     }
@@ -382,7 +391,10 @@ impl View {
             }
             println!("{:^width$}", name.room_titlebar_style(), width = self.width);
             if display_mode != ViewMode::Brief || !visited {
-                println!("{}", fill(description, self.width).description_style());
+                let descr_text = wrap(description.as_str(), normal_block(self.width));
+                descr_text
+                    .iter()
+                    .for_each(|line| println!("{}", line.to_string().description_style()));
                 println!();
             }
         }

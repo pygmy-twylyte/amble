@@ -5,6 +5,20 @@
 //! `String` are provided so string literals can be styled directly.
 
 use colored::{ColoredString, Colorize};
+use textwrap::Options;
+
+/// Returns textwrap::ptions for an indented, wrapped block of text.
+pub fn indented_block(display_width: usize) -> Options<'static> {
+    let indent = "    ";
+    Options::new(display_width)
+        .initial_indent(indent)
+        .subsequent_indent(indent)
+}
+
+/// Returns textwrap::Options for an unindented, wrapped block of text.
+pub fn normal_block(display_width: usize) -> Options<'static> {
+    Options::new(display_width)
+}
 
 /// Convenience trait for applying color and style to text output.
 pub trait GameStyle {
