@@ -9,9 +9,12 @@ use variantly::Variantly;
 
 use crate::style::{GameStyle, indented_block, normal_block};
 
+pub const HELP_TEXT: &str = include_str!("../data/help.txt");
 const ICON_SUCCESS: &str = "\u{2714}"; // ✔
 const ICON_FAILURE: &str = "\u{2716}"; // ✖
-pub const HELP_TEXT: &str = include_str!("../data/help.txt");
+const ICON_ERROR: &str = "⚠︎"; // U+26A0 U+FE0E
+const ICON_TRIGGER: &str = "⚡︎"; // U+26A1 U+FE0E
+const ICON_AMBIENT: &str = "…";
 
 /// View aggregates information to be displayed on each pass through the REPL and then organizes
 /// and displays the result.
@@ -94,7 +97,11 @@ impl View {
         self.errors();
     }
 
-    fn world_reaction(&mut self) {}
+    fn world_reaction(&mut self) {
+        self.triggered_event();
+        self.npc_speech();
+    }
+
     fn ambience(&mut self) {}
 
     fn system(&mut self) {
@@ -104,6 +111,32 @@ impl View {
     }
 
     // INDIVIDUAL VIEW ITEM HANDLERS START HERE -------------------------------
+    fn triggered_event(&mut self) {
+        let trig_messages = self.items.iter().filter(|i| matches!(i, ViewItem::TriggeredEvent(_)));
+        for msg in trig_messages {
+            let formatted = format!(
+                "{} {}",
+                ICON_TRIGGER.trig_icon_style(),
+                msg.clone().unwrap_triggered_event().triggered_style()
+            );
+            let wrapped = wrap(formatted.as_str(), normal_block(self.width));
+            wrapped.iter().for_each(|line| println!("{}", line))
+        }
+    }
+
+    fn npc_speech(&mut self) {
+        let speech_msgs = self.items.iter().filter(|i| i.is_npc_speech());
+        for quote in speech_msgs {
+            if let ViewItem::NpcSpeech { speaker, quote } = quote {
+                println!("{} says:", speaker.npc_style());
+                let wrapped = wrap(quote.as_str(), indented_block(self.width));
+                wrapped
+                    .iter()
+                    .for_each(|line| println!("{}", line.to_string().npc_quote_style()))
+            }
+        }
+    }
+
     fn load_or_save(&mut self) {
         if let Some(ViewItem::GameSaved { save_slot, save_file }) =
             self.items.iter().find(|i| matches!(i, ViewItem::GameSaved { .. }))
@@ -162,7 +195,7 @@ impl View {
 
     fn show_help(&mut self) {
         if let Some(ViewItem::Help) = self.items.iter().find(|item| matches!(item, ViewItem::Help)) {
-            println!("{}", HELP_TEXT.italic().yellow());
+            println!("{}", HELP_TEXT.italic().cyan());
         }
     }
 
@@ -240,13 +273,15 @@ impl View {
                 _ => None,
             })
             .collect();
-        messages.iter().for_each(|msg| println!("{}", (*msg).error_style()));
+        messages
+            .iter()
+            .for_each(|msg| println!("{} {}", ICON_ERROR.error_icon_style(), *msg));
     }
 
     fn item_text(&mut self) {
         if let Some(ViewItem::ItemText(text)) = self.items.iter().find(|i| matches!(i, ViewItem::ItemText(_))) {
             println!("{}:", "You can read".subheading_style());
-            println!("{}", text.italic());
+            println!("{}", text.item_text_style());
             println!();
         }
     }
