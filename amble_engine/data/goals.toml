@@ -1,14 +1,14 @@
 [[goals]]
 id = "get-oriented"
 name = "What the..?"
-description = "Look around to get some clue as to what's going on."
+description = "Look around to get some clue as to what's going on. Type 'help' for some guidance."
 group = { type = "required" }
 finished_when = { type = "hasFlag", flag = "read-scrawled-note" }
 
 [[goals]]
 id = "find-the-office"
 name = "Find the Office"
-description = "Apparently there's an office somewhere. You'll need to find it."
+description = "According to the posted note, there's an office somewhere. You'll need to find it."
 group = { type = "required" }
 activate_when = { type = "goalComplete", goal_id = "get-oriented" }
 finished_when = { type = "reachedRoom", room_sym = "b-a-office" }
@@ -24,7 +24,7 @@ finished_when = { type = "hasFlag", flag = "got-invitation" }
 [[goals]]
 id = "get-visitor-pass"
 name = "Get a Visitor Pass"
-description = "Now that you have an invitation, maybe the receptionist will help you with this."
+description = "Now that you have an invitation, maybe the receptionist in the office will help you with this -- or maybe she won't."
 group = { type = "required" }
 activate_when = { type = "goalComplete", goal_id = "get-invited" }
 finished_when = { type = "hasFlag", flag = "got-visitor-pass" }
@@ -40,7 +40,7 @@ finished_when = { type = "hasFlag", flag = "got-elevator-keycard" }
 [[goals]]
 id = "go-to-sublevel"
 name = "Go To Room AA-3B"
-description = "The receptionist said you should find Room AA-3B for the next step in your evaluation."
+description = "The receptionist said you should report to Room AA-3B for the next step in your evaluation, though she seemed hesitant to tell you."
 group = { type = "required" }
 activate_when = { type = "goalComplete", goal_id = "get_elevator_keycard" }
 finished_when = { type = "reachedRoom", room_sym = "sublevel-1-entrance" }
@@ -96,10 +96,7 @@ finished_when = { type = "reachedRoom", room_sym = "room-aa-3b" }
 [[goals]]
 id = "hal-module-1"
 name = "Retrieve HAL Memory Module #1"
-description = """
-The EMH has offered to help restore HAL, but only if you can repair and return
-his mobile emitter. Assist him and retrieve the first of HAL's memory modules.
-"""
+description = """The EMH has offered to help restore HAL, but only if you can repair and return his mobile emitter. Assist him and retrieve the first of HAL's memory modules."""
 group = { type = "required" }
 activate_when = { type = "flagInProgress", flag = "mobilize-emh" }
 finished_when = { type = "hasItem", item_sym = "hal_module_1" }
@@ -107,9 +104,7 @@ finished_when = { type = "hasItem", item_sym = "hal_module_1" }
 [[goals]]
 id = "get-a-towel"
 name = "Find a Towel"
-description = """
-No traveler should ever be without one. The security system at the entrance to
-the building seems adamant that find one before you go inside."""
+description = "No traveler should ever be without one. The security system at the entrance to the building seems adamant that you have one before you go inside."
 group = { type = "required" }
 activate_when = { type = "reachedRoom", room_sym = "front-entrance" }
 finished_when = { type = "hasFlag", flag = "got-towel" }

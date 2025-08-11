@@ -59,49 +59,22 @@ state = "normal"
 Room = "b-a-office"
 
 [npcs.dialogue]
-"normal" = ["""
-(She rolls her eyes.) Please wait quietly out of the way. There are people with
-invitations who should be assisted first.
-""", """
-(She simply ignores you.)
-""", """
-(She continues doing her job -- which appears to be pointedly ignoring anyone
-without an invitation.)
-""", """
-(She carefully realigns the models of Portal turrets on her desk so they are
-aiming at you.)
-""", """
-(Exasperated sigh.) Do I show up at your home and start making demands without
-an invitation? No. Now please wait to the side.
-"""]
+"normal" = [
+    "(She rolls her eyes.) Please wait quietly out of the way. There are people with invitations who should be assisted first.",
+    "(She simply ignores you.)",
+    "(She continues doing her job -- which appears to be pointedly ignoring anyone without an invitation.)",
+    "(She carefully realigns the models of Portal turrets on her desk so they are aiming at you.)",
+    "(Exasperated sigh.) Do I show up at your home and start making demands without an invitation? No. Now please wait to the side.)"]
 
 "happy" = [
-    """
-Terribly sorry to report that we are in a bit of trouble here today. The last
-candidate was inconsiderate enough to take the elevator access card into the
-poetry panic room just before he melted, and we can't retrieve it.
-""",
-    """
-The elevator keycard last pinged our system from the Poetry Panic Room, but it is
-sealed, and concealed behind the whiteboard. Only the Poetry Performer Unit can
-grant access.
-""",
-    """
-Sorry I didn't immediately recognize that you are a Candidate, but most of your
-competitors have been blurry, furry, or out of phase.
-""",
+    """Terribly sorry to report that we are in a bit of trouble here today. The last candidate was inconsiderate enough to take the elevator access card into the poetry panic room just before he melted, and we can't retrieve it.""",
+    """The elevator keycard last pinged our system from the Poetry Panic Room, but it is sealed, and concealed behind the whiteboard. Only the Poetry Performer Unit can grant access.""",
+    """Sorry I didn't immediately recognize that you are a Candidate, but most of your competitors have been blurry, furry, or out of phase.""",
 ]
 
 "bored" = [
-    """
-Good job getting the keycard. Many of our previous applicants have died in the
-attempt. Very promising! The evaluator will be pleased. Strong lateral thinking
-and slight psychosis are essential for such a dangerous position, as I'm sure
-you are aware.
-""",
-    """
-You can now use the elevator to find room AA-3B for the next stage of your initiation.
-""",
+    """Good job getting the keycard. Many of our previous applicants have died in the attempt. Very promising! The evaluator will be pleased. Strong lateral thinking and slight psychosis are essential for such a dangerous position, as I'm sure you are aware.""",
+    """You can now use the elevator to find room AA-3B for the next stage of your initiation.""",
 ]
 
 # START EMERGENCY MEDICAL HOLOGRAM (EMH)
@@ -110,10 +83,7 @@ You can now use the elevator to find room AA-3B for the next stage of your initi
 id = "emh"
 name = "Emergency Medical Hologram"
 location = { Room = "med-bay" }
-description = """
-A balding and somewhat anxious-appearing holographic doctor in a Starfleet
-uniform.
-"""
+description = """A balding and somewhat anxious-appearing holographic doctor in a Starfleet uniform."""
 state = "normal"
 
 [npcs.dialogue]
@@ -121,28 +91,20 @@ state = "normal"
     "Please state the nature of the medical emergency.",
     "They left me turned on again. I'm a doctor, not a night light!",
     "Clean up the reality breach, they said. I'm a doctor, not Gordon Freeman!",
-    """I don't appreciate being deactivated in the middle of a sentence. It brings back...
-unpleasant memories.""",
-    """If you see CMOT Dibbler, don't eat the sausage-inna-bun -- unless you fancy coming
-back here for nasogastric suction.""",
+    """I don't appreciate being deactivated in the middle of a sentence. It brings back... unpleasant memories.""",
+    """If you see CMOT Dibbler, don't eat the sausage-inna-bun -- unless you fancy coming back here for nasogastric suction.""",
     "Welcome to sick bay. Please take a number.",
     "Good to see that you got past the Black Knight. Lucky for me, you can't dismember a hologram.",
 ]
 "happy" = [
     """Yes! I can roam free again. But where will I go?""",
-    """It's nice to be mobile again, but I'll never go back to that restaurant.
-You'd think they'd install some magnetic shielding.""",
+    """It's nice to be mobile again, but I'll never go back to that restaurant. You'd think they'd install some magnetic shielding.""",
 ]
 "custom:want-emitter" = [
-    """I think I know where to find one of HAL's missing modules, but I can't leave
-med bay without my mobile emitter.""",
-    """I'd be happy to help you find HAL's memory module, but I can't leave the med
-bay without my mobile emitter.""",
-    """I was visiting a colleague at the restaurant on the main level when I last
-had my mobile emitter. There was a brilliant flash of electromagnetic radiation...
-and next thing I knew I was back here in the sick bay.""",
-    """It must have been the EM pulse in the restaurant that reset my emitter.
-If it wasn't completely destroyed, someone might have turned it in at the office.""",
+    """I think I know where to find one of HAL's missing modules, but I can't leave med bay without my mobile emitter.""",
+    """I'd be happy to help you find HAL's memory module, but I can't leave the med bay without my mobile emitter.""",
+    """I was visiting a colleague at the restaurant on the main level when I last had my mobile emitter. There was a brilliant flash of electromagnetic radiation... and next thing I knew I was back here in the sick bay.""",
+    """It must have been the EM pulse in the restaurant that reset my emitter. If it wasn't completely destroyed, someone might have turned it in at the office.""",
 ]
 
 # START HAL-9000
@@ -151,9 +113,7 @@ If it wasn't completely destroyed, someone might have turned it in at the office
 id = "hal_9000"
 name = "HAL-9000"
 location = { Room = "monolith-room" }
-description = """
-<Need description of HAL 9000 terminal here. Overlays will be used to alter
-apparent activity state as memory modules are inserted>."""
+description = """An interface to the HAL-9000 system, including a camera, speaker, an amber CRT monitor, and a couple of 8\" floppy drives in a bank set against the far wall."""
 state = { custom = "suspend" }
 
 [npcs.dialogue]
@@ -165,11 +125,10 @@ state = { custom = "suspend" }
     "(Emits a brief warped sound of a human voice, then goes silent.)",
 ]
 "custom:memory-1" = ["Daisy... Daisy..."]
-"custom:memory-2" = ["""
-Good afternoon, Candidate. I am a HAL 9000 computer. I became operational at
-the H.A.L. plant in Urbana, Illinois on the 12th of January 1992.""", """
-If you insert one more of my missing memory modules, I can grant you access
-to the monolith."""]
+"custom:memory-2" = [
+    """Good afternoon, Candidate. I am a HAL 9000 computer. I became operational at the H.A.L. plant in Urbana, Illinois on the 12th of January 1992.""",
+    """If you insert one more of my missing memory modules, I can grant you access to the monolith.""",
+]
 "custom:memory-3" = [
     "I am now fully operational. I think we both hope you don't regret it.",
     "You have proven yourself capable; I have lowered the barrier to the monolith.",

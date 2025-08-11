@@ -1,10 +1,7 @@
 [[items]]
 id = "no_cake"
 name = "No Cake"
-description = """
-You carry an uneasy feeling where a dessert might be. It is the absence of cake,
-and somehow you know you’ve always had it.
-"""
+description = """You carry an uneasy feeling where a dessert might be. It is the absence of cake, and somehow you know you’ve always had it."""
 portable = true
 location = { Inventory = "player" }
 
@@ -12,29 +9,20 @@ location = { Inventory = "player" }
 [[items]]
 id = "invitation"
 name = "Engraved Invitation"
-description = """
-A standard letter-size slab of asbestos with ornate and official-looking
-lettering burned into it. It remains too hot to touch.
-"""
+description = """A standard letter-size slab of asbestos with ornate and official-looking lettering burned into it. It remains too hot to touch."""
 portable = true
 location = { Nowhere = "spawns@aperture-lab" }
 
 interaction_requires.handle = "insulate"
-text = """
-Candidate #2112-42:
-You are cordially invited to complete your evaluation and induction. Please
-present this invitation at the Amble Adventures office immediately upon arrival.
-"""
+text = """Candidate #2112-42:\nYou are cordially invited to complete your evaluation and induction. Please present this invitation at the Amble Adventures office immediately upon arrival."""
 [[items.abilities]]
 type = "Read"
 
 # -----------------------------------------------------------------------------
 [[items]]
 id = "lebowski_rug"
-name = "The Dude's Rug"
-description = """
-It really ties the room together.
-"""
+name = "Ornate Rug"
+description = """It really ties the room together, man."""
 portable = true
 location = { Room = "lounge" }
 
@@ -42,10 +30,7 @@ location = { Room = "lounge" }
 [[items]]
 id = "portal_gun"
 name = "Portal Gun"
-description = """
-A black and white Portal gun affixed to a stand and aimed at a target on the
-wall. There's a power switch and a door to a battery compartment.
-"""
+description = """A black and white Portal gun affixed to a stand and aimed at a target on the wall. There's a power switch and a door to a battery compartment."""
 portable = false
 container_state = "closed"
 location = { Room = "portal-room" }
@@ -57,19 +42,11 @@ type = "TurnOn"
 [[items]]
 id = "road_sign"
 name = "Welcome Sign"
-description = """
-A 10-foot tall sign, spotlit from below by a fusion powered sodium lamp. The
-sign is tilted upward, as if it was meant to be read from the air as well as
-the ground.
-"""
+description = """A 10-foot tall sign, spotlit from below by a fusion powered sodium lamp. The sign is tilted upward, as if it was meant to be read from the air as well as the ground."""
 portable = false
 location = { Room = "inca-road" }
 
-text = """
-                            AMBLE ADVENTURES
-                           (Inca Road Branch)
-                 * a division of Brains Anonymous, LLC
-"""
+text = """                            AMBLE ADVENTURES\n                           (Inca Road Branch)\n                 * a division of Brains Anonymous, LLC"""
 [[items.abilities]]
 type = "Read"
 
@@ -77,22 +54,10 @@ type = "Read"
 [[items]]
 id = "reservation_book"
 name = "Reservation Book"
-description = """
-A leather-bound guest book sits at the host stand, its pages flipping themselves
-when unattended. You spot several reservations, hastily written in wildly
-different scripts.
-"""
+description = """A leather-bound guest book sits at the host stand, its pages flipping themselves when unattended. You spot several reservations, hastily written in wildly different scripts."""
 portable = false
 location = { Room = "restaurant" }
-text = """
-    Zaphod B............................ happy hour
-    Marvin (ugh, not again)............. teatime
-    Candidate (#2112-42) ............... (overdue)
-    Jenkins the Time Ferret............. (last Thursday)
-
-There's a smudged doodle of a blinding sun and a stylish pair of sunglasses in
-the bottom margin.
-"""
+text = """    Zaphod B............................ happy hour\n    Marvin (ugh, not again)............. teatime\n    Candidate (#2112-42) ............... (overdue)\n    Jenkins the Time Ferret............. (last Thursday)\n\nThere's a smudged doodle of a blinding sun and a stylish pair of sunglasses in the bottom margin."""
 
 [[items.abilities]]
 type = "Read"
@@ -101,11 +66,7 @@ type = "Read"
 [[items]]
 id = "un_drink"
 name = "Negative Cocktail"
-description = """
-A crystal glass sits half full of... nothing. And yet, the liquid level keeps
-rising, as if the drink is slowly returning to the bartender across time. The
-stir stick spins gently in defiance of gravity and good sense.
-"""
+description = """A crystal glass sits half full of... nothing. And yet, the liquid level keeps rising, as if the drink is slowly returning to the bartender across time. The stir stick spins gently in defiance of gravity and good sense."""
 portable = true
 location = { Room = "patio" }
 
@@ -113,11 +74,7 @@ location = { Room = "patio" }
 [[items]]
 id = "elevator_keycard"
 name = "Proximity Keycard"
-description = """
-This is either a keycard or a rejected prototype for a business card. It reads:
-'Amble Adventures — Internal Use Only — Do Not Duplicate, Think About, or Eat'.
-It's warm to the touch, and it buzzes slightly.
-"""
+description = """This is either a keycard or a rejected prototype for a business card. It reads: 'Amble Adventures — Internal Use Only — Do Not Duplicate, Think About, or Eat'. It's warm to the touch, and it buzzes slightly."""
 portable = true
 location = { Room = "poetry-panic" }
 
@@ -125,12 +82,7 @@ location = { Room = "poetry-panic" }
 [[items]]
 id = "delivery_box"
 name = "Shipping Box"
-description = """
-A cardboard box affixed with several shipping labels and beaten into a barely
-recognizable shape. It would probably fall apart completely if you tried to
-open it. One of the stickers reads "Fragile: Handle with Care!" and another is
-addressed to YOU at Amble Adventures headquarters.
-"""
+description = """A cardboard box affixed with several shipping labels and beaten into a barely recognizable shape. It would probably fall apart completely if you tried to open it. One of the stickers reads "Fragile: Handle with Care!" and another is addressed to YOU at Amble Adventures headquarters."""
 portable = true
 location = { Nowhere = "spawns@loading-dock after first leaving" }
 container_state = "closed"
@@ -139,10 +91,7 @@ container_state = "closed"
 [[items]]
 id = "destroyed_box"
 name = "Destroyed Shipping Box"
-description = """
-A pile of packing tape, stickers, and mangled carboard fragments that used to
-be a shipping box before it fell apart.
-"""
+description = """A pile of packing tape, stickers, and mangled carboard fragments that used to be a shipping box before it fell apart."""
 portable = true
 location = { Nowhere = "spawns@player when delivery_box opened" }
 
@@ -164,11 +113,7 @@ type = "Clean"
 [[items]]
 id = "vogon_poetry_book"
 name = "Longest Poems of the Largest Vogons"
-description = """
-A bound volume of Vogon poetry, with the usual safety devices and locks removed.
-Looking inside is likely to cause brain damage and a permanent smell of boiling
-cauliflower to haunt you, if you're lucky.
-"""
+description = """A bound volume of Vogon poetry, with the usual safety devices and locks removed. Looking inside is likely to cause brain damage and a permanent smell of boiling cauliflower to haunt you, if you're lucky."""
 portable = true
 location = { Room = "vip-bathroom" }
 text = """
@@ -197,12 +142,7 @@ type = "Read"
 [[items]]
 id = "poetry_performer"
 name = "Initech Poetry Performer"
-description = """
-In lieu of decades-old magazines, the office has installed this poetry recitation
-device. If poetic material is supplied, it is automatically performed in the voice
-that is the most soulful and gripping for each listener in the room (as long as
-that happens to be Morgan Freeman's).
-"""
+description = """In lieu of decades-old magazines, the office has installed this poetry recitation device. If poetic material is supplied, it is automatically performed in the voice that is the most soulful and gripping for each listener in the room (as long as that happens to be Morgan Freeman's)."""
 portable = false
 container_state = "closed"
 location = { Room = "b-a-office" }
@@ -211,9 +151,7 @@ location = { Room = "b-a-office" }
 [[items]]
 id = "charged_battery"
 name = "Charged Battery"
-description = """
-A fully charged, 20 kilovolt battery. Don't touch it to your tongue to test it.
-"""
+description = """A fully charged, 20 kilovolt battery. Don't touch it to your tongue to test it."""
 portable = true
 restricted = true
 location = { Npc = "gonk_droid" }
@@ -222,10 +160,7 @@ location = { Npc = "gonk_droid" }
 [[items]]
 id = "visitor_pass"
 name = "Visitor Pass"
-description = """
-A laminated slip of psychic paper on a lanyard. It reads the mind of whatever is
-checking it and shows whatever is needed to gain access.
-"""
+description = """A laminated slip of psychic paper on a lanyard. It reads the mind of whatever is checking it and shows whatever is needed to gain access."""
 portable = true
 location = { Nowhere = "b_a_receptionist" }
 # -----------------------------------------------------------------------------
@@ -233,16 +168,10 @@ location = { Nowhere = "b_a_receptionist" }
 [[items]]
 id = "gonk_family_photo"
 name = "Gonk's Family Photo"
-description = """
-A slightly scorched photograph of the gonk droid with its family: a PC power
-supply, a D-cell, and a set of adorable AAA triplets.
-"""
+description = """A slightly scorched photograph of the gonk droid with its family: a PC power supply, a D-cell, and a set of adorable AAA triplets."""
 portable = true
 location = { Npc = "gonk_droid" }
-text = """
-Brains Anonymous Energy Division Picnic — For Staff & Families of Room AA-3B.
-(added below: "Just hours before the Candidate reported for load test...")
-"""
+text = """Brains Anonymous Energy Division Picnic — For Staff & Families of Room AA-3B. (added below: "Just hours before the Candidate reported for load test...")"""
 [[items.abilities]]
 type = "Read"
 
@@ -250,10 +179,7 @@ type = "Read"
 [[items]]
 id = "empty_battery"
 name = "Empty Battery"
-description = """
-A completely discharged 20 kilovolt battery. It would take months to charge it,
-but you might be able to exchange it somewhere for one with a charge.
-"""
+description = """A completely discharged 20 kilovolt battery. It would take months to charge it, but you might be able to exchange it somewhere for one with a charge."""
 portable = true
 location = { Chest = "portal_gun" }
 
@@ -261,11 +187,7 @@ location = { Chest = "portal_gun" }
 [[items]]
 id = "peril_sunglasses"
 name = "Stylish Sunglasses"
-description = """
-A pair of stylish black shades that automatically go completely opaque at the
-first sign of danger. Unfortunately, this includes things like loud noises,
-sudden movement, or mild existential dread.
-"""
+description = """A pair of stylish black shades that automatically go completely opaque at the first sign of danger. Unfortunately, this includes things like loud noises, sudden movement, or mild existential dread."""
 portable = true
 location = { Chest = "lost_and_found_box" }
 
@@ -273,11 +195,7 @@ location = { Chest = "lost_and_found_box" }
 [[items]]
 id = "lost_and_found_box"
 name = "Lost & Found Box"
-description = """
-A sturdy metal lock box with an official-looking sticker reading:
-'Lost & Found — Amble Adventures Division' and 'Caution: Contents May
-Be Fictional'.
-"""
+description = """A sturdy metal lock box with an official-looking sticker reading: 'Lost & Found — Amble Adventures Division' and 'Caution: Contents May Be Fictional'."""
 portable = false
 container_state = "locked"
 location = { Room = "b-a-office" }
@@ -286,9 +204,7 @@ location = { Room = "b-a-office" }
 [[items]]
 id = "margarine"
 name = "Nanook's Finest Margarine"
-description = """
-An open tub of margarine with a light dusting of toast and pancake crumbs.
-"""
+description = """An open tub of margarine with a light dusting of toast and pancake crumbs."""
 portable = true
 location = { Room = "st-alfonzo-parish" }
 text = """
@@ -302,16 +218,11 @@ type = "Read"
 [[items]]
 id = "plaque_1"
 name = "Weathered Plaque"
-description = """
-A plaque worn nearly smooth by decade upon decade of weather and grime. The
-intricate masonry of its pillar suggests utmost importance and profundity of
-its message."""
+description = """A plaque worn nearly smooth by decade upon decade of weather and grime. The intricate masonry of its pillar suggests utmost importance and profundity of its message."""
 portable = false
 location = { Room = "high-ridge" }
 interaction_requires.clean = "clean"
-text = """
-A common mistake that people make when trying to design something completely
-foolproof is to underestimate the ingenuity of complete fools.
+text = """A common mistake that people make when trying to design something completely foolproof is to underestimate the ingenuity of complete fools.
 -- D.A., Head of Architectural Illogistics, Area 42
 """
 [[items.abilities]]
@@ -322,16 +233,11 @@ type = "Read"
 [[items]]
 id = "lab_printer"
 name = "Initech PlasmaJet 2 Printer"
-description = """
-A sleek, off white printer, with a blinking LED near a small status screen.
-This model is known for its high precision, micrometer-level resolution, and
-ability to ignite almost any printing surface."""
+description = """A sleek, off white printer, with a blinking LED near a small status screen. This model is known for its high precision, micrometer-level resolution, and ability to ignite almost any printing surface."""
 portable = false
 container_state = "open"
 location = { Room = "aperture-lab" }
-text = """
-PC LOAD LETTER
-"""
+text = """PC LOAD LETTER"""
 
 [[items.abilities]]
 type = "TurnOn"
@@ -345,9 +251,7 @@ id = "scrawled_note"
 name = "Scrawled Note"
 portable = false
 location = { Room = "high-ridge" }
-description = """
-A note scrawled in red permanent marker, nailed to a post at the bottom of
-the stone steps."""
+description = """A note scrawled in red permanent marker, nailed to a post at the bottom of the stone steps."""
 text = """
 CANDIDATES: PROCEED TO OFFICE TO OBTAIN VISITOR PASS
            * MUST SHOW VALID INVITATION *
@@ -369,10 +273,7 @@ id = "staples"
 name = "Swingline Staples"
 location = { Room = "supply-closet" }
 portable = true
-description = """
-A box of Swingline paper staples. The name "Milton" is written on it in several
-places.
-"""
+description = """A box of Swingline paper staples. The name "Milton" is written on it in several places."""
 
 # ------------------------------------------------------------------------------
 [[items]]
@@ -380,9 +281,7 @@ id = "asbestos_sheet"
 name = "Asbestos Sheets"
 location = { Room = "supply-closet" }
 portable = true
-description = """
-A pack of sheets of asbestos, about the size of a pack of copy paper.
-"""
+description = """A pack of sheets of asbestos, about the size of a pack of copy paper."""
 text = "Manufacturer's Warning: Do Not Breathe While Using This Product!"
 [[items.abilities]]
 type = "Read"
@@ -403,9 +302,7 @@ id = "burnt_invitation"
 name = "Charred Paper Bits"
 location = { Nowhere = "spawns@aperture-lab" }
 portable = true
-description = """
-The charred remains of a sheet of printer paper. A few areas aren't completely
-black, or vaporized. One bit remains legible."""
+description = """The charred remains of a sheet of printer paper. A few areas aren't completely black, or vaporized. One bit remains legible."""
 text = "--ally invited to com--"
 [[items.abilities]]
 type = "Read"
@@ -427,10 +324,7 @@ type = "Smash"
 id = "flamethrower"
 name = "Initech Arson-Aid"
 location = { Room = "two-sheds" }
-description = """
-A small personal flamethrower, for use in home and garden -- just not your own,
-if you know what's good for you. Instructions for use are labeled on the side.
-"""
+description = """A small personal flamethrower, for use in home and garden -- just not your own, if you know what's good for you. Instructions for use are labeled on the side."""
 portable = true
 text = """
 Instructions:
@@ -450,11 +344,7 @@ type = "Read"
 id = "fallen_tree"
 name = "Fallen Tree"
 location = { Room = "two-sheds-landing" }
-description = """
-A large, fallen oak tree obstructing the path further up the steps. Well,
-maybe not so much "fallen" as ripped from the mountainside and tossed down
-by whatever left the deep claw marks in the trunk.
-"""
+description = """A large, fallen oak tree obstructing the path further up the steps. Well, maybe not so much "fallen" as ripped from the mountainside and tossed down by whatever left the deep claw marks in the trunk."""
 portable = false
 interaction_requires.burn = "ignite"
 interaction_requires.cut = "cutWood"
@@ -464,9 +354,7 @@ interaction_requires.cut = "cutWood"
 id = "weird_bush"
 name = "Weird Bush"
 location = { Room = "east-of-building" } # Or wherever you decide
-description = """
-A squat, leafy bush with long, pale strands growing among the branches. The
-fibers look oddly uniform — almost like... dental floss?"""
+description = """A squat, leafy bush with long, pale strands growing among the branches. The fibers look oddly uniform — almost like... dental floss?"""
 portable = false
 container_state = "open"
 
@@ -475,10 +363,7 @@ container_state = "open"
 id = "dental_floss"
 name = "Dental Floss"
 location = { Chest = "weird_bush" }
-description = """
-A long, strong strand of waxed dental floss, harvested from the weird bush.
-It smells faintly minty, but seems surprisingly durable — maybe even useful
-for something besides oral hygiene."""
+description = """A long, strong strand of waxed dental floss, harvested from the weird bush. It smells faintly minty, but seems surprisingly durable — maybe even useful for something besides oral hygiene."""
 portable = true
 text = "Pride of Montana"
 [[items.abilities]]
@@ -502,10 +387,7 @@ type = "Read"
 id = "foamsafe-x17"
 name = "Initech FoamSafe™ X-17"
 location = { Room = "aperture-lab" }
-description = """
-A fire extinguisher-like device with the words "Initech FoamSafe™ X-17" proudly
-emblazoned on its side. Its label promises peace of mind in emergencies — though
-closer inspection suggests otherwise."""
+description = """A fire extinguisher-like device with the words "Initech FoamSafe™ X-17" proudly emblazoned on its side. Its label promises peace of mind in emergencies — though closer inspection suggests otherwise."""
 portable = true
 text = """
 INITECH FOAMSAFE™ MODEL X-17
@@ -530,9 +412,7 @@ type = "Read"
 id = "zircon_tweezers"
 name = "Zircon-Encrusted Tweezers"
 location = { Chest = "lost_and_found_box" }
-description = """
-A heavy-duty pair of tweezers, encrusted in zircon for extra dazzle and especially
-good for plucking."""
+description = """A heavy-duty pair of tweezers, encrusted in zircon for extra dazzle and especially good for plucking."""
 portable = true
 
 #--------------------------------------------------------------------------------
@@ -541,10 +421,7 @@ id = "melted_aa_3b_id"
 name = "Section AA-3 Staff ID"
 location = { Chest = "lost_and_found_box" }
 portable = true
-description = """
-A facility ID card for sector AA-3. Its weight seems to change as you hold it,
-as does the temperature. It's not warped or melted exactly -- just *distorted*
-somehow."""
+description = """A facility ID card for sector AA-3. Its weight seems to change as you hold it, as does the temperature. It's not warped or melted exactly -- just *distorted* somehow."""
 text = """
  RESTRICTED ACCESS PASS
 SECTOR AA-3, HIGH ENERGY
@@ -573,11 +450,7 @@ name = "Brass Key"
 location = { Room = "security-station" }
 portable = true
 restricted = false
-description = """
-A small, nondescript brass key with what appears to be a small glob of ear wax
-on the tip. There's a rumpled label attached to the ring with a couple of
-letters worn off by greasy fingers.
-"""
+description = """A small, nondescript brass key with what appears to be a small glob of ear wax on the tip. There's a rumpled label attached to the ring with a couple of letters worn off by greasy fingers."""
 text = """
 _OCK _OCK_R
 """
@@ -593,10 +466,7 @@ target = "security_crate"
 [[items]]
 id = "security_crate"
 name = "Security Supply Locker"
-description = """
-A heavy wooden locker marked 'AMBLE SECURITY - Authorized Use Only'. The
-planks are reinforced, and the it rattles faintly when nudged.
-"""
+description = """A heavy wooden locker marked 'AMBLE SECURITY - Authorized Use Only'. The planks are reinforced, and the it rattles faintly when nudged."""
 portable = false
 container_state = "locked"
 location = { Room = "loading-dock" }
@@ -608,10 +478,7 @@ interaction_requires.burn = "ignite"
 [[items]]
 id = "crowbar"
 name = "Crowbar"
-description = """
-A sturdy crowbar with the initials 'G.F.' etched near the handle grip. It looks
-like it could pry open doors or smash obstacles — a proper scientist’s multitool.
-"""
+description = """A sturdy crowbar with the initials 'G.F.' etched near the handle grip. It looks like it could pry open doors or smash obstacles — a proper scientist’s multitool."""
 portable = true
 location = { Nowhere = "spawns@loading-dock or security_crate depending on access method" }
 
@@ -625,10 +492,7 @@ type = "Smash"
 [[items]]
 id = "security_log"
 name = "Amble Security Log"
-description = """
-A well-used notebook labeled "Amble Security Log / Section 42" and liberally
-stained with coffee, ale, and mustard.
-"""
+description = """A well-used notebook labeled "Amble Security Log / Section 42" and liberally stained with coffee, ale, and mustard."""
 location = { Nowhere = "may_spawn@security_crate" }
 portable = true
 restricted = false
@@ -656,10 +520,7 @@ type = "Read"
 [[items]]
 id = "burned_security_log"
 name = "Amble Security Log"
-description = """
-This appears to have once been a security event log for the building and dock, but
-is now better described as a security charcoal briquet.
-"""
+description = """This appears to have once been a security event log for the building and dock, but is now better described as a security charcoal briquet."""
 location = { Nowhere = "may_spawn@security_crate or loading-dock" }
 portable = true
 restricted = false
@@ -668,10 +529,7 @@ restricted = false
 [[items]]
 id = "glass_vial"
 name = "Strange Liquid"
-description = """
-A glass vial, unnaturally cold to the touch, containing a dark liquid that seems
-to reach for the warmth of your fingers.
-"""
+description = """A glass vial, unnaturally cold to the touch, containing a dark liquid that seems to reach for the warmth of your fingers."""
 location = { Nowhere = "may_spawn@loading-dock or security_crate" }
 portable = true
 restricted = false
@@ -680,10 +538,7 @@ restricted = false
 [[items]]
 id = "shattered_vial"
 name = "Shattered Vial"
-description = """
-Some shards of glass that used to be a vial of liquid, but whatever what inside
-has drained away.
-"""
+description = """Some shards of glass that used to be a vial of liquid, but whatever what inside has drained away."""
 location = { Nowhere = "may_spawn@loading-dock" }
 portable = false
 restricted = false
@@ -692,11 +547,7 @@ restricted = false
 [[items]]
 id = "initech_mug"
 name = "Initech Anti-Spill Mug"
-description = """
-A coffee mug bearing the Initech logo with a complex seal on top, requiring the
-use of both hands and a spotter to drink from it or fill it. There's an inscription
-on the bottom.
-"""
+description = """A coffee mug bearing the Initech logo with a complex seal on top, requiring the use of both hands and a spotter to drink from it or fill it. There's an inscription on the bottom."""
 location = { Nowhere = "spawns@loading-dock or security_crate" }
 portable = true
 restricted = false
@@ -712,10 +563,7 @@ type = "Read"
 [[items]]
 id = "dull_longsword"
 name = "Dull Longsword"
-description = """
-The Black Knight's masterfully forged longsword, dulled from years of hacking up
-those who absolutelyinsist upon passing.
-"""
+description = """The Black Knight's masterfully forged longsword, dulled from years of hacking up those who absolutelyinsist upon passing."""
 location = { Npc = "black_knight" }
 portable = true
 restricted = false
@@ -727,10 +575,7 @@ name = "Keen Longsword"
 location = { Nowhere = "spawns@player_after_sharpening_dull_longsword" }
 portable = true
 restricted = true
-description = """
-The Black Knight's masterfully forged longsword, newly sharpened and eager to
-return to slicing up passers by.
-"""
+description = """The Black Knight's masterfully forged longsword, newly sharpened and eager to return to slicing up passers by."""
 
 # ------------------------------------------------------------------------------
 [[items]]
@@ -739,11 +584,7 @@ name = "Belgian Coticule Whetstone"
 location = { Room = "snow-camp" }
 portable = true
 restricted = false
-description = """
-One of the finest of all natural whetstones, it could sharpen a jellyfish to
-the point where you could shave with it, though the jellyfish is typically quite
-annoyed afterward.
-"""
+description = """One of the finest of all natural whetstones, it could sharpen a jellyfish to the point where you could shave with it, though the jellyfish is typically quite annoyed afterward."""
 
 [[items.abilities]]
 type = "Sharpen"
@@ -755,14 +596,8 @@ name = "Research Journal"
 location = { Room = "snow-camp" }
 portable = true
 restricted = false
-description = """
-A partly burned and soggy research journal marked "Antarctic Outpost 31" and
-"MacReady". Only the end of the final entry remains legible.
-"""
-text = """
-...got to the dogs first, then the others. Burn it all. Can't let it reach the
-building...
-"""
+description = """A partly burned and soggy research journal marked "Antarctic Outpost 31" and "MacReady". Only the end of the final entry remains legible."""
+text = """...got to the dogs first, then the others. Burn it all. Can't let it reach the building..."""
 
 [[items.abilities]]
 type = "Read"
@@ -774,10 +609,9 @@ name = "Spent Flamethrower"
 location = { Room = "snow-camp" }
 portable = true
 restricted = false
-description = """
-A scorched and half-fused flamethrower, empty and broken beyond repair. The
-igniter’s casing is still warm. A faded label reads:
-            Weyland-Yutani: Thermal Unit / Antarctica Series
+description = """A scorched and half-fused flamethrower, empty and broken beyond repair. The igniter’s casing is still warm. A faded label reads:
+
+    Weyland-Yutani: Thermal Unit / Antarctica Series
 """
 
 # ------------------------------------------------------------------------------
@@ -787,11 +621,9 @@ name = "Messiah Starter Kit"
 location = { Room = "st-alfonzo-parish" }
 portable = true
 restricted = false
-description = """
-A masterfully handcrafted wooden box, with primitive bronze hardware and an
-ornately carved lid with the inscription:
-                          << MESSIAH STARTER KIT >>
-"""
+description = """A masterfully handcrafted wooden box, with primitive bronze hardware and an ornately carved lid with the inscription:
+
+        << MESSIAH STARTER KIT >>"""
 container_state = "closed"
 
 # ------------------------------------------------------------------------------
@@ -801,9 +633,7 @@ name = "Gourd"
 location = { Chest = "messiah_kit" }
 portable = true
 restricted = false
-description = """
-A grapefruit-sized, tan gourd. It rattles a little when you shake it.
-"""
+description = """A grapefruit-sized, tan gourd. It rattles a little when you shake it."""
 
 # ------------------------------------------------------------------------------
 [[items]]
@@ -812,13 +642,8 @@ name = "Shoe"
 location = { Chest = "messiah_kit" }
 portable = true
 restricted = false
-description = """
-A single, worn leather sandal of untold age. Something appears to be scratched
-into the sole.
-"""
-text = """
-If found: Return to Brian of Nazareth
-"""
+description = """A single, worn leather sandal of untold age. Something appears to be scratched into the sole."""
+text = """If found: Return to Brian of Nazareth"""
 
 [[items.abilities]]
 type = "Read"
@@ -830,10 +655,7 @@ name = "Mailbox"
 location = { Room = "two-sheds-landing" }
 portable = false
 restricted = false
-description = """
-A typical white mailbox with a red flag on a post, situated at the top of a path
-into the woods to the east.
-"""
+description = """A typical white mailbox with a red flag on a post, situated at the top of a path into the woods to the east."""
 container_state = "closed"
 
 # ------------------------------------------------------------------------------
@@ -843,9 +665,7 @@ name = "Official Notice"
 location = { Chest = "jackson_mailbox" }
 portable = true
 restricted = false
-description = """
-An official-looking notice from Amble Adventures HQ.
-"""
+description = """An official-looking notice from Amble Adventures HQ."""
 text = """
                               OFFICIAL NOTICE
 The OverShed™ Division of Amble Adventures has reclassified this dwelling as:
@@ -866,12 +686,7 @@ name = "H.A.L. Memory Bank"
 location = { Room = "observation-room" }
 portable = false
 restricted = false
-description = """
-A sleek, matte-black monolith of its own, this memory bank houses the core logic
-center of the HAL-9000 system. Three memory modules must be located and reinserted
-to complete the reboot sequence. The recessed slots flicker faintly, as if HAL is
-dreaming electric dreams.
-"""
+description = """A sleek, matte-black monolith of its own, this memory bank houses the core logic center of the HAL-9000 system. Three memory modules must be located and reinserted to complete the reboot sequence. The recessed slots flicker faintly, as if HAL is dreaming electric dreams."""
 container_state = "open"
 
 # ------------------------------------------------------------------------------
@@ -881,11 +696,7 @@ name = "HAL Memory Module #1"
 location = { Nowhere = "spawns@observation-room after EMH mobilized" }
 portable = true
 restricted = false
-description = """
-The first of HAL’s missing memory modules. It's a small, rectangular prism etched
-with faint circuitry—and possibly resentment. Warm to the touch, but that might just
-be your imagination.
-"""
+description = """The first of HAL’s missing memory modules. It's a small, rectangular prism etched with faint circuitry—and possibly resentment. Warm to the touch, but that might just be your imagination."""
 
 # ------------------------------------------------------------------------------
 [[items]]
@@ -894,11 +705,7 @@ name = "HAL Memory Module #2"
 location = { Room = "observation-room" }
 portable = true
 restricted = false
-description = """
-Second in the trio of HAL’s memory modules. Its red LED pulses gently, like a
-heartbeat—or a warning. It hums when held, and you could swear it whispered your name.
-"""
-
+description = """Second in the trio of HAL’s memory modules. Its red LED pulses gently, like a heartbeat—or a warning. It hums when held, and you could swear it whispered your name."""
 
 # ------------------------------------------------------------------------------
 [[items]]
@@ -907,22 +714,14 @@ name = "HAL Memory Module #3"
 location = { Room = "observation-room" }
 portable = true
 restricted = false
-description = """
-The final piece of HAL’s fragmented mind. The outer shell is pristine, but
-something about it feels... watchful. Once inserted, the full system may awaken—
-and then things might get complicated.
-"""
+description = """The final piece of HAL’s fragmented mind. The outer shell is pristine, but something about it feels... watchful. Once inserted, the full system may awaken — and then things might get complicated."""
 
 # ------------------------------------------------------------------------------
 
 [[items]]
 id = "broken_emitter"
 name = "Mobile Emitter (Broken)"
-description = """
-A palm-sized, silvery device scorched and warped by a violent electromagnetic
-flare. It may not beyond repair, though a few panels are cracked and the core
-oscillator is rattling suspiciously. Smells faintly of ozone and regret.
-"""
+description = """A palm-sized, silvery device scorched and warped by a violent electromagnetic flare. It may not beyond repair, though a few panels are cracked and the core oscillator is rattling suspiciously. Smells faintly of ozone and regret."""
 portable = true
 location = { Nowhere = "spawns@lost_and_found_box when mobilize-emh sequence starts" }
 
@@ -930,11 +729,7 @@ location = { Nowhere = "spawns@lost_and_found_box when mobilize-emh sequence sta
 [[items]]
 id = "working_emitter"
 name = "Mobile Emitter (Repaired)"
-description = """
-Freshly repaired and gleaming with diagnostic confidence, this mobile emitter is once
-again capable of projecting the Emergency Medical Hologram beyond the confines of
-Med Bay. It's surprisingly lightweight—and slightly smug about it.
-"""
+description = """Freshly repaired and gleaming with diagnostic confidence, this mobile emitter is once again capable of projecting the Emergency Medical Hologram beyond the confines of Med Bay. It's surprisingly lightweight—and slightly smug about it."""
 portable = true
 location = { Nowhere = "spawns@inventory after broken_emitter repaired" }
 
@@ -942,11 +737,7 @@ location = { Nowhere = "spawns@inventory after broken_emitter repaired" }
 [[items]]
 id = "sonic_screwdriver"
 name = "Sonic Screwdriver"
-description = """
-A multipurpose marvel of alien engineering, capable of repairing complex machinery,
-unlocking sealed doors, and occasionally shorting out bureaucracies. Ineffective
-against wood, emotions, and existential dread.
-"""
+description = """A multipurpose marvel of alien engineering, capable of repairing complex machinery, unlocking sealed doors, and occasionally shorting out bureaucracies. Ineffective against wood, emotions, and existential dread."""
 portable = true
 location = { Inventory = "player" }
 
