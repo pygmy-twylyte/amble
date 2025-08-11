@@ -4,10 +4,10 @@
 
 use log::warn;
 
-use crate::{DEV_MODE, command::Command, style::GameStyle};
+use crate::{DEV_MODE, command::Command, style::GameStyle, view::{View, ViewItem}};
 
 /// Parse developer-only commands if '`DEV_MODE`' is true.
-pub fn parse_dev_command(input: &str) -> Option<Command> {
+pub fn parse_dev_command(input: &str, view: &mut View) -> Option<Command> {
     if input.starts_with(':') {
         let words: Vec<&str> = input.trim_start_matches(':').split_whitespace().collect();
         let maybe_command = match words.as_slice() {
@@ -24,7 +24,9 @@ pub fn parse_dev_command(input: &str) -> Option<Command> {
             _ => None,
         };
         if maybe_command.is_some() && !DEV_MODE {
-            println!("{}", "Developer commands are disabled in this build.".error_style());
+            view.push(ViewItem::Error(
+                "Developer commands are disabled in this build.".error_style().to_string(),
+            ));
             warn!(
                 "player attempted to use developer command '{:?}' with DEV_MODE = false",
                 maybe_command.unwrap()

@@ -10,7 +10,7 @@ use crate::{
     repl::{entity_not_found, find_world_object},
     spinners::SpinnerType,
     style::GameStyle,
-    trigger::{TriggerAction, TriggerCondition, check_triggers, triggers_contain_condition},
+    trigger::{check_triggers, triggers_contain_condition, TriggerAction, TriggerCondition},
 };
 
 use anyhow::{Context, Result};
@@ -35,26 +35,28 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
     let sent_id = if let Some(npc) = select_npc(world.player.location(), &world.npcs, npc_name) {
         npc.id()
     } else {
-        entity_not_found(world, npc_name);
+        entity_not_found(world, view, npc_name);
         return Ok(());
     };
 
     // check for any condition-specific dialogue
-    let fired_triggers = check_triggers(world, &[TriggerCondition::TalkToNpc(sent_id)])?;
+    let fired_triggers = check_triggers(world, view, &[TriggerCondition::TalkToNpc(sent_id)])?;
     let dialogue_fired = triggers_contain_condition(&fired_triggers, |cond| match cond {
         TriggerCondition::TalkToNpc(npc_id) => sent_id == *npc_id,
         _ => false,
     });
 
     // if no dialogue was triggered, fire random response according to Npc's mood
-    if !dialogue_fired && let Some(npc) = world.npcs.get(&sent_id) {
-        if let Some(ignore_spinner) = world.spinners.get(&SpinnerType::NpcIgnore) {
-            let dialogue = npc.random_dialogue(ignore_spinner);
-            view.push(ViewItem::NpcSpeech {
-                speaker: npc.name.clone(),
-                quote: dialogue.clone(),
-            });
-            info!("NPC \"{}\" ({}) said \"{}\"", npc.name(), npc.id(), dialogue);
+    if !dialogue_fired {
+        if let Some(npc) = world.npcs.get(&sent_id) {
+            if let Some(ignore_spinner) = world.spinners.get(&SpinnerType::NpcIgnore) {
+                let dialogue = npc.random_dialogue(ignore_spinner);
+                view.push(ViewItem::NpcSpeech {
+                    speaker: npc.name.clone(),
+                    quote: dialogue.clone(),
+                });
+                info!("NPC \"{}\" ({}) said \"{}\"", npc.name(), npc.id(), dialogue);
+            }
         }
     }
     Ok(())
@@ -84,7 +86,7 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
             return Ok(());
         }
     } else {
-        entity_not_found(world, npc);
+        entity_not_found(world, view, npc);
         return Ok(());
     };
 
@@ -110,11 +112,12 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
                 return Ok(());
             }
         } else {
-            entity_not_found(world, item);
+            entity_not_found(world, view, item);
             return Ok(());
         };
 
-    let fired_triggers = check_triggers(world, &[TriggerCondition::GiveToNpc { item_id, npc_id }])?;
+    let fired_triggers =
+        check_triggers(world, view, &[TriggerCondition::GiveToNpc { item_id, npc_id }])?;
     let fired = fired_triggers.iter().any(|&trigger| {
         trigger
             .conditions
@@ -145,7 +148,7 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
 
         // remove from player inventory
         world.player.remove_item(item_id);
-        check_triggers(world, &[TriggerCondition::Drop(item_id)])?;
+        check_triggers(world, view, &[TriggerCondition::Drop(item_id)])?;
 
         // report and log success
         view.push(ViewItem::ActionSuccess(format!(
