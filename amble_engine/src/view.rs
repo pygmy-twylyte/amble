@@ -4,7 +4,7 @@
 //! to be organized and displayed at the end of the turn.
 
 use colored::Colorize;
-use textwrap::wrap;
+use textwrap::{fill, termwidth};
 use variantly::Variantly;
 
 use crate::style::{GameStyle, indented_block, normal_block};
@@ -29,7 +29,7 @@ impl View {
     /// Defaults to Verbose behavior.
     pub fn new() -> Self {
         Self {
-            width: 80,
+            width: termwidth(),
             mode: ViewMode::Verbose,
             items: Vec::new(),
         }
@@ -42,6 +42,18 @@ impl View {
 
     /// Compose and diplay all message contents in the current frame / turn.
     pub fn flush(&mut self) {
+        // re-check terminal width in case it's been resized
+        self.width = termwidth();
+
+        // Optimization: We could bin sections here and then iterate over them separately,
+        // but considering we're typically dealing with a maximum of about 12 items to display,
+        // there would be no tangible benefit.
+
+        // Section Zero: Movement transition message, if any
+        if let Some(ViewItem::TransitionMessage(msg)) = self.items.iter().find(|i| i.is_transition_message()) {
+            println!("{}", fill(msg, normal_block()).transition_style());
+        }
+
         // First Section: Environment / Frame of Reference
         if self.items.iter().any(|item| item.section() == Section::Environment) {
             println!("{:.>width$}\n", "scene".section_style(), width = self.width);
@@ -102,7 +114,9 @@ impl View {
         self.npc_speech();
     }
 
-    fn ambience(&mut self) {}
+    fn ambience(&mut self) {
+        self.ambient_event();
+    }
 
     fn system(&mut self) {
         self.show_help();
@@ -111,16 +125,26 @@ impl View {
     }
 
     // INDIVIDUAL VIEW ITEM HANDLERS START HERE -------------------------------
+    fn ambient_event(&mut self) {
+        let trig_messages = self.items.iter().filter(|i| matches!(i, ViewItem::AmbientEvent(_)));
+        for msg in trig_messages {
+            let formatted = format!(
+                "{:<4}{}",
+                ICON_AMBIENT.ambient_icon_style(),
+                msg.clone().unwrap_ambient_event().ambient_trig_style()
+            );
+            println!("{}", fill(formatted.as_str(), normal_block()));
+        }
+    }
     fn triggered_event(&mut self) {
         let trig_messages = self.items.iter().filter(|i| matches!(i, ViewItem::TriggeredEvent(_)));
         for msg in trig_messages {
             let formatted = format!(
-                "{} {}",
+                "{:<4}{}",
                 ICON_TRIGGER.trig_icon_style(),
                 msg.clone().unwrap_triggered_event().triggered_style()
             );
-            let wrapped = wrap(formatted.as_str(), normal_block(self.width));
-            wrapped.iter().for_each(|line| println!("{}", line))
+            println!("{}", fill(formatted.as_str(), normal_block()));
         }
     }
 
@@ -129,10 +153,10 @@ impl View {
         for quote in speech_msgs {
             if let ViewItem::NpcSpeech { speaker, quote } = quote {
                 println!("{} says:", speaker.npc_style());
-                let wrapped = wrap(quote.as_str(), indented_block(self.width));
-                wrapped
-                    .iter()
-                    .for_each(|line| println!("{}", line.to_string().npc_quote_style()))
+                println!(
+                    "{}",
+                    fill(quote.as_str(), indented_block()).to_string().npc_quote_style()
+                );
             }
         }
     }
@@ -173,10 +197,12 @@ impl View {
                 for goal in active {
                     if let ViewItem::ActiveGoal { name, description } = goal {
                         println!("{}", name.goal_active_style());
-                        let descr_text = wrap(description.as_str(), indented_block(self.width));
-                        descr_text
-                            .iter()
-                            .for_each(|line| println!("{}", line.to_string().description_style()));
+                        println!(
+                            "{}",
+                            fill(description.as_str(), indented_block())
+                                .to_string()
+                                .description_style()
+                        );
                     }
                 }
             }
@@ -214,7 +240,11 @@ impl View {
         {
             let score_pct = 100.0 * (*score as f32 / *max_score as f32);
             let visit_pct = 100.0 * (*visited as f32 / *max_visited as f32);
-            println!("{:^80}", "CANDIDATE EVALUATION REPORT".black().on_yellow());
+            println!(
+                "{:^width$}",
+                "CANDIDATE EVALUATION REPORT".black().on_yellow(),
+                width = termwidth()
+            );
             println!("{:10} {}", "Rank:", rank.bright_cyan());
             println!("{:10} {}", "Notes:", notes.description_style());
             println!("{:10} {}/{} ({:.2})", "Score:", score, max_score, score_pct);
@@ -245,9 +275,15 @@ impl View {
                 _ => None,
             })
             .collect();
-        messages
-            .iter()
-            .for_each(|msg| println!("{} {}", ICON_SUCCESS.bright_green(), *msg));
+        messages.iter().for_each(|msg| {
+            println!(
+                "{}",
+                fill(
+                    format!("{} {}", ICON_SUCCESS.bright_green(), msg).as_str(),
+                    normal_block()
+                )
+            )
+        });
     }
 
     fn action_failure(&mut self) {
@@ -259,9 +295,15 @@ impl View {
                 _ => None,
             })
             .collect();
-        messages
-            .iter()
-            .for_each(|msg| println!("{} {}", ICON_FAILURE.bright_red(), *msg));
+        messages.iter().for_each(|msg| {
+            println!(
+                "{}",
+                fill(
+                    format!("{} {}", ICON_FAILURE.bright_red(), msg).as_str(),
+                    normal_block()
+                )
+            )
+        });
     }
 
     fn errors(&mut self) {
@@ -273,15 +315,21 @@ impl View {
                 _ => None,
             })
             .collect();
-        messages
-            .iter()
-            .for_each(|msg| println!("{} {}", ICON_ERROR.error_icon_style(), *msg));
+        messages.iter().for_each(|msg| {
+            println!(
+                "{}",
+                fill(
+                    format!("{} {}", ICON_ERROR.error_icon_style(), msg).as_str(),
+                    normal_block()
+                )
+            )
+        });
     }
 
     fn item_text(&mut self) {
         if let Some(ViewItem::ItemText(text)) = self.items.iter().find(|i| matches!(i, ViewItem::ItemText(_))) {
-            println!("{}:", "You can read".subheading_style());
-            println!("{}", text.item_text_style());
+            println!("{}:\n", "You read".subheading_style());
+            println!("{}", fill(text, indented_block()).item_text_style());
             println!();
         }
     }
@@ -291,10 +339,12 @@ impl View {
             self.items.iter().find(|i| matches!(i, ViewItem::NpcDescription { .. }))
         {
             println!("{}", name.npc_style().underline());
-            let descr_text = wrap(description.as_str(), indented_block(self.width));
-            descr_text
-                .iter()
-                .for_each(|line| println!("{}", line.to_string().description_style()));
+            println!(
+                "{}",
+                fill(description.as_str(), indented_block())
+                    .to_string()
+                    .description_style()
+            );
             println!();
         }
         if let Some(ViewItem::NpcInventory(content_lines)) =
@@ -322,10 +372,10 @@ impl View {
             .find(|i| matches!(i, ViewItem::ItemDescription { .. }))
         {
             println!("{}", name.item_style().underline());
-            let descr_text = wrap(description, indented_block(self.width));
-            descr_text
-                .iter()
-                .for_each(|line| println!("{}", line.to_string().description_style()));
+            println!(
+                "{}",
+                fill(description, indented_block()).to_string().description_style()
+            );
             println!();
         }
 
@@ -396,12 +446,9 @@ impl View {
             let display_mode = force_mode.unwrap_or(self.mode);
             if display_mode != ViewMode::Brief {
                 for ovl in text {
-                    let wrapped = wrap(ovl, normal_block(self.width));
-                    wrapped
-                        .iter()
-                        .for_each(|line| println!("{}", line.to_string().overlay_style()));
+                    println!("{}", fill(ovl, normal_block()).to_string().overlay_style());
+                    println!();
                 }
-                println!();
             }
         }
     }
@@ -426,10 +473,13 @@ impl View {
             }
             println!("{:^width$}", name.room_titlebar_style(), width = self.width);
             if display_mode != ViewMode::Brief || !visited {
-                let descr_text = wrap(description.as_str(), normal_block(self.width));
-                descr_text
-                    .iter()
-                    .for_each(|line| println!("{}", line.to_string().description_style()));
+                println!(
+                    "{}",
+                    fill(description.as_str(), normal_block())
+                        .to_string()
+                        .description_style()
+                );
+
                 println!();
             }
         }
@@ -449,6 +499,7 @@ impl View {
 /// Subsections of the output.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Section {
+    Transition,
     Environment,
     DirectResult,
     WorldResponse,
@@ -467,6 +518,7 @@ pub enum ViewMode {
 /// ViewItems are each of the various types of information / messages that may be displayed to the player.
 #[derive(Debug, Clone, PartialEq, Eq, Variantly)]
 pub enum ViewItem {
+    TransitionMessage(String),
     RoomDescription {
         name: String,
         description: String,
@@ -552,6 +604,7 @@ impl ViewItem {
             | ViewItem::Help
             | ViewItem::GameLoaded { .. }
             | ViewItem::GameSaved { .. } => Section::System,
+            ViewItem::TransitionMessage(_) => Section::Transition,
         }
     }
 }
