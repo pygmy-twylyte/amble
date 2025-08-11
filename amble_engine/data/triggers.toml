@@ -5,9 +5,9 @@ conditions = [
     { type = "enter", room_id = "guard-post" },
     { type = "missingItem", item_id = "towel" },
 ]
-actions = [{ type = "showMessage", text = """
-You pause here, realizing with increasing concern that you are traveling in
-a strange land without a towel.""" }]
+actions = [
+    { type = "showMessage", text = """You pause here, realizing with increasing concern that you are traveling in a strange land without a towel.""" },
+]
 
 [[triggers]]
 name = "Global: Got-Towel"
@@ -16,8 +16,7 @@ conditions = [{ type = "take", item_id = "towel" }]
 actions = [
     { type = "addFlag", flag = { type = "simple", name = "got-towel" } },
     { type = "awardPoints", amount = 2 },
-    { type = "showMessage", text = """
-Now you're a frood who really knows where his towel is.""" },
+    { type = "showMessage", text = """Now you're a frood who really knows where his towel is.""" },
 ]
 
 [[triggers]]
@@ -26,10 +25,7 @@ only_once = true
 conditions = [{ type = "leave", room_id = "loading-dock" }]
 actions = [
     { type = "spawnItemInRoom", item_id = "delivery_box", room_id = "loading-dock" },
-    { type = "showMessage", text = """
-You hear a thud behind you, back toward the dock, like something was just
-dropped off. You glimpse a drone flying away quickly, as if hoping not to
-be seen. Was that an Initech logo on the side?""" },
+    { type = "showMessage", text = """You hear a thud behind you, back toward the dock, like something was just dropped off. You glimpse a drone flying away quickly, as if hoping not to be seen. Was that an Initech logo on the side?""" },
 ]
 
 [[triggers]]
@@ -40,14 +36,7 @@ actions = [
     { type = "despawnItem", item_id = "delivery_box" },
     { type = "spawnItemCurrentRoom", item_id = "destroyed_box" },
     { type = "spawnItemCurrentRoom", item_id = "towel" },
-    { type = "showMessage", text = """
-The box sighs and collapses in a heap as soon as you touch it, relieved that its
-mission is over. Inside, you find a nanotruss-reinforced tachyon-powered towel
-with an attached note:
-
-                Always be a frood who knows where his towel is.
-                                -- F.P.
-""" },
+    { type = "showMessage", text = """The box sighs and collapses in a heap as soon as you touch it, relieved that its mission is over. Inside, you find a nanotruss-reinforced tachyon-powered towel with an attached note:\n\n                Always be a frood who knows where his towel is.\n                                -- F.P.""" },
 ]
 
 [[triggers]]
@@ -73,10 +62,9 @@ actions = [
 name = "Office: Open-Poetry-Performer"
 only_once = false
 conditions = [{ type = "open", item_id = "poetry_performer" }]
-actions = [{ type = "showMessage", text = """
-The machine clicks on and hums. A flashing red light warns:
-            ⚠️ NOT FOR USE WITH VOGON POETRY ⚠️
-""" }]
+actions = [
+    { type = "showMessage", text = """The machine clicks on and hums. A flashing red light warns:\n            ⚠️ NOT FOR USE WITH VOGON POETRY ⚠️""" },
+]
 
 # START LOUNGE, PORTAL GUN TRIGGERS
 # remove rug to reveal hidden exit to portal room
@@ -88,9 +76,7 @@ actions = [
     { type = "revealExit", direction = "down", exit_from = "lounge", exit_to = "portal-room" },
     { type = "addFlag", flag = { type = "simple", name = "found-portal-room" } },
     { type = "awardPoints", amount = 3 },
-    { type = "showMessage", text = """
-Light shines around the edges of a trapdoor revealed in the floor when you move
-the rug.""" },
+    { type = "showMessage", text = """Light shines around the edges of a trapdoor revealed in the floor when you move the rug.""" },
 ]
 
 # give portal_powered flag when charged battery inserted
@@ -104,10 +90,7 @@ actions = [
     { type = "addFlag", flag = { type = "simple", name = "portal-gun-powered" } },
     { type = "awardPoints", amount = 5 },
     { type = "restrictItem", item_id = "charged_battery" },
-    { type = "showMessage", text = """
-Arcing wildly as you insert it, the fully charged 20 KV battery fuses itself
-to the contacts inside the portal gun -- when then emits a quick high-pitched
-whine. The POWER indicator lights a steady green.""" },
+    { type = "showMessage", text = """Arcing wildly as you insert it, the fully charged 20 KV battery fuses itself to the contacts inside the portal gun -- when then emits a quick high-pitched whine. The POWER indicator lights a steady green.""" },
 ]
 
 # turn on: if gun powered, open portal exit to Aperture Science Laboratory
@@ -121,10 +104,7 @@ conditions = [
 actions = [
     { type = "revealExit", direction = "portal", exit_from = "portal-room", exit_to = "aperture-lab" },
     { type = "addFlag", flag = { type = "simple", name = "portal-opened" } },
-    { type = "showMessage", text = """
-A loud \"Squip!\" comes from the gun. The wall in front of it sizzles for a
-moment, and then a crackling oval blue portal expands on the wall to reveal a
-laboratory space on the other side.""" },
+    { type = "showMessage", text = """A loud \"Squip!\" comes from the gun. The wall in front of it sizzles for a moment, and then a crackling oval blue portal expands on the wall to reveal a laboratory space on the other side.""" },
 ]
 
 # turn on: fail, gun not powered yet
@@ -151,10 +131,7 @@ actions = [
     { type = "despawnItem", item_id = "printer_paper" },
     { type = "addFlag", flag = { type = "simple", name = "burned-invitation" } },
     { type = "spawnItemInRoom", item_id = "burnt_invitation", room_id = "aperture-lab" },
-    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """
-An annoyed voice on the PA:
-    "Staff Reminder: The Fire Marshall will close us down if he gets one more false alarm.
-    Do NOT use regular paper in the lab printer. Someone apparently didn't get the memo." """ },
+    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """An annoyed voice on the PA:\n    "Staff Reminder: The Fire Marshall will close us down if he gets one more false alarm. Do NOT use regular paper in the lab printer. Someone apparently didn't get the memo." """ },
     { type = "showMessage", text = "The paper ignites with a flash, and the PlasmaJet spits it onto the floor." },
     { type = "showMessage", text = """
 A nearby smoke detector alarms briefly, then quits with an exasperated sigh
@@ -173,12 +150,8 @@ actions = [
     { type = "awardPoints", amount = 10 },
     { type = "despawnItem", item_id = "asbestos_sheet" },
     { type = "spawnItemInRoom", item_id = "invitation", room_id = "aperture-lab" },
-    { type = "showMessage", text = """
-The PlasmaJet emits a blinding flash of light, leaving a printer-shaped purple
-blob in your visual field for a few moments.""" },
-    { type = "showMessage", text = """
-When your vision clears, you see a slightly glowing printed invitation on the
-floor.""" },
+    { type = "showMessage", text = """The PlasmaJet emits a blinding flash of light, leaving a printer-shaped purple blob in your visual field for a few moments.""" },
+    { type = "showMessage", text = """When your vision clears, you see a slightly glowing printed invitation on the floor.""" },
 ]
 
 # messages and flag when invitation is acquired
@@ -193,9 +166,7 @@ actions = [
     { type = "spawnItemInInventory", item_id = "invitation" },
     { type = "addFlag", flag = { type = "simple", name = "got-invitation" } },
     { type = "awardPoints", amount = 5 },
-    { type = "showMessage", text = """
-Using the towel as a potholder, you are able to get the piping hot invitation
-into your pack.""" },
+    { type = "showMessage", text = """Using the towel as a potholder, you are able to get the piping hot invitation into your pack.""" },
 ]
 
 [[triggers]]
@@ -208,9 +179,7 @@ conditions = [
 actions = [
     { type = "despawnItem", item_id = "invitation" },
     { type = "spawnItemCurrentRoom", item_id = "invitation" },
-    { type = "showMessage", text = """
-You burn your fingers and drop the invitation on the floor. It emits a reddish
-glow, and shimmers from the radiating heat.""" },
+    { type = "showMessage", text = """You burn your fingers and drop the invitation on the floor. It emits a reddish glow, and shimmers from the radiating heat.""" },
 ]
 
 [[triggers]]
@@ -235,18 +204,8 @@ actions = [
     { type = "despawnItem", item_id = "vogon_poetry_book" },
     { type = "addFlag", flag = { type = "simple", name = "panic-room-open" } },
     { type = "revealExit", direction = "west", exit_from = "b-a-office", exit_to = "poetry-panic" },
-    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """
-PA Announcement: "Vogon poetry detected in the building. If you are
-experiencing nausea, see the EMH in sick bay for assistance."""" },
-    { type = "showMessage", text = """
-The machine begins to whine at a high pitch and gives off a noxious odor of
-burning hair. A klaxon blares and the display warns:
-
-            ⚠️ VOGON INPUT DETECTED - POETRY PANIC ROOM UNLOCKED ⚠️
-               ☣ VAPORIZING VOGON INPUT - AVOID TOXIC FUMES ☣
-
-The whiteboard on the west wall slides to the side, revealing a vault-like door.
-""" },
+    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """PA Announcement: "Vogon poetry detected in the building. If you are experiencing nausea, see the EMH in sick bay for assistance."""" },
+    { type = "showMessage", text = """The machine begins to whine at a high pitch and gives off a noxious odor of burning hair. A klaxon blares and the display warns:\n\n            ⚠️ VOGON INPUT DETECTED - POETRY PANIC ROOM UNLOCKED ⚠️\n               ☣ VAPORIZING VOGON INPUT - AVOID TOXIC FUMES ☣\n\nThe whiteboard on the west wall slides to the side, revealing a vault-like door.""" },
 ]
 
 # START ELEVATOR ACTIVATION TRIGGERS
@@ -259,10 +218,9 @@ conditions = [
     { type = "enter", room_id = "lift-bank-main" },
     { type = "hasItem", item_id = "elevator_keycard" },
 ]
-actions = [{ type = "showMessage", text = """
-As you approach, the keycard in your pack chirps twice and the elevator springs
-to life. A Muzak version of Porcupine Tree's "The Sound of Muzak" plays softly.
-""" }]
+actions = [
+    { type = "showMessage", text = """As you approach, the keycard in your pack chirps twice and the elevator springs to life. A Muzak version of Porcupine Tree's "The Sound of Muzak" plays softly.""" },
+]
 
 # B-A Receptionist Triggers
 [[triggers]]
@@ -301,20 +259,8 @@ actions = [
     { type = "spawnItemInInventory", item_id = "visitor_pass" },
     { type = "awardPoints", amount = 5 },
     { type = "setNpcState", npc_id = "b_a_receptionist", state = "happy" },
-    { type = "showMessage", text = """
-The robotic receptionist initially glances at you with the disdain of someone
-who spends all day waiting on people who are waiting on someone else, but her
-demeanor and even appearance immediately become pleasant when she sees the
-invitation in your hand. She deftly takes it from you, scrutinizes it intently,
-and slips it into a desktop document vaporizer.
-
-She then hands you a laminated card on a lanyard. It appears blank, yet also
-appears to show a variety of credentials at the same time.
-""" },
-    { type = "npcSays", npc_id = "b_a_receptionist", quote = """
-Here is your visitor pass. Much of the facility will be inaccessible without
-it, so treat it like a second towel.
-""" },
+    { type = "showMessage", text = """The robotic receptionist initially glances at you with the disdain of someone who spends all day waiting on people who are waiting on someone else, but her demeanor and even appearance immediately become pleasant when she sees the invitation in your hand. She deftly takes it from you, scrutinizes it intently, and slips it into a desktop document vaporizer.\n\nShe then hands you a laminated card on a lanyard. It appears blank, yet also appears to show a variety of credentials at the same time.""" },
+    { type = "npcSays", npc_id = "b_a_receptionist", quote = """Here is your visitor pass. Much of the facility will be inaccessible without it, so treat it like a second towel.""" },
 ]
 
 [[triggers]]
@@ -326,10 +272,7 @@ conditions = [
 actions = [
     { type = "giveItemToPlayer", npc_id = "gonk_droid", item_id = "charged_battery" },
     { type = "setNpcState", npc_id = "gonk_droid", state = "happy" },
-    { type = "showMessage", text = """
-Elated that you've given it such a large, empty battery to charge, the gonk
-droid gives you a fully charged one, free of ... charge?
-""" },
+    { type = "showMessage", text = """Elated that you've given it such a large, empty battery to charge, the gonk droid gives you a fully charged one, free of ... charge?""" },
 ]
 
 [[triggers]]
@@ -355,11 +298,7 @@ conditions = [
 ]
 actions = [
     { type = "pushPlayerTo", room_id = "restaurant" },
-    { type = "showMessage", text = """
-A blinding burst of light erupts from the swirling starfield, forcing you to
-shield your eyes. With no protection, you're forcibly propelled back toward
-the relative safety of the restaurant.
-""" },
+    { type = "showMessage", text = """A blinding burst of light erupts from the swirling starfield, forcing you to shield your eyes. With no protection, you're forcibly propelled back toward the relative safety of the restaurant.""" },
 ]
 
 [[triggers]]
@@ -369,11 +308,9 @@ conditions = [
     { type = "enter", room_id = "patio" },
     { type = "hasItem", item_id = "peril_sunglasses" },
 ]
-actions = [{ type = "showMessage", text = """
-Sensing the possible harm in eating a dessert a stone's throw away from the
-explosions of all nearby stars, your peril-sensitive sunglasses flash nearly
-completely opaque, allowing you to see without permanent damage to the retina.
-""" }]
+actions = [
+    { type = "showMessage", text = """Sensing the possible harm in eating a dessert a stone's throw away from the explosions of all nearby stars, your peril-sensitive sunglasses flash nearly completely opaque, allowing you to see without permanent damage to the retina.""" },
+]
 
 [[triggers]]
 name = "Global: Cannot Discard No_Cake"
@@ -382,10 +319,7 @@ conditions = [{ type = "drop", item_id = "no_cake" }]
 actions = [
     { type = "despawnItem", item_id = "no_cake" },
     { type = "spawnItemInInventory", item_id = "no_cake" },
-    { type = "showMessage", text = """
-Try as you might, you cannot rid yourself of the feeling of a missing a
-promised dessert. The cake was a lie.
-""" },
+    { type = "showMessage", text = """Try as you might, you cannot rid yourself of the feeling of a missing a promised dessert. The cake was a lie.""" },
 ]
 
 [[triggers]]
@@ -451,17 +385,9 @@ conditions = [
 ]
 actions = [
     { type = "giveItemToPlayer", npc_id = "b_a_receptionist", item_id = "lost_and_found_key" },
-    { type = "showMessage", text = """
-Seeing you return with the keycard, the receptionist looks around warily and
-slips something into your hand, then looks directly at the lost and found box.
-    """ },
-    { type = "npcSays", npc_id = "b_a_receptionist", quote = """
-Finally! A Candidate bright enough to get to that keycard. I guess I lost the
-pool. Who'd have thought it'd be a primate?
-""" },
-    { type = "npcSays", npc_id = "b_a_receptionist", quote = """
-(quietly) Use this before you head down to AA-3B.
-""" },
+    { type = "showMessage", text = """Seeing you return with the keycard, the receptionist looks around warily and slips something into your hand, then looks directly at the lost and found box.""" },
+    { type = "npcSays", npc_id = "b_a_receptionist", quote = """Finally! A Candidate bright enough to get to that keycard. I guess I lost the pool. Who'd have thought it'd be a primate?""" },
+    { type = "npcSays", npc_id = "b_a_receptionist", quote = """(quietly) Use this before you head down to AA-3B.""" },
 ]
 
 [[triggers]]
@@ -500,11 +426,7 @@ actions = [
     { type = "addFlag", flag = { type = "simple", name = "cleared-fallen-tree" } },
     { type = "addFlag", flag = { type = "simple", name = "burned-fallen-tree" } },
     { type = "awardPoints", amount = 5 },
-    { type = "showMessage", text = """
-    You step back, aim, and squeeze the trigger... The device flares to life — and then
-    catches fire *itself*. Panicking, you hurl it straight into the mass of limbs and
-    branches. The fallen tree erupts into flame and, quite improbably, is reduced to
-    ash in mere seconds.""" },
+    { type = "showMessage", text = """You step back, aim, and squeeze the trigger... The device flares to life — and then catches fire *itself*. Panicking, you hurl it straight into the mass of limbs and branches. The fallen tree erupts into flame and, quite improbably, is reduced to ash in mere seconds.""" },
 ]
 
 [[triggers]]
@@ -512,10 +434,7 @@ name = "Pluck Dental Floss"
 only_once = true
 conditions = [{ type = "take", item_id = "dental_floss" }]
 actions = [
-    { type = "showMessage", text = """
-You pluck a strand of floss from the bush. It comes away easily — disturbingly so.
-Minty. Strong. Too strong. You’re no botanist, but you’re pretty sure this shouldn’t
-be growing out of a shrubbery.""" },
+    { type = "showMessage", text = """You pluck a strand of floss from the bush. It comes away easily — disturbingly so. Minty. Strong. Too strong. You’re no botanist, but you’re pretty sure this shouldn’t be growing out of a shrubbery.""" },
     { type = "awardPoints", amount = 3 },
 ]
 
@@ -529,10 +448,7 @@ actions = [
     { type = "spawnItemInContainer", item_id = "glass_vial", container_id = "security_crate" },
     { type = "spawnItemInContainer", item_id = "initech_mug", container_id = "security_crate" },
     { type = "addFlag", flag = { type = "simple", name = "unlocked-security-crate" } },
-    { type = "showMessage", text = """
-The ear wax on the tip of the key eases it into the rusted lock, which snaps
-open with a satisfying clunk.
-""" },
+    { type = "showMessage", text = """The ear wax on the tip of the key eases it into the rusted lock, which snaps open with a satisfying clunk.""" },
 ]
 
 [[triggers]]
@@ -548,13 +464,8 @@ actions = [
     { type = "spawnItemCurrentRoom", item_id = "shattered_vial" },
     { type = "spawnItemCurrentRoom", item_id = "security_log" },
     { type = "spawnItemCurrentRoom", item_id = "initech_mug" },
-    { type = "showMessage", text = """
-You're surprised to hear yourself singing, "I'm a lumberjack, and I'm OK. I
-sleep all night and I work all day!" -- as you chop the security locker into
-splinters. There is a crowbar lying amongst the rubble.""" },
-    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """
-PA Announcement: "Someone hacked into the security locker on the dock with an axe.
-Mind your belongings and report any lumberjack sightings to security."""" },
+    { type = "showMessage", text = """You're surprised to hear yourself singing, "I'm a lumberjack, and I'm OK. I sleep all night and I work all day!" -- as you chop the security locker into splinters. There is a crowbar lying amongst the rubble.""" },
+    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """PA Announcement: "Someone hacked into the security locker on the dock with an axe. Mind your belongings and report any lumberjack sightings to security."""" },
 ]
 
 [[triggers]]
@@ -570,14 +481,8 @@ actions = [
     { type = "spawnItemCurrentRoom", item_id = "shattered_vial" },
     { type = "spawnItemCurrentRoom", item_id = "security_log" },
     { type = "spawnItemCurrentRoom", item_id = "initech_mug" },
-    { type = "showMessage", text = """
-With a few hefty blows using the blunt side of the axe head, you manage to
-break the lock haft completely off of the security locker -- well after a few
-misses had already caved in the lid and destroyed it, but you were having fun.
-You can hardly have damaged the crowbar that was stored inside.""" },
-    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """
-PA Announcement: "Someone broke into the security locker on the dock.
-Mind your belongings and report any suspicious activity to security."""" },
+    { type = "showMessage", text = """With a few hefty blows using the blunt side of the axe head, you manage to break the lock haft completely off of the security locker -- well after a few misses had already caved in the lid and destroyed it, but you were having fun. You can hardly have damaged the crowbar that was stored inside.""" },
+    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """PA Announcement: "Someone broke into the security locker on the dock. Mind your belongings and report any suspicious activity to security."""" },
 ]
 
 [[triggers]]
@@ -595,19 +500,8 @@ actions = [
     { type = "spawnItemCurrentRoom", item_id = "glass_vial" },
     { type = "spawnItemCurrentRoom", item_id = "initech_mug" },
     { type = "showMessage", text = """
-Following the directions, you aim and slowly squeeze the Arson-Aid trigger.
-The entire device catches fire. Panicking, you chuck it at the security
-supply locker...
-
-WHOOOOOMP! The locker, which you now realize may have been made from the solid
-magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking
-your eyebrows with it. Luckily, the crowbar that was stored inside only warped
-a bit, but it's still quite usable.
-""" },
-    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """
-PA Announcement: "Someone used an Arson-Aid to torch the security locker at the
-loading dock. An investigation is underway. Report anyone with scorched clothes
-or missing eyebrows to security."""" },
+Following the directions, you aim and slowly squeeze the Arson-Aid trigger. The entire device catches fire. Panicking, you chuck it at the security supply locker...\n\nWHOOOOOMP! The locker, which you now realize may have been made from the solid magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking your eyebrows with it. Luckily, the crowbar that was stored inside only warped a bit, but it's still quite usable.""" },
+    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """PA Announcement: "Someone used an Arson-Aid to torch the security locker at the loading dock. An investigation is underway. Report anyone with scorched clothes or missing eyebrows to security."""" },
 ]
 
 [[triggers]]
@@ -615,14 +509,8 @@ name = "Got Crowbar"
 only_once = true
 conditions = [{ type = "take", item_id = "crowbar" }]
 actions = [
-    { type = "showMessage", text = """
-You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?
-""" },
-    { type = "showMessage", text = """
-Then you wonder why you're thinking of Barney as a real person instead of a
-character in a game. And Gordon, for that matter.Wait, he was just fiction,
-right? Come to think of it, you feel a little unsure of reality, and it's
-worse the nearer you are to the building.""" },
+    { type = "showMessage", text = """You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?""" },
+    { type = "showMessage", text = """Then you wonder why you're thinking of Barney as a real person instead of a character in a game. And Gordon, for that matter.Wait, he was just fiction, right? Come to think of it, you feel a little unsure of reality, and it's worse the nearer you are to the building.""" },
     { type = "addFlag", flag = { type = "simple", name = "got-crowbar" } },
     { type = "awardPoints", amount = 4 },
 ]
@@ -665,9 +553,7 @@ conditions = [
 actions = [
     { type = "despawnItem", item_id = "dull_longsword" },
     { type = "spawnItemInInventory", item_id = "keen_longsword" },
-    { type = "showMessage", text = """
-In almost no time, you hone the Black Knight's sword to a keen edge.
-""" },
+    { type = "showMessage", text = """In almost no time, you hone the Black Knight's sword to a keen edge.""" },
     { type = "addFlag", flag = { type = "simple", name = "sword-sharpened" } },
     { type = "awardPoints", amount = 3 },
 ]
@@ -683,9 +569,7 @@ actions = [
     { type = "addFlag", flag = { type = "simple", name = "appeased-black-knight" } },
     { type = "awardPoints", amount = 5 },
     { type = "setNpcState", npc_id = "black_knight", state = "happy" },
-    { type = "npcSays", npc_id = "black_knight", quote = """
-Thank you, good Sir! For your kind deed, I swear on my sword that I shall
-not cut you to bits with it. And you may pass wherever you like.""" },
+    { type = "npcSays", npc_id = "black_knight", quote = """Thank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like.""" },
 ]
 
 [[triggers]]
@@ -697,9 +581,7 @@ conditions = [
     { type = "missingFlag", flag = "appeased_black_knight" },
 ]
 actions = [
-    { type = "showMessage", text = """
-The Black Knight dodges about the room, occasionally trying to kick you in the shin.
-""" },
+    { type = "showMessage", text = """The Black Knight dodges about the room, occasionally trying to kick you in the shin.""" },
     { type = "npcSaysRandom", npc_id = "black_knight" },
 ]
 
@@ -787,9 +669,9 @@ conditions = [
     { type = "withNpc", npc_id = "b_a_receptionist" },
     { type = "hasFlag", flag = "read-vogon-poetry" },
 ]
-actions = [{ type = "npcSays", npc_id = "b_a_receptionist", quote = """
-You look ill. You didn't read that poetry book, did you? That won't
-look good on your evaluation.""" }]
+actions = [
+    { type = "npcSays", npc_id = "b_a_receptionist", quote = """You look ill. You didn't read that poetry book, did you? That won't look good on your evaluation.""" },
+]
 
 # ------ EMH CURES VOGON POETRY NAUSEA  -------
 # player must have read the poetry before talking to EMH
@@ -820,10 +702,7 @@ conditions = [
     { type = "flagInProgress", flag = "hal-reboot" },
 ]
 actions = [
-    { type = "npcSays", npc_id = "emh", quote = """
-Ah -- I hoped I would catch you.Word is, you've seen HAL, or what remains of
-him. If you want to get him working again -- and I'm not sure I'd advise it --
-I may be able to get one of those memory modules for you.""" },
+    { type = "npcSays", npc_id = "emh", quote = """Ah -- I hoped I would catch you. Word is, you've seen HAL, or what remains of him. If you want to get him working again -- and I'm not sure I'd advise it -- I may be able to get one of those memory modules for you.""" },
     { type = "setNpcState", npc_id = "emh", state = { custom = "want-emitter" } },
     { type = "spawnItemInContainer", item_id = "broken_emitter", container_id = "lost_and_found_box" },
     { type = "addFlag", flag = { type = "sequence", name = "mobilize-emh", end = 3 } },
@@ -841,9 +720,9 @@ conditions = [
     { type = "withNpc", npc_id = "b_a_receptionist" },
     { type = "hasFlag", flag = "mobilize-emh#0" },
 ]
-actions = [{ type = "npcSays", npc_id = "b_a_receptionist", quote = """
-I hear the EMH lost his emitter again. One has been turned into the Lost and
-Found, but I'm not sure how much good it will do you. Or him.""" }]
+actions = [
+    { type = "npcSays", npc_id = "b_a_receptionist", quote = """I hear the EMH lost his emitter again. One has been turned into the Lost and Found, but I'm not sure how much good it will do you. Or him.""" },
+]
 
 # advance sequence to #1 when broken emitter obtained
 [[triggers]]
@@ -859,9 +738,9 @@ only_once = false
 conditions = [
     { type = "giveToNpc", item_id = "broken_emitter", npc_id = "emh" },
 ]
-actions = [{ type = "npcRefuseItem", npc_id = "emh", reason = """
-That's my mobile emitter all right, but it's broken. You'll need to find a way
-to repair it before I can help you with HAL.""" }]
+actions = [
+    { type = "npcRefuseItem", npc_id = "emh", reason = """That's my mobile emitter all right, but it's broken. You'll need to find a way to repair it before I can help you with HAL.""" },
+]
 
 # enable repair of the broken_emitter using the sonic_screwdriver's repair ability
 [[triggers]]
@@ -873,9 +752,7 @@ conditions = [
 actions = [
     { type = "despawnItem", item_id = "broken_emitter" },
     { type = "spawnItemInInventory", item_id = "working_emitter" },
-    { type = "showMessage", text = """
-After a few electric whirring noises and a pass or two of the sonic, the
-emitter lights up and reboots, passing all self-tests.""" },
+    { type = "showMessage", text = """After a few electric whirring noises and a pass or two of the sonic, the emitter lights up and reboots, passing all self-tests.""" },
 ]
 
 # advance sequence to #2 when broken emitter repaired (working one in inventory)
@@ -898,19 +775,10 @@ actions = [
     { type = "setNpcState", npc_id = "emh", state = "happy" },
     { type = "npcSays", npc_id = "emh", quote = """Looks like it's working properly! Let me take it for a spin.""" },
     { type = "showMessage", text = """The EMH flickers, then vanishes in a flash. He reappears a few moments later.""" },
-    { type = "npcSays", npc_id = "emh", quote = """
-All seems to be in order. As promised, I retrieved one of HAL's modules. I
-dropped it off in the observation room across the hall, but insert it at your
-own peril.""" },
+    { type = "npcSays", npc_id = "emh", quote = """All seems to be in order. As promised, I retrieved one of HAL's modules. I dropped it off in the observation room across the hall, but insert it at your own peril.""" },
     { type = "spawnItemInRoom", item_id = "hal_module_1", room_id = "observation-room" },
-    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """
-Heard overhead: "Will the E.M.H. please return to sick bay? There's been a
-yellow snow blinding incident."
-    """ },
-    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """
-Over the PA: E.M.H and sanitation, please report to the lunch room.
-Mr. Creosote ate a tiny, wafer thin mint again.
-    """ },
+    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """Heard overhead: "Will the E.M.H. please return to sick bay? There's been a yellow snow blinding incident." """ },
+    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """Over the PA: E.M.H and sanitation, please report to the lunch room. Mr. Creosote ate a tiny, wafer thin mint again.""" },
 ]
 
 # first time player encounters EMH after HAL is fully rebooted
@@ -923,9 +791,7 @@ conditions = [
 ]
 actions = [
     { type = "setNpcState", npc_id = "emh", state = "normal" },
-    { type = "npcSays", npc_id = "emh", quote = """
-Well, now you've done it. HAL is opeerational again. We'll surely regret it --
-or at least *you* will.""" },
+    { type = "npcSays", npc_id = "emh", quote = """Well, now you've done it. HAL is opeerational again. We'll surely regret it -- or at least *you* will.""" },
 ]
 
 
