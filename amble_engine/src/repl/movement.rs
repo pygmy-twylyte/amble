@@ -8,7 +8,7 @@ use crate::{
     AmbleWorld, Location, View, ViewItem, WorldObject,
     spinners::SpinnerType,
     style::GameStyle,
-    trigger::{check_triggers, TriggerCondition},
+    trigger::{TriggerCondition, check_triggers},
     view::ViewMode,
 };
 
@@ -71,7 +71,7 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
                 .get(&destination_id)
                 .ok_or_else(|| anyhow!("invalid move destination ({})", destination_id))?;
             info!("{} moved to {} ({})", player_name, new_room.name(), new_room.id());
-            view.push(ViewItem::ActionSuccess(travel_message));
+            view.push(ViewItem::TransitionMessage(travel_message));
             if !new_room.visited {
                 world.player.score = world.player.score.saturating_add(1);
                 new_room.show(world, view, Some(ViewMode::Verbose))?;
