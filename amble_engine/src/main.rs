@@ -10,6 +10,7 @@ use amble_engine::{AMBLE_VERSION, WorldObject, load_world, run_repl};
 
 use anyhow::{Context, Result};
 use colored::Colorize;
+use textwrap::{fill, termwidth};
 
 use log::info;
 
@@ -30,15 +31,26 @@ fn main() -> Result<()> {
         .expect("failed to flush stdout after clearing the screen");
     info!("Starting the game!");
 
-    println!("{:^80}", "AMBLE: AN ADVENTURE".bright_yellow().underline());
     println!(
-        "\nYou are {}.\n{}\n",
-        world.player.name().bold().bright_blue(),
-        world.player.description()
+        "{:^width$}",
+        "AMBLE: AN ADVENTURE".bright_yellow().underline(),
+        width = termwidth()
+    );
+    println!(
+        "{}",
+        fill(
+            format!(
+                "\nYou are {}: {}\n",
+                world.player.name().bold().blue(),
+                world.player.description()
+            )
+            .as_str(),
+            termwidth()
+        )
     );
 
-    let introduction = fs::read_to_string("amble_engine/data/intro.txt")?;
-    println!("{}", introduction.description_style());
+    let introduction = include_str!("../data/intro.txt");
+    println!("{}", fill(introduction, termwidth()).description_style());
 
     run_repl(&mut world)
 }
