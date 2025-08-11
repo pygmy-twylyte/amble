@@ -1,6 +1,10 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
+- add logging for goals command
+- look_at - "You'll have to open it first" -> "You'll have to open it to see what's inside."
+- shrink mailbox notice width to 2/3 or so
+- point award spinners, maybe different for award sizeds
 - tests (meh)
 - trigger action to change the .read field on an item to update displays etc
 - mechanism like window or portal -- where one can look outside the current room into another?
