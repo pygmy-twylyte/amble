@@ -12,6 +12,7 @@ use crate::player::{Flag, Player};
 use crate::room::Exit;
 use crate::spinners::SpinnerType;
 use crate::style::GameStyle;
+use crate::view::{View, ViewItem};
 use crate::world::{AmbleWorld, Location, WorldObject};
 
 /// Types of actions that can be fired by a `Trigger` based on a set of `TriggerConditions`.
@@ -49,19 +50,19 @@ pub enum TriggerAction {
 /// # Errors
 /// - on failed triggered actions due to bad uuids
 /// fires the matching trigger action by calling its handler function
-pub fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result<()> {
+pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &TriggerAction) -> Result<()> {
     match action {
         TriggerAction::AddSpinnerWedge { spinner, text, width } => {
             add_spinner_wedge(&mut world.spinners, *spinner, text, *width)?;
         },
         TriggerAction::ResetFlag(flag_name) => reset_flag(&mut world.player, flag_name),
         TriggerAction::AdvanceFlag(flag_name) => advance_flag(&mut world.player, flag_name),
-        TriggerAction::SpinnerMessage { spinner } => spinner_message(world, *spinner)?,
+        TriggerAction::SpinnerMessage { spinner } => spinner_message(world, view, *spinner)?,
         TriggerAction::RestrictItem(item_id) => restrict_item(world, item_id)?,
-        TriggerAction::NpcRefuseItem { npc_id, reason } => npc_refuse_item(world, *npc_id, reason)?,
-        TriggerAction::NpcSaysRandom { npc_id } => npc_says_random(world, npc_id)?,
-        TriggerAction::NpcSays { npc_id, quote } => npc_says(world, npc_id, quote)?,
-        TriggerAction::DenyRead(reason) => deny_read(reason),
+        TriggerAction::NpcRefuseItem { npc_id, reason } => npc_refuse_item(world, view, *npc_id, reason)?,
+        TriggerAction::NpcSaysRandom { npc_id } => npc_says_random(world, view, npc_id)?,
+        TriggerAction::NpcSays { npc_id, quote } => npc_says(world, view, npc_id, quote)?,
+        TriggerAction::DenyRead(reason) => deny_read(view, reason),
         TriggerAction::DespawnItem { item_id } => despawn_item(world, item_id)?,
         TriggerAction::GiveItemToPlayer { npc_id, item_id } => {
             give_to_player(world, npc_id, item_id)?;
@@ -74,7 +75,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result
             exit_to,
         } => reveal_exit(world, direction, exit_from, exit_to)?,
         TriggerAction::SetNPCState { npc_id, state } => set_npc_state(world, npc_id, state)?,
-        TriggerAction::ShowMessage(text) => show_message(text),
+        TriggerAction::ShowMessage(text) => show_message(view, text),
         TriggerAction::SpawnItemInContainer { item_id, container_id } => {
             spawn_item_in_container(world, item_id, container_id)?;
         },
@@ -96,14 +97,22 @@ pub fn dispatch_action(world: &mut AmbleWorld, action: &TriggerAction) -> Result
 /// Make NPC refuse a specific item for a specific reason.
 /// # Errors
 ///
-pub fn npc_refuse_item(world: &mut AmbleWorld, npc_id: Uuid, reason: &str) -> Result<()> {
-    npc_says(world, &npc_id, reason)?;
+pub fn npc_refuse_item(
+    world: &mut AmbleWorld,
+    view: &mut View,
+    npc_id: Uuid,
+    reason: &str,
+) -> Result<()> {
+    npc_says(world, view, &npc_id, reason)?;
     let npc_name = world
         .npcs
         .get(&npc_id)
         .with_context(|| "looking up NPC {npc_id} during item refusal")?
         .name();
-    println!("{} returns it to you.", npc_name.npc_style());
+    view.push(ViewItem::TriggeredEvent(format!(
+        "{} returns it to you.",
+        npc_name.npc_style()
+    )));
     Ok(())
 }
 
@@ -141,11 +150,15 @@ pub fn advance_flag(player: &mut Player, flag_name: &str) {
 ///
 /// # Errors
 /// - if requested spinner type isn't found
-pub fn spinner_message(world: &mut AmbleWorld, spinner_type: SpinnerType) -> Result<()> {
+pub fn spinner_message(
+    world: &mut AmbleWorld,
+    view: &mut View,
+    spinner_type: SpinnerType,
+) -> Result<()> {
     if let Some(spinner) = world.spinners.get(&spinner_type) {
         let msg = spinner.spin().unwrap_or_default();
         if !msg.is_empty() {
-            println!("\n{} {}", "❉".ambient_icon_style(), msg.ambient_trig_style());
+            view.push(ViewItem::AmbientEvent(format!("{}", msg.ambient_trig_style())));
         }
         info!("└─ action: SpinnerMessage(\"{msg}\")");
         Ok(())
@@ -180,7 +193,11 @@ pub fn restrict_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
 ///
 /// # Errors
 /// - on failed NPC or `NpcIgnore` spinner lookups
-pub fn npc_says_random(world: &AmbleWorld, npc_id: &Uuid) -> Result<()> {
+pub fn npc_says_random(
+    world: &AmbleWorld,
+    view: &mut View,
+    npc_id: &Uuid,
+) -> Result<()> {
     let npc = world
         .npcs
         .get(npc_id)
@@ -190,7 +207,10 @@ pub fn npc_says_random(world: &AmbleWorld, npc_id: &Uuid) -> Result<()> {
         .get(&SpinnerType::NpcIgnore)
         .with_context(|| "failed lookup of NpcIgnore spinner".to_string())?;
     let line = npc.random_dialogue(ignore_spinner);
-    println!("{}:\n{line}", npc.name().npc_style());
+    view.push(ViewItem::NpcSpeech {
+        speaker: npc.name().to_string(),
+        quote: line.clone(),
+    });
     info!("└─ action: NpcSays({}, \"{line}\")", npc.name());
     Ok(())
 }
@@ -198,13 +218,21 @@ pub fn npc_says_random(world: &AmbleWorld, npc_id: &Uuid) -> Result<()> {
 /// Trigger specific dialogue from an NPC
 /// # Errors
 /// - on failed NPC uuid lookup
-pub fn npc_says(world: &AmbleWorld, npc_id: &Uuid, quote: &str) -> Result<()> {
+pub fn npc_says(
+    world: &AmbleWorld,
+    view: &mut View,
+    npc_id: &Uuid,
+    quote: &str,
+) -> Result<()> {
     let npc_name = world
         .npcs
         .get(npc_id)
         .with_context(|| format!("action NpcSays({npc_id},_): npc not found"))?
         .name();
-    println!("{}:\n{quote}", npc_name.npc_style());
+    view.push(ViewItem::NpcSpeech {
+        speaker: npc_name.to_string(),
+        quote: quote.to_string(),
+    });
     info!("└─ action: NpcSays({npc_name}, \"{quote}\")");
     Ok(())
 }
@@ -392,8 +420,8 @@ pub fn spawn_item_in_container(world: &mut AmbleWorld, item_id: &Uuid, container
 }
 
 /// Show a message to the player.
-pub fn show_message(text: &String) {
-    println!("{} {}", "✦".trig_icon_style(), text.triggered_style());
+pub fn show_message(view: &mut View, text: &String) {
+    view.push(ViewItem::TriggeredEvent(format!("{}", text.triggered_style())));
     info!(
         "└─ action: ShowMessage(\"{}...\")",
         &text[..std::cmp::min(text.len(), 50)]
@@ -519,8 +547,8 @@ pub fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
 }
 
 /// Notify player of the reason a Read(item) command was denied
-pub fn deny_read(reason: &String) {
-    println!("{}", reason.denied_style());
+pub fn deny_read(view: &mut View, reason: &String) {
+    view.push(ViewItem::ActionFailure(format!("{}", reason.denied_style())));
     info!("└─ action: DenyRead(\"{reason}\")");
 }
 

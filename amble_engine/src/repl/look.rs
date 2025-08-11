@@ -9,7 +9,7 @@ use crate::{
     item::ItemAbility,
     repl::{entity_not_found, find_world_object},
     style::GameStyle,
-    trigger::{TriggerAction, TriggerCondition, check_triggers},
+    trigger::{check_triggers, TriggerAction, TriggerCondition},
     view::{ContentLine, ViewMode},
     world::nearby_reachable_items,
 };
@@ -23,7 +23,7 @@ pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let room = world.player_room_ref()?;
     room.show(world, view, Some(ViewMode::Verbose))?;
     info!("{} looked around {} ({})", world.player.name, room.name, room.id);
-    let _fired = check_triggers(world, &[]);
+    let _fired = check_triggers(world, view, &[]);
     Ok(())
 }
 
@@ -45,9 +45,9 @@ pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> 
             info!("{} looked at {} ({})", world.player.name(), npc.name(), npc.id());
             npc.show(world, view);
         }
-        let _fired = check_triggers(world, &[]);
+        let _fired = check_triggers(world, view, &[]);
     } else {
-        entity_not_found(world, thing);
+        entity_not_found(world, view, thing);
     }
     Ok(())
 }
@@ -101,13 +101,14 @@ pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
             None
         }
     } else {
-        entity_not_found(world, pattern);
+        entity_not_found(world, view, pattern);
         return Ok(());
     };
     // check triggers for any DenyRead action that may have fired, and show the text if not
     if let Some(item_id) = found_item_id {
         let fired = check_triggers(
             world,
+            view,
             &[TriggerCondition::UseItem {
                 item_id,
                 ability: ItemAbility::Read,

@@ -3,7 +3,12 @@
 //! Describes possible commands used during gameplay.
 use variantly::Variantly;
 
-use crate::{dev_command::parse_dev_command, item::ItemInteractionType, style::GameStyle};
+use crate::{
+    dev_command::parse_dev_command,
+    item::ItemInteractionType,
+    style::GameStyle,
+    view::{View, ViewItem},
+};
 
 /// Commands that can be executed by the player.
 #[derive(Debug, Clone, PartialEq, Variantly)]
@@ -60,12 +65,12 @@ pub enum Command {
 ///
 /// The parser is case-insensitive; the input is converted to lowercase before
 /// being tokenized and matched against known commands.
-pub fn parse_command(input: &str) -> Command {
+pub fn parse_command(input: &str, view: &mut View) -> Command {
     // normalize user input to lowercase so commands are case-insensitive
     let lc_input = input.to_lowercase();
 
     // check for and parse developer commands if available
-    if let Some(command) = parse_dev_command(input) {
+    if let Some(command) = parse_dev_command(input, view) {
         return command;
     }
 
@@ -105,7 +110,10 @@ pub fn parse_command(input: &str) -> Command {
         ["save", gamefile] => Command::Save((*gamefile).to_string()),
         [verb, target, "with" | "using", tool] => parse_interaction_type(verb).map_or_else(
             || {
-                println!("I don't understand {} in this context.", (*verb).error_style());
+                view.push(ViewItem::Error(format!(
+                    "I don't understand {} in this context.",
+                    (*verb).error_style()
+                )));
                 Command::Unknown
             },
             |interaction| Command::UseItemOn {
@@ -143,12 +151,18 @@ pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
 mod tests {
     use super::*;
     use crate::command::Command;
+    use crate::View;
+
+    fn pc(input: &str) -> Command {
+        let mut view = View::new();
+        parse_command(input, &mut view)
+    }
 
     #[test]
     fn parse_goals_command() {
         let test_inputs = &["goals", "what now", "what next"];
         for input in test_inputs {
-            assert_eq!(parse_command(input), Command::Goals);
+            assert_eq!(pc(input), Command::Goals);
         }
     }
 
@@ -156,7 +170,7 @@ mod tests {
     fn parse_give_to_npc_command() {
         let test_input = "give item_name to npc_name";
         assert_eq!(
-            parse_command(test_input),
+            pc(test_input),
             Command::GiveToNpc {
                 item: "item_name".into(),
                 npc: "npc_name".into(),
@@ -168,7 +182,7 @@ mod tests {
     fn parse_look_at_command() {
         let test_inputs = &["look at foo", "look in foo"];
         for input in test_inputs {
-            assert_eq!(parse_command(input), Command::LookAt("foo".into()));
+            assert_eq!(pc(input), Command::LookAt("foo".into()));
         }
     }
 
@@ -187,14 +201,14 @@ mod tests {
             "climb through x",
         ];
         for input in test_inputs {
-            assert_eq!(parse_command(input), Command::MoveTo("x".into()))
+            assert_eq!(pc(input), Command::MoveTo("x".into()))
         }
     }
 
     #[test]
     fn parse_take_command() {
         let input = "take x";
-        assert_eq!(parse_command(input), Command::Take("x".into()))
+        assert_eq!(pc(input), Command::Take("x".into()))
     }
 
     #[test]
@@ -207,7 +221,7 @@ mod tests {
         ];
         for input in test_inputs {
             assert_eq!(
-                parse_command(input),
+                pc(input),
                 Command::TakeFrom {
                     item: "foo".into(),
                     container: "bar".into()
@@ -221,7 +235,7 @@ mod tests {
         let test_inputs = &["put item in chest", "place item in chest"];
         test_inputs.iter().for_each(|input| {
             assert_eq!(
-                parse_command(input),
+                pc(input),
                 Command::PutIn {
                     item: "item".into(),
                     container: "chest".into()
@@ -232,7 +246,7 @@ mod tests {
 
     #[test]
     fn parse_open_command() {
-        assert_eq!(parse_command("open box"), Command::Open("box".into()))
+        assert_eq!(pc("open box"), Command::Open("box".into()))
     }
 
     #[test]
@@ -240,17 +254,17 @@ mod tests {
         let inputs = &["close box", "shut box"];
         inputs
             .iter()
-            .for_each(|input| assert_eq!(parse_command(input), Command::Close("box".into())))
+            .for_each(|input| assert_eq!(pc(input), Command::Close("box".into())))
     }
 
     #[test]
     fn parse_lock_command() {
-        assert_eq!(parse_command("unlock box"), Command::UnlockItem("box".into()))
+        assert_eq!(pc("unlock box"), Command::UnlockItem("box".into()))
     }
 
     #[test]
     fn parse_unlock_command() {
-        assert_eq!(parse_command("lock box"), Command::LockItem("box".into()))
+        assert_eq!(pc("lock box"), Command::LockItem("box".into()))
     }
 
     #[test]
@@ -258,12 +272,12 @@ mod tests {
         let inputs = &["inventory", "inv"];
         inputs
             .iter()
-            .for_each(|input| assert_eq!(parse_command(input), Command::Inventory));
+            .for_each(|input| assert_eq!(pc(input), Command::Inventory));
     }
 
     #[test]
     fn parse_quit_command() {
-        assert_eq!(parse_command("quit"), Command::Quit);
+        assert_eq!(pc("quit"), Command::Quit);
     }
 
     #[test]
@@ -271,7 +285,7 @@ mod tests {
         let inputs = &["drop x", "leave x", "put x down"];
         inputs
             .iter()
-            .for_each(|input| assert_eq!(parse_command(input), Command::Drop("x".into())));
+            .for_each(|input| assert_eq!(pc(input), Command::Drop("x".into())));
     }
 
     #[test]
@@ -279,7 +293,7 @@ mod tests {
         let inputs = &["talk to npc", "talk with npc", "speak to npc", "speak with npc"];
         inputs
             .iter()
-            .for_each(|input| assert_eq!(parse_command(input), Command::TalkTo("npc".into())));
+            .for_each(|input| assert_eq!(pc(input), Command::TalkTo("npc".into())));
     }
 
     #[test]
@@ -287,27 +301,27 @@ mod tests {
         let inputs = &["turn x on", "switch x on", "start x", "trigger x"];
         inputs
             .iter()
-            .for_each(|input| assert_eq!(parse_command(input), Command::TurnOn("x".into())));
+            .for_each(|input| assert_eq!(pc(input), Command::TurnOn("x".into())));
     }
 
     #[test]
     fn parse_help_command() {
-        assert_eq!(parse_command("help"), Command::Help);
+        assert_eq!(pc("help"), Command::Help);
     }
 
     #[test]
     fn parse_save_command() {
-        assert_eq!(parse_command("save save_name"), Command::Save("save_name".into()));
+        assert_eq!(pc("save save_name"), Command::Save("save_name".into()));
     }
 
     #[test]
     fn parse_load_command() {
-        assert_eq!(parse_command("load save_name"), Command::Load("save_name".into()));
+        assert_eq!(pc("load save_name"), Command::Load("save_name".into()));
     }
 
     #[test]
     fn parse_read_command() {
-        assert_eq!(parse_command("read item"), Command::Read("item".into()));
+        assert_eq!(pc("read item"), Command::Read("item".into()));
     }
 
     #[test]
@@ -396,7 +410,7 @@ mod tests {
         ];
 
         for (input, answer) in answer_key {
-            assert_eq!(parse_command(input), *answer);
+            assert_eq!(pc(input), *answer);
         }
     }
 }

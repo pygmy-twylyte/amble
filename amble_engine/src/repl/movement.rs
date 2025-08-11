@@ -8,7 +8,7 @@ use crate::{
     AmbleWorld, Location, View, ViewItem, WorldObject,
     spinners::SpinnerType,
     style::GameStyle,
-    trigger::{TriggerCondition, check_triggers},
+    trigger::{check_triggers, TriggerCondition},
     view::ViewMode,
 };
 
@@ -83,6 +83,7 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
             }
             check_triggers(
                 world,
+                view,
                 &[
                     TriggerCondition::Leave(leaving_id),
                     TriggerCondition::Enter(destination_id),

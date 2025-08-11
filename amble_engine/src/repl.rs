@@ -20,13 +20,13 @@ pub use movement::*;
 pub use npc::*;
 pub use system::*;
 
-use crate::command::{Command, parse_command};
+use crate::command::{parse_command, Command};
 use crate::npc::Npc;
 use crate::spinners::SpinnerType;
 use crate::style::GameStyle;
 use crate::trigger::TriggerCondition;
 use crate::world::AmbleWorld;
-use crate::{Item, View, WorldObject};
+use crate::{Item, View, ViewItem, WorldObject};
 
 use anyhow::Result;
 use colored::Colorize;
@@ -59,12 +59,12 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             .expect("failed to flush stdout before reading input");
         let mut input = String::new();
         if io::stdin().read_line(&mut input).is_err() {
-            println!("{}", "Failed to read input. Try again.".red());
+            view.push(ViewItem::Error("Failed to read input. Try again.".red().to_string()));
+            view.flush();
             continue;
         }
-        println!();
 
-        match parse_command(&input) {
+        match parse_command(&input, &mut view) {
             Command::Goals => goals_handler(world, &mut view),
             Command::Help => help_handler(&mut view),
             Command::Quit => {
@@ -86,12 +86,12 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             Command::UnlockItem(thing) => unlock_handler(world, &mut view, &thing)?,
             Command::Inventory => inv_handler(world, &mut view)?,
             Command::Unknown => {
-                println!(
-                    "{}",
+                view.push(ViewItem::Error(
                     world
                         .spin_spinner(SpinnerType::UnrecognizedCommand, "Didn't quite catch that?")
                         .italic()
-                );
+                        .to_string(),
+                ));
             },
             Command::TalkTo(npc_name) => talk_to_handler(world, &mut view, &npc_name)?,
             Command::Teleport(room_symbol) => dev_teleport_handler(world, &mut view, &room_symbol),
@@ -109,7 +109,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             Command::SetFlag(flag_name) => dev_set_flag_handler(world, &mut view, &flag_name),
             Command::StartSeq { seq_name, end } => dev_start_seq_handler(world, &mut view, &seq_name, &end),
         }
-        check_ambient_triggers(world)?;
+        check_ambient_triggers(world, &mut view)?;
         view.flush();
     }
     Ok(())
@@ -119,7 +119,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
 ///
 /// # Errors
 /// - on failed lookup of player's location
-pub fn check_ambient_triggers(world: &mut AmbleWorld) -> Result<()> {
+pub fn check_ambient_triggers(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let current_room_id = world.player_room_ref()?.id();
     for trigger in &mut world.triggers {
         if trigger.fired && trigger.only_once {
@@ -133,7 +133,7 @@ pub fn check_ambient_triggers(world: &mut AmbleWorld) -> Result<()> {
                     let message = world.spinners.get(spinner).and_then(Spinner::spin).unwrap_or_default();
                     if !message.is_empty() {
                         trigger.fired = true;
-                        println!("\n{} {}", "❉".ambient_icon_style(), message.ambient_trig_style());
+                        view.push(ViewItem::AmbientEvent(format!("{}", message.ambient_trig_style())));
                     }
                 }
             }
@@ -174,10 +174,10 @@ pub fn find_world_object<'a>(
 }
 
 /// Feedback to player if an entity search comes up empty
-fn entity_not_found(world: &AmbleWorld, search_text: &str) {
-    println!(
+fn entity_not_found(world: &AmbleWorld, view: &mut View, search_text: &str) {
+    view.push(ViewItem::Error(format!(
         "\"{}\"? {}",
         search_text.error_style(),
         world.spin_spinner(SpinnerType::EntityNotFound, "What's that?")
-    );
+    )));
 }

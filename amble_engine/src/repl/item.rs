@@ -78,6 +78,7 @@ pub fn use_item_on_handler(
     let sent_tool_id = tool.id();
     let fired = check_triggers(
         world,
+        view,
         &[TriggerCondition::UseItemOnItem {
             interaction,
             target_id: target.id(),
@@ -113,6 +114,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
                 let sent_id = item.id();
                 let fired_triggers = check_triggers(
                     world,
+                    view,
                     &[TriggerCondition::UseItem {
                         item_id: sent_id,
                         ability: ItemAbility::TurnOn,
@@ -149,7 +151,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
             )));
         }
     } else {
-        entity_not_found(world, item_pattern);
+        entity_not_found(world, view, item_pattern);
     }
     Ok(())
 }
@@ -172,7 +174,7 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                 return Ok(());
             }
         } else {
-            entity_not_found(world, pattern);
+            entity_not_found(world, view, pattern);
             return Ok(());
         };
 
@@ -203,7 +205,7 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                     target_item.name().item_style()
                 )));
                 info!("{} opened the {} ({})", world.player.name(), name, container_id,);
-                check_triggers(world, &[TriggerCondition::Open(container_id)])?;
+                check_triggers(world, view, &[TriggerCondition::Open(container_id)])?;
             },
         }
     }
@@ -226,7 +228,7 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
             return Ok(());
         }
     } else {
-        entity_not_found(world, pattern);
+        entity_not_found(world, view, pattern);
         return Ok(());
     };
 
@@ -272,7 +274,7 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
             return Ok(());
         }
     } else {
-        entity_not_found(world, pattern);
+        entity_not_found(world, view, pattern);
         return Ok(());
     };
 
@@ -319,7 +321,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
                 return Ok(());
             }
         } else {
-            entity_not_found(world, pattern);
+            entity_not_found(world, view, pattern);
             return Ok(());
         };
 
@@ -361,7 +363,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
                         container_name,
                         container_id
                     );
-                    check_triggers(world, &[TriggerCondition::Unlock(container_id)])?;
+                    check_triggers(world, view, &[TriggerCondition::Unlock(container_id)])?;
                 } else {
                     view.push(ViewItem::ActionFailure(format!(
                         "You don't have anything that can unlock the {}.",

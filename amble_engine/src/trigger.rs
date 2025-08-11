@@ -9,7 +9,7 @@ pub mod condition;
 pub use action::*;
 pub use condition::*;
 
-use crate::AmbleWorld;
+use crate::{AmbleWorld, View};
 use anyhow::Result;
 
 use log::info;
@@ -38,7 +38,11 @@ where
 ///
 /// # Errors
 /// - on any failed uuid lookup during trigger dispatch
-pub fn check_triggers<'a>(world: &'a mut AmbleWorld, events: &[TriggerCondition]) -> Result<Vec<&'a Trigger>> {
+pub fn check_triggers<'a>(
+    world: &'a mut AmbleWorld,
+    view: &mut View,
+    events: &[TriggerCondition],
+) -> Result<Vec<&'a Trigger>> {
     // collect map of indices to triggers that should fire now
     let to_fire: Vec<_> = world
         .triggers
@@ -63,7 +67,7 @@ pub fn check_triggers<'a>(world: &'a mut AmbleWorld, events: &[TriggerCondition]
 
         let actions = trigger.actions.clone();
         for action in actions {
-            dispatch_action(world, &action)?;
+            dispatch_action(world, view, &action)?;
         }
     }
 
@@ -119,6 +123,7 @@ mod tests {
     #[test]
     fn check_triggers_moves_player_and_marks_trigger() {
         let (mut world, start_id, dest_id) = build_test_world();
+        let mut view = View::new();
         let trigger = Trigger {
             name: "move".into(),
             conditions: vec![TriggerCondition::Enter(start_id)],
@@ -128,7 +133,7 @@ mod tests {
         };
         world.triggers.push(trigger);
         let events = vec![TriggerCondition::Enter(start_id)];
-        let fired = check_triggers(&mut world, &events).expect("check_triggers failed");
+        let fired = check_triggers(&mut world, &mut view, &events).expect("check_triggers failed");
         assert_eq!(fired.len(), 1);
         assert!(triggers_contain_condition(
             &fired,
