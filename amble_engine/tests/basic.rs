@@ -4,8 +4,8 @@ use amble_engine as ae;
 
 #[test]
 fn test_command_parse() {
-    use ae::command::*;
     use ae::View;
+    use ae::command::*;
     let mut view = View::new();
     assert!(matches!(parse_command("look", &mut view), Command::Look));
     assert_eq!(parse_interaction_type("burn"), Some(item::ItemInteractionType::Burn));
@@ -137,7 +137,8 @@ fn test_style_item() {
 #[test]
 fn test_trigger_award_points() {
     let mut world = world::AmbleWorld::new_empty();
-    trigger::award_points(&mut world, 5);
+    let mut view = View::new();
+    trigger::award_points(&mut world, &mut view, 5);
     assert_eq!(world.player.score, 6); // default 1 + 5
 }
 
