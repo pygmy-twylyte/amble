@@ -89,7 +89,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
         TriggerAction::LockExit { from_room, direction } => lock_exit(world, from_room, direction)?,
         TriggerAction::AddFlag(flag) => add_flag(world, flag),
         TriggerAction::RemoveFlag(flag) => remove_flag(world, flag),
-        TriggerAction::AwardPoints(amount) => award_points(world, *amount),
+        TriggerAction::AwardPoints(amount) => award_points(world, view, *amount),
     }
     Ok(())
 }
@@ -97,12 +97,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
 /// Make NPC refuse a specific item for a specific reason.
 /// # Errors
 ///
-pub fn npc_refuse_item(
-    world: &mut AmbleWorld,
-    view: &mut View,
-    npc_id: Uuid,
-    reason: &str,
-) -> Result<()> {
+pub fn npc_refuse_item(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, reason: &str) -> Result<()> {
     npc_says(world, view, &npc_id, reason)?;
     let npc_name = world
         .npcs
@@ -150,11 +145,7 @@ pub fn advance_flag(player: &mut Player, flag_name: &str) {
 ///
 /// # Errors
 /// - if requested spinner type isn't found
-pub fn spinner_message(
-    world: &mut AmbleWorld,
-    view: &mut View,
-    spinner_type: SpinnerType,
-) -> Result<()> {
+pub fn spinner_message(world: &mut AmbleWorld, view: &mut View, spinner_type: SpinnerType) -> Result<()> {
     if let Some(spinner) = world.spinners.get(&spinner_type) {
         let msg = spinner.spin().unwrap_or_default();
         if !msg.is_empty() {
@@ -193,11 +184,7 @@ pub fn restrict_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
 ///
 /// # Errors
 /// - on failed NPC or `NpcIgnore` spinner lookups
-pub fn npc_says_random(
-    world: &AmbleWorld,
-    view: &mut View,
-    npc_id: &Uuid,
-) -> Result<()> {
+pub fn npc_says_random(world: &AmbleWorld, view: &mut View, npc_id: &Uuid) -> Result<()> {
     let npc = world
         .npcs
         .get(npc_id)
@@ -218,12 +205,7 @@ pub fn npc_says_random(
 /// Trigger specific dialogue from an NPC
 /// # Errors
 /// - on failed NPC uuid lookup
-pub fn npc_says(
-    world: &AmbleWorld,
-    view: &mut View,
-    npc_id: &Uuid,
-    quote: &str,
-) -> Result<()> {
+pub fn npc_says(world: &AmbleWorld, view: &mut View, npc_id: &Uuid, quote: &str) -> Result<()> {
     let npc_name = world
         .npcs
         .get(npc_id)
@@ -238,9 +220,10 @@ pub fn npc_says(
 }
 
 /// Award some points to the player (or penalize if amount < 0)
-pub fn award_points(world: &mut AmbleWorld, amount: isize) {
+pub fn award_points(world: &mut AmbleWorld, view: &mut View, amount: isize) {
     world.player.score = world.player.score.saturating_add_signed(amount);
     info!("└─ action: AwardPoints({amount})");
+    view.push(ViewItem::PointsAwarded(amount));
 }
 
 /// Adds a status flag to the player
@@ -680,9 +663,10 @@ mod tests {
     #[test]
     fn award_points_modifies_player_score() {
         let (mut world, _, _) = build_test_world();
-        award_points(&mut world, 5);
+        let mut view = View::new();
+        award_points(&mut world, &mut view, 5);
         assert_eq!(world.player.score, 6);
-        award_points(&mut world, -3);
+        award_points(&mut world, &mut view, -3);
         assert_eq!(world.player.score, 3);
     }
 
