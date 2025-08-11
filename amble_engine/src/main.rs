@@ -14,7 +14,6 @@ use textwrap::{fill, termwidth};
 
 use log::info;
 
-use std::fs;
 use std::io::Write;
 
 fn main() -> Result<()> {
