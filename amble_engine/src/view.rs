@@ -189,7 +189,7 @@ impl View {
             .iter()
             .filter(|i| matches!(i, ViewItem::CompleteGoal { .. }))
             .collect();
-        if !active.is_empty() | !complete.is_empty() {
+        if !active.is_empty() || !complete.is_empty() {
             println!("{}:", "Active Goals".subheading_style());
             if active.is_empty() {
                 println!("   {}", "Nothing here - explore more!".italic().dimmed());
