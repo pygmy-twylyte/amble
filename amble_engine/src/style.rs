@@ -5,23 +5,25 @@
 //! `String` are provided so string literals can be styled directly.
 
 use colored::{ColoredString, Colorize};
-use textwrap::Options;
+use textwrap::{Options, wrap_algorithms::Penalties};
 
 /// Returns textwrap::ptions for an indented, wrapped block of text.
-pub fn indented_block(display_width: usize) -> Options<'static> {
+pub fn indented_block() -> Options<'static> {
     let indent = "    ";
-    Options::new(display_width)
+    Options::with_termwidth()
         .initial_indent(indent)
         .subsequent_indent(indent)
+        .wrap_algorithm(textwrap::WrapAlgorithm::OptimalFit(Penalties::new()))
 }
 
 /// Returns textwrap::Options for an unindented, wrapped block of text.
-pub fn normal_block(display_width: usize) -> Options<'static> {
-    Options::new(display_width)
+pub fn normal_block() -> Options<'static> {
+    Options::with_termwidth().wrap_algorithm(textwrap::WrapAlgorithm::OptimalFit(Penalties::new()))
 }
 
 /// Convenience trait for applying color and style to text output.
 pub trait GameStyle {
+    fn transition_style(&self) -> ColoredString;
     fn item_style(&self) -> ColoredString;
     fn item_text_style(&self) -> ColoredString;
     fn npc_style(&self) -> ColoredString;
@@ -47,6 +49,9 @@ pub trait GameStyle {
 }
 
 impl GameStyle for &str {
+    fn transition_style(&self) -> ColoredString {
+        self.italic().truecolor(40, 210, 160)
+    }
     fn item_style(&self) -> ColoredString {
         self.truecolor(220, 180, 40)
     }
@@ -99,7 +104,7 @@ impl GameStyle for &str {
         self.truecolor(220, 40, 220)
     }
     fn goal_complete_style(&self) -> ColoredString {
-        self.truecolor(220, 40, 220).strikethrough()
+        self.truecolor(110, 20, 110).strikethrough()
     }
     fn denied_style(&self) -> ColoredString {
         self.italic().truecolor(230, 30, 30)
@@ -187,5 +192,9 @@ impl GameStyle for String {
 
     fn npc_quote_style(&self) -> ColoredString {
         self.as_str().npc_quote_style()
+    }
+
+    fn transition_style(&self) -> ColoredString {
+        self.as_str().transition_style()
     }
 }
