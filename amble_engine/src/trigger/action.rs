@@ -416,6 +416,9 @@ pub fn show_message(view: &mut View, text: &String) {
 /// - on failed npc lookup
 pub fn set_npc_state(world: &mut AmbleWorld, npc_id: &Uuid, state: &NpcState) -> Result<()> {
     if let Some(npc) = world.npcs.get_mut(npc_id) {
+        if npc.state == *state {
+            return Ok(()); // no-op if NPC already in state
+        }
         npc.state = state.clone();
         info!("└─ action: SetNpcState({npc_id}, {state:?})");
         Ok(())

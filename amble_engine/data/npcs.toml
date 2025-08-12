@@ -64,7 +64,8 @@ Room = "b-a-office"
     "(She simply ignores you.)",
     "(She continues doing her job -- which appears to be pointedly ignoring anyone without an invitation.)",
     "(She carefully realigns the models of Portal turrets on her desk so they are aiming at you.)",
-    "(Exasperated sigh.) Do I show up at your home and start making demands without an invitation? No. Now please wait to the side.)"]
+    "(Exasperated sigh.) Do I show up at your home and start making demands without an invitation? No. Now please wait to the side.)",
+]
 
 "happy" = [
     """Terribly sorry to report that we are in a bit of trouble here today. The last candidate was inconsiderate enough to take the elevator access card into the poetry panic room just before he melted, and we can't retrieve it.""",
@@ -113,7 +114,7 @@ state = "normal"
 id = "hal_9000"
 name = "HAL-9000"
 location = { Room = "monolith-room" }
-description = """An interface to the HAL-9000 system, including a camera, speaker, an amber CRT monitor, and a couple of 8\" floppy drives in a bank set against the far wall."""
+description = """A superintelligent AI whose track record is flawless, but whose motives are... sketchy."""
 state = { custom = "suspend" }
 
 [npcs.dialogue]
