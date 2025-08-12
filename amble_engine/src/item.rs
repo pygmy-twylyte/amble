@@ -191,7 +191,7 @@ impl Item {
                     "open".bold().green()
                 };
                 view.push(ViewItem::ActionFailure(format!(
-                    "You'll have to {action} it first."
+                    "You must {action} it to see what's inside."
                 )));
             }
         }

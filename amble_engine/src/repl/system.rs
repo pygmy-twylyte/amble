@@ -107,6 +107,8 @@ pub fn goals_handler(world: &AmbleWorld, view: &mut View) {
             description: goal.description.clone(),
         })
         .for_each(|goal_item| view.push(goal_item));
+
+    info!("{} checked goals status.", world.player.name());
 }
 
 /// Returns a list of game `Goals`, filtered by status

@@ -1,20 +1,27 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
-- add logging for goals command
-- look_at - "You'll have to open it first" -> "You'll have to open it to see what's inside."
-- shrink mailbox notice width to 2/3 or so
-- point award spinners, maybe different for award sizeds
+- do something about horrible help display
+- add a turn counter -- can be used to create delayed triggers, auto-save
+- add quick funny responses to things like "yell" or "cry"
 - tests (meh)
+- point award spinners, maybe different for award sizes (or add a "reason" field.)
 - trigger action to change the .read field on an item to update displays etc
 - mechanism like window or portal -- where one can look outside the current room into another?
+- NPC movement: will need for CMOT, Husky
 
 ## FIXITs from runthroughs / CONTENT additions
-- plaque 2 in snowfield or camp, encased in ice, can be removed by melting or breaking the ice to read it
+- add messaging to player with applied status effects and relief (status:nausea)
+- VIP bathroom overlay -- poem book on back of toilet until taken.
+- set goal: when portal gun opened "Find a Power Source"; when charged_battery obtained, complete goal (and "Open a Portal", complete after gun fired.)
+- snowfield NPC: Husky; follows you to snow-camp; once you read journal, vanishes can be seen in various locations
+- plaque 2 in snowfield down in the ice pit (new room, down rope), encased in ice, can be removed by melting or breaking the ice to read it
 - monolith will induce higher intelligence state or paradox acceptance ability that will allow AA-3B access
+- once in AA-3B we'll finally get the cake
 - HAL: monolith room has HAL, but HAL is deactivated due to missing (removed) memory modules. Must replace them to get access to the monolith.
 - HAL module locations:
-  * #1: EMH knows hidden location. EMH can only show player once player finds / repairs his mobile emitter.
+  * #1: EMH knows hidden location. EMH can only show player once player finds / repairs his mobile emitter. (done)
+  * #2: Access panel somewhere sparking...must be pried open with crowbar to reveal #2 jammed inside. Log to mention nearby location.
 - overlays for HAL's room / observation room to match puzzle progress
 - read denials should be red
 - add warning / instruction label to read on poetry performer, and make it Initech

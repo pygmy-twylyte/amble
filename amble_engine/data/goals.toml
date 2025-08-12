@@ -14,6 +14,22 @@ activate_when = { type = "goalComplete", goal_id = "get-oriented" }
 finished_when = { type = "reachedRoom", room_sym = "b-a-office" }
 
 [[goals]]
+id = "obtain-portal-power"
+name = "Find a Power Source"
+description = "You found a portal gun, but the power source is dead. Find another one or charge the empty battery to get the gun working."
+group = { type = "required" }
+activate_when = { type = "hasFlag", flag = "portal-gun-opened" }
+finished_when = { type = "hasFlag", flag = "portal-opened" }
+
+[[goals]]
+id = "open-a-portal"
+name = "Open a Portal"
+description = "Now that you have a suitable power source, you should be able to turn the gun on to open a portal. But where will it lead?"
+group = { type = "required" }
+activate_when = { type = "goalComplete", flag = "obtain-portal-power" }
+finished_when = { type = "hasFlag", flag = "done-flag" }
+
+[[goals]]
 id = "get-invited"
 name = "Get an Invitation"
 description = "The receptionist won't help you without an invitation; you'll need to get one somehow."

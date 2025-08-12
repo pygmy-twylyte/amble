@@ -95,7 +95,7 @@ to = "two-sheds-landing"
 id = "guard-post"
 name = "Guard Post"
 
-base_description = "A small stone guard post clings to the side of the trail, complete with a creaky wooden chair and a megaphone labeled 'USE ONLY IF VERY SURE'. A faded official-looking placard reads:\n\n        'NOTICE: Passage beyond this point may lead to anachronism.'\n\nIt seems no one’s been stationed here in quite some time. The trail continues upward, leading to what appears to be an ancient road—and a distinctly non-ancient office park."
+base_description = "A small stone guard post clings to the side of the trail, complete with a creaky wooden chair and a megaphone labeled 'USE ONLY IF VERY SURE'. A faded official-looking placard reads:\n\n'NOTICE: Passage beyond this point may lead to anachronism.'\n\nIt seems no one’s been stationed here in quite some time. The trail continues upward, leading to what appears to be an ancient road—and a distinctly non-ancient office park."
 
 location = "Nowhere"
 visited = false
@@ -133,7 +133,7 @@ base_description = "Potted plants flank a plain, darkened glass door on the fron
 
 [[rooms.overlays]]
 condition = { type = "flagUnset", flag = "got-towel" }
-text = "Finished scanning, the eye-bot's iris turns red, then it stares at the sign above."
+text = "After a few moments, the eye-bot's iris turns red, and it points at the sign above."
 
 [[rooms.overlays]]
 condition = { type = "flagSet", flag = "got-towel" }
@@ -188,7 +188,7 @@ to = "snowfield"
 id = "loading-dock"
 name = "Useless Loading Dock"
 
-base_description = "The so-called loading dock juts ten feet *above* the ground, with no ramp, stairs, or apparent means of access and a loading door thirty feet wide and ten inches tall. A conveyor belt runs from the building wall to the edge of the dock, then loops straight back in again without touching anything.\n\nA bronze plaque proudly identifies this as a **Bloody Stupid Johnson** project:\n> 'Winner of the 3rd Prize for Architectural Enthusiasm, 1873.'\n\nIt's unclear what this office ever needed to load—or who would deliver to the side of a remote building halfway up a mountain."
+base_description = "The so-called loading dock juts ten feet *above* the ground, with no ramp, stairs, or apparent means of access and a loading door thirty feet wide and ten inches tall. A conveyor belt runs from the building wall to the edge of the dock, then loops straight back in again without touching anything.\n\nA bronze plaque proudly identifies this as a **Bloody Stupid Johnson** project:\n'Winner of the 3rd Prize for Architectural Enthusiasm, 1973.'\n\nIt's unclear what this office ever needed to load—or who would deliver to the side of a remote building halfway up a mountain."
 
 location = "Nowhere"
 visited = false

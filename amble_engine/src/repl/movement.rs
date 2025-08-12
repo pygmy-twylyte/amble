@@ -92,11 +92,12 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
         } else {
             // the Exit is barred due to a missing item or flag
             if let Some(msg) = &destination_exit.barred_message {
-                view.push(ViewItem::ActionFailure((*msg).to_string()));
+                view.push(ViewItem::ActionFailure((*msg).denied_style().to_string()));
             } else {
-                view.push(ViewItem::ActionFailure(
-                    "You can't go that way because... \"reasons\"".to_string(),
-                ));
+                view.push(ViewItem::ActionFailure(format!(
+                    "{}",
+                    "You can't go that way because... \"reasons\"".denied_style()
+                )));
             }
             let dest_name = world
                 .rooms

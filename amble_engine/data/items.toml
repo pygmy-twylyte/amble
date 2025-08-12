@@ -42,7 +42,7 @@ type = "TurnOn"
 [[items]]
 id = "road_sign"
 name = "Welcome Sign"
-description = """A 10-foot tall sign, spotlit from below by a fusion powered sodium lamp. The sign is tilted upward, as if it was meant to be read from the air as well as the ground."""
+description = """A 10-foot tall sign, spotlit from below by a fusion powered sodium lamp. The sign is tilted upward, as if meant to be read from the air as well as the ground."""
 portable = false
 location = { Room = "inca-road" }
 
@@ -353,7 +353,7 @@ interaction_requires.cut = "cutWood"
 [[items]]
 id = "weird_bush"
 name = "Weird Bush"
-location = { Room = "east-of-building" } # Or wherever you decide
+location = { Room = "east-of-building" }                                                                                                                 # Or wherever you decide
 description = """A squat, leafy bush with long, pale strands growing among the branches. The fibers look oddly uniform — almost like... dental floss?"""
 portable = false
 container_state = "open"
@@ -667,13 +667,14 @@ portable = true
 restricted = false
 description = """An official-looking notice from Amble Adventures HQ."""
 text = """
-                              OFFICIAL NOTICE
-The OverShed™ Division of Amble Adventures has reclassified this dwelling as:
+                 OFFICIAL NOTICE
+The OverShed™ Division of Amble Adventures has
+reclassified this dwelling as:
 
-            >> Shed, Subtype B – Multiversal Crosslink Node <<
+>> Shed, Subtype B – Multiversal Crosslink Node <<
 
-       Report any fictional apparitions or missing time to your local
-                Amble Adventures cover-up coordinator.
+Report any fictional apparitions or missing time
+to your local Amble Adventures cover-up coordinator.
 """
 
 [[items.abilities]]

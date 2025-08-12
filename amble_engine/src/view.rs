@@ -53,7 +53,7 @@ impl View {
 
         // Section Zero: Movement transition message, if any
         if let Some(ViewItem::TransitionMessage(msg)) = self.items.iter().find(|i| i.is_transition_message()) {
-            println!("{}", fill(msg, normal_block()).transition_style());
+            println!("\n{}", fill(msg, normal_block()).transition_style());
         }
 
         // First Section: Environment / Frame of Reference
@@ -160,6 +160,7 @@ impl View {
                 msg.clone().unwrap_ambient_event().ambient_trig_style()
             );
             println!("{}", fill(formatted.as_str(), normal_block()));
+            println!();
         }
     }
     fn triggered_event(&mut self) {
@@ -171,6 +172,7 @@ impl View {
                 msg.clone().unwrap_triggered_event().triggered_style()
             );
             println!("{}", fill(formatted.as_str(), normal_block()));
+            println!();
         }
     }
 
@@ -183,6 +185,7 @@ impl View {
                     "{}",
                     fill(quote.as_str(), indented_block()).to_string().npc_quote_style()
                 );
+                println!();
             }
         }
     }
@@ -427,8 +430,7 @@ impl View {
     fn room_npc_list(&mut self) {
         if let Some(ViewItem::RoomNpcs(npcs)) = self.items.iter().find(|i| matches!(i, ViewItem::RoomNpcs(_))) {
             println!("{}:", "Others".subheading_style());
-            npcs.iter()
-                .for_each(|npc| println!("   {} - {}", npc.name.npc_style(), npc.description.description_style()));
+            npcs.iter().for_each(|npc| println!("   {}", npc.name.npc_style()));
             println!();
         }
     }
