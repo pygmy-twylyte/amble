@@ -79,6 +79,24 @@ pub enum ItemInteractionType {
     Turn,
     Unlock,
 }
+impl Display for ItemInteractionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Break => write!(f, "break"),
+            Self::Burn => write!(f, "burn"),
+            Self::Clean => write!(f, "clean"),
+            Self::Cover => write!(f, "cover"),
+            Self::Cut => write!(f, "cut"),
+            Self::Handle => write!(f, "handle"),
+            Self::Move => write!(f, "move"),
+            Self::Open => write!(f, "open"),
+            Self::Repair => write!(f, "repair"),
+            Self::Sharpen => write!(f, "sharpen"),
+            Self::Turn => write!(f, "turn"),
+            Self::Unlock => write!(f, "unlock"),
+        }
+    }
+}
 
 /// All of the valid states a container can be in.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Variantly)]

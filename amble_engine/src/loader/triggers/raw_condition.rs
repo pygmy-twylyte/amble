@@ -17,6 +17,7 @@ use crate::{
 #[serde(tag = "type", rename_all = "camelCase")]
 #[rustfmt::skip]
 pub enum RawTriggerCondition {
+    ActOnItem { target_sym: String, action: ItemInteractionType, },
     Ambient { room_ids: Option<Vec<String>>, spinner: SpinnerType, },
     ContainerHasItem { container_id: String, item_id: String, },
     Drop { item_id: String, },
@@ -50,6 +51,10 @@ pub enum RawTriggerCondition {
 impl RawTriggerCondition {
     pub fn to_condition(&self, symbols: &SymbolTable) -> Result<TriggerCondition> {
         match self {
+            Self::ActOnItem {
+                target_sym: item_id,
+                action,
+            } => cook_act_on_item(symbols, item_id, *action),
             Self::TalkToNpc { npc_id } => cook_talk_to_npc(symbols, npc_id),
             Self::Ambient { room_ids, spinner } => cook_ambient(symbols, room_ids.as_ref(), *spinner),
             Self::ContainerHasItem { container_id, item_id } => cook_container_has_item(symbols, container_id, item_id),
@@ -80,6 +85,17 @@ impl RawTriggerCondition {
                 tool_id,
             } => cook_use_item_on_item(symbols, *interaction, target_id, tool_id),
         }
+    }
+}
+
+fn cook_act_on_item(symbols: &SymbolTable, item_id: &str, action: ItemInteractionType) -> Result<TriggerCondition> {
+    if let Some(item_uuid) = symbols.items.get(item_id) {
+        Ok(TriggerCondition::ActOnItem {
+            target_id: *item_uuid,
+            action,
+        })
+    } else {
+        bail!("converting raw condition ActOnItem: item symbol '{item_id}' not found")
     }
 }
 

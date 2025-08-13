@@ -19,6 +19,10 @@ use crate::{
 /// Game states and player actions that can be detected by a `Trigger`
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TriggerCondition {
+    ActOnItem {
+        target_id: Uuid,
+        action: ItemInteractionType,
+    },
     Ambient {
         room_ids: HashSet<Uuid>, // empty = applies everywhere
         spinner: SpinnerType,
