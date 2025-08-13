@@ -1,16 +1,21 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
+- change UseItemOnItem to emit a new TriggerCondition::ActOnItem that specifies only the interaction type and the target...after checking that the specified tool has the required ability.
+- commands to change View modes
 - do something about horrible help display
 - add a turn counter -- can be used to create delayed triggers, auto-save
-- add quick funny responses to things like "yell" or "cry"
-- tests (meh)
-- point award spinners, maybe different for award sizes (or add a "reason" field.)
-- trigger action to change the .read field on an item to update displays etc
 - mechanism like window or portal -- where one can look outside the current room into another?
+- add quick funny responses to things like "yell" or "cry"
+- point award spinners, maybe different for award sizes (or add a "reason" field.)
 - NPC movement: will need for CMOT, Husky
+- trigger action to change the .read field on an item to update displays etc
+- tests (meh)
 
 ## FIXITs from runthroughs / CONTENT additions
+- sublevel 1 entrance... see if we can first block aa-3bwith black knight, then when black knight appeased, re-lock the AA-3B door with a new message
+- goal set after getting keycard to reach sublevel
+- overlays for observation-room
 - add messaging to player with applied status effects and relief (status:nausea)
 - VIP bathroom overlay -- poem book on back of toilet until taken.
 - set goal: when portal gun opened "Find a Power Source"; when charged_battery obtained, complete goal (and "Open a Portal", complete after gun fired.)
