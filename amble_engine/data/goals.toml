@@ -26,7 +26,7 @@ id = "open-a-portal"
 name = "Open a Portal"
 description = "Now that you have a suitable power source, you should be able to turn the gun on to open a portal. But where will it lead?"
 group = { type = "required" }
-activate_when = { type = "goalComplete", flag = "obtain-portal-power" }
+activate_when = { type = "goalComplete", goal_id = "obtain-portal-power" }
 finished_when = { type = "hasFlag", flag = "done-flag" }
 
 [[goals]]

@@ -293,8 +293,6 @@ name = "Magnifying Glass"
 location = { Room = "aperture-lab" }
 portable = true
 description = "Small gets big -- it's a rig."
-[[items.abilities]]
-type = "Use"
 
 # -----------------------------------------------------------------------------
 [[items]]

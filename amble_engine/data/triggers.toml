@@ -425,18 +425,27 @@ actions = [
 ]
 
 [[triggers]]
-name = "Two-Sheds-Landing: Burn Tree with Flamethrower"
+name = "Two-Sheds: Flamethrower Used on Tree"
 only_once = true
 conditions = [
     { type = "useItemOnItem", tool_id = "flamethrower", target_id = "fallen_tree", interaction = "burn" },
 ]
 actions = [
+    { type = "showMessage", text = """You aim the Arson-Aid and begin to squeeze the trigger when the whole thing erupts into a fireball. Panicking, you throw the whole thing into the tree.""" },
+]
+
+[[triggers]]
+name = "Two-Sheds-Landing: Burn Tree"
+only_once = true
+conditions = [
+    { type = "actOnItem", target_sym = "fallen_tree", action = "burn" },
+]
+actions = [
     { type = "despawnItem", item_id = "fallen_tree" },
-    { type = "despawnItem", item_id = "flamethrower" },
     { type = "addFlag", flag = { type = "simple", name = "cleared-fallen-tree" } },
     { type = "addFlag", flag = { type = "simple", name = "burned-fallen-tree" } },
     { type = "awardPoints", amount = 5 },
-    { type = "showMessage", text = """You step back, aim, and squeeze the trigger... The device flares to life — and then catches fire *itself*. Panicking, you hurl it straight into the mass of limbs and branches. The fallen tree erupts into flame and, quite improbably, is reduced to ash in mere seconds.""" },
+    { type = "showMessage", text = """WHOOOOOMPH! The fallen tree erupts into flame and, quite improbably, is reduced to ash in mere seconds.""" },
 ]
 
 [[triggers]]
