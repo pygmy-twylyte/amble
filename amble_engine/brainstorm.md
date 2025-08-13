@@ -1,7 +1,7 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
-- change UseItemOnItem to emit a new TriggerCondition::ActOnItem that specifies only the interaction type and the target...after checking that the specified tool has the required ability.
+- consumable Items. Add a HashMap<ItemInteractionType, ConsumableOpts> where ConsmableOpts defines # of uses and what to do when no uses left (despawn or replace with inactivated version of the item)
 - commands to change View modes
 - do something about horrible help display
 - add a turn counter -- can be used to create delayed triggers, auto-save
