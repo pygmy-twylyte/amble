@@ -381,9 +381,10 @@ name = "Dental Floss"
 location = { Chest = "weird_bush" }
 description = """A long, strong strand of waxed dental floss, harvested from the weird bush. It smells faintly minty, but seems surprisingly durable — maybe even useful for something besides oral hygiene."""
 portable = true
-text = "Pride of Montana"
+interaction_requires.attach = "attach"
+
 [[items.abilities]]
-type = "Read"
+type = "Attach"
 
 # -------------------------------------------------------------------------------
 [[items]]
@@ -778,3 +779,23 @@ location = { Inventory = "player" }
 
 [[items.abilities]]
 type = "Repair"
+
+# ===========================================
+[[items]]
+id = "paper_clip"
+name = "Paper Clip"
+description = "It's... a paper clip. I mean, do you really need a description?"
+portable = true
+location = { Room = "supply-closet" }
+interaction_requires.attach = "attach"
+
+[[items.abilities]]
+type = "Attach"
+
+# -----------------------------------------------
+[[items]]
+id = "fishing_line"
+name = "Makeshift Fishing Line"
+description = "An MacGyver-ed fishing line, with a paper clip hook attached to some dental floss."
+portable = true
+location = { Nowhere = "spawns@inventory when items attached" }

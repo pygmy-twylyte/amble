@@ -922,3 +922,16 @@ actions = [
     { type = "spawnItemInInventory", item_id = "no_cake" },
     { type = "showMessage", text = """Try as you might, you cannot rid yourself of the feeling of a missing a promised dessert. The cake was a lie.""" },
 ]
+
+[[triggers]]
+name = "Global: Make Fishing Line"
+only_once = true
+conditions = [
+    { type = "useItemOnItem", tool_id = "paper_clip", target_id = "dental_floss", interaction = "attach" },
+]
+actions = [
+    { type = "despawnItem", item_id = "paper_clip" },
+    { type = "despawnItem", item_id = "dental_floss" },
+    { type = "spawnItemInInventory", item_id = "fishing_line" },
+    { type = "showMessage", text = """You MacGyvered the floss and paper clip into a fishing line.""" },
+]
