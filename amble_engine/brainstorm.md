@@ -1,7 +1,7 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
-- consumable Items. Add a HashMap<ItemInteractionType, ConsumableOpts> where ConsmableOpts defines # of uses and what to do when no uses left (despawn or replace with inactivated version of the item)
+- consumable Items. Add a HashMap<ItemInteractionType, ConsumableOpts> where ConsmableOpts defines # of uses and what to do when no uses left (despawn or replace with inactivated version of the item). If a key exists for the interaction type, deplete the uses and update state accordingly. OR use the UseItem condition...for now can just trigger despawn of single use items, but ultimately could trigger an action that checks remaining uses...
 - commands to change View modes
 - do something about horrible help display
 - add a turn counter -- can be used to create delayed triggers, auto-save
