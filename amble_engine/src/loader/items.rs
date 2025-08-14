@@ -82,20 +82,29 @@ pub struct RawConsumableOpts {
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum RawConsumeType {
     Despawn,
-    Replace { replacement: String, location: Location },
+    ReplaceInventory { replacement: String },
+    ReplaceCurrentRoom { replacement: String },
 }
 impl RawConsumeType {
     pub fn to_consume_type(&self, symbols: &SymbolTable) -> Result<ConsumeType> {
         match self {
             Self::Despawn => Ok(ConsumeType::Despawn),
-            Self::Replace { replacement, location } => {
+            Self::ReplaceInventory { replacement } => {
                 let replacement_uuid = symbols
                     .items
                     .get(replacement)
                     .with_context(|| format!("looking up item symbol '{replacement}'"))?;
-                Ok(ConsumeType::Replace {
+                Ok(ConsumeType::ReplaceInventory {
                     replacement: *replacement_uuid,
-                    location: *location,
+                })
+            },
+            Self::ReplaceCurrentRoom { replacement } => {
+                let replacement_uuid = symbols
+                    .items
+                    .get(replacement)
+                    .with_context(|| format!("looking up item symbol '{replacement}'"))?;
+                Ok(ConsumeType::ReplaceCurrentRoom {
+                    replacement: *replacement_uuid,
                 })
             },
         }

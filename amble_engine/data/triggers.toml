@@ -457,7 +457,6 @@ conditions = [
 ]
 actions = [
     { type = "showMessage", text = "The Initech Arson-Aid melts down into an amorphous blob of aluminum." },
-    { type = "despawnItem", item_id = "flamethrower" },
 ]
 
 [[triggers]]

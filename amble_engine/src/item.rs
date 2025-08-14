@@ -6,11 +6,15 @@
 
 use crate::{Location, View, ViewItem, WorldObject, style::GameStyle, view::ContentLine, world::AmbleWorld};
 
+use anyhow::{Context, Result};
 use colored::Colorize;
+
+use log::info;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet},
     fmt::Display,
+    usize,
 };
 use uuid::Uuid;
 use variantly::Variantly;
@@ -75,6 +79,14 @@ impl ItemHolder for Item {
     }
 }
 impl Item {
+    /// Returns true if item is consumable and has been consumed.
+    pub fn is_consumed(&self) -> bool {
+        match &self.consumable {
+            Some(opts) => opts.uses_left == 0,
+            None => false,
+        }
+    }
+
     /// Returns true if item's contents can be accessed.
     pub fn is_accessible(&self) -> bool {
         self.container_state.is_some_and(|cs| cs.is_open())
@@ -171,6 +183,57 @@ impl Item {
             _ => None,
         }
     }
+}
+
+/// Consumes one use of the item with the specified ability.
+/// Returns an option containing the # of uses left, or None if not consumed by this ability.
+pub fn consume(world: &mut AmbleWorld, item_id: &Uuid, ability: ItemAbility) -> Result<Option<usize>> {
+    let item = world
+        .items
+        .get_mut(item_id)
+        .with_context(|| format!("failed lookup trying to consume() item '{item_id}'"))?;
+
+    let item_id = item.id;
+    let item_sym = item.symbol.clone();
+
+    // if consumable, decrement and set to # of remaining uses
+    // if not consumable, set to usize::MAX
+    let uses_left = if let Some(opts) = &mut item.consumable {
+        // decrement uses_left if right ability was used
+        if opts.consume_on.contains(&ability) && opts.uses_left > 0 {
+            opts.uses_left -= 1;
+        }
+        opts.uses_left
+    } else {
+        usize::MAX
+    };
+
+    // if uses_left is now zero, handle the consumption, current options are just to despawn,
+    // or to despawn and replace with another item either in inventory or the current room
+    if uses_left == 0 {
+        let item = world
+            .items
+            .get_mut(&item_id)
+            .with_context(|| format!("failed lookup trying to consume() item '{item_id}'"))?;
+
+        if let Some(opts) = &mut item.consumable {
+            match opts.when_consumed {
+                ConsumeType::ReplaceInventory { replacement } => {
+                    crate::trigger::despawn_item(world, &item_id)?;
+                    crate::trigger::spawn_item_in_inventory(world, &replacement)?
+                },
+                ConsumeType::ReplaceCurrentRoom { replacement } => {
+                    crate::trigger::despawn_item(world, &item_id)?;
+                    crate::trigger::spawn_item_in_current_room(world, &replacement)?
+                },
+                _ => (),
+            }
+        } else {
+            return Ok(None);
+        }
+    }
+    info!("used ({ability}) ability of consumable item '{item_sym}': {uses_left} uses left");
+    Ok(Some(uses_left))
 }
 
 /// Methods common to things that can hold items.
@@ -277,5 +340,6 @@ pub struct ConsumableOpts {
 #[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ConsumeType {
     Despawn,
-    Replace { replacement: Uuid, location: Location },
+    ReplaceInventory { replacement: Uuid },   // put replacement in inventory
+    ReplaceCurrentRoom { replacement: Uuid }, // put replacement in current room
 }
