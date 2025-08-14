@@ -332,6 +332,12 @@ Instructions:
 3) Throw at target (quickly!)
 4) Flee.
 """
+
+[items.consumable]
+uses_left = 1
+consume_on = [{ type = "Ignite" }]
+when_consumed = { type = "despawn" }
+
 [[items.abilities]]
 type = "Ignite"
 
