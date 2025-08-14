@@ -382,8 +382,26 @@ location = { Room = "patio" }
 portable = true
 description = "An engraved, metallic Zippo-style lighter, worn but functional."
 text = "DJVB"
+
+[items.consumable]
+uses_left = 2
+consume_on = [{ type = "Ignite" }]
+when_consumed = { type = "replaceInventory", replacement = "empty_lighter" }
+
 [[items.abilities]]
 type = "Ignite"
+[[items.abilities]]
+type = "Read"
+
+# ---------------------------------------------------------------------------------
+[[items]]
+id = "empty_lighter"
+name = "Butane Lighter (Empty)"
+description = "An engraved, metallic Zippo-style lighter. It was good for a few uses but seems to have run out of fuel."
+portable = true
+location = { Nowhere = "spawns@inventory when lighter used up" }
+text = "DJVB"
+
 [[items.abilities]]
 type = "Read"
 
