@@ -108,7 +108,7 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
         ["read", thing] => Command::Read((*thing).to_string()),
         ["load", gamefile] => Command::Load((*gamefile).to_string()),
         ["save", gamefile] => Command::Save((*gamefile).to_string()),
-        [verb, target, "with" | "using", tool] => parse_interaction_type(verb).map_or_else(
+        [verb, target, "with" | "using" | "to", tool] => parse_interaction_type(verb).map_or_else(
             || {
                 view.push(ViewItem::Error(format!(
                     "I don't understand {} in this context.",
@@ -132,6 +132,7 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
 /// player input before delegating here.
 pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
     match verb {
+        "attach" | "connect" | "join" => Some(ItemInteractionType::Attach),
         "break" | "smash" | "crack" | "shatter" => Some(ItemInteractionType::Break),
         "burn" | "ignite" | "light" | "melt" => Some(ItemInteractionType::Burn),
         "cover" | "wrap" | "shroud" | "mask" => Some(ItemInteractionType::Cover),
@@ -150,8 +151,8 @@ pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::command::Command;
     use crate::View;
+    use crate::command::Command;
 
     fn pc(input: &str) -> Command {
         let mut view = View::new();
