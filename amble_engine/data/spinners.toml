@@ -148,14 +148,15 @@ values = [
     "A couple of robots nearby heatedly debate the Zeroth Law of Robotics.",
     "You see a Borg drone repeatedly walking into a wall, disconnected from the collective.",
     "Around the corner, someone shouts \"Push the button, Frank!\"",
+    "A huge, shimmering metallic ring appears beside you, and something that looks like an Egyption hieroglyph walks through... then both disappear.",
 ]
-widths = [20, 1, 1, 1, 1, 1, 1]
+widths = [30]
 
 [[spinners]]
 spinnerType = "ambientInterior"
 values = [
     "",
-    "The intercom crackles: \"Please return the time machine to the checkout desk.\"",
+    "The intercom crackles: \"Please return the time machine to the checkout desk last Wednesday.\"",
     "A siren whoops twice, then cuts off mid-blare.",
     "A calm female voice over the PA says: \"Welcome to Aperture Science. Enjoy your stay,\" followed by a beep.",
     "Somewhere behind the walls, gears grind and then stop abruptly.",
@@ -169,7 +170,7 @@ values = [
     "You hear the \"Underdog\" theme through the wall from an adjacent room.",
     "Paperwork and supplies pass by through a pneumatic tube overhead, along with an occasional piece of cake.",
 ]
-widths = [25, 1, 1, 1, 1, 1, 1, 1, 1]
+widths = [25]
 
 [[spinners]]
 spinnerType = "nauseated"
@@ -182,11 +183,12 @@ values = [
     "Your stomach roils, like that time you stayed up all night drinking mezcal with Ruben",
     "You stop by the nearest wastebin for a few dry heaves.",
 ]
-widths = [10, 1, 1, 1, 1]
+widths = [10]
 
 [[spinners]]
 spinnerType = "muzak"
 values = [
+    "",
     """A Muzak version of Porcupine Tree's \"The Sound of Muzak\" plays softly over the elevator
 speaker.""",
     "Another version of \"The Sound of Muzak\" plays, this time with a pan flute playing the melody.",
@@ -195,3 +197,4 @@ speaker.""",
     "The Muzak pauses, and you hear the sound of someone flipping over a cassette tape.",
     "The Muzak \"The Sound of Muzak\" grows to intense volume. Sticking your towel in your ears doesn't help.",
 ]
+widths = [10]
