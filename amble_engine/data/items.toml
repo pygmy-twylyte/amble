@@ -24,6 +24,7 @@ id = "lebowski_rug"
 name = "Ornate Rug"
 description = """It really ties the room together, man."""
 portable = true
+interaction_requires.burn = "ignite"
 location = { Room = "lounge" }
 
 # -----------------------------------------------------------------------------

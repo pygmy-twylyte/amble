@@ -69,7 +69,7 @@ actions = [
 # START LOUNGE, PORTAL GUN TRIGGERS
 # remove rug to reveal hidden exit to portal room
 [[triggers]]
-name = "Lounge: Found Portal Room"
+name = "Lounge: Rug Taken"
 only_once = true
 conditions = [{ type = "take", item_id = "lebowski_rug" }]
 actions = [
@@ -77,6 +77,21 @@ actions = [
     { type = "addFlag", flag = { type = "simple", name = "found-portal-room" } },
     { type = "awardPoints", amount = 3 },
     { type = "showMessage", text = """Light shines around the edges of a trapdoor revealed in the floor when you move the rug.""" },
+]
+
+# burn rug to reveal hidden exit to portal room
+[[triggers]]
+name = "Lounge: Rug Burned Away"
+only_once = true
+conditions = [
+    { type = "actOnItem", target_sym = "lebowski_rug", action = "burn" },
+]
+actions = [
+    { type = "revealExit", direction = "down", exit_from = "lounge", exit_to = "portal-room" },
+    { type = "despawnItem", item_id = "lebowski_rug" },
+    { type = "addFlag", flag = { type = "simple", name = "found-portal-room" } },
+    { type = "awardPoints", amount = 3 },
+    { type = "showMessage", text = """As the smoke clears and your eyes stop burning, you see a trapdoor revealed in the floor where the rug used to be.""" },
 ]
 
 # give portal_powered flag when charged battery inserted
@@ -163,17 +178,27 @@ actions = [
 
 # messages and flag when invitation is acquired
 [[triggers]]
-name = "Aperture-Lab: Take Invitation Using Towel"
+name = "Aperture-Lab: Insulate using Towel"
 only_once = true
 conditions = [
     { type = "useItemOnItem", tool_id = "towel", target_id = "invitation", interaction = "handle" },
+]
+actions = [
+    { type = "showMessage", text = """You wrap your towel around your hand like a catcher's mitt to grasp the invitation.""" },
+]
+
+[[triggers]]
+name = "Aperture-Lab: Handle the Hot Invitation"
+only_once = true
+conditions = [
+    { type = "actOnItem", target_sym = "invitation", action = "handle" },
 ]
 actions = [
     { type = "despawnItem", item_id = "invitation" },
     { type = "spawnItemInInventory", item_id = "invitation" },
     { type = "addFlag", flag = { type = "simple", name = "got-invitation" } },
     { type = "awardPoints", amount = 5 },
-    { type = "showMessage", text = """Using the towel as a potholder, you are able to get the piping hot invitation into your pack.""" },
+    { type = "showMessage", text = """With some insulation between your hand and the piping hot document, you're able to get it into your pack.""" },
 ]
 
 [[triggers]]
@@ -341,15 +366,13 @@ actions = [
 ]
 
 [[triggers]]
-name = "Plaque 1: Clean With Towel"
+name = "Plaque 1: Cleaned"
 only_once = true
-conditions = [
-    { type = "useItemOnItem", tool_id = "towel", target_id = "plaque_1", interaction = "clean" },
-]
+conditions = [{ type = "actOnItem", target_sym = "plaque_1", action = "clean" }]
 actions = [
     { type = "addFlag", flag = { type = "simple", name = "cleaned-plaque-1" } },
     { type = "awardPoints", amount = 3 },
-    { type = "showMessage", text = "With some effort, you're able to wipe most of the grime off the plaque." },
+    { type = "showMessage", text = "With some effort, you're able to remove most of the grime from the plaque." },
 ]
 
 [[triggers]]
@@ -411,33 +434,48 @@ actions = [
 
 # START FALLEN TREE TRIGGERS
 [[triggers]]
-name = "Two-Sheds-Landing: Cut Tree with Axe"
+name = "Two-Sheds-Landing: Cut / Chop Tree"
 only_once = true
 conditions = [
-    { type = "useItemOnItem", tool_id = "lumberjack_axe", target_id = "fallen_tree", interaction = "cut" },
+    { type = "actOnItem", target_sym = "fallen_tree", action = "cut" },
 ]
 actions = [
-    { type = "showMessage", text = "You swing the axe with practiced heft, chopping through the tree in a shower of splinters." },
+    { type = "showMessage", text = "With considerable effort, you are able to chop the tree down into branches and pile them at the side of the path." },
     { type = "despawnItem", item_id = "fallen_tree" },
     { type = "addFlag", flag = { type = "simple", name = "cleared-fallen-tree" } },
     { type = "addFlag", flag = { type = "simple", name = "chopped-fallen-tree" } },
     { type = "awardPoints", amount = 5 },
 ]
 
+# flamethrower blows up -- despawns after first used to ignite something
+[[triggers]]
+name = "Global: Arson-Aid Fired"
+only_once = true
+conditions = [
+    # useItem - for events that depend on tool and interaction type but not target
+    { type = "useItem", item_id = "flamethrower", ability = "ignite" },
+]
+actions = [
+    { type = "showMessage", text = "The Initech Arson-Aid melts down into an amorphous blob of aluminum." },
+    { type = "despawnItem", item_id = "flamethrower" },
+]
+
 [[triggers]]
 name = "Two-Sheds: Flamethrower Used on Tree"
 only_once = true
 conditions = [
+    # useItemonItem only for flavor text for particular item-to-item interaction; ActOnItem actually used to change state.
     { type = "useItemOnItem", tool_id = "flamethrower", target_id = "fallen_tree", interaction = "burn" },
 ]
 actions = [
-    { type = "showMessage", text = """You aim the Arson-Aid and begin to squeeze the trigger when the whole thing erupts into a fireball. Panicking, you throw the whole thing into the tree.""" },
+    { type = "showMessage", text = """You aim the Arson-Aid and begin to squeeze the trigger when the device erupts into a fireball. Panicking, you throw the whole Arson-Aid into the tree.""" },
 ]
 
 [[triggers]]
 name = "Two-Sheds-Landing: Burn Tree"
 only_once = true
 conditions = [
+    # actOnItem for events that depend on the interaction type and target, but not the specific tool used to do it
     { type = "actOnItem", target_sym = "fallen_tree", action = "burn" },
 ]
 actions = [
@@ -471,27 +509,10 @@ actions = [
 ]
 
 [[triggers]]
-name = "Loading Dock: Open Security Crate (Cut Wood)"
-only_once = true
-conditions = [
-    { type = "useItemOnItem", tool_id = "lumberjack_axe", target_id = "security_crate", interaction = "cut" },
-    { type = "missingFlag", flag = "unlocked-security-crate" },
-]
-actions = [
-    { type = "despawnItem", item_id = "security_crate" },
-    { type = "spawnItemCurrentRoom", item_id = "crowbar" },
-    { type = "spawnItemCurrentRoom", item_id = "shattered_vial" },
-    { type = "spawnItemCurrentRoom", item_id = "security_log" },
-    { type = "spawnItemCurrentRoom", item_id = "initech_mug" },
-    { type = "showMessage", text = """You're surprised to hear yourself singing, "I'm a lumberjack, and I'm OK. I sleep all night and I work all day!" -- as you chop the security locker into splinters. There is a crowbar lying amongst the rubble.""" },
-    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """PA Announcement: "Someone hacked into the security locker on the dock with an axe. Mind your belongings and report any lumberjack sightings to security."""" },
-]
-
-[[triggers]]
 name = "Loading Dock: Open Security Crate (Break)"
 only_once = true
 conditions = [
-    { type = "useItemOnItem", tool_id = "lumberjack_axe", target_id = "security_crate", interaction = "break" },
+    { type = "actOnItem", target_sym = "security_crate", action = "break" },
     { type = "missingFlag", flag = "unlocked-security-crate" },
 ]
 actions = [
@@ -500,7 +521,7 @@ actions = [
     { type = "spawnItemCurrentRoom", item_id = "shattered_vial" },
     { type = "spawnItemCurrentRoom", item_id = "security_log" },
     { type = "spawnItemCurrentRoom", item_id = "initech_mug" },
-    { type = "showMessage", text = """With a few hefty blows using the blunt side of the axe head, you manage to break the lock haft completely off of the security locker -- well after a few misses had already caved in the lid and destroyed it, but you were having fun. You can hardly have damaged the crowbar that was stored inside.""" },
+    { type = "showMessage", text = "With a few hefty blows, you manage to break the lock haft completely off of the security locker -- well after a few misses had already caved in the lid and destroyed it, but you were having fun. It looks like you broke a couple of the items that were inside in the process." },
     { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """PA Announcement: "Someone broke into the security locker on the dock. Mind your belongings and report any suspicious activity to security."""" },
 ]
 
@@ -508,18 +529,16 @@ actions = [
 name = "Loading Dock: Open Security Crate (Burn)"
 only_once = true
 conditions = [
-    { type = "useItemOnItem", tool_id = "flamethrower", target_id = "security_crate", interaction = "burn" },
+    { type = "actOnItem", target_sym = "security_crate", action = "burn" },
     { type = "missingFlag", flag = "unlocked-security-crate" },
 ]
 actions = [
     { type = "despawnItem", item_id = "security_crate" },
-    { type = "despawnItem", item_id = "flamethrower" },
     { type = "spawnItemCurrentRoom", item_id = "crowbar" },
     { type = "spawnItemCurrentRoom", item_id = "burned_security_log" },
     { type = "spawnItemCurrentRoom", item_id = "glass_vial" },
     { type = "spawnItemCurrentRoom", item_id = "initech_mug" },
-    { type = "showMessage", text = """
-Following the directions, you aim and slowly squeeze the Arson-Aid trigger. The entire device catches fire. Panicking, you chuck it at the security supply locker...\n\nWHOOOOOMP! The locker, which you now realize may have been made from the solid magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking your eyebrows with it. Luckily, the crowbar that was stored inside only warped a bit, but it's still quite usable.""" },
+    { type = "showMessage", text = "WHOOOOOMP! The locker, which you now realize may have been made from the solid magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking your eyebrows with it. It looks like *some* of the items inside weren't flammable." },
     { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """PA Announcement: "Someone used an Arson-Aid to torch the security locker at the loading dock. An investigation is underway. Report anyone with scorched clothes or missing eyebrows to security."""" },
 ]
 
@@ -567,12 +586,12 @@ actions = [{ type = "setNpcState", npc_id = "black_knight", state = "normal" }]
 name = "Black Knight: Sharpened Sword"
 only_once = true
 conditions = [
-    { type = "useItemOnItem", tool_id = "whetstone", target_id = "dull_longsword", interaction = "sharpen" },
+    { type = "actOnItem", target_sym = "dull_longsword", action = "sharpen" },
 ]
 actions = [
     { type = "despawnItem", item_id = "dull_longsword" },
     { type = "spawnItemInInventory", item_id = "keen_longsword" },
-    { type = "showMessage", text = """In almost no time, you hone the Black Knight's sword to a keen edge.""" },
+    { type = "showMessage", text = "In almost no time, you hone the Black Knight's sword to a keen edge." },
     { type = "addFlag", flag = { type = "simple", name = "sword-sharpened" } },
     { type = "awardPoints", amount = 3 },
 ]
@@ -584,7 +603,7 @@ conditions = [
     { type = "giveToNpc", item_id = "keen_longsword", npc_id = "black_knight" },
 ]
 actions = [
-    { type = "restrictItem", item_id = "keen_longsword" },
+    { type = "restrictItem", item_id = "keen_longsword" },                                                                                                                                                   # no takebacks!
     { type = "addFlag", flag = { type = "simple", name = "appeased-black-knight" } },
     { type = "awardPoints", amount = 5 },
     { type = "setNpcState", npc_id = "black_knight", state = "happy" },
@@ -711,7 +730,8 @@ actions = [
 ]
 
 # --------------------------------------------------------------------------------------------------------------------------------
-# ------- EMH / HAL Module #1 Triggers ------------------------
+#                                                   ------- EMH Broken Emitter / HAL Module #1 Triggers ------------------------
+
 # first time player encounters EMH after hal-reboot is in progress
 [[triggers]]
 name = "EMH: Player Met HAL"
@@ -750,7 +770,7 @@ only_once = true
 conditions = [{ type = "take", item_id = "broken_emitter" }]
 actions = [{ type = "advanceFlag", flag = "mobilize-emh" }]
 
-# EMH immediately gives the broken emitter back if you try to give it to him
+# EMH immediately gives the emitter back if you try to give it to him still broken
 [[triggers]]
 name = "EMH: Refuse Broken Emitter"
 only_once = false
@@ -761,17 +781,28 @@ actions = [
     { type = "npcRefuseItem", npc_id = "emh", reason = """That's my mobile emitter all right, but it's broken. You'll need to find a way to repair it before I can help you with HAL.""" },
 ]
 
-# enable repair of the broken_emitter using the sonic_screwdriver's repair ability
+# flavor text for using the sonic to repair the emitter
 [[triggers]]
-name = "EMH: Repair Emitter with Sonic"
+name = "EMH: Use Sonic Screwdriver On Emitter"
 only_once = true
 conditions = [
     { type = "useItemOnItem", tool_id = "sonic_screwdriver", target_id = "broken_emitter", interaction = "repair" },
 ]
 actions = [
+    { type = "showMessage", text = "You hold the button down on the sonic. It makes electronic whirring noises while you make a few passes over the emitter." },
+]
+
+# enable repair of the broken_emitter and item with repair ability
+[[triggers]]
+name = "EMH: Repair Emitter"
+only_once = true
+conditions = [
+    { type = "actOnItem", target_sym = "broken_emitter", action = "repair" },
+]
+actions = [
     { type = "despawnItem", item_id = "broken_emitter" },
     { type = "spawnItemInInventory", item_id = "working_emitter" },
-    { type = "showMessage", text = """After a few electric whirring noises and a pass or two of the sonic, the emitter lights up and reboots, passing all self-tests.""" },
+    { type = "showMessage", text = """After a few seconds, the emitter lights up and reboots, passing all self-tests.""" },
 ]
 
 # advance sequence to #2 when broken emitter repaired (working one in inventory)
@@ -810,7 +841,7 @@ conditions = [
 ]
 actions = [
     { type = "setNpcState", npc_id = "emh", state = "normal" },
-    { type = "npcSays", npc_id = "emh", quote = """Well, now you've done it. HAL is opeerational again. We'll surely regret it -- or at least *you* will.""" },
+    { type = "npcSays", npc_id = "emh", quote = """Well, now you've done it. HAL is operational again. We'll surely regret it -- or at least *you* will.""" },
 ]
 
 
