@@ -408,6 +408,21 @@ impl View {
             println!();
         }
 
+        if let Some(ViewItem::ItemConsumableStatus(status_line)) =
+            self.items.iter().find(|i| i.is_item_consumable_status())
+        {
+            println!(
+                "{}",
+                fill(
+                    format!("({} {})", "Consumable:".yellow(), status_line).as_str(),
+                    indented_block()
+                )
+                .italic()
+                .dimmed()
+            );
+            println!();
+        }
+
         if let Some(ViewItem::ItemContents(content_lines)) =
             self.items.iter().find(|i| matches!(i, ViewItem::ItemContents(_)))
         {
@@ -565,6 +580,7 @@ pub enum ViewItem {
         name: String,
         description: String,
     },
+    ItemConsumableStatus(String),
     ItemText(String),
     ItemContents(Vec<ContentLine>),
     NpcDescription {
@@ -621,6 +637,7 @@ impl ViewItem {
             | ViewItem::Error(_)
             | ViewItem::ItemDescription { .. }
             | ViewItem::ItemText(_)
+            | ViewItem::ItemConsumableStatus(_)
             | ViewItem::ItemContents(_)
             | ViewItem::NpcDescription { .. }
             | ViewItem::NpcInventory(_)

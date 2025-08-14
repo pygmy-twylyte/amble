@@ -112,10 +112,22 @@ impl Item {
     }
     /// Show item description (and any contents if a container and open).
     pub fn show(&self, world: &AmbleWorld, view: &mut View) {
+        // push general desccription to View
         view.push(ViewItem::ItemDescription {
             name: self.name.clone(),
             description: self.description.clone(),
         });
+
+        // push any consumable status to View
+        if let Some(opts) = &self.consumable {
+            view.push(ViewItem::ItemConsumableStatus(format!(
+                "You can use this item {} more time{}.",
+                opts.uses_left.to_string().yellow(),
+                if opts.uses_left == 1 { "" } else { "s" }
+            )))
+        }
+
+        // push container contents to View or report why inaccessible
         if self.container_state.is_some() {
             if self.is_accessible() {
                 if self.contents.is_empty() {

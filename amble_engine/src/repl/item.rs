@@ -14,7 +14,7 @@ use crate::{
     trigger::{TriggerCondition, check_triggers, triggers_contain_condition},
 };
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use colored::Colorize;
 use log::{info, warn};
 use uuid::Uuid;
