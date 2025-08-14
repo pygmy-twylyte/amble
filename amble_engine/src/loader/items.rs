@@ -27,6 +27,7 @@ use super::{SymbolTable, resolve_location};
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
 #[serde(tag = "type", content = "target")]
 pub enum RawItemAbility {
+    Attach,
     Clean,
     CutWood,
     Ignite,
@@ -45,6 +46,7 @@ pub enum RawItemAbility {
 impl RawItemAbility {
     pub fn to_ability(&self, symbols: &SymbolTable) -> Result<ItemAbility> {
         let ability = match self {
+            Self::Attach => ItemAbility::Attach,
             Self::Clean => ItemAbility::Clean,
             Self::CutWood => ItemAbility::CutWood,
             Self::Ignite => ItemAbility::Ignite,

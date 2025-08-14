@@ -259,6 +259,7 @@ pub trait ItemHolder {
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub enum ItemAbility {
+    Attach,
     Clean,
     CutWood,
     Ignite,
@@ -277,6 +278,7 @@ pub enum ItemAbility {
 impl Display for ItemAbility {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Attach => write!(f, "attach"),
             Self::Clean => write!(f, "clean"),
             Self::CutWood => write!(f, "cut wood"),
             Self::Ignite => write!(f, "ignite"),
@@ -299,6 +301,7 @@ impl Display for ItemAbility {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, Hash)]
 #[serde(rename_all = "camelCase")]
 pub enum ItemInteractionType {
+    Attach,
     Break,
     Burn,
     Clean,
@@ -315,6 +318,7 @@ pub enum ItemInteractionType {
 impl Display for ItemInteractionType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Attach => write!(f, "attach"),
             Self::Break => write!(f, "break"),
             Self::Burn => write!(f, "burn"),
             Self::Clean => write!(f, "clean"),
