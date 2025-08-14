@@ -44,6 +44,7 @@ fn test_item_accessible() {
         abilities: Default::default(),
         interaction_requires: Default::default(),
         text: None,
+        consumable: None,
     };
     assert!(item.is_accessible());
 }
@@ -96,6 +97,7 @@ fn test_find_world_object() {
         abilities: Default::default(),
         interaction_requires: Default::default(),
         text: None,
+        consumable: None,
     };
     let mut items = HashMap::new();
     items.insert(id, item);
@@ -182,6 +184,7 @@ fn test_interaction_requirement_met() {
         abilities: [ItemAbility::Clean].into_iter().collect(),
         interaction_requires: Default::default(),
         text: None,
+        consumable: None,
     };
     let target = Item {
         id: uuid::Uuid::new_v4(),
@@ -196,6 +199,7 @@ fn test_interaction_requirement_met() {
         abilities: Default::default(),
         interaction_requires: std::iter::once((ItemInteractionType::Clean, ItemAbility::Clean)).collect(),
         text: None,
+        consumable: None,
     };
     assert!(ae::loader::items::interaction_requirement_met(
         ItemInteractionType::Clean,

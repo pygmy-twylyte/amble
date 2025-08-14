@@ -7,10 +7,10 @@ use std::collections::HashSet;
 use crate::{
     AmbleWorld, ItemHolder, Location, View, ViewItem, WorldObject,
     item::ItemInteractionType,
-    repl::{entity_not_found, find_world_object, WorldEntity},
+    repl::{WorldEntity, entity_not_found, find_world_object},
     spinners::SpinnerType,
     style::GameStyle,
-    trigger::{check_triggers, TriggerCondition},
+    trigger::{TriggerCondition, check_triggers},
     world::nearby_reachable_items,
 };
 
@@ -532,6 +532,7 @@ mod tests {
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         };
         world.items.insert(inv_item_id, inv_item);
         world.player.inventory.insert(inv_item_id);
@@ -551,6 +552,7 @@ mod tests {
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         };
         world.items.insert(room_item_id, room_item);
         world.rooms.get_mut(&room_id).unwrap().add_item(room_item_id);
@@ -570,6 +572,7 @@ mod tests {
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         };
         let gem_id = Uuid::new_v4();
         let gem = Item {
@@ -585,6 +588,7 @@ mod tests {
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         };
         let restricted_chest_item_id = Uuid::new_v4();
         let restricted_chest_item = Item {
@@ -600,6 +604,7 @@ mod tests {
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         };
         chest.add_item(gem_id);
         chest.add_item(restricted_chest_item_id);
@@ -634,6 +639,7 @@ mod tests {
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         };
         let restricted_npc_item_id = Uuid::new_v4();
         let restricted_npc_item = Item {
@@ -649,6 +655,7 @@ mod tests {
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         };
         npc.add_item(npc_item_id);
         npc.add_item(restricted_npc_item_id);

@@ -449,6 +449,7 @@ mod tests {
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         };
         container
             .interaction_requires
@@ -470,6 +471,7 @@ mod tests {
             abilities: [ItemAbility::Pry].into_iter().collect(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         };
         world.player.inventory.insert(tool_id);
         world.items.insert(tool_id, tool);
@@ -488,6 +490,7 @@ mod tests {
             abilities: [ItemAbility::TurnOn].into_iter().collect(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         };
         world.rooms.get_mut(&room_id).unwrap().contents.insert(lamp_id);
         world.items.insert(lamp_id, lamp);
@@ -506,6 +509,7 @@ mod tests {
             abilities: [ItemAbility::Unlock(Some(container_id))].into_iter().collect(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         };
         world.player.inventory.insert(key_id);
         world.items.insert(key_id, key);

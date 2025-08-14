@@ -181,6 +181,7 @@ mod tests {
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         }
     }
 
