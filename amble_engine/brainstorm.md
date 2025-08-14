@@ -20,7 +20,7 @@
 - VIP bathroom overlay -- poem book on back of toilet until taken.
 - set goal: when portal gun opened "Find a Power Source"; when charged_battery obtained, complete goal (and "Open a Portal", complete after gun fired.)
 - snowfield NPC: Husky; follows you to snow-camp; once you read journal, vanishes can be seen in various locations
-- plaque 2 in snowfield down in the ice pit (new room, down rope), encased in ice, can be removed by melting or breaking the ice to read it
+- plaque 2 in snowfield down in the ice pit (new room, down rope), encased in ice, can be removed by melting or breaking the ice to read it; must build fire next to it
 - monolith will induce higher intelligence state or paradox acceptance ability that will allow AA-3B access
 - once in AA-3B we'll finally get the cake
 - HAL: monolith room has HAL, but HAL is deactivated due to missing (removed) memory modules. Must replace them to get access to the monolith.

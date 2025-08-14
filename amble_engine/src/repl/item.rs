@@ -6,7 +6,7 @@ use std::collections::HashSet;
 
 use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
-    item::{ContainerState, ItemAbility, ItemInteractionType},
+    item::{ContainerState, ItemAbility, ItemInteractionType, consume},
     loader::items::interaction_requirement_met,
     repl::{entity_not_found, find_world_object},
     spinners::SpinnerType,
@@ -14,7 +14,7 @@ use crate::{
     trigger::{TriggerCondition, check_triggers, triggers_contain_condition},
 };
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use colored::Colorize;
 use log::{info, warn};
 use uuid::Uuid;
@@ -55,6 +55,7 @@ pub fn use_item_on_handler(
     let target_id = target.id();
     let tool_name = tool.name().to_string();
     let tool_id = tool.id();
+    let tool_is_consumable = tool.consumable.is_some();
 
     // Can you even do this to the target? ("burn water with lighter" -> you can't burn water!)
     // This may have unwanted consequences when items don't have a specifice reaction defined but it's still
@@ -92,7 +93,8 @@ pub fn use_item_on_handler(
     let used_ability = target
         .interaction_requires
         .get(&interaction)
-        .unwrap_or(&ItemAbility::Use);
+        .unwrap_or(&ItemAbility::Use)
+        .clone();
 
     let fired = check_triggers(
         world,
@@ -109,7 +111,7 @@ pub fn use_item_on_handler(
             },
             TriggerCondition::UseItem {
                 item_id: tool_id,
-                ability: *used_ability,
+                ability: used_ability,
             },
         ],
     )?;
@@ -130,6 +132,24 @@ pub fn use_item_on_handler(
             world.spin_spinner(SpinnerType::NoEffect, "That appears to have had no effect, Captain.",)
         )));
         info!("No matching trigger for {interaction:?} {target_name} ({target_id}) with {tool_name} ({tool_id})");
+    }
+    if tool_is_consumable {
+        let uses_left = consume(world, &tool_id, used_ability)?;
+        if let Some(uses_left) = uses_left {
+            if uses_left == 0 {
+                view.push(ViewItem::ActionSuccess(format!(
+                    "The {} has no more uses left.",
+                    tool_name.item_style()
+                )));
+            } else {
+                view.push(ViewItem::ActionSuccess(format!(
+                    "The {} has {} use{} left",
+                    tool_name.item_style(),
+                    uses_left,
+                    if uses_left == 1 { "" } else { "s" }
+                )));
+            }
+        }
     }
     Ok(())
 }
@@ -449,6 +469,7 @@ mod tests {
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         };
         container
             .interaction_requires
@@ -470,6 +491,7 @@ mod tests {
             abilities: [ItemAbility::Pry].into_iter().collect(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         };
         world.player.inventory.insert(tool_id);
         world.items.insert(tool_id, tool);
@@ -488,6 +510,7 @@ mod tests {
             abilities: [ItemAbility::TurnOn].into_iter().collect(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         };
         world.rooms.get_mut(&room_id).unwrap().contents.insert(lamp_id);
         world.items.insert(lamp_id, lamp);
@@ -506,6 +529,7 @@ mod tests {
             abilities: [ItemAbility::Unlock(Some(container_id))].into_iter().collect(),
             interaction_requires: HashMap::new(),
             text: None,
+            consumable: None,
         };
         world.player.inventory.insert(key_id);
         world.items.insert(key_id, key);
