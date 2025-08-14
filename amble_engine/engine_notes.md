@@ -1,17 +1,22 @@
 # Amble Engine Notes
-Some notes to help me remember and possible future others understand how this works / why it was done this way. This is put together piecemeal as I run across things that need some explanation.
+Some notes to help me remember and possible future others understand how this works / why it was done this way. This is put together piecemeal as I run across things that might need some explanation.
+
+---
 
 ## AmbleWorld
 - contains full game state: player, locations, items, triggers, npcs, spinners
+
+---
 
 ## Items
 * can be made single use by creating a despawn trigger conditioned on use.
 * despawned / unspawned items have location "Nowhere"
 
 ---
+
 ## Trigger System
 
-General function: any command / action runs check_triggers() at the end. Triggers are defined with a name, whether they're repeating or one-off, a list of conditions that must be me to fire, and a list of actions to perform when they're met.
+General function: any command / action runs check_triggers() with a set of matching TriggerConditions. Triggers are defined with a name, whether they're repeating or one-off, a list of conditions that must be me to fire, and a list of actions to perform when they're met.
 
 Some triggers conditions depend only on world state and can fire independent of player actions. Other conditions are met when particular player actions occur, such as opening a contaniner or leaving a room.
 
@@ -23,10 +28,25 @@ Some triggers uses have evolved over time and names don't reflect this (yet). In
 
 check_triggers() returns a Vec<Trigger> of all fired triggers, which allows the command handler to check to see if there was a any triggered reaction (and provide any default handling needed if not)
 
+---
+
 ## Flags
 * two types, Simple and Sequence
 * Simple flags are boolean "has done this thing at some point" or "has this state"
-* Sequence flags can be used to define steps in a puzzle or progression.
-* The sequence number can be advanced in triggers.
+* Sequence flags can be used to define steps in a puzzle or progressive severity of a condition.
+* The sequence number can be advanced in triggers
 * A sequence limit is typically set for the final step, but it *can* be infinite.
 * Can be used to change NPC state, unlock or reveal exits, advance Goals, create status effects
+
+---
+
+## Spinners
+* imported from my 'gametools' crate
+* provide humorous rephrasing of common message types to keep them more interesting
+* provide intermittent, location-based "ambient" messages for environment
+* defined in data/spinners.toml
+* wedges are Strings and can be weighted by being given different 'widths'
+* widths can be specified in an array of integers and default to 1.
+* intermittent messages are created using a blank wedge ("") with a high width so the blank is selected more frequently than the others
+* since all others default to 1, this is written in the toml just as width = [10 to 30] for the first (blank) wedge
+* spinner wedges can be added at runtime by triggers, allowing game events to color messages that follow
