@@ -18,13 +18,13 @@ use uuid::Uuid;
 use crate::{
     ItemHolder, Location,
     idgen::{NAMESPACE_ITEM, uuid_from_token},
-    item::{ContainerState, Item, ItemAbility, ItemInteractionType},
+    item::{ConsumableOpts, ConsumeType, ContainerState, Item, ItemAbility, ItemInteractionType},
     world::AmbleWorld,
 };
 
 use super::{SymbolTable, resolve_location};
 
-#[derive(Debug, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq, Hash)]
 #[serde(tag = "type", content = "target")]
 pub enum RawItemAbility {
     Clean,
@@ -42,8 +42,66 @@ pub enum RawItemAbility {
     Unlock(Option<String>),
     Use,
 }
+impl RawItemAbility {
+    pub fn to_ability(&self, symbols: &SymbolTable) -> Result<ItemAbility> {
+        let ability = match self {
+            Self::Clean => ItemAbility::Clean,
+            Self::CutWood => ItemAbility::CutWood,
+            Self::Ignite => ItemAbility::Ignite,
+            Self::Insulate => ItemAbility::Insulate,
+            Self::Pluck => ItemAbility::Pluck,
+            Self::Pry => ItemAbility::Pry,
+            Self::Read => ItemAbility::Read,
+            Self::Repair => ItemAbility::Repair,
+            Self::Sharpen => ItemAbility::Sharpen,
+            Self::Smash => ItemAbility::Smash,
+            Self::TurnOn => ItemAbility::TurnOn,
+            Self::TurnOff => ItemAbility::TurnOff,
+            Self::Unlock(Some(sym)) => {
+                let target = symbols
+                    .items
+                    .get(sym)
+                    .with_context(|| format!("raw item ability Unlock({sym}): target not found in symbol table"))?;
+                ItemAbility::Unlock(Some(*target))
+            },
+            Self::Unlock(None) => ItemAbility::Unlock(None),
+            Self::Use => ItemAbility::Use,
+        };
+        Ok(ability)
+    }
+}
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct RawConsumableOpts {
+    pub uses_left: usize,
+    pub consume_on: HashSet<RawItemAbility>,
+    pub when_consumed: RawConsumeType,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum RawConsumeType {
+    Despawn,
+    Replace { replacement: String, location: Location },
+}
+impl RawConsumeType {
+    pub fn to_consume_type(&self, symbols: &SymbolTable) -> Result<ConsumeType> {
+        match self {
+            Self::Despawn => Ok(ConsumeType::Despawn),
+            Self::Replace { replacement, location } => {
+                let replacement_uuid = symbols
+                    .items
+                    .get(replacement)
+                    .with_context(|| format!("looking up item symbol '{replacement}'"))?;
+                Ok(ConsumeType::Replace {
+                    replacement: *replacement_uuid,
+                    location: *location,
+                })
+            },
+        }
+    }
+}
+
 /// First stage of loading an `Item` from the items TOML file.
 /// In the TOML, id(token), name, description, portable, and location are all mandatory.
 /// Token IDs (e.g. "towel") are converted to UUIDs before second stage (placement)
@@ -53,6 +111,7 @@ pub enum RawItemAbility {
 /// `Abilities` designate additional abilities implemented in triggers (e.g. `TurnOn`)
 /// `Interaction_requires`: e.g. to "burn" x with y, x requires y to have "ignite" capability
 /// Text contains anything readable on the item or None.
+#[derive(Debug, Deserialize)]
 pub struct RawItem {
     pub id: String,
     pub name: String,
@@ -70,6 +129,7 @@ pub struct RawItem {
     pub interaction_requires: HashMap<ItemInteractionType, ItemAbility>,
     #[serde(default)]
     pub text: Option<String>,
+    pub consumable: Option<RawConsumableOpts>,
 }
 impl RawItem {
     /// Converts a `RawItem` loaded from TOML to an `Item` object.
@@ -85,33 +145,25 @@ impl RawItem {
             },
         };
 
+        // set up consumable options if present for this item
+        let consumable = if let Some(opts) = &self.consumable {
+            let mut consume_on = HashSet::new();
+            for ability in &opts.consume_on {
+                _ = consume_on.insert(ability.to_ability(symbols)?);
+            }
+            let when_consumed = opts.when_consumed.to_consume_type(symbols)?;
+            Some(ConsumableOpts {
+                uses_left: opts.uses_left,
+                consume_on,
+                when_consumed,
+            })
+        } else {
+            None
+        };
+
         let mut abilities = HashSet::new();
         for raw_ability in &self.abilities {
-            let ability = match raw_ability {
-                RawItemAbility::Clean => ItemAbility::Clean,
-                RawItemAbility::CutWood => ItemAbility::CutWood,
-                RawItemAbility::Ignite => ItemAbility::Ignite,
-                RawItemAbility::Insulate => ItemAbility::Insulate,
-                RawItemAbility::Pluck => ItemAbility::Pluck,
-                RawItemAbility::Pry => ItemAbility::Pry,
-                RawItemAbility::Read => ItemAbility::Read,
-                RawItemAbility::Repair => ItemAbility::Repair,
-                RawItemAbility::Sharpen => ItemAbility::Sharpen,
-                RawItemAbility::Smash => ItemAbility::Smash,
-                RawItemAbility::TurnOn => ItemAbility::TurnOn,
-                RawItemAbility::TurnOff => ItemAbility::TurnOff,
-                RawItemAbility::Unlock(Some(sym)) => {
-                    let target = symbols.items.get(sym).with_context(|| {
-                        format!(
-                            "raw item ({}) ability Unlock({sym}): not found in symbol table",
-                            self.id
-                        )
-                    })?;
-                    ItemAbility::Unlock(Some(*target))
-                },
-                RawItemAbility::Unlock(None) => ItemAbility::Unlock(None),
-                RawItemAbility::Use => ItemAbility::Use,
-            };
+            let ability = raw_ability.to_ability(symbols)?;
             abilities.insert(ability);
         }
 
@@ -128,6 +180,7 @@ impl RawItem {
             abilities,
             interaction_requires: self.interaction_requires.clone(),
             text: self.text.clone(),
+            consumable,
         };
         Ok(real_item)
     }

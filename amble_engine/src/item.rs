@@ -15,100 +15,17 @@ use std::{
 use uuid::Uuid;
 use variantly::Variantly;
 
-/// Methods common to things that can hold items.
-pub trait ItemHolder {
-    fn add_item(&mut self, item_id: Uuid);
-    fn remove_item(&mut self, item_id: Uuid);
-    fn contains_item(&self, item_id: Uuid) -> bool;
-}
-
-/// Things an item can do.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Eq, Hash)]
-#[serde(rename_all = "camelCase")]
-pub enum ItemAbility {
-    Clean,
-    CutWood,
-    Ignite,
-    Insulate,
-    Pluck,
-    Pry,
-    Read,
-    Repair,
-    Sharpen,
-    Smash,
-    TurnOn,
-    TurnOff,
-    Unlock(Option<Uuid>),
-    Use,
-}
-impl Display for ItemAbility {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Clean => write!(f, "clean"),
-            Self::CutWood => write!(f, "cut wood"),
-            Self::Ignite => write!(f, "ignite"),
-            Self::Insulate => write!(f, "insulate"),
-            Self::Read => write!(f, "read"),
-            Self::Repair => write!(f, "repair"),
-            Self::Sharpen => write!(f, "sharpen"),
-            Self::TurnOn => write!(f, "turn on"),
-            Self::TurnOff => write!(f, "turn off"),
-            Self::Unlock(_) => write!(f, "unlock"),
-            Self::Use => write!(f, "use"),
-            Self::Pluck => write!(f, "pluck"),
-            Self::Pry => write!(f, "pry"),
-            Self::Smash => write!(f, "smash"),
-        }
-    }
-}
-
-/// Things you can do to an item, but only with certain other items.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, Hash)]
-#[serde(rename_all = "camelCase")]
-pub enum ItemInteractionType {
-    Break,
-    Burn,
-    Clean,
-    Cover,
-    Cut,
-    Handle,
-    Move,
-    Open,
-    Repair,
-    Sharpen,
-    Turn,
-    Unlock,
-}
-impl Display for ItemInteractionType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Break => write!(f, "break"),
-            Self::Burn => write!(f, "burn"),
-            Self::Clean => write!(f, "clean"),
-            Self::Cover => write!(f, "cover"),
-            Self::Cut => write!(f, "cut"),
-            Self::Handle => write!(f, "handle"),
-            Self::Move => write!(f, "move"),
-            Self::Open => write!(f, "open"),
-            Self::Repair => write!(f, "repair"),
-            Self::Sharpen => write!(f, "sharpen"),
-            Self::Turn => write!(f, "turn"),
-            Self::Unlock => write!(f, "unlock"),
-        }
-    }
-}
-
-/// All of the valid states a container can be in.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Variantly)]
-#[serde(rename_all = "camelCase")]
-pub enum ContainerState {
-    Open,
-    Closed,
-    Locked,
-}
-
 /// Anything in '`AmbleWorld`' that can be inspected or manipulated apart from NPCs.
+///
 /// Some 'Items' can also act as containers for other items, if '`container_state`' is 'Some(_)'.
+/// 'symbol' is the string used to represent the item in the the TOML files.
+/// Items that aren't 'portable' are fixed and can't be moved at all.
+/// Items that are 'restricted' can't be *taken* by the player in current game state, but may become available.
+/// 'abilities' are special things you can do with this item (e.g. read, smash, ignite, clean)
+/// 'interaction_requires' maps a type of interaction (a thing that can be done to this item by another item) to an ability.
+///     e.g. ItemInteractionType::Burn => ItemAbility::Ignite
+/// Combined with an appropriate ActOnItem-based trigger, this would mean any Item with Ignite can be used to Burn this item.
+/// 'consumable' makes an item consumable if present, with various consumable types defined in ConsumableOpts
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Item {
     pub id: Uuid,
@@ -123,6 +40,7 @@ pub struct Item {
     pub abilities: HashSet<ItemAbility>,
     pub interaction_requires: HashMap<ItemInteractionType, ItemAbility>,
     pub text: Option<String>,
+    pub consumable: Option<ConsumableOpts>,
 }
 impl WorldObject for Item {
     fn id(&self) -> Uuid {
@@ -253,4 +171,111 @@ impl Item {
             _ => None,
         }
     }
+}
+
+/// Methods common to things that can hold items.
+pub trait ItemHolder {
+    fn add_item(&mut self, item_id: Uuid);
+    fn remove_item(&mut self, item_id: Uuid);
+    fn contains_item(&self, item_id: Uuid) -> bool;
+}
+
+/// Things an item can do.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Eq, Hash)]
+#[serde(rename_all = "camelCase")]
+pub enum ItemAbility {
+    Clean,
+    CutWood,
+    Ignite,
+    Insulate,
+    Pluck,
+    Pry,
+    Read,
+    Repair,
+    Sharpen,
+    Smash,
+    TurnOn,
+    TurnOff,
+    Unlock(Option<Uuid>),
+    Use,
+}
+impl Display for ItemAbility {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Clean => write!(f, "clean"),
+            Self::CutWood => write!(f, "cut wood"),
+            Self::Ignite => write!(f, "ignite"),
+            Self::Insulate => write!(f, "insulate"),
+            Self::Read => write!(f, "read"),
+            Self::Repair => write!(f, "repair"),
+            Self::Sharpen => write!(f, "sharpen"),
+            Self::TurnOn => write!(f, "turn on"),
+            Self::TurnOff => write!(f, "turn off"),
+            Self::Unlock(_) => write!(f, "unlock"),
+            Self::Use => write!(f, "use"),
+            Self::Pluck => write!(f, "pluck"),
+            Self::Pry => write!(f, "pry"),
+            Self::Smash => write!(f, "smash"),
+        }
+    }
+}
+
+/// Things you can do to an item, but only with certain other items.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize, Hash)]
+#[serde(rename_all = "camelCase")]
+pub enum ItemInteractionType {
+    Break,
+    Burn,
+    Clean,
+    Cover,
+    Cut,
+    Handle,
+    Move,
+    Open,
+    Repair,
+    Sharpen,
+    Turn,
+    Unlock,
+}
+impl Display for ItemInteractionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Break => write!(f, "break"),
+            Self::Burn => write!(f, "burn"),
+            Self::Clean => write!(f, "clean"),
+            Self::Cover => write!(f, "cover"),
+            Self::Cut => write!(f, "cut"),
+            Self::Handle => write!(f, "handle"),
+            Self::Move => write!(f, "move"),
+            Self::Open => write!(f, "open"),
+            Self::Repair => write!(f, "repair"),
+            Self::Sharpen => write!(f, "sharpen"),
+            Self::Turn => write!(f, "turn"),
+            Self::Unlock => write!(f, "unlock"),
+        }
+    }
+}
+
+/// All of the valid states a container can be in.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Variantly)]
+#[serde(rename_all = "camelCase")]
+pub enum ContainerState {
+    Open,
+    Closed,
+    Locked,
+}
+
+/// Extra options / data for consumable items are represented here.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ConsumableOpts {
+    pub uses_left: usize,
+    pub consume_on: HashSet<ItemAbility>,
+    pub when_consumed: ConsumeType,
+}
+
+/// Types of things that can happen when an item has been consumed.
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
+pub enum ConsumeType {
+    Despawn,
+    Replace { replacement: Uuid, location: Location },
 }
