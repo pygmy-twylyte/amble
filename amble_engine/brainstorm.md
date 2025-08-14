@@ -1,7 +1,6 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
-- consumable Items. Add a HashMap<ItemInteractionType, ConsumableOpts> where ConsmableOpts defines # of uses and what to do when no uses left (despawn or replace with inactivated version of the item). If a key exists for the interaction type, deplete the uses and update state accordingly. OR use the UseItem condition...for now can just trigger despawn of single use items, but ultimately could trigger an action that checks remaining uses...
 - commands to change View modes
 - do something about horrible help display
 - add a turn counter -- can be used to create delayed triggers, auto-save
@@ -13,6 +12,7 @@
 - tests (meh)
 
 ## FIXITs from runthroughs / CONTENT additions
+- sonic screwdriver in evidence locker that must be pried open (at security station)
 - sublevel 1 entrance... see if we can first block aa-3bwith black knight, then when black knight appeased, re-lock the AA-3B door with a new message
 - goal set after getting keycard to reach sublevel
 - overlays for observation-room
@@ -20,13 +20,13 @@
 - VIP bathroom overlay -- poem book on back of toilet until taken.
 - set goal: when portal gun opened "Find a Power Source"; when charged_battery obtained, complete goal (and "Open a Portal", complete after gun fired.)
 - snowfield NPC: Husky; follows you to snow-camp; once you read journal, vanishes can be seen in various locations
-- plaque 2 in snowfield down in the ice pit (new room, down rope), encased in ice, can be removed by melting or breaking the ice to read it; must build fire next to it
+- plaque 2 in snowfield down in the ice pit (new room, down rope), encased in ice, can be removed by melting or breaking the ice to read it; must build fire next to it (move dead fire from snow_camp)
 - monolith will induce higher intelligence state or paradox acceptance ability that will allow AA-3B access
 - once in AA-3B we'll finally get the cake
 - HAL: monolith room has HAL, but HAL is deactivated due to missing (removed) memory modules. Must replace them to get access to the monolith.
 - HAL module locations:
   * #1: EMH knows hidden location. EMH can only show player once player finds / repairs his mobile emitter. (done)
-  * #2: Access panel somewhere sparking...must be pried open with crowbar to reveal #2 jammed inside. Log to mention nearby location.
+  * #2: Vending machine...must be pried open with crowbar to reveal #2 jammed inside. Falls down in machine. Must be fished out with dental floss.
 - overlays for HAL's room / observation room to match puzzle progress
 - read denials should be red
 - add warning / instruction label to read on poetry performer, and make it Initech
