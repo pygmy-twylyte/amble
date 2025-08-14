@@ -86,6 +86,14 @@ pub fn use_item_on_handler(
     let sent_interaction = interaction;
     let sent_target_id = target.id();
 
+    // This is needed for the UseItem TriggerCondition. ItemAbility::Use is a reasonable default but
+    // should never come up, since the presence of this interaction is already verified by the
+    // interaction_requirement_met(...) call above.
+    let used_ability = target
+        .interaction_requires
+        .get(&interaction)
+        .unwrap_or(&ItemAbility::Use);
+
     let fired = check_triggers(
         world,
         view,
@@ -99,11 +107,15 @@ pub fn use_item_on_handler(
                 action: interaction,
                 target_id: target.id(),
             },
+            TriggerCondition::UseItem {
+                item_id: tool_id,
+                ability: *used_ability,
+            },
         ],
     )?;
-    // check to see if the ActOnItemtrigger we just sent fired
+    // check to see if the ActOnItem trigger we just sent fired
     // (that's the one that will actually change world state --
-    // an additional UseItemOnItem can provide flavor for a 
+    // an additional UseItemOnItem can provide flavor for a
     // particular item with the required ability.)
     let interaction_fired = triggers_contain_condition(&fired, |cond| match cond {
         TriggerCondition::ActOnItem { action, target_id } => {
