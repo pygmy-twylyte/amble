@@ -336,7 +336,7 @@ Instructions:
 [items.consumable]
 uses_left = 1
 consume_on = [{ type = "Ignite" }]
-when_consumed = { type = "despawn" }
+when_consumed = { type = "replaceCurrentRoom", replacement = "melted_flamethrower" }
 
 [[items.abilities]]
 type = "Ignite"
@@ -345,6 +345,17 @@ type = "Ignite"
 type = "Read"
 
 # -----------------------------------------------------------------------------
+[[items]]
+id = "melted_flamethrower"
+name = "Metallic Blob"
+description = "An irregular blob of metal and melted plastic that used to be an Initech Arson-Aid. Useless now. You can still just read the last step of the instructions on the side."
+portable = true
+location = { Nowhere = "spawns@wherever 'flamethrower' used" }
+text = "4) Flee."
+[[items.abilities]]
+type = "Read"
+
+# -------------------------------------------------------------------------------
 [[items]]
 id = "fallen_tree"
 name = "Fallen Tree"

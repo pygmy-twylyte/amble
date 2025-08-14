@@ -10,52 +10,12 @@ actions = [
 ]
 
 [[triggers]]
-name = "Global: Got-Towel"
-only_once = true
-conditions = [{ type = "take", item_id = "towel" }]
-actions = [
-    { type = "addFlag", flag = { type = "simple", name = "got-towel" } },
-    { type = "awardPoints", amount = 3 },
-    { type = "showMessage", text = """Now you're a frood who really knows where his towel is.""" },
-]
-
-[[triggers]]
 name = "Loading-Dock: Spawn Special Delivery"
 only_once = true
 conditions = [{ type = "leave", room_id = "loading-dock" }]
 actions = [
     { type = "spawnItemInRoom", item_id = "delivery_box", room_id = "loading-dock" },
     { type = "showMessage", text = """You hear a thud behind you, back toward the dock, like something was just dropped off. You glimpse a drone flying away quickly, as if hoping not to be seen. Was that an Initech logo on the side?""" },
-]
-
-[[triggers]]
-name = "Global: Open-Delivery-Box"
-only_once = true
-conditions = [{ type = "open", item_id = "delivery_box" }]
-actions = [
-    { type = "despawnItem", item_id = "delivery_box" },
-    { type = "spawnItemCurrentRoom", item_id = "destroyed_box" },
-    { type = "spawnItemCurrentRoom", item_id = "towel" },
-    { type = "showMessage", text = """The box sighs and collapses in a heap as soon as you touch it, relieved that its mission is over. Inside, you find a nanotruss-reinforced tachyon-powered towel with an attached note:\n\n                Always be a frood who knows where his towel is.\n                                -- F.P.""" },
-]
-
-[[triggers]]
-name = "Global: Take-Vogon-Poetry"
-only_once = false
-conditions = [{ type = "take", item_id = "vogon_poetry_book" }]
-actions = [
-    { type = "showMessage", text = "A greasy feeling of nausea envelops you." },
-]
-
-[[triggers]]
-name = "Global: Drop-Vogon-Poetry"
-only_once = false
-conditions = [
-    { type = "drop", item_id = "vogon_poetry_book" },
-    { type = "missingFlag", flag = "read-vogon-poetry" },
-]
-actions = [
-    { type = "showMessage", text = "That greasy, queasy feeling subsides." },
 ]
 
 [[triggers]]
@@ -348,16 +308,6 @@ actions = [
 ]
 
 [[triggers]]
-name = "Global: Cannot Discard No_Cake"
-only_once = false
-conditions = [{ type = "drop", item_id = "no_cake" }]
-actions = [
-    { type = "despawnItem", item_id = "no_cake" },
-    { type = "spawnItemInInventory", item_id = "no_cake" },
-    { type = "showMessage", text = """Try as you might, you cannot rid yourself of the feeling of a missing a promised dessert. The cake was a lie.""" },
-]
-
-[[triggers]]
 name = "Scrawled Note: Flag as Read"
 only_once = true
 conditions = [{ type = "useItem", item_id = "scrawled_note", ability = "read" }]
@@ -445,18 +395,6 @@ actions = [
     { type = "addFlag", flag = { type = "simple", name = "cleared-fallen-tree" } },
     { type = "addFlag", flag = { type = "simple", name = "chopped-fallen-tree" } },
     { type = "awardPoints", amount = 5 },
-]
-
-# flamethrower blows up -- despawns after first used to ignite something
-[[triggers]]
-name = "Global: Arson-Aid Fired"
-only_once = true
-conditions = [
-    # useItem - for events that depend on tool and interaction type but not target
-    { type = "useItem", item_id = "flamethrower", ability = "ignite" },
-]
-actions = [
-    { type = "showMessage", text = "The Initech Arson-Aid melts down into an amorphous blob of aluminum." },
 ]
 
 [[triggers]]
@@ -919,4 +857,68 @@ actions = [
     { type = "awardPoints", amount = 10 },
     { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-3" } },
     { type = "showMessage", text = "All memory now restored, HAL-9000 finishes rebooting and is fully operational." },
+]
+
+# -------------------------------- BEGIN GLOBAL TRIGGERS -----------------------------------------
+
+# flamethrower blows up -- despawns after first used to ignite something
+[[triggers]]
+name = "Global: Arson-Aid Fired"
+only_once = true
+conditions = [
+    # useItem - for events that depend on tool and interaction type but not target
+    { type = "useItem", item_id = "flamethrower", ability = "ignite" },
+]
+actions = [
+    { type = "showMessage", text = "The Initech Arson-Aid melts down into an amorphous blob of aluminum." },
+]
+
+[[triggers]]
+name = "Global: Got-Towel"
+only_once = true
+conditions = [{ type = "take", item_id = "towel" }]
+actions = [
+    { type = "addFlag", flag = { type = "simple", name = "got-towel" } },
+    { type = "awardPoints", amount = 3 },
+    { type = "showMessage", text = """NOW you're a frood who really "knows where his towel is." """ },
+]
+
+[[triggers]]
+name = "Global: Open-Delivery-Box"
+only_once = true
+conditions = [{ type = "open", item_id = "delivery_box" }]
+actions = [
+    { type = "despawnItem", item_id = "delivery_box" },
+    { type = "spawnItemCurrentRoom", item_id = "destroyed_box" },
+    { type = "spawnItemCurrentRoom", item_id = "towel" },
+    { type = "showMessage", text = """The box sighs and collapses in a heap as soon as you touch it, relieved that its mission is over. Inside, you find a nanotruss-reinforced tachyon-powered towel with an attached note:\n\n                Always be a frood who knows where his towel is.\n                                -- F.P.""" },
+]
+
+[[triggers]]
+name = "Global: Take-Vogon-Poetry"
+only_once = false
+conditions = [{ type = "take", item_id = "vogon_poetry_book" }]
+actions = [
+    { type = "showMessage", text = "A greasy feeling of nausea envelops you." },
+]
+
+[[triggers]]
+name = "Global: Drop-Vogon-Poetry"
+only_once = false
+conditions = [
+    { type = "drop", item_id = "vogon_poetry_book" },
+    { type = "missingFlag", flag = "read-vogon-poetry" },
+]
+actions = [
+    { type = "showMessage", text = "That greasy, queasy feeling subsides." },
+]
+
+[[triggers]]
+name = "Global: Cannot Discard No_Cake"
+only_once = false
+conditions = [{ type = "drop", item_id = "no_cake" }]
+actions = [
+    { type = "despawnItem", item_id = "no_cake" },
+    { type = "spawnItemInInventory", item_id = "no_cake" },
+    { type = "showMessage", text = """Try as you might, you cannot rid yourself of the feeling of a missing a promised dessert. The cake was a lie.""" },
 ]
