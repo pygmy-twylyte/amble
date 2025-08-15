@@ -17,6 +17,7 @@ const ICON_TRIGGER: &str = "⚡︎"; // U+26A1 U+FE0E
 const ICON_AMBIENT: &str = "…";
 const ICON_NEGATIVE: &str = "➖";
 const ICON_POSITIVE: &str = "➕";
+const ICON_ENGINE: &str = "*";
 
 /// View aggregates information to be displayed on each pass through the REPL and then organizes
 /// and displays the result.
@@ -124,10 +125,25 @@ impl View {
     fn system(&mut self) {
         self.show_help();
         self.load_or_save();
+        self.engine_message();
         self.quit_summary();
     }
 
     // INDIVIDUAL VIEW ITEM HANDLERS START HERE -------------------------------
+    fn engine_message(&mut self) {
+        let engine_msgs = self.items.iter().filter(|i| i.is_engine_message());
+        for msg in engine_msgs {
+            println!(
+                "{}",
+                fill(
+                    format!("{ICON_ENGINE:<4}{}", msg.clone().unwrap_engine_message()).as_str(),
+                    normal_block()
+                )
+            );
+        }
+        println!();
+    }
+
     fn points_awarded(&mut self) {
         let point_msgs = self.items.iter().filter(|i| i.is_points_awarded());
         for msg in point_msgs {
@@ -483,15 +499,14 @@ impl View {
     }
 
     fn room_overlays(&mut self) {
-        if let Some(ViewItem::RoomOverlays { text, force_mode }) =
+        // Note: force_mode is passed with a RoomOverlay item but currently unused
+        // (overlays are displayed regardless of view mode)
+        if let Some(ViewItem::RoomOverlays { text, .. }) =
             self.items.iter().find(|i| matches!(i, ViewItem::RoomOverlays { .. }))
         {
-            let display_mode = force_mode.unwrap_or(self.mode);
-            if display_mode != ViewMode::Brief {
-                for ovl in text {
-                    println!("{}", fill(ovl, normal_block()).to_string().overlay_style());
-                    println!();
-                }
+            for ovl in text {
+                println!("{}", fill(ovl, normal_block()).to_string().overlay_style());
+                println!();
             }
         }
     }
@@ -561,6 +576,7 @@ pub enum ViewMode {
 /// ViewItems are each of the various types of information / messages that may be displayed to the player.
 #[derive(Debug, Clone, PartialEq, Eq, Variantly)]
 pub enum ViewItem {
+    EngineMessage(String),
     PointsAwarded(isize),
     TransitionMessage(String),
     RoomDescription {
@@ -649,6 +665,7 @@ impl ViewItem {
             },
             ViewItem::AmbientEvent(_) => Section::Ambient,
             ViewItem::QuitSummary { .. }
+            | ViewItem::EngineMessage(_)
             | ViewItem::Help
             | ViewItem::GameLoaded { .. }
             | ViewItem::GameSaved { .. } => Section::System,
