@@ -923,11 +923,26 @@ actions = [
     { type = "showMessage", text = """Try as you might, you cannot rid yourself of the feeling of a missing a promised dessert. The cake was a lie.""" },
 ]
 
+# For "attach" triggers, we need two reciprocals so "attach foo to bar" and "attach bar to foo" are both recognized.
+# Example below:
 [[triggers]]
-name = "Global: Make Fishing Line"
-only_once = true
+name = "Global: Make Fishing Line (clip to floss)"
+only_once = false
 conditions = [
     { type = "useItemOnItem", tool_id = "paper_clip", target_id = "dental_floss", interaction = "attach" },
+]
+actions = [
+    { type = "despawnItem", item_id = "paper_clip" },
+    { type = "despawnItem", item_id = "dental_floss" },
+    { type = "spawnItemInInventory", item_id = "fishing_line" },
+    { type = "showMessage", text = """You MacGyvered the floss and paper clip into a fishing line.""" },
+]
+
+[[triggers]]
+name = "Global: Make Fishing Line (floss to clip)"
+only_once = false
+conditions = [
+    { type = "useItemOnItem", tool_id = "dental_floss", target_id = "paper_clip", interaction = "attach" },
 ]
 actions = [
     { type = "despawnItem", item_id = "paper_clip" },
