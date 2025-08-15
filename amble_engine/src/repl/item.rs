@@ -86,6 +86,7 @@ pub fn use_item_on_handler(
     // do the interaction as appropriate
     let sent_interaction = interaction;
     let sent_target_id = target.id();
+    let sent_tool_id = tool.id();
 
     // This is needed for the UseItem TriggerCondition. ItemAbility::Use is a reasonable default but
     // should never come up, since the presence of this interaction is already verified by the
@@ -123,6 +124,12 @@ pub fn use_item_on_handler(
         TriggerCondition::ActOnItem { action, target_id } => {
             *action == sent_interaction && *target_id == sent_target_id
         },
+        TriggerCondition::UseItem { ability, .. } => *ability == used_ability,
+        TriggerCondition::UseItemOnItem {
+            interaction,
+            target_id,
+            tool_id,
+        } => *interaction == sent_interaction && *target_id == sent_target_id && *tool_id == sent_tool_id,
         _ => false,
     });
 
