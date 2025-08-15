@@ -10,11 +10,36 @@ use std::path::PathBuf;
 use crate::goal::GoalStatus;
 use crate::style::GameStyle;
 
+use crate::view::ViewMode;
 use crate::{AMBLE_VERSION, Goal, View, ViewItem};
 use crate::{AmbleWorld, WorldObject, repl::ReplControl};
 
 use anyhow::{Context, Result};
 use log::{info, warn};
+
+/// Change the view mode.
+pub fn set_viewmode_handler(view: &mut View, mode: ViewMode) {
+    view.set_mode(mode);
+    let msg = match mode {
+        ViewMode::ClearVerbose => format!(
+            "{} mode set. {}",
+            "Clear".highlight(),
+            "Screen will be cleared with any movement and full location descriptions will always be shown.".italic()
+        ),
+        ViewMode::Verbose => format!(
+            "{} mode set. {}",
+            "Verbose".highlight(),
+            "Full location descriptions will always be shown.".italic()
+        ),
+        ViewMode::Brief => format!(
+            "{} mode set. {}",
+            "Brief".highlight(),
+            "Full location descriptions will only be shown on first visit and with the 'look' command.".italic()
+        ),
+    };
+    view.push(ViewItem::EngineMessage(msg));
+    info!("Player changed view mode to {mode:?}");
+}
 
 /// Quit the game.
 pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> {

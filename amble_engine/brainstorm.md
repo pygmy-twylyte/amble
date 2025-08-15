@@ -14,7 +14,6 @@
 ## FIXITs from runthroughs / CONTENT additions
 - sonic screwdriver in evidence locker that must be pried open (at security station)
 - sublevel 1 entrance... see if we can first block aa-3bwith black knight, then when black knight appeased, re-lock the AA-3B door with a new message
-- goal set after getting keycard to reach sublevel
 - overlays for observation-room
 - add messaging to player with applied status effects and relief (status:nausea)
 - VIP bathroom overlay -- poem book on back of toilet until taken.
@@ -23,12 +22,13 @@
 - plaque 2 in snowfield down in the ice pit (new room, down rope), encased in ice, can be removed by melting or breaking the ice to read it; must build fire next to it (move dead fire from snow_camp)
 - monolith will induce higher intelligence state or paradox acceptance ability that will allow AA-3B access
 - once in AA-3B we'll finally get the cake
-- HAL: monolith room has HAL, but HAL is deactivated due to missing (removed) memory modules. Must replace them to get access to the monolith.
-- HAL module locations:
+- HAL module locations:This is the Thing-infected Husky from the movie of the same name.
+It will first appear in the snowfield, watch the player when they go down in the ice pit, and then roam a specified area
+At this point, planned only to remain silent and stare creepily at the player
+Maybe should actually follow the player whenever outside the building
   * #1: EMH knows hidden location. EMH can only show player once player finds / repairs his mobile emitter. (done)
   * #2: Vending machine...must be pried open with crowbar to reveal #2 jammed inside. Falls down in machine. Must be fished out with dental floss.
-- overlays for HAL's room / observation room to match puzzle progress
-- read denials should be red
+  * #3: CMOT Dibbler will trade for his mug, but only after... ??? something else
 - add warning / instruction label to read on poetry performer, and make it Initech
 
 
