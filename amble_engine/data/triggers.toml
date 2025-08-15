@@ -560,6 +560,19 @@ actions = [
     { type = "npcSaysRandom", npc_id = "black_knight" },
 ]
 
+# -------------------------------- EVIDENCE LOCKER / SONIC SCREWDRIVER --------------------------------------
+[[triggers]]
+name = "Security-Station: Pry Evidence Locker Open"
+only_once = true
+conditions = [
+    { type = "actOnItem", target_sym = "evidence_locker_closed", action = "open" },
+]
+actions = [
+    { type = "despawnItem", item_id = "evidence_locker_closed" },
+    { type = "spawnItemInRoom", item_id = "evidence_locker_open", room_id = "security-station" },
+    { type = "showMessage", text = "Using all your weight, all your might, and most of your reserved F-bomb arsenal you pry the locker open, leaving the door barely attached." },
+]
+
 [[triggers]]
 name = "Ambient: Woodland"
 only_once = false
@@ -936,6 +949,7 @@ actions = [
     { type = "despawnItem", item_id = "dental_floss" },
     { type = "spawnItemInInventory", item_id = "fishing_line" },
     { type = "showMessage", text = """You MacGyvered the floss and paper clip into a fishing line.""" },
+    { type = "awardPoints", amount = 3 },
 ]
 
 [[triggers]]
@@ -949,4 +963,5 @@ actions = [
     { type = "despawnItem", item_id = "dental_floss" },
     { type = "spawnItemInInventory", item_id = "fishing_line" },
     { type = "showMessage", text = """You MacGyvered the floss and paper clip into a fishing line.""" },
+    { type = "awardPoints", amount = 3 },
 ]
