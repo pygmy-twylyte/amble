@@ -7,7 +7,7 @@ use crate::{
     dev_command::parse_dev_command,
     item::ItemInteractionType,
     style::GameStyle,
-    view::{View, ViewItem},
+    view::{View, ViewItem, ViewMode},
 };
 
 /// Commands that can be executed by the player.
@@ -37,7 +37,8 @@ pub enum Command {
     Read(String),
     ResetSeq(String), // DEV_MODE only
     Save(String),
-    SetFlag(String),   // DEV_MODE only
+    SetFlag(String), // DEV_MODE only
+    SetViewMode(ViewMode),
     SpawnItem(String), // DEV_MODE only
     StartSeq {
         // DEV_MODE only
@@ -122,6 +123,9 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
                 target: (*target).to_string(),
             },
         ), // ex. burn wood with torch
+        ["brief"] => Command::SetViewMode(ViewMode::Brief),
+        ["clear"] => Command::SetViewMode(ViewMode::ClearVerbose),
+        ["verbose"] => Command::SetViewMode(ViewMode::Verbose),
         _ => Command::Unknown,
     }
 }

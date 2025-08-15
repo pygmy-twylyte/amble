@@ -64,6 +64,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         }
 
         match parse_command(&input, &mut view) {
+            Command::SetViewMode(mode) => set_viewmode_handler(&mut view, mode),
             Command::Goals => goals_handler(world, &mut view),
             Command::Help => help_handler(&mut view),
             Command::Quit => {
