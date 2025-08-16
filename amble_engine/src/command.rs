@@ -136,6 +136,7 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
 /// player input before delegating here.
 pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
     match verb {
+        "open" | "pry" => Some(ItemInteractionType::Open),
         "attach" | "connect" | "join" => Some(ItemInteractionType::Attach),
         "break" | "smash" | "crack" | "shatter" => Some(ItemInteractionType::Break),
         "burn" | "ignite" | "light" | "melt" => Some(ItemInteractionType::Burn),
@@ -144,7 +145,7 @@ pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
         "handle" | "take" | "grasp" | "hold" | "grab" => Some(ItemInteractionType::Handle),
         "move" | "remove" | "shift" | "shove" | "budge" => Some(ItemInteractionType::Move),
         "turn" | "spin" | "twist" | "swivel" => Some(ItemInteractionType::Turn),
-        "unlock" | "undo" | "open" => Some(ItemInteractionType::Unlock),
+        "unlock" | "undo" => Some(ItemInteractionType::Unlock),
         "sharpen" | "hone" => Some(ItemInteractionType::Sharpen),
         "clean" | "wipe" | "shine" | "buff" => Some(ItemInteractionType::Clean),
         "repair" | "fix" => Some(ItemInteractionType::Repair),
