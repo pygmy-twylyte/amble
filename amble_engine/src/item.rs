@@ -363,10 +363,7 @@ pub enum ConsumeType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        npc::{Npc, NpcState},
-        world::{AmbleWorld, Location},
-    };
+    use crate::world::{AmbleWorld, Location};
     use std::collections::{HashMap, HashSet};
     use uuid::Uuid;
 

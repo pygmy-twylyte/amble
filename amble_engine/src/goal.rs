@@ -116,7 +116,7 @@ mod tests {
     use super::*;
     use crate::{
         item::Item,
-        player::{Flag, Player},
+        player::Flag,
         room::Room,
         world::{AmbleWorld, Location},
     };

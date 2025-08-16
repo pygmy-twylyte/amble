@@ -219,7 +219,7 @@ mod tests {
         item::Item,
         npc::{Npc, NpcState},
         player::Flag,
-        view::{View, ViewItem, ViewMode},
+        view::{View, ViewItem},
         world::{AmbleWorld, Location},
     };
     use std::collections::{HashMap, HashSet};

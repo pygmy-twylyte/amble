@@ -155,7 +155,7 @@ mod tests {
     use super::*;
     use crate::{
         item::Item,
-        view::{ContentLine, View, ViewItem},
+        view::{View, ViewItem},
         world::{AmbleWorld, Location},
     };
     use std::collections::{HashMap, HashSet};

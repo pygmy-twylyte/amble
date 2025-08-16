@@ -144,9 +144,9 @@ pub fn nearby_reachable_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashS
 mod tests {
     use super::*;
     use crate::{
-        item::{ContainerState, Item, ItemAbility},
+        item::{ContainerState, Item},
         npc::{Npc, NpcState},
-        player::{Flag, Player},
+        player::Player,
         room::Room,
         spinners::SpinnerType,
     };
@@ -187,6 +187,7 @@ mod tests {
         }
     }
 
+    #[allow(dead_code)]
     fn create_test_npc(id: Uuid, location: Location) -> Npc {
         Npc {
             id,
