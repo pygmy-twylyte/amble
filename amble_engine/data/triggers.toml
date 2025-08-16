@@ -571,7 +571,31 @@ actions = [
     { type = "despawnItem", item_id = "evidence_locker_closed" },
     { type = "spawnItemInRoom", item_id = "evidence_locker_open", room_id = "security-station" },
     { type = "showMessage", text = "Using all your weight, all your might, and most of your reserved F-bomb arsenal you pry the locker open, leaving the door barely attached." },
+    { type = "awardPoints", amount = 2 },
 ]
+
+[[triggers]]
+name = "Security-Station: Take Sonic Screwdriver"
+only_once = true
+conditions = [{ type = "take", item_id = "sonic_screwdriver" }]
+actions = [
+    { type = "addFlag", flag = { type = "simple", name = "got-sonic" } },
+    { type = "awardPoints", amount = 3 },
+]
+
+[[triggers]]
+name = "EMH: Player Has Sonic"
+only_once = true
+conditions = [
+    { type = "enter", room_id = "med-bay" },
+    { type = "hasItem", item_id = "sonic_screwdriver" },
+    { type = "hasFlag", flag = "mobilize-emh#1" },
+]
+actions = [
+    { type = "npcSays", npc_id = "emh", quote = "Please state the nature of your med... wait -- is that a sonic screwdriver? I bet you could use that to repair my mobile emitter!" },
+]
+
+# ================================ AMBIENT TRIGGERS =====================================
 
 [[triggers]]
 name = "Ambient: Woodland"
