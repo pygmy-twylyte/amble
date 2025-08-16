@@ -10,7 +10,7 @@ use variantly::Variantly;
 /// The player-controlled character.
 ///
 /// This struct tracks the player's state, such as inventory, score and flags.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Player {
     pub id: Uuid,
     pub symbol: String,
@@ -209,4 +209,313 @@ impl Hash for Flag {
 /// Format is <name>#<step>, e.g. "`hal_reboot#2`"
 pub fn format_sequence_value(name: &str, step: u8) -> String {
     format!("{name}#{step}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashSet;
+    use uuid::Uuid;
+
+    fn create_test_player() -> Player {
+        let mut player = Player::default();
+        player.flags.insert(Flag::simple("test_flag"));
+        player.flags.insert(Flag::sequence("test_seq", Some(3)));
+        let item_id = Uuid::new_v4();
+        player.inventory.insert(item_id);
+        player
+    }
+
+    #[test]
+    fn player_default_creates_valid_player() {
+        let player = Player::default();
+        assert_eq!(player.symbol, "the_candidate");
+        assert_eq!(player.name, "The Candidate");
+        assert_eq!(player.description, "default");
+        assert_eq!(player.location, Location::default());
+        assert_eq!(player.score, 1);
+        assert!(player.inventory.is_empty());
+        assert!(player.flags.is_empty());
+    }
+
+    #[test]
+    fn update_flag_modifies_existing_flag() {
+        let mut player = create_test_player();
+
+        player.update_flag("test_seq", |flag| {
+            if let Flag::Sequence { step, .. } = flag {
+                *step = 5;
+            }
+        });
+
+        let updated_flag = player.flags.get(&Flag::simple("test_seq")).unwrap();
+        if let Flag::Sequence { step, .. } = updated_flag {
+            assert_eq!(*step, 5);
+        } else {
+            panic!("Expected sequence flag");
+        }
+    }
+
+    #[test]
+    fn update_flag_does_nothing_for_nonexistent_flag() {
+        let mut player = create_test_player();
+        let original_flags = player.flags.clone();
+
+        player.update_flag("nonexistent", |_flag| {
+            // This should never be called
+            panic!("Should not be called for nonexistent flag");
+        });
+
+        assert_eq!(player.flags, original_flags);
+    }
+
+    #[test]
+    fn advance_flag_increments_sequence_step() {
+        let mut player = create_test_player();
+
+        player.advance_flag("test_seq");
+
+        let flag = player.flags.get(&Flag::simple("test_seq")).unwrap();
+        if let Flag::Sequence { step, .. } = flag {
+            assert_eq!(*step, 1);
+        } else {
+            panic!("Expected sequence flag");
+        }
+    }
+
+    #[test]
+    fn advance_flag_respects_end_limit() {
+        let mut player = create_test_player();
+
+        // Advance to end
+        player.advance_flag("test_seq"); // step 1
+        player.advance_flag("test_seq"); // step 2
+        player.advance_flag("test_seq"); // step 3 (end)
+        player.advance_flag("test_seq"); // should stay at 3
+
+        let flag = player.flags.get(&Flag::simple("test_seq")).unwrap();
+        if let Flag::Sequence { step, end, .. } = flag {
+            assert_eq!(*step, 3);
+            assert_eq!(*end, Some(3));
+        } else {
+            panic!("Expected sequence flag");
+        }
+    }
+
+    #[test]
+    fn reset_flag_sets_sequence_to_zero() {
+        let mut player = create_test_player();
+
+        // Advance first
+        player.advance_flag("test_seq");
+        player.advance_flag("test_seq");
+
+        // Then reset
+        player.reset_flag("test_seq");
+
+        let flag = player.flags.get(&Flag::simple("test_seq")).unwrap();
+        if let Flag::Sequence { step, .. } = flag {
+            assert_eq!(*step, 0);
+        } else {
+            panic!("Expected sequence flag");
+        }
+    }
+
+    #[test]
+    fn world_object_trait_works() {
+        let player = create_test_player();
+        assert_eq!(player.symbol(), "the_candidate");
+        assert_eq!(player.name(), "The Candidate");
+        assert_eq!(player.description(), "default");
+        assert_eq!(player.location(), &Location::default());
+    }
+
+    #[test]
+    fn item_holder_add_item_works() {
+        let mut player = Player::default();
+        let item_id = Uuid::new_v4();
+
+        player.add_item(item_id);
+        assert!(player.inventory.contains(&item_id));
+    }
+
+    #[test]
+    fn item_holder_remove_item_works() {
+        let mut player = create_test_player();
+        let item_id = *player.inventory.iter().next().unwrap();
+
+        player.remove_item(item_id);
+        assert!(!player.inventory.contains(&item_id));
+    }
+
+    #[test]
+    fn item_holder_contains_item_works() {
+        let player = create_test_player();
+        let item_id = *player.inventory.iter().next().unwrap();
+
+        assert!(player.contains_item(item_id));
+        assert!(!player.contains_item(Uuid::new_v4()));
+    }
+
+    #[test]
+    fn flag_simple_creates_simple_flag() {
+        let flag = Flag::simple("test");
+        if let Flag::Simple { name } = flag {
+            assert_eq!(name, "test");
+        } else {
+            panic!("Expected simple flag");
+        }
+    }
+
+    #[test]
+    fn flag_sequence_creates_sequence_flag() {
+        let flag = Flag::sequence("test", Some(5));
+        if let Flag::Sequence { name, step, end } = flag {
+            assert_eq!(name, "test");
+            assert_eq!(step, 0);
+            assert_eq!(end, Some(5));
+        } else {
+            panic!("Expected sequence flag");
+        }
+    }
+
+    #[test]
+    fn flag_value_returns_correct_values() {
+        let simple = Flag::simple("simple_flag");
+        assert_eq!(simple.value(), "simple_flag");
+
+        let sequence = Flag::sequence("seq_flag", Some(2));
+        assert_eq!(sequence.value(), "seq_flag#0");
+
+        let mut advanced_seq = Flag::sequence("advanced", Some(3));
+        advanced_seq.advance();
+        assert_eq!(advanced_seq.value(), "advanced#1");
+    }
+
+    #[test]
+    fn flag_advance_works_for_sequence() {
+        let mut flag = Flag::sequence("test", Some(3));
+
+        flag.advance();
+        if let Flag::Sequence { step, .. } = flag {
+            assert_eq!(step, 1);
+        }
+
+        flag.advance();
+        if let Flag::Sequence { step, .. } = flag {
+            assert_eq!(step, 2);
+        }
+    }
+
+    #[test]
+    fn flag_advance_respects_end_limit() {
+        let mut flag = Flag::sequence("test", Some(2));
+
+        flag.advance(); // step 1
+        flag.advance(); // step 2 (end)
+        flag.advance(); // should stay at 2
+
+        if let Flag::Sequence { step, .. } = flag {
+            assert_eq!(step, 2);
+        }
+    }
+
+    #[test]
+    fn flag_advance_unlimited_sequence() {
+        let mut flag = Flag::sequence("test", None);
+
+        for i in 1..=10 {
+            flag.advance();
+            if let Flag::Sequence { step, .. } = flag {
+                assert_eq!(step, i);
+            }
+        }
+    }
+
+    #[test]
+    fn flag_reset_works_for_sequence() {
+        let mut flag = Flag::sequence("test", Some(3));
+        flag.advance();
+        flag.advance();
+
+        flag.reset();
+        if let Flag::Sequence { step, .. } = flag {
+            assert_eq!(step, 0);
+        }
+    }
+
+    #[test]
+    fn flag_is_complete_works() {
+        let simple = Flag::simple("test");
+        assert!(simple.is_complete());
+
+        let incomplete_seq = Flag::sequence("test", Some(3));
+        assert!(!incomplete_seq.is_complete());
+
+        let mut complete_seq = Flag::sequence("test", Some(2));
+        complete_seq.advance();
+        complete_seq.advance();
+        assert!(complete_seq.is_complete());
+
+        let unlimited_seq = Flag::sequence("test", None);
+        assert!(!unlimited_seq.is_complete());
+    }
+
+    #[test]
+    fn flag_name_returns_base_name() {
+        let simple = Flag::simple("simple_name");
+        assert_eq!(simple.name(), "simple_name");
+
+        let sequence = Flag::sequence("seq_name", Some(3));
+        assert_eq!(sequence.name(), "seq_name");
+    }
+
+    #[test]
+    fn flag_display_works() {
+        let simple = Flag::simple("test_flag");
+        assert_eq!(format!("{}", simple), "test_flag");
+
+        let sequence = Flag::sequence("test_seq", Some(3));
+        assert_eq!(format!("{}", sequence), "test_seq#0");
+
+        let mut advanced = Flag::sequence("advanced", Some(2));
+        advanced.advance();
+        assert_eq!(format!("{}", advanced), "advanced#1");
+    }
+
+    #[test]
+    fn flag_equality_based_on_name_only() {
+        let flag1 = Flag::simple("test");
+        let mut flag2 = Flag::sequence("test", Some(3));
+        flag2.advance();
+
+        // Different types but same name should be equal
+        assert_eq!(flag1, flag2);
+
+        let flag3 = Flag::simple("different");
+        assert_ne!(flag1, flag3);
+    }
+
+    #[test]
+    fn flag_hash_based_on_name_only() {
+        let flag1 = Flag::simple("test");
+        let mut flag2 = Flag::sequence("test", Some(3));
+        flag2.advance();
+
+        let mut set = HashSet::new();
+        set.insert(flag1);
+
+        // Should find flag2 because it has same name as flag1
+        assert!(set.contains(&flag2));
+
+        let flag3 = Flag::simple("different");
+        assert!(!set.contains(&flag3));
+    }
+
+    #[test]
+    fn format_sequence_value_works() {
+        assert_eq!(format_sequence_value("test", 0), "test#0");
+        assert_eq!(format_sequence_value("quest", 5), "quest#5");
+        assert_eq!(format_sequence_value("special_name", 255), "special_name#255");
+    }
 }

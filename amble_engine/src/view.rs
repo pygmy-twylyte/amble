@@ -23,9 +23,9 @@ const ICON_ENGINE: &str = "*";
 /// and displays the result.
 #[derive(Debug, Clone)]
 pub struct View {
-    width: usize,
-    mode: ViewMode,
-    items: Vec<ViewItem>,
+    pub width: usize,
+    pub mode: ViewMode,
+    pub items: Vec<ViewItem>,
 }
 impl View {
     /// Create a new empty view.
