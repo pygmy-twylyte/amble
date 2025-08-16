@@ -52,7 +52,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     let mut view = View::new();
 
     loop {
-        print!("\n[Score: {}/{}]> ", world.player.score, world.max_score);
+        print!("\n[Turn: {} | Score: {}]> ", world.turn_count, world.player.score);
         io::stdout()
             .flush()
             .expect("failed to flush stdout before reading input");
@@ -109,6 +109,36 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             Command::SetFlag(flag_name) => dev_set_flag_handler(world, &mut view, &flag_name),
             Command::StartSeq { seq_name, end } => dev_start_seq_handler(world, &mut view, &seq_name, &end),
         }
+        // We'll update turn count here in a centralized way, but this approach does not
+        // take into account commands that return Ok(()) after failing to match a string.
+        // Example: "take zpoon" (meant "spoon") -> "What's a zpoon?" response --> Ok(()).
+        // That will count as a turn even though it's a no-op. If more granularity is needed,
+        // individual command handlers will need to be modified.
+        //
+        // Only commands / actions that may be part of what's required to solve a puzzle or advance
+        // the game count as a turn.
+        let turn_taken = match parse_command(&input, &mut view) {
+            Command::Close(_)
+            | Command::Drop(_)
+            | Command::GiveToNpc { .. }
+            | Command::LookAt(_)
+            | Command::LockItem(_)
+            | Command::MoveTo(_)
+            | Command::Open(_)
+            | Command::PutIn { .. }
+            | Command::Read(_)
+            | Command::Take(_)
+            | Command::TakeFrom { .. }
+            | Command::TalkTo(_)
+            | Command::TurnOn(_)
+            | Command::UnlockItem(_)
+            | Command::UseItemOn { .. } => true,
+            _ => false,
+        };
+        if turn_taken {
+            world.turn_count += 1;
+        }
+
         check_ambient_triggers(world, &mut view)?;
         view.flush();
     }

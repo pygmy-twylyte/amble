@@ -57,6 +57,7 @@ pub struct AmbleWorld {
     pub max_score: usize,
     pub goals: Vec<Goal>,
     pub version: String,
+    pub turn_count: usize,
 }
 impl AmbleWorld {
     /// Create a new empty world with a default player.
@@ -71,6 +72,7 @@ impl AmbleWorld {
             max_score: 0,
             goals: Vec::new(),
             version: AMBLE_VERSION.to_string(),
+            turn_count: 0,
         };
         info!("new, empty 'AmbleWorld' created");
         world
