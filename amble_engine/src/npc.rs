@@ -15,61 +15,6 @@ use uuid::Uuid;
 
 use crate::{ItemHolder, Location, View, ViewItem, WorldObject, view::ContentLine, world::AmbleWorld};
 
-/// Represents the demeanor of an 'Npc', which may affect default dialogue and behavior
-#[derive(Clone, Debug, variantly::Variantly, PartialEq, Hash, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum NpcState {
-    Bored,
-    Happy,
-    Mad,
-    Normal,
-    Sad,
-    Tired,
-    Custom(String),
-}
-impl Display for NpcState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Happy => write!(f, "Happy"),
-            Self::Bored => write!(f, "Bored"),
-            Self::Mad => write!(f, "Mad"),
-            Self::Normal => write!(f, "Normal"),
-            Self::Sad => write!(f, "Sad"),
-            Self::Tired => write!(f, "Tired"),
-            Self::Custom(_) => write!(f, "Custom"),
-        }
-    }
-}
-impl NpcState {
-    pub fn from_key(key: &str) -> Self {
-        match key {
-            "sad" => NpcState::Sad,
-            "bored" => NpcState::Bored,
-            "normal" => NpcState::Normal,
-            "happy" => NpcState::Happy,
-            "mad" => NpcState::Mad,
-            "tired" => NpcState::Tired,
-            other if other.starts_with("custom:") => NpcState::Custom(other.trim_start_matches("custom:").to_string()),
-            _ => {
-                warn!("Unknown NpcState key in dialogue map: {key}");
-                NpcState::Normal
-            },
-        }
-    }
-
-    pub fn as_key(&self) -> String {
-        match self {
-            NpcState::Sad => "sad".into(),
-            NpcState::Bored => "bored".into(),
-            NpcState::Normal => "normal".into(),
-            NpcState::Happy => "happy".into(),
-            NpcState::Mad => "mad".into(),
-            NpcState::Tired => "tired".into(),
-            NpcState::Custom(s) => format!("custom:{s}"),
-        }
-    }
-}
-
 /// A non-playable character.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Npc {
@@ -81,6 +26,7 @@ pub struct Npc {
     pub inventory: HashSet<Uuid>,
     pub dialogue: HashMap<NpcState, Vec<String>>,
     pub state: NpcState,
+    pub movement: NpcMovement,
 }
 impl Npc {
     /// Returns a random line of dialogue from within the NPCs current Mood.
@@ -150,6 +96,91 @@ impl ItemHolder for Npc {
     }
 }
 
+/// Paramaters that define when and where mobile NPCs should move.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct NpcMovement {
+    pub movement_type: MovementType,
+    pub timing: MovementTiming,
+    pub active: bool,
+    pub last_moved_turn: usize,
+}
+
+/// Type and route of NPC movement
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum MovementType {
+    Route {
+        rooms: Vec<Uuid>,
+        current_idx: usize,
+        loop_route: bool,
+    },
+    RandomSet {
+        rooms: HashSet<Uuid>,
+    },
+}
+
+/// Defines schedule for NPC movements
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum MovementTiming {
+    EveryNTurns(usize),
+    OnTurn(usize),
+}
+
+/// Represents the demeanor of an 'Npc', which may affect default dialogue and behavior
+#[derive(Clone, Debug, variantly::Variantly, PartialEq, Hash, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum NpcState {
+    Bored,
+    Happy,
+    Mad,
+    Normal,
+    Sad,
+    Tired,
+    Custom(String),
+}
+impl Display for NpcState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Happy => write!(f, "Happy"),
+            Self::Bored => write!(f, "Bored"),
+            Self::Mad => write!(f, "Mad"),
+            Self::Normal => write!(f, "Normal"),
+            Self::Sad => write!(f, "Sad"),
+            Self::Tired => write!(f, "Tired"),
+            Self::Custom(_) => write!(f, "Custom"),
+        }
+    }
+}
+impl NpcState {
+    pub fn from_key(key: &str) -> Self {
+        match key {
+            "sad" => NpcState::Sad,
+            "bored" => NpcState::Bored,
+            "normal" => NpcState::Normal,
+            "happy" => NpcState::Happy,
+            "mad" => NpcState::Mad,
+            "tired" => NpcState::Tired,
+            other if other.starts_with("custom:") => NpcState::Custom(other.trim_start_matches("custom:").to_string()),
+            _ => {
+                warn!("Unknown NpcState key in dialogue map: {key}");
+                NpcState::Normal
+            },
+        }
+    }
+
+    pub fn as_key(&self) -> String {
+        match self {
+            NpcState::Sad => "sad".into(),
+            NpcState::Bored => "bored".into(),
+            NpcState::Normal => "normal".into(),
+            NpcState::Happy => "happy".into(),
+            NpcState::Mad => "mad".into(),
+            NpcState::Tired => "tired".into(),
+            NpcState::Custom(s) => format!("custom:{s}"),
+        }
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
