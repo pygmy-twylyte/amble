@@ -4,6 +4,7 @@
 //! or items. The main [`load_world`] function ties them all together.
 
 pub mod goals;
+pub mod help;
 pub mod items;
 pub mod npcs;
 pub mod player;

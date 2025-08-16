@@ -1,0 +1,67 @@
+[[commands]]
+command = "help"
+description = "show this help message"
+
+[[commands]]
+command = "goals"
+description = "will help you determine what to do next, if unsure"
+
+[[commands]]
+command = "inventory"
+description = "show your current inventory (can be shortened to 'inv')"
+
+[[commands]]
+command = "look"
+description = "describe your surroundings"
+
+[[commands]]
+command = "look at <object>"
+description = "describe an object (or character) in more detail"
+
+[[commands]]
+command = "go <direction>"
+description = "move in a direction"
+
+[[commands]]
+command = "load <savegame>"
+description = "load a saved game"
+
+[[commands]]
+command = "save <savegame>"
+description = "save the game"
+
+[[commands]]
+command = "quit"
+description = "quit the game"
+
+[[commands]]
+command = "take <object>"
+description = "pick up an object"
+
+[[commands]]
+command = "take <object> from <vessel>"
+description = "take an object from a container or character"
+
+[[commands]]
+command = "put <object> in <vessel>"
+description = "put an object into a container"
+
+[[commands]]
+command = "give <object> to <character>"
+description = "give an object to a character"
+
+[[commands]]
+command = "drop <object>"
+description = "drop an object"
+
+[[commands]]
+command = "talk to <character>"
+description = "talk to a character"
+
+[[commands]]
+command = "start <object>"
+description = "switch something on (can also use 'turn <object> on')"
+
+[[commands]]
+command = "<verb> <object> with <other_object>"
+description = "many possibilities, e.g. 'light candle with match', 'cut cake with knife'"

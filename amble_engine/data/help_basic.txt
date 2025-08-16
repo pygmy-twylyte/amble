@@ -1,0 +1,16 @@
+General:
+
+The commands listed below are a partial list covering the most common ones.
+Many other actions are understood by the game and are necessary to solve some
+of the puzzles, and you'll need to discover those for yourself!
+
+Some items can be read (e.g. 'read mug', 'read log') and provide extra detail
+about the game world, instructions for use, and other goodies.
+
+NPCs can be talked to and may offer help (or refuse it!) Their moods and
+actions may change depending on your game progress. You can also give them
+items or take them in some cases.
+
+Item names, character names, and directions are pattern-matched so you don't
+have to type the whole thing. For example, if you want to talk to the knight,
+you can type 'talk to kni' or 'talk to kn' or even 'talk to gh'.

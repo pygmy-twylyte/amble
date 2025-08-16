@@ -8,6 +8,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use crate::goal::GoalStatus;
+use crate::loader::help::load_help_data;
 use crate::style::GameStyle;
 
 use crate::view::ViewMode;
@@ -16,6 +17,7 @@ use crate::{AmbleWorld, WorldObject, repl::ReplControl};
 
 use anyhow::{Context, Result};
 use log::{info, warn};
+use std::path::Path;
 
 /// Change the view mode.
 pub fn set_viewmode_handler(view: &mut View, mode: ViewMode) {
@@ -112,7 +114,24 @@ pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> 
 
 /// Show available commands.
 pub fn help_handler(view: &mut View) {
-    view.push(ViewItem::Help);
+    let basic_text_path = Path::new("amble_engine/data/help_basic.txt");
+    let commands_toml_path = Path::new("amble_engine/data/help_commands.toml");
+
+    match load_help_data(basic_text_path, commands_toml_path) {
+        Ok(help_data) => {
+            view.push(ViewItem::Help {
+                basic_text: help_data.basic_text,
+                commands: help_data.commands,
+            });
+        },
+        Err(e) => {
+            view.push(ViewItem::Error(format!(
+                "Failed to load help data: {}",
+                e.to_string().error_style()
+            )));
+            warn!("Failed to load help data: {}", e);
+        },
+    }
 }
 
 /// Show current game game goals / status.

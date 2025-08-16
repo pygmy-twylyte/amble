@@ -7,9 +7,9 @@ use colored::Colorize;
 use textwrap::{fill, termwidth};
 use variantly::Variantly;
 
+use crate::loader::help::HelpCommand;
 use crate::style::{GameStyle, indented_block, normal_block};
 
-pub const HELP_TEXT: &str = include_str!("../data/help.txt");
 const ICON_SUCCESS: &str = "\u{2714}"; // ✔
 const ICON_FAILURE: &str = "\u{2716}"; // ✖
 const ICON_ERROR: &str = "⚠︎"; // U+26A0 U+FE0E
@@ -265,8 +265,22 @@ impl View {
     }
 
     fn show_help(&mut self) {
-        if let Some(ViewItem::Help) = self.items.iter().find(|item| matches!(item, ViewItem::Help)) {
-            println!("{}", HELP_TEXT.italic().cyan());
+        if let Some(ViewItem::Help { basic_text, commands }) =
+            self.items.iter().find(|item| matches!(item, ViewItem::Help { .. }))
+        {
+            // Print the basic help text with proper text wrapping
+            println!("{}", fill(basic_text, normal_block()).italic().cyan());
+            println!();
+
+            // Print "Some Common Commands:" header
+            println!("{}", "Some Common Commands:".bold().yellow());
+            println!();
+
+            // Print each command with formatting and proper text wrapping
+            for command in commands {
+                let formatted_line = format!("{} - {}", command.command.bold().green(), command.description.italic());
+                println!("{}", fill(&formatted_line, normal_block()));
+            }
         }
     }
 
@@ -622,7 +636,10 @@ pub enum ViewItem {
         visited: usize,
         max_visited: usize,
     },
-    Help,
+    Help {
+        basic_text: String,
+        commands: Vec<HelpCommand>,
+    },
     ActiveGoal {
         name: String,
         description: String,
@@ -666,7 +683,7 @@ impl ViewItem {
             ViewItem::AmbientEvent(_) => Section::Ambient,
             ViewItem::QuitSummary { .. }
             | ViewItem::EngineMessage(_)
-            | ViewItem::Help
+            | ViewItem::Help { .. }
             | ViewItem::GameLoaded { .. }
             | ViewItem::GameSaved { .. } => Section::System,
             ViewItem::TransitionMessage(_) => Section::Transition,
