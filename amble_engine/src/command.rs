@@ -400,7 +400,7 @@ mod tests {
             (
                 "open chest with magic_wand",
                 Command::UseItemOn {
-                    verb: ItemInteractionType::Unlock,
+                    verb: ItemInteractionType::Open,
                     tool: "magic_wand".into(),
                     target: "chest".into(),
                 },
