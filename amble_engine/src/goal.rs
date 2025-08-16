@@ -110,3 +110,354 @@ impl Goal {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        item::Item,
+        player::{Flag, Player},
+        room::Room,
+        world::{AmbleWorld, Location},
+    };
+    use std::collections::{HashMap, HashSet};
+    use uuid::Uuid;
+
+    fn create_test_world() -> AmbleWorld {
+        let mut world = AmbleWorld::new_empty();
+
+        // Add test room
+        let room_id = Uuid::new_v4();
+        let mut room = Room {
+            id: room_id,
+            symbol: "test_room".into(),
+            name: "Test Room".into(),
+            base_description: "A test room".into(),
+            overlays: vec![],
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+        room.visited = true;
+        world.rooms.insert(room_id, room);
+
+        // Add test item
+        let item_id = Uuid::new_v4();
+        let item = Item {
+            id: item_id,
+            symbol: "test_item".into(),
+            name: "Test Item".into(),
+            description: "A test item".into(),
+            location: Location::Inventory,
+            portable: true,
+            container_state: None,
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+            consumable: None,
+        };
+        world.items.insert(item_id, item);
+        world.player.inventory.insert(item_id);
+
+        // Add test flags
+        world.player.flags.insert(Flag::simple("test_flag"));
+        world.player.flags.insert(Flag::sequence("test_seq", Some(2)));
+
+        world
+    }
+
+    #[test]
+    fn goal_condition_flag_complete_works() {
+        let mut world = create_test_world();
+
+        // Add completed sequence flag
+        let mut seq_flag = Flag::sequence("completed_seq", Some(2));
+        seq_flag.advance(); // step 1
+        seq_flag.advance(); // step 2 (complete)
+        world.player.flags.insert(seq_flag);
+
+        let condition = GoalCondition::FlagComplete {
+            flag: "completed_seq".into(),
+        };
+        assert!(condition.satisfied(&world));
+
+        let condition = GoalCondition::FlagComplete {
+            flag: "nonexistent".into(),
+        };
+        assert!(!condition.satisfied(&world));
+    }
+
+    #[test]
+    fn goal_condition_flag_in_progress_works() {
+        let mut world = create_test_world();
+
+        // Advance the test sequence flag
+        world.player.advance_flag("test_seq");
+
+        let condition = GoalCondition::FlagInProgress {
+            flag: "test_seq".into(),
+        };
+        assert!(condition.satisfied(&world));
+
+        let condition = GoalCondition::FlagInProgress {
+            flag: "nonexistent".into(),
+        };
+        assert!(!condition.satisfied(&world));
+    }
+
+    #[test]
+    fn goal_condition_goal_complete_works() {
+        let world = create_test_world();
+
+        // Create a completed goal
+        let completed_goal = Goal {
+            id: "completed_goal".into(),
+            name: "Completed Goal".into(),
+            description: "A completed goal".into(),
+            group: GoalGroup::Required,
+            activate_when: None,
+            finished_when: GoalCondition::HasFlag {
+                flag: "test_flag".into(),
+            },
+            failed_when: None,
+        };
+
+        // Create a goal that depends on the completed goal
+        let dependent_goal = Goal {
+            id: "dependent_goal".into(),
+            name: "Dependent Goal".into(),
+            description: "A goal that depends on another".into(),
+            group: GoalGroup::Optional,
+            activate_when: Some(GoalCondition::GoalComplete {
+                goal_id: "completed_goal".into(),
+            }),
+            finished_when: GoalCondition::HasFlag {
+                flag: "nonexistent".into(),
+            },
+            failed_when: None,
+        };
+
+        // Test with completed goal in world
+        let mut world_with_goals = world.clone();
+        world_with_goals.goals.push(completed_goal);
+        world_with_goals.goals.push(dependent_goal);
+
+        let condition = GoalCondition::GoalComplete {
+            goal_id: "completed_goal".into(),
+        };
+        assert!(condition.satisfied(&world_with_goals));
+
+        let condition = GoalCondition::GoalComplete {
+            goal_id: "nonexistent".into(),
+        };
+        assert!(!condition.satisfied(&world_with_goals));
+    }
+
+    #[test]
+    fn goal_condition_has_item_works() {
+        let world = create_test_world();
+        let item_id = world.player.inventory.iter().next().copied().unwrap();
+
+        let condition = GoalCondition::HasItem { item_id };
+        assert!(condition.satisfied(&world));
+
+        let condition = GoalCondition::HasItem {
+            item_id: Uuid::new_v4(),
+        };
+        assert!(!condition.satisfied(&world));
+    }
+
+    #[test]
+    fn goal_condition_has_flag_works() {
+        let world = create_test_world();
+
+        let condition = GoalCondition::HasFlag {
+            flag: "test_flag".into(),
+        };
+        assert!(condition.satisfied(&world));
+
+        let condition = GoalCondition::HasFlag {
+            flag: "nonexistent".into(),
+        };
+        assert!(!condition.satisfied(&world));
+    }
+
+    #[test]
+    fn goal_condition_missing_flag_works() {
+        let world = create_test_world();
+
+        let condition = GoalCondition::MissingFlag {
+            flag: "nonexistent".into(),
+        };
+        assert!(condition.satisfied(&world));
+
+        let condition = GoalCondition::MissingFlag {
+            flag: "test_flag".into(),
+        };
+        assert!(!condition.satisfied(&world));
+    }
+
+    #[test]
+    fn goal_condition_reached_room_works() {
+        let world = create_test_world();
+        let room_id = world.rooms.keys().next().copied().unwrap();
+
+        let condition = GoalCondition::ReachedRoom { room_id };
+        assert!(condition.satisfied(&world));
+
+        let condition = GoalCondition::ReachedRoom {
+            room_id: Uuid::new_v4(),
+        };
+        assert!(!condition.satisfied(&world));
+    }
+
+    #[test]
+    fn goal_status_inactive_when_activation_condition_not_met() {
+        let world = create_test_world();
+
+        let goal = Goal {
+            id: "test_goal".into(),
+            name: "Test Goal".into(),
+            description: "A test goal".into(),
+            group: GoalGroup::Required,
+            activate_when: Some(GoalCondition::HasFlag {
+                flag: "nonexistent".into(),
+            }),
+            finished_when: GoalCondition::HasFlag {
+                flag: "test_flag".into(),
+            },
+            failed_when: None,
+        };
+
+        assert_eq!(goal.status(&world), GoalStatus::Inactive);
+    }
+
+    #[test]
+    fn goal_status_active_when_conditions_met_but_not_finished() {
+        let world = create_test_world();
+
+        let goal = Goal {
+            id: "test_goal".into(),
+            name: "Test Goal".into(),
+            description: "A test goal".into(),
+            group: GoalGroup::Required,
+            activate_when: Some(GoalCondition::HasFlag {
+                flag: "test_flag".into(),
+            }),
+            finished_when: GoalCondition::HasFlag {
+                flag: "nonexistent".into(),
+            },
+            failed_when: None,
+        };
+
+        assert_eq!(goal.status(&world), GoalStatus::Active);
+    }
+
+    #[test]
+    fn goal_status_complete_when_finished_condition_met() {
+        let world = create_test_world();
+
+        let goal = Goal {
+            id: "test_goal".into(),
+            name: "Test Goal".into(),
+            description: "A test goal".into(),
+            group: GoalGroup::Required,
+            activate_when: Some(GoalCondition::HasFlag {
+                flag: "test_flag".into(),
+            }),
+            finished_when: GoalCondition::HasFlag {
+                flag: "test_flag".into(),
+            },
+            failed_when: None,
+        };
+
+        assert_eq!(goal.status(&world), GoalStatus::Complete);
+    }
+
+    #[test]
+    fn goal_status_failed_when_failure_condition_met() {
+        let world = create_test_world();
+
+        let goal = Goal {
+            id: "test_goal".into(),
+            name: "Test Goal".into(),
+            description: "A test goal".into(),
+            group: GoalGroup::Required,
+            activate_when: None,
+            finished_when: GoalCondition::HasFlag {
+                flag: "nonexistent".into(),
+            },
+            failed_when: Some(GoalCondition::HasFlag {
+                flag: "test_flag".into(),
+            }),
+        };
+
+        assert_eq!(goal.status(&world), GoalStatus::Failed);
+    }
+
+    #[test]
+    fn goal_status_active_when_no_activation_condition_and_not_finished() {
+        let world = create_test_world();
+
+        let goal = Goal {
+            id: "test_goal".into(),
+            name: "Test Goal".into(),
+            description: "A test goal".into(),
+            group: GoalGroup::Required,
+            activate_when: None,
+            finished_when: GoalCondition::HasFlag {
+                flag: "nonexistent".into(),
+            },
+            failed_when: None,
+        };
+
+        assert_eq!(goal.status(&world), GoalStatus::Active);
+    }
+
+    #[test]
+    fn goal_status_complete_when_no_activation_condition_and_finished() {
+        let world = create_test_world();
+
+        let goal = Goal {
+            id: "test_goal".into(),
+            name: "Test Goal".into(),
+            description: "A test goal".into(),
+            group: GoalGroup::Required,
+            activate_when: None,
+            finished_when: GoalCondition::HasFlag {
+                flag: "test_flag".into(),
+            },
+            failed_when: None,
+        };
+
+        assert_eq!(goal.status(&world), GoalStatus::Complete);
+    }
+
+    #[test]
+    fn goal_groups_are_properly_defined() {
+        // Test that goal groups serialize/deserialize correctly
+        let required = GoalGroup::Required;
+        let optional = GoalGroup::Optional;
+        let status_effect = GoalGroup::StatusEffect;
+
+        assert_eq!(format!("{:?}", required), "Required");
+        assert_eq!(format!("{:?}", optional), "Optional");
+        assert_eq!(format!("{:?}", status_effect), "StatusEffect");
+    }
+
+    #[test]
+    fn goal_status_variants_work() {
+        // Test that goal status variants are properly defined
+        assert_eq!(GoalStatus::Inactive, GoalStatus::Inactive);
+        assert_eq!(GoalStatus::Active, GoalStatus::Active);
+        assert_eq!(GoalStatus::Complete, GoalStatus::Complete);
+        assert_eq!(GoalStatus::Failed, GoalStatus::Failed);
+
+        assert_ne!(GoalStatus::Inactive, GoalStatus::Active);
+        assert_ne!(GoalStatus::Complete, GoalStatus::Failed);
+    }
+}

@@ -71,7 +71,7 @@ impl NpcState {
 }
 
 /// A non-playable character.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Npc {
     pub id: Uuid,
     pub symbol: String,
@@ -147,5 +147,242 @@ impl ItemHolder for Npc {
 
     fn contains_item(&self, item_id: Uuid) -> bool {
         self.inventory.contains(&item_id)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        item::Item,
+        view::{ContentLine, View, ViewItem},
+        world::{AmbleWorld, Location},
+    };
+    use std::collections::{HashMap, HashSet};
+    use uuid::Uuid;
+
+    fn create_test_npc() -> Npc {
+        let mut dialogue = HashMap::new();
+        dialogue.insert(NpcState::Normal, vec!["Hello there!".into(), "Nice weather!".into()]);
+        dialogue.insert(NpcState::Happy, vec!["What a wonderful day!".into()]);
+        dialogue.insert(NpcState::Mad, vec!["Go away!".into(), "I'm not talking to you!".into()]);
+
+        Npc {
+            id: Uuid::new_v4(),
+            symbol: "test_npc".into(),
+            name: "Test NPC".into(),
+            description: "A test NPC".into(),
+            location: Location::Nowhere,
+            inventory: HashSet::new(),
+            dialogue,
+            state: NpcState::Normal,
+        }
+    }
+
+    fn create_test_world() -> AmbleWorld {
+        let mut world = AmbleWorld::new_empty();
+
+        let item_id = Uuid::new_v4();
+        let item = Item {
+            id: item_id,
+            symbol: "test_item".into(),
+            name: "Test Item".into(),
+            description: "A test item".into(),
+            location: Location::Nowhere,
+            portable: true,
+            container_state: None,
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+            consumable: None,
+        };
+        world.items.insert(item_id, item);
+
+        world
+    }
+
+    #[test]
+    fn npc_state_from_key_parses_standard_states() {
+        assert_eq!(NpcState::from_key("sad"), NpcState::Sad);
+        assert_eq!(NpcState::from_key("bored"), NpcState::Bored);
+        assert_eq!(NpcState::from_key("normal"), NpcState::Normal);
+        assert_eq!(NpcState::from_key("happy"), NpcState::Happy);
+        assert_eq!(NpcState::from_key("mad"), NpcState::Mad);
+        assert_eq!(NpcState::from_key("tired"), NpcState::Tired);
+    }
+
+    #[test]
+    fn npc_state_from_key_parses_custom_states() {
+        let custom = NpcState::from_key("custom:excited");
+        assert_eq!(custom, NpcState::Custom("excited".into()));
+
+        let custom2 = NpcState::from_key("custom:some_state");
+        assert_eq!(custom2, NpcState::Custom("some_state".into()));
+    }
+
+    #[test]
+    fn npc_state_from_key_defaults_to_normal_for_unknown() {
+        assert_eq!(NpcState::from_key("unknown_state"), NpcState::Normal);
+        assert_eq!(NpcState::from_key("invalid"), NpcState::Normal);
+        assert_eq!(NpcState::from_key(""), NpcState::Normal);
+    }
+
+    #[test]
+    fn npc_state_as_key_converts_correctly() {
+        assert_eq!(NpcState::Sad.as_key(), "sad");
+        assert_eq!(NpcState::Bored.as_key(), "bored");
+        assert_eq!(NpcState::Normal.as_key(), "normal");
+        assert_eq!(NpcState::Happy.as_key(), "happy");
+        assert_eq!(NpcState::Mad.as_key(), "mad");
+        assert_eq!(NpcState::Tired.as_key(), "tired");
+        assert_eq!(NpcState::Custom("excited".into()).as_key(), "custom:excited");
+    }
+
+    #[test]
+    fn npc_state_display_works() {
+        assert_eq!(format!("{}", NpcState::Happy), "Happy");
+        assert_eq!(format!("{}", NpcState::Bored), "Bored");
+        assert_eq!(format!("{}", NpcState::Mad), "Mad");
+        assert_eq!(format!("{}", NpcState::Normal), "Normal");
+        assert_eq!(format!("{}", NpcState::Sad), "Sad");
+        assert_eq!(format!("{}", NpcState::Tired), "Tired");
+        assert_eq!(format!("{}", NpcState::Custom("test".into())), "Custom");
+    }
+
+    #[test]
+    fn npc_random_dialogue_returns_appropriate_line() {
+        use gametools::{Spinner, Wedge};
+
+        let npc = create_test_npc();
+        let ignore_spinner = Spinner::new(vec![Wedge::new("Ignores you.".into())]);
+
+        // Test normal state dialogue
+        let dialogue = npc.random_dialogue(&ignore_spinner);
+        let normal_lines = &npc.dialogue[&NpcState::Normal];
+        assert!(normal_lines.contains(&dialogue) || dialogue == "Ignores you.");
+    }
+
+    #[test]
+    fn npc_random_dialogue_returns_fallback_for_missing_state() {
+        use gametools::{Spinner, Wedge};
+
+        let mut npc = create_test_npc();
+        npc.state = NpcState::Tired; // State not in dialogue map
+        let ignore_spinner = Spinner::new(vec![Wedge::new("Ignores you.".into())]);
+
+        let dialogue = npc.random_dialogue(&ignore_spinner);
+        assert_eq!(dialogue, "Ignores you.");
+    }
+
+    #[test]
+    fn npc_show_displays_description_and_inventory() {
+        let world = create_test_world();
+        let mut view = View::new();
+        let item_id = *world.items.keys().next().unwrap();
+
+        let mut npc = create_test_npc();
+        npc.inventory.insert(item_id);
+
+        npc.show(&world, &mut view);
+
+        // Check that the view contains the expected items
+        let items = &view.items;
+        assert!(items.iter().any(|item| matches!(item, ViewItem::NpcDescription { .. })));
+        assert!(items.iter().any(|item| matches!(item, ViewItem::NpcInventory(_))));
+
+        if let Some(ViewItem::NpcDescription { name, description }) = items
+            .iter()
+            .find(|item| matches!(item, ViewItem::NpcDescription { .. }))
+        {
+            assert_eq!(name, "Test NPC");
+            assert_eq!(description, "A test NPC");
+        }
+
+        if let Some(ViewItem::NpcInventory(inventory)) =
+            items.iter().find(|item| matches!(item, ViewItem::NpcInventory(_)))
+        {
+            assert_eq!(inventory.len(), 1);
+            assert_eq!(inventory[0].item_name, "Test Item");
+        }
+    }
+
+    #[test]
+    fn npc_show_handles_empty_inventory() {
+        let world = create_test_world();
+        let mut view = View::new();
+        let npc = create_test_npc();
+
+        npc.show(&world, &mut view);
+
+        if let Some(ViewItem::NpcInventory(inventory)) =
+            view.items.iter().find(|item| matches!(item, ViewItem::NpcInventory(_)))
+        {
+            assert!(inventory.is_empty());
+        }
+    }
+
+    #[test]
+    fn world_object_trait_works() {
+        let npc = create_test_npc();
+        assert_eq!(npc.symbol(), "test_npc");
+        assert_eq!(npc.name(), "Test NPC");
+        assert_eq!(npc.description(), "A test NPC");
+        assert_eq!(npc.location(), &Location::Nowhere);
+    }
+
+    #[test]
+    fn item_holder_add_item_works() {
+        let mut npc = create_test_npc();
+        let item_id = Uuid::new_v4();
+
+        npc.add_item(item_id);
+        assert!(npc.inventory.contains(&item_id));
+    }
+
+    #[test]
+    fn item_holder_remove_item_works() {
+        let mut npc = create_test_npc();
+        let item_id = Uuid::new_v4();
+        npc.inventory.insert(item_id);
+
+        npc.remove_item(item_id);
+        assert!(!npc.inventory.contains(&item_id));
+    }
+
+    #[test]
+    fn item_holder_contains_item_works() {
+        let mut npc = create_test_npc();
+        let item_id = Uuid::new_v4();
+        npc.inventory.insert(item_id);
+
+        assert!(npc.contains_item(item_id));
+        assert!(!npc.contains_item(Uuid::new_v4()));
+    }
+
+    #[test]
+    fn npc_state_equality_and_hash_work() {
+        let state1 = NpcState::Happy;
+        let state2 = NpcState::Happy;
+        let state3 = NpcState::Mad;
+
+        assert_eq!(state1, state2);
+        assert_ne!(state1, state3);
+
+        let mut state_map = HashMap::new();
+        state_map.insert(state1, "happy dialogue");
+        assert_eq!(state_map.get(&state2), Some(&"happy dialogue"));
+    }
+
+    #[test]
+    fn npc_state_custom_equality_works() {
+        let custom1 = NpcState::Custom("excited".into());
+        let custom2 = NpcState::Custom("excited".into());
+        let custom3 = NpcState::Custom("angry".into());
+
+        assert_eq!(custom1, custom2);
+        assert_ne!(custom1, custom3);
+        assert_ne!(custom1, NpcState::Happy);
     }
 }

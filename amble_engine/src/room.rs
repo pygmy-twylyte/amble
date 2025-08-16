@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 /// An exit from one room to another.
 ///
 /// Additional flags and items may be required to traverse it.
@@ -91,7 +91,7 @@ pub enum OverlayCondition {
 }
 
 /// Any visitable location in the game world.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Room {
     pub id: Uuid,
     pub symbol: String,
@@ -209,5 +209,441 @@ impl Room {
         }
         view.push(ViewItem::RoomExits(exit_lines));
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        item::Item,
+        npc::{Npc, NpcState},
+        player::Flag,
+        view::{View, ViewItem, ViewMode},
+        world::{AmbleWorld, Location},
+    };
+    use std::collections::{HashMap, HashSet};
+    use uuid::Uuid;
+
+    fn create_test_room(id: Uuid) -> Room {
+        Room {
+            id,
+            symbol: "test_room".into(),
+            name: "Test Room".into(),
+            base_description: "A test room for testing".into(),
+            overlays: vec![],
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        }
+    }
+
+    fn create_test_world() -> AmbleWorld {
+        let mut world = AmbleWorld::new_empty();
+
+        let room_id = Uuid::new_v4();
+        let room = create_test_room(room_id);
+        world.rooms.insert(room_id, room);
+        world.player.location = Location::Room(room_id);
+
+        let item_id = Uuid::new_v4();
+        let item = Item {
+            id: item_id,
+            symbol: "test_item".into(),
+            name: "Test Item".into(),
+            description: "A test item".into(),
+            location: Location::Room(room_id),
+            portable: true,
+            container_state: None,
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+            consumable: None,
+        };
+        world.items.insert(item_id, item);
+
+        let npc_id = Uuid::new_v4();
+        let npc = Npc {
+            id: npc_id,
+            symbol: "test_npc".into(),
+            name: "Test NPC".into(),
+            description: "A test NPC".into(),
+            location: Location::Room(room_id),
+            inventory: HashSet::new(),
+            dialogue: HashMap::new(),
+            state: NpcState::Normal,
+        };
+        world.npcs.insert(npc_id, npc);
+
+        world
+    }
+
+    #[test]
+    fn exit_new_creates_basic_exit() {
+        let dest_id = Uuid::new_v4();
+        let exit = Exit::new(dest_id);
+
+        assert_eq!(exit.to, dest_id);
+        assert!(!exit.hidden);
+        assert!(!exit.locked);
+        assert!(exit.required_flags.is_empty());
+        assert!(exit.required_items.is_empty());
+        assert!(exit.barred_message.is_none());
+    }
+
+    #[test]
+    fn room_overlay_applies_with_flag_set() {
+        let mut world = create_test_world();
+        world.player.flags.insert(Flag::simple("test_flag"));
+
+        let overlay = RoomOverlay {
+            condition: OverlayCondition::FlagSet {
+                flag: "test_flag".into(),
+            },
+            text: "This overlay should show".into(),
+        };
+
+        assert!(overlay.applies(world.player.location.unwrap_room(), &world));
+    }
+
+    #[test]
+    fn room_overlay_does_not_apply_without_flag() {
+        let world = create_test_world();
+
+        let overlay = RoomOverlay {
+            condition: OverlayCondition::FlagSet {
+                flag: "nonexistent_flag".into(),
+            },
+            text: "This overlay should not show".into(),
+        };
+
+        assert!(!overlay.applies(world.player.location.unwrap_room(), &world));
+    }
+
+    #[test]
+    fn room_overlay_applies_with_flag_unset() {
+        let world = create_test_world();
+
+        let overlay = RoomOverlay {
+            condition: OverlayCondition::FlagUnset {
+                flag: "nonexistent_flag".into(),
+            },
+            text: "This overlay should show".into(),
+        };
+
+        assert!(overlay.applies(world.player.location.unwrap_room(), &world));
+    }
+
+    #[test]
+    fn room_overlay_applies_with_flag_complete() {
+        let mut world = create_test_world();
+        let mut seq_flag = Flag::sequence("test_seq", Some(2));
+        seq_flag.advance();
+        seq_flag.advance(); // Complete
+        world.player.flags.insert(seq_flag);
+
+        let overlay = RoomOverlay {
+            condition: OverlayCondition::FlagComplete {
+                flag: "test_seq".into(),
+            },
+            text: "Sequence is complete".into(),
+        };
+
+        assert!(overlay.applies(world.player.location.unwrap_room(), &world));
+    }
+
+    #[test]
+    fn room_overlay_applies_with_item_present() {
+        let world = create_test_world();
+        let room_id = world.player.location.unwrap_room();
+        let item_id = *world.items.keys().next().unwrap();
+
+        let overlay = RoomOverlay {
+            condition: OverlayCondition::ItemPresent { item_id },
+            text: "Item is here".into(),
+        };
+
+        assert!(overlay.applies(room_id, &world));
+    }
+
+    #[test]
+    fn room_overlay_applies_with_item_absent() {
+        let world = create_test_world();
+        let room_id = world.player.location.unwrap_room();
+        let nonexistent_item = Uuid::new_v4();
+
+        let overlay = RoomOverlay {
+            condition: OverlayCondition::ItemAbsent {
+                item_id: nonexistent_item,
+            },
+            text: "Item is not here".into(),
+        };
+
+        assert!(overlay.applies(room_id, &world));
+    }
+
+    #[test]
+    fn room_overlay_applies_with_player_has_item() {
+        let mut world = create_test_world();
+        let item_id = *world.items.keys().next().unwrap();
+        world.items.get_mut(&item_id).unwrap().location = Location::Inventory;
+        world.player.inventory.insert(item_id);
+
+        let overlay = RoomOverlay {
+            condition: OverlayCondition::PlayerHasItem { item_id },
+            text: "You have the item".into(),
+        };
+
+        assert!(overlay.applies(world.player.location.unwrap_room(), &world));
+    }
+
+    #[test]
+    fn room_overlay_applies_with_npc_in_mood() {
+        let world = create_test_world();
+        let npc_id = *world.npcs.keys().next().unwrap();
+
+        let overlay = RoomOverlay {
+            condition: OverlayCondition::NpcInMood {
+                npc_id,
+                mood: NpcState::Normal,
+            },
+            text: "NPC is in normal mood".into(),
+        };
+
+        assert!(overlay.applies(world.player.location.unwrap_room(), &world));
+    }
+
+    #[test]
+    fn room_overlay_applies_with_item_in_room() {
+        let world = create_test_world();
+        let room_id = world.player.location.unwrap_room();
+        let item_id = *world.items.keys().next().unwrap();
+
+        let overlay = RoomOverlay {
+            condition: OverlayCondition::ItemInRoom { item_id, room_id },
+            text: "Item is in this specific room".into(),
+        };
+
+        assert!(overlay.applies(room_id, &world));
+    }
+
+    #[test]
+    fn room_show_displays_all_sections() {
+        let mut world = create_test_world();
+        let mut view = View::new();
+        let room_id = world.player.location.unwrap_room();
+
+        // Add items and NPCs to the room
+        let item_id = *world.items.keys().next().unwrap();
+        let npc_id = *world.npcs.keys().next().unwrap();
+
+        world.rooms.get_mut(&room_id).unwrap().contents.insert(item_id);
+        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
+
+        // Add another room for exits
+        let other_room_id = Uuid::new_v4();
+        let other_room = create_test_room(other_room_id);
+        world.rooms.insert(other_room_id, other_room);
+
+        // Add exit
+        world
+            .rooms
+            .get_mut(&room_id)
+            .unwrap()
+            .exits
+            .insert("north".into(), Exit::new(other_room_id));
+
+        let room = world.rooms.get(&room_id).unwrap();
+        room.show(&world, &mut view, None).unwrap();
+
+        let items = &view.items;
+        assert!(
+            items
+                .iter()
+                .any(|item| matches!(item, ViewItem::RoomDescription { .. }))
+        );
+        assert!(items.iter().any(|item| matches!(item, ViewItem::RoomItems(_))));
+        assert!(items.iter().any(|item| matches!(item, ViewItem::RoomExits(_))));
+        assert!(items.iter().any(|item| matches!(item, ViewItem::RoomNpcs(_))));
+    }
+
+    #[test]
+    fn room_show_overlays_displays_applicable_overlays() {
+        let mut world = create_test_world();
+        let mut view = View::new();
+        let room_id = world.player.location.unwrap_room();
+
+        world.player.flags.insert(Flag::simple("show_overlay"));
+
+        let overlay = RoomOverlay {
+            condition: OverlayCondition::FlagSet {
+                flag: "show_overlay".into(),
+            },
+            text: "This is an overlay text".into(),
+        };
+
+        world.rooms.get_mut(&room_id).unwrap().overlays.push(overlay);
+
+        let room = world.rooms.get(&room_id).unwrap();
+        room.show_overlays(&world, &mut view, None);
+
+        if let Some(ViewItem::RoomOverlays { text, .. }) = view
+            .items
+            .iter()
+            .find(|item| matches!(item, ViewItem::RoomOverlays { .. }))
+        {
+            assert_eq!(text.len(), 1);
+            assert_eq!(text[0], "This is an overlay text");
+        } else {
+            panic!("Expected RoomOverlays view item");
+        }
+    }
+
+    #[test]
+    fn room_show_npcs_displays_npc_list() {
+        let mut world = create_test_world();
+        let mut view = View::new();
+        let room_id = world.player.location.unwrap_room();
+        let npc_id = *world.npcs.keys().next().unwrap();
+
+        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
+
+        let room = world.rooms.get(&room_id).unwrap();
+        room.show_npcs(&world, &mut view);
+
+        if let Some(ViewItem::RoomNpcs(npcs)) = view.items.iter().find(|item| matches!(item, ViewItem::RoomNpcs(_))) {
+            assert_eq!(npcs.len(), 1);
+            assert_eq!(npcs[0].name, "Test NPC");
+        } else {
+            panic!("Expected RoomNpcs view item");
+        }
+    }
+
+    #[test]
+    fn room_show_exits_displays_exit_list() {
+        let mut world = create_test_world();
+        let mut view = View::new();
+        let room_id = world.player.location.unwrap_room();
+
+        let dest_room_id = Uuid::new_v4();
+        let dest_room = create_test_room(dest_room_id);
+        world.rooms.insert(dest_room_id, dest_room);
+
+        world
+            .rooms
+            .get_mut(&room_id)
+            .unwrap()
+            .exits
+            .insert("north".into(), Exit::new(dest_room_id));
+
+        let room = world.rooms.get(&room_id).unwrap();
+        room.show_exits(&world, &mut view).unwrap();
+
+        if let Some(ViewItem::RoomExits(exits)) = view.items.iter().find(|item| matches!(item, ViewItem::RoomExits(_)))
+        {
+            assert_eq!(exits.len(), 1);
+            assert_eq!(exits[0].direction, "north");
+            assert_eq!(exits[0].destination, "Test Room");
+            assert!(!exits[0].exit_locked);
+            assert!(!exits[0].dest_visited);
+        } else {
+            panic!("Expected RoomExits view item");
+        }
+    }
+
+    #[test]
+    fn world_object_trait_works() {
+        let room = create_test_room(Uuid::new_v4());
+        assert_eq!(room.symbol(), "test_room");
+        assert_eq!(room.name(), "Test Room");
+        assert_eq!(room.description(), "A test room for testing");
+        assert_eq!(room.location(), &Location::Nowhere);
+    }
+
+    #[test]
+    fn item_holder_add_item_works() {
+        let mut room = create_test_room(Uuid::new_v4());
+        let item_id = Uuid::new_v4();
+
+        room.add_item(item_id);
+        assert!(room.contents.contains(&item_id));
+    }
+
+    #[test]
+    fn item_holder_remove_item_works() {
+        let mut room = create_test_room(Uuid::new_v4());
+        let item_id = Uuid::new_v4();
+        room.contents.insert(item_id);
+
+        room.remove_item(item_id);
+        assert!(!room.contents.contains(&item_id));
+    }
+
+    #[test]
+    fn item_holder_contains_item_works() {
+        let mut room = create_test_room(Uuid::new_v4());
+        let item_id = Uuid::new_v4();
+        room.contents.insert(item_id);
+
+        assert!(room.contains_item(item_id));
+        assert!(!room.contains_item(Uuid::new_v4()));
+    }
+
+    #[test]
+    fn room_show_handles_empty_sections() {
+        let world = create_test_world();
+        let mut view = View::new();
+        let room_id = world.player.location.unwrap_room();
+
+        let room = world.rooms.get(&room_id).unwrap();
+        room.show(&world, &mut view, None).unwrap();
+
+        // Should handle empty items/npcs/exits gracefully
+        let items = &view.items;
+        assert!(
+            items
+                .iter()
+                .any(|item| matches!(item, ViewItem::RoomDescription { .. }))
+        );
+        // Items, NPCs, and exits should not be shown if empty
+        assert!(!items.iter().any(|item| matches!(item, ViewItem::RoomItems(_))));
+        assert!(!items.iter().any(|item| matches!(item, ViewItem::RoomNpcs(_))));
+        assert!(items.iter().any(|item| matches!(item, ViewItem::RoomExits(_)))); // Empty exits still shown
+    }
+
+    #[test]
+    fn exit_with_requirements_shows_correct_state() {
+        let mut world = create_test_world();
+        let mut view = View::new();
+        let room_id = world.player.location.unwrap_room();
+
+        let dest_room_id = Uuid::new_v4();
+        let dest_room = create_test_room(dest_room_id);
+        world.rooms.insert(dest_room_id, dest_room);
+
+        // Create exit with requirements
+        let mut exit = Exit::new(dest_room_id);
+        exit.locked = true;
+        exit.required_flags.insert(Flag::simple("key_flag"));
+
+        world
+            .rooms
+            .get_mut(&room_id)
+            .unwrap()
+            .exits
+            .insert("north".into(), exit);
+
+        let room = world.rooms.get(&room_id).unwrap();
+        room.show_exits(&world, &mut view).unwrap();
+
+        if let Some(ViewItem::RoomExits(exits)) = view.items.iter().find(|item| matches!(item, ViewItem::RoomExits(_)))
+        {
+            assert_eq!(exits.len(), 1);
+            assert!(exits[0].exit_locked);
+        }
     }
 }

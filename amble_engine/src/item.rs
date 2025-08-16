@@ -209,7 +209,7 @@ pub fn consume(world: &mut AmbleWorld, item_id: &Uuid, ability: ItemAbility) -> 
     let item_sym = item.symbol.clone();
 
     // if consumable, decrement and set to # of remaining uses
-    // if not consumable, set to usize::MAX
+    // if not consumable, return early with None
     let uses_left = if let Some(opts) = &mut item.consumable {
         // decrement uses_left if right ability was used
         if opts.consume_on.contains(&ability) && opts.uses_left > 0 {
@@ -217,7 +217,7 @@ pub fn consume(world: &mut AmbleWorld, item_id: &Uuid, ability: ItemAbility) -> 
         }
         opts.uses_left
     } else {
-        usize::MAX
+        return Ok(None);
     };
 
     // if uses_left is now zero, handle the consumption, current options are just to despawn,
@@ -358,4 +358,333 @@ pub enum ConsumeType {
     Despawn,
     ReplaceInventory { replacement: Uuid },   // put replacement in inventory
     ReplaceCurrentRoom { replacement: Uuid }, // put replacement in current room
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        npc::{Npc, NpcState},
+        world::{AmbleWorld, Location},
+    };
+    use std::collections::{HashMap, HashSet};
+    use uuid::Uuid;
+
+    fn create_test_item(id: Uuid) -> Item {
+        Item {
+            id,
+            symbol: "test_item".into(),
+            name: "Test Item".into(),
+            description: "A test item".into(),
+            location: Location::Nowhere,
+            portable: true,
+            container_state: None,
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+            consumable: None,
+        }
+    }
+
+    fn create_test_world() -> AmbleWorld {
+        let mut world = AmbleWorld::new_empty();
+
+        let item_id = Uuid::new_v4();
+        let item = create_test_item(item_id);
+        world.items.insert(item_id, item);
+
+        world
+    }
+
+    #[test]
+    fn item_is_consumed_returns_false_for_non_consumable() {
+        let item = create_test_item(Uuid::new_v4());
+        assert!(!item.is_consumed());
+    }
+
+    #[test]
+    fn item_is_consumed_returns_false_for_unconsumed_consumable() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.consumable = Some(ConsumableOpts {
+            uses_left: 3,
+            consume_on: HashSet::new(),
+            when_consumed: ConsumeType::Despawn,
+        });
+        assert!(!item.is_consumed());
+    }
+
+    #[test]
+    fn item_is_consumed_returns_true_for_consumed_consumable() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.consumable = Some(ConsumableOpts {
+            uses_left: 0,
+            consume_on: HashSet::new(),
+            when_consumed: ConsumeType::Despawn,
+        });
+        assert!(item.is_consumed());
+    }
+
+    #[test]
+    fn item_is_accessible_returns_false_for_non_container() {
+        let item = create_test_item(Uuid::new_v4());
+        assert!(!item.is_accessible());
+    }
+
+    #[test]
+    fn item_is_accessible_returns_true_for_open_container() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.container_state = Some(ContainerState::Open);
+        assert!(item.is_accessible());
+    }
+
+    #[test]
+    fn item_is_accessible_returns_false_for_closed_container() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.container_state = Some(ContainerState::Closed);
+        assert!(!item.is_accessible());
+    }
+
+    #[test]
+    fn item_is_accessible_returns_false_for_locked_container() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.container_state = Some(ContainerState::Locked);
+        assert!(!item.is_accessible());
+    }
+
+    #[test]
+    fn set_location_room_updates_location() {
+        let mut item = create_test_item(Uuid::new_v4());
+        let room_id = Uuid::new_v4();
+        item.set_location_room(room_id);
+        assert_eq!(item.location, Location::Room(room_id));
+    }
+
+    #[test]
+    fn set_location_item_updates_location() {
+        let mut item = create_test_item(Uuid::new_v4());
+        let container_id = Uuid::new_v4();
+        item.set_location_item(container_id);
+        assert_eq!(item.location, Location::Item(container_id));
+    }
+
+    #[test]
+    fn set_location_inventory_updates_location_and_unrestricts() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.restricted = true;
+        item.set_location_inventory();
+        assert_eq!(item.location, Location::Inventory);
+        assert!(!item.restricted);
+    }
+
+    #[test]
+    fn set_location_npc_updates_location() {
+        let mut item = create_test_item(Uuid::new_v4());
+        let npc_id = Uuid::new_v4();
+        item.set_location_npc(npc_id);
+        assert_eq!(item.location, Location::Npc(npc_id));
+    }
+
+    #[test]
+    fn requires_capability_for_returns_none_for_no_requirement() {
+        let item = create_test_item(Uuid::new_v4());
+        assert_eq!(item.requires_capability_for(ItemInteractionType::Break), None);
+    }
+
+    #[test]
+    fn requires_capability_for_returns_ability_when_required() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.interaction_requires
+            .insert(ItemInteractionType::Break, ItemAbility::Smash);
+        assert_eq!(
+            item.requires_capability_for(ItemInteractionType::Break),
+            Some(ItemAbility::Smash)
+        );
+    }
+
+    #[test]
+    fn access_denied_reason_returns_none_for_open_container() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.container_state = Some(ContainerState::Open);
+        assert_eq!(item.access_denied_reason(), None);
+    }
+
+    #[test]
+    fn access_denied_reason_returns_reason_for_closed_container() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.container_state = Some(ContainerState::Closed);
+        let reason = item.access_denied_reason().unwrap();
+        assert!(reason.contains("closed"));
+    }
+
+    #[test]
+    fn access_denied_reason_returns_reason_for_locked_container() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.container_state = Some(ContainerState::Locked);
+        let reason = item.access_denied_reason().unwrap();
+        assert!(reason.contains("locked"));
+    }
+
+    #[test]
+    fn access_denied_reason_returns_reason_for_non_container() {
+        let item = create_test_item(Uuid::new_v4());
+        let reason = item.access_denied_reason().unwrap();
+        assert!(reason.contains("isn't a container"));
+    }
+
+    #[test]
+    fn take_denied_reason_returns_none_for_portable_unrestricted() {
+        let item = create_test_item(Uuid::new_v4());
+        assert_eq!(item.take_denied_reason(), None);
+    }
+
+    #[test]
+    fn take_denied_reason_returns_reason_for_non_portable() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.portable = false;
+        let reason = item.take_denied_reason().unwrap();
+        assert!(reason.contains("isn't portable"));
+    }
+
+    #[test]
+    fn take_denied_reason_returns_reason_for_restricted() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.restricted = true;
+        let reason = item.take_denied_reason().unwrap();
+        assert!(reason.contains("can't take"));
+    }
+
+    #[test]
+    fn item_holder_add_item_works() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.container_state = Some(ContainerState::Open);
+        let item_to_add = Uuid::new_v4();
+
+        item.add_item(item_to_add);
+        assert!(item.contents.contains(&item_to_add));
+    }
+
+    #[test]
+    fn item_holder_add_item_ignores_self_reference() {
+        let item_id = Uuid::new_v4();
+        let mut item = create_test_item(item_id);
+        item.container_state = Some(ContainerState::Open);
+
+        item.add_item(item_id);
+        assert!(!item.contents.contains(&item_id));
+    }
+
+    #[test]
+    fn item_holder_add_item_ignores_non_container() {
+        let mut item = create_test_item(Uuid::new_v4());
+        let item_to_add = Uuid::new_v4();
+
+        item.add_item(item_to_add);
+        assert!(!item.contents.contains(&item_to_add));
+    }
+
+    #[test]
+    fn item_holder_remove_item_works() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.container_state = Some(ContainerState::Open);
+        let item_to_remove = Uuid::new_v4();
+        item.contents.insert(item_to_remove);
+
+        item.remove_item(item_to_remove);
+        assert!(!item.contents.contains(&item_to_remove));
+    }
+
+    #[test]
+    fn item_holder_contains_item_works() {
+        let mut item = create_test_item(Uuid::new_v4());
+        let contained_item = Uuid::new_v4();
+        item.contents.insert(contained_item);
+
+        assert!(item.contains_item(contained_item));
+        assert!(!item.contains_item(Uuid::new_v4()));
+    }
+
+    #[test]
+    fn consume_returns_none_for_non_consumable() {
+        let mut world = create_test_world();
+        let item_id = *world.items.keys().next().unwrap();
+
+        let result = consume(&mut world, &item_id, ItemAbility::Use).unwrap();
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn consume_decrements_uses_for_correct_ability() {
+        let mut world = create_test_world();
+        let item_id = *world.items.keys().next().unwrap();
+
+        let mut consume_on = HashSet::new();
+        consume_on.insert(ItemAbility::Ignite);
+
+        world.items.get_mut(&item_id).unwrap().consumable = Some(ConsumableOpts {
+            uses_left: 3,
+            consume_on,
+            when_consumed: ConsumeType::Despawn,
+        });
+
+        let result = consume(&mut world, &item_id, ItemAbility::Ignite).unwrap();
+        assert_eq!(result, Some(2));
+        assert_eq!(world.items[&item_id].consumable.as_ref().unwrap().uses_left, 2);
+    }
+
+    #[test]
+    fn consume_does_not_decrement_for_wrong_ability() {
+        let mut world = create_test_world();
+        let item_id = *world.items.keys().next().unwrap();
+
+        let mut consume_on = HashSet::new();
+        consume_on.insert(ItemAbility::Ignite);
+
+        world.items.get_mut(&item_id).unwrap().consumable = Some(ConsumableOpts {
+            uses_left: 3,
+            consume_on,
+            when_consumed: ConsumeType::Despawn,
+        });
+
+        let result = consume(&mut world, &item_id, ItemAbility::Use).unwrap();
+        assert_eq!(result, Some(3));
+        assert_eq!(world.items[&item_id].consumable.as_ref().unwrap().uses_left, 3);
+    }
+
+    #[test]
+    fn container_state_is_open_works() {
+        assert!(ContainerState::Open.is_open());
+        assert!(!ContainerState::Closed.is_open());
+        assert!(!ContainerState::Locked.is_open());
+    }
+
+    #[test]
+    fn item_ability_display_works() {
+        assert_eq!(format!("{}", ItemAbility::Attach), "attach");
+        assert_eq!(format!("{}", ItemAbility::Clean), "clean");
+        assert_eq!(format!("{}", ItemAbility::CutWood), "cut wood");
+        assert_eq!(format!("{}", ItemAbility::TurnOn), "turn on");
+        assert_eq!(format!("{}", ItemAbility::TurnOff), "turn off");
+        assert_eq!(format!("{}", ItemAbility::Unlock(None)), "unlock");
+    }
+
+    #[test]
+    fn item_interaction_type_display_works() {
+        assert_eq!(format!("{}", ItemInteractionType::Attach), "attach");
+        assert_eq!(format!("{}", ItemInteractionType::Break), "break");
+        assert_eq!(format!("{}", ItemInteractionType::Burn), "burn");
+        assert_eq!(format!("{}", ItemInteractionType::Clean), "clean");
+        assert_eq!(format!("{}", ItemInteractionType::Cover), "cover");
+    }
+
+    #[test]
+    fn world_object_trait_works() {
+        let item = create_test_item(Uuid::new_v4());
+        assert_eq!(item.id(), item.id);
+        assert_eq!(item.symbol(), "test_item");
+        assert_eq!(item.name(), "Test Item");
+        assert_eq!(item.description(), "A test item");
+        assert_eq!(item.location(), &Location::Nowhere);
+    }
 }
