@@ -477,8 +477,8 @@ to = "lift-sublevel-1"
 
 [rooms.exits.west]
 to = "room-aa-3b"
-required_flags = [{ type = "simple", name = "NONEXSTENT_FLAG" }]
-barred_message = """Room AA-3B no longer exists at this location. If found, DO NOT ATTEMPT TO ENTER and notify the risk management office immediately!"""
+required_flags = [{ type = "simple", name = "touched-monolith" }]
+barred_message = """The entrance to Room AA-3B remains sealed. The monolith's touch is required to unlock the path to this reality-bending chamber."""
 
 [rooms.exits.east]
 to = "security-station"

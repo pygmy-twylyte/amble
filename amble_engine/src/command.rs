@@ -104,6 +104,7 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
         ["quit"] => Command::Quit,
         ["drop" | "leave", thing] | ["put", thing, "down"] => Command::Drop((*thing).to_string()),
         ["talk" | "speak", "to" | "with", npc_name] => Command::TalkTo((*npc_name).to_string()),
+        ["touch", "monolith"] => Command::TurnOn("monolith".to_string()),
         ["turn" | "switch", thing, "on"] | ["start" | "trigger", thing] => Command::TurnOn((*thing).to_string()),
         ["help" | "?"] => Command::Help,
         ["read", thing] => Command::Read((*thing).to_string()),
@@ -308,6 +309,11 @@ mod tests {
         inputs
             .iter()
             .for_each(|input| assert_eq!(pc(input), Command::TurnOn("x".into())));
+    }
+
+    #[test]
+    fn parse_touch_monolith_command() {
+        assert_eq!(pc("touch monolith"), Command::TurnOn("monolith".into()));
     }
 
     #[test]

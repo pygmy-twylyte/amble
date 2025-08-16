@@ -835,3 +835,15 @@ Place:  Monolith Room
 Event:  White male in his 30's found in the monolith room pointing this whirring item at the HAL terminal. Perpetrator states he was trying to fix it. Luckily, he failed. Confiscated the tool from him (he calls it a sonic screwdriver) to prevent any future attempts."""
 [[items.abilities]]
 type = "Read"
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "monolith"
+name = "The Monolith"
+description = """A towering obsidian rectangle that seems to absorb light itself. Standing nearly twelve feet tall, its surface is perfectly smooth and utterly black. It radiates an otherworldly presence that makes your skin crawl and your mind race with impossible thoughts. This is clearly something far beyond human understanding - a relic from the dawn of intelligence itself."""
+portable = false
+location = { Room = "monolith-room" }
+restricted = false
+
+[[items.abilities]]
+type = "TurnOn"

@@ -989,3 +989,57 @@ actions = [
     { type = "showMessage", text = """You MacGyvered the floss and paper clip into a fishing line.""" },
     { type = "awardPoints", amount = 3 },
 ]
+
+# -------------------------------------------------------------------------------------------------------------------------------
+#                                                   ------- MONOLITH INTERACTION SEQUENCE --------
+
+# Announce monolith access after HAL reboot is complete
+[[triggers]]
+name = "Monolith: Announce Access After HAL Reboot"
+only_once = true
+conditions = [{ type = "flagComplete", flag = "hal-reboot" }]
+actions = [
+    { type = "showMessage", text = """HAL-9000's lens turns to focus on the monolith.""" },
+    { type = "npcSays", npc_id = "hal_9000", quote = """Access granted, Candidate. The monolith awaits your touch.""" },
+]
+
+# Handle touching monolith before HAL can speak properly (before memory-2 state)
+[[triggers]]
+name = "Monolith: Touch Rejected (HAL Not Ready)"
+only_once = false
+conditions = [
+    { type = "useItem", item_id = "monolith", ability = "turnOn" },
+    { type = "missingFlag", flag = "hal-reboot#2" },
+    { type = "missingFlag", flag = "hal-reboot#3" },
+]
+actions = [
+    { type = "showMessage", text = """As you approach the monolith, HAL-9000's dim red lens flickers briefly but he cannot respond coherently. Something prevents you from touching the ancient artifact - as if an invisible barrier surrounds it.""" },
+]
+
+# Handle touching monolith when HAL can speak but reboot isn't complete
+[[triggers]]
+name = "Monolith: Touch Rejected (HAL Memory-2)"
+only_once = false
+conditions = [
+    { type = "useItem", item_id = "monolith", ability = "turnOn" },
+    { type = "hasFlag", flag = "hal-reboot#2" },
+    { type = "missingFlag", flag = "hal-reboot#3" },
+]
+actions = [
+    { type = "showMessage", text = """As you approach the monolith, HAL-9000's lens swivels toward you.""" },
+    { type = "npcSays", npc_id = "hal_9000", quote = """I'm sorry, Candidate. I cannot allow access to the monolith until my systems are fully operational. Please insert one more memory module.""" },
+]
+
+# Handle touching monolith after HAL reboot is complete
+[[triggers]]
+name = "Monolith: Touch Success"
+only_once = true
+conditions = [
+    { type = "useItem", item_id = "monolith", ability = "turnOn" },
+    { type = "flagComplete", flag = "hal-reboot" },
+]
+actions = [
+    { type = "addFlag", flag = { type = "simple", name = "touched-monolith" } },
+    { type = "awardPoints", amount = 15 },
+    { type = "showMessage", text = """You reach out and place your palm against the monolith's impossibly smooth surface. For a moment, nothing happens. Then reality seems to shiver around you. Images flash through your mind - star-filled voids, impossible geometries, the birth and death of civilizations. You stagger backward, forever changed by the contact. The path to understanding has opened.""" },
+]
