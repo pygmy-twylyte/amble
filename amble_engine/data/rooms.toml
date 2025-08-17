@@ -477,8 +477,11 @@ to = "lift-sublevel-1"
 
 [rooms.exits.west]
 to = "room-aa-3b"
-required_flags = [{ type = "simple", name = "touched-monolith" }]
-barred_message = """The entrance to Room AA-3B remains sealed. The monolith's touch is required to unlock the path to this reality-bending chamber."""
+required_flags = [
+    { type = "simple", name = "appeased-black-knight" },
+    { type = "simple", name = "touched-monolith" },
+]
+barred_message = """The Black Knight blocks your way."""
 
 [rooms.exits.east]
 to = "security-station"
