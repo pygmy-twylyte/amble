@@ -534,20 +534,6 @@ actions = [
 ]
 
 [[triggers]]
-name = "Black Knight: Happy When Keen Sword Returned"
-only_once = true
-conditions = [
-    { type = "giveToNpc", item_id = "keen_longsword", npc_id = "black_knight" },
-]
-actions = [
-    { type = "restrictItem", item_id = "keen_longsword" },                                                                                                                                                   # no takebacks!
-    { type = "addFlag", flag = { type = "simple", name = "appeased-black-knight" } },
-    { type = "awardPoints", amount = 5 },
-    { type = "setNpcState", npc_id = "black_knight", state = "happy" },
-    { type = "npcSays", npc_id = "black_knight", quote = """Thank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like.""" },
-]
-
-[[triggers]]
 name = "Black Knight: Angry, Kicks Player"
 only_once = false
 conditions = [
@@ -558,6 +544,21 @@ conditions = [
 actions = [
     { type = "showMessage", text = """The Black Knight dodges about the room, occasionally trying to kick you in the shin.""" },
     { type = "npcSaysRandom", npc_id = "black_knight" },
+]
+
+[[triggers]]
+name = "Black Knight: Happy When Keen Sword Returned"
+only_once = true
+conditions = [
+    { type = "giveToNpc", item_id = "keen_longsword", npc_id = "black_knight" },
+]
+actions = [
+    { type = "restrictItem", item_id = "keen_longsword" },
+    { type = "addFlag", flag = { type = "simple", name = "appeased-black-knight" } },
+    { type = "setBarredMessage", exit_from = "sublevel-1-entrance", exit_to = "room-aa-3b", msg = "As you near the door, you are overwhelmed by a sense of spinning through an unending series of fictional realities, compelling you to step away." },
+    { type = "awardPoints", amount = 5 },
+    { type = "setNpcState", npc_id = "black_knight", state = "happy" },
+    { type = "npcSays", npc_id = "black_knight", quote = """Thank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like.""" },
 ]
 
 # -------------------------------- EVIDENCE LOCKER / SONIC SCREWDRIVER --------------------------------------

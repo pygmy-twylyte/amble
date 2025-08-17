@@ -17,18 +17,6 @@
 //!
 //! The engine is designed to be data-driven, loading most game content
 //! from TOML configuration files rather than requiring code changes.
-//!
-//! # Quick Start
-//!
-//! ```rust
-//! use amble_engine::{load_world, run_repl};
-//!
-//! # fn main() -> anyhow::Result<()> {
-//! let mut world = load_world()?;
-//! run_repl(&mut world)?;
-//! # Ok(())
-//! # }
-//! ```
 
 pub const AMBLE_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const DEV_MODE: bool = true;

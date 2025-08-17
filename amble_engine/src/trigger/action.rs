@@ -23,6 +23,7 @@ pub enum TriggerAction {
     AdvanceFlag(String),
     RemoveFlag(String),
     AwardPoints(isize),
+    SetBarredMessage { exit_from: Uuid, exit_to: Uuid, msg: String },
     DenyRead(String),
     DespawnItem { item_id: Uuid },
     GiveItemToPlayer { npc_id: Uuid, item_id: Uuid },
@@ -52,6 +53,11 @@ pub enum TriggerAction {
 /// fires the matching trigger action by calling its handler function
 pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &TriggerAction) -> Result<()> {
     match action {
+        TriggerAction::SetBarredMessage {
+            exit_from,
+            exit_to,
+            msg,
+        } => set_barred_message(world, *exit_from, *exit_to, msg)?,
         TriggerAction::AddSpinnerWedge { spinner, text, width } => {
             add_spinner_wedge(&mut world.spinners, *spinner, text, *width)?;
         },
@@ -90,6 +96,24 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
         TriggerAction::AddFlag(flag) => add_flag(world, flag),
         TriggerAction::RemoveFlag(flag) => remove_flag(world, flag),
         TriggerAction::AwardPoints(amount) => award_points(world, view, *amount),
+    }
+    Ok(())
+}
+
+/// Change the reason for being barred from an exit.
+fn set_barred_message(world: &mut AmbleWorld, exit_from: Uuid, exit_to: Uuid, msg: &str) -> Result<()> {
+    let room = world
+        .rooms
+        .get_mut(&exit_from)
+        .with_context(|| format!("trigger setting barred message: room_id {exit_from} not found"))?;
+    let exit = room
+        .exits
+        .iter()
+        .find_map(|exit| if exit.1.to == exit_to { Some(exit) } else { None });
+    if let Some(exit) = exit {
+        let (direction, mut exit) = (exit.0.clone(), exit.1.clone());
+        exit.set_barred_msg(Some(msg.to_string()));
+        room.exits.insert(direction, exit);
     }
     Ok(())
 }
