@@ -34,6 +34,10 @@ impl Exit {
             barred_message: None,
         }
     }
+    /// Change the barred message given to player if they try this exit without meeting requirements.
+    pub fn set_barred_msg(&mut self, msg: Option<String>) {
+        self.barred_message = msg;
+    }
 }
 
 /// Conditional text that may be part of a room description, depending on some state.
