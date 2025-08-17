@@ -10,12 +10,7 @@
 //! The actual spinner data (text and weights) is loaded from `spinners.toml`
 //! and the spinners are built from that data in the `loader::spinners` module.
 //!
-//! # Examples
-//!
-//! ```rust
-//! // Get a random "no effect" message
-//! let message = world.spin_spinner(SpinnerType::NoEffect, "Nothing happens.");
-//! ```
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
