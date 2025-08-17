@@ -3,9 +3,32 @@
 
 //! Amble game engine library.
 //!
+//! A comprehensive text adventure game engine with scripting support.
+//!
 //! This crate contains the core data structures and logic that power the
-//! command line adventure game. It exposes a small API used by the binary
-//! in `main.rs` and by tooling.
+//! Amble command-line adventure game. It provides:
+//!
+//! - **World modeling**: Rooms, items, NPCs with complex interactions
+//! - **Command parsing**: Natural language command interpretation
+//! - **Trigger system**: Event-driven game logic and scripting
+//! - **Save/load**: Complete game state serialization
+//! - **Goal tracking**: Quest and objective management
+//! - **Rich text output**: Styled terminal output with multiple view modes
+//!
+//! The engine is designed to be data-driven, loading most game content
+//! from TOML configuration files rather than requiring code changes.
+//!
+//! # Quick Start
+//!
+//! ```rust
+//! use amble_engine::{load_world, run_repl};
+//!
+//! # fn main() -> anyhow::Result<()> {
+//! let mut world = load_world()?;
+//! run_repl(&mut world)?;
+//! # Ok(())
+//! # }
+//! ```
 
 pub const AMBLE_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const DEV_MODE: bool = true;

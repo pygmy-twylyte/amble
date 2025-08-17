@@ -172,6 +172,16 @@ pub enum VesselType {
 }
 
 /// Removes an item from a vessel (NPC or container item) and adds to inventory.
+///
+/// This function handles some complex logic of validating and then transferring
+/// items either from an NPC or from a container item. It must validate:
+/// 1. The `vessel_pattern` matches a nearby container item or NPC (the "vessel")
+/// 2. The vessel contents are accessible (not closed or locked).
+/// 3. The vessel contains an item that matches `item_pattern`.
+/// 4. Player has permission to take the item (`portable` and not `restricted`).
+///
+/// Then player inventory, vessel inventory/contents, and item location are all
+/// updated to maintain consistent game state.
 pub fn take_from_handler(
     world: &mut AmbleWorld,
     view: &mut View,
@@ -182,7 +192,8 @@ pub fn take_from_handler(
     let current_room = world.player_room_ref()?;
     let search_scope: HashSet<Uuid> = current_room.contents.union(&current_room.npcs).copied().collect();
 
-    // extract metadata for the npc or container we're transferring from
+    // extract metadata for the npc or container we're transferring from, which will be used
+    // to determine the validation and transfer logic required.
     let (vessel_id, vessel_name, vessel_type) =
         if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, vessel_pattern) {
             if let Some(vessel) = entity.item() {

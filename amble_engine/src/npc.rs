@@ -140,7 +140,7 @@ pub fn move_scheduled(movement: &NpcMovement, current_turn: usize) -> bool {
 
 /// Returns `Location` NPC is set to move to next, if any.
 pub fn calculate_next_location(movement: &mut NpcMovement) -> Option<Location> {
-    use crate::npc::MovementType::{Route, RandomSet};
+    use crate::npc::MovementType::{RandomSet, Route};
     match &mut movement.movement_type {
         Route {
             rooms,
@@ -221,7 +221,14 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
     Ok(())
 }
 
-/// Represents the demeanor of an 'Npc', which may affect default dialogue and behavior
+/// Represents the demeanor of an 'Npc', which may affect default dialogue and behavior.
+///
+/// NPC states affect which dialogue lines are given in response to a `TalkTo` command. They
+/// can also be used as trigger conditions, and state can be changed by triggers. Room
+/// overlays can also change according to NPC presence / state. Custom states allow for
+/// other "moods" and can be used to pin selections of dialogue to particular game states.
+/// Ex: player does something -> puzzle advanced to puzzle#2 -> trigger sets custom NPC state
+/// "player_at_puzzle_step_2" which has specific dialogue.
 #[derive(Clone, Debug, variantly::Variantly, PartialEq, Hash, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum NpcState {
