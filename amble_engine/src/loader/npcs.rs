@@ -14,7 +14,7 @@ use uuid::Uuid;
 use crate::{
     Location, WorldObject,
     idgen::{self, NAMESPACE_CHARACTER},
-    npc::{Npc, NpcState},
+    npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState},
     world::AmbleWorld,
 };
 
@@ -37,6 +37,28 @@ pub struct RawNpc {
     pub inventory: HashSet<String>,
     pub dialogue: HashMap<String, Vec<String>>,
     pub state: NpcState,
+    #[serde(default)]
+    pub movement: Option<RawNpcMovement>,
+}
+
+/// Structure for loading NPC movement data from TOML files.
+#[derive(Debug, Deserialize)]
+pub struct RawNpcMovement {
+    pub movement_type: String, // "route" or "random"
+    pub rooms: Vec<String>,
+    pub timing: String, // "every_N_turns" or "on_turn_N"
+    #[serde(default = "default_active")]
+    pub active: bool,
+    #[serde(default = "default_loop_route")]
+    pub loop_route: bool,
+}
+
+fn default_active() -> bool {
+    true
+}
+
+fn default_loop_route() -> bool {
+    true
 }
 impl RawNpc {
     /// Converts this `RawNpc` to a real `Npc`
@@ -50,6 +72,12 @@ impl RawNpc {
             processed_dialogue.insert(state, lines.clone());
         }
 
+        let movement = if let Some(ref raw_movement) = self.movement {
+            Some(raw_movement.to_movement(symbols)?)
+        } else {
+            None
+        };
+
         Ok(Npc {
             id: *symbols
                 .characters
@@ -62,6 +90,80 @@ impl RawNpc {
             inventory: HashSet::new(),
             dialogue: processed_dialogue,
             state: self.state.clone(),
+            movement,
+        })
+    }
+}
+
+impl RawNpcMovement {
+    /// Converts this `RawNpcMovement` to a real `NpcMovement`
+    /// # Errors
+    /// - on failure to resolve room symbols or parse timing
+    pub fn to_movement(&self, symbols: &SymbolTable) -> Result<NpcMovement> {
+        let movement_type = match self.movement_type.as_str() {
+            "route" => {
+                let mut room_uuids = Vec::new();
+                for room_symbol in &self.rooms {
+                    let room_uuid = symbols
+                        .rooms
+                        .get(room_symbol)
+                        .ok_or_else(|| anyhow!("Room symbol '{}' not found in symbols", room_symbol))?;
+                    room_uuids.push(*room_uuid);
+                }
+                MovementType::Route {
+                    rooms: room_uuids,
+                    current_idx: 0,
+                    loop_route: self.loop_route,
+                }
+            },
+            "random" => {
+                let mut room_uuids = HashSet::new();
+                for room_symbol in &self.rooms {
+                    let room_uuid = symbols
+                        .rooms
+                        .get(room_symbol)
+                        .ok_or_else(|| anyhow!("Room symbol '{}' not found in symbols", room_symbol))?;
+                    room_uuids.insert(*room_uuid);
+                }
+                MovementType::RandomSet { rooms: room_uuids }
+            },
+            _ => bail!(
+                "Invalid movement_type '{}' - must be 'route' or 'random'",
+                self.movement_type
+            ),
+        };
+
+        let timing = if self.timing.starts_with("every_") {
+            let turns_str = self
+                .timing
+                .strip_prefix("every_")
+                .and_then(|s| s.strip_suffix("_turns"))
+                .ok_or_else(|| anyhow!("Invalid timing format '{}' - expected 'every_N_turns'", self.timing))?;
+            let turns: usize = turns_str
+                .parse()
+                .with_context(|| format!("Failed to parse turn count from '{}'", turns_str))?;
+            MovementTiming::EveryNTurns(turns)
+        } else if self.timing.starts_with("on_turn_") {
+            let turn_str = self
+                .timing
+                .strip_prefix("on_turn_")
+                .ok_or_else(|| anyhow!("Invalid timing format '{}' - expected 'on_turn_N'", self.timing))?;
+            let turn: usize = turn_str
+                .parse()
+                .with_context(|| format!("Failed to parse turn number from '{}'", turn_str))?;
+            MovementTiming::OnTurn(turn)
+        } else {
+            bail!(
+                "Invalid timing format '{}' - must start with 'every_' or 'on_turn_'",
+                self.timing
+            );
+        };
+
+        Ok(NpcMovement {
+            movement_type,
+            timing,
+            active: self.active,
+            last_moved_turn: 0,
         })
     }
 }
