@@ -25,6 +25,11 @@ pub enum RawTriggerAction {
     AwardPoints {
         amount: isize,
     },
+    SetBarredMessage {
+        exit_from: String,
+        exit_to: String,
+        msg: String,
+    },
     DenyRead {
         reason: String,
     },
@@ -103,6 +108,11 @@ impl RawTriggerAction {
     /// Convert the TOML representation of this action to a fully realized `TriggerAction`.
     pub fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
+            Self::SetBarredMessage {
+                msg,
+                exit_from,
+                exit_to,
+            } => cook_barred_message(symbols, msg, exit_from, exit_to),
             Self::AddSpinnerWedge { spinner, text, width } => Ok(TriggerAction::AddSpinnerWedge {
                 spinner: *spinner,
                 text: text.clone(),
@@ -146,6 +156,21 @@ impl RawTriggerAction {
 /*
  * "Cook" functions below convert RawTriggerActions to TriggerActions
  */
+
+fn cook_barred_message(symbols: &SymbolTable, msg: &str, exit_from: &str, exit_to: &str) -> Result<TriggerAction> {
+    if let Some(from_id) = symbols.rooms.get(exit_from)
+        && let Some(to_id) = symbols.rooms.get(exit_to)
+    {
+        Ok(TriggerAction::SetBarredMessage {
+            exit_from: *from_id,
+            exit_to: *to_id,
+            msg: msg.to_string(),
+        })
+    } else {
+        bail!("failed room {exit_from} or destination {exit_to} lookup setting barred message {msg}");
+    }
+}
+
 fn cook_npc_refuse_item(symbols: &SymbolTable, npc_symbol: &String, reason: &String) -> Result<TriggerAction> {
     if let Some(npc_id) = symbols.characters.get(npc_symbol) {
         Ok(TriggerAction::NpcRefuseItem {
