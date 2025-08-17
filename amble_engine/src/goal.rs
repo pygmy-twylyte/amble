@@ -31,7 +31,11 @@ pub enum GoalCondition {
 impl GoalCondition {
     /// Returns true if the condition has been satisfied.
     pub fn satisfied(&self, world: &AmbleWorld) -> bool {
+        // Helper closure to check if a flag is set by comparing flag values
+        // This works because Flag::value() returns the current state representation
+        // with sequence flags in the form <flag>#<step>.
         let flag_is_set = |flag_str: &str| world.player.flags.iter().any(|f| f.value() == *flag_str);
+
         match self {
             Self::HasItem { item_id } => world.player.contains_item(*item_id),
             Self::HasFlag { flag } => flag_is_set(flag),

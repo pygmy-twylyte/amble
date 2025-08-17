@@ -198,7 +198,20 @@ impl Item {
 }
 
 /// Consumes one use of the item with the specified ability.
-/// Returns an option containing the # of uses left, or None if not consumed by this ability.
+///
+/// # Arguments
+/// * `world` - Mutable reference to the game world
+/// * `item_id` - UUID of the item to consume
+/// * `ability` - The ability that triggered the consumption (e.g. ItemAbility::Ignite)
+///
+/// # Returns
+/// * `Ok(Some(uses_left))` - Item was consumable and consumed, returns remaining uses
+/// * `Ok(None)` - Item is not consumable or ability doesn't trigger consumption
+/// * `Err(_)` - Item lookup failed
+///
+/// # Errors
+/// * Returns error if the item UUID is not found in world.items
+/// * Context will include the item UUID that failed lookup
 pub fn consume(world: &mut AmbleWorld, item_id: &Uuid, ability: ItemAbility) -> Result<Option<usize>> {
     let item = world
         .items

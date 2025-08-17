@@ -133,8 +133,16 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
 
 /// Takes a verb from user input and returns a matching `ItemInteractionType` if any.
 ///
-/// The provided verb should be lowercase; [`parse_command`] handles lowering
+/// The provided verb should be lowercase; `parse_command` handles lowering
 /// player input before delegating here.
+///
+/// # Examples
+/// ```
+/// # use amble_engine::command::parse_interaction_type;
+/// # use amble_engine::item::ItemInteractionType;
+/// assert_eq!(parse_interaction_type("burn"), Some(ItemInteractionType::Burn));
+/// assert_eq!(parse_interaction_type("invalid"), None);
+/// ```
 pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
     match verb {
         "open" | "pry" => Some(ItemInteractionType::Open),

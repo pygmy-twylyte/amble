@@ -191,6 +191,11 @@ use std::hash::{Hash, Hasher};
 
 impl PartialEq for Flag {
     /// Defines equality of two flags as based on name only (not step).
+    ///
+    /// This is crucial for HashSet operations - flags are considered equal
+    /// if they have the same name, regardless of their current step in a sequence.
+    /// This allows updating sequence flags by removing the old version and
+    /// inserting the updated version.
     fn eq(&self, other: &Self) -> bool {
         self.name() == other.name()
     }
@@ -199,6 +204,10 @@ impl PartialEq for Flag {
 impl Eq for Flag {}
 
 impl Hash for Flag {
+    /// Hash implementation that matches the PartialEq implementation.
+    ///
+    /// Since equality is based only on the flag name, we hash only the name
+    /// to maintain the invariant that equal items have equal hashes.
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.name().hash(state);
     }
