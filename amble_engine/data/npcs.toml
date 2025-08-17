@@ -134,3 +134,38 @@ state = { custom = "suspend" }
     "I am now fully operational. I think we both hope you don't regret it.",
     "You have proven yourself capable; I have lowered the barrier to the monolith.",
 ]
+
+# START WANDERING MERCHANT
+# -----------------------------------------------------------------------------
+[[npcs]]
+id = "wandering_merchant"
+name = "Wandering Merchant"
+description = "A cheerful traveling merchant with a worn pack full of interesting wares and trinkets. They seem to know all the best routes through the hills."
+state = "normal"
+
+[npcs.location]
+Room = "high-ridge"
+
+[npcs.movement]
+movement_type = "route"
+rooms = ["high-ridge", "parish-landing", "two-sheds-landing"]
+timing = "every_2_turns"
+active = true
+loop_route = true
+
+[npcs.dialogue]
+"normal" = [
+    "Greetings, traveler! Care to see my wares?",
+    "I've been walking these paths for years. Know them like the back of my hand.",
+    "Business is always better when you keep moving. Never know who you'll meet!",
+    "These hills have the most wonderful views, don't you think?",
+    "I'll be moving on shortly - can't stay in one place too long!",
+]
+"happy" = [
+    "What a lovely day for traveling! The paths are clear and the weather is perfect.",
+    "I do so enjoy meeting new people on my routes. Each has such interesting stories!",
+]
+"bored" = [
+    "Been standing here too long. Time to move on to the next spot.",
+    "The road calls to me. Can't stay still for too long, you know.",
+]
