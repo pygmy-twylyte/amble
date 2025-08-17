@@ -72,11 +72,11 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
                 .ok_or_else(|| anyhow!("invalid move destination ({})", destination_id))?;
             info!("{} moved to {} ({})", player_name, new_room.name(), new_room.id());
             view.push(ViewItem::TransitionMessage(travel_message));
-            if !new_room.visited {
+            if new_room.visited {
+                new_room.show(world, view, None)?;
+            } else {
                 world.player.score = world.player.score.saturating_add(1);
                 new_room.show(world, view, Some(ViewMode::Verbose))?;
-            } else {
-                new_room.show(world, view, None)?;
             }
             if let Some(new_room) = world.rooms.get_mut(&destination_id) {
                 new_room.visited = true;

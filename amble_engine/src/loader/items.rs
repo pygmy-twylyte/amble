@@ -249,7 +249,7 @@ pub fn build_items(raw_items: &[RawItem], symbols: &mut SymbolTable) -> Result<V
 
     // make sure pre-inserted items are in data loaded from items.toml
     for (item_symbol, item_uuid) in &early_inserts {
-        if !symbols.items.get(item_symbol).is_some_and(|id| id == item_uuid) {
+        if symbols.items.get(item_symbol).is_none_or(|id| id != item_uuid) {
             bail!("error while loading pre-registered item '{item_symbol}': symbol not found or uuid mismatch")
         }
     }

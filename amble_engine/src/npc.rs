@@ -1,6 +1,7 @@
 //! NPC Module
 
-use log::warn;
+use anyhow::{Context, Result, bail};
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet},
@@ -9,66 +10,13 @@ use std::{
 
 use colored::Colorize;
 use gametools::Spinner;
-use rand::prelude::IndexedRandom;
+use rand::{prelude::IndexedRandom, seq::IteratorRandom};
 
 use uuid::Uuid;
 
-use crate::{ItemHolder, Location, View, ViewItem, WorldObject, view::ContentLine, world::AmbleWorld};
-
-/// Represents the demeanor of an 'Npc', which may affect default dialogue and behavior
-#[derive(Clone, Debug, variantly::Variantly, PartialEq, Hash, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum NpcState {
-    Bored,
-    Happy,
-    Mad,
-    Normal,
-    Sad,
-    Tired,
-    Custom(String),
-}
-impl Display for NpcState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Happy => write!(f, "Happy"),
-            Self::Bored => write!(f, "Bored"),
-            Self::Mad => write!(f, "Mad"),
-            Self::Normal => write!(f, "Normal"),
-            Self::Sad => write!(f, "Sad"),
-            Self::Tired => write!(f, "Tired"),
-            Self::Custom(_) => write!(f, "Custom"),
-        }
-    }
-}
-impl NpcState {
-    pub fn from_key(key: &str) -> Self {
-        match key {
-            "sad" => NpcState::Sad,
-            "bored" => NpcState::Bored,
-            "normal" => NpcState::Normal,
-            "happy" => NpcState::Happy,
-            "mad" => NpcState::Mad,
-            "tired" => NpcState::Tired,
-            other if other.starts_with("custom:") => NpcState::Custom(other.trim_start_matches("custom:").to_string()),
-            _ => {
-                warn!("Unknown NpcState key in dialogue map: {key}");
-                NpcState::Normal
-            },
-        }
-    }
-
-    pub fn as_key(&self) -> String {
-        match self {
-            NpcState::Sad => "sad".into(),
-            NpcState::Bored => "bored".into(),
-            NpcState::Normal => "normal".into(),
-            NpcState::Happy => "happy".into(),
-            NpcState::Mad => "mad".into(),
-            NpcState::Tired => "tired".into(),
-            NpcState::Custom(s) => format!("custom:{s}"),
-        }
-    }
-}
+use crate::{
+    ItemHolder, Location, View, ViewItem, WorldObject, style::GameStyle, view::ContentLine, world::AmbleWorld,
+};
 
 /// A non-playable character.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -81,6 +29,7 @@ pub struct Npc {
     pub inventory: HashSet<Uuid>,
     pub dialogue: HashMap<NpcState, Vec<String>>,
     pub state: NpcState,
+    pub movement: Option<NpcMovement>,
 }
 impl Npc {
     /// Returns a random line of dialogue from within the NPCs current Mood.
@@ -150,6 +99,182 @@ impl ItemHolder for Npc {
     }
 }
 
+/// Paramaters that define when and where mobile NPCs should move.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct NpcMovement {
+    pub movement_type: MovementType,
+    pub timing: MovementTiming,
+    pub active: bool,
+    pub last_moved_turn: usize,
+}
+
+/// Type and route of NPC movement
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum MovementType {
+    Route {
+        rooms: Vec<Uuid>,
+        current_idx: usize,
+        loop_route: bool,
+    },
+    RandomSet {
+        rooms: HashSet<Uuid>,
+    },
+}
+
+/// Defines schedule for NPC movements
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum MovementTiming {
+    EveryNTurns(usize),
+    OnTurn(usize),
+}
+
+/// Returns true if movement should occur according to the '`NpcMovement`' parameters given.
+pub fn move_scheduled(movement: &NpcMovement, current_turn: usize) -> bool {
+    match &movement.timing {
+        MovementTiming::EveryNTurns(interval) => current_turn % interval == 0,
+        MovementTiming::OnTurn(turn) => current_turn == *turn,
+    }
+}
+
+/// Returns `Location` NPC is set to move to next, if any.
+pub fn calculate_next_location(movement: &mut NpcMovement) -> Option<Location> {
+    use crate::npc::MovementType::{Route, RandomSet};
+    match &mut movement.movement_type {
+        Route {
+            rooms,
+            current_idx,
+            loop_route,
+        } => {
+            let next_idx = if *loop_route {
+                (*current_idx + 1) % rooms.len()
+            } else {
+                *current_idx + 1
+            };
+            if let Some(room_id) = rooms.get(next_idx) {
+                *current_idx = next_idx;
+                Some(Location::Room(*room_id))
+            } else {
+                None
+            }
+        },
+        RandomSet { rooms } => rooms
+            .iter()
+            .choose(&mut rand::rng())
+            .map(|room_id| Location::Room(*room_id)),
+    }
+}
+
+/// Moves an NPC to a new `Location`.
+/// # Errors
+/// - if '`move_to`' is a location other than a 'Room' or 'Nowhere'
+pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: Location) -> Result<()> {
+    // update location in NPC instance
+    let npc = world
+        .npcs
+        .get(&npc_id)
+        .with_context(|| format!("looking up npc_id {npc_id} for move"))?;
+
+    // only valid locations to move to are "nowhere" (a despawn) or a room (spawn/move)
+    if move_to.is_not_room() && move_to.is_not_nowhere() {
+        bail!("tried to move NPC to invalid location {move_to:?}")
+    }
+
+    info!("moving NPC '{}' from {:?} to {:?}", npc.symbol, npc.location, move_to);
+
+    // TODO: check player location here -- push a ViewItem to View if the NPC is either
+    // entering or leaving the player's room.
+
+    // get source and destination ids, or None where not a room
+    let from_room_id = match &npc.location {
+        Location::Room(uuid) => Some(*uuid),
+        _ => None,
+    };
+    let to_room_id = match &move_to {
+        Location::Room(uuid) => Some(*uuid),
+        _ => None,
+    };
+
+    // needed for message to player if NPC entering / leaving their current location
+    let player_room_id = world.player_room_ref()?.id();
+
+    // update npc list in from/to rooms as appropriate
+    if let Some(uuid) = from_room_id {
+        if uuid == player_room_id {
+            view.push(ViewItem::TriggeredEvent(format!("{} left.", npc.name().npc_style())));
+            info!("{} left the Candidate's location.", npc.name());
+        }
+        world.rooms.get_mut(&uuid).map(|room| room.npcs.remove(&npc_id));
+    }
+    if let Some(uuid) = to_room_id {
+        if uuid == player_room_id {
+            view.push(ViewItem::TriggeredEvent(format!("{} entered.", npc.name().npc_style())));
+            info!("{} arrived at the Candidate's location.", npc.name());
+        }
+        world.rooms.get_mut(&uuid).map(|room| room.npcs.insert(npc_id));
+    }
+
+    // finally update NPC instance's location field
+    world.npcs.get_mut(&npc_id).map(|npc| npc.location = move_to);
+
+    Ok(())
+}
+
+/// Represents the demeanor of an 'Npc', which may affect default dialogue and behavior
+#[derive(Clone, Debug, variantly::Variantly, PartialEq, Hash, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum NpcState {
+    Bored,
+    Happy,
+    Mad,
+    Normal,
+    Sad,
+    Tired,
+    Custom(String),
+}
+impl Display for NpcState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Happy => write!(f, "Happy"),
+            Self::Bored => write!(f, "Bored"),
+            Self::Mad => write!(f, "Mad"),
+            Self::Normal => write!(f, "Normal"),
+            Self::Sad => write!(f, "Sad"),
+            Self::Tired => write!(f, "Tired"),
+            Self::Custom(_) => write!(f, "Custom"),
+        }
+    }
+}
+impl NpcState {
+    pub fn from_key(key: &str) -> Self {
+        match key {
+            "sad" => NpcState::Sad,
+            "bored" => NpcState::Bored,
+            "normal" => NpcState::Normal,
+            "happy" => NpcState::Happy,
+            "mad" => NpcState::Mad,
+            "tired" => NpcState::Tired,
+            other if other.starts_with("custom:") => NpcState::Custom(other.trim_start_matches("custom:").to_string()),
+            _ => {
+                warn!("Unknown NpcState key in dialogue map: {key}");
+                NpcState::Normal
+            },
+        }
+    }
+
+    pub fn as_key(&self) -> String {
+        match self {
+            NpcState::Sad => "sad".into(),
+            NpcState::Bored => "bored".into(),
+            NpcState::Normal => "normal".into(),
+            NpcState::Happy => "happy".into(),
+            NpcState::Mad => "mad".into(),
+            NpcState::Tired => "tired".into(),
+            NpcState::Custom(s) => format!("custom:{s}"),
+        }
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -176,6 +301,7 @@ mod tests {
             inventory: HashSet::new(),
             dialogue,
             state: NpcState::Normal,
+            movement: None,
         }
     }
 

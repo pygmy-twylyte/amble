@@ -1,4 +1,4 @@
-//! Trigger loader submodule for RawConditions
+//! Trigger loader submodule for `RawConditions`
 
 use std::collections::HashSet;
 

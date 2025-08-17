@@ -155,7 +155,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     if let Some(state) = item.container_state {
                         detail.push(Line::from(vec![
                             Span::styled("Container: ", Style::default().fg(Color::Blue)),
-                            Span::raw(format!("{:?}", state)),
+                            Span::raw(format!("{state:?}")),
                         ]));
                         detail.push(Line::from(vec![Span::styled(
                             "Contents:",
@@ -219,9 +219,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             Style::default().fg(Color::Blue),
                         )]));
                         for (mood, lines) in &npc.dialogue {
-                            detail.push(Line::from(Span::raw(format!("  {:?}:", mood))));
+                            detail.push(Line::from(Span::raw(format!("  {mood:?}:"))));
                             for line in lines {
-                                detail.push(Line::from(Span::raw(format!("    {}", line))));
+                                detail.push(Line::from(Span::raw(format!("    {line}"))));
                             }
                         }
                     }
@@ -264,14 +264,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         Line::from(vec![Span::styled("Conditions:", Style::default().fg(Color::Blue))]),
                     ];
                     for cond in &trg.conditions {
-                        detail.push(Line::from(Span::raw(format!("  {:?}", cond))));
+                        detail.push(Line::from(Span::raw(format!("  {cond:?}"))));
                     }
                     detail.push(Line::from(vec![Span::styled(
                         "Actions:",
                         Style::default().fg(Color::Blue),
                     )]));
                     for act in &trg.actions {
-                        detail.push(Line::from(Span::raw(format!("  {:?}", act))));
+                        detail.push(Line::from(Span::raw(format!("  {act:?}"))));
                     }
                     let paragraph = Paragraph::new(detail)
                         .wrap(Wrap { trim: true })

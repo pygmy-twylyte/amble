@@ -21,7 +21,7 @@ pub use npc::*;
 pub use system::*;
 
 use crate::command::{Command, parse_command};
-use crate::npc::Npc;
+use crate::npc::{Npc, calculate_next_location, move_npc, move_scheduled};
 use crate::spinners::SpinnerType;
 use crate::style::GameStyle;
 use crate::trigger::TriggerCondition;
@@ -137,10 +137,37 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         };
         if turn_taken {
             world.turn_count += 1;
+            check_npc_movement(world, &mut view)?;
         }
 
         check_ambient_triggers(world, &mut view)?;
         view.flush();
+    }
+    Ok(())
+}
+
+/// Check to see if any NPCs are scheduled to move and move them.
+/// # Errors
+///
+pub fn check_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
+    let current_turn = world.turn_count;
+    let npc_ids: Vec<Uuid> = world.npcs.keys().copied().collect();
+
+    for npc_id in npc_ids {
+        if let Some(npc) = world.npcs.get_mut(&npc_id) {
+            if let Some(ref mut movement) = npc.movement {
+                if !movement.active {
+                    continue;
+                }
+
+                if move_scheduled(movement, current_turn) {
+                    if let Some(new_location) = calculate_next_location(movement) {
+                        movement.last_moved_turn = current_turn;
+                        move_npc(world, view, npc_id, new_location)?;
+                    }
+                }
+            }
+        }
     }
     Ok(())
 }

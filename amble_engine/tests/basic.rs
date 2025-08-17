@@ -222,6 +222,7 @@ fn test_raw_npc_to_npc() {
         inventory: HashSet::new(),
         dialogue: HashMap::new(),
         state: ae::npc::NpcState::Normal,
+        movement: None,
     };
     let npc = raw.to_npc(&symbols).unwrap();
     assert_eq!(npc.name, "Npc");

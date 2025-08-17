@@ -191,9 +191,8 @@ pub fn take_from_handler(
                         "{reason} You can't take anything from it."
                     )));
                     return Ok(());
-                } else {
-                    (vessel.id(), vessel.name().to_string(), VesselType::Item)
                 }
+                (vessel.id(), vessel.name().to_string(), VesselType::Item)
             } else if let Some(npc) = entity.npc() {
                 (npc.id(), npc.name().to_string(), VesselType::Npc)
             } else {
@@ -236,11 +235,10 @@ pub(crate) fn validate_and_transfer_from_npc(
         if let Some(entity) = find_world_object(&container.inventory, &world.items, &world.npcs, item_pattern) {
             if let Some(loot) = entity.item() {
                 if let Some(reason) = loot.take_denied_reason() {
-                    view.push(ViewItem::ActionFailure(format!("{reason}")));
+                    view.push(ViewItem::ActionFailure(reason.to_string()));
                     return Ok(());
-                } else {
-                    (loot.id(), loot.name().to_string())
                 }
+                (loot.id(), loot.name().to_string())
             } else {
                 unexpected_entity(
                     entity,
@@ -387,9 +385,8 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
                 if let Some(reason) = item.take_denied_reason() {
                     view.push(ViewItem::ActionFailure(reason));
                     return Ok(());
-                } else {
-                    (item.id(), item.name().to_string())
                 }
+                (item.id(), item.name().to_string())
             } else {
                 unexpected_entity(entity, view, &format!("No item in inventory matches \"{item}\"."));
                 return Ok(());
@@ -461,14 +458,14 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
 }
 
 /// Handle situation where an NPC uuid is found where only items should be.
-/// (Typically when find_world_object matches an NPC when an item is expected.)
+/// (Typically when `find_world_object` matches an NPC when an item is expected.)
 pub fn unexpected_entity(entity: WorldEntity, view: &mut View, denial_msg: &str) {
     let (entity_name, entity_id, entity_loc) = match entity {
         WorldEntity::Item(item) => (item.name(), item.id(), item.location()),
         WorldEntity::Npc(npc) => (npc.name(), npc.id(), npc.location()),
     };
     view.push(ViewItem::Error(denial_msg.to_string()));
-    error!("entity '{entity_name}' ({entity_id}) found in unexpected location {entity_loc:?}")
+    error!("entity '{entity_name}' ({entity_id}) found in unexpected location {entity_loc:?}");
 }
 
 #[cfg(test)]
@@ -624,6 +621,7 @@ mod tests {
             inventory: HashSet::new(),
             dialogue: HashMap::new(),
             state: NpcState::Normal,
+            movement: None,
         };
         let npc_item_id = Uuid::new_v4();
         let npc_item = Item {

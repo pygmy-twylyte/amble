@@ -195,6 +195,7 @@ mod tests {
             inventory: HashSet::new(),
             dialogue: HashMap::new(),
             state,
+            movement: None,
         }
     }
 

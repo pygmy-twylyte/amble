@@ -7,7 +7,7 @@
 use colored::{ColoredString, Colorize};
 use textwrap::{Options, wrap_algorithms::Penalties};
 
-/// Returns textwrap::ptions for an indented, wrapped block of text.
+/// Returns `textwrap::Options` for an indented, wrapped block of text.
 pub fn indented_block() -> Options<'static> {
     let indent = "    ";
     Options::with_termwidth()
@@ -16,7 +16,7 @@ pub fn indented_block() -> Options<'static> {
         .wrap_algorithm(textwrap::WrapAlgorithm::OptimalFit(Penalties::new()))
 }
 
-/// Returns textwrap::Options for an unindented, wrapped block of text.
+/// Returns `textwrap::Options` for an unindented, wrapped block of text.
 pub fn normal_block() -> Options<'static> {
     Options::with_termwidth().wrap_algorithm(textwrap::WrapAlgorithm::OptimalFit(Penalties::new()))
 }
@@ -115,7 +115,7 @@ impl GameStyle for &str {
     }
 
     fn section_style(&self) -> ColoredString {
-        let bracketed = format!("[{}]", self);
+        let bracketed = format!("[{self}]");
         bracketed.truecolor(75, 80, 75)
     }
 

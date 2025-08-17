@@ -276,6 +276,7 @@ mod tests {
             inventory: HashSet::new(),
             dialogue: HashMap::new(),
             state: NpcState::Normal,
+            movement: None,
         };
         world.npcs.insert(npc_id, npc);
 
