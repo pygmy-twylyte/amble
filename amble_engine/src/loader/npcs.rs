@@ -141,7 +141,7 @@ impl RawNpcMovement {
                 .ok_or_else(|| anyhow!("Invalid timing format '{}' - expected 'every_N_turns'", self.timing))?;
             let turns: usize = turns_str
                 .parse()
-                .with_context(|| format!("Failed to parse turn count from '{}'", turns_str))?;
+                .with_context(|| format!("Failed to parse turn count from '{turns_str}'"))?;
             MovementTiming::EveryNTurns(turns)
         } else if self.timing.starts_with("on_turn_") {
             let turn_str = self
@@ -150,7 +150,7 @@ impl RawNpcMovement {
                 .ok_or_else(|| anyhow!("Invalid timing format '{}' - expected 'on_turn_N'", self.timing))?;
             let turn: usize = turn_str
                 .parse()
-                .with_context(|| format!("Failed to parse turn number from '{}'", turn_str))?;
+                .with_context(|| format!("Failed to parse turn number from '{turn_str}'"))?;
             MovementTiming::OnTurn(turn)
         } else {
             bail!(
@@ -203,7 +203,7 @@ pub fn build_npcs(raw_npcs: &[RawNpc], symbols: &mut SymbolTable) -> Result<Vec<
 
     // make sure each pre-registered NPC exists in loaded data and UUID is correct
     for (npc_symbol, npc_id) in &early_inserts {
-        if !symbols.characters.get(npc_symbol).is_some_and(|id| id == npc_id) {
+        if symbols.characters.get(npc_symbol).is_none_or(|id| id != npc_id) {
             bail!("error while loading pre-registered NPC '{npc_symbol}': symbol not found or uuid mismatch");
         }
     }

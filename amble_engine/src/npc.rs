@@ -130,7 +130,7 @@ pub enum MovementTiming {
     OnTurn(usize),
 }
 
-/// Returns true if movement should occur according to the 'NpcMovement' parameters given.
+/// Returns true if movement should occur according to the '`NpcMovement`' parameters given.
 pub fn move_scheduled(movement: &NpcMovement, current_turn: usize) -> bool {
     match &movement.timing {
         MovementTiming::EveryNTurns(interval) => current_turn % interval == 0,
@@ -140,7 +140,7 @@ pub fn move_scheduled(movement: &NpcMovement, current_turn: usize) -> bool {
 
 /// Returns `Location` NPC is set to move to next, if any.
 pub fn calculate_next_location(movement: &mut NpcMovement) -> Option<Location> {
-    use crate::npc::MovementType::*;
+    use crate::npc::MovementType::{Route, RandomSet};
     match &mut movement.movement_type {
         Route {
             rooms,
@@ -168,7 +168,7 @@ pub fn calculate_next_location(movement: &mut NpcMovement) -> Option<Location> {
 
 /// Moves an NPC to a new `Location`.
 /// # Errors
-/// - if 'move_to' is a location other than a 'Room' or 'Nowhere'
+/// - if '`move_to`' is a location other than a 'Room' or 'Nowhere'
 pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: Location) -> Result<()> {
     // update location in NPC instance
     let npc = world

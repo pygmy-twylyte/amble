@@ -26,10 +26,10 @@ use variantly::Variantly;
 /// Items that aren't 'portable' are fixed and can't be moved at all.
 /// Items that are 'restricted' can't be *taken* by the player in current game state, but may become available.
 /// 'abilities' are special things you can do with this item (e.g. read, smash, ignite, clean)
-/// 'interaction_requires' maps a type of interaction (a thing that can be done to this item by another item) to an ability.
-///     e.g. ItemInteractionType::Burn => ItemAbility::Ignite
+/// '`interaction_requires`' maps a type of interaction (a thing that can be done to this item by another item) to an ability.
+///     e.g. `ItemInteractionType::Burn` => `ItemAbility::Ignite`
 /// Combined with an appropriate ActOnItem-based trigger, this would mean any Item with Ignite can be used to Burn this item.
-/// 'consumable' makes an item consumable if present, with various consumable types defined in ConsumableOpts
+/// 'consumable' makes an item consumable if present, with various consumable types defined in `ConsumableOpts`
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Item {
     pub id: Uuid,
@@ -124,7 +124,7 @@ impl Item {
                 "You can use this item {} more time{}.",
                 opts.uses_left.to_string().yellow(),
                 if opts.uses_left == 1 { "" } else { "s" }
-            )))
+            )));
         }
 
         // push container contents to View or report why inaccessible
@@ -232,11 +232,11 @@ pub fn consume(world: &mut AmbleWorld, item_id: &Uuid, ability: ItemAbility) -> 
             match opts.when_consumed {
                 ConsumeType::ReplaceInventory { replacement } => {
                     crate::trigger::despawn_item(world, &item_id)?;
-                    crate::trigger::spawn_item_in_inventory(world, &replacement)?
+                    crate::trigger::spawn_item_in_inventory(world, &replacement)?;
                 },
                 ConsumeType::ReplaceCurrentRoom { replacement } => {
                     crate::trigger::despawn_item(world, &item_id)?;
-                    crate::trigger::spawn_item_in_current_room(world, &replacement)?
+                    crate::trigger::spawn_item_in_current_room(world, &replacement)?;
                 },
                 _ => (),
             }

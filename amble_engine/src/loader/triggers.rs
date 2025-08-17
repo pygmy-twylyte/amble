@@ -7,8 +7,8 @@
 pub mod raw_action;
 pub mod raw_condition;
 
-use raw_action::*;
-use raw_condition::*;
+use raw_action::RawTriggerAction;
+use raw_condition::RawTriggerCondition;
 
 use std::{fs, path::Path};
 

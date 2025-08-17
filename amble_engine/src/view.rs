@@ -27,6 +27,12 @@ pub struct View {
     pub mode: ViewMode,
     pub items: Vec<ViewItem>,
 }
+impl Default for View {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl View {
     /// Create a new empty view.
     /// Defaults to Verbose behavior.
@@ -154,14 +160,14 @@ impl View {
                         ICON_NEGATIVE.bright_red(),
                         amount.abs(),
                         if *amount == 1 { "" } else { "s" }
-                    )
+                    );
                 } else {
                     println!(
                         "{:<4}You were awarded {} point{}.",
                         ICON_POSITIVE.bright_green(),
                         amount,
                         if *amount == 1 { "" } else { "s" }
-                    )
+                    );
                 }
             }
         }
@@ -334,15 +340,15 @@ impl View {
                 _ => None,
             })
             .collect();
-        messages.iter().for_each(|msg| {
+        for msg in messages {
             println!(
                 "{}",
                 fill(
                     format!("{} {}", ICON_SUCCESS.bright_green(), msg).as_str(),
                     normal_block()
                 )
-            )
-        });
+            );
+        }
     }
 
     fn action_failure(&mut self) {
@@ -354,15 +360,15 @@ impl View {
                 _ => None,
             })
             .collect();
-        messages.iter().for_each(|msg| {
+        for msg in messages {
             println!(
                 "{}",
                 fill(
                     format!("{} {}", ICON_FAILURE.bright_red(), msg).as_str(),
                     normal_block()
                 )
-            )
-        });
+            );
+        }
     }
 
     fn errors(&mut self) {
@@ -374,15 +380,15 @@ impl View {
                 _ => None,
             })
             .collect();
-        messages.iter().for_each(|msg| {
+        for msg in messages {
             println!(
                 "{}",
                 fill(
                     format!("{} {}", ICON_ERROR.error_icon_style(), msg).as_str(),
                     normal_block()
                 )
-            )
-        });
+            );
+        }
     }
 
     fn item_text(&mut self) {
@@ -413,13 +419,13 @@ impl View {
             if content_lines.is_empty() {
                 println!("   {}", "(Empty)".dimmed().italic());
             } else {
-                content_lines.iter().for_each(|line| {
+                for line in content_lines {
                     println!(
                         "   {} {}",
                         line.item_name.item_style(),
                         if line.restricted { "[R]" } else { "" }
-                    )
-                });
+                    );
+                }
             }
         }
     }
@@ -460,13 +466,13 @@ impl View {
             if content_lines.is_empty() {
                 println!("   {}", "Empty".italic().dimmed());
             } else {
-                content_lines.iter().for_each(|line| {
+                for line in content_lines {
                     println!(
                         "   {} {}",
                         line.item_name.item_style(),
                         if line.restricted { "[R]" } else { "" }
                     );
-                });
+                }
                 println!();
             }
         }
@@ -525,7 +531,7 @@ impl View {
         }
     }
 
-    /// Used by flush() to show base room description
+    /// Used by `flush()` to show base room description
     fn room_description(&mut self) {
         if let Some(ViewItem::RoomDescription {
             name,
@@ -562,7 +568,7 @@ impl View {
         self.items.clear();
     }
 
-    /// Sets a ViewMode and returns the previously set mode.
+    /// Sets a `ViewMode` and returns the previously set mode.
     pub fn set_mode(&mut self, mode: ViewMode) -> ViewMode {
         std::mem::replace(&mut self.mode, mode)
     }
@@ -579,7 +585,7 @@ pub enum Section {
     System,
 }
 
-/// ViewMode alters the way that each "frame" is rendered.
+/// `ViewMode` alters the way that each "frame" is rendered.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ViewMode {
     ClearVerbose, // clears before every room description
@@ -587,7 +593,7 @@ pub enum ViewMode {
     Brief,        // only show full description on first entry
 }
 
-/// ViewItems are each of the various types of information / messages that may be displayed to the player.
+/// `ViewItems` are each of the various types of information / messages that may be displayed to the player.
 #[derive(Debug, Clone, PartialEq, Eq, Variantly)]
 pub enum ViewItem {
     EngineMessage(String),

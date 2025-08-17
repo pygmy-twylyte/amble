@@ -91,11 +91,10 @@ pub fn use_item_on_handler(
     // This is needed for the UseItem TriggerCondition. ItemAbility::Use is a reasonable default but
     // should never come up, since the presence of this interaction is already verified by the
     // interaction_requirement_met(...) call above.
-    let used_ability = target
+    let used_ability = *target
         .interaction_requires
         .get(&interaction)
-        .unwrap_or(&ItemAbility::Use)
-        .clone();
+        .unwrap_or(&ItemAbility::Use);
 
     let fired = check_triggers(
         world,
@@ -134,10 +133,7 @@ pub fn use_item_on_handler(
     });
 
     if !interaction_fired {
-        view.push(ViewItem::ActionFailure(format!(
-            "{}",
-            world.spin_spinner(SpinnerType::NoEffect, "That appears to have had no effect, Captain.",)
-        )));
+        view.push(ViewItem::ActionFailure(world.spin_spinner(SpinnerType::NoEffect, "That appears to have had no effect, Captain.",).to_string()));
         info!("No matching trigger for {interaction:?} {target_name} ({target_id}) with {tool_name} ({tool_id})");
     }
     if tool_is_consumable {

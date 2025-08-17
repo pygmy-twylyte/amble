@@ -1,4 +1,4 @@
-//! Trigger loader submodule for RawTriggerActions
+//! Trigger loader submodule for `RawTriggerActions`
 
 use anyhow::{Result, bail};
 use serde::Deserialize;
@@ -100,7 +100,7 @@ pub enum RawTriggerAction {
     },
 }
 impl RawTriggerAction {
-    /// Convert the TOML representation of this action to a fully realized TriggerAction.
+    /// Convert the TOML representation of this action to a fully realized `TriggerAction`.
     pub fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
             Self::AddSpinnerWedge { spinner, text, width } => Ok(TriggerAction::AddSpinnerWedge {

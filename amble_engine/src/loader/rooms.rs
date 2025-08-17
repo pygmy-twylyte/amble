@@ -147,7 +147,7 @@ impl RawRoom {
     }
 }
 
-/// Convert a RawOverlayCondition to an OverlayCondition
+/// Convert a `RawOverlayCondition` to an `OverlayCondition`
 pub fn convert_overlay_condition(
     raw_condition: &RawOverlayCondition,
     symbols: &mut SymbolTable,

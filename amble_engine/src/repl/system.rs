@@ -129,7 +129,7 @@ pub fn help_handler(view: &mut View) {
                 "Failed to load help data: {}",
                 e.to_string().error_style()
             )));
-            warn!("Failed to load help data: {}", e);
+            warn!("Failed to load help data: {e}");
         },
     }
 }
