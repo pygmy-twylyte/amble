@@ -15,8 +15,7 @@ use rand::{prelude::IndexedRandom, seq::IteratorRandom};
 use uuid::Uuid;
 
 use crate::{
-    ItemHolder, Location, View, ViewItem, WorldObject, helpers::room_symbol_from_id, style::GameStyle,
-    view::ContentLine, world::AmbleWorld,
+    ItemHolder, Location, View, ViewItem, WorldObject, style::GameStyle, view::ContentLine, world::AmbleWorld,
 };
 
 /// A non-playable character.
