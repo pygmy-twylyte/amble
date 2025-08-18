@@ -142,7 +142,7 @@ impl RawNpcMovement {
             let turns: usize = turns_str
                 .parse()
                 .with_context(|| format!("Failed to parse turn count from '{turns_str}'"))?;
-            MovementTiming::EveryNTurns(turns)
+            MovementTiming::EveryNTurns { turns }
         } else if self.timing.starts_with("on_turn_") {
             let turn_str = self
                 .timing
@@ -151,7 +151,7 @@ impl RawNpcMovement {
             let turn: usize = turn_str
                 .parse()
                 .with_context(|| format!("Failed to parse turn number from '{turn_str}'"))?;
-            MovementTiming::OnTurn(turn)
+            MovementTiming::OnTurn { turn }
         } else {
             bail!(
                 "Invalid timing format '{}' - must start with 'every_' or 'on_turn_'",
