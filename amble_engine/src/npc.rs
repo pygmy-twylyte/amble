@@ -15,7 +15,8 @@ use rand::{prelude::IndexedRandom, seq::IteratorRandom};
 use uuid::Uuid;
 
 use crate::{
-    ItemHolder, Location, View, ViewItem, WorldObject, style::GameStyle, view::ContentLine, world::AmbleWorld,
+    ItemHolder, Location, View, ViewItem, WorldObject, helpers::room_symbol_from_id, style::GameStyle,
+    view::ContentLine, world::AmbleWorld,
 };
 
 /// A non-playable character.
@@ -126,15 +127,15 @@ pub enum MovementType {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum MovementTiming {
-    EveryNTurns(usize),
-    OnTurn(usize),
+    EveryNTurns { turns: usize },
+    OnTurn { turn: usize },
 }
 
 /// Returns true if movement should occur according to the '`NpcMovement`' parameters given.
 pub fn move_scheduled(movement: &NpcMovement, current_turn: usize) -> bool {
     match &movement.timing {
-        MovementTiming::EveryNTurns(interval) => current_turn % interval == 0,
-        MovementTiming::OnTurn(turn) => current_turn == *turn,
+        MovementTiming::EveryNTurns { turns } => current_turn % turns == 0,
+        MovementTiming::OnTurn { turn } => current_turn == *turn,
     }
 }
 
@@ -180,8 +181,27 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
     if move_to.is_not_room() && move_to.is_not_nowhere() {
         bail!("tried to move NPC to invalid location {move_to:?}")
     }
+    let current_room_sym = match npc.location {
+        Location::Room(uuid) => world
+            .rooms
+            .get(&uuid)
+            .map(|room| room.symbol.clone())
+            .expect("npc Room should be valid"),
+        _ => "<nowhere>".to_string(),
+    };
+    let dest_room_sym = match move_to {
+        Location::Room(uuid) => world
+            .rooms
+            .get(&uuid)
+            .map(|room| room.symbol.clone())
+            .expect("move_to Room should be valid"),
+        _ => "<nowhere>".to_string(),
+    };
 
-    info!("moving NPC '{}' from {:?} to {:?}", npc.symbol, npc.location, move_to);
+    info!(
+        "moving NPC '{}' from [{}] to [{}]",
+        npc.symbol, current_room_sym, dest_room_sym
+    );
 
     // TODO: check player location here -- push a ViewItem to View if the NPC is either
     // entering or leaving the player's room.
@@ -203,14 +223,14 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
     if let Some(uuid) = from_room_id {
         if uuid == player_room_id {
             view.push(ViewItem::TriggeredEvent(format!("{} left.", npc.name().npc_style())));
-            info!("{} left the Candidate's location.", npc.name());
+            info!("{} ({}) left the Candidate's location.", npc.name(), npc.symbol());
         }
         world.rooms.get_mut(&uuid).map(|room| room.npcs.remove(&npc_id));
     }
     if let Some(uuid) = to_room_id {
         if uuid == player_room_id {
             view.push(ViewItem::TriggeredEvent(format!("{} entered.", npc.name().npc_style())));
-            info!("{} arrived at the Candidate's location.", npc.name());
+            info!("{} ({}) arrived at the Candidate's location.", npc.name(), npc.symbol());
         }
         world.rooms.get_mut(&uuid).map(|room| room.npcs.insert(npc_id));
     }
