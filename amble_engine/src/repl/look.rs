@@ -9,7 +9,7 @@ use crate::{
     item::ItemAbility,
     repl::{entity_not_found, find_world_object},
     style::GameStyle,
-    trigger::{check_triggers, TriggerAction, TriggerCondition},
+    trigger::{TriggerAction, TriggerCondition, check_triggers},
     view::{ContentLine, ViewMode},
     world::nearby_reachable_items,
 };
@@ -22,7 +22,12 @@ use uuid::Uuid;
 pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let room = world.player_room_ref()?;
     room.show(world, view, Some(ViewMode::Verbose))?;
-    info!("{} looked around {} ({})", world.player.name, room.name, room.id);
+    info!(
+        "{} looked around {} ({})",
+        world.player.name(),
+        room.name(),
+        room.symbol()
+    );
     let _fired = check_triggers(world, view, &[]);
     Ok(())
 }
@@ -39,10 +44,10 @@ pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> 
         .collect();
     if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, thing) {
         if let Some(item) = entity.item() {
-            info!("{} looked at {} ({})", world.player.name(), item.name(), item.id());
+            info!("{} looked at {} ({})", world.player.name(), item.name(), item.symbol());
             item.show(world, view);
         } else if let Some(npc) = entity.npc() {
-            info!("{} looked at {} ({})", world.player.name(), npc.name(), npc.id());
+            info!("{} looked at {} ({})", world.player.name(), npc.name(), npc.symbol());
             npc.show(world, view);
         }
         let _fired = check_triggers(world, view, &[]);
@@ -96,7 +101,7 @@ pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                 "{} tried to read textless item {} ({})",
                 world.player.name(),
                 item.name(),
-                item.id()
+                item.symbol()
             );
             None
         }
@@ -129,7 +134,7 @@ pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
             view.push(ViewItem::ItemText(
                 item.text.clone().unwrap_or("(Nothing legible.)".to_string()),
             ));
-            info!("{} read '{}' ({})", world.player.name(), item.name(), item.id());
+            info!("{} read '{}' ({})", world.player.name(), item.name(), item.symbol());
         }
     }
     Ok(())

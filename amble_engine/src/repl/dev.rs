@@ -18,7 +18,7 @@ pub fn dev_spawn_item_handler(world: &mut AmbleWorld, view: &mut View, symbol: &
     let item_id = uuid_from_token(&NAMESPACE_ITEM, symbol);
     if world.items.contains_key(&item_id) {
         spawn_item_in_inventory(world, &item_id).expect("should not err; item_id already known to be valid");
-        info!("player used DEV_MODE SpawnItem({symbol}) [uuid:{item_id}]");
+        info!("player used DEV_MODE SpawnItem({symbol})");
         view.push(ViewItem::ActionSuccess(format!("Item '{symbol}' moved to inventory.")));
     } else {
         view.push(ViewItem::ActionFailure(format!(

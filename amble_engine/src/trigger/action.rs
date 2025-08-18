@@ -6,6 +6,7 @@ use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::helpers::{item_symbol_from_id, room_symbol_from_id};
 use crate::item::{ContainerState, ItemHolder};
 use crate::npc::NpcState;
 use crate::player::{Flag, Player};
@@ -198,7 +199,7 @@ pub fn remove_flag(world: &mut AmbleWorld, flag: &str) {
 pub fn restrict_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     if let Some(item) = world.items.get_mut(item_id) {
         item.restricted = true;
-        info!("└─ action: RestrictItem({item_id}) \"{}\"", item.name());
+        info!("└─ action: RestrictItem({}) \"{}\"", item.symbol(), item.name());
         Ok(())
     } else {
         bail!("action RestrictItem({item_id}): item not found");
@@ -222,7 +223,7 @@ pub fn npc_says_random(world: &AmbleWorld, view: &mut View, npc_id: &Uuid) -> Re
         speaker: npc.name().to_string(),
         quote: line.clone(),
     });
-    info!("└─ action: NpcSays({}, \"{line}\")", npc.name());
+    info!("└─ action: NpcSays({}, \"{line}\")", npc.symbol());
     Ok(())
 }
 
@@ -266,7 +267,10 @@ pub fn lock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -
         .and_then(|rm| rm.exits.get_mut(direction))
     {
         exit.locked = true;
-        info!("└─ action: LockExit({direction}, from {from_room})");
+        info!(
+            "└─ action: LockExit({direction}, from [{}]",
+            room_symbol_from_id(&world.rooms, *from_room)
+        );
         Ok(())
     } else {
         bail!("LockExit({from_room}, {direction}): bad room id or exit direction");
@@ -279,7 +283,10 @@ pub fn lock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -
 pub fn unlock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Result<()> {
     if let Some(exit) = world.rooms.get_mut(from_room).and_then(|r| r.exits.get_mut(direction)) {
         exit.locked = false;
-        info!("└─ action: UnlockExit({direction}, from {from_room})");
+        info!(
+            "└─ action: UnlockExit({direction}, from [{}])",
+            room_symbol_from_id(&world.rooms, *from_room)
+        );
         Ok(())
     } else {
         bail!("UnlockExit({from_room}, {direction}): bad room id or exit direction");
@@ -294,9 +301,12 @@ pub fn unlock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
         match item.container_state {
             Some(ContainerState::Locked) => {
                 item.container_state = Some(ContainerState::Open);
-                info!("└─ action: UnlockItem({item_id}) '{}'", item.name());
+                info!("└─ action: UnlockItem({}) '{}'", item.symbol(), item.name());
             },
-            Some(_) => warn!("action UnlockItem({item_id}): item wasn't locked"),
+            Some(_) => warn!(
+                "action UnlockItem({}): item wasn't locked",
+                item_symbol_from_id(&world.items, *item_id)
+            ),
             None => warn!("action UnlockItem({item_id}): item '{}' isn't a container", item.name()),
         }
         Ok(())
@@ -325,7 +335,11 @@ pub fn spawn_item_in_specific_room(world: &mut AmbleWorld, item_id: &Uuid, room_
         .items
         .get_mut(item_id)
         .ok_or_else(|| anyhow!("item {} missing", item_id))?;
-    info!("└─ action: SpawnItemInRoom({item_id}, {room_id})");
+    info!(
+        "└─ action: SpawnItemInRoom({}, {})",
+        item.symbol(),
+        room_symbol_from_id(&world.rooms, *room_id)
+    );
     item.set_location_room(*room_id);
     world
         .rooms
@@ -361,7 +375,7 @@ pub fn spawn_item_in_current_room(world: &mut AmbleWorld, item_id: &Uuid) -> Res
         .get_mut(item_id)
         .ok_or_else(|| anyhow!("item {} missing", item_id))?;
 
-    info!("└─ action: SpawnItemCurrentRoom({item_id})");
+    info!("└─ action: SpawnItemCurrentRoom({})", item.symbol());
     item.set_location_room(*room_id);
     world
         .rooms
@@ -390,7 +404,7 @@ pub fn spawn_item_in_inventory(world: &mut AmbleWorld, item_id: &Uuid) -> Result
         .items
         .get_mut(item_id)
         .ok_or_else(|| anyhow!("item {} missing", item_id))?;
-    info!("└─ action: SpawnItemInInventory({item_id})");
+    info!("└─ action: SpawnItemInInventory({})", item.symbol());
     item.set_location_inventory();
     world.player.add_item(*item_id);
     Ok(())
@@ -411,12 +425,15 @@ pub fn spawn_item_in_container(world: &mut AmbleWorld, item_id: &Uuid, container
         despawn_item(world, item_id)?;
     }
 
+    // need to grab this here to avoid trouble with the borrow checker below
+    let container_sym = item_symbol_from_id(&world.items, *container_id);
+
     // then spawn again in the desired location
     let item = world
         .items
         .get_mut(item_id)
         .ok_or_else(|| anyhow!("item {} missing", item_id))?;
-    info!("└─ action: SpawnItemInContainer({item_id}, {container_id})");
+    info!("└─ action: SpawnItemInContainer({}, {})", item.symbol(), container_sym);
     item.set_location_item(*container_id);
     world
         .items
@@ -463,7 +480,11 @@ pub fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &Uuid,
         .entry(direction.clone())
         .or_insert_with(|| Exit::new(*exit_to));
     exit.hidden = false;
-    info!("└─ action: RevealExit({direction}, from {exit_from}, to {exit_to})");
+    info!(
+        "└─ action: RevealExit({direction}, from '{}', to '{}')",
+        room_symbol_from_id(&world.rooms, *exit_from),
+        room_symbol_from_id(&world.rooms, *exit_to)
+    );
     Ok(())
 }
 
@@ -473,7 +494,10 @@ pub fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &Uuid,
 pub fn push_player(world: &mut AmbleWorld, room_id: &Uuid) -> Result<()> {
     if world.rooms.contains_key(room_id) {
         world.player.location = Location::Room(*room_id);
-        info!("└─ action: PushPlayerTo({room_id})");
+        info!(
+            "└─ action: PushPlayerTo({})",
+            room_symbol_from_id(&world.rooms, *room_id)
+        );
         Ok(())
     } else {
         bail!("tried to push player to unknown room ({room_id})");
@@ -488,9 +512,13 @@ pub fn lock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     if let Some(item) = world.items.get_mut(item_id) {
         if item.container_state.is_some() {
             item.container_state = Some(ContainerState::Locked);
-            info!("└─ action: LockItem({item_id})");
+            info!("└─ action: LockItem({})", item.symbol());
         } else {
-            warn!("action LockItem({item_id}): '{}' is not a container", item.name());
+            warn!(
+                "action LockItem({}): '{}' is not a container",
+                item.symbol(),
+                item.name()
+            );
         }
         Ok(())
     } else {
@@ -514,7 +542,7 @@ pub fn give_to_player(world: &mut AmbleWorld, npc_id: &Uuid, item_id: &Uuid) -> 
         item.set_location_inventory();
         npc.remove_item(*item_id);
         world.player.add_item(*item_id);
-        info!("└─ action: GiveItemToPlayer({npc_id}, {item_id})");
+        info!("└─ action: GiveItemToPlayer({}, {})", npc.symbol(), item.symbol());
         Ok(())
     } else {
         bail!("item {} not found in NPC {} inventory", item_id, npc_id);
@@ -531,6 +559,7 @@ pub fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
         .get_mut(item_id)
         .ok_or_else(|| anyhow!("unknown item {}", item_id))?;
     let prev_loc = std::mem::replace(&mut item.location, Location::Nowhere);
+    info!("└─ action: DespawnItem({})", item.symbol());
     match prev_loc {
         Location::Room(id) => {
             if let Some(r) = world.rooms.get_mut(&id) {
@@ -552,7 +581,6 @@ pub fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
         },
         Location::Nowhere => {},
     }
-    info!("└─ action: DespawnItem({item_id})");
     Ok(())
 }
 

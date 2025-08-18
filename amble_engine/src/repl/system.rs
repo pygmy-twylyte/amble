@@ -47,14 +47,14 @@ pub fn set_viewmode_handler(view: &mut View, mode: ViewMode) {
 pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> {
     info!("{} quit with a score of {}", world.player.name(), world.player.score);
     info!("ending flags:");
-    world.player.flags.iter().for_each(|i| info!("* {i}"));
+    world.player.flags.iter().for_each(|i| info!("flag> {i}"));
     info!("ending inventory:");
     world
         .player
         .inventory
         .iter()
         .filter_map(|uuid| world.items.get(uuid))
-        .for_each(|i| info!("- {} ({})", i.name(), i.id()));
+        .for_each(|i| info!("- {} ({})", i.name(), i.symbol()));
 
     let percent = (world.player.score as f32 / world.max_score as f32) * 100.0;
 
@@ -112,7 +112,15 @@ pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> 
     Ok(ReplControl::Quit)
 }
 
-/// Show available commands.
+/// Show general help and some available commands.
+///
+/// General help text or paragraph goes in amble_engine/data/help_basic.txt.
+/// A TOML dictionary of example commands and explanations goes in help_commands.toml
+///
+/// Example help_commands.toml entry:
+/// [[commands]]
+/// command = "drop <object>"
+/// description = "drop an object"
 pub fn help_handler(view: &mut View) {
     let basic_text_path = Path::new("amble_engine/data/help_basic.txt");
     let commands_toml_path = Path::new("amble_engine/data/help_commands.toml");
