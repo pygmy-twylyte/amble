@@ -16,11 +16,18 @@ use anyhow::{Context, Result, anyhow};
 use log::info;
 
 /// Move the player to a neighboring location, if all exit conditions are met.
+///
+/// 1. Matches `input_dir` to a direction and finds the actual Exit (`destination exit`) (reports if nothing matched)
+/// 2. Denies entry if exit is locked
+/// 3. Checks any requirements for items or flags (blocks exit and reports `barred_message`)
+/// 4. Moves the player to the new location
+/// 5. Checks triggers for leaving the former location and entering the new one.
 pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str) -> Result<()> {
     let player_name = world.player.name.clone();
     let travel_message = world.spin_spinner(SpinnerType::Movement, "You head that way...");
     let leaving_id = world.player.location.unwrap_room();
 
+    // match "input_dir" to an Exit
     let destination_exit = {
         let current_room = world.player_room_ref()?;
         // find a direction (e.g. "up") in current room that matches user input
@@ -52,7 +59,7 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
             return Ok(());
         }
 
-        // check for unmet actions (recorded as flags) for this exit
+        // check for missing items or flags required to use this Exit
         let unmet_flags: HashSet<_> = destination_exit
             .required_flags
             .difference(&world.player.flags)
@@ -64,13 +71,17 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
             .collect();
 
         if unmet_flags.is_empty() && unmet_items.is_empty() {
+            // we've met all of the requirements to move now
+            // update player's location
             let destination_id = destination_exit.to;
             world.player.location = Location::Room(destination_id);
             let new_room = world
                 .rooms
                 .get(&destination_id)
                 .ok_or_else(|| anyhow!("invalid move destination ({})", destination_id))?;
-            info!("{} moved to {} ({})", player_name, new_room.name(), new_room.id());
+
+            // log and push display items for the new location
+            info!("{} moved to {} ({})", player_name, new_room.name(), new_room.symbol());
             view.push(ViewItem::TransitionMessage(travel_message));
             if new_room.visited {
                 new_room.show(world, view, None)?;
@@ -99,13 +110,14 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
                     "You can't go that way because... \"reasons\"".denied_style()
                 )));
             }
-            let dest_name = world
+            let (dest_name, dest_sym) = world
                 .rooms
                 .get(&destination_exit.to)
-                .with_context(|| format!("accessing room {}", destination_exit.to))?
-                .name();
+                .map(|rm| (rm.name(), rm.symbol()))
+                .with_context(|| format!("accessing room {}", destination_exit.to))?;
+
             info!(
-                "{} denied access to {dest_name}: missing items ({:?}) or flags ({:?})",
+                "{} denied access to {dest_name} ({dest_sym}): missing items ({:?}) or flags ({:?})",
                 world.player.name(),
                 unmet_items,
                 unmet_flags,

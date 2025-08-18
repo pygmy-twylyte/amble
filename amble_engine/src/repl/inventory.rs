@@ -6,6 +6,7 @@ use std::collections::HashSet;
 
 use crate::{
     AmbleWorld, ItemHolder, Location, View, ViewItem, WorldObject,
+    helpers::{item_symbol_from_id, npc_symbol_from_id, room_symbol_from_id},
     item::ItemInteractionType,
     repl::{WorldEntity, entity_not_found, find_world_object},
     spinners::SpinnerType,
@@ -31,12 +32,12 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                     if let Some(room) = world.rooms.get_mut(&room_id) {
                         room.add_item(dropped.id());
                         info!(
-                            "{} dropped {}({}) in {}({})",
+                            "{} dropped {} ({}) in {} ({})",
                             world.player.name(),
                             dropped.name(),
-                            dropped.id(),
+                            dropped.symbol(),
                             room.name(),
-                            room.id()
+                            room.symbol()
                         );
                     }
                     world.player.remove_item(item_id);
@@ -99,7 +100,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                 info!(
                     "Blocked attempt to take {} ({}) without item that can \"{ability}\"",
                     item.name(),
-                    item.id()
+                    item.symbol()
                 );
                 return Ok(());
             }
@@ -119,7 +120,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                         "{} took the {} ({})",
                         world.player.name,
                         moved_item.name(),
-                        moved_item.id()
+                        moved_item.symbol()
                     );
                 }
                 // remove item from original location
@@ -128,14 +129,22 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                         if let Some(container) = world.items.get_mut(&container_id) {
                             container.remove_item(loot_id);
                         } else {
-                            bail!("container ({container_id}) not found during Take({loot_id})");
+                            bail!(
+                                "container ({}) not found during Take({})",
+                                item_symbol_from_id(&world.items, container_id),
+                                item_symbol_from_id(&world.items, loot_id)
+                            );
                         }
                     },
                     Location::Room(room_id) => {
                         if let Some(room) = world.rooms.get_mut(&room_id) {
                             room.remove_item(loot_id);
                         } else {
-                            bail!("room ({room_id}) not found during Take({loot_id})");
+                            bail!(
+                                "room ({}) not found during Take({})",
+                                room_symbol_from_id(&world.rooms, room_id),
+                                item_symbol_from_id(&world.items, loot_id)
+                            );
                         }
                     },
                     _ => {
@@ -154,7 +163,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                     "{} denied ({reason}) item {} ({})",
                     world.player.name(),
                     item.name(),
-                    item.id()
+                    item.symbol()
                 );
             }
         }
@@ -381,9 +390,12 @@ pub fn transfer_to_player(
         "{} took {} ({}) from {} ({})",
         world.player.name(),
         loot_name,
-        loot_id,
+        item_symbol_from_id(&world.items, loot_id),
         vessel_name,
-        vessel_id
+        match vessel_type {
+            VesselType::Item => item_symbol_from_id(&world.items, vessel_id),
+            VesselType::Npc => npc_symbol_from_id(&world.npcs, vessel_id),
+        }
     );
 }
 
@@ -450,10 +462,11 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
         "{} put {} ({}) into {} ({})",
         world.player.name(),
         item_name,
-        item_id,
+        item_symbol_from_id(&world.items, item_id),
         vessel_name,
-        vessel_id
+        item_symbol_from_id(&world.items, vessel_id)
     );
+
     check_triggers(
         world,
         view,
@@ -471,12 +484,12 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
 /// Handle situation where an NPC uuid is found where only items should be.
 /// (Typically when `find_world_object` matches an NPC when an item is expected.)
 pub fn unexpected_entity(entity: WorldEntity, view: &mut View, denial_msg: &str) {
-    let (entity_name, entity_id, entity_loc) = match entity {
-        WorldEntity::Item(item) => (item.name(), item.id(), item.location()),
-        WorldEntity::Npc(npc) => (npc.name(), npc.id(), npc.location()),
+    let (entity_name, entity_sym, entity_loc) = match entity {
+        WorldEntity::Item(item) => (item.name(), item.symbol(), item.location()),
+        WorldEntity::Npc(npc) => (npc.name(), npc.symbol(), npc.location()),
     };
     view.push(ViewItem::Error(denial_msg.to_string()));
-    error!("entity '{entity_name}' ({entity_id}) found in unexpected location {entity_loc:?}");
+    error!("entity '{entity_name}' ({entity_sym}) found in unexpected location {entity_loc:?}");
 }
 
 #[cfg(test)]

@@ -6,11 +6,12 @@ use std::collections::HashMap;
 
 use crate::{
     AmbleWorld, ItemHolder, Location, View, ViewItem, WorldObject,
+    helpers::{item_symbol_from_id, npc_symbol_from_id},
     npc::Npc,
     repl::{entity_not_found, find_world_object},
     spinners::SpinnerType,
     style::GameStyle,
-    trigger::{check_triggers, triggers_contain_condition, TriggerAction, TriggerCondition},
+    trigger::{TriggerAction, TriggerCondition, check_triggers, triggers_contain_condition},
 };
 
 use anyhow::{Context, Result};
@@ -55,7 +56,7 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
                     speaker: npc.name.clone(),
                     quote: dialogue.clone(),
                 });
-                info!("NPC \"{}\" ({}) said \"{}\"", npc.name(), npc.id(), dialogue);
+                info!("NPC \"{}\" ({}) said \"{}\"", npc.name(), npc.symbol(), dialogue);
             }
         }
     }
@@ -95,7 +96,7 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
         if let Some(entity) = find_world_object(&world.player.inventory, &world.items, &world.npcs, item) {
             if let Some(item) = entity.item() {
                 if !item.portable {
-                    info!("player tried to move fixed item {} ({})", item.name(), item.id());
+                    info!("player tried to move fixed item {} ({})", item.name(), item.symbol());
                     view.push(ViewItem::ActionFailure(format!(
                         "Sorry, the {} isn't portable.",
                         item.name().error_style()
@@ -116,8 +117,7 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
             return Ok(());
         };
 
-    let fired_triggers =
-        check_triggers(world, view, &[TriggerCondition::GiveToNpc { item_id, npc_id }])?;
+    let fired_triggers = check_triggers(world, view, &[TriggerCondition::GiveToNpc { item_id, npc_id }])?;
     let fired = fired_triggers.iter().any(|&trigger| {
         trigger
             .conditions
@@ -160,13 +160,13 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
             "{} gave {} ({}) to {} ({})",
             world.player.name(),
             item_name,
-            item_id,
+            item_symbol_from_id(&world.items, item_id),
             npc_name,
-            npc_id
+            npc_symbol_from_id(&world.npcs, npc_id),
         );
-    // trigger didn't fire, so NPC refuses the item
+    // trigger didn't fire, so NPC refuses the item by default; a specific refusal reason
+    // can be defined for particular items by setting an `NpcRefuseItem` trigger action.
     } else {
-        // show a default message if there wasn't a specific refusal trigger fired to do it
         if !fired {
             view.push(ViewItem::ActionFailure(format!(
                 "{} has no use for {}, and won't hold it for you.",
@@ -174,7 +174,11 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
                 item_name.item_style()
             )));
         }
-        info!("{npc_name} ({npc_id}) refused a gift of {item_name} ({item_id})");
+        info!(
+            "{npc_name} ({}) refused a gift of {item_name} ({})",
+            npc_symbol_from_id(&world.npcs, npc_id),
+            item_symbol_from_id(&world.items, item_id)
+        );
     }
     Ok(())
 }

@@ -6,6 +6,7 @@ use std::collections::HashSet;
 
 use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
+    helpers::item_symbol_from_id,
     item::{ContainerState, ItemAbility, ItemInteractionType, consume},
     loader::items::interaction_requirement_met,
     repl::{entity_not_found, find_world_object},
@@ -24,27 +25,27 @@ pub fn use_item_on_handler(
     world: &mut AmbleWorld,
     view: &mut View,
     interaction: ItemInteractionType,
-    tool: &str,
-    target: &str,
+    tool_str: &str,
+    target_str: &str,
 ) -> Result<()> {
     // make sure we can find valid matches for tool and target items and notify player if not
     let items_nearby = &world.player_room_ref()?.contents;
     let target_scope: HashSet<_> = items_nearby.union(&world.player.inventory).collect();
     let maybe_target =
-        find_world_object(target_scope, &world.items, &world.npcs, target).and_then(super::WorldEntity::item);
-    let maybe_tool =
-        find_world_object(&world.player.inventory, &world.items, &world.npcs, tool).and_then(super::WorldEntity::item);
+        find_world_object(target_scope, &world.items, &world.npcs, target_str).and_then(super::WorldEntity::item);
+    let maybe_tool = find_world_object(&world.player.inventory, &world.items, &world.npcs, tool_str)
+        .and_then(super::WorldEntity::item);
     if maybe_target.is_none() {
         view.push(ViewItem::ActionFailure(format!(
             "You don't see any {} nearby.",
-            target.error_style()
+            target_str.error_style()
         )));
         return Ok(());
     }
     if maybe_tool.is_none() {
         view.push(ViewItem::ActionFailure(format!(
             "You don't have any {} in inventory.",
-            tool.error_style()
+            tool_str.error_style()
         )));
         return Ok(());
     }
@@ -77,9 +78,9 @@ pub fn use_item_on_handler(
             "Player tried to {:?} {} ({}) with {} ({})",
             interaction,
             target.name(),
-            target.id(),
+            target.symbol(),
             tool.name(),
-            tool.id()
+            tool.symbol()
         );
         return Ok(());
     }
@@ -133,8 +134,16 @@ pub fn use_item_on_handler(
     });
 
     if !interaction_fired {
-        view.push(ViewItem::ActionFailure(world.spin_spinner(SpinnerType::NoEffect, "That appears to have had no effect, Captain.",).to_string()));
-        info!("No matching trigger for {interaction:?} {target_name} ({target_id}) with {tool_name} ({tool_id})");
+        view.push(ViewItem::ActionFailure(
+            world
+                .spin_spinner(SpinnerType::NoEffect, "That appears to have had no effect, Captain.")
+                .to_string(),
+        ));
+        info!(
+            "No matching trigger for {interaction:?} {target_name} ({}) with {tool_name} ({})",
+            item_symbol_from_id(&world.items, target_id),
+            item_symbol_from_id(&world.items, tool_id)
+        );
     }
     if tool_is_consumable {
         let uses_left = consume(world, &tool_id, used_ability)?;
@@ -162,7 +171,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
     if let Some(entity) = find_world_object(&current_room.contents, &world.items, &world.npcs, item_pattern) {
         if let Some(item) = entity.item() {
             if item.abilities.contains(&ItemAbility::TurnOn) {
-                info!("Player switched on {} ({})", item.name(), item.id());
+                info!("Player switched on {} ({})", item.name(), item.symbol());
                 let sent_id = item.id();
                 let fired_triggers = check_triggers(
                     world,
@@ -188,7 +197,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
                 info!(
                     "Player tried to turn on unswitchable item {} ({})",
                     item.name(),
-                    item.id()
+                    item.symbol()
                 );
                 view.push(ViewItem::ActionFailure(format!(
                     "The {} can't be turned on.",
@@ -196,7 +205,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
                 )));
             }
         } else if let Some(npc) = entity.npc() {
-            info!("Player tried to turn on an NPC {} ({})", npc.name(), npc.id());
+            info!("Player tried to turn on an NPC {} ({})", npc.name(), npc.symbol());
             view.push(ViewItem::ActionFailure(format!(
                 "{} is impervious to your attempt at seduction.",
                 npc.name().npc_style()
@@ -256,7 +265,12 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                     "You opened the {}.\n",
                     target_item.name().item_style()
                 )));
-                info!("{} opened the {} ({})", world.player.name(), name, container_id,);
+                info!(
+                    "{} opened the {} ({})",
+                    world.player.name(),
+                    name,
+                    item_symbol_from_id(&world.items, container_id)
+                );
                 check_triggers(world, view, &[TriggerCondition::Open(container_id)])?;
             },
         }
@@ -304,7 +318,12 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
                     "You closed the {}.\n",
                     target_item.name().item_style()
                 )));
-                info!("{} closed the {} ({})", world.player.name(), name, uuid);
+                info!(
+                    "{} closed the {} ({})",
+                    world.player.name(),
+                    name,
+                    item_symbol_from_id(&world.items, uuid)
+                );
             },
         }
     }
@@ -350,7 +369,12 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                     "You locked the {}.\n",
                     target_item.name().item_style()
                 )));
-                info!("{} locked the {} ({})", world.player.name(), name, uuid);
+                info!(
+                    "{} locked the {} ({})",
+                    world.player.name(),
+                    name,
+                    item_symbol_from_id(&world.items, uuid)
+                );
             },
         }
     }
@@ -413,7 +437,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
                         "{} unlocked the {} ({})",
                         world.player.name(),
                         container_name,
-                        container_id
+                        item_symbol_from_id(&world.items, container_id)
                     );
                     check_triggers(world, view, &[TriggerCondition::Unlock(container_id)])?;
                 } else {
