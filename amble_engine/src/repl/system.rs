@@ -1,6 +1,61 @@
-//! `repl::system` module
+//! System utility command handlers for the Amble game engine.
 //!
-//! Contains repl loop handlers for commands that are for system utilities.
+//! This module provides handlers for meta-game commands that control the game
+//! system itself rather than affecting the game world directly. These commands
+//! manage game state persistence, user interface settings, help systems, and
+//! game termination.
+//!
+//! # Command Categories
+//!
+//! ## Game State Management
+//! - [`save_handler`] - Serialize and save current game state to disk
+//! - [`load_handler`] - Load previously saved game state from disk
+//! - [`quit_handler`] - Terminate game session with scoring summary
+//!
+//! ## User Interface Control
+//! - [`set_viewmode_handler`] - Change display verbosity and screen clearing behavior
+//!
+//! ## Information Systems
+//! - [`help_handler`] - Display game help text and command reference
+//! - [`goals_handler`] - Show current objectives and completion status
+//!
+//! # Save System
+//!
+//! The save system uses RON (Rusty Object Notation) format for human-readable
+//! and debuggable save files. Save files include version information to handle
+//! compatibility across game updates.
+//!
+//! ## Save File Format
+//! - **Location**: `saved_games/` directory
+//! - **Naming**: `{slot_name}-amble-{version}.ron`
+//! - **Content**: Complete serialized `AmbleWorld` state
+//!
+//! ## Version Compatibility
+//! - Save files include version metadata
+//! - Loading mismatched versions shows warnings but attempts to proceed
+//! - Version conflicts are logged for debugging
+//!
+//! # View Modes
+//!
+//! The system supports multiple display modes:
+//! - **Brief**: Minimal descriptions for visited locations
+//! - **Verbose**: Full descriptions always shown
+//! - **Clear Verbose**: Full descriptions with screen clearing on movement
+//!
+//! # Goal Tracking
+//!
+//! Goals are dynamic objectives that can be:
+//! - **Active**: Currently available for completion
+//! - **Complete**: Successfully achieved by player actions
+//! - **Conditional**: Dependent on game state for availability
+//!
+//! # Scoring System
+//!
+//! The quit handler provides comprehensive scoring analysis:
+//! - Point-based scoring with maximum possible calculation
+//! - Exploration tracking (rooms visited vs. total rooms)
+//! - Performance ranking with humorous titles
+//! - Detailed game statistics and achievements
 
 use colored::Colorize;
 use std::fs;
@@ -19,7 +74,29 @@ use anyhow::{Context, Result};
 use log::{info, warn};
 use std::path::Path;
 
-/// Change the view mode.
+/// Changes the display verbosity and screen clearing behavior.
+///
+/// This handler allows players to customize how room descriptions and other
+/// game text are displayed, balancing information density with screen clarity.
+/// Different modes suit different play styles and preferences.
+///
+/// # Parameters
+///
+/// * `view` - Mutable reference to the player's view for mode changes and feedback
+/// * `mode` - The new view mode to activate
+///
+/// # Available Modes
+///
+/// - **ClearVerbose**: Clears screen on movement, always shows full descriptions
+/// - **Verbose**: Always shows full room descriptions without screen clearing
+/// - **Brief**: Shows full descriptions only on first visit and when explicitly looking
+///
+/// # Behavior
+///
+/// - Updates the view's display mode immediately
+/// - Provides confirmation message explaining the new mode
+/// - Mode changes are logged for debugging purposes
+/// - Setting persists for the current game session
 pub fn set_viewmode_handler(view: &mut View, mode: ViewMode) {
     view.set_mode(mode);
     let msg = match mode {
@@ -43,7 +120,42 @@ pub fn set_viewmode_handler(view: &mut View, mode: ViewMode) {
     info!("Player changed view mode to {mode:?}");
 }
 
-/// Quit the game.
+/// Terminates the game session and displays comprehensive scoring summary.
+///
+/// This handler provides a complete game ending experience, including detailed
+/// statistics, performance evaluation, and humorous ranking based on the player's
+/// achievements during the session.
+///
+/// # Parameters
+///
+/// * `world` - Reference to the game world for final state analysis
+/// * `view` - Mutable reference to display the quit summary and statistics
+///
+/// # Returns
+///
+/// Returns `ReplControl::Quit` to signal the game loop should terminate.
+///
+/// # Scoring Analysis
+///
+/// The function calculates and displays:
+/// - **Final score** vs. maximum possible points
+/// - **Completion percentage** with performance ranking
+/// - **Exploration statistics** (rooms visited vs. available)
+/// - **Humorous rank titles** based on achievement level
+///
+/// # Logging Output
+///
+/// Comprehensive session data is logged including:
+/// - Final score and player statistics
+/// - All active flags at game end
+/// - Complete inventory listing with item symbols
+/// - Session completion metrics
+///
+/// # Performance Rankings
+///
+/// Players receive titles ranging from "Quantum Overachiever" (100%) to
+/// "Amnesiac Test Subject" (0%), each with personalized evaluation messages
+/// that reflect their exploration and puzzle-solving success.
 pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> {
     info!("{} quit with a score of {}", world.player.name(), world.player.score);
     info!("ending flags:");
@@ -112,15 +224,42 @@ pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> 
     Ok(ReplControl::Quit)
 }
 
-/// Show general help and some available commands.
+/// Displays comprehensive help information including basic instructions and command reference.
 ///
-/// General help text or paragraph goes in amble_engine/data/help_basic.txt.
-/// A TOML dictionary of example commands and explanations goes in help_commands.toml
+/// This handler loads and presents help content from external data files, providing
+/// players with essential game information and command documentation. The help system
+/// is designed to be easily updatable without code changes.
 ///
-/// Example help_commands.toml entry:
+/// # Parameters
+///
+/// * `view` - Mutable reference to display help content to the player
+///
+/// # Help Content Sources
+///
+/// - **Basic Text**: `amble_engine/data/help_basic.txt` - General game instructions
+/// - **Commands**: `amble_engine/data/help_commands.toml` - Command reference with examples
+///
+/// # Command Documentation Format
+///
+/// Commands are documented in TOML format with structure:
+/// ```toml
 /// [[commands]]
 /// command = "drop <object>"
-/// description = "drop an object"
+/// description = "Remove an item from inventory and place in current room"
+/// ```
+///
+/// # Error Handling
+///
+/// If help files cannot be loaded:
+/// - Error message displayed to player with styling
+/// - Warning logged for debugging
+/// - Game continues normally (help failure is non-fatal)
+///
+/// # Content Organization
+///
+/// Help is presented in two sections:
+/// 1. **Basic Instructions** - Game concepts, objectives, basic interaction
+/// 2. **Command Reference** - Detailed list of available commands with syntax
 pub fn help_handler(view: &mut View) {
     let basic_text_path = Path::new("amble_engine/data/help_basic.txt");
     let commands_toml_path = Path::new("amble_engine/data/help_commands.toml");
@@ -142,7 +281,43 @@ pub fn help_handler(view: &mut View) {
     }
 }
 
-/// Show current game game goals / status.
+/// Displays current game objectives and their completion status.
+///
+/// This handler presents the player with their current goals, showing both
+/// active objectives they can work toward and completed achievements they've
+/// already accomplished during their session.
+///
+/// # Parameters
+///
+/// * `world` - Reference to the game world for goal evaluation
+/// * `view` - Mutable reference to display goal information to the player
+///
+/// # Goal Categories
+///
+/// Goals are displayed in two sections:
+/// - **Active Goals**: Currently available objectives the player can pursue
+/// - **Complete Goals**: Objectives the player has already achieved
+///
+/// # Goal Status Evaluation
+///
+/// Goal status is dynamically evaluated based on current world state:
+/// - Goals may become active when certain conditions are met
+/// - Goals are marked complete when their success conditions are satisfied
+/// - Goal availability can change as the player progresses through the game
+///
+/// # Display Format
+///
+/// Each goal is presented with:
+/// - **Name**: Brief identifier for the objective
+/// - **Description**: Detailed explanation of what needs to be accomplished
+/// - **Status indication**: Visual distinction between active and completed goals
+///
+/// # Usage
+///
+/// Players can use this command to:
+/// - Check what objectives are currently available
+/// - Review what they've already accomplished
+/// - Get reminders about active goals when stuck or planning next actions
 pub fn goals_handler(world: &AmbleWorld, view: &mut View) {
     filtered_goals(world, GoalStatus::Active)
         .iter()
@@ -163,15 +338,75 @@ pub fn goals_handler(world: &AmbleWorld, view: &mut View) {
     info!("{} checked goals status.", world.player.name());
 }
 
-/// Returns a list of game `Goals`, filtered by status
+/// Filters the world's goal collection by completion status.
+///
+/// This utility function extracts goals from the world that match a specific
+/// status, enabling the display of active versus completed objectives.
+///
+/// # Parameters
+///
+/// * `world` - Reference to the game world containing the goal collection
+/// * `status` - The goal status to filter for (Active or Complete)
+///
+/// # Returns
+///
+/// Returns a vector of goal references that match the specified status.
+///
+/// # Behavior
+///
+/// - Evaluates each goal's status against current world state
+/// - Returns only goals matching the requested status
+/// - Goal status is computed dynamically, not stored statically
+/// - Enables real-time goal status updates as game state changes
 pub fn filtered_goals(world: &AmbleWorld, status: GoalStatus) -> Vec<&Goal> {
     world.goals.iter().filter(|goal| goal.status(world) == status).collect()
 }
 
-/// Loads a saved game.
+/// Loads a previously saved game state from disk.
 ///
-/// # Errors
-/// - on save file not found or RON parsing error.
+/// This handler attempts to restore a complete game session from a save file,
+/// including all world state, player progress, and game configuration. The
+/// system handles version compatibility and provides appropriate feedback
+/// for various failure conditions.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to replace with loaded game state
+/// * `view` - Mutable reference to display load results and feedback
+/// * `gamefile` - Name of the save slot to load (without path or extension)
+///
+/// # Save File Location
+///
+/// Files are loaded from: `saved_games/{gamefile}-amble-{version}.ron`
+///
+/// # Version Compatibility
+///
+/// - Save files include version metadata for compatibility checking
+/// - Mismatched versions generate warnings but attempt to load anyway
+/// - Version conflicts are logged for debugging purposes
+/// - Players are informed of version mismatches with clear messaging
+///
+/// # Error Conditions
+///
+/// - **File not found**: Save slot doesn't exist or is inaccessible
+/// - **Parse error**: Save file is corrupted or from incompatible version
+/// - **Version mismatch**: Save file version differs from current game version
+///
+/// # Success Behavior
+///
+/// On successful load:
+/// - Complete world state is replaced with loaded data
+/// - Success message displayed with save file information
+/// - Load event is logged with file path details
+/// - Game continues from the loaded state
+///
+/// # Failure Behavior
+///
+/// On failure:
+/// - Appropriate error message displayed to player
+/// - Original world state remains unchanged
+/// - Error details logged for debugging
+/// - Game continues with current state
 pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) {
     let load_path = PathBuf::from("saved_games").join(format!("{gamefile}-amble-{AMBLE_VERSION}.ron"));
     if let Ok(world_ron) = fs::read_to_string(load_path.as_path()) {
@@ -212,7 +447,59 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) {
     }
 }
 
-/// save game to a file
+/// Saves the current game state to a persistent file on disk.
+///
+/// This handler serializes the complete game world state using RON format
+/// and writes it to a versioned save file. The save system creates organized
+/// storage with version compatibility information.
+///
+/// # Parameters
+///
+/// * `world` - Reference to the current game world to serialize
+/// * `view` - Mutable reference to display save results and feedback
+/// * `gamefile` - Name for the save slot (without path or extension)
+///
+/// # Returns
+///
+/// Returns `Ok(())` on successful save, or an error if the save operation fails.
+///
+/// # Save File Organization
+///
+/// - **Directory**: `saved_games/` (created if it doesn't exist)
+/// - **Filename**: `{gamefile}-amble-{version}.ron`
+/// - **Format**: RON (Rusty Object Notation) for human readability
+///
+/// # Serialization Process
+///
+/// 1. **World serialization** - Convert complete world state to RON format
+/// 2. **Directory creation** - Ensure save directory exists
+/// 3. **File creation** - Create versioned save file
+/// 4. **Data writing** - Write serialized world to file
+/// 5. **Confirmation** - Display success message with file details
+///
+/// # Error Handling
+///
+/// Potential failure points:
+/// - World serialization errors (corrupted game state)
+/// - Directory creation failures (permission issues)
+/// - File creation errors (disk space, permissions)
+/// - Write operation failures (I/O errors)
+///
+/// # Success Feedback
+///
+/// On successful save:
+/// - Confirmation message with save slot name
+/// - File path information for reference
+/// - Encouraging message to continue playing
+/// - Logging of save operation for debugging
+///
+/// # File Format
+///
+/// RON format provides:
+/// - Human-readable save files for debugging
+/// - Efficient serialization/deserialization
+/// - Version compatibility metadata
+/// - Complete world state preservation
 pub fn save_handler(world: &AmbleWorld, view: &mut View, gamefile: &str) -> Result<()> {
     // serialize the current AmbleWorld state to RON format
     let world_ron =

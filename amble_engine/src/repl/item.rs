@@ -1,6 +1,48 @@
-//! `repl::item` module
+//! Item interaction and manipulation command handlers for the Amble game engine.
 //!
-//! Contains repl loop handlers for commands that affect item state
+//! This module contains handlers for commands that directly interact with or modify
+//! the state of items in the game world. These commands allow players to use items
+//! in various ways, manipulate container states, and interact with the physical
+//! properties of objects.
+//!
+//! # Command Categories
+//!
+//! ## Item Usage
+//! - [`use_item_on_handler`] - Use one item on another with specific interactions
+//! - [`turn_on_handler`] - Activate items that can be switched on
+//!
+//! ## Container Management
+//! - [`open_handler`] - Open closed containers to access contents
+//! - [`close_handler`] - Close open containers for security or organization
+//! - [`lock_handler`] - Lock containers to prevent access
+//! - [`unlock_handler`] - Unlock containers using appropriate keys
+//!
+//! # Interaction System
+//!
+//! The module implements a sophisticated item interaction system where:
+//! - Items can require specific capabilities for different interactions
+//! - Tools must have the right abilities to perform actions on targets
+//! - Interactions can trigger game events and story progression
+//! - Failed interactions provide helpful feedback about requirements
+//!
+//! # Container States
+//!
+//! Containers can exist in multiple states:
+//! - **Open** - Contents are accessible and visible
+//! - **Closed** - Contents are hidden but can be opened
+//! - **Locked** - Contents are secured and require keys to access
+//!
+//! # Trigger Integration
+//!
+//! Item interactions can trigger various game events:
+//! - `TriggerCondition::UseItem` - When items are activated or used
+//! - `TriggerCondition::UseItemOnItem` - When tools are used on targets
+//! - `TriggerCondition::ActOnItem` - When actions are performed on items
+//! - `TriggerCondition::Open` - When containers are opened
+//! - `TriggerCondition::Unlock` - When locked items are unlocked
+//!
+//! These triggers enable rich gameplay where item interactions can advance
+//! storylines, solve puzzles, unlock areas, or cause other game effects.
 
 use std::collections::HashSet;
 
@@ -20,7 +62,52 @@ use colored::Colorize;
 use log::{info, warn};
 use uuid::Uuid;
 
-/// Use one item on another item in a specific way
+/// Uses one item on another item with a specific type of interaction.
+///
+/// This is the core handler for complex item interactions where one item (the tool)
+/// is used to perform an action on another item (the target). The interaction system
+/// validates that the tool has the required capabilities and that the target can
+/// accept that type of interaction.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `view` - Mutable reference to the player's view for feedback messages
+/// * `interaction` - The type of interaction to perform (e.g., Cut, Burn, Clean)
+/// * `tool_str` - Pattern string to match the tool item in player inventory
+/// * `target_str` - Pattern string to match the target item in nearby area
+///
+/// # Returns
+///
+/// Returns `Ok(())` on successful interaction attempt, regardless of whether
+/// the interaction actually succeeded or failed due to game logic.
+///
+/// # Interaction Validation
+///
+/// The function performs several validation steps:
+/// 1. **Tool availability** - Tool must be in player inventory
+/// 2. **Target availability** - Target must be nearby (room or inventory)
+/// 3. **Capability matching** - Tool must have ability required by target
+/// 4. **Interaction firing** - Triggers must exist to handle the interaction
+///
+/// # Trigger System
+///
+/// Multiple triggers may fire for a single interaction:
+/// - `UseItemOnItem` - Specific tool + target + interaction combination
+/// - `ActOnItem` - General action on target (regardless of tool)
+/// - `UseItem` - General tool usage (regardless of target)
+///
+/// # Consumable Items
+///
+/// If the tool is consumable, it will lose uses when successfully employed.
+/// The function tracks remaining uses and notifies the player when items
+/// are exhausted.
+///
+/// # Feedback System
+///
+/// - Success: Determined by whether appropriate triggers fire
+/// - Failure: Provides specific feedback about missing requirements
+/// - No effect: Generic message when no triggers handle the interaction
 pub fn use_item_on_handler(
     world: &mut AmbleWorld,
     view: &mut View,
@@ -165,7 +252,35 @@ pub fn use_item_on_handler(
     }
     Ok(())
 }
-/// Turns something on, if it can be turned on
+/// Activates an item if it has the ability to be turned on.
+///
+/// This handler attempts to turn on or activate items in the current room
+/// that have switch-like functionality. Items must have the `TurnOn` ability
+/// to be activated, and the activation may trigger various game effects.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `view` - Mutable reference to the player's view for feedback messages
+/// * `item_pattern` - Pattern string to match against items in current room
+///
+/// # Returns
+///
+/// Returns `Ok(())` after attempting activation, regardless of success.
+///
+/// # Behavior
+///
+/// - Searches current room for items matching the pattern
+/// - Verifies the item has the `TurnOn` ability
+/// - Fires `TriggerCondition::UseItem` with `ItemAbility::TurnOn`
+/// - Provides appropriate feedback based on whether triggers fire
+///
+/// # Error Handling
+///
+/// - Item not found: Standard "not found" message
+/// - Item cannot be turned on: Specific capability message
+/// - NPC matched: Humorous rejection message
+/// - No effect: Generic "nothing happens" message when no triggers fire
 pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
     if let Some(entity) = find_world_object(&current_room.contents, &world.items, &world.npcs, item_pattern) {
@@ -217,7 +332,42 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
     Ok(())
 }
 
-/// Opens an item if it is a closed, unlocked container.
+/// Opens a closed container item, making its contents accessible.
+///
+/// This handler attempts to open container items that are currently in a
+/// closed state. Only unlocked containers can be opened; locked containers
+/// must be unlocked first. Opening a container may trigger game events.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `view` - Mutable reference to the player's view for feedback messages
+/// * `pattern` - Pattern string to match against nearby container items
+///
+/// # Returns
+///
+/// Returns `Ok(())` after attempting to open the container.
+///
+/// # Container State Logic
+///
+/// - **Non-container**: Cannot be opened (no container state)
+/// - **Locked**: Must be unlocked first before opening
+/// - **Already open**: Acknowledges current state
+/// - **Closed**: Successfully opens and triggers events
+///
+/// # Trigger Effects
+///
+/// Opening a container fires `TriggerCondition::Open`, which can:
+/// - Reveal items inside the container
+/// - Advance puzzle or story logic
+/// - Trigger ambient effects or messages
+/// - Cause other game state changes
+///
+/// # Scope
+///
+/// Searches both the current room and player inventory for containers,
+/// allowing players to open containers they're carrying as well as
+/// those in their environment.
 pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     // search player's location for an item matching search
     let room = world.player_room_ref()?;
@@ -278,7 +428,38 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
     Ok(())
 }
 
-/// Closes a container item nearby.
+/// Closes an open container item, hiding its contents from view.
+///
+/// This handler closes container items that are currently open, which can
+/// be useful for organization, security, or puzzle mechanics. Closing containers
+/// does not trigger game events but changes their accessibility state.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `view` - Mutable reference to the player's view for feedback messages
+/// * `pattern` - Pattern string to match against nearby container items
+///
+/// # Returns
+///
+/// Returns `Ok(())` after attempting to close the container.
+///
+/// # Container State Logic
+///
+/// - **Non-container**: Cannot be closed (no container state)
+/// - **Already closed/locked**: Acknowledges current state
+/// - **Open**: Successfully closes the container
+///
+/// # Behavior
+///
+/// Unlike opening, closing containers does not trigger game events.
+/// This is primarily a state management operation that affects item
+/// visibility and access but not game progression.
+///
+/// # Scope
+///
+/// Searches both current room and player inventory for containers,
+/// allowing closure of both environmental and carried containers.
 pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     let room = world.player_room_ref()?;
     let search_scope: HashSet<Uuid> = room.contents.union(&world.player.inventory).copied().collect();
@@ -330,7 +511,38 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
     Ok(())
 }
 
-/// Locks a container item nearby.
+/// Locks a container item, securing it against unauthorized access.
+///
+/// This handler locks container items, preventing them from being opened
+/// until they are unlocked with an appropriate key. Locking is primarily
+/// used for puzzle mechanics and security.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `view` - Mutable reference to the player's view for feedback messages
+/// * `pattern` - Pattern string to match against containers in current room
+///
+/// # Returns
+///
+/// Returns `Ok(())` after attempting to lock the container.
+///
+/// # Container State Logic
+///
+/// - **Non-container**: Cannot be locked (no lock mechanism)
+/// - **Already locked**: Acknowledges current state
+/// - **Open/Closed**: Successfully locks the container
+///
+/// # Key Requirements
+///
+/// Unlike unlocking, locking typically doesn't require specific keys
+/// in most game implementations, though this could be extended to
+/// require lock-specific tools or abilities.
+///
+/// # Scope
+///
+/// Only searches the current room for containers to lock, as locking
+/// items in inventory is less commonly needed in gameplay scenarios.
 pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     let room = world.player_room_ref()?;
     let (uuid, name) = if let Some(entity) = find_world_object(&room.contents, &world.items, &world.npcs, pattern) {
@@ -381,7 +593,47 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
     Ok(())
 }
 
-/// Unlocks and opens an item nearby.
+/// Unlocks a locked container using an appropriate key from inventory.
+///
+/// This handler attempts to unlock locked containers by checking the player's
+/// inventory for items with the appropriate unlocking abilities. Success
+/// requires having the right key, and unlocking may trigger game events.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `view` - Mutable reference to the player's view for feedback messages
+/// * `pattern` - Pattern string to match against containers in current room
+///
+/// # Returns
+///
+/// Returns `Ok(())` after attempting to unlock the container.
+///
+/// # Key System
+///
+/// The function searches inventory for items with `ItemAbility::Unlock`:
+/// - **Specific keys**: Target a particular container by UUID
+/// - **Universal keys**: Can unlock any container (master keys)
+///
+/// # Container State Logic
+///
+/// - **Non-container**: Cannot be unlocked (no lock)
+/// - **Already unlocked**: Acknowledges current state
+/// - **Locked with valid key**: Successfully unlocks to closed state
+/// - **Locked without key**: Denies access with helpful message
+///
+/// # Trigger Effects
+///
+/// Unlocking fires `TriggerCondition::Unlock`, which can:
+/// - Advance puzzle sequences requiring specific unlocking order
+/// - Reveal important story items or clues
+/// - Trigger narrative events or character reactions
+/// - Enable access to new areas or content
+///
+/// # Security Model
+///
+/// The key must be in the player's inventory - keys in the room or
+/// in other containers cannot be used, maintaining gameplay challenge.
 pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     let room = world.player_room_ref()?;
     let (container_id, container_name) =

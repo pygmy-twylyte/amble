@@ -1,3 +1,76 @@
+//! Trigger action system for the Amble game engine.
+//!
+//! This module contains the implementation of all actions that can be triggered
+//! by game events. Actions are the "effects" part of the trigger system - they
+//! modify world state, update the user interface, or cause other changes when
+//! specific conditions are met.
+//!
+//! # Overview
+//!
+//! The trigger system works in two phases:
+//! 1. **Conditions** - Check if certain game states are met (handled elsewhere)
+//! 2. **Actions** - Execute changes to world state (implemented in this module)
+//!
+//! Actions are defined as enum variants in [`TriggerAction`] and implemented
+//! as individual functions that take the necessary parameters to modify the
+//! game world.
+//!
+//! # Action Categories
+//!
+//! ## Player State Management
+//! Actions that modify the player's status, inventory, or progression:
+//! - Flag management (add, remove, advance, reset)
+//! - Score changes (award/subtract points)
+//! - Inventory manipulation (spawn items, transfers)
+//! - Player movement (teleportation)
+//!
+//! ## World State Changes
+//! Actions that modify the game world itself:
+//! - Room connections (lock/unlock exits, reveal passages)
+//! - Item states (lock/unlock containers, restrict items)
+//! - Item placement (spawn in rooms, containers, inventory)
+//! - Item removal (despawn from world)
+//!
+//! ## NPC Interactions
+//! Actions that control non-player characters:
+//! - Dialogue (scripted or random responses)
+//! - State changes (modify NPC behavior)
+//! - Item transfers (give items to player)
+//! - Response control (refuse item transfers)
+//!
+//! ## User Interface
+//! Actions that affect what the player sees:
+//! - Message display (triggered events, ambient messages)
+//! - Reading restrictions (conditional text access)
+//! - Random text generation (spinner messages)
+//!
+//! # Usage Pattern
+//!
+//! Actions are typically not called directly. Instead, they are:
+//! 1. Defined in TOML configuration files as part of trigger definitions
+//! 2. Deserialized into [`TriggerAction`] enum variants
+//! 3. Executed by [`dispatch_action`] when trigger conditions are met
+//!
+//! # Error Handling
+//!
+//! Most action functions return `Result<()>` and can fail if:
+//! - Required world objects (items, rooms, NPCs) don't exist
+//! - Invalid UUIDs are provided
+//! - World state is inconsistent
+//!
+//! Errors are typically logged and may be displayed to the player depending
+//! on the context in which the action was triggered.
+//!
+//! # Logging
+//!
+//! All actions log their execution with a consistent format:
+//! ```text
+//! └─ action: ActionName(parameters)
+//! ```
+//!
+//! This provides an audit trail of all world state changes and helps with
+//! debugging game logic.
+
 use std::collections::HashMap;
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -18,33 +91,107 @@ use crate::world::{AmbleWorld, Location, WorldObject};
 
 /// Types of actions that can be fired by a `Trigger` based on a set of `TriggerConditions`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+/// Represents all possible actions that can be triggered by game events.
+///
+/// Each variant corresponds to a specific action function that modifies world state,
+/// updates the user interface, or triggers some other game behavior. Actions are
+/// executed when their associated trigger conditions are met.
+///
+/// # Action Types
+///
+/// ## Flag Management
+/// - [`AddFlag`] - Adds a status flag to the player
+/// - [`AdvanceFlag`] - Advances a sequence flag to the next step
+/// - [`RemoveFlag`] - Removes a flag from the player
+/// - [`ResetFlag`] - Resets a sequence flag to step 0
+///
+/// ## Item Manipulation
+/// - [`DespawnItem`] - Removes an item from the world entirely
+/// - [`LockItem`] - Locks a container item
+/// - [`RestrictItem`] - Makes an item non-transferable
+/// - [`SpawnItemCurrentRoom`] - Creates an item in the player's current room
+/// - [`SpawnItemInContainer`] - Creates an item inside a container
+/// - [`SpawnItemInInventory`] - Creates an item in the player's inventory
+/// - [`SpawnItemInRoom`] - Creates an item in a specific room
+/// - [`UnlockItem`] - Unlocks a container item
+///
+/// ## Player Actions
+/// - [`AwardPoints`] - Adds or subtracts points from the player's score
+/// - [`GiveItemToPlayer`] - Transfers an item from an NPC to the player
+/// - [`PushPlayerTo`] - Instantly moves the player to a different room
+///
+/// ## NPC Interactions
+/// - [`NpcRefuseItem`] - Makes an NPC refuse an item with a custom message
+/// - [`NpcSays`] - Makes an NPC speak a specific line
+/// - [`NpcSaysRandom`] - Makes an NPC speak a random line based on their mood
+/// - [`SetNPCState`] - Changes an NPC's behavioral state
+///
+/// ## World Modification
+/// - [`LockExit`] - Locks a room exit, preventing passage
+/// - [`RevealExit`] - Makes a hidden exit visible and usable
+/// - [`SetBarredMessage`] - Sets a custom message for blocked exits
+/// - [`UnlockExit`] - Unlocks a previously locked exit
+///
+/// ## UI/UX Actions
+/// - [`AddSpinnerWedge`] - Adds a new random text option to a spinner
+/// - [`DenyRead`] - Prevents reading an item with a custom message
+/// - [`ShowMessage`] - Displays a message to the player
+/// - [`SpinnerMessage`] - Displays a random message from a spinner
+#[derive(Debug, Clone, PartialEq)]
 pub enum TriggerAction {
+    /// Adds a status flag to the player
     AddFlag(Flag),
+    /// Adds a weighted text option to a random text spinner
     AddSpinnerWedge { spinner: SpinnerType, text: String, width: usize },
+    /// Advances a sequence flag to the next step
     AdvanceFlag(String),
+    /// Removes a flag from the player
     RemoveFlag(String),
+    /// Awards points to the player (negative values subtract points)
     AwardPoints(isize),
+    /// Sets a custom message for a blocked exit between two rooms
     SetBarredMessage { exit_from: Uuid, exit_to: Uuid, msg: String },
+    /// Prevents reading an item with a custom denial message
     DenyRead(String),
+    /// Removes an item from the world entirely
     DespawnItem { item_id: Uuid },
+    /// Transfers an item from an NPC to the player's inventory
     GiveItemToPlayer { npc_id: Uuid, item_id: Uuid },
+    /// Locks an exit in a specific direction from a room
     LockExit { from_room: Uuid, direction: String },
+    /// Locks a container item
     LockItem(Uuid),
+    /// Makes an NPC refuse an item with a custom message
     NpcRefuseItem { npc_id: Uuid, reason: String },
+    /// Makes an NPC speak a specific line of dialogue
     NpcSays { npc_id: Uuid, quote: String },
+    /// Makes an NPC speak a random line based on their current mood
     NpcSaysRandom { npc_id: Uuid },
+    /// Instantly moves the player to a different room
     PushPlayerTo(Uuid),
+    /// Resets a sequence flag back to step 0
     ResetFlag(String),
+    /// Makes an item non-transferable (cannot be taken or dropped)
     RestrictItem(Uuid),
+    /// Makes a hidden exit visible and usable
     RevealExit { exit_from: Uuid, exit_to: Uuid, direction: String },
+    /// Changes an NPC's behavioral state
     SetNPCState { npc_id: Uuid, state: NpcState },
+    /// Displays a message to the player
     ShowMessage(String),
+    /// Creates an item in the player's current room
     SpawnItemCurrentRoom(Uuid),
+    /// Creates an item inside a container item
     SpawnItemInContainer { item_id: Uuid, container_id: Uuid },
+    /// Creates an item in the player's inventory
     SpawnItemInInventory(Uuid),
+    /// Creates an item in a specific room
     SpawnItemInRoom { item_id: Uuid, room_id: Uuid },
+    /// Displays a random message from a spinner
     SpinnerMessage { spinner: SpinnerType },
+    /// Unlocks an exit in a specific direction from a room
     UnlockExit { from_room: Uuid, direction: String },
+    /// Unlocks a container item
     UnlockItem(Uuid),
 }
 
@@ -101,8 +248,28 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
     Ok(())
 }
 
-/// Change the reason for being barred from an exit.
-fn set_barred_message(world: &mut AmbleWorld, exit_from: Uuid, exit_to: Uuid, msg: &str) -> Result<()> {
+/// Sets a custom message that will be displayed when a player tries to use a blocked exit.
+///
+/// This function finds the exit from one room to another and sets a custom denial message
+/// that will be shown instead of the generic "you can't go that way" message.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `exit_from` - UUID of the room containing the exit
+/// * `exit_to` - UUID of the destination room (used to identify the specific exit)
+/// * `msg` - The custom message to display when the exit is blocked
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the message was set successfully, or an error if the exit
+/// couldn't be found.
+///
+/// # Errors
+///
+/// - If the source room doesn't exist
+/// - If no exit from the source room leads to the destination room
+fn set_barred_message(world: &mut AmbleWorld, exit_from: &Uuid, exit_to: &Uuid, msg: &str) -> Result<()> {
     let room = world
         .rooms
         .get_mut(&exit_from)
@@ -133,13 +300,37 @@ pub fn npc_refuse_item(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, re
         "{} returns it to you.",
         npc_name.npc_style()
     )));
+    info!("└─ action: NpcRefuseItem({npc_name}, \"{reason}\"");
     Ok(())
 }
 
-/// Add a wedge to one of the spinners.
+/// Adds a weighted text option ("wedge") to a random text spinner.
+///
+/// Spinners are used throughout the game to provide randomized text for various
+/// situations like NPC dialogue, ambient messages, and flavor text. Each wedge
+/// has a weight that affects how likely it is to be selected.
+///
+/// # Parameters
+///
+/// * `spinners` - Mutable reference to the world's spinner collection
+/// * `spin_type` - The type of spinner to modify (e.g., `NpcIgnore`, `TakeVerb`)
+/// * `text` - The text content to add to the spinner
+/// * `width` - The weight of this option (higher values make it more likely to be selected)
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the wedge was added successfully.
 ///
 /// # Errors
-/// - if spinner type is not found
+///
+/// - If the specified spinner type doesn't exist in the world's spinner collection
+///
+/// # Examples
+///
+/// Adding a new take verb with higher probability:
+/// ```ignore
+/// add_spinner_wedge(spinners, SpinnerType::TakeVerb, "snatch", 3)?;
+/// ```
 pub fn add_spinner_wedge(
     spinners: &mut HashMap<SpinnerType, Spinner<String>>,
     spin_type: SpinnerType,
@@ -151,25 +342,78 @@ pub fn add_spinner_wedge(
         .get_mut(&spin_type)
         .with_context(|| format!("add_spinner_wedge(_, {spin_type:?}, _, _): spinner not found"))?;
     *spinref = spinref.add_wedge(wedge);
+    info!("└─ action: AddSpinnerWedge({spin_type:?}, \"{text}\"");
     Ok(())
 }
 
-/// Reset a sequence flag to the first step (0).
+/// Resets a sequence flag back to its initial step (0).
+///
+/// Sequence flags are used to track multi-step progress through game events,
+/// puzzles, or storylines. This action resets the flag back to the beginning,
+/// effectively undoing any progress made on that sequence.
+///
+/// # Parameters
+///
+/// * `player` - Mutable reference to the player whose flag will be reset
+/// * `flag_name` - Name of the sequence flag to reset
+///
+/// # Behavior
+///
+/// - If the flag exists and is a sequence flag, it's reset to step 0
+/// - If the flag doesn't exist, no action is taken
+/// - Simple (non-sequence) flags are unaffected by this action
 pub fn reset_flag(player: &mut Player, flag_name: &str) {
     info!("└─ action: ResetFlag(\"{flag_name}\")");
     player.reset_flag(flag_name);
 }
 
-/// Advance a sequence flag to the next step.
+/// Advances a sequence flag to the next step in the sequence.
+///
+/// Sequence flags track multi-step progress and can have optional limits.
+/// This action moves the flag forward by one step, unless it has already
+/// reached its maximum limit.
+///
+/// # Parameters
+///
+/// * `player` - Mutable reference to the player whose flag will be advanced
+/// * `flag_name` - Name of the sequence flag to advance
+///
+/// # Behavior
+///
+/// - If the flag exists and hasn't reached its limit, it advances by one step
+/// - If the flag is at its limit, no advancement occurs
+/// - If the flag doesn't exist, no action is taken
+/// - Simple (non-sequence) flags are unaffected by this action
 pub fn advance_flag(player: &mut Player, flag_name: &str) {
     info!("└─ action: AdvanceFlag(\"{flag_name}\")");
     player.advance_flag(flag_name);
 }
 
-/// Displays a triggered, randomized message (or sometimes none) from one of the world spinners.
+/// Displays a random message from a world spinner.
+///
+/// Spinners provide randomized ambient messages, flavor text, or contextual responses
+/// throughout the game. This action selects a random message from the specified spinner
+/// and displays it to the player as an ambient event.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world containing the spinners
+/// * `view` - Mutable reference to the player's view for displaying the message
+/// * `spinner_type` - The type of spinner to draw a message from
+///
+/// # Returns
+///
+/// Returns `Ok(())` if a message was successfully selected and displayed.
 ///
 /// # Errors
-/// - if requested spinner type isn't found
+///
+/// - If the requested spinner type doesn't exist in the world
+///
+/// # Behavior
+///
+/// - Selects a random weighted message from the spinner
+/// - If the spinner returns an empty message, nothing is displayed
+/// - Messages are styled as ambient events for visual distinction
 pub fn spinner_message(world: &mut AmbleWorld, view: &mut View, spinner_type: SpinnerType) -> Result<()> {
     if let Some(spinner) = world.spinners.get(&spinner_type) {
         let msg = spinner.spin().unwrap_or_default();
@@ -183,7 +427,22 @@ pub fn spinner_message(world: &mut AmbleWorld, view: &mut View, spinner_type: Sp
     }
 }
 
-/// Remove a flag that's been applied to the player.
+/// Removes a flag from the player.
+///
+/// This action removes a status flag from the player, effectively undoing
+/// whatever condition or state the flag represented. This is useful for
+/// temporary conditions, completed objectives, or state transitions.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world containing the player
+/// * `flag` - Name of the flag to remove
+///
+/// # Behavior
+///
+/// - If the flag exists, it's removed from the player's flag collection
+/// - If the flag doesn't exist, a warning is logged but no error occurs
+/// - Both simple and sequence flags can be removed with this action
 pub fn remove_flag(world: &mut AmbleWorld, flag: &str) {
     let target = Flag::simple(flag);
     if world.player.flags.remove(&target) {
@@ -192,10 +451,25 @@ pub fn remove_flag(world: &mut AmbleWorld, flag: &str) {
         warn!("└─ action: RemoveFlag(\"{flag}\") - flag was not set");
     }
 }
-/// Changes an item's status to restricted
+/// Makes an item non-transferable by marking it as restricted.
+///
+/// Restricted items cannot be taken from their current location or dropped
+/// if they're already in inventory. This is useful for items that should
+/// remain fixed in place once certain conditions are met, or for preventing
+/// players from transferring key items at inappropriate times.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world containing the item
+/// * `item_id` - UUID of the item to restrict
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the item was successfully restricted.
 ///
 /// # Errors
-/// - on failed item lookup
+///
+/// - If the specified item doesn't exist in the world
 pub fn restrict_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     if let Some(item) = world.items.get_mut(item_id) {
         item.restricted = true;
@@ -205,10 +479,26 @@ pub fn restrict_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
         bail!("action RestrictItem({item_id}): item not found");
     }
 }
-/// Trigger random dialogue (based on mood) from NPC
+/// Makes an NPC speak a random line of dialogue based on their current mood.
+///
+/// This action uses the NPC's mood and the world's `NpcIgnore` spinner to
+/// generate contextually appropriate dialogue. Different NPC states may
+/// result in different types of responses.
+///
+/// # Parameters
+///
+/// * `world` - Reference to the game world containing the NPC and spinners
+/// * `view` - Mutable reference to the player's view for displaying the dialogue
+/// * `npc_id` - UUID of the NPC who should speak
+///
+/// # Returns
+///
+/// Returns `Ok(())` if dialogue was successfully generated and displayed.
 ///
 /// # Errors
-/// - on failed NPC or `NpcIgnore` spinner lookups
+///
+/// - If the specified NPC doesn't exist in the world
+/// - If the `NpcIgnore` spinner required for dialogue generation is missing
 pub fn npc_says_random(world: &AmbleWorld, view: &mut View, npc_id: &Uuid) -> Result<()> {
     let npc = world
         .npcs
@@ -227,9 +517,26 @@ pub fn npc_says_random(world: &AmbleWorld, view: &mut View, npc_id: &Uuid) -> Re
     Ok(())
 }
 
-/// Trigger specific dialogue from an NPC
+/// Makes an NPC speak a specific line of dialogue.
+///
+/// This action bypasses the NPC's mood system and makes them speak an exact
+/// line of text. This is useful for scripted dialogue, important story moments,
+/// or specific responses to player actions.
+///
+/// # Parameters
+///
+/// * `world` - Reference to the game world containing the NPC
+/// * `view` - Mutable reference to the player's view for displaying the dialogue
+/// * `npc_id` - UUID of the NPC who should speak
+/// * `quote` - The exact text the NPC should say
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the dialogue was successfully displayed.
+///
 /// # Errors
-/// - on failed NPC uuid lookup
+///
+/// - If the specified NPC doesn't exist in the world
 pub fn npc_says(world: &AmbleWorld, view: &mut View, npc_id: &Uuid, quote: &str) -> Result<()> {
     let npc_name = world
         .npcs
@@ -244,22 +551,70 @@ pub fn npc_says(world: &AmbleWorld, view: &mut View, npc_id: &Uuid, quote: &str)
     Ok(())
 }
 
-/// Award some points to the player (or penalize if amount < 0)
+/// Awards points to the player or penalizes them if the amount is negative.
+///
+/// This action modifies the player's score and displays a message indicating
+/// the point change. Points are typically awarded for solving puzzles,
+/// discovering new areas, or completing objectives.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world containing the player
+/// * `view` - Mutable reference to the player's view for displaying the point award
+/// * `amount` - Number of points to award (negative values subtract points)
+///
+/// # Behavior
+///
+/// - Player's score is updated using saturating arithmetic to prevent overflow/underflow
+/// - A message is displayed to the player showing the point change
+/// - The action is logged for audit purposes
 pub fn award_points(world: &mut AmbleWorld, view: &mut View, amount: isize) {
     world.player.score = world.player.score.saturating_add_signed(amount);
     info!("└─ action: AwardPoints({amount})");
     view.push(ViewItem::PointsAwarded(amount));
 }
 
-/// Adds a status flag to the player
+/// Adds a status flag to the player.
+///
+/// Flags are used to track player progress, unlock new content, and control
+/// game flow. They can be simple boolean flags or sequence flags that track
+/// multi-step progress through events or puzzles.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world containing the player
+/// * `flag` - The flag to add to the player's flag collection
+///
+/// # Behavior
+///
+/// - The flag is added to the player's flag collection
+/// - If a flag with the same name already exists, it's replaced
+/// - Both simple and sequence flags can be added
 pub fn add_flag(world: &mut AmbleWorld, flag: &Flag) {
     world.player.flags.insert(flag.clone());
     info!("└─ action: AddFlag(\"{flag}\")");
 }
 
-/// lock an exit specified by room and direction
+/// Locks an exit in a specific direction from a room, preventing player movement.
+///
+/// Locked exits cannot be used by the player until they are unlocked again.
+/// This is useful for creating barriers that require keys, solving puzzles,
+/// or meeting other conditions before areas become accessible.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world containing the rooms
+/// * `from_room` - UUID of the room containing the exit to lock
+/// * `direction` - Direction name of the exit to lock (e.g., "north", "up")
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the exit was successfully locked.
+///
 /// # Errors
-/// - on invalid room or exit direction
+///
+/// - If the specified room doesn't exist in the world
+/// - If no exit in the specified direction exists from the given room
 pub fn lock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Result<()> {
     if let Some(exit) = world
         .rooms
@@ -277,9 +632,26 @@ pub fn lock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -
     }
 }
 
-/// unlock an exit specified by room and direction
+/// Unlocks an exit in a specific direction from a room, allowing player movement.
+///
+/// This action removes the lock from an exit, making it passable again.
+/// Unlocked exits can be traversed by the player without restriction
+/// (subject to any other requirements like flags or items).
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world containing the rooms
+/// * `from_room` - UUID of the room containing the exit to unlock
+/// * `direction` - Direction name of the exit to unlock (e.g., "north", "up")
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the exit was successfully unlocked.
+///
 /// # Errors
-/// - on invalid room or exit direction
+///
+/// - If the specified room doesn't exist in the world
+/// - If no exit in the specified direction exists from the given room
 pub fn unlock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -> Result<()> {
     if let Some(exit) = world.rooms.get_mut(from_room).and_then(|r| r.exits.get_mut(direction)) {
         exit.locked = false;
@@ -315,9 +687,32 @@ pub fn unlock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     }
 }
 
-/// Spawn an `Item` in a specific `Room`
+/// Creates an item in a specific room.
+///
+/// This action places an item in a designated room, making it available for
+/// player interaction. If the item already exists elsewhere in the world,
+/// it will be moved to the new location (with a warning logged).
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `item_id` - UUID of the item to spawn
+/// * `room_id` - UUID of the room where the item should appear
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the item was successfully spawned in the room.
+///
 /// # Errors
-/// - on failed item or room lookup
+///
+/// - If the specified item doesn't exist in the world's item collection
+/// - If the specified room doesn't exist in the world
+///
+/// # Behavior
+///
+/// - If the item is already located somewhere, it's moved rather than duplicated
+/// - The item's location is updated and it's added to the room's contents
+/// - A warning is logged if an existing item had to be moved
 pub fn spawn_item_in_specific_room(world: &mut AmbleWorld, item_id: &Uuid, room_id: &Uuid) -> Result<()> {
     // warn and remove item from world if it's already somewhere to avoid dups
     if let Some(item) = world.items.get(item_id)
@@ -349,9 +744,32 @@ pub fn spawn_item_in_specific_room(world: &mut AmbleWorld, item_id: &Uuid, room_
     Ok(())
 }
 
-/// Spawn an `Item` in the `Room` the player currently occupies
+/// Creates an item in the player's current room.
+///
+/// This action places an item in whatever room the player is currently in,
+/// making it immediately available for interaction. This is useful for
+/// dynamically creating items based on player actions or story events.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `item_id` - UUID of the item to spawn
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the item was successfully spawned in the current room.
+///
 /// # Errors
-/// - on failed item or room lookup
+///
+/// - If the specified item doesn't exist in the world's item collection
+/// - If the player is not currently in a room (e.g., in an invalid state)
+/// - If the player's current room doesn't exist in the world
+///
+/// # Behavior
+///
+/// - If the item already exists elsewhere, it's moved rather than duplicated
+/// - The item appears in whatever room the player currently occupies
+/// - A warning is logged if an existing item had to be moved
 pub fn spawn_item_in_current_room(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     // warn and remove item from world if it's already somewhere to avoid dups
     if let Some(item) = world.items.get(item_id)
@@ -385,9 +803,31 @@ pub fn spawn_item_in_current_room(world: &mut AmbleWorld, item_id: &Uuid) -> Res
     Ok(())
 }
 
-/// Spawn an `Item` in player's inventory
+/// Creates an item directly in the player's inventory.
+///
+/// This action places an item directly into the player's inventory, making it
+/// immediately available for use. This is useful for rewards, quest items,
+/// or other objects that should go straight to the player without appearing
+/// in the world first.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `item_id` - UUID of the item to spawn in inventory
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the item was successfully added to inventory.
+///
 /// # Errors
-/// - on failed item lookup
+///
+/// - If the specified item doesn't exist in the world's item collection
+///
+/// # Behavior
+///
+/// - If the item already exists elsewhere, it's moved rather than duplicated
+/// - The item's location is updated to inventory and added to player's items
+/// - A warning is logged if an existing item had to be moved
 pub fn spawn_item_in_inventory(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     // warn and remove item from world if it's already somewhere to avoid dups
     if let Some(item) = world.items.get(item_id)
@@ -410,9 +850,33 @@ pub fn spawn_item_in_inventory(world: &mut AmbleWorld, item_id: &Uuid) -> Result
     Ok(())
 }
 
-/// Spawn an `Item` within a container `Item`
+/// Creates an item inside a container item.
+///
+/// This action places an item within another item that has container capabilities.
+/// The item becomes part of the container's contents and can be accessed when
+/// the player examines or interacts with the container.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `item_id` - UUID of the item to spawn inside the container
+/// * `container_id` - UUID of the container item that will hold the new item
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the item was successfully placed in the container.
+///
 /// # Errors
-/// - on failed item or container lookup
+///
+/// - If the specified item doesn't exist in the world's item collection
+/// - If the specified container doesn't exist in the world
+///
+/// # Behavior
+///
+/// - If the item already exists elsewhere, it's moved rather than duplicated
+/// - The item's location is updated to reference the container
+/// - The container's contents are updated to include the item
+/// - A warning is logged if an existing item had to be moved
 pub fn spawn_item_in_container(world: &mut AmbleWorld, item_id: &Uuid, container_id: &Uuid) -> Result<()> {
     // if item is already in-world, warn and remove it to avoid duplications / inconsistent state
     if let Some(item) = world.items.get(item_id)
@@ -443,7 +907,21 @@ pub fn spawn_item_in_container(world: &mut AmbleWorld, item_id: &Uuid, container
     Ok(())
 }
 
-/// Show a message to the player.
+/// Displays a message to the player as a triggered event.
+///
+/// This action shows text to the player with special styling to indicate
+/// it was triggered by a game event rather than being part of normal
+/// room descriptions or dialogue.
+///
+/// # Parameters
+///
+/// * `view` - Mutable reference to the player's view for displaying the message
+/// * `text` - The message text to display to the player
+///
+/// # Behavior
+///
+/// - The message is styled as a triggered event for visual distinction
+/// - Long messages are truncated in the log for readability (first 50 characters)
 pub fn show_message(view: &mut View, text: &String) {
     view.push(ViewItem::TriggeredEvent(format!("{}", text.triggered_style())));
     info!(
@@ -452,9 +930,30 @@ pub fn show_message(view: &mut View, text: &String) {
     );
 }
 
-/// Set the state of a specified `Npc`
+/// Changes an NPC's behavioral state.
+///
+/// NPC states control how NPCs behave, what dialogue they use, and how they
+/// respond to player interactions. Changing an NPC's state can dramatically
+/// alter their behavior and available interactions.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world containing the NPC
+/// * `npc_id` - UUID of the NPC whose state should be changed
+/// * `state` - The new state to assign to the NPC
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the NPC's state was successfully changed.
+///
 /// # Errors
-/// - on failed npc lookup
+///
+/// - If the specified NPC doesn't exist in the world
+///
+/// # Behavior
+///
+/// - If the NPC is already in the target state, no action is taken
+/// - State changes are logged for debugging and audit purposes
 pub fn set_npc_state(world: &mut AmbleWorld, npc_id: &Uuid, state: &NpcState) -> Result<()> {
     if let Some(npc) = world.npcs.get_mut(npc_id) {
         if npc.state == *state {
@@ -468,9 +967,32 @@ pub fn set_npc_state(world: &mut AmbleWorld, npc_id: &Uuid, state: &NpcState) ->
     }
 }
 
-/// Reveal or create a new exit from a `Room`
+/// Makes a hidden exit visible and usable, or creates a new exit if none exists.
+///
+/// This action can either reveal a previously hidden exit or create an entirely
+/// new passage between rooms. Hidden exits are useful for secret passages that
+/// become available after solving puzzles or meeting certain conditions.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world containing the rooms
+/// * `direction` - Direction name for the exit (e.g., "north", "secret passage")
+/// * `exit_from` - UUID of the room where the exit should appear
+/// * `exit_to` - UUID of the destination room the exit leads to
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the exit was successfully revealed or created.
+///
 /// # Errors
-/// - on invalid `exit_from` room uuid
+///
+/// - If the source room doesn't exist in the world
+///
+/// # Behavior
+///
+/// - If an exit already exists in that direction, it's unhidden
+/// - If no exit exists, a new one is created leading to the destination
+/// - The exit becomes immediately usable by the player
 pub fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &Uuid, exit_to: &Uuid) -> Result<()> {
     let exit = world
         .rooms
@@ -488,9 +1010,30 @@ pub fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &Uuid,
     Ok(())
 }
 
-/// Move player to another `Room`
+/// Instantly moves the player to a different room.
+///
+/// This action bypasses normal movement mechanics and teleports the player
+/// directly to a new location. This is useful for story events, traps,
+/// magical transportation, or other situations where instant relocation is needed.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world containing the player and rooms
+/// * `room_id` - UUID of the destination room
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the player was successfully moved.
+///
 /// # Errors
-/// - on failed room lookup
+///
+/// - If the destination room doesn't exist in the world
+///
+/// # Behavior
+///
+/// - Player's location is immediately updated to the new room
+/// - No movement restrictions or exit requirements are checked
+/// - The move is logged for audit purposes
 pub fn push_player(world: &mut AmbleWorld, room_id: &Uuid) -> Result<()> {
     if world.rooms.contains_key(room_id) {
         world.player.location = Location::Room(*room_id);
@@ -504,10 +1047,31 @@ pub fn push_player(world: &mut AmbleWorld, room_id: &Uuid) -> Result<()> {
     }
 }
 
-/// Lock an `Item`
+/// Locks a container item, preventing access to its contents.
+///
+/// This action changes a container's state to locked, preventing players from
+/// opening it or accessing its contents until it's unlocked. Only items with
+/// container capabilities can be locked.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world containing the item
+/// * `item_id` - UUID of the container item to lock
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the item was successfully locked.
+///
 /// # Errors
-/// - if attempt to lock an item that isn't a container
-/// - if specified container is not found
+///
+/// - If the specified item doesn't exist in the world
+/// - If the item is not a container (doesn't have a `container_state`)
+///
+/// # Behavior
+///
+/// - The item's container state is set to locked
+/// - Players cannot access the container's contents until it's unlocked
+/// - Items that are already locked remain locked (no state change)
 pub fn lock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     if let Some(item) = world.items.get_mut(item_id) {
         if item.container_state.is_some() {
@@ -526,9 +1090,33 @@ pub fn lock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     }
 }
 
-/// Move an `Item` from an `Npc` to the player's inventory.
+/// Transfers an item from an NPC's inventory to the player's inventory.
+///
+/// This action handles the complete transfer of an item from an NPC to the player,
+/// updating all necessary world state including item location, NPC inventory,
+/// and player inventory.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `npc_id` - UUID of the NPC who currently has the item
+/// * `item_id` - UUID of the item to transfer
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the transfer was successful.
+///
 /// # Errors
-/// - on failed item or npc lookup
+///
+/// - If the specified NPC doesn't exist in the world
+/// - If the specified item doesn't exist in the world
+/// - If the NPC doesn't actually have the item in their inventory
+///
+/// # Behavior
+///
+/// - Item's location is updated to inventory
+/// - Item is removed from NPC's inventory and added to player's inventory
+/// - The transfer is logged for audit purposes
 pub fn give_to_player(world: &mut AmbleWorld, npc_id: &Uuid, item_id: &Uuid) -> Result<()> {
     let npc = world
         .npcs
@@ -549,10 +1137,31 @@ pub fn give_to_player(world: &mut AmbleWorld, npc_id: &Uuid, item_id: &Uuid) -> 
     }
 }
 
-/// Remove an `Item` from the world.
-/// Sets item location to "Nowhere" and removes it from wherever it was
+/// Completely removes an item from the world.
+///
+/// This action removes an item from all world collections and sets its location
+/// to "Nowhere", effectively making it disappear from the game. This is useful
+/// for consumable items, temporary objects, or cleanup operations.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `item_id` - UUID of the item to remove from the world
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the item was successfully removed.
+///
 /// # Errors
-/// - on failed item lookup
+///
+/// - If the specified item doesn't exist in the world
+///
+/// # Behavior
+///
+/// - Item is removed from its current location (room, inventory, container, or NPC)
+/// - Item's location is set to `Location::Nowhere`
+/// - All references to the item are cleaned up to maintain world consistency
+/// - The removal is logged for audit purposes
 pub fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     let item = world
         .items
@@ -584,7 +1193,30 @@ pub fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     Ok(())
 }
 
-/// Notify player of the reason a Read(item) command was denied
+/// Prevents a player from reading an item and displays a custom denial message.
+///
+/// This action is used to conditionally block reading of items based on
+/// game state, missing tools, or story requirements. For example, text
+/// might be too small to read without a magnifying glass, or a document
+/// might be in a language the player doesn't understand yet.
+///
+/// # Parameters
+///
+/// * `view` - Mutable reference to the player's view for displaying the denial message
+/// * `reason` - Custom message explaining why the item cannot be read
+///
+/// # Behavior
+///
+/// - The denial message is displayed to the player with special styling
+/// - The read attempt is logged for debugging purposes
+/// - No changes are made to world state (the item remains readable for future attempts)
+///
+/// # Common Use Cases
+///
+/// - Items requiring special tools (magnifying glass, translator, etc.)
+/// - Text that becomes readable after learning languages or skills
+/// - Documents that require specific lighting or conditions
+/// - Story-gated content that shouldn't be accessible yet
 pub fn deny_read(view: &mut View, reason: &String) {
     view.push(ViewItem::ActionFailure(format!("{}", reason.denied_style())));
     info!("└─ action: DenyRead(\"{reason}\")");

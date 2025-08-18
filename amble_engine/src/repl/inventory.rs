@@ -1,6 +1,46 @@
-//! `repl::inventory` module
+//! Player inventory management command handlers for the Amble game engine.
 //!
-//! Contains repl loop handlers for commands that affect player inventory
+//! This module contains handlers for all commands that manipulate items in the
+//! player's inventory or transfer items between different containers in the world.
+//! These commands form the core of the game's item interaction system.
+//!
+//! # Command Categories
+//!
+//! ## Basic Inventory Operations
+//! - [`drop_handler`] - Remove items from inventory and place in current room
+//! - [`take_handler`] - Pick up items from the current room into inventory
+//!
+//! ## Container Interactions
+//! - [`take_from_handler`] - Remove items from containers or NPCs into inventory
+//! - [`put_in_handler`] - Place inventory items into nearby containers
+//!
+//! ## Transfer Mechanics
+//!
+//! The module handles complex item transfer logic including:
+//! - Location tracking (rooms, containers, NPCs, inventory)
+//! - Portability restrictions (some items cannot be moved)
+//! - Access permissions (locked containers, restricted items)
+//! - Container state management (open/closed/locked)
+//! - World consistency (preventing duplicate items)
+//!
+//! # Error Handling
+//!
+//! All handlers provide user-friendly error messages for common failure cases:
+//! - Items not found or not available
+//! - Containers that are locked or inaccessible
+//! - Items that cannot be transferred due to restrictions
+//! - Attempting to transfer non-items (like NPCs)
+//!
+//! # Trigger Integration
+//!
+//! Many inventory operations trigger game events:
+//! - `TriggerCondition::Take` - When items are picked up
+//! - `TriggerCondition::Drop` - When items are dropped or placed
+//! - `TriggerCondition::Insert` - When items are put into containers
+//! - `TriggerCondition::TakeFromNpc` - When taking items from NPCs
+//!
+//! These triggers can cause additional game effects like advancing storylines,
+//! unlocking areas, or triggering NPC responses.
 
 use std::collections::HashSet;
 
@@ -20,7 +60,37 @@ use colored::Colorize;
 use log::{error, info, warn};
 use uuid::Uuid;
 
-/// Drops an item from inventory in the current room.
+/// Removes an item from the player's inventory and places it in the current room.
+///
+/// This command transfers an item from the player's inventory to the room they're
+/// currently in, making it available for other interactions. Only portable items
+/// can be dropped, and the action may trigger game events.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `view` - Mutable reference to the player's view for feedback messages
+/// * `thing` - Pattern string to match against inventory items
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or error if world state is inconsistent.
+///
+/// # Behavior
+///
+/// - Searches player inventory for items matching the pattern
+/// - Verifies the item is portable (non-portable items cannot be dropped)
+/// - Updates item location from inventory to current room
+/// - Adds item to room's contents and removes from player inventory
+/// - Triggers `TriggerCondition::Drop` for potential game effects
+/// - Provides appropriate feedback messages for all outcomes
+///
+/// # Error Conditions
+///
+/// - Item not found in inventory
+/// - Item is not portable (displays specific message)
+/// - Pattern matches non-item entity (handled gracefully)
+/// - World state corruption (returns error)
 pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     if let Some(entity) = find_world_object(&world.player.inventory, &world.items, &world.npcs, thing) {
         if let Some(item) = entity.item() {
@@ -69,7 +139,45 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
         Ok(())
     }
 }
-/// Removes an item from current room and adds it to inventory.
+/// Picks up an item from the current area and adds it to the player's inventory.
+///
+/// This command transfers an item from the player's current environment (room or
+/// nearby containers) into their inventory. Items must be portable and not restricted,
+/// and some items may require specific capabilities to handle safely.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `view` - Mutable reference to the player's view for feedback messages
+/// * `thing` - Pattern string to match against nearby items
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or error if world state is inconsistent.
+///
+/// # Behavior
+///
+/// - Searches nearby reachable items for matches to the pattern
+/// - Checks if item requires special handling capabilities (like heat resistance)
+/// - Verifies item is portable and not restricted
+/// - Updates item location from current location to inventory
+/// - Removes item from original container and adds to player inventory
+/// - Triggers `TriggerCondition::Take` for potential game effects
+/// - Uses randomized "take" verbs for variety in descriptions
+///
+/// # Access Control
+///
+/// Items may be denied if they:
+/// - Require special capabilities the player lacks (e.g., heat-proof gloves)
+/// - Are marked as restricted (cannot be transferred)
+/// - Are not portable (fixed in place)
+///
+/// # Location Handling
+///
+/// Items can be taken from various locations:
+/// - Room contents (lying on the ground)
+/// - Open containers (boxes, chests, etc.)
+/// - Other accessible locations
 pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     let take_verb = world.spin_spinner(SpinnerType::TakeVerb, "take");
     let room_id = world.player_room_ref()?.id();
@@ -173,14 +281,60 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
     Ok(())
 }
 
-/// Indicates whether the vessel we're taking from is an NPC or another item.
+/// Specifies the type of container being accessed for item transfers.
+///
+/// This enum distinguishes between taking items from NPCs versus taking them
+/// from container items, which require different validation and transfer logic.
 #[derive(Debug, Copy, Clone)]
 pub enum VesselType {
     Item,
     Npc,
 }
 
-/// Removes an item from a vessel (NPC or container item) and adds to inventory.
+/// Transfers an item from a container or NPC to the player's inventory.
+///
+/// This is one of the most complex inventory operations, handling transfers from
+/// both container items (like chests or bags) and NPC inventories. It performs
+/// extensive validation to ensure the transfer is valid and maintains world consistency.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `view` - Mutable reference to the player's view for feedback messages
+/// * `item_pattern` - Pattern string to match against items in the container/NPC
+/// * `vessel_pattern` - Pattern string to match against nearby containers or NPCs
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or error if world state is inconsistent.
+///
+/// # Validation Process
+///
+/// The function performs several validation steps:
+/// 1. Identifies and validates the target container/NPC in the current room
+/// 2. Checks container accessibility (not closed/locked)
+/// 3. Searches for the requested item within the container/NPC
+/// 4. Verifies the item can be transferred (portable, not restricted)
+/// 5. Executes the complete transfer with world state updates
+///
+/// # Container Access
+///
+/// For container items:
+/// - Must be in an accessible state (open, unlocked)
+/// - Player receives appropriate feedback for locked/closed containers
+///
+/// For NPCs:
+/// - Items in NPC inventory are accessible by default
+/// - May trigger special NPC interactions or responses
+///
+/// # Trigger Effects
+///
+/// Different triggers fire depending on the source:
+/// - `TriggerCondition::Take` - General item pickup trigger
+/// - `TriggerCondition::TakeFromNpc` - Specific trigger for NPC interactions
+///
+/// This allows the game to respond differently to taking items from containers
+/// versus taking them from NPCs.
 ///
 /// This function handles some complex logic of validating and then transferring
 /// items either from an NPC or from a container item. It must validate:
@@ -240,6 +394,36 @@ pub fn take_from_handler(
     Ok(())
 }
 
+/// Validates and executes transfer of an item from an NPC to the player.
+///
+/// This internal function handles the NPC-specific logic for item transfers,
+/// including validation of the NPC's inventory and the target item's transferability.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `view` - Mutable reference to the player's view for feedback messages
+/// * `item_pattern` - Pattern to match against items in the NPC's inventory
+/// * `vessel_id` - UUID of the NPC being accessed
+/// * `vessel_name` - Display name of the NPC for user feedback
+///
+/// # Returns
+///
+/// Returns `Ok(())` on successful transfer or validation failure.
+///
+/// # Validation
+///
+/// - Verifies the NPC exists and has the requested item
+/// - Checks if the item can be transferred (not restricted)
+/// - Handles cases where pattern matches non-items inappropriately
+/// - Provides specific feedback for each failure case
+///
+/// # Transfer Process
+///
+/// On successful validation:
+/// - Calls [`transfer_to_player`] to execute the actual transfer
+/// - Triggers both general and NPC-specific trigger conditions
+/// - Updates all necessary world state collections
 pub(crate) fn validate_and_transfer_from_npc(
     world: &mut AmbleWorld,
     view: &mut View,
@@ -298,6 +482,36 @@ pub(crate) fn validate_and_transfer_from_npc(
     Ok(())
 }
 
+/// Validates and executes transfer of an item from a container to the player.
+///
+/// This internal function handles the container-specific logic for item transfers,
+/// including validation of container contents and item accessibility.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `view` - Mutable reference to the player's view for feedback messages
+/// * `item_pattern` - Pattern to match against items in the container
+/// * `vessel_id` - UUID of the container item being accessed
+/// * `vessel_name` - Display name of the container for user feedback
+///
+/// # Returns
+///
+/// Returns `Ok(())` on successful transfer or validation failure.
+///
+/// # Validation
+///
+/// - Verifies the container exists and contains the requested item
+/// - Checks if the item can be transferred (not restricted)
+/// - Handles inappropriate pattern matches gracefully
+/// - Provides specific feedback for missing items or transfer restrictions
+///
+/// # Transfer Process
+///
+/// On successful validation:
+/// - Calls [`transfer_to_player`] to execute the actual transfer
+/// - Triggers general take conditions (container transfers don't have special triggers)
+/// - Updates container contents and player inventory
 pub(crate) fn validate_and_transfer_from_item(
     world: &mut AmbleWorld,
     view: &mut View,
@@ -348,7 +562,36 @@ pub(crate) fn validate_and_transfer_from_item(
     Ok(())
 }
 
-/// Update world state to move item from a vessel (NPC or container item) into inventory.
+/// Executes the complete transfer of an item from a container/NPC to player inventory.
+///
+/// This function performs the actual world state updates required to move an item
+/// from its current location (NPC inventory or container contents) to the player's
+/// inventory. It maintains world consistency by updating all affected collections.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `view` - Mutable reference to the player's view for feedback messages
+/// * `vessel_type` - Whether transferring from an NPC or container item
+/// * `vessel_id` - UUID of the source container or NPC
+/// * `vessel_name` - Display name of the source for user feedback
+/// * `loot_id` - UUID of the item being transferred
+/// * `loot_name` - Display name of the item for user feedback
+///
+/// # World State Updates
+///
+/// The function updates multiple world state collections:
+/// 1. **Item location** - Updates the item's location to inventory
+/// 2. **Source cleanup** - Removes item from NPC inventory or container contents
+/// 3. **Player inventory** - Adds item to player's inventory collection
+/// 4. **User feedback** - Displays success message with randomized take verb
+/// 5. **Audit logging** - Records the transfer with full details
+///
+/// # Consistency
+///
+/// This function is critical for maintaining world state consistency. It ensures
+/// that items exist in exactly one location and that all collections accurately
+/// reflect the current world state.
 pub fn transfer_to_player(
     world: &mut AmbleWorld,
     view: &mut View,
@@ -399,7 +642,44 @@ pub fn transfer_to_player(
     );
 }
 
-/// Removes an item from inventory and places it in a nearby container.
+/// Transfers an item from the player's inventory to a nearby container.
+///
+/// This command allows players to organize items by placing them in containers
+/// like chests, bags, or other storage items. The container must be accessible
+/// (unlocked and open) and in the current room.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `view` - Mutable reference to the player's view for feedback messages
+/// * `item` - Pattern string to match against inventory items
+/// * `container` - Pattern string to match against nearby containers
+///
+/// # Returns
+///
+/// Returns `Ok(())` on success or error if world state is inconsistent.
+///
+/// # Validation Process
+///
+/// 1. **Item validation** - Verifies item exists in inventory and is transferable
+/// 2. **Container validation** - Finds container in current room and checks accessibility
+/// 3. **Transfer execution** - Updates all world state collections consistently
+///
+/// # Container Requirements
+///
+/// Target containers must be:
+/// - Present in the current room
+/// - Accessible (not locked or closed)
+/// - Actually be a container (not a regular item)
+///
+/// # Trigger Effects
+///
+/// This action triggers multiple conditions:
+/// - `TriggerCondition::Insert` - Specific to putting items in containers
+/// - `TriggerCondition::Drop` - General item placement trigger
+///
+/// This allows the game to respond to both the specific act of organized storage
+/// and the general act of item placement.
 pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, container: &str) -> Result<()> {
     // get uuid of item and container
     let (item_id, item_name) =
@@ -481,7 +761,30 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
     Ok(())
 }
 
-/// Handle situation where an NPC uuid is found where only items should be.
+/// Handles cases where an NPC is found when searching for items.
+///
+/// This utility function provides appropriate error handling when the player's
+/// search pattern matches an NPC in a context where only items are expected.
+/// It provides user-friendly feedback and logs the unexpected situation for debugging.
+///
+/// # Parameters
+///
+/// * `entity` - The world entity that was unexpectedly found
+/// * `view` - Mutable reference to the player's view for error messages
+/// * `denial_msg` - Specific message explaining why the action cannot be performed
+///
+/// # Behavior
+///
+/// - Displays the denial message to the player
+/// - Logs detailed error information for debugging
+/// - Does not modify world state (safe error handling)
+///
+/// # Common Use Cases
+///
+/// This typically occurs when players try to:
+/// - Take an NPC (which would be kidnapping)
+/// - Put an NPC in a container
+/// - Use item-specific commands on NPCs
 /// (Typically when `find_world_object` matches an NPC when an item is expected.)
 pub fn unexpected_entity(entity: WorldEntity, view: &mut View, denial_msg: &str) {
     let (entity_name, entity_sym, entity_loc) = match entity {

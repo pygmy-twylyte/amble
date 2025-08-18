@@ -1,6 +1,41 @@
-//! `repl::look` module
+//! Observation and examination command handlers for the Amble game engine.
 //!
-//! Contains repl loop handlers for commands that involve examining items and surroundings
+//! This module provides handlers for commands that allow players to examine
+//! their environment, items, and inventory without modifying world state.
+//! These commands are essential for player understanding and navigation.
+//!
+//! # Command Categories
+//!
+//! ## Environmental Observation
+//! - [`look_handler`] - Examine current surroundings in detail
+//! - [`look_at_handler`] - Examine specific items, NPCs, or objects
+//!
+//! ## Inventory Management
+//! - [`inv_handler`] - Display current inventory contents
+//!
+//! ## Text Interaction
+//! - [`read_handler`] - Read text on items (books, signs, documents)
+//!
+//! # Scope Management
+//!
+//! The module implements intelligent scoping for examination commands:
+//! - Current room contents (items and NPCs)
+//! - Player inventory items
+//! - Items within reach (including container contents)
+//!
+//! # Conditional Access
+//!
+//! Some examination commands may be conditional:
+//! - Reading may require special tools (magnifying glass, light source)
+//! - Examination triggers may provide different descriptions based on game state
+//! - Certain items may only be readable under specific conditions
+//!
+//! # Trigger Integration
+//!
+//! Observation commands can trigger game events:
+//! - Looking around may reveal hidden details or trigger story events
+//! - Reading specific items may advance plot or provide crucial information
+//! - Examination may unlock new areas or interactions
 
 use std::collections::HashSet;
 
