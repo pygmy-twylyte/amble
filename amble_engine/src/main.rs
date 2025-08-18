@@ -10,6 +10,7 @@ use amble_engine::{AMBLE_VERSION, WorldObject, load_world, run_repl};
 
 use anyhow::{Context, Result};
 use colored::Colorize;
+use env_logger::Env;
 use textwrap::{fill, termwidth};
 
 use log::info;
@@ -17,9 +18,11 @@ use log::info;
 use std::io::Write;
 
 fn main() -> Result<()> {
-    env_logger::init();
-    info!("Starting Amble (version {AMBLE_VERSION})");
-    info!("Start: loading 'AmbleWorld' from files");
+    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
+        .format_timestamp(None)
+        .init();
+    info!("Starting Amble engine (version {AMBLE_VERSION})");
+    info!("Start: loading game world from files");
     let mut world = load_world().context("while loading AmbleWorld")?;
     info!("AmbleWorld loaded successfully.");
 
