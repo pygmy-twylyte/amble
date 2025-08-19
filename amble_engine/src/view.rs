@@ -18,6 +18,7 @@ const ICON_AMBIENT: &str = "…";
 const ICON_NEGATIVE: &str = "➖";
 const ICON_POSITIVE: &str = "➕";
 const ICON_ENGINE: &str = "*";
+const ICON_STATUS: &str = "%";
 
 /// View aggregates information to be displayed on each pass through the REPL and then organizes
 /// and displays the result.
@@ -121,6 +122,7 @@ impl View {
     fn world_reaction(&mut self) {
         self.triggered_event();
         self.npc_speech();
+        self.status_change();
         self.points_awarded();
     }
 
@@ -136,6 +138,26 @@ impl View {
     }
 
     // INDIVIDUAL VIEW ITEM HANDLERS START HERE -------------------------------
+    fn status_change(&mut self) {
+        let status_msgs: Vec<_> = self.items.iter().filter(|item| item.is_status_change()).collect();
+        for msg in &status_msgs {
+            if let ViewItem::StatusChange { action, status } = msg {
+                println!(
+                    "{:<4}Status: {} has been {}.",
+                    ICON_STATUS.yellow(),
+                    status.underline(),
+                    match action {
+                        StatusAction::Apply => "applied",
+                        StatusAction::Remove => "removed",
+                    }
+                )
+            }
+        }
+        if !status_msgs.is_empty() {
+            println!();
+        }
+    }
+
     fn engine_message(&mut self) {
         let engine_msgs = self.items.iter().filter(|i| i.is_engine_message());
         for msg in engine_msgs {
@@ -596,29 +618,39 @@ pub enum ViewMode {
 /// `ViewItems` are each of the various types of information / messages that may be displayed to the player.
 #[derive(Debug, Clone, PartialEq, Eq, Variantly)]
 pub enum ViewItem {
-    EngineMessage(String),
-    PointsAwarded(isize),
-    TransitionMessage(String),
-    RoomDescription {
+    ActionFailure(String),
+    ActionSuccess(String),
+    ActiveGoal {
         name: String,
         description: String,
-        visited: bool,
-        force_mode: Option<ViewMode>,
     },
-    RoomOverlays {
-        text: Vec<String>,
-        force_mode: Option<ViewMode>,
+    AmbientEvent(String),
+    CompleteGoal {
+        name: String,
+        description: String,
     },
-    RoomItems(Vec<String>),
-    RoomExits(Vec<ExitLine>),
-    RoomNpcs(Vec<NpcLine>),
+    EngineMessage(String),
+    Error(String),
+    GameLoaded {
+        save_slot: String,
+        save_file: String,
+    },
+    GameSaved {
+        save_slot: String,
+        save_file: String,
+    },
+    Help {
+        basic_text: String,
+        commands: Vec<HelpCommand>,
+    },
+    Inventory(Vec<ContentLine>),
+    ItemConsumableStatus(String),
+    ItemContents(Vec<ContentLine>),
     ItemDescription {
         name: String,
         description: String,
     },
-    ItemConsumableStatus(String),
     ItemText(String),
-    ItemContents(Vec<ContentLine>),
     NpcDescription {
         name: String,
         description: String,
@@ -628,12 +660,7 @@ pub enum ViewItem {
         speaker: String,
         quote: String,
     },
-    AmbientEvent(String),
-    TriggeredEvent(String),
-    ActionSuccess(String),
-    ActionFailure(String),
-    Error(String),
-    Inventory(Vec<ContentLine>),
+    PointsAwarded(isize),
     QuitSummary {
         rank: String,
         notes: String,
@@ -642,26 +669,25 @@ pub enum ViewItem {
         visited: usize,
         max_visited: usize,
     },
-    Help {
-        basic_text: String,
-        commands: Vec<HelpCommand>,
-    },
-    ActiveGoal {
+    RoomDescription {
         name: String,
         description: String,
+        visited: bool,
+        force_mode: Option<ViewMode>,
     },
-    CompleteGoal {
-        name: String,
-        description: String,
+    RoomExits(Vec<ExitLine>),
+    RoomItems(Vec<String>),
+    RoomNpcs(Vec<NpcLine>),
+    RoomOverlays {
+        text: Vec<String>,
+        force_mode: Option<ViewMode>,
     },
-    GameLoaded {
-        save_slot: String,
-        save_file: String,
+    StatusChange {
+        action: StatusAction,
+        status: String,
     },
-    GameSaved {
-        save_slot: String,
-        save_file: String,
-    },
+    TransitionMessage(String),
+    TriggeredEvent(String),
 }
 impl ViewItem {
     pub fn section(&self) -> Section {
@@ -683,9 +709,10 @@ impl ViewItem {
             | ViewItem::Inventory(_)
             | ViewItem::ActiveGoal { .. }
             | ViewItem::CompleteGoal { .. } => Section::DirectResult,
-            ViewItem::NpcSpeech { .. } | ViewItem::TriggeredEvent(_) | ViewItem::PointsAwarded(_) => {
-                Section::WorldResponse
-            },
+            ViewItem::NpcSpeech { .. }
+            | ViewItem::TriggeredEvent(_)
+            | ViewItem::PointsAwarded(_)
+            | ViewItem::StatusChange { .. } => Section::WorldResponse,
             ViewItem::AmbientEvent(_) => Section::Ambient,
             ViewItem::QuitSummary { .. }
             | ViewItem::EngineMessage(_)
@@ -696,6 +723,13 @@ impl ViewItem {
         }
     }
 }
+/// Different actions that can be applied to status effects.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum StatusAction {
+    Apply,
+    Remove,
+}
+
 /// Information needed to display a contents list for an item correctly
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContentLine {

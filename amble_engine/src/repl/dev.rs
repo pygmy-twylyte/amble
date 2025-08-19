@@ -166,7 +166,7 @@ pub fn dev_start_seq_handler(world: &mut AmbleWorld, view: &mut View, seq_name: 
         seq.value()
     )));
     warn!("DEV_MODE command StartSeq used: '{}' set, limit {limit:?}", seq.value());
-    trigger::add_flag(world, &seq);
+    trigger::add_flag(world, view, &seq);
 }
 
 /// Sets a simple boolean flag on the player (DEV_MODE only).
@@ -198,7 +198,7 @@ pub fn dev_set_flag_handler(world: &mut AmbleWorld, view: &mut View, flag_name: 
     let flag = Flag::simple(flag_name);
     view.push(ViewItem::ActionSuccess(format!("Simple flag '{}' set.", flag.value())));
     warn!("DEV_MODE command SetFlag used: '{}' set.", flag.value());
-    trigger::add_flag(world, &flag);
+    trigger::add_flag(world, view, &flag);
 }
 
 /// Advances a sequence flag to its next step (DEV_MODE only).

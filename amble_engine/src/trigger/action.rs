@@ -86,7 +86,7 @@ use crate::player::{Flag, Player};
 use crate::room::Exit;
 use crate::spinners::SpinnerType;
 use crate::style::GameStyle;
-use crate::view::{View, ViewItem};
+use crate::view::{StatusAction, View, ViewItem};
 use crate::world::{AmbleWorld, Location, WorldObject};
 
 /// Types of actions that can be fired by a `Trigger` based on a set of `TriggerConditions`.
@@ -240,8 +240,8 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
         TriggerAction::UnlockItem(item_id) => unlock_item(world, item_id)?,
         TriggerAction::UnlockExit { from_room, direction } => unlock_exit(world, from_room, direction)?,
         TriggerAction::LockExit { from_room, direction } => lock_exit(world, from_room, direction)?,
-        TriggerAction::AddFlag(flag) => add_flag(world, flag),
-        TriggerAction::RemoveFlag(flag) => remove_flag(world, flag),
+        TriggerAction::AddFlag(flag) => add_flag(world, view, flag),
+        TriggerAction::RemoveFlag(flag) => remove_flag(world, view, flag),
         TriggerAction::AwardPoints(amount) => award_points(world, view, *amount),
     }
     Ok(())
@@ -435,17 +435,25 @@ pub fn spinner_message(world: &mut AmbleWorld, view: &mut View, spinner_type: Sp
 /// # Parameters
 ///
 /// * `world` - Mutable reference to the game world containing the player
+/// * `view` - Mutable reference to the game's view system for notification
 /// * `flag` - Name of the flag to remove
 ///
 /// # Behavior
 ///
 /// - If the flag exists, it's removed from the player's flag collection
+/// - If exists and is a status flag (prefix = "status:"), push status change to view
 /// - If the flag doesn't exist, a warning is logged but no error occurs
 /// - Both simple and sequence flags can be removed with this action
-pub fn remove_flag(world: &mut AmbleWorld, flag: &str) {
+pub fn remove_flag(world: &mut AmbleWorld, view: &mut View, flag: &str) {
     let target = Flag::simple(flag);
     if world.player.flags.remove(&target) {
         info!("└─ action: RemoveFlag(\"{flag}\")");
+        if let Some(status) = flag.strip_prefix("status:") {
+            view.push(ViewItem::StatusChange {
+                action: StatusAction::Remove,
+                status: status.to_string(),
+            });
+        }
     } else {
         warn!("└─ action: RemoveFlag(\"{flag}\") - flag was not set");
     }
@@ -582,6 +590,7 @@ pub fn award_points(world: &mut AmbleWorld, view: &mut View, amount: isize) {
 /// # Parameters
 ///
 /// * `world` - Mutable reference to the game world containing the player
+/// * `view` - Mutable reference to the game view for notification
 /// * `flag` - The flag to add to the player's flag collection
 ///
 /// # Behavior
@@ -589,7 +598,13 @@ pub fn award_points(world: &mut AmbleWorld, view: &mut View, amount: isize) {
 /// - The flag is added to the player's flag collection
 /// - If a flag with the same name already exists, it's replaced
 /// - Both simple and sequence flags can be added
-pub fn add_flag(world: &mut AmbleWorld, flag: &Flag) {
+pub fn add_flag(world: &mut AmbleWorld, view: &mut View, flag: &Flag) {
+    if let Some(status) = flag.name().strip_prefix("status:") {
+        view.push(ViewItem::StatusChange {
+            action: StatusAction::Apply,
+            status: status.to_string(),
+        });
+    }
     world.player.flags.insert(flag.clone());
     info!("└─ action: AddFlag(\"{flag}\")");
 }
@@ -1318,10 +1333,11 @@ mod tests {
     #[test]
     fn add_and_remove_flag_updates_player_flags() {
         let (mut world, _, _) = build_test_world();
+        let mut view = View::new();
         let flag = Flag::simple("test");
-        add_flag(&mut world, &flag);
+        add_flag(&mut world, &mut view, &flag);
         assert!(world.player.flags.contains(&flag));
-        remove_flag(&mut world, "test");
+        remove_flag(&mut world, &mut view, "test");
         assert!(!world.player.flags.contains(&flag));
     }
 
