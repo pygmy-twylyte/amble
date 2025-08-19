@@ -90,7 +90,6 @@ use crate::view::{View, ViewItem};
 use crate::world::{AmbleWorld, Location, WorldObject};
 
 /// Types of actions that can be fired by a `Trigger` based on a set of `TriggerConditions`.
-#[derive(Debug, Clone, Serialize, Deserialize)]
 /// Represents all possible actions that can be triggered by game events.
 ///
 /// Each variant corresponds to a specific action function that modifies world state,
@@ -137,7 +136,7 @@ use crate::world::{AmbleWorld, Location, WorldObject};
 /// - [`DenyRead`] - Prevents reading an item with a custom message
 /// - [`ShowMessage`] - Displays a message to the player
 /// - [`SpinnerMessage`] - Displays a random message from a spinner
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TriggerAction {
     /// Adds a status flag to the player
     AddFlag(Flag),
@@ -205,7 +204,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
             exit_from,
             exit_to,
             msg,
-        } => set_barred_message(world, *exit_from, *exit_to, msg)?,
+        } => set_barred_message(world, exit_from, exit_to, msg)?,
         TriggerAction::AddSpinnerWedge { spinner, text, width } => {
             add_spinner_wedge(&mut world.spinners, *spinner, text, *width)?;
         },
@@ -277,7 +276,7 @@ fn set_barred_message(world: &mut AmbleWorld, exit_from: &Uuid, exit_to: &Uuid, 
     let exit = room
         .exits
         .iter()
-        .find_map(|exit| if exit.1.to == exit_to { Some(exit) } else { None });
+        .find_map(|exit| if exit.1.to == *exit_to { Some(exit) } else { None });
     if let Some(exit) = exit {
         let (direction, mut exit) = (exit.0.clone(), exit.1.clone());
         exit.set_barred_msg(Some(msg.to_string()));
