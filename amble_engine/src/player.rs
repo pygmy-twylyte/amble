@@ -46,6 +46,17 @@ impl Player {
     pub fn reset_flag(&mut self, name: &str) {
         self.update_flag(name, Flag::reset);
     }
+
+    /// Returns list of applied status effects.
+    ///
+    /// Status effects are created by using a `Flag` with a name in the form "status:<status_type",
+    /// e.g. "status:nausea"
+    pub fn status(&self) -> HashSet<&str> {
+        self.flags
+            .iter()
+            .filter_map(|f| f.name().strip_prefix("status:"))
+            .collect()
+    }
 }
 impl Default for Player {
     fn default() -> Player {

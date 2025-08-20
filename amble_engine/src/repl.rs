@@ -52,7 +52,13 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     let mut view = View::new();
 
     loop {
-        print!("\n[Turn: {} | Score: {}]> ", world.turn_count, world.player.score);
+        let mut status_effects = String::new();
+        for status in world.player.status() {
+            let s = format!("[{}]", status.to_uppercase().green());
+            status_effects.push_str(&s);
+            status_effects.push(' ');
+        }
+        print!("\n[Score: {} {}]> ", world.player.score, status_effects);
         io::stdout()
             .flush()
             .expect("failed to flush stdout before reading input");
