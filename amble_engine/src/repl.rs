@@ -81,6 +81,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             },
             Command::Look => look_handler(world, &mut view)?,
             Command::LookAt(thing) => look_at_handler(world, &mut view, &thing)?,
+            Command::GoBack => go_back_handler(world, &mut view)?,
             Command::MoveTo(direction) => move_to_handler(world, &mut view, &direction)?,
             Command::Take(thing) => take_handler(world, &mut view, &thing)?,
             Command::TakeFrom { item, container } => take_from_handler(world, &mut view, &item, &container)?,

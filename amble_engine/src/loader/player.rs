@@ -55,6 +55,7 @@ impl RawPlayer {
             name: self.name.to_string(),
             description: self.description.to_string(),
             location,
+            location_history: Vec::new(),
             inventory: HashSet::<Uuid>::default(),
             flags: HashSet::<Flag>::default(),
             score: self.score,
