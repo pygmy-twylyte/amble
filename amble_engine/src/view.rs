@@ -143,9 +143,9 @@ impl View {
         for msg in &status_msgs {
             if let ViewItem::StatusChange { action, status } = msg {
                 println!(
-                    "{:<4}Status: {} has been {}.",
+                    "{:<4}Status {}: {}",
                     ICON_STATUS.yellow(),
-                    status.underline(),
+                    status.status_style(),
                     match action {
                         StatusAction::Apply => "applied",
                         StatusAction::Remove => "removed",

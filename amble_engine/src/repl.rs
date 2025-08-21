@@ -54,7 +54,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     loop {
         let mut status_effects = String::new();
         for status in world.player.status() {
-            let s = format!("[{}]", status.to_uppercase().green());
+            let s = format!("[{}]", status.status_style());
             status_effects.push_str(&s);
             status_effects.push(' ');
         }

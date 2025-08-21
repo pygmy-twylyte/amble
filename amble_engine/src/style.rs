@@ -23,6 +23,7 @@ pub fn normal_block() -> Options<'static> {
 
 /// Convenience trait for applying color and style to text output.
 pub trait GameStyle {
+    fn status_style(&self) -> ColoredString;
     fn highlight(&self) -> ColoredString;
     fn transition_style(&self) -> ColoredString;
     fn item_style(&self) -> ColoredString;
@@ -50,6 +51,10 @@ pub trait GameStyle {
 }
 
 impl GameStyle for &str {
+    fn status_style(&self) -> ColoredString {
+        self.to_uppercase().truecolor(20, 220, 100)
+    }
+
     fn transition_style(&self) -> ColoredString {
         self.italic().truecolor(40, 210, 160)
     }
@@ -129,6 +134,9 @@ impl GameStyle for &str {
 }
 
 impl GameStyle for String {
+    fn status_style(&self) -> ColoredString {
+        self.as_str().status_style()
+    }
     fn item_style(&self) -> ColoredString {
         self.as_str().item_style()
     }
