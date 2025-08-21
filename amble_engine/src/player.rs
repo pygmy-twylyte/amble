@@ -17,6 +17,7 @@ pub struct Player {
     pub name: String,
     pub description: String,
     pub location: Location,
+    pub location_history: Vec<Uuid>,
     pub inventory: HashSet<Uuid>,
     pub flags: HashSet<Flag>,
     pub score: usize,
@@ -57,6 +58,35 @@ impl Player {
             .filter_map(|f| f.name().strip_prefix("status:"))
             .collect()
     }
+
+    /// Adds current location to history and updates to new location.
+    /// Maintains a maximum of 5 previous locations.
+    pub fn move_to_room(&mut self, new_room_id: Uuid) {
+        if let Location::Room(current_room) = self.location {
+            self.location_history.push(current_room);
+            // Keep only the last 5 locations
+            if self.location_history.len() > 5 {
+                self.location_history.remove(0);
+            }
+        }
+        self.location = Location::Room(new_room_id);
+    }
+
+    /// Returns the most recent room in history, if any.
+    pub fn previous_room(&self) -> Option<Uuid> {
+        self.location_history.last().copied()
+    }
+
+    /// Moves back to the previous room, removing it from history.
+    /// Returns the room ID moved to, or None if no history exists.
+    pub fn go_back(&mut self) -> Option<Uuid> {
+        if let Some(previous_room) = self.location_history.pop() {
+            self.location = Location::Room(previous_room);
+            Some(previous_room)
+        } else {
+            None
+        }
+    }
 }
 impl Default for Player {
     fn default() -> Player {
@@ -66,6 +96,7 @@ impl Default for Player {
             name: "The Candidate".into(),
             description: "default".into(),
             location: Location::default(),
+            location_history: Vec::new(),
             inventory: HashSet::<Uuid>::default(),
             flags: HashSet::<Flag>::default(),
             score: 1,
@@ -256,6 +287,7 @@ mod tests {
         assert_eq!(player.score, 1);
         assert!(player.inventory.is_empty());
         assert!(player.flags.is_empty());
+        assert!(player.location_history.is_empty());
     }
 
     #[test]
@@ -537,5 +569,96 @@ mod tests {
         assert_eq!(format_sequence_value("test", 0), "test#0");
         assert_eq!(format_sequence_value("quest", 5), "quest#5");
         assert_eq!(format_sequence_value("special_name", 255), "special_name#255");
+    }
+
+    #[test]
+    fn move_to_room_updates_location_and_history() {
+        use crate::Location;
+        let mut player = Player::default();
+        let room1 = Uuid::new_v4();
+        let room2 = Uuid::new_v4();
+        let room3 = Uuid::new_v4();
+
+        // Start with player in room1
+        player.location = Location::Room(room1);
+
+        // Move to room2
+        player.move_to_room(room2);
+        assert_eq!(player.location, Location::Room(room2));
+        assert_eq!(player.location_history, vec![room1]);
+
+        // Move to room3
+        player.move_to_room(room3);
+        assert_eq!(player.location, Location::Room(room3));
+        assert_eq!(player.location_history, vec![room1, room2]);
+    }
+
+    #[test]
+    fn move_to_room_limits_history_size() {
+        use crate::Location;
+        let mut player = Player::default();
+        let rooms: Vec<Uuid> = (0..8).map(|_| Uuid::new_v4()).collect();
+
+        // Start in room 0
+        player.location = Location::Room(rooms[0]);
+
+        // Move through all rooms
+        for i in 1..8 {
+            player.move_to_room(rooms[i]);
+        }
+
+        // Should only keep last 5 rooms in history
+        assert_eq!(player.location_history.len(), 5);
+        assert_eq!(player.location_history, rooms[2..7].to_vec());
+    }
+
+    #[test]
+    fn previous_room_returns_last_room() {
+        use crate::Location;
+        let mut player = Player::default();
+        let room1 = Uuid::new_v4();
+        let room2 = Uuid::new_v4();
+
+        // No history initially
+        assert_eq!(player.previous_room(), None);
+
+        // After one move
+        player.location = Location::Room(room1);
+        player.move_to_room(room2);
+        assert_eq!(player.previous_room(), Some(room1));
+    }
+
+    #[test]
+    fn go_back_returns_to_previous_room() {
+        use crate::Location;
+        let mut player = Player::default();
+        let room1 = Uuid::new_v4();
+        let room2 = Uuid::new_v4();
+        let room3 = Uuid::new_v4();
+
+        // Set up history: room1 -> room2 -> room3
+        player.location = Location::Room(room1);
+        player.move_to_room(room2);
+        player.move_to_room(room3);
+
+        // Go back to room2
+        assert_eq!(player.go_back(), Some(room2));
+        assert_eq!(player.location, Location::Room(room2));
+        assert_eq!(player.location_history, vec![room1]);
+
+        // Go back to room1
+        assert_eq!(player.go_back(), Some(room1));
+        assert_eq!(player.location, Location::Room(room1));
+        assert_eq!(player.location_history.len(), 0);
+
+        // No more history
+        assert_eq!(player.go_back(), None);
+        assert_eq!(player.location, Location::Room(room1));
+    }
+
+    #[test]
+    fn go_back_with_no_history_returns_none() {
+        let mut player = Player::default();
+        assert_eq!(player.go_back(), None);
     }
 }

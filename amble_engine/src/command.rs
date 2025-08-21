@@ -21,6 +21,7 @@ pub enum Command {
         npc: String,
     },
     Goals,
+    GoBack,
     Help,
     Inventory,
     Load(String),
@@ -78,6 +79,7 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
     let words: Vec<&str> = lc_input.split_whitespace().collect();
     match words.as_slice() {
         ["goals"] | ["what", "now" | "next"] => Command::Goals,
+        ["back"] | ["go", "back"] | ["return"] => Command::GoBack,
         ["look"] => Command::Look,
         ["give", item, "to", npc] => Command::GiveToNpc {
             item: (*item).to_string(),
@@ -342,6 +344,14 @@ mod tests {
     #[test]
     fn parse_read_command() {
         assert_eq!(pc("read item"), Command::Read("item".into()));
+    }
+
+    #[test]
+    fn parse_go_back_command() {
+        let test_inputs = &["back", "go back", "return"];
+        for input in test_inputs {
+            assert_eq!(pc(input), Command::GoBack);
+        }
     }
 
     #[test]
