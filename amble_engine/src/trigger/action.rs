@@ -27,7 +27,7 @@
 //! ## World State Changes
 //! Actions that modify the game world itself:
 //! - Room connections (lock/unlock exits, reveal passages)
-//! - Item states (lock/unlock containers, restrict items)
+//! - Item states (lock/unlock containers, restrict items, change description)
 //! - Item placement (spawn in rooms, containers, inventory)
 //! - Item removal (despawn from world)
 //!
@@ -113,6 +113,7 @@ use crate::world::{AmbleWorld, Location, WorldObject};
 /// - [`SpawnItemInInventory`] - Creates an item in the player's inventory
 /// - [`SpawnItemInRoom`] - Creates an item in a specific room
 /// - [`UnlockItem`] - Unlocks a container item
+/// - [`SetItemDescription`] - Sets a new description for an item
 ///
 /// ## Player Actions
 /// - [`AwardPoints`] - Adds or subtracts points from the player's score
@@ -174,6 +175,8 @@ pub enum TriggerAction {
     RestrictItem(Uuid),
     /// Makes a hidden exit visible and usable
     RevealExit { exit_from: Uuid, exit_to: Uuid, direction: String },
+    /// Changes an item's description
+    SetItemDescription { item_id: Uuid, text: String },
     /// Changes an NPC's behavioral state
     SetNPCState { npc_id: Uuid, state: NpcState },
     /// Displays a message to the player
@@ -199,51 +202,62 @@ pub enum TriggerAction {
 /// - on failed triggered actions due to bad uuids
 /// fires the matching trigger action by calling its handler function
 pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &TriggerAction) -> Result<()> {
+    use TriggerAction::*;
     match action {
-        TriggerAction::SetBarredMessage {
+        SetBarredMessage {
             exit_from,
             exit_to,
             msg,
         } => set_barred_message(world, exit_from, exit_to, msg)?,
-        TriggerAction::AddSpinnerWedge { spinner, text, width } => {
+        AddSpinnerWedge { spinner, text, width } => {
             add_spinner_wedge(&mut world.spinners, *spinner, text, *width)?;
         },
-        TriggerAction::ResetFlag(flag_name) => reset_flag(&mut world.player, flag_name),
-        TriggerAction::AdvanceFlag(flag_name) => advance_flag(&mut world.player, flag_name),
-        TriggerAction::SpinnerMessage { spinner } => spinner_message(world, view, *spinner)?,
-        TriggerAction::RestrictItem(item_id) => restrict_item(world, item_id)?,
-        TriggerAction::NpcRefuseItem { npc_id, reason } => npc_refuse_item(world, view, *npc_id, reason)?,
-        TriggerAction::NpcSaysRandom { npc_id } => npc_says_random(world, view, npc_id)?,
-        TriggerAction::NpcSays { npc_id, quote } => npc_says(world, view, npc_id, quote)?,
-        TriggerAction::DenyRead(reason) => deny_read(view, reason),
-        TriggerAction::DespawnItem { item_id } => despawn_item(world, item_id)?,
-        TriggerAction::GiveItemToPlayer { npc_id, item_id } => {
+        ResetFlag(flag_name) => reset_flag(&mut world.player, flag_name),
+        AdvanceFlag(flag_name) => advance_flag(&mut world.player, flag_name),
+        SpinnerMessage { spinner } => spinner_message(world, view, *spinner)?,
+        RestrictItem(item_id) => restrict_item(world, item_id)?,
+        NpcRefuseItem { npc_id, reason } => npc_refuse_item(world, view, *npc_id, reason)?,
+        NpcSaysRandom { npc_id } => npc_says_random(world, view, npc_id)?,
+        NpcSays { npc_id, quote } => npc_says(world, view, npc_id, quote)?,
+        DenyRead(reason) => deny_read(view, reason),
+        DespawnItem { item_id } => despawn_item(world, item_id)?,
+        GiveItemToPlayer { npc_id, item_id } => {
             give_to_player(world, npc_id, item_id)?;
         },
-        TriggerAction::LockItem(item_id) => lock_item(world, item_id)?,
-        TriggerAction::PushPlayerTo(room_id) => push_player(world, room_id)?,
-        TriggerAction::RevealExit {
+        LockItem(item_id) => lock_item(world, item_id)?,
+        PushPlayerTo(room_id) => push_player(world, room_id)?,
+        RevealExit {
             direction,
             exit_from,
             exit_to,
         } => reveal_exit(world, direction, exit_from, exit_to)?,
-        TriggerAction::SetNPCState { npc_id, state } => set_npc_state(world, npc_id, state)?,
-        TriggerAction::ShowMessage(text) => show_message(view, text),
-        TriggerAction::SpawnItemInContainer { item_id, container_id } => {
+        SetItemDescription { item_id, text } => set_item_description(world, *item_id, text)?,
+        SetNPCState { npc_id, state } => set_npc_state(world, npc_id, state)?,
+        ShowMessage(text) => show_message(view, text),
+        SpawnItemInContainer { item_id, container_id } => {
             spawn_item_in_container(world, item_id, container_id)?;
         },
-        TriggerAction::SpawnItemInInventory(item_id) => spawn_item_in_inventory(world, item_id)?,
-        TriggerAction::SpawnItemCurrentRoom(item_id) => spawn_item_in_current_room(world, item_id)?,
-        TriggerAction::SpawnItemInRoom { item_id, room_id } => {
+        SpawnItemInInventory(item_id) => spawn_item_in_inventory(world, item_id)?,
+        SpawnItemCurrentRoom(item_id) => spawn_item_in_current_room(world, item_id)?,
+        SpawnItemInRoom { item_id, room_id } => {
             spawn_item_in_specific_room(world, item_id, room_id)?;
         },
-        TriggerAction::UnlockItem(item_id) => unlock_item(world, item_id)?,
-        TriggerAction::UnlockExit { from_room, direction } => unlock_exit(world, from_room, direction)?,
-        TriggerAction::LockExit { from_room, direction } => lock_exit(world, from_room, direction)?,
-        TriggerAction::AddFlag(flag) => add_flag(world, view, flag),
-        TriggerAction::RemoveFlag(flag) => remove_flag(world, view, flag),
-        TriggerAction::AwardPoints(amount) => award_points(world, view, *amount),
+        UnlockItem(item_id) => unlock_item(world, item_id)?,
+        UnlockExit { from_room, direction } => unlock_exit(world, from_room, direction)?,
+        LockExit { from_room, direction } => lock_exit(world, from_room, direction)?,
+        AddFlag(flag) => add_flag(world, view, flag),
+        RemoveFlag(flag) => remove_flag(world, view, flag),
+        AwardPoints(amount) => award_points(world, view, *amount),
     }
+    Ok(())
+}
+
+/// Sets a new description for an `Item`
+fn set_item_description(world: &mut AmbleWorld, item_id: Uuid, text: &str) -> Result<()> {
+    let item = world
+        .get_item_mut(item_id)
+        .with_context(|| format!("changing item '{item_id} description"))?;
+    item.description = text.to_string();
     Ok(())
 }
 

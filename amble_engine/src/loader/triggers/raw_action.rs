@@ -72,6 +72,10 @@ pub enum RawTriggerAction {
         exit_to: String,
         direction: String,
     },
+    SetItemDescription {
+        item_sym: String,
+        text: String,
+    },
     SetNpcState {
         npc_id: String,
         state: NpcState,
@@ -108,6 +112,7 @@ impl RawTriggerAction {
     /// Convert the TOML representation of this action to a fully realized `TriggerAction`.
     pub fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
+            Self::SetItemDescription { item_sym, text } => cook_set_item_description(symbols, item_sym, text),
             Self::SetBarredMessage {
                 msg,
                 exit_from,
@@ -154,8 +159,19 @@ impl RawTriggerAction {
 }
 
 /*
- * "Cook" functions below convert RawTriggerActions to TriggerActions
+ * "Cook" functions below convert RawTriggerActions to "fully cooked" TriggerActions
  */
+
+fn cook_set_item_description(symbols: &SymbolTable, item_sym: &str, text: &str) -> Result<TriggerAction> {
+    if let Some(item_id) = symbols.items.get(item_sym) {
+        Ok(TriggerAction::SetItemDescription {
+            item_id: *item_id,
+            text: text.to_string(),
+        })
+    } else {
+        bail!("item symbol '{item_sym}' not found when loading raw SetItemDescription trigger action");
+    }
+}
 
 fn cook_barred_message(symbols: &SymbolTable, msg: &str, exit_from: &str, exit_to: &str) -> Result<TriggerAction> {
     if let Some(from_id) = symbols.rooms.get(exit_from)
