@@ -6,8 +6,7 @@ use variantly::Variantly;
 use crate::{
     dev_command::parse_dev_command,
     item::ItemInteractionType,
-    style::GameStyle,
-    view::{View, ViewItem, ViewMode},
+    view::{View, ViewMode},
 };
 
 /// Commands that can be executed by the player.
@@ -112,20 +111,13 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
         ["read", thing] => Command::Read((*thing).to_string()),
         ["load", gamefile] => Command::Load((*gamefile).to_string()),
         ["save", gamefile] => Command::Save((*gamefile).to_string()),
-        [verb, target, "with" | "using" | "to", tool] => parse_interaction_type(verb).map_or_else(
-            || {
-                view.push(ViewItem::Error(format!(
-                    "I don't understand {} in this context.",
-                    (*verb).error_style()
-                )));
-                Command::Unknown
-            },
-            |interaction| Command::UseItemOn {
+        [verb, target, "with" | "using" | "to", tool] => {
+            parse_interaction_type(verb).map_or(Command::Unknown, |interaction| Command::UseItemOn {
                 verb: interaction,
                 tool: (*tool).to_string(),
                 target: (*target).to_string(),
-            },
-        ), // ex. burn wood with torch
+            })
+        }, // ex. burn wood with torch
         ["brief"] => Command::SetViewMode(ViewMode::Brief),
         ["clear"] => Command::SetViewMode(ViewMode::ClearVerbose),
         ["verbose"] => Command::SetViewMode(ViewMode::Verbose),
