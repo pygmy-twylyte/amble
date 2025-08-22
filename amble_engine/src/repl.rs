@@ -58,7 +58,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             status_effects.push_str(&s);
             status_effects.push(' ');
         }
-        print!("\n[Score: {} {}]> ", world.player.score, status_effects);
+        print!("\n[Score: {}|{}]> ", world.player.score, status_effects);
         io::stdout()
             .flush()
             .expect("failed to flush stdout before reading input");
