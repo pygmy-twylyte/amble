@@ -1044,3 +1044,53 @@ actions = [
     { type = "awardPoints", amount = 15 },
     { type = "showMessage", text = """You reach out and place your palm against the monolith's impossibly smooth surface. For a moment, nothing happens. Then reality seems to shiver around you. Images flash through your mind - star-filled voids, impossible geometries, the birth and death of civilizations. You stagger backward, forever changed by the contact. The path to understanding has opened.""" },
 ]
+
+# START VENDING MACHINE PUZZLE TRIGGERS
+[[triggers]]
+name = "Vending Machine: Pry Open with Crowbar"
+only_once = true
+conditions = [
+    { type = "useItemOnItem", tool_id = "crowbar", target_id = "vending_machine", interaction = "open" },
+]
+actions = [
+    { type = "showMessage", text = """With a mighty heave and several creative applications of leverage that would make Archimedes proud, you pry open the vending machine. There's a satisfying CRACK as the lock mechanism gives way. Unfortunately, your vigorous prying causes the machine to tilt forward slightly, and you watch in horror as the HAL module slides off its shelf and disappears into a narrow crevice between the machine and the floor. The other items tumble onto the floor around you.\n\nThe machine's internal speaker crackles to life one last time: 'Thank you for choosing violence. Have a mediocre day.'""" },
+    { type = "unlockItem", item_id = "vending_machine" },
+    { type = "despawnItem", item_id = "hal_module_2" },
+    { type = "despawnItem", item_id = "dehydrated_water" },
+    { type = "despawnItem", item_id = "schrodingers_sandwich" },
+    { type = "despawnItem", item_id = "fortune_cookie_of_doom" },
+    { type = "spawnItemCurrentRoom", item_id = "hal_module_2_crevice" },
+    { type = "spawnItemCurrentRoom", item_id = "dehydrated_water" },
+    { type = "spawnItemCurrentRoom", item_id = "schrodingers_sandwich" },
+    { type = "spawnItemCurrentRoom", item_id = "fortune_cookie_of_doom" },
+    { type = "addFlag", flag = { type = "simple", name = "vending-machine-pried" } },
+    { type = "addFlag", flag = { type = "simple", name = "hal-module-in-crevice" } },
+    { type = "awardPoints", amount = 5 },
+]
+
+[[triggers]]
+name = "Floor Crevice: Fish Out HAL Module"
+only_once = true
+conditions = [
+    { type = "useItemOnItem", tool_id = "fishing_line", target_id = "hal_module_2_crevice", interaction = "handle" },
+    { type = "hasFlag", flag = "hal-module-in-crevice" },
+]
+actions = [
+    { type = "showMessage", text = """You carefully lower your makeshift fishing line into the crevice where the HAL module fell. After several attempts and some creative swearing, you manage to hook the module with the paper clip. You slowly, carefully pull it up, holding your breath the entire time. Success! The module is yours, though it's now covered in dust and what might be ancient gum.""" },
+    { type = "despawnItem", item_id = "hal_module_2_crevice" },
+    { type = "spawnItemInInventory", item_id = "hal_module_2" },
+    { type = "awardPoints", amount = 10 },
+    { type = "addFlag", flag = { type = "simple", name = "hal-module-2-retrieved" } },
+]
+
+[[triggers]]
+name = "Floor Crevice: Try to Reach HAL Module by Hand"
+only_once = false
+conditions = [
+    { type = "take", item_id = "hal_module_2_crevice" },
+    { type = "hasFlag", flag = "hal-module-in-crevice" },
+    { type = "missingFlag", flag = "hal-module-2-retrieved" },
+]
+actions = [
+    { type = "showMessage", text = """The HAL module has fallen deep into a narrow crevice between the vending machine and the floor. You try to reach it with your hand, but the gap is too narrow. Your fingers can just barely brush against the module, pushing it slightly further away. You're going to need some kind of fishing tool to retrieve it.""" },
+]
