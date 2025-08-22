@@ -320,3 +320,86 @@ pub fn place_items(world: &mut AmbleWorld) -> Result<()> {
     info!("{unspawned} items remain unspawned (Location::Nowhere)");
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::item::ContainerState;
+
+    #[test]
+    fn test_transparent_container_loading() {
+        // Create a minimal test world
+        let mut world = AmbleWorld::new_empty();
+
+        // Create a room
+        let room_id = Uuid::new_v4();
+        let room = crate::Room {
+            id: room_id,
+            symbol: "test_room".into(),
+            name: "Test Room".into(),
+            base_description: "A test room".into(),
+            overlays: Vec::new(),
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+        world.rooms.insert(room_id, room);
+
+        // Create a transparent locked container
+        let container_id = Uuid::new_v4();
+        let container = Item {
+            id: container_id,
+            symbol: "test_container".into(),
+            name: "Test Container".into(),
+            description: "A test container".into(),
+            location: Location::Room(room_id),
+            portable: false,
+            container_state: Some(ContainerState::TransparentLocked),
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            consumable: None,
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+
+        // Create an item to place in the container
+        let item_id = Uuid::new_v4();
+        let item = Item {
+            id: item_id,
+            symbol: "test_item".into(),
+            name: "Test Item".into(),
+            description: "A test item".into(),
+            location: Location::Item(container_id),
+            portable: true,
+            container_state: None,
+            restricted: false,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            consumable: None,
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+
+        // Add items to world
+        world.items.insert(container_id, container);
+        world.items.insert(item_id, item);
+
+        // Run place_items
+        place_items(&mut world).unwrap();
+
+        // Verify the container has the item
+        let container = world.items.get(&container_id).unwrap();
+        assert!(
+            container.contents.contains(&item_id),
+            "Container should contain the item"
+        );
+        assert_eq!(
+            container.container_state,
+            Some(ContainerState::TransparentLocked),
+            "Container should be TransparentLocked"
+        );
+    }
+}
