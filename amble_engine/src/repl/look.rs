@@ -46,7 +46,7 @@ use crate::{
     style::GameStyle,
     trigger::{TriggerAction, TriggerCondition, check_triggers},
     view::{ContentLine, ViewMode},
-    world::nearby_reachable_items,
+    world::{nearby_reachable_items, nearby_visible_items},
 };
 
 use anyhow::{Context, Result};
@@ -70,9 +70,9 @@ pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
 /// Shows description of something (scoped to nearby items and npcs and inventory)
 pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
-    // scope = local items + npcs + player inventory
-    let items_in_reach = nearby_reachable_items(world, current_room.id())?;
-    let search_scope: HashSet<Uuid> = items_in_reach
+    // scope = local items + npcs + player inventory (including items visible in transparent containers)
+    let items_visible = nearby_visible_items(world, current_room.id())?;
+    let search_scope: HashSet<Uuid> = items_visible
         .union(&current_room.npcs)
         .copied()
         .chain(world.player.inventory.iter().copied())
