@@ -449,6 +449,17 @@ name = "Zircon-Encrusted Tweezers"
 location = { Chest = "lost_and_found_box" }
 description = """A heavy-duty pair of tweezers, encrusted in zircon for extra dazzle and especially good for plucking."""
 portable = true
+[[items.abilities]]
+type = "Pluck"
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "zircon_tweezers_crevice"
+name = "Zircon Encrusted Tweezers (in crevice)"
+description = """A heavy-duty pair of tweezers, encrusted in zircon for extra dazzle and especially good for plucking -- but not for reaching, as you found out when they fell into the crevice of the main lobby floor."""
+portable = true
+location = { Nowhere = "spawns@main-lobby if tweezers tried to reach HAL module" }
+interaction_requires.handle = "pluck"
 
 #--------------------------------------------------------------------------------
 [[items]]
@@ -746,15 +757,6 @@ interaction_requires.open = "pry"
 
 # ------------------------------------------------------------------------------
 [[items]]
-id = "floor_crevice"
-name = "Floor Crevice"
-description = """A narrow gap between the vending machine and the floor, just wide enough for small objects to fall through but too narrow for fingers. It seems to extend deeper than it should, possibly into another dimension or at least the maintenance level below. Peering into the darkness, you can make out various lost objects resting on what looks like decades of accumulated dust, lost coins, and possibly a family of dust bunnies that have achieved sentience."""
-portable = false
-location = { Room = "main-lobby" }
-container_state = "open"
-
-# ------------------------------------------------------------------------------
-[[items]]
 id = "hal_module_2"
 name = "HAL Memory Module #2"
 location = { Chest = "vending_machine" }
@@ -765,7 +767,7 @@ description = """Second in the trio of HAL's memory modules. Its red LED pulses 
 # ------------------------------------------------------------------------------
 [[items]]
 id = "hal_module_2_crevice"
-name = "HAL Memory Module #2"
+name = "HAL Memory Module #2 (in crevice)"
 location = { Nowhere = "spawns in main-lobby when vending machine pried" }
 portable = true
 restricted = false

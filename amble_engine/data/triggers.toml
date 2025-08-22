@@ -1046,6 +1046,12 @@ actions = [
 ]
 
 # START VENDING MACHINE PUZZLE TRIGGERS
+# note: rather than just updating item description when it goes into the crevice, we use a separate
+# HAL module Item (hal_module_2_crevice) which requires the "pluck" ability to handle. We don't want it
+# to still require that ability once the player has retrieved it... so the "crevice"/"pluck" version
+# is despawned when the player gets it from the crevice and it's replaced with the original (hal_module_2),
+# which doesn't require "pluck" for handling. The plain hal_module_2 must have its description updated
+# so it doesn't still say it's in the vending machine after retrieval.
 [[triggers]]
 name = "Vending Machine: Pry Open with Crowbar"
 only_once = true
@@ -1065,11 +1071,12 @@ actions = [
     { type = "spawnItemCurrentRoom", item_id = "fortune_cookie_of_doom" },
     { type = "addFlag", flag = { type = "simple", name = "vending-machine-pried" } },
     { type = "addFlag", flag = { type = "simple", name = "hal-module-in-crevice" } },
+    { type = "setItemDescription", item_sym = "vending_machine", text = "A battered and broken vending machine -- even more so since you took a crowbar to it. Miraculously, the glass still remains intact on the front panel which has been pried open and hangs on a slant. Empty now, the machine's contents have all spilled out on the floor." },
     { type = "awardPoints", amount = 5 },
 ]
 
 [[triggers]]
-name = "Floor Crevice: Fish Out HAL Module"
+name = "Main-Lobby: Fish Out HAL Module"
 only_once = true
 conditions = [
     { type = "useItemOnItem", tool_id = "fishing_line", target_id = "hal_module_2_crevice", interaction = "handle" },
@@ -1078,13 +1085,14 @@ conditions = [
 actions = [
     { type = "showMessage", text = """You carefully lower your makeshift fishing line into the crevice where the HAL module fell. After several attempts and some creative swearing, you manage to hook the module with the paper clip. You slowly, carefully pull it up, holding your breath the entire time. Success! The module is yours, though it's now covered in dust and what might be ancient gum.""" },
     { type = "despawnItem", item_id = "hal_module_2_crevice" },
+    { type = "setItemDescription", item_sym = "hal_module_2", text = "Second in the trio of HAL's missing memory modules. Its red LED pulses gently, like a heartbeat—or a warning. Its case was cracked during retrieval from the vending machine and floor crevice, but it still seems serviceable." },
     { type = "spawnItemInInventory", item_id = "hal_module_2" },
     { type = "awardPoints", amount = 10 },
     { type = "addFlag", flag = { type = "simple", name = "hal-module-2-retrieved" } },
 ]
 
 [[triggers]]
-name = "Floor Crevice: Try to Reach HAL Module by Hand"
+name = "HAL Module #2 (crevice): Try to Reach Without Tool"
 only_once = false
 conditions = [
     { type = "take", item_id = "hal_module_2_crevice" },
@@ -1093,4 +1101,33 @@ conditions = [
 ]
 actions = [
     { type = "showMessage", text = """The HAL module has fallen deep into a narrow crevice between the vending machine and the floor. You try to reach it with your hand, but the gap is too narrow. Your fingers can just barely brush against the module, pushing it slightly further away. You're going to need some kind of fishing tool to retrieve it.""" },
+]
+
+[[triggers]]
+name = "HAL Module #2 (crevice): Try to Reach with Tweezers"
+only_once = false
+conditions = [
+    { type = "useItemOnItem", tool_id = "zircon_tweezers", target_id = "hal_module_2_crevice", interaction = "handle" },
+    { type = "hasFlag", flag = "hal-module-in-crevice" },
+]
+actions = [
+    { type = "showMessage", text = """The glint of the zircon-encrusted tweezers is truly something to behold, but the tweezers are too short to reach the memory module. In fact, in trying to reach that far into the crack with them, the tweezers slip from your fingers and fall into the crevice too.""" },
+    { type = "despawnItem", item_id = "zircon_tweezers" },
+    { type = "spawnItemCurrentRoom", item_id = "zircon_tweezers_crevice" },
+    { type = "addFlag", flag = { type = "simple", name = "lost-tweezers" } },
+    { type = "awardPoints", amount = -2 },
+]
+
+[[triggers]]
+name = "Main-Lobby: Recover Tweezers"
+only_once = false
+conditions = [
+    { type = "useItemOnItem", tool_id = "fishing_line", target_id = "zircon_tweezers_crevice", interaction = "handle" },
+]
+actions = [
+    { type = "showMessage", text = """After a dozen tries and venting by beating the vending machine with the crowbar some more, you are able to fish your prized zircon-encrusted tweezers back out of the crevice.""" },
+    { type = "despawnItem", item_id = "zircon_tweezers_crevice" },
+    { type = "spawnItemInInventory", item_id = "zircon_tweezers" },
+    { type = "addFlag", flag = { type = "simple", name = "recovered-tweezers" } },
+    { type = "awardPoints", amount = 3 },
 ]
