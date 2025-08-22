@@ -689,6 +689,14 @@ pub fn unlock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
                 item.container_state = Some(ContainerState::Open);
                 info!("└─ action: UnlockItem({}) '{}'", item.symbol(), item.name());
             },
+            Some(ContainerState::TransparentLocked) => {
+                item.container_state = Some(ContainerState::Open);
+                info!(
+                    "└─ action: UnlockItem({}) '{}' (was transparent locked)",
+                    item.symbol(),
+                    item.name()
+                );
+            },
             Some(_) => warn!(
                 "action UnlockItem({}): item wasn't locked",
                 item_symbol_from_id(&world.items, *item_id)
