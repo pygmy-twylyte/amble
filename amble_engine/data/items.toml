@@ -736,12 +736,41 @@ description = """The first of HAL’s missing memory modules. It's a small, rect
 
 # ------------------------------------------------------------------------------
 [[items]]
+id = "vending_machine"
+name = "Vending Machine"
+description = """A battered vending machine that looks like it's been through several wars and at least one peace treaty negotiation. The glass front is surprisingly intact, though spider-webbed with cracks. Through the transparent but locked panel, you can see various items that definitely weren't approved by any health department. A handwritten sign taped to the front reads: 'OUT OF ORDER - Management suggests violence.'"""
+portable = false
+location = { Room = "main-lobby" }
+container_state = "transparentLocked"
+interaction_requires.open = "pry"
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "floor_crevice"
+name = "Floor Crevice"
+description = """A narrow gap between the vending machine and the floor, just wide enough for small objects to fall through but too narrow for fingers. It seems to extend deeper than it should, possibly into another dimension or at least the maintenance level below. Peering into the darkness, you can make out various lost objects resting on what looks like decades of accumulated dust, lost coins, and possibly a family of dust bunnies that have achieved sentience."""
+portable = false
+location = { Room = "main-lobby" }
+container_state = "open"
+
+# ------------------------------------------------------------------------------
+[[items]]
 id = "hal_module_2"
 name = "HAL Memory Module #2"
-location = { Room = "observation-room" }
+location = { Chest = "vending_machine" }
 portable = true
 restricted = false
-description = """Second in the trio of HAL’s memory modules. Its red LED pulses gently, like a heartbeat—or a warning. It hums when held, and you could swear it whispered your name."""
+description = """Second in the trio of HAL's memory modules. Its red LED pulses gently, like a heartbeat—or a warning. Through the cracked glass of the vending machine, you can see it sitting on shelf B4, wedged between what appears to be dehydrated water and a sandwich that may or may not exist. It hums faintly, and you could swear it whispered your name."""
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "hal_module_2_crevice"
+name = "HAL Memory Module #2"
+location = { Nowhere = "spawns in main-lobby when vending machine pried" }
+portable = true
+restricted = false
+description = """Second in the trio of HAL's memory modules. The module has fallen deep into a narrow crevice between the vending machine and the floor. Its red LED pulses from the darkness about a foot down, resting on what looks like decades of accumulated dust, lost coins, and possibly sentient dust bunnies. The gap is too narrow for your hand - you'll need some kind of tool to fish it out."""
+interaction_requires.handle = "pluck"
 
 # ------------------------------------------------------------------------------
 [[items]]
@@ -799,6 +828,34 @@ name = "Makeshift Fishing Line"
 description = "An MacGyver-ed fishing line, with a paper clip hook attached to some dental floss."
 portable = true
 location = { Nowhere = "spawns@inventory when items attached" }
+
+[[items.abilities]]
+type = "Pluck"
+
+# --------------------------------------------------
+# --------------------------------------------------
+[[items]]
+id = "dehydrated_water"
+name = "Dehydrated Water"
+description = """A packet labeled 'Dehydrated Water - Just Add Water!' The instructions on the back have been crossed out and replaced with 'PARADOX WARNING: Do not attempt to reconstitute.'"""
+portable = true
+location = { Chest = "vending_machine" }
+
+# --------------------------------------------------
+[[items]]
+id = "schrodingers_sandwich"
+name = "Schrödinger's Sandwich"
+description = """A sandwich in a quantum superposition of both fresh and moldy until observed. The packaging warns: 'Contents may or may not contain nuts, and also definitely contain nuts.'"""
+portable = true
+location = { Chest = "vending_machine" }
+
+# --------------------------------------------------
+[[items]]
+id = "fortune_cookie_of_doom"
+name = "Fortune Cookie of Doom"
+description = """A fortune cookie wrapped in black paper with tiny skulls on it. You can feel it radiating pessimism through the wrapper. Previous fortunes reportedly included 'Your future is behind you' and 'Help! I'm trapped in a fortune cookie factory!'"""
+portable = true
+location = { Chest = "vending_machine" }
 
 # --------------------------------------------------
 [[items]]
