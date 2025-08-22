@@ -142,6 +142,28 @@ pub fn nearby_reachable_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashS
     Ok(room_items.union(&contained_items).copied().collect())
 }
 
+/// Get all items that are visible in the room, including those in transparent containers
+pub fn nearby_visible_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashSet<Uuid>> {
+    let current_room = world
+        .rooms
+        .get(&room_id)
+        .with_context(|| format!("{room_id} room id not found"))?;
+    let room_items = &current_room.contents;
+    let mut contained_items = HashSet::new();
+    for item_id in room_items {
+        if let Some(item) = world.items.get(item_id) {
+            // Include contents from open containers and transparent containers
+            if item.container_state == Some(ContainerState::Open)
+                || item.container_state == Some(ContainerState::TransparentClosed)
+                || item.container_state == Some(ContainerState::TransparentLocked)
+            {
+                contained_items.extend(&item.contents);
+            }
+        }
+    }
+    Ok(room_items.union(&contained_items).copied().collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -483,6 +505,81 @@ mod tests {
         let reachable = nearby_reachable_items(&world, room_id).unwrap();
         assert_eq!(reachable.len(), 1);
         assert!(reachable.contains(&item_id));
+    }
+
+    #[test]
+    fn nearby_visible_items_includes_transparent_container_contents() {
+        let mut world = AmbleWorld::new_empty();
+        let room_id = Uuid::new_v4();
+        let mut room = create_test_room(room_id);
+
+        let container_id = Uuid::new_v4();
+        let mut container = create_test_item(container_id, Location::Room(room_id));
+        container.container_state = Some(ContainerState::TransparentClosed);
+
+        let item_in_container_id = Uuid::new_v4();
+        let item_in_container = create_test_item(item_in_container_id, Location::Item(container_id));
+        container.contents.insert(item_in_container_id);
+
+        room.contents.insert(container_id);
+        world.rooms.insert(room_id, room);
+        world.items.insert(container_id, container);
+        world.items.insert(item_in_container_id, item_in_container);
+
+        let visible = nearby_visible_items(&world, room_id).unwrap();
+        assert_eq!(visible.len(), 2);
+        assert!(visible.contains(&container_id));
+        assert!(visible.contains(&item_in_container_id));
+    }
+
+    #[test]
+    fn nearby_visible_items_includes_transparent_locked_container_contents() {
+        let mut world = AmbleWorld::new_empty();
+        let room_id = Uuid::new_v4();
+        let mut room = create_test_room(room_id);
+
+        let container_id = Uuid::new_v4();
+        let mut container = create_test_item(container_id, Location::Room(room_id));
+        container.container_state = Some(ContainerState::TransparentLocked);
+
+        let item_in_container_id = Uuid::new_v4();
+        let item_in_container = create_test_item(item_in_container_id, Location::Item(container_id));
+        container.contents.insert(item_in_container_id);
+
+        room.contents.insert(container_id);
+        world.rooms.insert(room_id, room);
+        world.items.insert(container_id, container);
+        world.items.insert(item_in_container_id, item_in_container);
+
+        let visible = nearby_visible_items(&world, room_id).unwrap();
+        assert_eq!(visible.len(), 2);
+        assert!(visible.contains(&container_id));
+        assert!(visible.contains(&item_in_container_id));
+    }
+
+    #[test]
+    fn nearby_visible_items_excludes_regular_locked_container_contents() {
+        let mut world = AmbleWorld::new_empty();
+        let room_id = Uuid::new_v4();
+        let mut room = create_test_room(room_id);
+
+        let container_id = Uuid::new_v4();
+        let mut container = create_test_item(container_id, Location::Room(room_id));
+        container.container_state = Some(ContainerState::Locked);
+
+        let item_in_container_id = Uuid::new_v4();
+        let item_in_container = create_test_item(item_in_container_id, Location::Item(container_id));
+        container.contents.insert(item_in_container_id);
+
+        room.contents.insert(container_id);
+        world.rooms.insert(room_id, room);
+        world.items.insert(container_id, container);
+        world.items.insert(item_in_container_id, item_in_container);
+
+        let visible = nearby_visible_items(&world, room_id).unwrap();
+        assert_eq!(visible.len(), 1);
+        assert!(visible.contains(&container_id));
+        assert!(!visible.contains(&item_in_container_id));
     }
 
     #[test]
