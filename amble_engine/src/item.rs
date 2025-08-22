@@ -91,6 +91,12 @@ impl Item {
     pub fn is_accessible(&self) -> bool {
         self.container_state.is_some_and(|cs| cs.is_open())
     }
+
+    /// Returns true if item is a transparent container (contents visible but not accessible)
+    pub fn is_transparent(&self) -> bool {
+        self.container_state
+            .is_some_and(|cs| cs.is_transparent_closed() || cs.is_transparent_locked())
+    }
     /// Set location to a `Room` by UUID
     pub fn set_location_room(&mut self, room_id: Uuid) {
         self.location = Location::Room(room_id);
@@ -129,7 +135,7 @@ impl Item {
 
         // push container contents to View or report why inaccessible
         if self.container_state.is_some() {
-            if self.is_accessible() {
+            if self.is_accessible() || self.is_transparent() {
                 if self.contents.is_empty() {
                     view.push(ViewItem::ItemContents(Vec::new()));
                 } else {
@@ -143,6 +149,21 @@ impl Item {
                             })
                             .collect(),
                     ));
+                }
+
+                // For transparent containers, add a note that items can't be taken
+                if self.is_transparent() {
+                    let action = if self
+                        .container_state
+                        .is_some_and(|cs| cs.is_locked() || cs.is_transparent_locked())
+                    {
+                        "unlock".bold().red()
+                    } else {
+                        "open".bold().green()
+                    };
+                    view.push(ViewItem::ActionFailure(format!(
+                        "You can see inside, but you must {action} it to access the contents."
+                    )));
                 }
             } else {
                 let action = if self.container_state.is_some_and(|cs| cs.is_locked()) {
@@ -172,6 +193,22 @@ impl Item {
             },
             Some(ContainerState::Locked) => {
                 let reason = format!("The {} is {}.", self.name().item_style(), "locked".bold());
+                Some(reason)
+            },
+            Some(ContainerState::TransparentClosed) => {
+                let reason = format!(
+                    "The {} is {}. You can see inside but can't access the contents.",
+                    self.name().item_style(),
+                    "closed".bold()
+                );
+                Some(reason)
+            },
+            Some(ContainerState::TransparentLocked) => {
+                let reason = format!(
+                    "The {} is {}. You can see inside but can't access the contents.",
+                    self.name().item_style(),
+                    "locked".bold()
+                );
                 Some(reason)
             },
             None => {
@@ -355,6 +392,8 @@ pub enum ContainerState {
     Open,
     Closed,
     Locked,
+    TransparentClosed,
+    TransparentLocked,
 }
 
 /// Extra options / data for consumable items are represented here.
@@ -464,6 +503,43 @@ mod tests {
     }
 
     #[test]
+    fn item_is_accessible_returns_false_for_transparent_closed_container() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.container_state = Some(ContainerState::TransparentClosed);
+        assert!(!item.is_accessible());
+    }
+
+    #[test]
+    fn item_is_accessible_returns_false_for_transparent_locked_container() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.container_state = Some(ContainerState::TransparentLocked);
+        assert!(!item.is_accessible());
+    }
+
+    #[test]
+    fn item_is_transparent_returns_true_for_transparent_containers() {
+        let mut item = create_test_item(Uuid::new_v4());
+
+        item.container_state = Some(ContainerState::TransparentClosed);
+        assert!(item.is_transparent());
+
+        item.container_state = Some(ContainerState::TransparentLocked);
+        assert!(item.is_transparent());
+
+        item.container_state = Some(ContainerState::Closed);
+        assert!(!item.is_transparent());
+
+        item.container_state = Some(ContainerState::Locked);
+        assert!(!item.is_transparent());
+
+        item.container_state = Some(ContainerState::Open);
+        assert!(!item.is_transparent());
+
+        item.container_state = None;
+        assert!(!item.is_transparent());
+    }
+
+    #[test]
     fn set_location_room_updates_location() {
         let mut item = create_test_item(Uuid::new_v4());
         let room_id = Uuid::new_v4();
@@ -534,6 +610,24 @@ mod tests {
         item.container_state = Some(ContainerState::Locked);
         let reason = item.access_denied_reason().unwrap();
         assert!(reason.contains("locked"));
+    }
+
+    #[test]
+    fn access_denied_reason_returns_reason_for_transparent_closed_container() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.container_state = Some(ContainerState::TransparentClosed);
+        let reason = item.access_denied_reason().unwrap();
+        assert!(reason.contains("closed"));
+        assert!(reason.contains("see inside"));
+    }
+
+    #[test]
+    fn access_denied_reason_returns_reason_for_transparent_locked_container() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.container_state = Some(ContainerState::TransparentLocked);
+        let reason = item.access_denied_reason().unwrap();
+        assert!(reason.contains("locked"));
+        assert!(reason.contains("see inside"));
     }
 
     #[test]
