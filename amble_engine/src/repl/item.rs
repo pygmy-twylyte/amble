@@ -403,13 +403,19 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                     target_item.name().item_style()
                 )));
             },
+            Some(ContainerState::TransparentLocked) => {
+                view.push(ViewItem::ActionFailure(format!(
+                    "The {} is locked. You'll have to unlock it first.",
+                    target_item.name().item_style()
+                )));
+            },
             Some(ContainerState::Open) => {
                 view.push(ViewItem::ActionSuccess(format!(
                     "The {} is already open.",
                     target_item.name().item_style()
                 )));
             },
-            Some(ContainerState::Closed) => {
+            Some(ContainerState::Closed | ContainerState::TransparentClosed) => {
                 target_item.container_state = Some(ContainerState::Open);
                 view.push(ViewItem::ActionSuccess(format!(
                     "You opened the {}.\n",
@@ -487,7 +493,12 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
                     target_item.name().item_style()
                 )));
             },
-            Some(ContainerState::Closed | ContainerState::Locked) => {
+            Some(
+                ContainerState::Closed
+                | ContainerState::Locked
+                | ContainerState::TransparentClosed
+                | ContainerState::TransparentLocked,
+            ) => {
                 view.push(ViewItem::ActionSuccess(format!(
                     "The {} is already closed.",
                     target_item.name().item_style()
@@ -569,13 +580,13 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                     target_item.name().item_style()
                 )));
             },
-            Some(ContainerState::Locked) => {
+            Some(ContainerState::Locked | ContainerState::TransparentLocked) => {
                 view.push(ViewItem::ActionSuccess(format!(
                     "The {} is already locked.",
                     target_item.name().item_style()
                 )));
             },
-            Some(ContainerState::Open | ContainerState::Closed) => {
+            Some(ContainerState::Open | ContainerState::Closed | ContainerState::TransparentClosed) => {
                 target_item.container_state = Some(ContainerState::Locked);
                 view.push(ViewItem::ActionSuccess(format!(
                     "You locked the {}.\n",
@@ -672,15 +683,21 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
                     target_item.name().item_style()
                 )));
             },
-            Some(ContainerState::Open | ContainerState::Closed) => {
+            Some(ContainerState::Open | ContainerState::Closed | ContainerState::TransparentClosed) => {
                 view.push(ViewItem::ActionSuccess(format!(
                     "The {} is already unlocked.",
                     target_item.name().item_style()
                 )));
             },
-            Some(ContainerState::Locked) => {
+            Some(ContainerState::Locked | ContainerState::TransparentLocked) => {
                 if has_valid_key {
-                    target_item.container_state = Some(ContainerState::Closed);
+                    // If it was transparent locked, make it transparent closed, otherwise regular closed
+                    target_item.container_state =
+                        if target_item.container_state == Some(ContainerState::TransparentLocked) {
+                            Some(ContainerState::TransparentClosed)
+                        } else {
+                            Some(ContainerState::Closed)
+                        };
                     view.push(ViewItem::ActionSuccess(format!(
                         "You unlocked the {}.\n",
                         target_item.name().item_style()
