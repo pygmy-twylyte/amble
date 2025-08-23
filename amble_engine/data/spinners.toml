@@ -1,3 +1,4 @@
+# Core spinner overrides - these override the built-in defaults
 [[spinners]]
 spinnerType = "quitMsg"
 values = ["Bye.", "Auf Wiedersehen.", "Later, 'gator!", "Aww. Come back soon."]
@@ -69,10 +70,10 @@ values = [
     "Your feet refuse to obey such nonsense.",
     "You strain your eyes in that direction, but see only confusion.",
     "That direction folds in on itself and vanishes.",
-    "An ancient voice whispers, ‘Not today.’",
+    "An ancient voice whispers, 'Not today.'",
     "Quantum parser collapsed that possibility.",
     "Not even the map believes in that.",
-    "If you walk that way, you’ll need a packed lunch and several paradox waivers.",
+    "If you walk that way, you'll need a packed lunch and several paradox waivers.",
     "You boldly go nowhere in particular.",
     "That direction has been repossessed by the Guild of Pathfinders.",
     "The local gods of misdirection hold a brief conference and vote no.",
@@ -114,6 +115,7 @@ values = [
     "That didn't work. Maybe if you type it faster, or in all caps?",
 ]
 
+# Custom game-specific spinners - these are unique to this game world
 [[spinners]]
 spinnerType = "ambientWoodland"
 values = [
@@ -129,8 +131,16 @@ values = [
     "Were those trees there before? They seem to be rearranging themselves when you're not looking.",
     "The woods go eerily quiet. Your footsteps don't even make a sound.",
     "A fire-breathing dragonfly blows smoke rings as it flies past.",
+    "A wooden rabbit with big, pointy teeth scurries behind a tree.",
+    "You hear someone in the distance yell \"Run away! Run away!\"",
+    "A sign reads: \"Beware of the Leopard\" but there's no leopard in sight. Yet.",
+    "Three weirdly tall trees are playing what looks suspiciously like whack-a-mole with some gophers.",
+    "A small dragon flies by muttering \"Not the Mama! Not the Mama!\"",
+    "Someone has carved \"HERE LIES UNCLE LOUIE\" on a tree. Uncle Louie is probably fine.",
+    "A white rabbit in a waistcoat checks his pocket watch and hurries past, looking stressed.",
+    "You glimpse what might be the back end of a gruffalo disappearing behind a boulder.",
 ]
-widths = [25, 1, 1, 1, 1, 1, 1]
+widths = [25, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 [[spinners]]
 spinnerType = "ambientAA3B"
@@ -149,6 +159,15 @@ values = [
     "You see a Borg drone repeatedly walking into a wall, disconnected from the collective.",
     "Around the corner, someone shouts \"Push the button, Frank!\"",
     "A huge, shimmering metallic ring appears beside you, and something that looks like an Egyption hieroglyph walks through... then both disappear.",
+    "A deadpan voice announces: \"The computer is your friend. Happiness is mandatory.\"",
+    "You briefly see a man in a crowbar t-shirt prying open a crate before he vanishes in orange light.",
+    "A cake materializes on a nearby table. The cake is a lie. The cake disappears.",
+    "You hear someone muttering \"Would you kindly...\" before the voice fades away.",
+    "A small sign appears reading \"You are likely to be eaten by a grue\" then immediately catches fire.",
+    "Someone walks by carrying a fish and a towel, looking very determined.",
+    "A voice booms: \"All your base are belong to us\" followed by awkward silence.",
+    "You glimpse a person in power armor giving a thumbs up before stepping into a cryogenic pod.",
+    "A figure in a lab coat adjusts his glasses and says \"Rise and shine, Mister Freeman\" before vanishing.",
 ]
 widths = [30]
 
@@ -164,11 +183,20 @@ values = [
     "A gust of wind rushes through the room, but there are no open doors or windows.",
     "A faint voice says \"Testing in progress\" followed by a thump.",
     "You hear a tone, then \"Fiction containment at 42%.\"",
-    "The building shudders violently for a moment. Nobody seems to notice.",
+    "The building shudder violently for a moment. Nobody seems to notice.",
     "All of the fire doors in the building suddenly close.",
     "Someone in the distance yells: \"Hey, who turned out the lights?!\"",
     "You hear the \"Underdog\" theme through the wall from an adjacent room.",
     "Paperwork and supplies pass by through a pneumatic tube overhead, along with an occasional piece of cake.",
+    "The PA system plays a brief snippet of \"Also Sprach Zarathustra\" for no apparent reason.",
+    "You hear someone practicing the lute in a distant room. Badly.",
+    "A vending machine dispenses a can of Slurm with an enthusiastic \"Woo!\"",
+    "The sprinkler system activates for exactly three seconds, then stops with an apologetic beep.",
+    "Someone in the next room is apparently explaining the plot of \"Finnegan's Wake\" to a rubber duck.",
+    "The elevator music briefly changes to a death metal version of \"Girl from Ipanema.\"",
+    "A mechanical voice announces: \"Attention: The Ministry of Silly Walks is now in session.\"",
+    "You hear the distinctive sound of someone trying to eat soup with a fork.",
+    "The air conditioning kicks in with a sound suspiciously like whale song.",
 ]
 widths = [25]
 
@@ -182,6 +210,11 @@ values = [
     "Everything smells faintly of old tuna. Why?",
     "Your stomach roils, like that time you stayed up all night drinking mezcal with Ruben",
     "You stop by the nearest wastebin for a few dry heaves.",
+    "You feel like you've just eaten a Klingon gagh sampler platter. Raw.",
+    "Your digestive system briefly considers filing a formal complaint with management.",
+    "You experience the gastric equivalent of a Windows blue screen of death.",
+    "A wave of nausea hits you like a brick made entirely of other, smaller bricks.",
+    "You feel queasy enough to consider switching to a liquid diet of nothing but antacids.",
 ]
 widths = [10]
 
@@ -196,5 +229,11 @@ speaker.""",
     "The Muzak version of \"The Sound of Muzak\" crescendos leading up to the guitar -- I mean harp -- solo.",
     "The Muzak pauses, and you hear the sound of someone flipping over a cassette tape.",
     "The Muzak \"The Sound of Muzak\" grows to intense volume. Sticking your towel in your ears doesn't help.",
+    "A gentle acoustic version of \"Master of Puppets\" begins playing. Somehow it's even more disturbing than the original.",
+    "The elevator plays what sounds suspiciously like \"Yakety Sax\" arranged for harpsichord and oboe.",
+    "You realize the background music is actually the Tetris theme played on a church organ. Very slowly.",
+    "A muzak version of \"The Imperial March\" plays. Even Darth Vader would find this offensive.",
+    "The speakers emit what can only be described as smooth jazz interpretation of death metal.",
+    "Someone has apparently decided that \"Never Gonna Give You Up\" needed a xylophone solo. They were wrong.",
 ]
 widths = [10]
