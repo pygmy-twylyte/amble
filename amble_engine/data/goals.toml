@@ -110,7 +110,7 @@ activate_when = { type = "hasFlag", flag = "entered-sublevel-1" }
 finished_when = { type = "reachedRoom", room_sym = "room-aa-3b" }
 
 [[goals]]
-id = "ask-about-module-1"
+id = "find-hal-module-1"
 name = "Find HAL Memory Module #1"
 description = "Look around and talk to other characters to figure out where to find HAL's first missing module."
 group = { type = "required" }
@@ -126,7 +126,7 @@ activate_when = { type = "flagInProgress", flag = "mobilize-emh" }
 finished_when = { type = "hasItem", item_sym = "hal_module_1" }
 
 [[goals]]
-id = "insert-module-1"
+id = "insert-hal-module-1"
 name = "Insert HAL Memory Module #1"
 description = "Once mobilized, the EMH was able to retrieve the module for you. It must be inserted in HAL's memory bank (in the Observation Room) to activate it and advance HAL's reboot process."
 group = { type = "required" }
@@ -136,10 +136,10 @@ finished_when = { type = "hasFlag", flag = "module-1-inserted" }
 [[goals]]
 id = "find-hal-module-2"
 name = "Find HAL Memory Module #2"
-description = "Look around the building and talk to other characters to get a lead on the location of HAL's second memory module."
+description = "Look around and talk to other characters to get a lead on the location of HAL's second memory module."
 group = { type = "required" }
 activate_when = { type = "flagInProgress", flag = "hal-reboot" }
-finished_when = { type = "hasFlag", flag = "done-flag" }
+finished_when = { type = "hasFlag", flag = "found-module-2" }
 
 [[goals]]
 id = "get-a-towel"
