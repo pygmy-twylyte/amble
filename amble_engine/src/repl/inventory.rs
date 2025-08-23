@@ -49,7 +49,7 @@ use crate::{
     helpers::{item_symbol_from_id, npc_symbol_from_id, room_symbol_from_id},
     item::ItemInteractionType,
     repl::{WorldEntity, entity_not_found, find_world_object},
-    spinners::SpinnerType,
+    spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers},
     world::nearby_reachable_items,
@@ -179,7 +179,7 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
 /// - Open containers (boxes, chests, etc.)
 /// - Other accessible locations
 pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
-    let take_verb = world.spin_spinner(SpinnerType::TakeVerb, "take");
+    let take_verb = world.spin_core(CoreSpinnerType::TakeVerb, "take");
     let room_id = world.player_room_ref()?.id();
     let scope = nearby_reachable_items(world, room_id)?;
 
@@ -190,7 +190,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                 view,
                 &format!(
                     "That's not an item. You can't {} it.",
-                    world.spin_spinner(SpinnerType::TakeVerb, "take")
+                    world.spin_core(CoreSpinnerType::TakeVerb, "take")
                 ),
             );
         }
@@ -624,7 +624,7 @@ pub fn transfer_to_player(
     world.player.add_item(loot_id);
 
     // Report and log success
-    let take_verb = world.spin_spinner(SpinnerType::TakeVerb, "take");
+    let take_verb = world.spin_core(CoreSpinnerType::TakeVerb, "take");
     view.push(ViewItem::ActionSuccess(format!(
         "You {take_verb} the {}.",
         loot_name.item_style()

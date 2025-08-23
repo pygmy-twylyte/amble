@@ -42,7 +42,7 @@ use std::collections::HashSet;
 
 use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
-    spinners::SpinnerType,
+    spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers},
     view::ViewMode,
@@ -134,7 +134,7 @@ pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let leaving_id = world.player.location.unwrap_room();
 
     if let Some(previous_room_id) = world.player.go_back() {
-        let travel_message = world.spin_spinner(SpinnerType::Movement, "You retrace your steps...");
+        let travel_message = world.spin_core(CoreSpinnerType::Movement, "You retrace your steps...");
 
         let previous_room = world
             .rooms
@@ -170,7 +170,7 @@ pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
 
 pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str) -> Result<()> {
     let player_name = world.player.name.clone();
-    let travel_message = world.spin_spinner(SpinnerType::Movement, "You head that way...");
+    let travel_message = world.spin_core(CoreSpinnerType::Movement, "You head that way...");
     let leaving_id = world.player.location.unwrap_room();
 
     // match "input_dir" to an Exit
@@ -189,7 +189,7 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
             view.push(ViewItem::Error(format!(
                 "{}? {}",
                 input_dir.error_style(),
-                world.spin_spinner(SpinnerType::DestinationUnknown, "Which way is that?")
+                world.spin_core(CoreSpinnerType::DestinationUnknown, "Which way is that?")
             )));
             return Ok(());
         }
