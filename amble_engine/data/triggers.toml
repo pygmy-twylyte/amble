@@ -1070,6 +1070,22 @@ actions = [
     { type = "npcSays", npc_id = "black_knight", quote = """Lo, good Sir! I grow weary, and require a chalice of electrolytes and caffeine, but cannot leave my post. Nor do I want to dull my new sword doing battle with that infernal contraption in the lobby again. If you pass by there, retrieve one for me and I shall be further in your debt.""" },
 ]
 
+# set flag once player has looked at the vending machine after the hal-reboot sequence is underway
+[[triggers]]
+name = "Vending Machine: HAL Module #2 Spotted / Start Puzzle"
+only_once = true
+conditions = [
+    { type = "lookAt", item_id = "vending_machine" },
+    { type = "flagInProgress", flag = "hal-reboot" },
+]
+actions = [
+    { type = "addFlag", flag = { type = "simple", name = "found-module-2" } },
+    { type = "addFlag", flag = { type = "sequence", name = "module-2-puzzle", end = 2 } },
+    # module-2-puzzle#0 -- module 2 found, still trapped in vending machine
+    # module-2-puzzle#1 -- machine pried open, module in crevice
+    # module-2-puzzle#2 -- module retrieved from crevice
+]
+
 [[triggers]]
 name = "Vending Machine: Pry Open with Crowbar"
 only_once = true
@@ -1079,6 +1095,7 @@ conditions = [
 actions = [
     { type = "showMessage", text = """With a mighty heave and several creative applications of leverage that would make Archimedes proud, you pry open the vending machine. There's a satisfying CRACK as the lock mechanism gives way. Unfortunately, your vigorous prying causes the machine to tilt forward slightly, and you watch in horror as the HAL module slides off its shelf and disappears into a narrow crevice between the machine and the floor. The other items tumble onto the floor around you.\n\nThe machine's internal speaker crackles to life one last time: 'Thank you for choosing violence. Have a mediocre day.'""" },
     { type = "unlockItem", item_id = "vending_machine" },
+    { type = "advanceFlag", flag = "module-2-puzzle" },
     { type = "despawnItem", item_id = "hal_module_2" },
     { type = "despawnItem", item_id = "dehydrated_water" },
     { type = "despawnItem", item_id = "schrodingers_sandwich" },
@@ -1098,7 +1115,7 @@ name = "Main-Lobby: Fish Out HAL Module"
 only_once = true
 conditions = [
     { type = "useItemOnItem", tool_id = "fishing_line", target_id = "hal_module_2_crevice", interaction = "handle" },
-    { type = "hasFlag", flag = "hal-module-in-crevice" },
+    { type = "hasFlag", flag = "module-2-puzzle#1" },
 ]
 actions = [
     { type = "showMessage", text = """You carefully lower your makeshift fishing line into the crevice where the HAL module fell. After several attempts and some creative swearing, you manage to hook the module with the paper clip. You slowly, carefully pull it up, holding your breath the entire time. Success! The module is yours, though it's now covered in dust and what might be ancient gum.""" },
@@ -1107,6 +1124,7 @@ actions = [
     { type = "spawnItemInInventory", item_id = "hal_module_2" },
     { type = "awardPoints", amount = 10 },
     { type = "addFlag", flag = { type = "simple", name = "hal-module-2-retrieved" } },
+    { type = "advanceFlag", flag = "module-2-puzzle" },
 ]
 
 [[triggers]]
@@ -1114,8 +1132,7 @@ name = "HAL Module #2 (crevice): Try to Reach Without Tool"
 only_once = false
 conditions = [
     { type = "take", item_id = "hal_module_2_crevice" },
-    { type = "hasFlag", flag = "hal-module-in-crevice" },
-    { type = "missingFlag", flag = "hal-module-2-retrieved" },
+    { type = "hasFlag", flag = "module-2-puzzle#1" },
 ]
 actions = [
     { type = "showMessage", text = """The HAL module has fallen deep into a narrow crevice between the vending machine and the floor. You try to reach it with your hand, but the gap is too narrow. Your fingers can just barely brush against the module, pushing it slightly further away. You're going to need some kind of fishing tool to retrieve it.""" },
@@ -1126,7 +1143,7 @@ name = "HAL Module #2 (crevice): Try to Reach with Tweezers"
 only_once = false
 conditions = [
     { type = "useItemOnItem", tool_id = "zircon_tweezers", target_id = "hal_module_2_crevice", interaction = "handle" },
-    { type = "hasFlag", flag = "hal-module-in-crevice" },
+    { type = "hasFlag", flag = "module-2-puzzle#1" },
 ]
 actions = [
     { type = "showMessage", text = """The glint of the zircon-encrusted tweezers is truly something to behold, but the tweezers are too short to reach the memory module. In fact, in trying to reach that far into the crack with them, the tweezers slip from your fingers and fall into the crevice too.""" },
