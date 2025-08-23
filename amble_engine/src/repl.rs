@@ -49,6 +49,7 @@ pub enum ReplControl {
 /// # Panics
 /// This function does not expect to panic.
 pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
+    use Command::*;
     let mut view = View::new();
 
     loop {
@@ -70,29 +71,29 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         }
 
         match parse_command(&input, &mut view) {
-            Command::SetViewMode(mode) => set_viewmode_handler(&mut view, mode),
-            Command::Goals => goals_handler(world, &mut view),
-            Command::Help => help_handler(&mut view),
-            Command::Quit => {
+            SetViewMode(mode) => set_viewmode_handler(&mut view, mode),
+            Goals => goals_handler(world, &mut view),
+            Help => help_handler(&mut view),
+            Quit => {
                 if let ReplControl::Quit = quit_handler(world, &mut view)? {
                     view.flush();
                     break;
                 }
             },
-            Command::Look => look_handler(world, &mut view)?,
-            Command::LookAt(thing) => look_at_handler(world, &mut view, &thing)?,
-            Command::GoBack => go_back_handler(world, &mut view)?,
-            Command::MoveTo(direction) => move_to_handler(world, &mut view, &direction)?,
-            Command::Take(thing) => take_handler(world, &mut view, &thing)?,
-            Command::TakeFrom { item, container } => take_from_handler(world, &mut view, &item, &container)?,
-            Command::Drop(thing) => drop_handler(world, &mut view, &thing)?,
-            Command::PutIn { item, container } => put_in_handler(world, &mut view, &item, &container)?,
-            Command::Open(thing) => open_handler(world, &mut view, &thing)?,
-            Command::Close(thing) => close_handler(world, &mut view, &thing)?,
-            Command::LockItem(thing) => lock_handler(world, &mut view, &thing)?,
-            Command::UnlockItem(thing) => unlock_handler(world, &mut view, &thing)?,
-            Command::Inventory => inv_handler(world, &mut view)?,
-            Command::Unknown => {
+            Look => look_handler(world, &mut view)?,
+            LookAt(thing) => look_at_handler(world, &mut view, &thing)?,
+            GoBack => go_back_handler(world, &mut view)?,
+            MoveTo(direction) => move_to_handler(world, &mut view, &direction)?,
+            Take(thing) => take_handler(world, &mut view, &thing)?,
+            TakeFrom { item, container } => take_from_handler(world, &mut view, &item, &container)?,
+            Drop(thing) => drop_handler(world, &mut view, &thing)?,
+            PutIn { item, container } => put_in_handler(world, &mut view, &item, &container)?,
+            Open(thing) => open_handler(world, &mut view, &thing)?,
+            Close(thing) => close_handler(world, &mut view, &thing)?,
+            LockItem(thing) => lock_handler(world, &mut view, &thing)?,
+            UnlockItem(thing) => unlock_handler(world, &mut view, &thing)?,
+            Inventory => inv_handler(world, &mut view)?,
+            Unknown => {
                 view.push(ViewItem::Error(
                     world
                         .spin_spinner(SpinnerType::UnrecognizedCommand, "Didn't quite catch that?")
@@ -100,21 +101,21 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
                         .to_string(),
                 ));
             },
-            Command::TalkTo(npc_name) => talk_to_handler(world, &mut view, &npc_name)?,
-            Command::Teleport(room_symbol) => dev_teleport_handler(world, &mut view, &room_symbol),
-            Command::SpawnItem(item_symbol) => dev_spawn_item_handler(world, &mut view, &item_symbol),
-            Command::GiveToNpc { item, npc } => give_to_npc_handler(world, &mut view, &item, &npc)?,
-            Command::TurnOn(thing) => turn_on_handler(world, &mut view, &thing)?,
-            Command::Read(thing) => read_handler(world, &mut view, &thing)?,
-            Command::Load(gamefile) => load_handler(world, &mut view, &gamefile),
-            Command::Save(gamefile) => save_handler(world, &mut view, &gamefile)?,
-            Command::UseItemOn { verb, tool, target } => {
+            TalkTo(npc_name) => talk_to_handler(world, &mut view, &npc_name)?,
+            Teleport(room_symbol) => dev_teleport_handler(world, &mut view, &room_symbol),
+            SpawnItem(item_symbol) => dev_spawn_item_handler(world, &mut view, &item_symbol),
+            GiveToNpc { item, npc } => give_to_npc_handler(world, &mut view, &item, &npc)?,
+            TurnOn(thing) => turn_on_handler(world, &mut view, &thing)?,
+            Read(thing) => read_handler(world, &mut view, &thing)?,
+            Load(gamefile) => load_handler(world, &mut view, &gamefile),
+            Save(gamefile) => save_handler(world, &mut view, &gamefile)?,
+            UseItemOn { verb, tool, target } => {
                 use_item_on_handler(world, &mut view, verb, &tool, &target)?;
             },
-            Command::AdvanceSeq(seq_name) => dev_advance_seq_handler(world, &mut view, &seq_name),
-            Command::ResetSeq(seq_name) => dev_reset_seq_handler(world, &mut view, &seq_name),
-            Command::SetFlag(flag_name) => dev_set_flag_handler(world, &mut view, &flag_name),
-            Command::StartSeq { seq_name, end } => dev_start_seq_handler(world, &mut view, &seq_name, &end),
+            AdvanceSeq(seq_name) => dev_advance_seq_handler(world, &mut view, &seq_name),
+            ResetSeq(seq_name) => dev_reset_seq_handler(world, &mut view, &seq_name),
+            SetFlag(flag_name) => dev_set_flag_handler(world, &mut view, &flag_name),
+            StartSeq { seq_name, end } => dev_start_seq_handler(world, &mut view, &seq_name, &end),
         }
         // We'll update turn count here in a centralized way, but this approach does not
         // take into account commands that return Ok(()) after failing to match a string.
@@ -125,21 +126,21 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         // Only commands / actions that may be part of what's required to solve a puzzle or advance
         // the game count as a turn.
         let turn_taken = match parse_command(&input, &mut view) {
-            Command::Close(_)
-            | Command::Drop(_)
-            | Command::GiveToNpc { .. }
-            | Command::LookAt(_)
-            | Command::LockItem(_)
-            | Command::MoveTo(_)
-            | Command::Open(_)
-            | Command::PutIn { .. }
-            | Command::Read(_)
-            | Command::Take(_)
-            | Command::TakeFrom { .. }
-            | Command::TalkTo(_)
-            | Command::TurnOn(_)
-            | Command::UnlockItem(_)
-            | Command::UseItemOn { .. } => true,
+            Close(_)
+            | Drop(_)
+            | GiveToNpc { .. }
+            | LookAt(_)
+            | LockItem(_)
+            | MoveTo(_)
+            | Open(_)
+            | PutIn { .. }
+            | Read(_)
+            | Take(_)
+            | TakeFrom { .. }
+            | TalkTo(_)
+            | TurnOn(_)
+            | UnlockItem(_)
+            | UseItemOn { .. } => true,
             _ => false,
         };
         if turn_taken {
