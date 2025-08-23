@@ -329,7 +329,7 @@ mod tests {
 
     #[test]
     fn amble_world_spin_core_convenience() {
-        let mut world = AmbleWorld::new_empty();
+        let world = AmbleWorld::new_empty();
 
         // Test core convenience method
         let result = world.spin_core(CoreSpinnerType::Movement, "default");
