@@ -81,11 +81,12 @@ pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> 
         if let Some(item) = entity.item() {
             info!("{} looked at {} ({})", world.player.name(), item.name(), item.symbol());
             item.show(world, view);
+            let _fired = check_triggers(world, view, &[TriggerCondition::LookAt(item.id())]);
         } else if let Some(npc) = entity.npc() {
             info!("{} looked at {} ({})", world.player.name(), npc.name(), npc.symbol());
             npc.show(world, view);
+            let _fired = check_triggers(world, view, &[]);
         }
-        let _fired = check_triggers(world, view, &[]);
     } else {
         entity_not_found(world, view, thing);
     }

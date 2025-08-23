@@ -48,6 +48,7 @@ pub enum TriggerCondition {
         container: Uuid,
     },
     Leave(Uuid),
+    LookAt(Uuid),
     MissingFlag(String),
     MissingItem(Uuid),
     NpcHasItem {
@@ -205,6 +206,22 @@ mod tests {
         let events = vec![TriggerCondition::Enter(room1_id)];
         assert!(TriggerCondition::Enter(room1_id).matches_event_in(&events));
         assert!(!TriggerCondition::Enter(room2_id).matches_event_in(&events));
+    }
+
+    #[test]
+    fn look_at_condition_matches_event() {
+        let item_id = Uuid::new_v4();
+        let other_id = Uuid::new_v4();
+        let events = vec![TriggerCondition::LookAt(item_id)];
+        assert!(TriggerCondition::LookAt(item_id).matches_event_in(&events));
+        assert!(!TriggerCondition::LookAt(other_id).matches_event_in(&events));
+    }
+
+    #[test]
+    fn look_at_condition_is_not_ongoing() {
+        let (world, _, _) = build_test_world();
+        let item_id = Uuid::new_v4();
+        assert!(!TriggerCondition::LookAt(item_id).is_ongoing(&world));
     }
 
     #[test]

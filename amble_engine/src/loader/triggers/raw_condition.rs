@@ -31,6 +31,7 @@ pub enum RawTriggerCondition {
     InRoom { room_id: String, },
     Insert { item_id: String, container_id: String, },
     Leave { room_id: String, },
+    LookAt { item_id: String, },
     MissingFlag { flag: String, },
     MissingItem { item_id: String, },
     NpcHasItem { npc_id: String, item_id: String, },
@@ -68,6 +69,7 @@ impl RawTriggerCondition {
             Self::Enter { room_id } => cook_enter(symbols, room_id),
             Self::GiveToNpc { item_id, npc_id } => cook_give_to_npc(symbols, item_id, npc_id),
             Self::Leave { room_id } => cook_leave(symbols, room_id),
+            Self::LookAt { item_id } => cook_look_at(symbols, item_id),
             Self::Drop { item_id } => cook_drop(symbols, item_id),
             Self::Insert { item_id, container_id } => cook_insert(symbols, item_id, container_id),
             Self::Unlock { item_id } => cook_unlock(symbols, item_id),
@@ -254,6 +256,14 @@ fn cook_leave(symbols: &SymbolTable, room_id: &String) -> Result<TriggerConditio
         Ok(TriggerCondition::Leave(*room_uuid))
     } else {
         bail!("raw condition Leave({room_id}): token not in symbols");
+    }
+}
+
+fn cook_look_at(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition> {
+    if let Some(item_uuid) = symbols.items.get(item_id) {
+        Ok(TriggerCondition::LookAt(*item_uuid))
+    } else {
+        bail!("raw condition LookAt({item_id}): token not in symbols");
     }
 }
 
