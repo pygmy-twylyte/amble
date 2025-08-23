@@ -140,6 +140,35 @@
       "{ type = \"ambient\", spinner = \"${1:spinner-id}\", room_ids = [ \"${2:room-id}\" ] }"
     ]
   },
+  "tc-act-on-item": {
+    "prefix": "tc-act-on-item",
+    "description": "Condition: act on item",
+    "body": [
+      "{ type = \"actOnItem\", target_sym = \"${1:item-id}\", action = \"${2:action}\" }"
+    ]
+  },
+  "tc-in-room": {
+    "prefix": "tc-in-room",
+    "description": "Condition: in room",
+    "body": ["{ type = \"inRoom\", room_id = \"${1:room-id}\" }"]
+  },
+  "tc-look-at": {
+    "prefix": "tc-look-at",
+    "description": "Condition: look at item",
+    "body": ["{ type = \"lookAt\", item_id = \"${1:item-id}\" }"]
+  },
+  "tc-npc-has-item": {
+    "prefix": "tc-npc-has-item",
+    "description": "Condition: NPC has item",
+    "body": [
+      "{ type = \"npcHasItem\", npc_id = \"${1:npc-id}\", item_id = \"${2:item-id}\" }"
+    ]
+  },
+  "tc-open": {
+    "prefix": "tc-open",
+    "description": "Condition: open item",
+    "body": ["{ type = \"open\", item_id = \"${1:item-id}\" }"]
+  },
   "ta-showMessage": {
     "prefix": "ta-show-message",
     "description": "Action: show message",
@@ -256,6 +285,56 @@
       "{ type = \"addSpinnerWedge\", spinner = \"${1:spinner-id}\", width = ${2:1}, text = \"\"\"",
       "${3:spinner message}",
       "\"\"\" }"
+    ]
+  },
+  "ta-lockItem": {
+    "prefix": "ta-lock-item",
+    "description": "Action: lock item",
+    "body": ["{ type = \"lockItem\", item_id = \"${1:item-id}\" }"]
+  },
+  "ta-unlockItem": {
+    "prefix": "ta-unlock-item",
+    "description": "Action: unlock item",
+    "body": ["{ type = \"unlockItem\", item_id = \"${1:item-id}\" }"]
+  },
+  "ta-lockExit": {
+    "prefix": "ta-lock-exit",
+    "description": "Action: lock exit",
+    "body": [
+      "{ type = \"lockExit\", from_room = \"${1:room-id}\", direction = \"${2:direction}\" }"
+    ]
+  },
+  "ta-unlockExit": {
+    "prefix": "ta-unlock-exit",
+    "description": "Action: unlock exit",
+    "body": [
+      "{ type = \"unlockExit\", from_room = \"${1:room-id}\", direction = \"${2:direction}\" }"
+    ]
+  },
+  "ta-npcRefuseItem": {
+    "prefix": "ta-npc-refuse-item",
+    "description": "Action: NPC refuses item",
+    "body": [
+      "{ type = \"npcRefuseItem\", npc_id = \"${1:npc-id}\", reason = \"${2:reason}\" }"
+    ]
+  },
+  "ta-resetFlag": {
+    "prefix": "ta-reset-flag",
+    "description": "Action: reset sequence flag",
+    "body": ["{ type = \"resetFlag\", flag = \"${1:flag-name}\" }"]
+  },
+  "ta-setItemDescription": {
+    "prefix": "ta-set-item-desc",
+    "description": "Action: set item description",
+    "body": [
+      "{ type = \"setItemDescription\", item_sym = \"${1:item-id}\", text = \"${2:new description}\" }"
+    ]
+  },
+  "ta-setBarredMessage": {
+    "prefix": "ta-set-barred-message",
+    "description": "Action: set barred exit message",
+    "body": [
+      "{ type = \"setBarredMessage\", exit_from = \"${1:from-room-id}\", exit_to = \"${2:to-room-id}\", msg = \"${3:message}\" }"
     ]
   },
   "item-new": {
@@ -396,6 +475,26 @@
     "description": "Ability: TurnOn",
     "body": ["[[items.abilities]]", "type = \"TurnOn\""]
   },
+  "item-ability-turnoff": {
+    "prefix": "item-ability-turnoff",
+    "description": "Ability: TurnOff",
+    "body": ["[[items.abilities]]", "type = \"TurnOff\""]
+  },
+  "item-ability-attach": {
+    "prefix": "item-ability-attach",
+    "description": "Ability: Attach",
+    "body": ["[[items.abilities]]", "type = \"Attach\""]
+  },
+  "item-ability-pluck": {
+    "prefix": "item-ability-pluck",
+    "description": "Ability: Pluck",
+    "body": ["[[items.abilities]]", "type = \"Pluck\""]
+  },
+  "item-ability-repair": {
+    "prefix": "item-ability-repair",
+    "description": "Ability: Repair",
+    "body": ["[[items.abilities]]", "type = \"Repair\""]
+  },
   "room-new": {
     "prefix": "room-new",
     "description": "New full room block",
@@ -431,6 +530,94 @@
     "body": [
       "[[rooms.overlays]]",
       "condition = { type = \"${1:flagSet}\", flag = \"${2:flag-name}\" }",
+      "text = \"\"\"",
+      "${3:Overlay text}",
+      "\"\"\""
+    ]
+  },
+  "room-overlay-flag-unset": {
+    "prefix": "room-overlay-flag-unset",
+    "description": "Room overlay: flag unset",
+    "body": [
+      "[[rooms.overlays]]",
+      "condition = { type = \"flagUnset\", flag = \"${1:flag-name}\" }",
+      "text = \"\"\"",
+      "${2:Overlay text}",
+      "\"\"\""
+    ]
+  },
+  "room-overlay-flag-complete": {
+    "prefix": "room-overlay-flag-complete",
+    "description": "Room overlay: flag complete",
+    "body": [
+      "[[rooms.overlays]]",
+      "condition = { type = \"flagComplete\", flag = \"${1:flag-name}\" }",
+      "text = \"\"\"",
+      "${2:Overlay text}",
+      "\"\"\""
+    ]
+  },
+  "room-overlay-item-present": {
+    "prefix": "room-overlay-item-present",
+    "description": "Room overlay: item present",
+    "body": [
+      "[[rooms.overlays]]",
+      "condition = { type = \"itemPresent\", item_id = \"${1:item-id}\" }",
+      "text = \"\"\"",
+      "${2:Overlay text}",
+      "\"\"\""
+    ]
+  },
+  "room-overlay-item-absent": {
+    "prefix": "room-overlay-item-absent",
+    "description": "Room overlay: item absent",
+    "body": [
+      "[[rooms.overlays]]",
+      "condition = { type = \"itemAbsent\", item_id = \"${1:item-id}\" }",
+      "text = \"\"\"",
+      "${2:Overlay text}",
+      "\"\"\""
+    ]
+  },
+  "room-overlay-player-has-item": {
+    "prefix": "room-overlay-player-has-item",
+    "description": "Room overlay: player has item",
+    "body": [
+      "[[rooms.overlays]]",
+      "condition = { type = \"playerHasItem\", item_id = \"${1:item-id}\" }",
+      "text = \"\"\"",
+      "${2:Overlay text}",
+      "\"\"\""
+    ]
+  },
+  "room-overlay-player-missing-item": {
+    "prefix": "room-overlay-player-missing-item",
+    "description": "Room overlay: player missing item",
+    "body": [
+      "[[rooms.overlays]]",
+      "condition = { type = \"playerMissingItem\", item_id = \"${1:item-id}\" }",
+      "text = \"\"\"",
+      "${2:Overlay text}",
+      "\"\"\""
+    ]
+  },
+  "room-overlay-npc-in-state": {
+    "prefix": "room-overlay-npc-state",
+    "description": "Room overlay: NPC in state",
+    "body": [
+      "[[rooms.overlays]]",
+      "condition = { type = \"npcInState\", npc_id = \"${1:npc-id}\", state = \"${2:state}\" }",
+      "text = \"\"\"",
+      "${3:Overlay text}",
+      "\"\"\""
+    ]
+  },
+  "room-overlay-item-in-room": {
+    "prefix": "room-overlay-item-in-room",
+    "description": "Room overlay: item in room",
+    "body": [
+      "[[rooms.overlays]]",
+      "condition = { type = \"itemInRoom\", item_id = \"${1:item-id}\", room_id = \"${2:room-id}\" }",
       "text = \"\"\"",
       "${3:Overlay text}",
       "\"\"\""
@@ -513,5 +700,47 @@
     "prefix": "goal-group",
     "description": "Goal group type",
     "body": ["group = { type = \"${1:required}\" }"]
+  },
+  "goal-activate-item": {
+    "prefix": "goal-activate-item",
+    "description": "Activate when: has item",
+    "body": [
+      "activate_when = { type = \"hasItem\", item_sym = \"${1:item-id}\" }"
+    ]
+  },
+  "goal-finished-item": {
+    "prefix": "goal-finished-item",
+    "description": "Finished when: has item",
+    "body": [
+      "finished_when = { type = \"hasItem\", item_sym = \"${1:item-id}\" }"
+    ]
+  },
+  "goal-activate-missing-flag": {
+    "prefix": "goal-activate-missing-flag",
+    "description": "Activate when: missing flag",
+    "body": [
+      "activate_when = { type = \"missingFlag\", flag = \"${1:flag-name}\" }"
+    ]
+  },
+  "goal-finished-missing-flag": {
+    "prefix": "goal-finished-missing-flag",
+    "description": "Finished when: missing flag",
+    "body": [
+      "finished_when = { type = \"missingFlag\", flag = \"${1:flag-name}\" }"
+    ]
+  },
+  "goal-activate-in-progress": {
+    "prefix": "goal-activate-in-progress",
+    "description": "Activate when: sequence flag in progress",
+    "body": [
+      "activate_when = { type = \"flagInProgress\", flag = \"${1:sequence-flag}\" }"
+    ]
+  },
+  "goal-finished-in-progress": {
+    "prefix": "goal-finished-in-progress",
+    "description": "Finished when: sequence flag in progress",
+    "body": [
+      "finished_when = { type = \"flagInProgress\", flag = \"${1:sequence-flag}\" }"
+    ]
   }
 }
