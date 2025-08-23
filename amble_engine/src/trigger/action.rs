@@ -84,7 +84,7 @@ use crate::item::{ContainerState, ItemHolder};
 use crate::npc::NpcState;
 use crate::player::{Flag, Player};
 use crate::room::Exit;
-use crate::spinners::SpinnerType;
+use crate::spinners::{CoreSpinnerType, SpinnerType};
 use crate::style::GameStyle;
 use crate::view::{StatusAction, View, ViewItem};
 use crate::world::{AmbleWorld, Location, WorldObject};
@@ -210,11 +210,11 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
             msg,
         } => set_barred_message(world, exit_from, exit_to, msg)?,
         AddSpinnerWedge { spinner, text, width } => {
-            add_spinner_wedge(&mut world.spinners, *spinner, text, *width)?;
+            add_spinner_wedge(&mut world.spinners, spinner.clone(), text, *width)?;
         },
         ResetFlag(flag_name) => reset_flag(&mut world.player, flag_name),
         AdvanceFlag(flag_name) => advance_flag(&mut world.player, flag_name),
-        SpinnerMessage { spinner } => spinner_message(world, view, *spinner)?,
+        SpinnerMessage { spinner } => spinner_message(world, view, spinner.clone())?,
         RestrictItem(item_id) => restrict_item(world, item_id)?,
         NpcRefuseItem { npc_id, reason } => npc_refuse_item(world, view, *npc_id, reason)?,
         NpcSaysRandom { npc_id } => npc_says_random(world, view, npc_id)?,
@@ -342,7 +342,7 @@ pub fn npc_refuse_item(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, re
 ///
 /// Adding a new take verb with higher probability:
 /// ```ignore
-/// add_spinner_wedge(spinners, SpinnerType::TakeVerb, "snatch", 3)?;
+/// add_spinner_wedge(spinners, SpinnerType::Core(CoreSpinnerType::TakeVerb), "snatch", 3)?;
 /// ```
 pub fn add_spinner_wedge(
     spinners: &mut HashMap<SpinnerType, Spinner<String>>,
@@ -527,7 +527,7 @@ pub fn npc_says_random(world: &AmbleWorld, view: &mut View, npc_id: &Uuid) -> Re
         .with_context(|| format!("action NpcSaysRandom({npc_id}): npc not found"))?;
     let ignore_spinner = world
         .spinners
-        .get(&SpinnerType::NpcIgnore)
+        .get(&SpinnerType::Core(CoreSpinnerType::NpcIgnore))
         .with_context(|| "failed lookup of NpcIgnore spinner".to_string())?;
     let line = npc.random_dialogue(ignore_spinner);
     view.push(ViewItem::NpcSpeech {
