@@ -18,7 +18,7 @@ use crate::{
 #[rustfmt::skip]
 pub enum RawTriggerCondition {
     ActOnItem { target_sym: String, action: ItemInteractionType, },
-    Ambient { room_ids: Option<Vec<String>>, spinner: SpinnerType, },
+    Ambient { room_ids: Option<Vec<String>>, spinner: String, },
     ContainerHasItem { container_id: String, item_id: String, },
     Drop { item_id: String, },
     Enter { room_id: String, },
@@ -57,7 +57,7 @@ impl RawTriggerCondition {
                 action,
             } => cook_act_on_item(symbols, item_id, *action),
             Self::TalkToNpc { npc_id } => cook_talk_to_npc(symbols, npc_id),
-            Self::Ambient { room_ids, spinner } => cook_ambient(symbols, room_ids.as_ref(), *spinner),
+            Self::Ambient { room_ids, spinner } => cook_ambient(symbols, room_ids.as_ref(), spinner),
             Self::ContainerHasItem { container_id, item_id } => cook_container_has_item(symbols, container_id, item_id),
             Self::MissingFlag { flag } => Ok(TriggerCondition::MissingFlag(flag.to_string())),
             Self::HasFlag { flag } => Ok(TriggerCondition::HasFlag(flag.to_string())),
@@ -113,11 +113,7 @@ fn cook_talk_to_npc(symbols: &SymbolTable, npc_symbol: &str) -> Result<TriggerCo
     }
 }
 
-fn cook_ambient(
-    symbols: &SymbolTable,
-    room_symbols: Option<&Vec<String>>,
-    spinner: SpinnerType,
-) -> Result<TriggerCondition> {
+fn cook_ambient(symbols: &SymbolTable, room_symbols: Option<&Vec<String>>, spinner: &str) -> Result<TriggerCondition> {
     let mut room_ids = HashSet::new();
     if let Some(syms) = room_symbols {
         for sym in syms {
@@ -128,7 +124,10 @@ fn cook_ambient(
             room_ids.insert(*uuid);
         }
     }
-    Ok(TriggerCondition::Ambient { room_ids, spinner })
+    Ok(TriggerCondition::Ambient {
+        room_ids,
+        spinner: SpinnerType::from_toml_key(spinner),
+    })
 }
 
 fn cook_use_item_on_item(
