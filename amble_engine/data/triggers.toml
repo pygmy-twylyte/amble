@@ -709,7 +709,7 @@ actions = [
 
 # first time player encounters EMH after hal-reboot is in progress
 [[triggers]]
-name = "EMH: Player Met HAL"
+name = "EMH: Player Met HAL, Hint About Module 1"
 only_once = true
 conditions = [
     { type = "withNpc", npc_id = "emh" },
@@ -720,6 +720,7 @@ actions = [
     { type = "setNpcState", npc_id = "emh", state = { custom = "want-emitter" } },
     { type = "spawnItemInContainer", item_id = "broken_emitter", container_id = "lost_and_found_box" },
     { type = "addFlag", flag = { type = "sequence", name = "mobilize-emh", end = 3 } },
+    { type = "addFlag", flag = { type = "simple", name = "got-hint-from-emh" } },
     # mobilize-emh#0 -- first tasked with getting emitter, not found yet
     # mobilize-emh#1 -- obtained broken emitter
     # mobilize-emh#2 -- fixed broken emitter
@@ -728,7 +729,7 @@ actions = [
 
 # first time player enters the office after EMH starts seeking the emitter
 [[triggers]]
-name = "Office: Hint - Check L&F for HAL Module"
+name = "Office: Hint - Check L&F for Mobile Emitter"
 only_once = true
 conditions = [
     { type = "withNpc", npc_id = "b_a_receptionist" },
@@ -843,6 +844,7 @@ conditions = [
 ]
 actions = [
     { type = "advanceFlag", flag = "hal-reboot" },
+    { type = "addFlag", flag = { type = "simple", name = "module-1-inserted" } },
     { type = "restrictItem", item_id = "hal_module_1" },
     { type = "showMessage", text = "Memory module #1 magnetically locks into place and lights up." },
 ]
@@ -855,6 +857,7 @@ conditions = [
 ]
 actions = [
     { type = "advanceFlag", flag = "hal-reboot" },
+    { type = "addFlag", flag = { type = "simple", name = "module-2-inserted" } },
     { type = "restrictItem", item_id = "hal_module_2" },
     { type = "showMessage", text = "Memory module #2 magnetically locks into place and lights up." },
 ]
@@ -867,6 +870,7 @@ conditions = [
 ]
 actions = [
     { type = "advanceFlag", flag = "hal-reboot" },
+    { type = "addFlag", flag = { type = "simple", name = "module-3-inserted" } },
     { type = "restrictItem", item_id = "hal_module_3" },
     { type = "showMessage", text = "Memory module #3 magnetically locks into place and lights up." },
 ]
@@ -994,11 +998,14 @@ actions = [
 # -------------------------------------------------------------------------------------------------------------------------------
 #                                                   ------- MONOLITH INTERACTION SEQUENCE --------
 
-# Announce monolith access after HAL reboot is complete
+# Announce monolith access after HAL reboot is complete (next time in room with HAL)
 [[triggers]]
 name = "Monolith: Announce Access After HAL Reboot"
 only_once = true
-conditions = [{ type = "flagComplete", flag = "hal-reboot" }]
+conditions = [
+    { type = "flagComplete", flag = "hal-reboot" },
+    { type = "withNpc", npc_id = "hal_9000" },
+]
 actions = [
     { type = "showMessage", text = """HAL-9000's lens turns to focus on the monolith.""" },
     { type = "npcSays", npc_id = "hal_9000", quote = """Access granted, Candidate. The monolith awaits your touch.""" },
@@ -1052,6 +1059,17 @@ actions = [
 # is despawned when the player gets it from the crevice and it's replaced with the original (hal_module_2),
 # which doesn't require "pluck" for handling. The plain hal_module_2 must have its description updated
 # so it doesn't still say it's in the vending machine after retrieval.
+[[triggers]]
+name = "Black Knight: Hint About Vending Machine"
+only_once = true
+conditions = [
+    { type = "withNpc", npc_id = "black_knight" },
+    { type = "flagInProgress", flag = "hal-reboot" },
+]
+actions = [
+    { type = "npcSays", npc_id = "black_knight", quote = """Lo, good Sir! I grow weary, and require a chalice of electrolytes and caffeine, but cannot leave my post. Nor do I want to dull my new sword doing battle with that infernal contraption in the lobby again. If you pass by there, retrieve one for me and I shall be further in your debt.""" },
+]
+
 [[triggers]]
 name = "Vending Machine: Pry Open with Crowbar"
 only_once = true

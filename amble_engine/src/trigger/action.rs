@@ -870,7 +870,8 @@ pub fn spawn_item_in_inventory(world: &mut AmbleWorld, item_id: &Uuid) -> Result
         && item.location.is_not_nowhere()
     {
         warn!(
-            "SpawnItemInInventory({item_id}): '{}' already in world -- MOVING item instead (may not be desired!)",
+            "SpawnItemInInventory({}): '{}' already in world -- MOVING item instead (may not be desired!)",
+            item.symbol(),
             item.name()
         );
         despawn_item(world, item_id)?;
@@ -996,7 +997,7 @@ pub fn set_npc_state(world: &mut AmbleWorld, npc_id: &Uuid, state: &NpcState) ->
             return Ok(()); // no-op if NPC already in state
         }
         npc.state = state.clone();
-        info!("└─ action: SetNpcState({npc_id}, {state:?})");
+        info!("└─ action: SetNpcState({}, {state:?})", npc.symbol());
         Ok(())
     } else {
         bail!("SetNpcState({npc_id},_): unknown NPC id");
