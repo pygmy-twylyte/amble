@@ -12,7 +12,7 @@ pub enum RawTriggerAction {
         flag: Flag,
     },
     AddSpinnerWedge {
-        spinner: SpinnerType,
+        spinner: String,
         text: String,
         width: usize,
     },
@@ -98,7 +98,7 @@ pub enum RawTriggerAction {
         room_id: String,
     },
     SpinnerMessage {
-        spinner: SpinnerType,
+        spinner: String,
     },
     UnlockItem {
         item_id: String,
@@ -119,13 +119,15 @@ impl RawTriggerAction {
                 exit_to,
             } => cook_barred_message(symbols, msg, exit_from, exit_to),
             Self::AddSpinnerWedge { spinner, text, width } => Ok(TriggerAction::AddSpinnerWedge {
-                spinner: *spinner,
+                spinner: SpinnerType::from_toml_key(spinner),
                 text: text.clone(),
                 width: *width,
             }),
             Self::ResetFlag { flag } => Ok(TriggerAction::ResetFlag(flag.to_string())),
             Self::AdvanceFlag { flag } => Ok(TriggerAction::AdvanceFlag(flag.to_string())),
-            Self::SpinnerMessage { spinner } => Ok(TriggerAction::SpinnerMessage { spinner: *spinner }),
+            Self::SpinnerMessage { spinner } => Ok(TriggerAction::SpinnerMessage {
+                spinner: SpinnerType::from_toml_key(spinner),
+            }),
             Self::RestrictItem { item_id } => cook_restrict_item(symbols, item_id),
             Self::NpcRefuseItem { npc_id, reason } => cook_npc_refuse_item(symbols, npc_id, reason),
             Self::NpcSaysRandom { npc_id } => cook_npc_says_random(symbols, npc_id),

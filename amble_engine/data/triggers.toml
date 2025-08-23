@@ -610,7 +610,7 @@ conditions = [
         "guard-post",
     ] },
 ]
-actions = []
+actions = [{ type = "spinnerMessage", spinner = "ambientWoodland" }]
 
 [[triggers]]
 name = "Ambient: Elevator Muzak"
@@ -621,7 +621,7 @@ conditions = [
         "lift-sublevel-1",
     ] },
 ]
-actions = []
+actions = [{ type = "spinnerMessage", spinner = "muzak" }]
 
 [[triggers]]
 name = "Ambient: Near AA-3B"
@@ -637,7 +637,7 @@ conditions = [
         "med-bay",
     ] },
 ]
-actions = []
+actions = [{ type = "spinnerMessage", spinner = "ambientAA3B" }]
 
 [[triggers]]
 name = "Ambient: AA Building Main Floor"
@@ -653,7 +653,7 @@ conditions = [
         "vip-bathroom",
     ] },
 ]
-actions = []
+actions = [{ type = "spinnerMessage", spinner = "ambientInterior" }]
 
 [[triggers]]
 name = "Vogon Poetry: Nausea & Vomiting Upon Reading"

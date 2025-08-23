@@ -52,7 +52,7 @@ use crate::{
     item::{ContainerState, ItemAbility, ItemInteractionType, consume},
     loader::items::interaction_requirement_met,
     repl::{entity_not_found, find_world_object},
-    spinners::SpinnerType,
+    spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers, triggers_contain_condition},
 };
@@ -223,7 +223,10 @@ pub fn use_item_on_handler(
     if !interaction_fired {
         view.push(ViewItem::ActionFailure(
             world
-                .spin_spinner(SpinnerType::NoEffect, "That appears to have had no effect, Captain.")
+                .spin_core(
+                    CoreSpinnerType::NoEffect,
+                    "That appears to have had no effect, Captain.",
+                )
                 .to_string(),
         ));
         info!(

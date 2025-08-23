@@ -121,8 +121,8 @@ fn test_room_overlay_applies_flag() {
 
 #[test]
 fn test_spinner_type_serde() {
-    use ae::spinners::SpinnerType;
-    let ty = SpinnerType::Movement;
+    use ae::spinners::{CoreSpinnerType, SpinnerType};
+    let ty = SpinnerType::Core(CoreSpinnerType::Movement);
     let s = serde_json::to_string(&ty).unwrap();
     let back: SpinnerType = serde_json::from_str(&s).unwrap();
     assert_eq!(ty, back);
@@ -261,16 +261,16 @@ fn test_register_item() {
 #[test]
 fn test_spinner_file_to_map() {
     use ae::loader::spinners::{RawSpinnerData, SpinnerFile};
-    use ae::spinners::SpinnerType;
+    use ae::spinners::{CoreSpinnerType, SpinnerType};
     let file = SpinnerFile {
         entries: vec![RawSpinnerData {
-            spinner_type: SpinnerType::Movement,
+            spinner_type_key: "movement".into(),
             values: vec!["go".into()],
             widths: vec![1],
         }],
     };
     let map = file.to_spinner_map();
-    assert!(map.contains_key(&SpinnerType::Movement));
+    assert!(map.contains_key(&SpinnerType::Core(CoreSpinnerType::Movement)));
 }
 
 #[test]

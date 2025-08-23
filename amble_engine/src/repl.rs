@@ -22,7 +22,7 @@ pub use system::*;
 
 use crate::command::{Command, parse_command};
 use crate::npc::{Npc, calculate_next_location, move_npc, move_scheduled};
-use crate::spinners::SpinnerType;
+use crate::spinners::CoreSpinnerType;
 use crate::style::GameStyle;
 use crate::trigger::TriggerCondition;
 use crate::world::AmbleWorld;
@@ -96,7 +96,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             Unknown => {
                 view.push(ViewItem::Error(
                     world
-                        .spin_spinner(SpinnerType::UnrecognizedCommand, "Didn't quite catch that?")
+                        .spin_core(CoreSpinnerType::UnrecognizedCommand, "Didn't quite catch that?")
                         .italic()
                         .to_string(),
                 ));
@@ -243,6 +243,6 @@ fn entity_not_found(world: &AmbleWorld, view: &mut View, search_text: &str) {
     view.push(ViewItem::Error(format!(
         "\"{}\"? {}",
         search_text.error_style(),
-        world.spin_spinner(SpinnerType::EntityNotFound, "What's that?")
+        world.spin_core(CoreSpinnerType::EntityNotFound, "What's that?")
     )));
 }

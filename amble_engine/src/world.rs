@@ -6,7 +6,7 @@
 use crate::AMBLE_VERSION;
 use crate::item::ContainerState;
 use crate::npc::Npc;
-use crate::spinners::SpinnerType;
+use crate::spinners::{CoreSpinnerType, SpinnerType};
 use crate::trigger::Trigger;
 use crate::{Goal, Item, Player, Room};
 
@@ -78,12 +78,22 @@ impl AmbleWorld {
         world
     }
 
-    /// Returns a random string (&'static str) from the selected spinner type, or a supplied default.
+    /// Returns a random string from the selected spinner type, or a supplied default.
     pub fn spin_spinner(&self, spin_type: SpinnerType, default: &'static str) -> String {
         self.spinners
             .get(&spin_type)
             .and_then(gametools::Spinner::spin)
             .unwrap_or(default.to_string())
+    }
+
+    /// Convenience method to spin a core spinner type.
+    pub fn spin_core(&self, core_type: CoreSpinnerType, default: &'static str) -> String {
+        self.spin_spinner(SpinnerType::Core(core_type), default)
+    }
+
+    /// Convenience method to spin a custom spinner by key.
+    pub fn spin_custom(&self, key: &str, default: &'static str) -> String {
+        self.spin_spinner(SpinnerType::Custom(key.to_string()), default)
     }
 
     /// Obtain a reference to the room the player occupies.
@@ -304,14 +314,43 @@ mod tests {
         let mut world = AmbleWorld::new_empty();
 
         // Test with no spinner
-        let result = world.spin_spinner(SpinnerType::Movement, "default");
+        let result = world.spin_spinner(SpinnerType::Core(CoreSpinnerType::Movement), "default");
         assert_eq!(result, "default");
 
         // Test with spinner
         let spinner = Spinner::new(vec![Wedge::new("custom result".into())]);
-        world.spinners.insert(SpinnerType::Movement, spinner);
+        world
+            .spinners
+            .insert(SpinnerType::Core(CoreSpinnerType::Movement), spinner);
 
-        let result = world.spin_spinner(SpinnerType::Movement, "default");
+        let result = world.spin_spinner(SpinnerType::Core(CoreSpinnerType::Movement), "default");
+        assert_eq!(result, "custom result");
+    }
+
+    #[test]
+    fn amble_world_spin_core_convenience() {
+        let mut world = AmbleWorld::new_empty();
+
+        // Test core convenience method
+        let result = world.spin_core(CoreSpinnerType::Movement, "default");
+        assert_eq!(result, "default");
+    }
+
+    #[test]
+    fn amble_world_spin_custom_convenience() {
+        let mut world = AmbleWorld::new_empty();
+
+        // Test custom convenience method
+        let result = world.spin_custom("testSpinner", "default");
+        assert_eq!(result, "default");
+
+        // Add a custom spinner and test
+        let spinner = Spinner::new(vec![Wedge::new("custom result".into())]);
+        world
+            .spinners
+            .insert(SpinnerType::Custom("testSpinner".to_string()), spinner);
+
+        let result = world.spin_custom("testSpinner", "default");
         assert_eq!(result, "custom result");
     }
 

@@ -51,7 +51,7 @@ use crate::{
     helpers::{item_symbol_from_id, npc_symbol_from_id},
     npc::Npc,
     repl::{entity_not_found, find_world_object},
-    spinners::SpinnerType,
+    spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{TriggerAction, TriggerCondition, check_triggers, triggers_contain_condition},
 };
@@ -141,7 +141,10 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
     // if no dialogue was triggered, fire random response according to Npc's mood
     if !dialogue_fired {
         if let Some(npc) = world.npcs.get(&sent_id) {
-            if let Some(ignore_spinner) = world.spinners.get(&SpinnerType::NpcIgnore) {
+            if let Some(ignore_spinner) = world
+                .spinners
+                .get(&crate::spinners::SpinnerType::Core(CoreSpinnerType::NpcIgnore))
+            {
                 let dialogue = npc.random_dialogue(ignore_spinner);
                 view.push(ViewItem::NpcSpeech {
                     speaker: npc.name.clone(),
