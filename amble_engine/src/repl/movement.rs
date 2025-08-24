@@ -51,57 +51,6 @@ use crate::{
 use anyhow::{Context, Result, anyhow};
 use log::info;
 
-/// Attempts to move the player in the specified direction.
-///
-/// This is the main movement handler that validates and executes player movement
-/// between rooms. It performs comprehensive validation of exit conditions and
-/// requirements before allowing movement, and handles all the associated game
-/// state updates and trigger effects.
-///
-/// # Parameters
-///
-/// * `world` - Mutable reference to the game world containing rooms and player state
-/// * `view` - Mutable reference to the player's view for feedback messages and room display
-/// * `input_dir` - Direction string from player input (e.g., "north", "n", "up")
-///
-/// # Returns
-///
-/// Returns `Ok(())` on successful movement attempt, or an error if world state
-/// is corrupted (invalid room references).
-///
-/// # Movement Process
-///
-/// 1. **Direction Matching** - Finds exits matching the input direction
-/// 2. **Lock Validation** - Ensures the exit is not locked
-/// 3. **Requirement Checking** - Validates required items and flags
-/// 4. **Movement Execution** - Updates player location and triggers events
-/// 5. **Room Display** - Shows new location with appropriate detail level
-///
-/// # Exit Requirements
-///
-/// Movement may be blocked if the player lacks:
-/// - Required flags (story progression markers)
-/// - Required items (keys, tools, passes)
-/// - Proper exit state (unlocked, revealed)
-///
-/// # Scoring System
-///
-/// - First visit to any room awards 1 point
-/// - Subsequent visits to the same room award no points
-/// - Room visit status is permanently tracked
-///
-/// # Display Behavior
-///
-/// - **First visit**: Full verbose description shown automatically
-/// - **Return visit**: Brief description shown (unless in verbose mode)
-/// - **Travel message**: Randomized flavor text for immersion
-///
-/// # Error Conditions
-///
-/// - **Invalid direction**: No exit matches the input direction
-/// - **Locked exit**: Exit exists but is currently locked
-/// - **Missing requirements**: Player lacks required items or flags
-/// - **Invalid destination**: Exit points to non-existent room (returns error)
 /// Handles the "back" command to return to a previous room.
 ///
 /// This function attempts to move the player back to their most recently visited room
@@ -168,6 +117,57 @@ pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     Ok(())
 }
 
+/// Attempts to move the player in the specified direction.
+///
+/// This is the main movement handler that validates and executes player movement
+/// between rooms. It performs comprehensive validation of exit conditions and
+/// requirements before allowing movement, and handles all the associated game
+/// state updates and trigger effects.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world containing rooms and player state
+/// * `view` - Mutable reference to the player's view for feedback messages and room display
+/// * `input_dir` - Direction string from player input (e.g., "north", "n", "up")
+///
+/// # Returns
+///
+/// Returns `Ok(())` on successful movement attempt, or an error if world state
+/// is corrupted (invalid room references).
+///
+/// # Movement Process
+///
+/// 1. **Direction Matching** - Finds exits matching the input direction
+/// 2. **Lock Validation** - Ensures the exit is not locked
+/// 3. **Requirement Checking** - Validates required items and flags
+/// 4. **Movement Execution** - Updates player location and triggers events
+/// 5. **Room Display** - Shows new location with appropriate detail level
+///
+/// # Exit Requirements
+///
+/// Movement may be blocked if the player lacks:
+/// - Required flags (story progression markers)
+/// - Required items (keys, tools, passes)
+/// - Proper exit state (unlocked, revealed)
+///
+/// # Scoring System
+///
+/// - First visit to any room awards 1 point
+/// - Subsequent visits to the same room award no points
+/// - Room visit status is permanently tracked
+///
+/// # Display Behavior
+///
+/// - **First visit**: Full verbose description shown automatically
+/// - **Return visit**: Brief description shown (unless in verbose mode)
+/// - **Travel message**: Randomized flavor text for immersion
+///
+/// # Error Conditions
+///
+/// - **Invalid direction**: No exit matches the input direction
+/// - **Locked exit**: Exit exists but is currently locked
+/// - **Missing requirements**: Player lacks required items or flags
+/// - **Invalid destination**: Exit points to non-existent room (returns error)
 pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str) -> Result<()> {
     let player_name = world.player.name.clone();
     let travel_message = world.spin_core(CoreSpinnerType::Movement, "You head that way...");
@@ -395,7 +395,7 @@ mod tests {
     #[test]
     fn move_requires_flag() {
         let (mut world, start, dest, mut view) = build_test_world();
-        let flag = Flag::simple("alpha");
+        let flag = Flag::simple("alpha", world.turn_count);
         world
             .rooms
             .get_mut(&start)
