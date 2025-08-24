@@ -613,6 +613,17 @@ conditions = [
 actions = [{ type = "spinnerMessage", spinner = "ambientWoodland" }]
 
 [[triggers]]
+name = "Ambient: Snowfield"
+only_once = false
+conditions = [
+    { type = "ambient", spinner = "ambientSnowfield", room_ids = [
+        "snowfield",
+        "snow-camp",
+    ] },
+]
+actions = [{ type = "spinnerMessage", spinner = "ambientSnowfield" }]
+
+[[triggers]]
 name = "Ambient: Elevator Muzak"
 only_once = false
 conditions = [

@@ -168,6 +168,7 @@ values = [
     "A voice booms: \"All your base are belong to us\" followed by awkward silence.",
     "You glimpse a person in power armor giving a thumbs up before stepping into a cryogenic pod.",
     "A figure in a lab coat adjusts his glasses and says \"Rise and shine, Mister Freeman\" before vanishing.",
+    "All devices nearby repeat: ATTENTION ALL PLANETS OF THE SOLAR FEDERATION: WE HAVE ASSUMED CONTROL",
 ]
 widths = [30]
 
@@ -177,28 +178,34 @@ values = [
     "",
     "The intercom crackles: \"Please return the time machine to the checkout desk last Wednesday.\"",
     "A siren whoops twice, then cuts off mid-blare.",
-    "A calm female voice over the PA says: \"Welcome to Aperture Science. Enjoy your stay,\" followed by a beep.",
+    "A calm female voice over the PA says: \"Welcome to Aperture Science. Enjoy your tests,\" followed by a beep.",
     "Somewhere behind the walls, gears grind and then stop abruptly.",
-    "The lights flicker and buzz with a discordant hum.",
+    "The lights flicker and buzz with a discordant hum, then flare brightly for a moment.",
     "A gust of wind rushes through the room, but there are no open doors or windows.",
     "A faint voice says \"Testing in progress\" followed by a thump.",
-    "You hear a tone, then \"Fiction containment at 42%.\"",
-    "The building shudder violently for a moment. Nobody seems to notice.",
-    "All of the fire doors in the building suddenly close.",
+    "You hear a tritone, then \"Fiction containment at 42%. Not great. Not terrible.\"",
+    "The building shudders violently for a moment. Nobody seems to notice.",
+    "All of the fire doors around you suddenly close.",
     "Someone in the distance yells: \"Hey, who turned out the lights?!\"",
     "You hear the \"Underdog\" theme through the wall from an adjacent room.",
     "Paperwork and supplies pass by through a pneumatic tube overhead, along with an occasional piece of cake.",
     "The PA system plays a brief snippet of \"Also Sprach Zarathustra\" for no apparent reason.",
-    "You hear someone practicing the lute in a distant room. Badly.",
+    "You hear someone practicing the lute in a distant room. They clearly need to keep practicing. And tune the lute. Then light it on fire.",
     "A vending machine dispenses a can of Slurm with an enthusiastic \"Woo!\"",
     "The sprinkler system activates for exactly three seconds, then stops with an apologetic beep.",
     "Someone in the next room is apparently explaining the plot of \"Finnegan's Wake\" to a rubber duck.",
-    "The elevator music briefly changes to a death metal version of \"Girl from Ipanema.\"",
     "A mechanical voice announces: \"Attention: The Ministry of Silly Walks is now in session.\"",
-    "You hear the distinctive sound of someone trying to eat soup with a fork.",
     "The air conditioning kicks in with a sound suspiciously like whale song.",
 ]
-widths = [25]
+widths = [40]
+
+[[spinners]]
+spinnerType = "ambientSnowfield"
+values = [
+    "A large husky dog watches you intently, staying close but not approaching.",
+    "A husky tracks you through the snowield, keeping at a short distance.",
+    "From a small copse nearby, a large husky stares at you, stone still. Never blinking. Is it breathing?",
+]
 
 [[spinners]]
 spinnerType = "nauseated"
@@ -208,15 +215,16 @@ values = [
     "You throw up a little in your mouth.",
     "You regurgitate a bit of last night's dinner, but can't remember what it was.",
     "Everything smells faintly of old tuna. Why?",
-    "Your stomach roils, like that time you stayed up all night drinking mezcal with Ruben",
+    "Your stomach roils, like that time you stayed up all night drinking mezcal with Ruben. Why did you eat that worm?",
     "You stop by the nearest wastebin for a few dry heaves.",
     "You feel like you've just eaten a Klingon gagh sampler platter. Raw.",
     "Your digestive system briefly considers filing a formal complaint with management.",
     "You experience the gastric equivalent of a Windows blue screen of death.",
     "A wave of nausea hits you like a brick made entirely of other, smaller bricks.",
     "You feel queasy enough to consider switching to a liquid diet of nothing but antacids.",
+    "Throat burning with acid bile, you swear off Vogon poetry forever. Just like last time.",
 ]
-widths = [10]
+widths = [5]
 
 [[spinners]]
 spinnerType = "muzak"
