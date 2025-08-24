@@ -169,7 +169,10 @@ pub fn check_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()>
                 }
 
                 if move_scheduled(movement, current_turn) {
-                    if let Some(new_location) = calculate_next_location(movement) {
+                    // just no-ops if next location == current
+                    if let Some(new_location) = calculate_next_location(movement)
+                        && npc.location != new_location
+                    {
                         movement.last_moved_turn = current_turn;
                         move_npc(world, view, npc_id, new_location)?;
                     }
