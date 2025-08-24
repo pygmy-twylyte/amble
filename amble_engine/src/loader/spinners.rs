@@ -101,7 +101,7 @@ impl SpinnerFile {
             let wedges: Vec<Wedge<String>> = values
                 .iter()
                 .zip(widths.iter())
-                .map(|(val, &width)| Wedge::new_weighted(val.to_string(), width))
+                .map(|(val, &width)| Wedge::new_weighted((*val).to_string(), width))
                 .collect();
 
             let spinner = Spinner::new(wedges);
