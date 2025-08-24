@@ -137,23 +137,13 @@ pub fn use_item_on_handler(
         return Ok(());
     }
     // unwrap OK here because we just checked for None above
-    let target = maybe_target.unwrap();
-    let tool = maybe_tool.unwrap();
+    let target = maybe_target.expect("maybe_target already checked for None case");
+    let tool = maybe_tool.expect("maybe_tool already checked for None case");
     let target_name = target.name().to_string();
     let target_id = target.id();
     let tool_name = tool.name().to_string();
     let tool_id = tool.id();
     let tool_is_consumable = tool.consumable.is_some();
-
-    // Can you even do this to the target? ("burn water with lighter" -> you can't burn water!)
-    // This may have unwanted consequences when items don't have a specifice reaction defined but it's still
-    // a reasonable command to try -- e.g. "clean flamethrower with towel" -- reasonable to do but won't have a defined requirement for cleaning
-    // message would be "You can't clean the flamethrower!"... problematic.
-    // if !target.interaction_requires.contains_key(&interaction) {
-    //     view.push(ViewItem::ActionFailure(format!(
-    //         "You can't {interaction} the {target_name}!"
-    //     )));
-    // }
 
     // check if these items can interact in this way
     if !interaction_requirement_met(interaction, target, tool) {
@@ -203,10 +193,7 @@ pub fn use_item_on_handler(
             },
         ],
     )?;
-    // check to see if the ActOnItem trigger we just sent fired
-    // (that's the one that will actually change world state --
-    // an additional UseItemOnItem can provide flavor for a
-    // particular item with the required ability.)
+
     let interaction_fired = triggers_contain_condition(&fired, |cond| match cond {
         TriggerCondition::ActOnItem { action, target_id } => {
             *action == sent_interaction && *target_id == sent_target_id
@@ -400,13 +387,7 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                     target_item.name().item_style()
                 )));
             },
-            Some(ContainerState::Locked) => {
-                view.push(ViewItem::ActionFailure(format!(
-                    "The {} is locked. You'll have to unlock it first.",
-                    target_item.name().item_style()
-                )));
-            },
-            Some(ContainerState::TransparentLocked) => {
+            Some(ContainerState::Locked | ContainerState::TransparentLocked) => {
                 view.push(ViewItem::ActionFailure(format!(
                     "The {} is locked. You'll have to unlock it first.",
                     target_item.name().item_style()
