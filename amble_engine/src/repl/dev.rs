@@ -160,7 +160,7 @@ pub fn dev_start_seq_handler(world: &mut AmbleWorld, view: &mut View, seq_name: 
     } else {
         end.parse::<u8>().ok()
     };
-    let seq = Flag::sequence(seq_name, limit);
+    let seq = Flag::sequence(seq_name, limit, world.turn_count);
     view.push(ViewItem::ActionSuccess(format!(
         "Sequence flag '{}' started with step limit {limit:?}.",
         seq.value()
@@ -195,13 +195,13 @@ pub fn dev_start_seq_handler(world: &mut AmbleWorld, view: &mut View, seq_name: 
 /// - Testing trigger conditions that depend on flag states
 /// - Simulating completed story events or achievements
 pub fn dev_set_flag_handler(world: &mut AmbleWorld, view: &mut View, flag_name: &str) {
-    let flag = Flag::simple(flag_name);
+    let flag = Flag::simple(flag_name, world.turn_count);
     view.push(ViewItem::ActionSuccess(format!("Simple flag '{}' set.", flag.value())));
     warn!("DEV_MODE command SetFlag used: '{}' set.", flag.value());
     trigger::add_flag(world, view, &flag);
 }
 
-/// Advances a sequence flag to its next step (DEV_MODE only).
+/// Advances a sequence flag to its next step (`DEV_MODE` only).
 ///
 /// This development command increments a sequence flag by one step, simulating
 /// progress through a multi-step process. This is useful for testing triggers
@@ -230,7 +230,7 @@ pub fn dev_set_flag_handler(world: &mut AmbleWorld, view: &mut View, flag_name: 
 /// - Fast-forwarding through lengthy sequences during testing
 pub fn dev_advance_seq_handler(world: &mut AmbleWorld, view: &mut View, seq_name: &str) {
     world.player.advance_flag(seq_name);
-    let target = Flag::simple(seq_name);
+    let target = Flag::simple(seq_name, world.turn_count);
     if let Some(flag) = world.player.flags.get(&target) {
         view.push(ViewItem::ActionSuccess(format!(
             "Sequence '{}' advanced to [{}].",
@@ -274,7 +274,7 @@ pub fn dev_advance_seq_handler(world: &mut AmbleWorld, view: &mut View, seq_name
 /// - Clearing progress to test different approaches
 pub fn dev_reset_seq_handler(world: &mut AmbleWorld, view: &mut View, seq_name: &str) {
     world.player.reset_flag(seq_name);
-    let target = Flag::simple(seq_name);
+    let target = Flag::simple(seq_name, world.turn_count);
     if let Some(flag) = world.player.flags.get(&target) {
         view.push(ViewItem::ActionSuccess(format!(
             "Sequence '{}' reset to [{}].",

@@ -54,7 +54,10 @@ impl RoomOverlay {
             OverlayCondition::FlagComplete { flag } => world
                 .player
                 .flags
-                .get(&Flag::Simple { name: flag.into() })
+                .get(&Flag::Simple {
+                    name: flag.into(),
+                    turn_set: 0,
+                })
                 .is_some_and(Flag::is_complete),
             OverlayCondition::FlagSet { flag } => flag_is_set(flag),
             OverlayCondition::FlagUnset { flag } => !flag_is_set(flag),
@@ -303,7 +306,7 @@ mod tests {
     #[test]
     fn room_overlay_applies_with_flag_set() {
         let mut world = create_test_world();
-        world.player.flags.insert(Flag::simple("test_flag"));
+        world.player.flags.insert(Flag::simple("test_flag", 0));
 
         let overlay = RoomOverlay {
             condition: OverlayCondition::FlagSet {
@@ -346,7 +349,7 @@ mod tests {
     #[test]
     fn room_overlay_applies_with_flag_complete() {
         let mut world = create_test_world();
-        let mut seq_flag = Flag::sequence("test_seq", Some(2));
+        let mut seq_flag = Flag::sequence("test_seq", Some(2), 0);
         seq_flag.advance();
         seq_flag.advance(); // Complete
         world.player.flags.insert(seq_flag);
@@ -482,7 +485,10 @@ mod tests {
         let mut view = View::new();
         let room_id = world.player.location.unwrap_room();
 
-        world.player.flags.insert(Flag::simple("show_overlay"));
+        world
+            .player
+            .flags
+            .insert(Flag::simple("show_overlay", world.turn_count));
 
         let overlay = RoomOverlay {
             condition: OverlayCondition::FlagSet {
@@ -633,7 +639,7 @@ mod tests {
         // Create exit with requirements
         let mut exit = Exit::new(dest_room_id);
         exit.locked = true;
-        exit.required_flags.insert(Flag::simple("key_flag"));
+        exit.required_flags.insert(Flag::simple("key_flag", world.turn_count));
 
         world
             .rooms
