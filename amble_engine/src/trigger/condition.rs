@@ -96,12 +96,18 @@ impl TriggerCondition {
             Self::FlagInProgress(flag) => world
                 .player
                 .flags
-                .get(&Flag::Simple { name: flag.into() })
+                .get(&Flag::Simple {
+                    name: flag.into(),
+                    turn_set: usize::MAX, /* dummy - not used in hash */
+                })
                 .is_some_and(|f| !f.is_complete()),
             Self::FlagComplete(flag) => world
                 .player
                 .flags
-                .get(&Flag::Simple { name: flag.into() })
+                .get(&Flag::Simple {
+                    name: flag.into(),
+                    turn_set: usize::MAX,
+                })
                 .is_some_and(Flag::is_complete),
             Self::HasVisited(room_id) => world.rooms.get(room_id).is_some_and(|r| r.visited),
             Self::InRoom(room_id) => *room_id == world.player.location.unwrap_room(),
@@ -234,7 +240,7 @@ mod tests {
     #[test]
     fn flag_conditions_reflect_player_flags() {
         let mut world = build_test_world().0;
-        world.player.flags.insert(Flag::simple("a"));
+        world.player.flags.insert(Flag::simple("a", world.turn_count));
         assert!(TriggerCondition::HasFlag("a".into()).is_ongoing(&world));
         assert!(!TriggerCondition::MissingFlag("a".into()).is_ongoing(&world));
         assert!(TriggerCondition::MissingFlag("b".into()).is_ongoing(&world));
@@ -243,7 +249,10 @@ mod tests {
     #[test]
     fn sequence_flag_progress_and_complete() {
         let mut world = build_test_world().0;
-        world.player.flags.insert(Flag::sequence("quest", Some(2)));
+        world
+            .player
+            .flags
+            .insert(Flag::sequence("quest", Some(2), world.turn_count));
         world.player.advance_flag("quest");
         assert!(TriggerCondition::FlagInProgress("quest".into()).is_ongoing(&world));
         world.player.advance_flag("quest");
