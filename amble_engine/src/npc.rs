@@ -14,7 +14,9 @@ use rand::{prelude::IndexedRandom, seq::IteratorRandom};
 
 use uuid::Uuid;
 
-use crate::{ItemHolder, Location, View, ViewItem, WorldObject, view::ContentLine, world::AmbleWorld};
+use crate::{
+    ItemHolder, Location, View, ViewItem, WorldObject, spinners::CoreSpinnerType, view::ContentLine, world::AmbleWorld,
+};
 
 /// A non-playable character.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -221,6 +223,7 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
         if uuid == player_room_id {
             view.push(ViewItem::NpcLeft {
                 npc_name: npc.name().to_string(),
+                spin_msg: world.spin_core(CoreSpinnerType::NpcLeft, "left."),
             });
             info!("{} ({}) left the Candidate's location.", npc.name(), npc.symbol());
         }
@@ -230,6 +233,7 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
         if uuid == player_room_id {
             view.push(ViewItem::NpcEntered {
                 npc_name: npc.name().to_string(),
+                spin_msg: world.spin_core(CoreSpinnerType::NpcEntered, "entered."),
             });
             info!("{} ({}) arrived at the Candidate's location.", npc.name(), npc.symbol());
         }
@@ -595,7 +599,7 @@ mod tests {
         // Check that NpcLeft ViewItem was created
         let left_items: Vec<_> = view.items.iter().filter(|item| item.is_npc_left()).collect();
         assert_eq!(left_items.len(), 1);
-        if let ViewItem::NpcLeft { npc_name } = &left_items[0] {
+        if let ViewItem::NpcLeft { npc_name, .. } = &left_items[0] {
             assert_eq!(npc_name, "Test NPC");
         } else {
             panic!("Expected NpcLeft ViewItem");
@@ -609,7 +613,7 @@ mod tests {
         // Check that NpcEntered ViewItem was created
         let entered_items: Vec<_> = view.items.iter().filter(|item| item.is_npc_entered()).collect();
         assert_eq!(entered_items.len(), 1);
-        if let ViewItem::NpcEntered { npc_name } = &entered_items[0] {
+        if let ViewItem::NpcEntered { npc_name, .. } = &entered_items[0] {
             assert_eq!(npc_name, "Test NPC");
         } else {
             panic!("Expected NpcEntered ViewItem");
