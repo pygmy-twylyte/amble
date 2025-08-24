@@ -43,6 +43,11 @@ state = "normal"
 [npcs.location]
 Room = "main-lobby"
 
+[npcs.movement]
+movement_type = "route"
+rooms = ["main-lobby", "lift-bank-main", "lounge"]
+timing = "every_2_turns"
+
 [npcs.dialogue]
 "normal" = ["GONK!", "(gonk)", "GONK gonk.", "Gonk... Gonk..."]
 "happy" = ["(You hear a transformer humming a happy tune.)"]
