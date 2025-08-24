@@ -19,6 +19,8 @@ const ICON_NEGATIVE: &str = "➖";
 const ICON_POSITIVE: &str = "➕";
 const ICON_ENGINE: &str = "⚙";
 const ICON_STATUS: &str = "⚕";
+const ICON_NPC_ENTER: &str = "→"; // U+2192
+const ICON_NPC_LEAVE: &str = "←"; // U+2190
 
 /// View aggregates information to be displayed on each pass through the REPL and then organizes
 /// and displays the result.
@@ -120,8 +122,8 @@ impl View {
     }
 
     fn world_reaction(&mut self) {
+        self.npc_events_sorted();
         self.triggered_event();
-        self.npc_speech();
         self.status_change();
         self.points_awarded();
     }
@@ -220,8 +222,31 @@ impl View {
         }
     }
 
-    fn npc_speech(&mut self) {
-        let speech_msgs = self.items.iter().filter(|i| i.is_npc_speech());
+    fn npc_events_sorted(&mut self) {
+        // Collect all NPC-related events
+        let mut npc_enters: Vec<_> = self.items.iter().filter(|i| i.is_npc_entered()).collect();
+        let mut npc_leaves: Vec<_> = self.items.iter().filter(|i| i.is_npc_left()).collect();
+        let speech_msgs: Vec<_> = self.items.iter().filter(|i| i.is_npc_speech()).collect();
+
+        // Sort by NPC name for consistent ordering
+        npc_enters.sort_by(|a, b| a.npc_name().cmp(&b.npc_name()));
+        npc_leaves.sort_by(|a, b| a.npc_name().cmp(&b.npc_name()));
+
+        let has_events = !npc_enters.is_empty() || !npc_leaves.is_empty() || !speech_msgs.is_empty();
+
+        // Display entered events first
+        for msg in npc_enters {
+            if let ViewItem::NpcEntered { npc_name } = msg {
+                let formatted = format!(
+                    "{:<4}{}",
+                    ICON_NPC_ENTER.trig_icon_style(),
+                    format!("{} entered.", npc_name.npc_style()).npc_movement_style()
+                );
+                println!("{}", fill(formatted.as_str(), normal_block()));
+            }
+        }
+
+        // Then display speech events
         for quote in speech_msgs {
             if let ViewItem::NpcSpeech { speaker, quote } = quote {
                 println!("{} says:", speaker.npc_style());
@@ -229,8 +254,24 @@ impl View {
                     "{}",
                     fill(quote.as_str(), indented_block()).to_string().npc_quote_style()
                 );
-                println!();
             }
+        }
+
+        // Finally display left events
+        for msg in npc_leaves {
+            if let ViewItem::NpcLeft { npc_name } = msg {
+                let formatted = format!(
+                    "{:<4}{}",
+                    ICON_NPC_LEAVE.trig_icon_style(),
+                    format!("{} left.", npc_name.npc_style()).npc_movement_style()
+                );
+                println!("{}", fill(formatted.as_str(), normal_block()));
+            }
+        }
+
+        // Add spacing if any NPC events were displayed
+        if has_events {
+            println!();
         }
     }
 
@@ -660,6 +701,12 @@ pub enum ViewItem {
         speaker: String,
         quote: String,
     },
+    NpcEntered {
+        npc_name: String,
+    },
+    NpcLeft {
+        npc_name: String,
+    },
     PointsAwarded(isize),
     QuitSummary {
         rank: String,
@@ -710,6 +757,8 @@ impl ViewItem {
             | ViewItem::ActiveGoal { .. }
             | ViewItem::CompleteGoal { .. } => Section::DirectResult,
             ViewItem::NpcSpeech { .. }
+            | ViewItem::NpcEntered { .. }
+            | ViewItem::NpcLeft { .. }
             | ViewItem::TriggeredEvent(_)
             | ViewItem::PointsAwarded(_)
             | ViewItem::StatusChange { .. } => Section::WorldResponse,
@@ -720,6 +769,15 @@ impl ViewItem {
             | ViewItem::GameLoaded { .. }
             | ViewItem::GameSaved { .. } => Section::System,
             ViewItem::TransitionMessage(_) => Section::Transition,
+        }
+    }
+
+    // Helper methods for extracting data from ViewItems
+    pub fn npc_name(&self) -> &str {
+        match self {
+            ViewItem::NpcEntered { npc_name } => npc_name,
+            ViewItem::NpcLeft { npc_name } => npc_name,
+            _ => panic!("Called npc_name on ViewItem that doesn't have npc_name field"),
         }
     }
 }

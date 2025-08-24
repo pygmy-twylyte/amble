@@ -48,6 +48,7 @@ pub trait GameStyle {
     fn denied_style(&self) -> ColoredString;
     fn overlay_style(&self) -> ColoredString;
     fn section_style(&self) -> ColoredString;
+    fn npc_movement_style(&self) -> ColoredString;
 }
 
 impl GameStyle for &str {
@@ -131,6 +132,10 @@ impl GameStyle for &str {
     fn highlight(&self) -> ColoredString {
         self.yellow()
     }
+
+    fn npc_movement_style(&self) -> ColoredString {
+        self.italic().truecolor(40, 180, 220)
+    }
 }
 
 impl GameStyle for String {
@@ -213,5 +218,9 @@ impl GameStyle for String {
 
     fn highlight(&self) -> ColoredString {
         self.as_str().highlight()
+    }
+
+    fn npc_movement_style(&self) -> ColoredString {
+        self.as_str().npc_movement_style()
     }
 }

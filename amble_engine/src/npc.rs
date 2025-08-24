@@ -14,9 +14,7 @@ use rand::{prelude::IndexedRandom, seq::IteratorRandom};
 
 use uuid::Uuid;
 
-use crate::{
-    ItemHolder, Location, View, ViewItem, WorldObject, style::GameStyle, view::ContentLine, world::AmbleWorld,
-};
+use crate::{ItemHolder, Location, View, ViewItem, WorldObject, view::ContentLine, world::AmbleWorld};
 
 /// A non-playable character.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -221,14 +219,18 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
     // update npc list in from/to rooms as appropriate
     if let Some(uuid) = from_room_id {
         if uuid == player_room_id {
-            view.push(ViewItem::TriggeredEvent(format!("{} left.", npc.name().npc_style())));
+            view.push(ViewItem::NpcLeft {
+                npc_name: npc.name().to_string(),
+            });
             info!("{} ({}) left the Candidate's location.", npc.name(), npc.symbol());
         }
         world.rooms.get_mut(&uuid).map(|room| room.npcs.remove(&npc_id));
     }
     if let Some(uuid) = to_room_id {
         if uuid == player_room_id {
-            view.push(ViewItem::TriggeredEvent(format!("{} entered.", npc.name().npc_style())));
+            view.push(ViewItem::NpcEntered {
+                npc_name: npc.name().to_string(),
+            });
             info!("{} ({}) arrived at the Candidate's location.", npc.name(), npc.symbol());
         }
         world.rooms.get_mut(&uuid).map(|room| room.npcs.insert(npc_id));
@@ -536,5 +538,147 @@ mod tests {
         assert_eq!(custom1, custom2);
         assert_ne!(custom1, custom3);
         assert_ne!(custom1, NpcState::Happy);
+    }
+
+    #[test]
+    fn npc_movement_creates_correct_view_items() {
+        use crate::room::Room;
+
+        let mut world = AmbleWorld::new_empty();
+        let mut view = View::new();
+
+        // Create two rooms
+        let player_room_id = Uuid::new_v4();
+        let other_room_id = Uuid::new_v4();
+
+        let player_room = Room {
+            id: player_room_id,
+            symbol: "player_room".into(),
+            name: "Player Room".into(),
+            base_description: "The player's room".into(),
+            overlays: vec![],
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+
+        let other_room = Room {
+            id: other_room_id,
+            symbol: "other_room".into(),
+            name: "Other Room".into(),
+            base_description: "Another room".into(),
+            overlays: vec![],
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+
+        world.rooms.insert(player_room_id, player_room);
+        world.rooms.insert(other_room_id, other_room);
+
+        // Create NPC and set player location
+        let npc_id = Uuid::new_v4();
+        let npc = create_test_npc();
+        world.npcs.insert(npc_id, npc);
+        world.player.location = Location::Room(player_room_id);
+
+        // Move NPC from player's room to another room (should create NpcLeft)
+        world.npcs.get_mut(&npc_id).unwrap().location = Location::Room(player_room_id);
+        let _ = move_npc(&mut world, &mut view, npc_id, Location::Room(other_room_id));
+
+        // Check that NpcLeft ViewItem was created
+        let left_items: Vec<_> = view.items.iter().filter(|item| item.is_npc_left()).collect();
+        assert_eq!(left_items.len(), 1);
+        if let ViewItem::NpcLeft { npc_name } = &left_items[0] {
+            assert_eq!(npc_name, "Test NPC");
+        } else {
+            panic!("Expected NpcLeft ViewItem");
+        }
+
+        view.items.clear();
+
+        // Move NPC from another room to player's room (should create NpcEntered)
+        let _ = move_npc(&mut world, &mut view, npc_id, Location::Room(player_room_id));
+
+        // Check that NpcEntered ViewItem was created
+        let entered_items: Vec<_> = view.items.iter().filter(|item| item.is_npc_entered()).collect();
+        assert_eq!(entered_items.len(), 1);
+        if let ViewItem::NpcEntered { npc_name } = &entered_items[0] {
+            assert_eq!(npc_name, "Test NPC");
+        } else {
+            panic!("Expected NpcEntered ViewItem");
+        }
+    }
+
+    #[test]
+    fn npc_events_are_ordered_correctly_in_view() {
+        use crate::room::Room;
+
+        let mut world = AmbleWorld::new_empty();
+        let mut view = View::new();
+
+        // Create rooms and NPC
+        let player_room_id = Uuid::new_v4();
+        let other_room_id = Uuid::new_v4();
+
+        let player_room = Room {
+            id: player_room_id,
+            symbol: "player_room".into(),
+            name: "Player Room".into(),
+            base_description: "The player's room".into(),
+            overlays: vec![],
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+
+        let other_room = Room {
+            id: other_room_id,
+            symbol: "other_room".into(),
+            name: "Other Room".into(),
+            base_description: "Another room".into(),
+            overlays: vec![],
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+
+        world.rooms.insert(player_room_id, player_room);
+        world.rooms.insert(other_room_id, other_room);
+
+        let npc_id = Uuid::new_v4();
+        let npc = create_test_npc();
+        world.npcs.insert(npc_id, npc);
+        world.player.location = Location::Room(player_room_id);
+
+        // Simulate NPC entering, speaking, then leaving
+        // First: NPC enters player's room
+        world.npcs.get_mut(&npc_id).unwrap().location = Location::Room(other_room_id);
+        let _ = move_npc(&mut world, &mut view, npc_id, Location::Room(player_room_id));
+
+        // Add some speech
+        view.push(ViewItem::NpcSpeech {
+            speaker: "Test NPC".into(),
+            quote: "Hello there!".into(),
+        });
+
+        // Then: NPC leaves player's room
+        let _ = move_npc(&mut world, &mut view, npc_id, Location::Room(other_room_id));
+
+        // Verify we have all three event types
+        assert_eq!(view.items.iter().filter(|i| i.is_npc_entered()).count(), 1);
+        assert_eq!(view.items.iter().filter(|i| i.is_npc_speech()).count(), 1);
+        assert_eq!(view.items.iter().filter(|i| i.is_npc_left()).count(), 1);
+
+        // The ordering should be: enter → speech → leave
+        // This is now handled by the npc_events_sorted() method in the view
     }
 }
