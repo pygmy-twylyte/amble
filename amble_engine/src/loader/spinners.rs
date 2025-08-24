@@ -92,6 +92,8 @@ impl SpinnerFile {
             CoreSpinnerType::TakeVerb,
             CoreSpinnerType::UnrecognizedCommand,
             CoreSpinnerType::QuitMsg,
+            CoreSpinnerType::NpcEntered,
+            CoreSpinnerType::NpcLeft,
         ];
 
         for core_type in core_types {
@@ -176,7 +178,7 @@ mod tests {
         assert!(spinners.contains_key(&SpinnerType::Core(CoreSpinnerType::TakeVerb)));
 
         // Should have exactly the number of core types
-        assert_eq!(spinners.len(), 8);
+        assert_eq!(spinners.len(), 10);
 
         // All should be core spinners
         assert!(spinners.keys().all(|k| k.is_core()));
@@ -195,7 +197,7 @@ mod tests {
         let map = spinner_file.to_spinner_map();
 
         // Should have all core defaults plus the custom one
-        assert!(map.len() > 8);
+        assert!(map.len() > 10);
         assert!(map.contains_key(&SpinnerType::Custom("customTest".to_string())));
     }
 
@@ -211,8 +213,8 @@ mod tests {
 
         let map = spinner_file.to_spinner_map();
 
-        // Should still have 8 core spinners, but movement should be overridden
-        assert_eq!(map.keys().filter(|k| k.is_core()).count(), 8);
+        // Should still have 10 core spinners, but movement should be overridden
+        assert_eq!(map.keys().filter(|k| k.is_core()).count(), 10);
 
         let movement_spinner = map.get(&SpinnerType::Core(CoreSpinnerType::Movement)).unwrap();
         // This would need more complex testing to verify the content, but we can at least verify it exists
@@ -226,7 +228,7 @@ mod tests {
         // Should succeed with defaults
         assert!(result.is_ok());
         let spinners = result.unwrap();
-        assert_eq!(spinners.len(), 8); // Just core defaults
+        assert_eq!(spinners.len(), 10); // Just core defaults
     }
 
     #[test]
@@ -248,7 +250,7 @@ mod tests {
 
         let spinners = spinner_file.to_spinner_map();
         // Should have core spinners + 1 custom
-        assert!(spinners.len() > 8);
+        assert!(spinners.len() > 10);
         assert!(spinners.contains_key(&SpinnerType::Custom("testCustom".to_string())));
     }
 
@@ -267,6 +269,6 @@ mod tests {
         // Should not contain the empty spinner
         assert!(!map.contains_key(&SpinnerType::Custom("empty".to_string())));
         // Should still have all core defaults
-        assert_eq!(map.keys().filter(|k| k.is_core()).count(), 8);
+        assert_eq!(map.keys().filter(|k| k.is_core()).count(), 10);
     }
 }
