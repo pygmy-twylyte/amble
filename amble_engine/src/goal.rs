@@ -57,10 +57,13 @@ impl GoalCondition {
             Self::FlagInProgress { flag } => world
                 .player
                 .flags
-                .get(&Flag::Simple { name: flag.into() })
+                .get(&Flag::Simple {
+                    name: flag.into(),
+                    turn_set: 0,
+                })
                 .is_some_and(|f| !f.is_complete()),
             Self::FlagComplete { flag } => {
-                let target = Flag::simple(flag);
+                let target = Flag::simple(flag, world.turn_count);
                 world.player.flags.get(&target).is_some_and(Flag::is_complete)
             },
         }
@@ -168,8 +171,11 @@ mod tests {
         world.player.inventory.insert(item_id);
 
         // Add test flags
-        world.player.flags.insert(Flag::simple("test_flag"));
-        world.player.flags.insert(Flag::sequence("test_seq", Some(2)));
+        world.player.flags.insert(Flag::simple("test_flag", world.turn_count));
+        world
+            .player
+            .flags
+            .insert(Flag::sequence("test_seq", Some(2), world.turn_count));
 
         world
     }
@@ -179,7 +185,7 @@ mod tests {
         let mut world = create_test_world();
 
         // Add completed sequence flag
-        let mut seq_flag = Flag::sequence("completed_seq", Some(2));
+        let mut seq_flag = Flag::sequence("completed_seq", Some(2), world.turn_count);
         seq_flag.advance(); // step 1
         seq_flag.advance(); // step 2 (complete)
         world.player.flags.insert(seq_flag);
