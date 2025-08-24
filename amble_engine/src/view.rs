@@ -237,11 +237,11 @@ impl View {
 
         // Display entered events first
         for msg in npc_enters {
-            if let ViewItem::NpcEntered { npc_name } = msg {
+            if let ViewItem::NpcEntered { npc_name, spin_msg } = msg {
                 let formatted = format!(
                     "{:<4}{}",
                     ICON_NPC_ENTER.trig_icon_style(),
-                    format!("{} entered.", npc_name.npc_style()).npc_movement_style()
+                    format!("{} {spin_msg}", npc_name.npc_style()).npc_movement_style()
                 );
                 println!("{}", fill(formatted.as_str(), normal_block()));
             }
@@ -260,11 +260,11 @@ impl View {
 
         // Finally display left events
         for msg in npc_leaves {
-            if let ViewItem::NpcLeft { npc_name } = msg {
+            if let ViewItem::NpcLeft { npc_name, spin_msg } = msg {
                 let formatted = format!(
                     "{:<4}{}",
                     ICON_NPC_LEAVE.trig_icon_style(),
-                    format!("{} left.", npc_name.npc_style()).npc_movement_style()
+                    format!("{} {spin_msg}", npc_name.npc_style()).npc_movement_style()
                 );
                 println!("{}", fill(formatted.as_str(), normal_block()));
             }
@@ -704,9 +704,11 @@ pub enum ViewItem {
     },
     NpcEntered {
         npc_name: String,
+        spin_msg: String,
     },
     NpcLeft {
         npc_name: String,
+        spin_msg: String,
     },
     PointsAwarded(isize),
     QuitSummary {
@@ -776,7 +778,7 @@ impl ViewItem {
     /// Extract NPC name from NPC transit items.
     pub fn npc_name(&self) -> &str {
         match self {
-            ViewItem::NpcEntered { npc_name } | ViewItem::NpcLeft { npc_name } => npc_name,
+            ViewItem::NpcEntered { npc_name, .. } | ViewItem::NpcLeft { npc_name, .. } => npc_name,
             _ => {
                 info!("Called npc_name on ViewItem that doesn't have npc_name field");
                 ""
