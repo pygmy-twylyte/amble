@@ -14,7 +14,6 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet},
     fmt::Display,
-    usize,
 };
 use uuid::Uuid;
 use variantly::Variantly;
@@ -288,7 +287,7 @@ pub fn consume(world: &mut AmbleWorld, item_id: &Uuid, ability: ItemAbility) -> 
                     crate::trigger::despawn_item(world, &item_id)?;
                     crate::trigger::spawn_item_in_current_room(world, &replacement)?;
                 },
-                _ => (),
+                ConsumeType::Despawn => crate::trigger::despawn_item(world, &item_id)?,
             }
         } else {
             return Ok(None);
