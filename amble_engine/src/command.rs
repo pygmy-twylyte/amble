@@ -78,7 +78,7 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
     let words: Vec<&str> = lc_input.split_whitespace().collect();
     match words.as_slice() {
         ["goals"] | ["what", "now" | "next"] => Command::Goals,
-        ["back", "return"] | ["go", "back"] => Command::GoBack,
+        ["back" | "return"] | ["go", "back"] => Command::GoBack,
         ["look"] => Command::Look,
         ["give", item, "to", npc] => Command::GiveToNpc {
             item: (*item).to_string(),
