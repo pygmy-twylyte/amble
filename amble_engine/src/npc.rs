@@ -237,7 +237,9 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
     }
 
     // finally update NPC instance's location field
-    world.npcs.get_mut(&npc_id).map(|npc| npc.location = move_to);
+    if let Some(npc) = world.npcs.get_mut(&npc_id) {
+        npc.location = move_to;
+    }
 
     Ok(())
 }
