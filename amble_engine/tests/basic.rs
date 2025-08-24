@@ -1,3 +1,5 @@
+use std::usize;
+
 use ae::style::GameStyle;
 use ae::*;
 use amble_engine as ae;
@@ -17,7 +19,7 @@ fn test_goal_condition_flag() {
     use ae::player::Flag;
     let mut world = world::AmbleWorld::new_empty();
     assert!(!GoalCondition::HasFlag { flag: "a".into() }.satisfied(&world));
-    world.player.flags.insert(Flag::simple("a"));
+    world.player.flags.insert(Flag::simple("a", usize::MAX));
     assert!(GoalCondition::HasFlag { flag: "a".into() }.satisfied(&world));
 }
 
@@ -75,7 +77,7 @@ fn test_npc_state_keys() {
 #[test]
 fn test_player_flag_sequence() {
     use ae::player::Flag;
-    let mut flag = Flag::sequence("quest", Some(2));
+    let mut flag = Flag::sequence("quest", Some(2), usize::MAX);
     flag.advance();
     assert_eq!(flag.value(), ae::player::format_sequence_value("quest", 1));
 }
@@ -111,7 +113,7 @@ fn test_room_overlay_applies_flag() {
     use ae::player::Flag;
     use ae::room::{OverlayCondition, RoomOverlay};
     let mut world = world::AmbleWorld::new_empty();
-    world.player.flags.insert(Flag::simple("x"));
+    world.player.flags.insert(Flag::simple("x", usize::MAX));
     let overlay = RoomOverlay {
         condition: OverlayCondition::FlagSet { flag: "x".into() },
         text: String::new(),
