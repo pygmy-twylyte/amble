@@ -28,7 +28,10 @@ impl Player {
     where
         F: FnOnce(&mut Flag),
     {
-        let target = Flag::Simple { name: name.to_string() };
+        let target = Flag::Simple {
+            name: name.to_string(),
+            turn_set: 0,
+        };
         if let Some(mut flag) = self.flags.take(&target) {
             updater(&mut flag);
             info!("player flag updated: '{flag}'");
@@ -140,9 +143,13 @@ impl ItemHolder for Player {
 pub enum Flag {
     Simple {
         name: String,
+        #[serde(default)]
+        turn_set: usize,
     },
     Sequence {
         name: String,
+        #[serde(default)]
+        turn_set: usize,
         #[serde(default)]
         step: u8,
         #[serde(default)]
@@ -155,7 +162,7 @@ impl Flag {
     /// For "Sequence" this is "<name>#<step>".
     pub fn value(&self) -> String {
         match self {
-            Self::Simple { name } => name.to_string(),
+            Self::Simple { name, .. } => name.to_string(),
             Self::Sequence { name, step, .. } => format_sequence_value(name, *step),
         }
     }
@@ -168,7 +175,7 @@ impl Flag {
             Flag::Simple { name, .. } => {
                 warn!("advance() called on non-sequence flag '{name}'");
             },
-            Flag::Sequence { name, step, end } => {
+            Flag::Sequence { name, step, end, .. } => {
                 if let Some(final_step) = end {
                     *step = std::cmp::min(*step + 1, *final_step);
                 } else {
@@ -182,7 +189,7 @@ impl Flag {
     /// Resets to beginning of sequence
     pub fn reset(&mut self) {
         match self {
-            Flag::Simple { name } => warn!("reset() called on non-sequence flag '{name}'"),
+            Flag::Simple { name, .. } => warn!("reset() called on non-sequence flag '{name}'"),
             Flag::Sequence { name, step, .. } => {
                 *step = 0;
                 info!("sequence '{name}' reset to step '{step}'");
@@ -200,14 +207,18 @@ impl Flag {
     }
 
     /// Create a new simple flag
-    pub fn simple(name: &str) -> Flag {
-        Flag::Simple { name: name.to_string() }
+    pub fn simple(name: &str, turn_set: usize) -> Flag {
+        Flag::Simple {
+            name: name.to_string(),
+            turn_set,
+        }
     }
 
     /// Create a new sequence flag
-    pub fn sequence(name: &str, end: Option<u8>) -> Flag {
+    pub fn sequence(name: &str, end: Option<u8>, turn_set: usize) -> Flag {
         Flag::Sequence {
             name: name.to_string(),
+            turn_set,
             step: 0u8,
             end,
         }
@@ -216,15 +227,14 @@ impl Flag {
     /// Get base name of the flag
     pub fn name(&self) -> &str {
         match self {
-            Flag::Simple { name } => name,
-            Flag::Sequence { name, .. } => name,
+            Flag::Simple { name, .. } | Flag::Sequence { name, .. } => name,
         }
     }
 }
 impl std::fmt::Display for Flag {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Flag::Simple { name } => write!(f, "{name}"),
+            Flag::Simple { name, .. } => write!(f, "{name}"),
             Flag::Sequence { name, step, .. } => write!(f, "{name}#{step}"),
         }
     }
@@ -270,8 +280,8 @@ mod tests {
 
     fn create_test_player() -> Player {
         let mut player = Player::default();
-        player.flags.insert(Flag::simple("test_flag"));
-        player.flags.insert(Flag::sequence("test_seq", Some(3)));
+        player.flags.insert(Flag::simple("test_flag", 0));
+        player.flags.insert(Flag::sequence("test_seq", Some(3), 0));
         let item_id = Uuid::new_v4();
         player.inventory.insert(item_id);
         player
@@ -300,7 +310,7 @@ mod tests {
             }
         });
 
-        let updated_flag = player.flags.get(&Flag::simple("test_seq")).unwrap();
+        let updated_flag = player.flags.get(&Flag::simple("test_seq", 0)).unwrap();
         if let Flag::Sequence { step, .. } = updated_flag {
             assert_eq!(*step, 5);
         } else {
@@ -327,7 +337,7 @@ mod tests {
 
         player.advance_flag("test_seq");
 
-        let flag = player.flags.get(&Flag::simple("test_seq")).unwrap();
+        let flag = player.flags.get(&Flag::simple("test_seq", 0)).unwrap();
         if let Flag::Sequence { step, .. } = flag {
             assert_eq!(*step, 1);
         } else {
@@ -345,7 +355,7 @@ mod tests {
         player.advance_flag("test_seq"); // step 3 (end)
         player.advance_flag("test_seq"); // should stay at 3
 
-        let flag = player.flags.get(&Flag::simple("test_seq")).unwrap();
+        let flag = player.flags.get(&Flag::simple("test_seq", 0)).unwrap();
         if let Flag::Sequence { step, end, .. } = flag {
             assert_eq!(*step, 3);
             assert_eq!(*end, Some(3));
@@ -365,7 +375,7 @@ mod tests {
         // Then reset
         player.reset_flag("test_seq");
 
-        let flag = player.flags.get(&Flag::simple("test_seq")).unwrap();
+        let flag = player.flags.get(&Flag::simple("test_seq", 0)).unwrap();
         if let Flag::Sequence { step, .. } = flag {
             assert_eq!(*step, 0);
         } else {
@@ -411,9 +421,10 @@ mod tests {
 
     #[test]
     fn flag_simple_creates_simple_flag() {
-        let flag = Flag::simple("test");
-        if let Flag::Simple { name } = flag {
+        let flag = Flag::simple("test", 12);
+        if let Flag::Simple { name, turn_set } = flag {
             assert_eq!(name, "test");
+            assert_eq!(turn_set, 12);
         } else {
             panic!("Expected simple flag");
         }
@@ -421,11 +432,18 @@ mod tests {
 
     #[test]
     fn flag_sequence_creates_sequence_flag() {
-        let flag = Flag::sequence("test", Some(5));
-        if let Flag::Sequence { name, step, end } = flag {
+        let flag = Flag::sequence("test", Some(5), 12);
+        if let Flag::Sequence {
+            name,
+            step,
+            end,
+            turn_set,
+        } = flag
+        {
             assert_eq!(name, "test");
             assert_eq!(step, 0);
             assert_eq!(end, Some(5));
+            assert_eq!(turn_set, 12);
         } else {
             panic!("Expected sequence flag");
         }
@@ -433,20 +451,20 @@ mod tests {
 
     #[test]
     fn flag_value_returns_correct_values() {
-        let simple = Flag::simple("simple_flag");
+        let simple = Flag::simple("simple_flag", 0);
         assert_eq!(simple.value(), "simple_flag");
 
-        let sequence = Flag::sequence("seq_flag", Some(2));
+        let sequence = Flag::sequence("seq_flag", Some(2), 0);
         assert_eq!(sequence.value(), "seq_flag#0");
 
-        let mut advanced_seq = Flag::sequence("advanced", Some(3));
+        let mut advanced_seq = Flag::sequence("advanced", Some(3), 0);
         advanced_seq.advance();
         assert_eq!(advanced_seq.value(), "advanced#1");
     }
 
     #[test]
     fn flag_advance_works_for_sequence() {
-        let mut flag = Flag::sequence("test", Some(3));
+        let mut flag = Flag::sequence("test", Some(3), 0);
 
         flag.advance();
         if let Flag::Sequence { step, .. } = flag {
@@ -461,7 +479,7 @@ mod tests {
 
     #[test]
     fn flag_advance_respects_end_limit() {
-        let mut flag = Flag::sequence("test", Some(2));
+        let mut flag = Flag::sequence("test", Some(2), 0);
 
         flag.advance(); // step 1
         flag.advance(); // step 2 (end)
@@ -474,7 +492,7 @@ mod tests {
 
     #[test]
     fn flag_advance_unlimited_sequence() {
-        let mut flag = Flag::sequence("test", None);
+        let mut flag = Flag::sequence("test", None, 0);
 
         for i in 1..=10 {
             flag.advance();
@@ -486,7 +504,7 @@ mod tests {
 
     #[test]
     fn flag_reset_works_for_sequence() {
-        let mut flag = Flag::sequence("test", Some(3));
+        let mut flag = Flag::sequence("test", Some(3), 0);
         flag.advance();
         flag.advance();
 
@@ -498,60 +516,60 @@ mod tests {
 
     #[test]
     fn flag_is_complete_works() {
-        let simple = Flag::simple("test");
+        let simple = Flag::simple("test", 0);
         assert!(simple.is_complete());
 
-        let incomplete_seq = Flag::sequence("test", Some(3));
+        let incomplete_seq = Flag::sequence("test", Some(3), 0);
         assert!(!incomplete_seq.is_complete());
 
-        let mut complete_seq = Flag::sequence("test", Some(2));
+        let mut complete_seq = Flag::sequence("test", Some(2), 0);
         complete_seq.advance();
         complete_seq.advance();
         assert!(complete_seq.is_complete());
 
-        let unlimited_seq = Flag::sequence("test", None);
+        let unlimited_seq = Flag::sequence("test", None, 0);
         assert!(!unlimited_seq.is_complete());
     }
 
     #[test]
     fn flag_name_returns_base_name() {
-        let simple = Flag::simple("simple_name");
+        let simple = Flag::simple("simple_name", 0);
         assert_eq!(simple.name(), "simple_name");
 
-        let sequence = Flag::sequence("seq_name", Some(3));
+        let sequence = Flag::sequence("seq_name", Some(3), 0);
         assert_eq!(sequence.name(), "seq_name");
     }
 
     #[test]
     fn flag_display_works() {
-        let simple = Flag::simple("test_flag");
+        let simple = Flag::simple("test_flag", 0);
         assert_eq!(format!("{}", simple), "test_flag");
 
-        let sequence = Flag::sequence("test_seq", Some(3));
+        let sequence = Flag::sequence("test_seq", Some(3), 0);
         assert_eq!(format!("{}", sequence), "test_seq#0");
 
-        let mut advanced = Flag::sequence("advanced", Some(2));
+        let mut advanced = Flag::sequence("advanced", Some(2), 0);
         advanced.advance();
         assert_eq!(format!("{}", advanced), "advanced#1");
     }
 
     #[test]
     fn flag_equality_based_on_name_only() {
-        let flag1 = Flag::simple("test");
-        let mut flag2 = Flag::sequence("test", Some(3));
+        let flag1 = Flag::simple("test", 0);
+        let mut flag2 = Flag::sequence("test", Some(3), 0);
         flag2.advance();
 
         // Different types but same name should be equal
         assert_eq!(flag1, flag2);
 
-        let flag3 = Flag::simple("different");
+        let flag3 = Flag::simple("different", 0);
         assert_ne!(flag1, flag3);
     }
 
     #[test]
     fn flag_hash_based_on_name_only() {
-        let flag1 = Flag::simple("test");
-        let mut flag2 = Flag::sequence("test", Some(3));
+        let flag1 = Flag::simple("test", 0);
+        let mut flag2 = Flag::sequence("test", Some(3), 0);
         flag2.advance();
 
         let mut set = HashSet::new();
@@ -560,7 +578,7 @@ mod tests {
         // Should find flag2 because it has same name as flag1
         assert!(set.contains(&flag2));
 
-        let flag3 = Flag::simple("different");
+        let flag3 = Flag::simple("different", 0);
         assert!(!set.contains(&flag3));
     }
 
