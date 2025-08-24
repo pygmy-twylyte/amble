@@ -37,6 +37,10 @@ pub enum CoreSpinnerType {
     UnrecognizedCommand,
     /// Used for quit/exit messages
     QuitMsg,
+    /// Used for <NPC> entered messages
+    NpcEntered,
+    /// Used for <NPC> left messages
+    NpcLeft,
 }
 
 /// Represents either a core spinner type or a custom game-specific spinner.
@@ -98,6 +102,8 @@ impl CoreSpinnerType {
             CoreSpinnerType::TakeVerb => "takeVerb".to_string(),
             CoreSpinnerType::UnrecognizedCommand => "unrecognizedCommand".to_string(),
             CoreSpinnerType::QuitMsg => "quitMsg".to_string(),
+            CoreSpinnerType::NpcLeft => "npcLeft".to_string(),
+            CoreSpinnerType::NpcEntered => "npcEntered".to_string(),
         }
     }
 
@@ -112,6 +118,8 @@ impl CoreSpinnerType {
             "takeVerb" => Some(CoreSpinnerType::TakeVerb),
             "unrecognizedCommand" => Some(CoreSpinnerType::UnrecognizedCommand),
             "quitMsg" => Some(CoreSpinnerType::QuitMsg),
+            "npcEntered" => Some(CoreSpinnerType::NpcEntered),
+            "npcLeft" => Some(CoreSpinnerType::NpcLeft),
             _ => None,
         }
     }
@@ -158,6 +166,15 @@ impl CoreSpinnerType {
                 "That doesn't make sense.",
             ],
             CoreSpinnerType::QuitMsg => vec!["Goodbye!", "Thanks for playing!", "See you later!"],
+            CoreSpinnerType::NpcEntered => vec![
+                "enters.",
+                "ambles in.",
+                "arrives.",
+                "shows up.",
+                "turns up.",
+                "drops in.",
+            ],
+            CoreSpinnerType::NpcLeft => vec!["leaves.", "departs.", "exits.", "goes away.", "takes off."],
         }
     }
 
@@ -202,6 +219,8 @@ mod tests {
             CoreSpinnerType::TakeVerb,
             CoreSpinnerType::UnrecognizedCommand,
             CoreSpinnerType::QuitMsg,
+            CoreSpinnerType::NpcEntered,
+            CoreSpinnerType::NpcLeft,
         ];
 
         for core_type in core_types {
@@ -244,6 +263,8 @@ mod tests {
             CoreSpinnerType::TakeVerb,
             CoreSpinnerType::UnrecognizedCommand,
             CoreSpinnerType::QuitMsg,
+            CoreSpinnerType::NpcEntered,
+            CoreSpinnerType::NpcLeft,
         ] {
             let values = core_type.default_values();
             let widths = core_type.default_widths();
