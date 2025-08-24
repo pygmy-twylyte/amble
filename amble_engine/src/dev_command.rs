@@ -47,7 +47,7 @@ pub fn parse_dev_command(input: &str, view: &mut View) -> Option<Command> {
             ));
             warn!(
                 "player attempted to use developer command '{:?}' with DEV_MODE = false",
-                maybe_command.unwrap()
+                maybe_command.expect("maybe_command already should not be None here")
             );
             return None;
         }
