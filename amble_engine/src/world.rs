@@ -79,21 +79,21 @@ impl AmbleWorld {
     }
 
     /// Returns a random string from the selected spinner type, or a supplied default.
-    pub fn spin_spinner(&self, spin_type: SpinnerType, default: &'static str) -> String {
+    pub fn spin_spinner(&self, spin_type: &SpinnerType, default: &'static str) -> String {
         self.spinners
-            .get(&spin_type)
+            .get(spin_type)
             .and_then(gametools::Spinner::spin)
             .unwrap_or(default.to_string())
     }
 
     /// Convenience method to spin a core spinner type.
     pub fn spin_core(&self, core_type: CoreSpinnerType, default: &'static str) -> String {
-        self.spin_spinner(SpinnerType::Core(core_type), default)
+        self.spin_spinner(&SpinnerType::Core(core_type), default)
     }
 
     /// Convenience method to spin a custom spinner by key.
     pub fn spin_custom(&self, key: &str, default: &'static str) -> String {
-        self.spin_spinner(SpinnerType::Custom(key.to_string()), default)
+        self.spin_spinner(&SpinnerType::Custom(key.to_string()), default)
     }
 
     /// Obtain a reference to the room the player occupies.
@@ -314,7 +314,7 @@ mod tests {
         let mut world = AmbleWorld::new_empty();
 
         // Test with no spinner
-        let result = world.spin_spinner(SpinnerType::Core(CoreSpinnerType::Movement), "default");
+        let result = world.spin_spinner(&SpinnerType::Core(CoreSpinnerType::Movement), "default");
         assert_eq!(result, "default");
 
         // Test with spinner
@@ -323,7 +323,7 @@ mod tests {
             .spinners
             .insert(SpinnerType::Core(CoreSpinnerType::Movement), spinner);
 
-        let result = world.spin_spinner(SpinnerType::Core(CoreSpinnerType::Movement), "default");
+        let result = world.spin_spinner(&SpinnerType::Core(CoreSpinnerType::Movement), "default");
         assert_eq!(result, "custom result");
     }
 
