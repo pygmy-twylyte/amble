@@ -197,10 +197,10 @@ pub enum TriggerAction {
     UnlockItem(Uuid),
 }
 
+/// Fires the matching trigger action by calling its handler function
 ///
 /// # Errors
 /// - on failed triggered actions due to bad uuids
-/// fires the matching trigger action by calling its handler function
 pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &TriggerAction) -> Result<()> {
     use TriggerAction::*;
     match action {
@@ -210,11 +210,11 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
             msg,
         } => set_barred_message(world, exit_from, exit_to, msg)?,
         AddSpinnerWedge { spinner, text, width } => {
-            add_spinner_wedge(&mut world.spinners, spinner.clone(), text, *width)?;
+            add_spinner_wedge(&mut world.spinners, spinner, text, *width)?;
         },
         ResetFlag(flag_name) => reset_flag(&mut world.player, flag_name),
         AdvanceFlag(flag_name) => advance_flag(&mut world.player, flag_name),
-        SpinnerMessage { spinner } => spinner_message(world, view, spinner.clone())?,
+        SpinnerMessage { spinner } => spinner_message(world, view, spinner)?,
         RestrictItem(item_id) => restrict_item(world, item_id)?,
         NpcRefuseItem { npc_id, reason } => npc_refuse_item(world, view, *npc_id, reason)?,
         NpcSaysRandom { npc_id } => npc_says_random(world, view, npc_id)?,
@@ -285,12 +285,9 @@ fn set_item_description(world: &mut AmbleWorld, item_id: Uuid, text: &str) -> Re
 fn set_barred_message(world: &mut AmbleWorld, exit_from: &Uuid, exit_to: &Uuid, msg: &str) -> Result<()> {
     let room = world
         .rooms
-        .get_mut(&exit_from)
+        .get_mut(exit_from)
         .with_context(|| format!("trigger setting barred message: room_id {exit_from} not found"))?;
-    let exit = room
-        .exits
-        .iter()
-        .find_map(|exit| if exit.1.to == *exit_to { Some(exit) } else { None });
+    let exit = room.exits.iter().find(|exit| exit.1.to == *exit_to);
     if let Some(exit) = exit {
         let (direction, mut exit) = (exit.0.clone(), exit.1.clone());
         exit.set_barred_msg(Some(msg.to_string()));
@@ -346,13 +343,13 @@ pub fn npc_refuse_item(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, re
 /// ```
 pub fn add_spinner_wedge(
     spinners: &mut HashMap<SpinnerType, Spinner<String>>,
-    spin_type: SpinnerType,
+    spin_type: &SpinnerType,
     text: &str,
     width: usize,
 ) -> Result<()> {
     let wedge = Wedge::new_weighted(text.to_string(), width);
     let spinref = spinners
-        .get_mut(&spin_type)
+        .get_mut(spin_type)
         .with_context(|| format!("add_spinner_wedge(_, {spin_type:?}, _, _): spinner not found"))?;
     *spinref = spinref.add_wedge(wedge);
     info!("└─ action: AddSpinnerWedge({spin_type:?}, \"{text}\"");
@@ -427,8 +424,8 @@ pub fn advance_flag(player: &mut Player, flag_name: &str) {
 /// - Selects a random weighted message from the spinner
 /// - If the spinner returns an empty message, nothing is displayed
 /// - Messages are styled as ambient events for visual distinction
-pub fn spinner_message(world: &mut AmbleWorld, view: &mut View, spinner_type: SpinnerType) -> Result<()> {
-    if let Some(spinner) = world.spinners.get(&spinner_type) {
+pub fn spinner_message(world: &mut AmbleWorld, view: &mut View, spinner_type: &SpinnerType) -> Result<()> {
+    if let Some(spinner) = world.spinners.get(spinner_type) {
         let msg = spinner.spin().unwrap_or_default();
         if !msg.is_empty() {
             view.push(ViewItem::AmbientEvent(format!("{}", msg.ambient_trig_style())));
@@ -459,7 +456,7 @@ pub fn spinner_message(world: &mut AmbleWorld, view: &mut View, spinner_type: Sp
 /// - If the flag doesn't exist, a warning is logged but no error occurs
 /// - Both simple and sequence flags can be removed with this action
 pub fn remove_flag(world: &mut AmbleWorld, view: &mut View, flag: &str) {
-    let target = Flag::simple(flag);
+    let target = Flag::simple(flag, 0);
     if world.player.flags.remove(&target) {
         info!("└─ action: RemoveFlag(\"{flag}\")");
         if let Some(status) = flag.strip_prefix("status:") {
@@ -1357,7 +1354,7 @@ mod tests {
     fn add_and_remove_flag_updates_player_flags() {
         let (mut world, _, _) = build_test_world();
         let mut view = View::new();
-        let flag = Flag::simple("test");
+        let flag = Flag::simple("test", 0);
         add_flag(&mut world, &mut view, &flag);
         assert!(world.player.flags.contains(&flag));
         remove_flag(&mut world, &mut view, "test");
@@ -1367,7 +1364,7 @@ mod tests {
     #[test]
     fn reset_and_advance_flag_modifies_sequence() {
         let (mut world, _, _) = build_test_world();
-        let flag = Flag::sequence("quest", Some(2));
+        let flag = Flag::sequence("quest", Some(2), 0);
         world.player.flags.insert(flag);
         advance_flag(&mut world.player, "quest");
         assert!(
