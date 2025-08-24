@@ -171,7 +171,7 @@ pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> 
     let percent = (world.player.score as f32 / world.max_score as f32) * 100.0;
 
     let (rank, eval) = match percent {
-        p if p == 100.0 => (
+        100.0 => (
             "Quantum Overachiever",
             "You saw the multiverse, understood it, then filed a bug report.",
         ),
