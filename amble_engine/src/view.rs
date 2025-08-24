@@ -10,15 +10,15 @@ use variantly::Variantly;
 use crate::loader::help::HelpCommand;
 use crate::style::{GameStyle, indented_block, normal_block};
 
-const ICON_SUCCESS: &str = "\u{2714}"; // ✔
-const ICON_FAILURE: &str = "\u{2716}"; // ✖
+const ICON_SUCCESS: &str = "\u{2611}"; // ✔
+const ICON_FAILURE: &str = "\u{274C}"; // ✖
 const ICON_ERROR: &str = "⚠︎"; // U+26A0 U+FE0E
 const ICON_TRIGGER: &str = "⚡︎"; // U+26A1 U+FE0E
-const ICON_AMBIENT: &str = "…";
+const ICON_AMBIENT: &str = "⌘";
 const ICON_NEGATIVE: &str = "➖";
 const ICON_POSITIVE: &str = "➕";
-const ICON_ENGINE: &str = "*";
-const ICON_STATUS: &str = "%";
+const ICON_ENGINE: &str = "⚙";
+const ICON_STATUS: &str = "⚕";
 
 /// View aggregates information to be displayed on each pass through the REPL and then organizes
 /// and displays the result.

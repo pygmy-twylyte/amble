@@ -56,7 +56,16 @@ use uuid::Uuid;
 /// Shows description of surroundings.
 pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let room = world.player_room_ref()?;
-    room.show(world, view, Some(ViewMode::Verbose))?;
+    room.show(
+        world,
+        view,
+        if view.mode == ViewMode::Brief {
+            Some(ViewMode::Verbose)
+        } else {
+            None
+        },
+    )?;
+
     info!(
         "{} looked around {} ({})",
         world.player.name(),

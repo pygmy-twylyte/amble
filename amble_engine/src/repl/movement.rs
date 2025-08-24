@@ -233,7 +233,15 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
                 new_room.show(world, view, None)?;
             } else {
                 world.player.score = world.player.score.saturating_add(1);
-                new_room.show(world, view, Some(ViewMode::Verbose))?;
+                new_room.show(
+                    world,
+                    view,
+                    if matches!(view.mode, ViewMode::Brief) {
+                        Some(ViewMode::Verbose)
+                    } else {
+                        None
+                    },
+                )?;
             }
             if let Some(new_room) = world.rooms.get_mut(&destination_id) {
                 new_room.visited = true;
