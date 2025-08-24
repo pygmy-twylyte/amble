@@ -785,7 +785,6 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
 /// - Take an NPC (which would be kidnapping)
 /// - Put an NPC in a container
 /// - Use item-specific commands on NPCs
-/// (Typically when `find_world_object` matches an NPC when an item is expected.)
 pub fn unexpected_entity(entity: WorldEntity, view: &mut View, denial_msg: &str) {
     let (entity_name, entity_sym, entity_loc) = match entity {
         WorldEntity::Item(item) => (item.name(), item.symbol(), item.location()),
