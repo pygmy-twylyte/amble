@@ -4,6 +4,7 @@
 //! to be organized and displayed at the end of the turn.
 
 use colored::Colorize;
+use log::info;
 use textwrap::{fill, termwidth};
 use variantly::Variantly;
 
@@ -152,7 +153,7 @@ impl View {
                         StatusAction::Apply => "applied",
                         StatusAction::Remove => "removed",
                     }
-                )
+                );
             }
         }
         if !status_msgs.is_empty() {
@@ -229,8 +230,8 @@ impl View {
         let speech_msgs: Vec<_> = self.items.iter().filter(|i| i.is_npc_speech()).collect();
 
         // Sort by NPC name for consistent ordering
-        npc_enters.sort_by(|a, b| a.npc_name().cmp(&b.npc_name()));
-        npc_leaves.sort_by(|a, b| a.npc_name().cmp(&b.npc_name()));
+        npc_enters.sort_by(|a, b| a.npc_name().cmp(b.npc_name()));
+        npc_leaves.sort_by(|a, b| a.npc_name().cmp(b.npc_name()));
 
         let has_events = !npc_enters.is_empty() || !npc_leaves.is_empty() || !speech_msgs.is_empty();
 
@@ -772,12 +773,14 @@ impl ViewItem {
         }
     }
 
-    // Helper methods for extracting data from ViewItems
+    /// Extract NPC name from NPC transit items.
     pub fn npc_name(&self) -> &str {
         match self {
-            ViewItem::NpcEntered { npc_name } => npc_name,
-            ViewItem::NpcLeft { npc_name } => npc_name,
-            _ => panic!("Called npc_name on ViewItem that doesn't have npc_name field"),
+            ViewItem::NpcEntered { npc_name } | ViewItem::NpcLeft { npc_name } => npc_name,
+            _ => {
+                info!("Called npc_name on ViewItem that doesn't have npc_name field");
+                ""
+            },
         }
     }
 }
