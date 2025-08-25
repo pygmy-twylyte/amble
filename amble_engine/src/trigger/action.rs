@@ -195,6 +195,18 @@ pub enum TriggerAction {
     UnlockExit { from_room: Uuid, direction: String },
     /// Unlocks a container item
     UnlockItem(Uuid),
+    /// Schedules a list of actions to fire after a specified number of turns
+    ScheduleIn {
+        turns_ahead: usize,
+        actions: Vec<TriggerAction>,
+        note: Option<String>,
+    },
+    /// Schedules a list of actions to fire on a specific turn
+    ScheduleOn {
+        on_turn: usize,
+        actions: Vec<TriggerAction>,
+        note: Option<String>,
+    },
 }
 
 /// Fires the matching trigger action by calling its handler function
@@ -248,6 +260,16 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
         AddFlag(flag) => add_flag(world, view, flag),
         RemoveFlag(flag) => remove_flag(world, view, flag),
         AwardPoints(amount) => award_points(world, view, *amount),
+        ScheduleIn {
+            turns_ahead,
+            actions,
+            note,
+        } => {
+            schedule_in(world, view, *turns_ahead, actions, note.clone())?;
+        },
+        ScheduleOn { on_turn, actions, note } => {
+            schedule_on(world, view, *on_turn, actions, note.clone())?;
+        },
     }
     Ok(())
 }
@@ -1256,6 +1278,90 @@ pub fn deny_read(view: &mut View, reason: &String) {
     info!("└─ action: DenyRead(\"{reason}\")");
 }
 
+/// Schedules a list of actions to fire after a specified number of turns.
+///
+/// This action uses the world's scheduler to queue up future events. The actions
+/// will be executed automatically when the specified number of turns have passed.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world containing the scheduler
+/// * `view` - Mutable reference to the view (used for potential error messages)
+/// * `turns_ahead` - Number of turns to wait before firing the actions
+/// * `actions` - List of actions to execute when the time comes
+/// * `note` - Optional description of the event for logging purposes
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the actions were successfully scheduled.
+///
+/// # Behavior
+///
+/// - Actions are queued in the world's scheduler priority queue
+/// - The event will fire automatically during the REPL turn processing
+/// - Multiple events can be scheduled for the same future turn
+/// - Scheduled events persist across game saves/loads
+fn schedule_in(
+    world: &mut AmbleWorld,
+    _view: &mut View,
+    turns_ahead: usize,
+    actions: &[TriggerAction],
+    note: Option<String>,
+) -> Result<()> {
+    let log_note = note.as_deref().unwrap_or("<no note>");
+    info!(
+        "└─ action: ScheduleIn({turns_ahead} turns, {} actions): \"{log_note}\"",
+        actions.len()
+    );
+
+    world
+        .scheduler
+        .schedule_in(world.turn_count, turns_ahead, actions.to_vec(), note);
+    Ok(())
+}
+
+/// Schedules a list of actions to fire on a specific turn.
+///
+/// This action uses the world's scheduler to queue up future events for an
+/// exact turn number. The actions will be executed automatically when that
+/// turn is reached.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world containing the scheduler
+/// * `view` - Mutable reference to the view (used for potential error messages)
+/// * `on_turn` - Exact turn number when the actions should fire
+/// * `actions` - List of actions to execute when the time comes
+/// * `note` - Optional description of the event for logging purposes
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the actions were successfully scheduled.
+///
+/// # Behavior
+///
+/// - Actions are queued in the world's scheduler priority queue
+/// - If the target turn has already passed, the event may fire immediately
+/// - Multiple events can be scheduled for the same turn
+/// - Events fire in FIFO order when scheduled for the same turn
+/// - Scheduled events persist across game saves/loads
+fn schedule_on(
+    world: &mut AmbleWorld,
+    _view: &mut View,
+    on_turn: usize,
+    actions: &[TriggerAction],
+    note: Option<String>,
+) -> Result<()> {
+    let log_note = note.as_deref().unwrap_or("<no note>");
+    info!(
+        "└─ action: ScheduleOn(turn {on_turn}, {} actions): \"{log_note}\"",
+        actions.len()
+    );
+
+    world.scheduler.schedule_on(on_turn, actions.to_vec(), note);
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1514,5 +1620,120 @@ mod tests {
         assert_eq!(world.items[&item_id].location, Location::Inventory);
         assert!(world.player.inventory.contains(&item_id));
         assert!(!world.npcs[&npc_id].inventory.contains(&item_id));
+    }
+
+    #[test]
+    fn schedule_in_adds_event_to_scheduler() {
+        let (mut world, _, _) = build_test_world();
+        let mut view = View::new();
+        let actions = vec![TriggerAction::ShowMessage("Test message".to_string())];
+
+        schedule_in(&mut world, &mut view, 5, &actions, Some("Test event".to_string())).unwrap();
+
+        assert_eq!(world.scheduler.events.len(), 1);
+        assert_eq!(world.scheduler.heap.len(), 1);
+
+        let event = &world.scheduler.events[0];
+        assert_eq!(event.on_turn, world.turn_count + 5); // Should be current turn + 5
+        assert_eq!(event.actions.len(), 1);
+        assert_eq!(event.note, Some("Test event".to_string()));
+    }
+
+    #[test]
+    fn schedule_on_adds_event_to_scheduler() {
+        let (mut world, _, _) = build_test_world();
+        let mut view = View::new();
+        let actions = vec![TriggerAction::ShowMessage("Test message".to_string())];
+
+        schedule_on(
+            &mut world,
+            &mut view,
+            42,
+            &actions,
+            Some("Exact turn event".to_string()),
+        )
+        .unwrap();
+
+        assert_eq!(world.scheduler.events.len(), 1);
+        assert_eq!(world.scheduler.heap.len(), 1);
+
+        let event = &world.scheduler.events[0];
+        assert_eq!(event.on_turn, 42);
+        assert_eq!(event.actions.len(), 1);
+        assert_eq!(event.note, Some("Exact turn event".to_string()));
+    }
+
+    #[test]
+    fn schedule_in_with_multiple_actions() {
+        let (mut world, _, _) = build_test_world();
+        let mut view = View::new();
+        let actions = vec![
+            TriggerAction::ShowMessage("First message".to_string()),
+            TriggerAction::AwardPoints(10),
+            TriggerAction::ShowMessage("Second message".to_string()),
+        ];
+
+        schedule_in(&mut world, &mut view, 3, &actions, None).unwrap();
+
+        let event = &world.scheduler.events[0];
+        assert_eq!(event.actions.len(), 3);
+        assert_eq!(event.note, None);
+    }
+
+    #[test]
+    fn schedule_on_with_no_note() {
+        let (mut world, _, _) = build_test_world();
+        let mut view = View::new();
+        let actions = vec![TriggerAction::AwardPoints(5)];
+
+        schedule_on(&mut world, &mut view, 100, &actions, None).unwrap();
+
+        let event = &world.scheduler.events[0];
+        assert_eq!(event.note, None);
+        assert_eq!(event.on_turn, 100);
+    }
+
+    #[test]
+    fn dispatch_action_schedule_in_works() {
+        let (mut world, _, _) = build_test_world();
+        let mut view = View::new();
+
+        let nested_actions = vec![TriggerAction::ShowMessage("Delayed message".to_string())];
+        let action = TriggerAction::ScheduleIn {
+            turns_ahead: 7,
+            actions: nested_actions,
+            note: Some("Integration test".to_string()),
+        };
+
+        dispatch_action(&mut world, &mut view, &action).unwrap();
+
+        assert_eq!(world.scheduler.events.len(), 1);
+        let event = &world.scheduler.events[0];
+        assert_eq!(event.on_turn, world.turn_count + 7);
+        assert_eq!(event.note, Some("Integration test".to_string()));
+    }
+
+    #[test]
+    fn dispatch_action_schedule_on_works() {
+        let (mut world, _, _) = build_test_world();
+        let mut view = View::new();
+
+        let nested_actions = vec![
+            TriggerAction::AwardPoints(25),
+            TriggerAction::ShowMessage("Exact timing!".to_string()),
+        ];
+        let action = TriggerAction::ScheduleOn {
+            on_turn: 50,
+            actions: nested_actions,
+            note: None,
+        };
+
+        dispatch_action(&mut world, &mut view, &action).unwrap();
+
+        assert_eq!(world.scheduler.events.len(), 1);
+        let event = &world.scheduler.events[0];
+        assert_eq!(event.on_turn, 50);
+        assert_eq!(event.actions.len(), 2);
+        assert_eq!(event.note, None);
     }
 }

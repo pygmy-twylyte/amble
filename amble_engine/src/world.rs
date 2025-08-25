@@ -8,7 +8,7 @@ use crate::item::ContainerState;
 use crate::npc::Npc;
 use crate::spinners::{CoreSpinnerType, SpinnerType};
 use crate::trigger::Trigger;
-use crate::{Goal, Item, Player, Room};
+use crate::{Goal, Item, Player, Room, Scheduler};
 
 use anyhow::{Context, Result, anyhow};
 use gametools::Spinner;
@@ -58,6 +58,7 @@ pub struct AmbleWorld {
     pub goals: Vec<Goal>,
     pub version: String,
     pub turn_count: usize,
+    pub scheduler: Scheduler,
 }
 impl AmbleWorld {
     /// Create a new empty world with a default player.
@@ -73,6 +74,7 @@ impl AmbleWorld {
             goals: Vec::new(),
             version: AMBLE_VERSION.to_string(),
             turn_count: 0,
+            scheduler: Scheduler::default(),
         };
         info!("new, empty 'AmbleWorld' created");
         world

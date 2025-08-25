@@ -1177,3 +1177,38 @@ actions = [
     { type = "addFlag", flag = { type = "simple", name = "recovered-tweezers" } },
     { type = "awardPoints", amount = 3 },
 ]
+
+# TEST TRIGGERS FOR SCHEDULER ACTIONS
+
+[[triggers]]
+name = "Test: Schedule In - Coffee Machine Delayed Response"
+only_once = true
+conditions = [
+    { type = "useItem", item_id = "coffee_machine", ability = "turnOn" },
+]
+actions = [
+    { type = "showMessage", text = "The coffee machine hums to life and begins its brewing cycle. A timer shows 3 minutes remaining..." },
+    { type = "setItemDescription", item_sym = "coffee_machine", text = "A single serve drip coffee machine, which apparently takes quite a while to finish brewing a cup one drip at a time..." },
+    { type = "scheduleIn", turns_ahead = 3, note = "Coffee brewing completes", actions = [
+        { type = "setItemDescription", item_sym = "coffee_machine", text = "A single serve, drip coffee maker. It appears the grounds have already been used." },
+        { type = "showMessage", text = "♪ BEEP BEEP BEEP! ♪ The coffee machine chimes cheerfully. The rich aroma of freshly brewed coffee fills the air." },
+        { type = "spawnItemInRoom", item_id = "hot_coffee", room_id = "lounge" },
+        { type = "awardPoints", amount = 2 },
+    ] },
+]
+
+[[triggers]]
+name = "Test: Schedule On - Timed Self-Destruct"
+only_once = true
+conditions = [{ type = "useItem", item_id = "scrawled_note", ability = "read" }]
+actions = [
+    { type = "showMessage", text = "WARNING: SELF-DESTRUCT SEQUENCE INITIATED! All personnel evacuate immediately! Demolition commences on rel 10!" },
+    { type = "addFlag", flag = { type = "simple", name = "self-destruct-armed" } },
+    { type = "scheduleOn", on_turn = 10, note = "Self-destruct detonation", actions = [
+        { type = "showMessage", text = "💥 KABOOM! 💥 The entire area shakes violently as explosions rock the mountain!" },
+        { type = "showMessage", text = "Fortunately, this was just a training exercise. All systems return to normal." },
+        { type = "removeFlag", flag = "self-destruct-armed" },
+        { type = "awardPoints", amount = 5 },
+        { type = "addFlag", flag = { type = "simple", name = "survived-fake-explosion" } },
+    ] },
+]

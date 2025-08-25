@@ -15,6 +15,7 @@ pub use dev::*;
 use gametools::Spinner;
 pub use inventory::*;
 pub use item::*;
+use log::info;
 pub use look::*;
 pub use movement::*;
 pub use npc::*;
@@ -24,7 +25,7 @@ use crate::command::{Command, parse_command};
 use crate::npc::{Npc, calculate_next_location, move_npc, move_scheduled};
 use crate::spinners::CoreSpinnerType;
 use crate::style::GameStyle;
-use crate::trigger::TriggerCondition;
+use crate::trigger::{TriggerCondition, dispatch_action};
 use crate::world::AmbleWorld;
 use crate::{Item, View, ViewItem, WorldObject};
 
@@ -55,11 +56,13 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     loop {
         let mut status_effects = String::new();
         for status in world.player.status() {
-            let s = format!("[{}]", status.status_style());
+            let s = format!(" [{}]", status.status_style());
             status_effects.push_str(&s);
-            status_effects.push(' ');
         }
-        print!("\n[Score: {} {}]> ", world.player.score, status_effects);
+        print!(
+            "\n[Rel: {}|Score: {}{}]> ",
+            world.turn_count, world.player.score, status_effects
+        );
         io::stdout()
             .flush()
             .expect("failed to flush stdout before reading input");
@@ -125,31 +128,49 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         //
         // Only commands / actions that may be part of what's required to solve a puzzle or advance
         // the game count as a turn.
-        let turn_taken = match parse_command(&input, &mut view) {
+        let turn_taken = matches!(
+            parse_command(&input, &mut view),
             Close(_)
-            | Drop(_)
-            | GiveToNpc { .. }
-            | LookAt(_)
-            | LockItem(_)
-            | MoveTo(_)
-            | Open(_)
-            | PutIn { .. }
-            | Read(_)
-            | Take(_)
-            | TakeFrom { .. }
-            | TalkTo(_)
-            | TurnOn(_)
-            | UnlockItem(_)
-            | UseItemOn { .. } => true,
-            _ => false,
-        };
+                | Drop(_)
+                | GiveToNpc { .. }
+                | LookAt(_)
+                | LockItem(_)
+                | MoveTo(_)
+                | Open(_)
+                | PutIn { .. }
+                | Read(_)
+                | Take(_)
+                | TakeFrom { .. }
+                | TalkTo(_)
+                | TurnOn(_)
+                | UnlockItem(_)
+                | UseItemOn { .. }
+        );
+
         if turn_taken {
             world.turn_count += 1;
+            info!("----> turn advanced to {} <----", world.turn_count);
             check_npc_movement(world, &mut view)?;
+            check_scheduled_events(world, &mut view)?;
         }
 
         check_ambient_triggers(world, &mut view)?;
         view.flush();
+    }
+    Ok(())
+}
+
+/// Check the scheduler for any due events and fire them.
+pub fn check_scheduled_events(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
+    let now = world.turn_count;
+    while let Some(event) = world.scheduler.pop_due(now) {
+        info!(
+            "scheduled event \"{}\" firing --->)",
+            event.note.unwrap_or_else(|| "<no note recorded>".to_string())
+        );
+        for action in event.actions {
+            dispatch_action(world, view, &action)?;
+        }
     }
     Ok(())
 }

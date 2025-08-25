@@ -906,3 +906,22 @@ restricted = false
 
 [[items.abilities]]
 type = "TurnOn"
+
+# ---------------------------------------
+[[items]]
+id = "coffee_machine"
+name = "Coffee Machine"
+description = "A sleek black single-serve drip coffee machine, ready to go with fresh grounds."
+portable = false
+location = { Room = "lounge" }
+
+[[items.abilities]]
+type = "TurnOn"
+
+# ------------------------------
+[[items]]
+id = "hot_coffee"
+name = "Hot Coffee"
+description = "A paper cup of piping hot deep black coffee. Smells like a dark french roast."
+portable = true
+location = { Nowhere = "spawns@lounge after coffee_machine started" }

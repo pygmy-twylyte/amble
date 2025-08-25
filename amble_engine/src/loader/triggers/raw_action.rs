@@ -107,6 +107,16 @@ pub enum RawTriggerAction {
         from_room: String,
         direction: String,
     },
+    ScheduleIn {
+        turns_ahead: usize,
+        actions: Vec<RawTriggerAction>,
+        note: Option<String>,
+    },
+    ScheduleOn {
+        on_turn: usize,
+        actions: Vec<RawTriggerAction>,
+        note: Option<String>,
+    },
 }
 impl RawTriggerAction {
     /// Convert the TOML representation of this action to a fully realized `TriggerAction`.
@@ -156,6 +166,12 @@ impl RawTriggerAction {
             Self::SpawnItemInInventory { item_id } => cook_spawn_item_in_inventory(symbols, item_id),
             Self::UnlockExit { from_room, direction } => cook_unlock_exit(symbols, from_room, direction),
             Self::DenyRead { reason } => Ok(TriggerAction::DenyRead(reason.to_string())),
+            Self::ScheduleIn {
+                turns_ahead,
+                actions,
+                note,
+            } => cook_schedule_in(symbols, *turns_ahead, actions, note.clone()),
+            Self::ScheduleOn { on_turn, actions, note } => cook_schedule_on(symbols, *on_turn, actions, note.clone()),
         }
     }
 }
@@ -398,4 +414,38 @@ fn cook_npc_says(
     } else {
         bail!("raw action NpcSays({npc_id},_): token not found in symbols")
     }
+}
+
+fn cook_schedule_in(
+    symbols: &SymbolTable,
+    turns_ahead: usize,
+    raw_actions: &[RawTriggerAction],
+    note: Option<String>,
+) -> Result<TriggerAction> {
+    let mut cooked_actions = Vec::new();
+    for raw_action in raw_actions {
+        cooked_actions.push(raw_action.to_action(symbols)?);
+    }
+    Ok(TriggerAction::ScheduleIn {
+        turns_ahead,
+        actions: cooked_actions,
+        note,
+    })
+}
+
+fn cook_schedule_on(
+    symbols: &SymbolTable,
+    on_turn: usize,
+    raw_actions: &[RawTriggerAction],
+    note: Option<String>,
+) -> Result<TriggerAction> {
+    let mut cooked_actions = Vec::new();
+    for raw_action in raw_actions {
+        cooked_actions.push(raw_action.to_action(symbols)?);
+    }
+    Ok(TriggerAction::ScheduleOn {
+        on_turn,
+        actions: cooked_actions,
+        note,
+    })
 }
