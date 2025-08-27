@@ -23,6 +23,7 @@ pub fn normal_block() -> Options<'static> {
 
 /// Convenience trait for applying color and style to text output.
 pub trait GameStyle {
+    fn prompt_style(&self) -> ColoredString;
     fn status_style(&self) -> ColoredString;
     fn highlight(&self) -> ColoredString;
     fn transition_style(&self) -> ColoredString;
@@ -52,6 +53,9 @@ pub trait GameStyle {
 }
 
 impl GameStyle for &str {
+    fn prompt_style(&self) -> ColoredString {
+        self.truecolor(250, 200, 100).on_truecolor(50, 51, 50)
+    }
     fn status_style(&self) -> ColoredString {
         self.to_uppercase().truecolor(20, 220, 100)
     }
@@ -66,7 +70,7 @@ impl GameStyle for &str {
         self.truecolor(40, 180, 40)
     }
     fn npc_style(&self) -> ColoredString {
-        self.truecolor(13, 130, 60).underline()
+        self.truecolor(50, 200, 50).underline()
     }
     fn room_style(&self) -> ColoredString {
         self.truecolor(223, 77, 10)
@@ -126,7 +130,7 @@ impl GameStyle for &str {
     }
 
     fn npc_quote_style(&self) -> ColoredString {
-        self.italic().truecolor(40, 180, 40)
+        self.italic().truecolor(100, 250, 250)
     }
 
     fn highlight(&self) -> ColoredString {
@@ -222,5 +226,9 @@ impl GameStyle for String {
 
     fn npc_movement_style(&self) -> ColoredString {
         self.as_str().npc_movement_style()
+    }
+
+    fn prompt_style(&self) -> ColoredString {
+        self.as_str().prompt_style()
     }
 }
