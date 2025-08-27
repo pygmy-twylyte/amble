@@ -71,7 +71,7 @@ impl RoomOverlay {
                 .is_none_or(|item| !matches!(item.location, Location::Room(id) if id == room_id)),
             OverlayCondition::PlayerHasItem { item_id } => world.player.contains_item(*item_id),
             OverlayCondition::PlayerMissingItem { item_id } => !world.player.contains_item(*item_id),
-            OverlayCondition::NpcInMood { npc_id, mood } => {
+            OverlayCondition::NpcInState { npc_id, mood } => {
                 world.npcs.get(npc_id).is_some_and(|npc| npc.state == *mood)
             },
             OverlayCondition::ItemInRoom { item_id, room_id } => world
@@ -93,7 +93,7 @@ pub enum OverlayCondition {
     ItemAbsent { item_id: Uuid },
     PlayerHasItem { item_id: Uuid },
     PlayerMissingItem { item_id: Uuid },
-    NpcInMood { npc_id: Uuid, mood: NpcState },
+    NpcInState { npc_id: Uuid, mood: NpcState },
     ItemInRoom { item_id: Uuid, room_id: Uuid },
 }
 
@@ -415,7 +415,7 @@ mod tests {
         let npc_id = *world.npcs.keys().next().unwrap();
 
         let overlay = RoomOverlay {
-            condition: OverlayCondition::NpcInMood {
+            condition: OverlayCondition::NpcInState {
                 npc_id,
                 mood: NpcState::Normal,
             },
