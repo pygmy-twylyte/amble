@@ -95,6 +95,9 @@ impl View {
 
         // clear the buffer for the next turn
         self.items.clear();
+
+        // create a little space before the next prompt
+        println!("\n");
     }
 
     // SECTION AGGREGATORS START HERE --------------------
