@@ -105,7 +105,9 @@ use crate::world::{AmbleWorld, Location, WorldObject};
 /// - [`ResetFlag`] - Resets a sequence flag to step 0
 ///
 /// ## Item Manipulation
+/// - [`ReplaceDropItem`] - Drops item at current location AND replaces it with another.
 /// - [`DespawnItem`] - Removes an item from the world entirely
+/// - [`ReplaceItem`] - Replaces one item with another, in the same location.
 /// - [`LockItem`] - Locks a container item
 /// - [`RestrictItem`] - Makes an item non-transferable
 /// - [`SpawnItemCurrentRoom`] - Creates an item in the player's current room
@@ -139,6 +141,10 @@ use crate::world::{AmbleWorld, Location, WorldObject};
 /// - [`SpinnerMessage`] - Displays a random message from a spinner
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TriggerAction {
+    /// Replaces an item at its current location
+    ReplaceItem { old_id: Uuid, new_id: Uuid },
+    /// Replaces an item and drops it at the player's location
+    ReplaceDropItem { old_id: Uuid, new_id: Uuid },
     /// Adds a status flag to the player
     AddFlag(Flag),
     /// Adds a weighted text option to a random text spinner
@@ -216,6 +222,8 @@ pub enum TriggerAction {
 pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &TriggerAction) -> Result<()> {
     use TriggerAction::*;
     match action {
+        ReplaceItem { old_id, new_id } => replace_item(world, old_id, new_id)?,
+        ReplaceDropItem { old_id, new_id } => replace_drop_item(world, old_id, new_id)?,
         SetBarredMessage {
             exit_from,
             exit_to,
@@ -243,7 +251,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
             exit_from,
             exit_to,
         } => reveal_exit(world, direction, exit_from, exit_to)?,
-        SetItemDescription { item_id, text } => set_item_description(world, *item_id, text)?,
+        SetItemDescription { item_id, text } => set_item_description(world, item_id, text)?,
         SetNPCState { npc_id, state } => set_npc_state(world, npc_id, state)?,
         ShowMessage(text) => show_message(view, text),
         SpawnItemInContainer { item_id, container_id } => {
@@ -274,12 +282,71 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
     Ok(())
 }
 
+/// Replaces an item with another, wherever it's located
+fn replace_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -> Result<()> {
+    // record old item's location and symbol
+    let (location, old_sym) = if let Some(old_item) = world.items.get(&old_id) {
+        (old_item.location, old_item.symbol.clone())
+    } else {
+        bail!("replacing item {old_id}: item not found");
+    };
+
+    // despawn old item
+    despawn_item(world, &old_id)?;
+
+    // update location of new item in world.items
+    if let Some(new_item) = world.get_item_mut(*new_id) {
+        new_item.location = location;
+    }
+
+    // update location itself to contain the new item, if needed; process depends
+    // on which type of location the old item came from...
+    match &location {
+        Location::Item(container_uuid) => {
+            if let Some(container) = world.get_item_mut(*container_uuid) {
+                container.add_item(*new_id);
+            }
+        },
+        Location::Inventory => world.player.add_item(*new_id),
+        Location::Nowhere => warn!("replace_item called on an unspawned item ({old_sym})"),
+        Location::Npc(npc_id) => {
+            if let Some(npc) = world.npcs.get_mut(npc_id) {
+                npc.add_item(*new_id);
+            }
+        },
+        Location::Room(room_id) => {
+            if let Some(room) = world.rooms.get_mut(room_id) {
+                room.add_item(*new_id);
+            }
+        },
+    }
+    info!(
+        "└─ action: ReplaceItem({}, {}) [Location = {location:?}",
+        old_sym,
+        item_symbol_from_id(&world.items, *new_id)
+    );
+    Ok(())
+}
+
+/// Drops an item in the current room and replaces it with the new version.
+fn replace_drop_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -> Result<()> {
+    despawn_item(world, old_id)?;
+    spawn_item_in_current_room(world, new_id)?;
+    Ok(())
+}
+
 /// Sets a new description for an `Item`
-fn set_item_description(world: &mut AmbleWorld, item_id: Uuid, text: &str) -> Result<()> {
+fn set_item_description(world: &mut AmbleWorld, item_id: &Uuid, text: &str) -> Result<()> {
     let item = world
-        .get_item_mut(item_id)
+        .get_item_mut(*item_id)
         .with_context(|| format!("changing item '{item_id} description"))?;
     item.description = text.to_string();
+    // text is truncated below at max 50 chars for the log
+    info!(
+        "└─ action: SetItemDescription({}, \"{}\")",
+        item_symbol_from_id(&world.items, *item_id),
+        &text[..std::cmp::min(text.len(), 50)]
+    );
     Ok(())
 }
 
@@ -315,6 +382,11 @@ fn set_barred_message(world: &mut AmbleWorld, exit_from: &Uuid, exit_to: &Uuid, 
         exit.set_barred_msg(Some(msg.to_string()));
         room.exits.insert(direction, exit);
     }
+    info!(
+        "└─ action: SetBarredMessage({} -> {}, '{msg}')",
+        room_symbol_from_id(&world.rooms, *exit_from),
+        room_symbol_from_id(&world.rooms, *exit_to)
+    );
     Ok(())
 }
 
