@@ -8,6 +8,14 @@ use crate::{loader::SymbolTable, npc::NpcState, player::Flag, spinners::SpinnerT
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum RawTriggerAction {
+    ReplaceItem {
+        old_sym: String,
+        new_sym: String,
+    },
+    ReplaceDropItem {
+        old_sym: String,
+        new_sym: String,
+    },
     AddFlag {
         flag: Flag,
     },
@@ -122,6 +130,8 @@ impl RawTriggerAction {
     /// Convert the TOML representation of this action to a fully realized `TriggerAction`.
     pub fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
+            Self::ReplaceItem { old_sym, new_sym } => cook_replace_item(symbols, old_sym, new_sym),
+            Self::ReplaceDropItem { old_sym, new_sym } => cook_replace_drop_item(symbols, old_sym, new_sym),
             Self::SetItemDescription { item_sym, text } => cook_set_item_description(symbols, item_sym, text),
             Self::SetBarredMessage {
                 msg,
@@ -179,6 +189,31 @@ impl RawTriggerAction {
 /*
  * "Cook" functions below convert RawTriggerActions to "fully cooked" TriggerActions
  */
+fn cook_replace_item(symbols: &SymbolTable, old_sym: &str, new_sym: &str) -> Result<TriggerAction> {
+    if let Some(old_id) = symbols.items.get(old_sym)
+        && let Some(new_id) = symbols.items.get(new_sym)
+    {
+        Ok(TriggerAction::ReplaceItem {
+            old_id: *old_id,
+            new_id: *new_id,
+        })
+    } else {
+        bail!("item symbol '{old_sym}' or '{new_sym}' not found when loading raw ReplaceItem trigger action");
+    }
+}
+
+fn cook_replace_drop_item(symbols: &SymbolTable, old_sym: &str, new_sym: &str) -> Result<TriggerAction> {
+    if let Some(old_uuid) = symbols.items.get(old_sym)
+        && let Some(new_uuid) = symbols.items.get(new_sym)
+    {
+        Ok(TriggerAction::ReplaceDropItem {
+            old_id: *old_uuid,
+            new_id: *new_uuid,
+        })
+    } else {
+        bail!("item symbol '{old_sym}' or '{new_sym}' not found when loading raw ReplaceDropItem trigger action");
+    }
+}
 
 fn cook_set_item_description(symbols: &SymbolTable, item_sym: &str, text: &str) -> Result<TriggerAction> {
     if let Some(item_id) = symbols.items.get(item_sym) {
