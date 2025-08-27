@@ -168,7 +168,7 @@ pub fn convert_overlay_condition(
         RawOverlayCondition::PlayerMissingItem { item_id } => OverlayCondition::PlayerMissingItem {
             item_id: register_item(symbols, item_id),
         },
-        RawOverlayCondition::NpcInState { npc_id, state: mood } => OverlayCondition::NpcInMood {
+        RawOverlayCondition::NpcInState { npc_id, state: mood } => OverlayCondition::NpcInState {
             npc_id: register_npc(symbols, npc_id),
             mood: mood.clone(),
         },
