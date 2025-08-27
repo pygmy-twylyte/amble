@@ -60,8 +60,12 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             status_effects.push_str(&s);
         }
         print!(
-            "\n[Rel: {}|Score: {}{}]> ",
-            world.turn_count, world.player.score, status_effects
+            "{}",
+            format!(
+                "\n[Rel: {}|Score: {}{}]>> ",
+                world.turn_count, world.player.score, status_effects
+            )
+            .prompt_style()
         );
         io::stdout()
             .flush()
