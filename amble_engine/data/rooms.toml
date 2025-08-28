@@ -7,11 +7,11 @@ visited = true
 base_description = "A small, flat ridge in the midst of a steeply sloped wooded area. Probably west of something, depending on how you're oriented.\n\nSome rough stairs carved into the slope curve upward into the trees."
 
 [[rooms.overlays]]
-condition = { type = "flagUnset", flag = "cleaned-plaque-1" }
+conditions = [{ type = "flagUnset", flag = "cleaned-plaque-1" }]
 text = "Near the bottom of the stairs stands an impressive, intricately sculpted pillar bearing a plaque tarnished with age and forest grime."
 
 [[rooms.overlays]]
-condition = { type = "flagSet", flag = "cleaned-plaque-1" }
+conditions = [{ type = "flagSet", flag = "cleaned-plaque-1" }]
 text = "You're occasionally blinded by a flash of sunlight reflected from the freshly cleaned plaque."
 
 [rooms.exits.up]
@@ -55,15 +55,15 @@ location = "Nowhere"
 visited = false
 
 [[rooms.overlays]]
-condition = { type = "itemPresent", item_id = "fallen_tree" }
+conditions = [{ type = "itemPresent", item_id = "fallen_tree" }]
 text = "A huge tangle of limbs and branches from a fallen tree block the path continuing upward."
 
 [[rooms.overlays]]
-condition = { type = "flagSet", flag = "chopped-fallen-tree" }
+conditions = [{ type = "flagSet", flag = "chopped-fallen-tree" }]
 text = "Cut branches of a fallen tree are piled to the side of the path upward."
 
 [[rooms.overlays]]
-condition = { type = "flagSet", flag = "burned-fallen-tree" }
+conditions = [{ type = "flagSet", flag = "burned-fallen-tree" }]
 text = "Charred twigs and smoldering ash are all that remain of the fallen tree."
 
 [rooms.exits.up]
@@ -132,11 +132,11 @@ visited = false
 base_description = "Potted plants flank a plain, darkened glass door on the front of the building to the north. As you approach the door, a security eye-bot mounted above it mutters judgementally as it scans you. A sign above it reads:\n\n                       \"Always Know Where Your Towel Is\"\n\nPaved paths lead around the building to the east and west."
 
 [[rooms.overlays]]
-condition = { type = "flagUnset", flag = "got-towel" }
+conditions = [{ type = "flagUnset", flag = "got-towel" }]
 text = "After a few moments, the eye-bot's iris turns red, and it points at the sign above."
 
 [[rooms.overlays]]
-condition = { type = "flagSet", flag = "got-towel" }
+conditions = [{ type = "flagSet", flag = "got-towel" }]
 text = "Finished scanning, the eye-bot's iris glows green. The doors unlatch and open slightly."
 
 [rooms.exits.north]
@@ -226,11 +226,17 @@ visited = false
 base_description = "The lobby is clinically clean in a way that feels suspicious. A slightly humming vending machine stands beside an empty receptionist's desk bearing a dusty nameplate that reads, in Comic Sans: 'WELCOME TEMPORARY LIFEFORM'. A softly glowing sign on the north wall reads 'Elevator Access', while arrows on the east and west walls point toward other destinations with little enthusiasm."
 
 [[rooms.overlays]]
-condition = { type = "npcInState", npc_id = "gonk_droid", state = "normal" }
-text = "A gonk droid stands idle in the corner, muttering to itself."
+conditions = [
+    { type = "npcPresent", npc_id = "gonk_droid" },
+    { type = "npcInState", npc_id = "gonk_droid", state = "normal" },
+]
+text = "A gonk droid stands idle in the corner, muttering to itself and tottering in circles."
 
 [[rooms.overlays]]
-condition = { type = "npcInState", npc_id = "gonk_droid", state = "happy" }
+conditions = [
+    { type = "npcPresent", npc_id = "gonk_droid" },
+    { type = "npcInState", npc_id = "gonk_droid", state = "happy" },
+]
 text = "The gonk droid gonks a happy tune in the corner, charging the battery you gave it."
 
 [rooms.exits.north]
@@ -253,23 +259,23 @@ location = "Nowhere"
 visited = false
 base_description = "The office of Amble Adventures, a wholly disowned subsidiary of Brains Anonymous™, is a shrine to barely-funded creativity. Faded posters of games that were never released adorn the walls, including one titled 'PONG Construction Set 3000'. A sagging ficus looms in the corner like it’s been through something. An Initech™ Poetry Performer plays possum in another corner, hoping you don't notice it."
 [[rooms.overlays]]
-condition = { type = "flagUnset", flag = "panic-room-open" }
+conditions = [{ type = "flagUnset", flag = "panic-room-open" }]
 text = """A floor-to-ceiling whiteboard on the west wall boasts an impressive flowchart titled "Planning to Plan"."""
 
 [[rooms.overlays]]
-condition = { type = "flagSet", flag = "panic-room-open" }
+conditions = [{ type = "flagSet", flag = "panic-room-open" }]
 text = """The "Planning to Plan" whiteboard has parted to reveal a heavy, vault-like door set into the west wall."""
 
 [[rooms.overlays]]
-condition = { type = "flagUnset", flag = "got-visitor-pass" }
+conditions = [{ type = "flagUnset", flag = "got-visitor-pass" }]
 text = """A receptionist sits behind a tidy desk adorned with figurines of Portal turrets and companion cubes -- pointedly ignoring you."""
 
 [[rooms.overlays]]
-condition = { type = "playerHasItem", item_id = "invitation" }
+conditions = [{ type = "playerHasItem", item_id = "invitation" }]
 text = "The receptionist appears to be trying furtively to see what you have in your pack."
 
 [[rooms.overlays]]
-condition = { type = "flagSet", flag = "got-visitor-pass" }
+conditions = [{ type = "flagSet", flag = "got-visitor-pass" }]
 text = "The receptionist looks up from her desk and gives you an awkward wink and a grin."
 
 [rooms.exits.east]
@@ -287,11 +293,11 @@ visited = false
 base_description = "A bank of elevators waits here, none of which seem eager to go anywhere. One of them is open and labeled 'MAIN LIFT' in glowing teal script.  To the east, a door marked 'LOUNGE' is just slightly ajar, as if luring you to come in."
 
 [[rooms.overlays]]
-condition = { type = "flagUnset", flag = "got-elevator-keycard" }
+conditions = [{ type = "flagUnset", flag = "got-elevator-keycard" }]
 text = """The proximity card reader next to the lift displays: ACCESS DENIED. With no sympathy whatsoever."""
 
 [[rooms.overlays]]
-condition = { type = "flagSet", flag = "got-elevator-keycard" }
+conditions = [{ type = "flagSet", flag = "got-elevator-keycard" }]
 text = """The proximity card reader next to the lift now somewhat sheepishly displays: ACCESS GRANTED."""
 
 [rooms.exits.north]
@@ -312,11 +318,11 @@ visited = false
 base_description = "The elevator interior is surprisingly luxurious -- polished chrome panels, soft lighting, and a faint scent of something that might be vanilla or data corruption."
 
 [[rooms.overlays]]
-condition = { type = "flagUnset", flag = "got-elevator-keycard" }
+conditions = [{ type = "flagUnset", flag = "got-elevator-keycard" }]
 text = """There are only two buttons: [main] is lit, but [aa-3] is dark."""
 
 [[rooms.overlays]]
-condition = { type = "flagSet", flag = "got-elevator-keycard" }
+conditions = [{ type = "flagSet", flag = "got-elevator-keycard" }]
 text = """The [main] and [aa-3] buttons are both lit."""
 
 [rooms.exits.main]
@@ -335,11 +341,11 @@ location = "Nowhere"
 visited = false
 base_description = "A small space to relax, with a sofa, a few magazines, and part of a jigsaw puzzle. A tarry substance slowly bubbles in the bottom of a coffee carafe."
 [[rooms.overlays]]
-condition = { type = "flagSet", flag = "found-portal-room" }
+conditions = [{ type = "flagSet", flag = "found-portal-room" }]
 text = "A trap door in the floor reveals a ladder down to a room below."
 
 [[rooms.overlays]]
-condition = { type = "flagUnset", flag = "found-portal-room" }
+conditions = [{ type = "flagUnset", flag = "found-portal-room" }]
 text = "An ornate rug lies in the center of the room. It really ties the room together."
 
 [rooms.exits.west]
@@ -354,11 +360,11 @@ visited = false
 base_description = "A bare white room with a white tile floor. A ladder leads back up through the trap door in the ceiling. Three of the four walls are used as whiteboards, littered with obscure diagrams and equations. In the center, a black and white Portal gun is affixed to a pedestal and aimed squarely at the fourth wall."
 
 [[rooms.overlays]]
-condition = { type = "flagUnset", flag = "portal-opened" }
+conditions = [{ type = "flagUnset", flag = "portal-opened" }]
 text = """A bullseye adorns the fourth, otherwise blank wall. A photo of a watch-sized computer attached to a potato battery is taped in the center, for some reason."""
 
 [[rooms.overlays]]
-condition = { type = "flagSet", flag = "portal-opened" }
+conditions = [{ type = "flagSet", flag = "portal-opened" }]
 text = """There is a sparkling blue portal in the fourth wall, with a view to a laboratory space beyond. A bit of smoke drifts in from the portal."""
 
 [rooms.exits.ladder]
@@ -376,7 +382,7 @@ visited = false
 base_description = "The unnaturally white—walls, floor, ceiling, even the air here feels clinical and overexposed. Everything hums at a frequency designed to encourage strict compliance. A single console blinks on a table beside a highly over-engineered printer labeled \"Aperture Science Hospitality Generator.\""
 
 [[rooms.overlays]]
-condition = { type = "flagSet", flag = "burned-invitation" }
+conditions = [{ type = "flagSet", flag = "burned-invitation" }]
 text = "A smoky haze and the lingering smell of burned paper permeate the room."
 
 [rooms.exits.portal]
@@ -461,15 +467,17 @@ visited = false
 base_description = "A small landing area covered in dust. Buckets, tools, and debris are strewn about the floor. The door to the west is labeled with a sign:\n\n                        🚧 ROOM AA-3B 🚧\n                 FICTIONAL UNIVERSE CONTAINMENT"
 
 [[rooms.overlays]]
-condition = { type = "npcInState", npc_id = "black_knight", state = "normal" }
+conditions = [
+    { type = "npcInState", npc_id = "black_knight", state = "normal" },
+]
 text = """The Black Knight stands in your path, staring you down, leaning on his battered longsword."""
 
 [[rooms.overlays]]
-condition = { type = "npcInState", npc_id = "black_knight", state = "mad" }
+conditions = [{ type = "npcInState", npc_id = "black_knight", state = "mad" }]
 text = """Agitated, the Black Knight sidesteps around the room, occasionally lunging at you to grab at his sword or kick you in the shin."""
 
 [[rooms.overlays]]
-condition = { type = "npcInState", npc_id = "black_knight", state = "happy" }
+conditions = [{ type = "npcInState", npc_id = "black_knight", state = "happy" }]
 text = """The Black Knight stands in a corner, helmet off, gleefully plucking hairs from his beard and splitting them with his sword."""
 
 [rooms.exits.north]
@@ -599,27 +607,27 @@ base_description = "The room is stark, dim, and cavernous. A series of industria
 
 # before player first tries to interact with HAL
 [[rooms.overlays]]
-condition = { type = "flagUnset", flag = "talked-to-hal" }
+conditions = [{ type = "flagUnset", flag = "talked-to-hal" }]
 text = """A HAL-9000 camera and terminal embedded in the far wall looms dark and silent, but somehow still seems to be watching you."""
 
 # after player speaks to HAL but no modules inserted
 [[rooms.overlays]]
-condition = { type = "flagSet", flag = "hal-reboot#0" }
+conditions = [{ type = "flagSet", flag = "talked-to-hal" }]
 text = """The red light in HAL-9000's lens glows faintly. Two lights shine next to the CRT display, which remains blank."""
 
 # after player speaks to HAL with one module inserted
 [[rooms.overlays]]
-condition = { type = "flagSet", flag = "hal-reboot#1" }
+conditions = [{ type = "flagSet", flag = "hal-reboot#1" }]
 text = """Several lights blink slowly on a panel near HAL-9000's camera, whose red light still glows faintly. A few cryptic instructions flicker across the monitor."""
 
 # after player speaks to HAL with two modules inserted
 [[rooms.overlays]]
-condition = { type = "flagSet", flag = "hal-reboot#2" }
+conditions = [{ type = "flagSet", flag = "hal-reboot#2" }]
 text = """HAL-9000's lens light glows bright red with a yellow center. Lights on several panels now flash in sequence; a boot sequence scrolls rapidly up the display."""
 
 # after player speaks to HAL with three modules inserted
 [[rooms.overlays]]
-condition = { type = "flagSet", flag = "hal-reboot#3" }
+conditions = [{ type = "flagSet", flag = "hal-reboot#3" }]
 text = """The light in HAL-9000's lens glows an intense red and seems to stare through you and into the monolith. Various status notifications cycle on the nearby monitor."""
 
 [rooms.exits.east]

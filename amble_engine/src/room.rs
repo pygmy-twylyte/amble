@@ -43,14 +43,36 @@ impl Exit {
 /// Conditional text that may be part of a room description, depending on some state.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoomOverlay {
-    pub condition: OverlayCondition,
+    pub conditions: Vec<OverlayCondition>,
     pub text: String,
 }
 impl RoomOverlay {
-    /// Returns true if an overlay's condition is met.
+    /// Returns true if an overlay's conditions are all met.
+    pub fn applies(&self, room_id: Uuid, world: &AmbleWorld) -> bool {
+        self.conditions.iter().all(|cond| cond.applies(room_id, world))
+    }
+}
+
+/// Types of conditions that may enable room overlays
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum OverlayCondition {
+    FlagComplete { flag: String },
+    FlagSet { flag: String },
+    FlagUnset { flag: String },
+    ItemAbsent { item_id: Uuid },
+    ItemInRoom { item_id: Uuid, room_id: Uuid },
+    ItemPresent { item_id: Uuid },
+    NpcInState { npc_id: Uuid, mood: NpcState },
+    NpcPresent { npc_id: Uuid },
+    PlayerHasItem { item_id: Uuid },
+    PlayerMissingItem { item_id: Uuid },
+}
+impl OverlayCondition {
+    /// Returns true if this condition currently applies.
     pub fn applies(&self, room_id: Uuid, world: &AmbleWorld) -> bool {
         let flag_is_set = |flag_str: &str| world.player.flags.iter().any(|f| f.value() == *flag_str);
-        match &self.condition {
+        match &self {
             OverlayCondition::FlagComplete { flag } => world
                 .player
                 .flags
@@ -78,23 +100,11 @@ impl RoomOverlay {
                 .items
                 .get(item_id)
                 .is_some_and(|item| matches!(item.location, Location::Room(id) if id == *room_id)),
+            OverlayCondition::NpcPresent { npc_id } => {
+                world.rooms.get(&room_id).is_some_and(|room| room.npcs.contains(npc_id))
+            },
         }
     }
-}
-
-/// Types of conditions that may enable room overlays
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum OverlayCondition {
-    FlagComplete { flag: String },
-    FlagSet { flag: String },
-    FlagUnset { flag: String },
-    ItemPresent { item_id: Uuid },
-    ItemAbsent { item_id: Uuid },
-    PlayerHasItem { item_id: Uuid },
-    PlayerMissingItem { item_id: Uuid },
-    NpcInState { npc_id: Uuid, mood: NpcState },
-    ItemInRoom { item_id: Uuid, room_id: Uuid },
 }
 
 /// Any visitable location in the game world.
@@ -309,9 +319,9 @@ mod tests {
         world.player.flags.insert(Flag::simple("test_flag", 0));
 
         let overlay = RoomOverlay {
-            condition: OverlayCondition::FlagSet {
+            conditions: vec![OverlayCondition::FlagSet {
                 flag: "test_flag".into(),
-            },
+            }],
             text: "This overlay should show".into(),
         };
 
@@ -323,9 +333,9 @@ mod tests {
         let world = create_test_world();
 
         let overlay = RoomOverlay {
-            condition: OverlayCondition::FlagSet {
+            conditions: vec![OverlayCondition::FlagSet {
                 flag: "nonexistent_flag".into(),
-            },
+            }],
             text: "This overlay should not show".into(),
         };
 
@@ -337,9 +347,9 @@ mod tests {
         let world = create_test_world();
 
         let overlay = RoomOverlay {
-            condition: OverlayCondition::FlagUnset {
+            conditions: vec![OverlayCondition::FlagUnset {
                 flag: "nonexistent_flag".into(),
-            },
+            }],
             text: "This overlay should show".into(),
         };
 
@@ -355,9 +365,9 @@ mod tests {
         world.player.flags.insert(seq_flag);
 
         let overlay = RoomOverlay {
-            condition: OverlayCondition::FlagComplete {
+            conditions: vec![OverlayCondition::FlagComplete {
                 flag: "test_seq".into(),
-            },
+            }],
             text: "Sequence is complete".into(),
         };
 
@@ -371,7 +381,7 @@ mod tests {
         let item_id = *world.items.keys().next().unwrap();
 
         let overlay = RoomOverlay {
-            condition: OverlayCondition::ItemPresent { item_id },
+            conditions: vec![OverlayCondition::ItemPresent { item_id }],
             text: "Item is here".into(),
         };
 
@@ -385,9 +395,9 @@ mod tests {
         let nonexistent_item = Uuid::new_v4();
 
         let overlay = RoomOverlay {
-            condition: OverlayCondition::ItemAbsent {
+            conditions: vec![OverlayCondition::ItemAbsent {
                 item_id: nonexistent_item,
-            },
+            }],
             text: "Item is not here".into(),
         };
 
@@ -402,7 +412,7 @@ mod tests {
         world.player.inventory.insert(item_id);
 
         let overlay = RoomOverlay {
-            condition: OverlayCondition::PlayerHasItem { item_id },
+            conditions: vec![OverlayCondition::PlayerHasItem { item_id }],
             text: "You have the item".into(),
         };
 
@@ -415,10 +425,10 @@ mod tests {
         let npc_id = *world.npcs.keys().next().unwrap();
 
         let overlay = RoomOverlay {
-            condition: OverlayCondition::NpcInState {
+            conditions: vec![OverlayCondition::NpcInState {
                 npc_id,
                 mood: NpcState::Normal,
-            },
+            }],
             text: "NPC is in normal mood".into(),
         };
 
@@ -432,7 +442,7 @@ mod tests {
         let item_id = *world.items.keys().next().unwrap();
 
         let overlay = RoomOverlay {
-            condition: OverlayCondition::ItemInRoom { item_id, room_id },
+            conditions: vec![OverlayCondition::ItemInRoom { item_id, room_id }],
             text: "Item is in this specific room".into(),
         };
 
@@ -491,9 +501,9 @@ mod tests {
             .insert(Flag::simple("show_overlay", world.turn_count));
 
         let overlay = RoomOverlay {
-            condition: OverlayCondition::FlagSet {
+            conditions: vec![OverlayCondition::FlagSet {
                 flag: "show_overlay".into(),
-            },
+            }],
             text: "This is an overlay text".into(),
         };
 

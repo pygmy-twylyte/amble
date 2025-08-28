@@ -115,7 +115,7 @@ fn test_room_overlay_applies_flag() {
     let mut world = world::AmbleWorld::new_empty();
     world.player.flags.insert(Flag::simple("x", usize::MAX));
     let overlay = RoomOverlay {
-        condition: OverlayCondition::FlagSet { flag: "x".into() },
+        conditions: vec![OverlayCondition::FlagSet { flag: "x".into() }],
         text: String::new(),
     };
     assert!(overlay.applies(uuid::Uuid::new_v4(), &world));
