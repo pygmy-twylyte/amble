@@ -1808,4 +1808,94 @@ mod tests {
         assert_eq!(event.actions.len(), 2);
         assert_eq!(event.note, None);
     }
+
+    #[test]
+    fn replace_item_swaps_items_preserving_location() {
+        let (mut world, room1, _) = build_test_world();
+        let old_id = Uuid::new_v4();
+        let new_id = Uuid::new_v4();
+        world
+            .items
+            .insert(old_id, make_item(old_id, Location::Room(room1), None));
+        world.rooms.get_mut(&room1).unwrap().contents.insert(old_id);
+        world
+            .items
+            .insert(new_id, make_item(new_id, Location::Nowhere, None));
+
+        replace_item(&mut world, &old_id, &new_id).unwrap();
+
+        assert_eq!(world.items[&old_id].location, Location::Nowhere);
+        assert_eq!(world.items[&new_id].location, Location::Room(room1));
+        assert!(world.rooms[&room1].contents.contains(&new_id));
+        assert!(!world.rooms[&room1].contents.contains(&old_id));
+    }
+
+    #[test]
+    fn set_barred_message_updates_exit() {
+        let (mut world, room1, room2) = build_test_world();
+        world
+            .rooms
+            .get_mut(&room1)
+            .unwrap()
+            .exits
+            .insert("north".into(), Exit::new(room2));
+
+        set_barred_message(&mut world, &room1, &room2, "No entry").unwrap();
+
+        let exit = world.rooms[&room1].exits.get("north").unwrap();
+        assert_eq!(exit.barred_message, Some("No entry".to_string()));
+    }
+
+    #[test]
+    fn npc_says_adds_dialogue_to_view() {
+        let (mut world, room1, _) = build_test_world();
+        let npc_id = Uuid::new_v4();
+        let npc = make_npc(npc_id, Location::Room(room1), NpcState::Normal);
+        world.rooms.get_mut(&room1).unwrap().npcs.insert(npc_id);
+        world.npcs.insert(npc_id, npc);
+
+        let mut view = View::new();
+        npc_says(&world, &mut view, &npc_id, "Hello there").unwrap();
+
+        assert!(matches!(
+            view.items.last(),
+            Some(ViewItem::NpcSpeech { quote, .. }) if quote == "Hello there"
+        ));
+    }
+
+    #[test]
+    fn npc_says_random_uses_npc_dialogue() {
+        let (mut world, room1, _) = build_test_world();
+        world.spinners.insert(
+            SpinnerType::Core(CoreSpinnerType::NpcIgnore),
+            Spinner::new(vec![Wedge::new("Ignores you.".into())]),
+        );
+        let npc_id = Uuid::new_v4();
+        let mut npc = make_npc(npc_id, Location::Room(room1), NpcState::Normal);
+        npc.dialogue
+            .insert(NpcState::Normal, vec!["Howdy".to_string()]);
+        world.rooms.get_mut(&room1).unwrap().npcs.insert(npc_id);
+        world.npcs.insert(npc_id, npc);
+
+        let mut view = View::new();
+        npc_says_random(&world, &mut view, &npc_id).unwrap();
+
+        assert!(matches!(
+            view.items.last(),
+            Some(ViewItem::NpcSpeech { quote, .. }) if quote == "Howdy"
+        ));
+    }
+
+    #[test]
+    fn set_npc_state_changes_state() {
+        let (mut world, room1, _) = build_test_world();
+        let npc_id = Uuid::new_v4();
+        let npc = make_npc(npc_id, Location::Room(room1), NpcState::Normal);
+        world.rooms.get_mut(&room1).unwrap().npcs.insert(npc_id);
+        world.npcs.insert(npc_id, npc);
+
+        set_npc_state(&mut world, &npc_id, &NpcState::Mad).unwrap();
+
+        assert_eq!(world.npcs[&npc_id].state, NpcState::Mad);
+    }
 }

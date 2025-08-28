@@ -667,4 +667,50 @@ mod tests {
             assert!(exits[0].exit_locked);
         }
     }
+
+    #[test]
+    fn room_overlay_applies_with_player_missing_item() {
+        let world = create_test_world();
+        let room_id = world.player.location.unwrap_room();
+        let missing_item = Uuid::new_v4();
+
+        let overlay = RoomOverlay {
+            conditions: vec![OverlayCondition::PlayerMissingItem { item_id: missing_item }],
+            text: "You don't have this item".into(),
+        };
+
+        assert!(overlay.applies(room_id, &world));
+    }
+
+    #[test]
+    fn room_overlay_applies_with_npc_present() {
+        let mut world = create_test_world();
+        let room_id = world.player.location.unwrap_room();
+        let npc_id = *world.npcs.keys().next().unwrap();
+        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
+
+        let overlay = RoomOverlay {
+            conditions: vec![OverlayCondition::NpcPresent { npc_id }],
+            text: "NPC is here".into(),
+        };
+
+        assert!(overlay.applies(room_id, &world));
+    }
+
+    #[test]
+    fn room_show_exits_errors_if_destination_missing() {
+        let mut world = create_test_world();
+        let mut view = View::new();
+        let room_id = world.player.location.unwrap_room();
+        let missing_room = Uuid::new_v4();
+        world
+            .rooms
+            .get_mut(&room_id)
+            .unwrap()
+            .exits
+            .insert("east".into(), Exit::new(missing_room));
+
+        let room = world.rooms.get(&room_id).unwrap();
+        assert!(room.show_exits(&world, &mut view).is_err());
+    }
 }
