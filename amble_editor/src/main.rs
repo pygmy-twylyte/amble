@@ -110,7 +110,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             Style::default().fg(Color::Blue),
                         )]));
                         for ov in &room.overlays {
-                            detail.push(Line::from(Span::raw(format!("  if {:?} => {}", ov.condition, ov.text))));
+                            detail.push(Line::from(Span::raw(format!(
+                                "  if {:?} => {}",
+                                ov.conditions, ov.text
+                            ))));
                         }
                     }
                     let paragraph = Paragraph::new(detail)
