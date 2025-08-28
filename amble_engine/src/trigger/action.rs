@@ -105,6 +105,7 @@ use crate::world::{AmbleWorld, Location, WorldObject};
 /// - [`ResetFlag`] - Resets a sequence flag to step 0
 ///
 /// ## Item Manipulation
+/// - [`SetContainerState`] - Monkey wrench for containers: open/close, lock/unlock, set transparency.
 /// - [`ReplaceDropItem`] - Drops item at current location AND replaces it with another.
 /// - [`DespawnItem`] - Removes an item from the world entirely
 /// - [`ReplaceItem`] - Replaces one item with another, in the same location.
@@ -141,6 +142,8 @@ use crate::world::{AmbleWorld, Location, WorldObject};
 /// - [`SpinnerMessage`] - Displays a random message from a spinner
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TriggerAction {
+    /// Set the ContainerState of an Item
+    SetContainerState { item_id: Uuid, state: Option<ContainerState> },
     /// Replaces an item at its current location
     ReplaceItem { old_id: Uuid, new_id: Uuid },
     /// Replaces an item and drops it at the player's location
@@ -222,6 +225,7 @@ pub enum TriggerAction {
 pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &TriggerAction) -> Result<()> {
     use TriggerAction::*;
     match action {
+        SetContainerState { item_id, state } => set_container_state(world, *item_id, *state)?,
         ReplaceItem { old_id, new_id } => replace_item(world, old_id, new_id)?,
         ReplaceDropItem { old_id, new_id } => replace_drop_item(world, old_id, new_id)?,
         SetBarredMessage {
@@ -279,6 +283,16 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
             schedule_on(world, view, *on_turn, actions, note.clone())?;
         },
     }
+    Ok(())
+}
+
+fn set_container_state(world: &mut AmbleWorld, item_id: Uuid, state: Option<ContainerState>) -> Result<()> {
+    if let Some(item) = world.items.get_mut(&item_id) {
+        item.container_state = state;
+    } else {
+        bail!("setting container state for item {item_id}: item not found");
+    }
+    info!("└─ action: setting container state for item {item_id}: {state:?}");
     Ok(())
 }
 

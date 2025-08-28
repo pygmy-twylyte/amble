@@ -3,11 +3,18 @@
 use anyhow::{Result, bail};
 use serde::Deserialize;
 
-use crate::{loader::SymbolTable, npc::NpcState, player::Flag, spinners::SpinnerType, trigger::TriggerAction};
+use crate::{
+    item::ContainerState, loader::SymbolTable, npc::NpcState, player::Flag, spinners::SpinnerType,
+    trigger::TriggerAction,
+};
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum RawTriggerAction {
+    SetContainerState {
+        item_sym: String,
+        state: Option<ContainerState>,
+    },
     ReplaceItem {
         old_sym: String,
         new_sym: String,
@@ -130,6 +137,7 @@ impl RawTriggerAction {
     /// Convert the TOML representation of this action to a fully realized `TriggerAction`.
     pub fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
+            Self::SetContainerState { item_sym, state } => cook_set_container_state(symbols, item_sym, *state),
             Self::ReplaceItem { old_sym, new_sym } => cook_replace_item(symbols, old_sym, new_sym),
             Self::ReplaceDropItem { old_sym, new_sym } => cook_replace_drop_item(symbols, old_sym, new_sym),
             Self::SetItemDescription { item_sym, text } => cook_set_item_description(symbols, item_sym, text),
@@ -189,6 +197,19 @@ impl RawTriggerAction {
 /*
  * "Cook" functions below convert RawTriggerActions to "fully cooked" TriggerActions
  */
+
+fn cook_set_container_state(
+    symbols: &SymbolTable,
+    item_sym: &str,
+    state: Option<ContainerState>,
+) -> Result<TriggerAction> {
+    if let Some(&item_id) = symbols.items.get(item_sym) {
+        Ok(TriggerAction::SetContainerState { item_id, state })
+    } else {
+        bail!("item symbol '{item_sym}' not found when loading raw SetContainerState trigger action");
+    }
+}
+
 fn cook_replace_item(symbols: &SymbolTable, old_sym: &str, new_sym: &str) -> Result<TriggerAction> {
     if let Some(old_id) = symbols.items.get(old_sym)
         && let Some(new_id) = symbols.items.get(new_sym)
