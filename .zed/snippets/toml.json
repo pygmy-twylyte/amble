@@ -337,6 +337,45 @@
       "{ type = \"setBarredMessage\", exit_from = \"${1:from-room-id}\", exit_to = \"${2:to-room-id}\", msg = \"${3:message}\" }"
     ]
   },
+  "ta-setContainerState": {
+    "prefix": "ta-set-container-state",
+    "description": "Action: set container state",
+    "body": [
+      "{ type = \"setContainerState\", item_sym = \"${1:item-id}\", state = \"${2:open}\" }"
+    ]
+  },
+  "ta-replaceItem": {
+    "prefix": "ta-replace-item",
+    "description": "Action: replace item",
+    "body": [
+      "{ type = \"replaceItem\", old_sym = \"${1:old-item-id}\", new_sym = \"${2:new-item-id}\" }"
+    ]
+  },
+  "ta-replaceDropItem": {
+    "prefix": "ta-replace-drop-item",
+    "description": "Action: replace item on drop",
+    "body": [
+      "{ type = \"replaceDropItem\", old_sym = \"${1:old-item-id}\", new_sym = \"${2:new-item-id}\" }"
+    ]
+  },
+  "ta-scheduleIn": {
+    "prefix": "ta-schedule-in",
+    "description": "Action: schedule actions in N turns",
+    "body": [
+      "{ type = \"scheduleIn\", turns_ahead = ${1:3}, note = \"${2:description}\", actions = [",
+      "    ${3}",
+      "] }"
+    ]
+  },
+  "ta-scheduleOn": {
+    "prefix": "ta-schedule-on",
+    "description": "Action: schedule actions on specific turn",
+    "body": [
+      "{ type = \"scheduleOn\", on_turn = ${1:10}, note = \"${2:description}\", actions = [",
+      "    ${3}",
+      "] }"
+    ]
+  },
   "item-new": {
     "prefix": "item-new",
     "description": "New full item block",
@@ -620,6 +659,17 @@
       "condition = { type = \"itemInRoom\", item_id = \"${1:item-id}\", room_id = \"${2:room-id}\" }",
       "text = \"\"\"",
       "${3:Overlay text}",
+      "\"\"\""
+    ]
+  },
+  "room-overlay-npc-present": {
+    "prefix": "room-overlay-npc-present",
+    "description": "Room overlay: NPC present",
+    "body": [
+      "[[rooms.overlays]]",
+      "condition = { type = \"npcPresent\", npc_id = \"${1:npc-id}\" }",
+      "text = \"\"\"",
+      "${2:Overlay text}",
       "\"\"\""
     ]
   },
