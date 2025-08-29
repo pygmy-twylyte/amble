@@ -139,6 +139,27 @@ text = "After a few moments, the eye-bot's iris turns red, and it points at the 
 conditions = [{ type = "flagSet", flag = "got-towel" }]
 text = "Finished scanning, the eye-bot's iris glows green. The doors unlatch and open slightly."
 
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "normal" },
+]
+text = "C.M.O.T. Dibbler blocks the entrance, hawking dubious sausages."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "happy" },
+]
+text = "Dibbler beams and offers a celebratory sausage-inna-bun."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "bored" },
+]
+text = "Dibbler sighs about the slow foot traffic."
+
 [rooms.exits.north]
 to = "main-lobby"
 required_flags = [{ type = "simple", name = "got-towel" }]
@@ -193,6 +214,27 @@ base_description = "The so-called loading dock juts ten feet *above* the ground,
 location = "Nowhere"
 visited = false
 
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "normal" },
+]
+text = "Dibbler paces the dock, trying to sell sausages to absent drivers."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "happy" },
+]
+text = "Dibbler whistles, convinced the loading dock will make him rich."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "bored" },
+]
+text = "Dibbler slumps against the dock, lamenting the lack of deliveries."
+
 [rooms.exits.southeast]
 to = "east-of-building"
 
@@ -208,6 +250,27 @@ base_description = "You’re east of the building now, facing a patch of ornamen
 
 location = "Nowhere"
 visited = false
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "normal" },
+]
+text = "Dibbler wanders here, pitching sausages to the patient yucca."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "happy" },
+]
+text = "Dibbler hums a sales jingle, certain new patrons will arrive."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "bored" },
+]
+text = "Dibbler kicks at the gravel, lamenting the lack of customers."
 
 [rooms.exits.northwest]
 to = "loading-dock"
@@ -238,6 +301,27 @@ conditions = [
     { type = "npcInState", npc_id = "gonk_droid", state = "happy" },
 ]
 text = "The gonk droid gonks a happy tune in the corner, charging the battery you gave it."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "normal" },
+]
+text = "C.M.O.T. Dibbler hawks dubious sausages to anyone entering."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "happy" },
+]
+text = "Dibbler grins broadly, offering a complimentary bite."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "bored" },
+]
+text = "Dibbler mutters about slow lobby sales."
 
 [rooms.exits.north]
 to = "lift-bank-main"
@@ -314,6 +398,27 @@ conditions = [
 ]
 text = "The gonk droid hums a cheerful gonk as it watches the lift lights blink."
 
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "normal" },
+]
+text = "Dibbler loiters by the elevators, promising snacks for the ride."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "happy" },
+]
+text = "Dibbler beams, certain elevator patrons are his best customers."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "bored" },
+]
+text = "Dibbler counts his sausages as the lift lights blink listlessly."
+
 [rooms.exits.north]
 to = "lift-main"
 
@@ -376,6 +481,27 @@ conditions = [
 ]
 text = "The gonk droid gonk-gonks an upbeat rhythm beside the sofa."
 
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "normal" },
+]
+text = "Dibbler lounges here, pitching snacks to passing adventurers."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "happy" },
+]
+text = "Dibbler cheerfully offers samples to anyone near the sofa."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "bored" },
+]
+text = "Dibbler stares at the coffee pot, wondering where customers went."
+
 [rooms.exits.west]
 to = "lift-bank-main"
 
@@ -424,6 +550,27 @@ base_description = "Soft jazz wafts through invisible speakers, accompanied by t
 
 location = "Nowhere"
 visited = false
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "normal" },
+]
+text = "Dibbler circles the tables, insisting his sausages are a bargain."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "happy" },
+]
+text = "Dibbler proclaims today's special with exaggerated flair."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "cmot_dibbler" },
+    { type = "npcInState", npc_id = "cmot_dibbler", state = "bored" },
+]
+text = "Dibbler pokes at an empty table, grumbling about the quiet rush."
 
 [rooms.exits.west]
 to = "main-lobby"
