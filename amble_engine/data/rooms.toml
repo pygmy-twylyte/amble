@@ -300,6 +300,20 @@ text = """The proximity card reader next to the lift displays: ACCESS DENIED. Wi
 conditions = [{ type = "flagSet", flag = "got-elevator-keycard" }]
 text = """The proximity card reader next to the lift now somewhat sheepishly displays: ACCESS GRANTED."""
 
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "gonk_droid" },
+    { type = "npcInState", npc_id = "gonk_droid", state = "normal" },
+]
+text = "A gonk droid pokes at the elevator call panel, emitting perplexed gonks."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "gonk_droid" },
+    { type = "npcInState", npc_id = "gonk_droid", state = "happy" },
+]
+text = "The gonk droid hums a cheerful gonk as it watches the lift lights blink."
+
 [rooms.exits.north]
 to = "lift-main"
 
@@ -347,6 +361,20 @@ text = "A trap door in the floor reveals a ladder down to a room below."
 [[rooms.overlays]]
 conditions = [{ type = "flagUnset", flag = "found-portal-room" }]
 text = "An ornate rug lies in the center of the room. It really ties the room together."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "gonk_droid" },
+    { type = "npcInState", npc_id = "gonk_droid", state = "normal" },
+]
+text = "A gonk droid loiters by the coffee carafe, muttering soft gonks."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "gonk_droid" },
+    { type = "npcInState", npc_id = "gonk_droid", state = "happy" },
+]
+text = "The gonk droid gonk-gonks an upbeat rhythm beside the sofa."
 
 [rooms.exits.west]
 to = "lift-bank-main"
