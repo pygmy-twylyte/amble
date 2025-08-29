@@ -43,6 +43,10 @@ base_description = "The parish resembles a half-abandoned diner and half-absolve
 location = "Nowhere"
 visited = false
 
+[[rooms.overlays]]
+conditions = [{ type = "itemAbsent", item_id = "margarine" }]
+text = "The refrigerated pedestal hums solemnly in the corner, empty now that the tub of margarine is gone."
+
 [rooms.exits.east]
 to = "parish-landing"
 
