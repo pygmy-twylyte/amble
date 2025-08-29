@@ -276,6 +276,10 @@ conditions = [
 ]
 text = "Dibbler kicks at the gravel, lamenting the lack of customers."
 
+[[rooms.overlays]]
+conditions = [{ type = "playerHasItem", item_id = "dental_floss" }]
+text = "The weird bush looks oddly bare now, stripped of its floss-like strands."
+
 [rooms.exits.northwest]
 to = "loading-dock"
 

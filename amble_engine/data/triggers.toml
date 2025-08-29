@@ -431,6 +431,7 @@ conditions = [{ type = "take", item_id = "dental_floss" }]
 actions = [
     { type = "showMessage", text = """You pluck a strand of floss from the bush. It comes away easily — disturbingly so. Minty. Strong. Too strong. You’re no botanist, but you’re pretty sure this shouldn’t be growing out of a shrubbery.""" },
     { type = "awardPoints", amount = 3 },
+    { type = "setItemDescription", item_sym = "weird_bush", text = "A squat, leafy bush now stripped of its floss-like strands, bare branches jutting out awkwardly." },
 ]
 
 [[triggers]]
