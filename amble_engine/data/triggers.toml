@@ -1193,15 +1193,20 @@ actions = [
 [[triggers]]
 name = "Test: Schedule On - Timed Self-Destruct"
 only_once = true
-conditions = [{ type = "useItem", item_id = "scrawled_note", ability = "read" }]
+conditions = [
+    { type = "chance", one_in = 3.0 },
+    { type = "useItem", item_id = "scrawled_note", ability = "read" },
+]
 actions = [
-    { type = "showMessage", text = "WARNING: SELF-DESTRUCT SEQUENCE INITIATED! All personnel evacuate immediately! Demolition commences on rel 10!" },
+    { type = "showMessage", text = "A voice suddenly booms through the trees and the canyon below: \"WARNING: SELF-DESTRUCT SEQUENCE INITIATED! All personnel evacuate immediately! Demolition commences on REL 10!\"" },
     { type = "addFlag", flag = { type = "simple", name = "self-destruct-armed" } },
     { type = "scheduleOn", on_turn = 10, note = "Self-destruct detonation", actions = [
-        { type = "showMessage", text = "💥 KABOOM! 💥 The entire area shakes violently as explosions rock the mountain!" },
-        { type = "showMessage", text = "Fortunately, this was just a training exercise. All systems return to normal." },
+        { type = "showMessage", text = "💥 KABOOM! 💥 The entire area shakes violently as a deep rumbling rocks the mountain!" },
+    ] },
+    { type = "scheduleOn", on_turn = 11, note = "nope, it was just Billy", actions = [
+        { type = "showMessage", text = "The rumbling stops. Then, after a minute, the voice again: \"Erm, it turns out that was just Billy waking up. Cancel the evacuation, and have a productive day.\"" },
         { type = "removeFlag", flag = "self-destruct-armed" },
-        { type = "awardPoints", amount = 5 },
+        { type = "awardPoints", amount = 2 },
         { type = "addFlag", flag = { type = "simple", name = "survived-fake-explosion" } },
     ] },
 ]
