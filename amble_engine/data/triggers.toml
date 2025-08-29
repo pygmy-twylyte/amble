@@ -1182,11 +1182,20 @@ actions = [
     { type = "showMessage", text = "The coffee machine hums to life and begins its brewing cycle. A timer shows 3 minutes remaining..." },
     { type = "setItemDescription", item_sym = "coffee_machine", text = "A single serve drip coffee machine, which apparently takes quite a while to finish brewing a cup one drip at a time..." },
     { type = "scheduleIn", turns_ahead = 3, note = "Coffee brewing completes", actions = [
-        { type = "setItemDescription", item_sym = "coffee_machine", text = "A single serve, drip coffee maker. It appears the grounds have already been used." },
+        { type = "setItemDescription", item_sym = "coffee_machine", text = "A single serve, drip coffee maker. The brew cycle is complete and the grounds have already been used." },
         { type = "showMessage", text = "♪ BEEP BEEP BEEP! ♪ The coffee machine chimes cheerfully. The rich aroma of freshly brewed coffee fills the air." },
         { type = "spawnItemInRoom", item_id = "hot_coffee", room_id = "lounge" },
+        { type = "addFlag", flag = { type = "simple", name = "coffee-brewed" } },
         { type = "awardPoints", amount = 2 },
     ] },
+]
+
+[[triggers]]
+name = "Lounge: Coffee Taken"
+only_once = false
+conditions = [{ type = "take", item_id = "hot_coffee" }]
+actions = [
+    { type = "removeFlag", flag = "coffee-brewed" },
 ]
 
 [[triggers]]
