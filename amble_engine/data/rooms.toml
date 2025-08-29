@@ -370,6 +370,10 @@ text = "The receptionist appears to be trying furtively to see what you have in 
 conditions = [{ type = "flagSet", flag = "got-visitor-pass" }]
 text = "The receptionist looks up from her desk and gives you an awkward wink and a grin."
 
+[[rooms.overlays]]
+conditions = [{ type = "flagSet", flag = "lost-and-found-opened" }]
+text = """The Lost & Found box sits with its lid hanging open, contents plainly visible."""
+
 [rooms.exits.east]
 to = "main-lobby"
 

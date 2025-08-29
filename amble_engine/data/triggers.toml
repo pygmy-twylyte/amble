@@ -381,6 +381,7 @@ conditions = [{ type = "unlock", item_id = "lost_and_found_box" }]
 actions = [
     { type = "awardPoints", amount = 5 },
     { type = "addFlag", flag = { type = "simple", name = "lost-and-found-opened" } },
+    { type = "setItemDescription", item_sym = "lost_and_found_box", text = """The sturdy metal lock box's lid hangs open, its contents now visible.""" },
 ]
 
 # START FALLEN TREE TRIGGERS
