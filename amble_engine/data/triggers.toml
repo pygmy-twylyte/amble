@@ -65,6 +65,7 @@ actions = [
     { type = "addFlag", flag = { type = "simple", name = "portal-gun-powered" } },
     { type = "awardPoints", amount = 3 },
     { type = "restrictItem", item_id = "charged_battery" },
+    { type = "setItemDescription", item_sym = "portal_gun", text = """A black and white Portal gun sits on its pedestal, aimed at a target on the wall. A fused battery juts from the compartment and the power indicator glows steadily green.""" },
     { type = "showMessage", text = """Arcing wildly as you insert it, the fully charged 20 KV battery fuses itself to the contacts inside the portal gun -- when then emits a quick high-pitched whine. The POWER indicator lights a steady green.""" },
 ]
 

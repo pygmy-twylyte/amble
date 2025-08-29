@@ -514,6 +514,10 @@ visited = false
 base_description = "A bare white room with a white tile floor. A ladder leads back up through the trap door in the ceiling. Three of the four walls are used as whiteboards, littered with obscure diagrams and equations. In the center, a black and white Portal gun is affixed to a pedestal and aimed squarely at the fourth wall."
 
 [[rooms.overlays]]
+conditions = [{ type = "flagSet", flag = "portal-gun-powered" }]
+text = "The portal gun's power indicator glows a steady green."
+
+[[rooms.overlays]]
 conditions = [{ type = "flagUnset", flag = "portal-opened" }]
 text = """A bullseye adorns the fourth, otherwise blank wall. A photo of a watch-sized computer attached to a potato battery is taped in the center, for some reason."""
 
