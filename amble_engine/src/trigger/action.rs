@@ -286,7 +286,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
     Ok(())
 }
 
-fn set_container_state(world: &mut AmbleWorld, item_id: Uuid, state: Option<ContainerState>) -> Result<()> {
+pub fn set_container_state(world: &mut AmbleWorld, item_id: Uuid, state: Option<ContainerState>) -> Result<()> {
     if let Some(item) = world.items.get_mut(&item_id) {
         item.container_state = state;
     } else {
@@ -297,7 +297,7 @@ fn set_container_state(world: &mut AmbleWorld, item_id: Uuid, state: Option<Cont
 }
 
 /// Replaces an item with another, wherever it's located
-fn replace_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -> Result<()> {
+pub fn replace_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -> Result<()> {
     // record old item's location and symbol
     let (location, old_sym) = if let Some(old_item) = world.items.get(&old_id) {
         (old_item.location, old_item.symbol.clone())
@@ -343,14 +343,14 @@ fn replace_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -> Result<
 }
 
 /// Drops an item in the current room and replaces it with the new version.
-fn replace_drop_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -> Result<()> {
+pub fn replace_drop_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -> Result<()> {
     despawn_item(world, old_id)?;
     spawn_item_in_current_room(world, new_id)?;
     Ok(())
 }
 
 /// Sets a new description for an `Item`
-fn set_item_description(world: &mut AmbleWorld, item_id: &Uuid, text: &str) -> Result<()> {
+pub fn set_item_description(world: &mut AmbleWorld, item_id: &Uuid, text: &str) -> Result<()> {
     let item = world
         .get_item_mut(*item_id)
         .with_context(|| format!("changing item '{item_id} description"))?;
@@ -385,7 +385,7 @@ fn set_item_description(world: &mut AmbleWorld, item_id: &Uuid, text: &str) -> R
 ///
 /// - If the source room doesn't exist
 /// - If no exit from the source room leads to the destination room
-fn set_barred_message(world: &mut AmbleWorld, exit_from: &Uuid, exit_to: &Uuid, msg: &str) -> Result<()> {
+pub fn set_barred_message(world: &mut AmbleWorld, exit_from: &Uuid, exit_to: &Uuid, msg: &str) -> Result<()> {
     let room = world
         .rooms
         .get_mut(exit_from)
@@ -1387,7 +1387,7 @@ pub fn deny_read(view: &mut View, reason: &String) {
 /// - The event will fire automatically during the REPL turn processing
 /// - Multiple events can be scheduled for the same future turn
 /// - Scheduled events persist across game saves/loads
-fn schedule_in(
+pub fn schedule_in(
     world: &mut AmbleWorld,
     _view: &mut View,
     turns_ahead: usize,
@@ -1431,7 +1431,7 @@ fn schedule_in(
 /// - Multiple events can be scheduled for the same turn
 /// - Events fire in FIFO order when scheduled for the same turn
 /// - Scheduled events persist across game saves/loads
-fn schedule_on(
+pub fn schedule_on(
     world: &mut AmbleWorld,
     _view: &mut View,
     on_turn: usize,
@@ -1832,9 +1832,7 @@ mod tests {
             .items
             .insert(old_id, make_item(old_id, Location::Room(room1), None));
         world.rooms.get_mut(&room1).unwrap().contents.insert(old_id);
-        world
-            .items
-            .insert(new_id, make_item(new_id, Location::Nowhere, None));
+        world.items.insert(new_id, make_item(new_id, Location::Nowhere, None));
 
         replace_item(&mut world, &old_id, &new_id).unwrap();
 
@@ -1886,8 +1884,7 @@ mod tests {
         );
         let npc_id = Uuid::new_v4();
         let mut npc = make_npc(npc_id, Location::Room(room1), NpcState::Normal);
-        npc.dialogue
-            .insert(NpcState::Normal, vec!["Howdy".to_string()]);
+        npc.dialogue.insert(NpcState::Normal, vec!["Howdy".to_string()]);
         world.rooms.get_mut(&room1).unwrap().npcs.insert(npc_id);
         world.npcs.insert(npc_id, npc);
 
