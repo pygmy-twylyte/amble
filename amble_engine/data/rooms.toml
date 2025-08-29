@@ -468,6 +468,10 @@ conditions = [{ type = "flagUnset", flag = "found-portal-room" }]
 text = "An ornate rug lies in the center of the room. It really ties the room together."
 
 [[rooms.overlays]]
+conditions = [{ type = "flagSet", flag = "coffee-brewed" }]
+text = "The coffee machine emits a few satisfied clicks as the rich aroma of fresh coffee fills the lounge."
+
+[[rooms.overlays]]
 conditions = [
     { type = "npcPresent", npc_id = "gonk_droid" },
     { type = "npcInState", npc_id = "gonk_droid", state = "normal" },
