@@ -758,6 +758,33 @@ location = "Nowhere"
 visited = false
 base_description = "A clean white infirmary with two bio-beds extending from the back wall, surrounded by a bevy of monitors and robotic surgical tools. One of the machines goes \"Bing!\" every few minutes. A small cleaning robot floats around the room disinfecting things."
 
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "emh" },
+]
+text = "The Emergency Medical Hologram flickers beside the bio-beds, its emitter humming softly."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "emh" },
+    { type = "npcInState", npc_id = "emh", state = "normal" },
+]
+text = "The EMH stands with professional detachment, awaiting your symptoms."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "emh" },
+    { type = "npcInState", npc_id = "emh", state = "happy" },
+]
+text = "The EMH smiles and hums a bright tune while adjusting the diagnostic displays."
+
+[[rooms.overlays]]
+conditions = [
+    { type = "npcPresent", npc_id = "emh" },
+    { type = "npcInState", npc_id = "emh", state = { custom = "want-emitter" } },
+]
+text = "The EMH fidgets restlessly, casting longing glances toward the door as if craving a mobile emitter."
+
 [rooms.exits.west]
 to = "corridor-north"
 
