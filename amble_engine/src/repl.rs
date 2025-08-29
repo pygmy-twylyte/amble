@@ -267,7 +267,7 @@ pub fn find_world_object<'a>(
 }
 
 /// Feedback to player if an entity search comes up empty
-fn entity_not_found(world: &AmbleWorld, view: &mut View, search_text: &str) {
+pub fn entity_not_found(world: &AmbleWorld, view: &mut View, search_text: &str) {
     view.push(ViewItem::Error(format!(
         "\"{}\"? {}",
         search_text.error_style(),
