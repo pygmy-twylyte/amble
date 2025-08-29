@@ -2,7 +2,7 @@
 
 use std::collections::HashSet;
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Ok, Result, bail};
 use serde::Deserialize;
 
 use crate::{
@@ -19,6 +19,7 @@ use crate::{
 pub enum RawTriggerCondition {
     ActOnItem { target_sym: String, action: ItemInteractionType, },
     Ambient { room_ids: Option<Vec<String>>, spinner: String, },
+    Chance { one_in: f64 },
     ContainerHasItem { container_id: String, item_id: String, },
     Drop { item_id: String, },
     Enter { room_id: String, },
@@ -58,6 +59,7 @@ impl RawTriggerCondition {
             } => cook_act_on_item(symbols, item_id, *action),
             Self::TalkToNpc { npc_id } => cook_talk_to_npc(symbols, npc_id),
             Self::Ambient { room_ids, spinner } => cook_ambient(symbols, room_ids.as_ref(), spinner),
+            Self::Chance { one_in } => Ok(TriggerCondition::Chance { one_in: *one_in }),
             Self::ContainerHasItem { container_id, item_id } => cook_container_has_item(symbols, container_id, item_id),
             Self::MissingFlag { flag } => Ok(TriggerCondition::MissingFlag(flag.to_string())),
             Self::HasFlag { flag } => Ok(TriggerCondition::HasFlag(flag.to_string())),

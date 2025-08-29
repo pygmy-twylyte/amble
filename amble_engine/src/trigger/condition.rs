@@ -5,6 +5,7 @@
 
 use std::collections::HashSet;
 
+use rand::random_bool;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -26,6 +27,9 @@ pub enum TriggerCondition {
     Ambient {
         room_ids: HashSet<Uuid>, // empty = applies everywhere
         spinner: SpinnerType,
+    },
+    Chance {
+        one_in: f64,
     },
     ContainerHasItem {
         container_id: Uuid,
@@ -87,6 +91,7 @@ impl TriggerCondition {
     pub fn is_ongoing(&self, world: &AmbleWorld) -> bool {
         let player_flag_set = |flag_str: &str| world.player.flags.iter().any(|f| f.value() == *flag_str);
         match self {
+            Self::Chance { one_in } => random_bool(1.0 / *one_in),
             Self::ContainerHasItem { container_id, item_id } => world
                 .items
                 .get(item_id)
