@@ -1171,10 +1171,8 @@ actions = [
     { type = "awardPoints", amount = 3 },
 ]
 
-# TEST TRIGGERS FOR SCHEDULER ACTIONS
-
 [[triggers]]
-name = "Test: Schedule In - Coffee Machine Delayed Response"
+name = "Lounge: Brew Coffee"
 only_once = true
 conditions = [
     { type = "useItem", item_id = "coffee_machine", ability = "turnOn" },
@@ -1191,14 +1189,14 @@ actions = [
 ]
 
 [[triggers]]
-name = "Test: Schedule On - Timed Self-Destruct"
+name = "High-Ridge: Billy Wakes Up"
 only_once = true
 conditions = [
     { type = "chance", one_in = 3.0 },
     { type = "useItem", item_id = "scrawled_note", ability = "read" },
 ]
 actions = [
-    { type = "showMessage", text = "A voice suddenly booms through the trees and the canyon below: \"WARNING: SELF-DESTRUCT SEQUENCE INITIATED! All personnel evacuate immediately! Demolition commences on REL 10!\"" },
+    { type = "showMessage", text = "You feel a deep rumbling coming up through your feet. Suddenly, a voice booms through the trees and the canyon below: \"WARNING: SELF-DESTRUCT SEQUENCE INITIATED! All personnel evacuate immediately! Demolition commences on REL 10!\"" },
     { type = "addFlag", flag = { type = "simple", name = "self-destruct-armed" } },
     { type = "scheduleOn", on_turn = 10, note = "Self-destruct detonation", actions = [
         { type = "showMessage", text = "💥 KABOOM! 💥 The entire area shakes violently as a deep rumbling rocks the mountain!" },
