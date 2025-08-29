@@ -344,3 +344,140 @@ fn test_filtered_goals_empty() {
     let list = ae::repl::system::filtered_goals(&world, goal::GoalStatus::Active);
     assert!(list.is_empty());
 }
+
+#[test]
+fn test_check_scheduled_events() {
+    use ae::trigger::TriggerAction;
+    let mut world = world::AmbleWorld::new_empty();
+    let mut view = View::new();
+    world
+        .scheduler
+        .schedule_on(1, vec![TriggerAction::ShowMessage("test".to_string())], None);
+    world.turn_count = 1;
+    ae::repl::check_scheduled_events(&mut world, &mut view).unwrap();
+    assert!(
+        view.items
+            .iter()
+            .any(|item| matches!(item, view::ViewItem::TriggeredEvent(msg) if msg.contains("test")))
+    );
+}
+
+#[test]
+fn test_check_npc_movement() {
+    use ae::npc::{MovementTiming, MovementType, Npc, NpcMovement};
+    use ae::room::Room;
+    use std::collections::{HashMap, HashSet};
+    let mut world = world::AmbleWorld::new_empty();
+    let mut view = View::new();
+    let r1 = uuid::Uuid::new_v4();
+    let r2 = uuid::Uuid::new_v4();
+    let room1 = Room {
+        id: r1,
+        symbol: "r1".into(),
+        name: "R1".into(),
+        base_description: String::new(),
+        overlays: vec![],
+        location: world::Location::Nowhere,
+        visited: true,
+        exits: HashMap::new(),
+        contents: HashSet::new(),
+        npcs: HashSet::new(),
+    };
+    let room2 = Room {
+        id: r2,
+        symbol: "r2".into(),
+        name: "R2".into(),
+        base_description: String::new(),
+        overlays: vec![],
+        location: world::Location::Nowhere,
+        visited: false,
+        exits: HashMap::new(),
+        contents: HashSet::new(),
+        npcs: HashSet::new(),
+    };
+    world.rooms.insert(r1, room1);
+    world.rooms.insert(r2, room2);
+    let npc_id = uuid::Uuid::new_v4();
+    let npc = Npc {
+        id: npc_id,
+        symbol: "npc".into(),
+        name: "NPC".into(),
+        description: String::new(),
+        location: world::Location::Room(r1),
+        inventory: HashSet::new(),
+        dialogue: HashMap::new(),
+        state: npc::NpcState::Normal,
+        movement: Some(NpcMovement {
+            movement_type: MovementType::Route {
+                rooms: vec![r1, r2],
+                current_idx: 0,
+                loop_route: false,
+            },
+            timing: MovementTiming::EveryNTurns { turns: 1 },
+            active: true,
+            last_moved_turn: 0,
+        }),
+    };
+    world.npcs.insert(npc_id, npc);
+    world.player.location = world::Location::Room(r1);
+    world.turn_count = 1;
+    ae::repl::check_npc_movement(&mut world, &mut view).unwrap();
+    let npc = world.npcs.get(&npc_id).unwrap();
+    assert!(matches!(npc.location, world::Location::Room(id) if id == r2));
+}
+
+#[test]
+fn test_check_ambient_triggers() {
+    use ae::spinners::SpinnerType;
+    use ae::trigger::{Trigger, TriggerCondition};
+    use gametools::{Spinner, Wedge};
+    let mut world = world::AmbleWorld::new_empty();
+    let mut view = View::new();
+    let r1 = uuid::Uuid::new_v4();
+    let room1 = room::Room {
+        id: r1,
+        symbol: "r1".into(),
+        name: "R1".into(),
+        base_description: String::new(),
+        overlays: vec![],
+        location: world::Location::Nowhere,
+        visited: true,
+        exits: std::collections::HashMap::new(),
+        contents: std::collections::HashSet::new(),
+        npcs: std::collections::HashSet::new(),
+    };
+    world.rooms.insert(r1, room1);
+    world.player.location = world::Location::Room(r1);
+    let spinner_type = SpinnerType::Custom("test_spinner".to_string());
+    let spinner = Spinner::new(vec![Wedge::new("test message".to_string())]);
+    world.spinners.insert(spinner_type.clone(), spinner);
+    let trigger = Trigger {
+        name: "ambient".into(),
+        conditions: vec![TriggerCondition::Ambient {
+            room_ids: [r1].into_iter().collect(),
+            spinner: spinner_type,
+        }],
+        actions: vec![],
+        only_once: false,
+        fired: false,
+    };
+    world.triggers.push(trigger);
+    ae::repl::check_ambient_triggers(&mut world, &mut view).unwrap();
+    assert!(
+        view.items
+            .iter()
+            .any(|item| matches!(item, view::ViewItem::AmbientEvent(msg) if msg.contains("test message")))
+    );
+}
+
+#[test]
+fn test_entity_not_found() {
+    let world = world::AmbleWorld::new_empty();
+    let mut view = View::new();
+    ae::repl::entity_not_found(&world, &mut view, "test_entity");
+    assert!(
+        view.items
+            .iter()
+            .any(|item| matches!(item, view::ViewItem::Error(msg) if msg.contains("test_entity")))
+    );
+}
