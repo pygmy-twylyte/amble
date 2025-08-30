@@ -80,7 +80,10 @@ use log::info;
 /// Moving back to previously visited rooms does not award points, as this is
 /// considered backtracking rather than exploration of new areas.
 pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
-    let leaving_id = world.player.location.unwrap_room();
+    let leaving_id = world.player.location.room_id().map_err(|e| {
+        view.push(ViewItem::ActionFailure("You're not in a room.".to_string()));
+        e
+    })?;
 
     if let Some(previous_room_id) = world.player.go_back() {
         let travel_message = world.spin_core(CoreSpinnerType::Movement, "You retrace your steps...");
@@ -171,7 +174,10 @@ pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
 pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str) -> Result<()> {
     let player_name = world.player.name.clone();
     let travel_message = world.spin_core(CoreSpinnerType::Movement, "You head that way...");
-    let leaving_id = world.player.location.unwrap_room();
+    let leaving_id = world.player.location.room_id().map_err(|e| {
+        view.push(ViewItem::ActionFailure("You're not in a room.".to_string()));
+        e
+    })?;
 
     // match "input_dir" to an Exit
     let destination_exit = {
@@ -443,6 +449,26 @@ mod tests {
         assert!(go_back_handler(&mut world, &mut view).is_ok());
         assert!(matches!(world.player.location, Location::Room(id) if id == start));
         assert_eq!(world.player.location_history.len(), 0);
+    }
+
+    #[test]
+    fn move_to_handler_errors_when_not_in_room() {
+        let (mut world, _start, _dest, mut view) = build_test_world();
+        world.player.location = Location::Inventory;
+        let result = move_to_handler(&mut world, &mut view, "north");
+        assert!(result.is_err());
+        assert_eq!(view.items.len(), 1);
+        assert!(matches!(view.items[0], ViewItem::ActionFailure(ref msg) if msg == "You're not in a room."));
+    }
+
+    #[test]
+    fn go_back_handler_errors_when_not_in_room() {
+        let (mut world, _start, _dest, mut view) = build_test_world();
+        world.player.location = Location::Inventory;
+        let result = go_back_handler(&mut world, &mut view);
+        assert!(result.is_err());
+        assert_eq!(view.items.len(), 1);
+        assert!(matches!(view.items[0], ViewItem::ActionFailure(ref msg) if msg == "You're not in a room."));
     }
 
     #[test]

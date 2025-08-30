@@ -128,7 +128,7 @@ impl TriggerCondition {
                 })
                 .is_some_and(Flag::is_complete),
             Self::HasVisited(room_id) => world.rooms.get(room_id).is_some_and(|r| r.visited),
-            Self::InRoom(room_id) => *room_id == world.player.location.unwrap_room(),
+            Self::InRoom(room_id) => world.player.location.room_id().map_or(false, |id| *room_id == id),
             Self::NpcHasItem { npc_id, item_id } => {
                 world.npcs.get(npc_id).is_some_and(|npc| npc.contains_item(*item_id))
             },
