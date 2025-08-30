@@ -238,6 +238,7 @@ description = """A sleek, off white printer, with a blinking LED near a small st
 portable = false
 container_state = "open"
 location = { Room = "aperture-lab" }
+interaction_requires.extinguish = "extinguish"
 text = """PC LOAD LETTER"""
 
 [[items.abilities]]
@@ -441,6 +442,16 @@ combustion, flashpoint misalignment, or structural regrets.
 """
 [[items.abilities]]
 type = "Read"
+[[items.abilities]]
+type = "Extinguish"
+
+# ------------------------------------------------------------------------------
+[[items]]
+id = "foam_fire"
+name = "Foam Fire"
+location = { Nowhere = "spawns@aperture-lab when foamsafe misfires" }
+description = """A raging patch of fire fueled by accelerant-laced foam. It crackles hungrily."""
+portable = false
 
 # ------------------------------------------------------------------------------
 [[items]]

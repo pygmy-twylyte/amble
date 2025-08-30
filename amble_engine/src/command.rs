@@ -144,55 +144,60 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
 /// assert_eq!(parse_interaction_type("invalid"), None);
 /// ```
 pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
-    VERB_TO_INTERACTION.get(verb).copied()
+
+    INTERACTION_VERBS.get(verb).copied()
 }
 
-lazy_static! {
-    static ref VERB_TO_INTERACTION: HashMap<&'static str, ItemInteractionType> = {
+lazy_static::lazy_static! {
+    static ref INTERACTION_VERBS: std::collections::HashMap<&'static str, ItemInteractionType> = {
         use ItemInteractionType::*;
-        let mut m = HashMap::new();
+        let mut verbs = std::collections::HashMap::new();
 
         for verb in ["open", "pry"] {
-            m.insert(verb, Open);
+            verbs.insert(verb, Open);
         }
         for verb in ["attach", "connect", "join"] {
-            m.insert(verb, Attach);
+            verbs.insert(verb, Attach);
         }
         for verb in ["break", "smash", "crack", "shatter"] {
-            m.insert(verb, Break);
+            verbs.insert(verb, Break);
         }
         for verb in ["burn", "ignite", "light", "melt"] {
-            m.insert(verb, Burn);
+            verbs.insert(verb, Burn);
+        }
+        for verb in ["extinguish", "spray"] {
+            verbs.insert(verb, Extinguish);
         }
         for verb in ["cover", "wrap", "shroud", "mask"] {
-            m.insert(verb, Cover);
+            verbs.insert(verb, Cover);
         }
         for verb in ["cut", "slice", "sever", "slash", "carve", "chop"] {
-            m.insert(verb, Cut);
+            verbs.insert(verb, Cut);
         }
         for verb in ["handle", "take", "grasp", "hold", "grab"] {
-            m.insert(verb, Handle);
+            verbs.insert(verb, Handle);
         }
         for verb in ["move", "remove", "shift", "shove", "budge"] {
-            m.insert(verb, Move);
+            verbs.insert(verb, Move);
         }
         for verb in ["turn", "spin", "twist", "swivel"] {
-            m.insert(verb, Turn);
+            verbs.insert(verb, Turn);
         }
         for verb in ["unlock", "undo"] {
-            m.insert(verb, Unlock);
+            verbs.insert(verb, Unlock);
         }
         for verb in ["sharpen", "hone"] {
-            m.insert(verb, Sharpen);
+            verbs.insert(verb, Sharpen);
         }
         for verb in ["clean", "wipe", "shine", "buff"] {
-            m.insert(verb, Clean);
+            verbs.insert(verb, Clean);
         }
         for verb in ["repair", "fix"] {
-            m.insert(verb, Repair);
+            verbs.insert(verb, Repair);
         }
 
-        m
+        verbs
+
     };
 }
 
@@ -436,6 +441,14 @@ mod tests {
                 },
             ),
             (
+                "extinguish fire with foam",
+                Command::UseItemOn {
+                    verb: ItemInteractionType::Extinguish,
+                    tool: "foam".into(),
+                    target: "fire".into(),
+                },
+            ),
+            (
                 "grasp eel with tongs",
                 Command::UseItemOn {
                     verb: ItemInteractionType::Handle,
@@ -473,6 +486,14 @@ mod tests {
                     verb: ItemInteractionType::Sharpen,
                     tool: "grinder".into(),
                     target: "blade".into(),
+                },
+            ),
+            (
+                "spray blaze with extinguisher",
+                Command::UseItemOn {
+                    verb: ItemInteractionType::Extinguish,
+                    tool: "extinguisher".into(),
+                    target: "blaze".into(),
                 },
             ),
         ];

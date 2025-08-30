@@ -311,6 +311,7 @@ pub enum ItemAbility {
     Attach,
     Clean,
     CutWood,
+    Extinguish,
     Ignite,
     Insulate,
     Pluck,
@@ -330,6 +331,7 @@ impl Display for ItemAbility {
             Self::Attach => write!(f, "attach"),
             Self::Clean => write!(f, "clean"),
             Self::CutWood => write!(f, "cut wood"),
+            Self::Extinguish => write!(f, "extinguish"),
             Self::Ignite => write!(f, "ignite"),
             Self::Insulate => write!(f, "insulate"),
             Self::Read => write!(f, "read"),
@@ -353,6 +355,7 @@ pub enum ItemInteractionType {
     Attach,
     Break,
     Burn,
+    Extinguish,
     Clean,
     Cover,
     Cut,
@@ -370,6 +373,7 @@ impl Display for ItemInteractionType {
             Self::Attach => write!(f, "attach"),
             Self::Break => write!(f, "break"),
             Self::Burn => write!(f, "burn"),
+            Self::Extinguish => write!(f, "extinguish"),
             Self::Clean => write!(f, "clean"),
             Self::Cover => write!(f, "cover"),
             Self::Cut => write!(f, "cut"),
@@ -767,6 +771,7 @@ mod tests {
         assert_eq!(format!("{}", ItemAbility::Attach), "attach");
         assert_eq!(format!("{}", ItemAbility::Clean), "clean");
         assert_eq!(format!("{}", ItemAbility::CutWood), "cut wood");
+        assert_eq!(format!("{}", ItemAbility::Extinguish), "extinguish");
         assert_eq!(format!("{}", ItemAbility::TurnOn), "turn on");
         assert_eq!(format!("{}", ItemAbility::TurnOff), "turn off");
         assert_eq!(format!("{}", ItemAbility::Unlock(None)), "unlock");
@@ -777,6 +782,7 @@ mod tests {
         assert_eq!(format!("{}", ItemInteractionType::Attach), "attach");
         assert_eq!(format!("{}", ItemInteractionType::Break), "break");
         assert_eq!(format!("{}", ItemInteractionType::Burn), "burn");
+        assert_eq!(format!("{}", ItemInteractionType::Extinguish), "extinguish");
         assert_eq!(format!("{}", ItemInteractionType::Clean), "clean");
         assert_eq!(format!("{}", ItemInteractionType::Cover), "cover");
     }
