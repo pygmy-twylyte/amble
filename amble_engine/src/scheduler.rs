@@ -19,6 +19,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::trigger::TriggerAction;
 
+#[cfg(test)]
+const PLACEHOLDER_THRESHOLD: usize = 4;
+#[cfg(not(test))]
+const PLACEHOLDER_THRESHOLD: usize = 64;
+
 /// The event scheduler.
 ///
 /// Uses a reversed binary heap to maintain a priority queue for upcoming events.
@@ -59,12 +64,35 @@ impl Scheduler {
             if now >= turn_due {
                 self.heap.pop();
                 // "take" instead of "remove" keeps indices stable for the heap entries
-                // leaves default placeholders, likely negligible in terms of RAM impact
-                // but we can filter and rebuild the heap later if it proves necessary
-                return Some(std::mem::take(&mut self.events[idx]));
+                // leaves default placeholders
+                let event = std::mem::take(&mut self.events[idx]);
+                self.compact_if_needed();
+                return Some(event);
             }
         }
         None
+    }
+
+    fn compact_if_needed(&mut self) {
+        let placeholder_count = self.events.iter().filter(|e| e.is_placeholder()).count();
+        if placeholder_count > PLACEHOLDER_THRESHOLD {
+            let old_events = std::mem::take(&mut self.events);
+            let mut index_map = vec![0; old_events.len()];
+            for (old_idx, event) in old_events.into_iter().enumerate() {
+                if event.is_placeholder() {
+                    continue;
+                }
+                let new_idx = self.events.len();
+                index_map[old_idx] = new_idx;
+                self.events.push(event);
+            }
+            let mut new_heap = BinaryHeap::with_capacity(self.heap.len());
+            while let Some(Reverse((turn_due, old_idx))) = self.heap.pop() {
+                let new_idx = index_map[old_idx];
+                new_heap.push(Reverse((turn_due, new_idx)));
+            }
+            self.heap = new_heap;
+        }
     }
 }
 
@@ -79,6 +107,12 @@ pub struct ScheduledEvent {
     pub on_turn: usize,
     pub actions: Vec<TriggerAction>,
     pub note: Option<String>,
+}
+
+impl ScheduledEvent {
+    fn is_placeholder(&self) -> bool {
+        self.on_turn == 0 && self.actions.is_empty() && self.note.is_none()
+    }
 }
 
 #[cfg(test)]
@@ -315,6 +349,27 @@ mod tests {
         assert_eq!(placeholder.on_turn, 0);
         assert!(placeholder.actions.is_empty());
         assert_eq!(placeholder.note, None);
+    }
+
+    #[test]
+    fn compact_events_when_placeholder_threshold_exceeded() {
+        let mut scheduler = Scheduler::default();
+
+        for i in 1..=6 {
+            scheduler.schedule_on(i, create_test_actions(1), Some(format!("Event {}", i)));
+        }
+
+        for turn in 1..=5 {
+            let ev = scheduler.pop_due(turn).unwrap();
+            assert_eq!(ev.note, Some(format!("Event {}", turn)));
+        }
+
+        assert_eq!(scheduler.events.len(), 1);
+        assert_eq!(scheduler.heap.len(), 1);
+        assert_eq!(scheduler.events[0].note, Some("Event 6".to_string()));
+
+        let final_event = scheduler.pop_due(6).unwrap();
+        assert_eq!(final_event.note, Some("Event 6".to_string()));
     }
 
     #[test]
