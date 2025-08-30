@@ -332,7 +332,10 @@ mod tests {
         assert_eq!(view.items.len(), 1);
         if let ViewItem::ActionFailure(msg) = &view.items[0] {
             // Strip ANSI color codes for comparison
-            let clean_msg = msg.replace("\u{1b}[38;2;230;30;30m", "").replace("\u{1b}[0m", "");
+            let clean_msg = msg
+                .replace("\u{1b}[38;2;230;30;30m", "")
+                .replace("\u{1b}[31m", "")
+                .replace("\u{1b}[0m", "");
             assert!(clean_msg.contains("No sequence flag 'nonexistent_flag' found"));
             assert!(clean_msg.contains("Use :init-seq to create it first"));
         } else {
@@ -371,7 +374,10 @@ mod tests {
         assert_eq!(view.items.len(), 1);
         if let ViewItem::ActionFailure(msg) = &view.items[0] {
             // Strip ANSI color codes for comparison
-            let clean_msg = msg.replace("\u{1b}[38;2;230;30;30m", "").replace("\u{1b}[0m", "");
+            let clean_msg = msg
+                .replace("\u{1b}[38;2;230;30;30m", "")
+                .replace("\u{1b}[31m", "")
+                .replace("\u{1b}[0m", "");
             assert!(clean_msg.contains("No sequence flag 'nonexistent_flag' found"));
             assert!(clean_msg.contains("Use :init-seq to create it first"));
         } else {
