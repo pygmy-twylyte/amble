@@ -64,6 +64,7 @@ pub enum OverlayCondition {
     ItemInRoom { item_id: Uuid, room_id: Uuid },
     ItemPresent { item_id: Uuid },
     NpcInState { npc_id: Uuid, mood: NpcState },
+    NpcAbsent { npc_id: Uuid },
     NpcPresent { npc_id: Uuid },
     PlayerHasItem { item_id: Uuid },
     PlayerMissingItem { item_id: Uuid },
@@ -103,6 +104,10 @@ impl OverlayCondition {
             OverlayCondition::NpcPresent { npc_id } => {
                 world.rooms.get(&room_id).is_some_and(|room| room.npcs.contains(npc_id))
             },
+            OverlayCondition::NpcAbsent { npc_id } => world
+                .rooms
+                .get(&room_id)
+                .is_some_and(|room| !room.npcs.contains(npc_id)),
         }
     }
 }

@@ -61,6 +61,7 @@ pub enum RawOverlayCondition {
     ItemPresent { item_id: String },
     NpcInState { npc_id: String, state: NpcState },
     NpcPresent { npc_id: String },
+    NpcAbsent { npc_id: String },
     PlayerHasItem { item_id: String },
     PlayerMissingItem { item_id: String },
 }
@@ -183,6 +184,9 @@ pub fn convert_overlay_conditions(
                     .ok_or_else(|| anyhow!("OverlayCondition::ItemInRoom(_,{room_id}) - room not in symbol table"))?,
             },
             RawOverlayCondition::NpcPresent { npc_id } => OverlayCondition::NpcPresent {
+                npc_id: register_npc(symbols, npc_id),
+            },
+            RawOverlayCondition::NpcAbsent { npc_id } => OverlayCondition::NpcAbsent {
                 npc_id: register_npc(symbols, npc_id),
             },
         };
