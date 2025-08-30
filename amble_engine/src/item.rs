@@ -259,12 +259,12 @@ pub fn consume(world: &mut AmbleWorld, item_id: &Uuid, ability: ItemAbility) -> 
 
     // if consumable, decrement and set to # of remaining uses
     // if not consumable, return early with None
-    let uses_left = if let Some(opts) = &mut item.consumable {
+    let (uses_left, when_consumed) = if let Some(opts) = &mut item.consumable {
         // decrement uses_left if right ability was used
         if opts.consume_on.contains(&ability) && opts.uses_left > 0 {
             opts.uses_left -= 1;
         }
-        opts.uses_left
+        (opts.uses_left, opts.when_consumed)
     } else {
         return Ok(None);
     };
@@ -272,25 +272,20 @@ pub fn consume(world: &mut AmbleWorld, item_id: &Uuid, ability: ItemAbility) -> 
     // if uses_left is now zero, handle the consumption, current options are just to despawn,
     // or to despawn and replace with another item either in inventory or the current room
     if uses_left == 0 {
-        let item = world
-            .items
-            .get_mut(&item_id)
-            .with_context(|| format!("failed lookup trying to consume() item '{item_id}'"))?;
+        // release the mutable borrow on the item before performing actions that
+        // require another mutable borrow of the world
+        let _ = item;
 
-        if let Some(opts) = &mut item.consumable {
-            match opts.when_consumed {
-                ConsumeType::ReplaceInventory { replacement } => {
-                    crate::trigger::despawn_item(world, &item_id)?;
-                    crate::trigger::spawn_item_in_inventory(world, &replacement)?;
-                },
-                ConsumeType::ReplaceCurrentRoom { replacement } => {
-                    crate::trigger::despawn_item(world, &item_id)?;
-                    crate::trigger::spawn_item_in_current_room(world, &replacement)?;
-                },
-                ConsumeType::Despawn => crate::trigger::despawn_item(world, &item_id)?,
-            }
-        } else {
-            return Ok(None);
+        match when_consumed {
+            ConsumeType::ReplaceInventory { replacement } => {
+                crate::trigger::despawn_item(world, &item_id)?;
+                crate::trigger::spawn_item_in_inventory(world, &replacement)?;
+            },
+            ConsumeType::ReplaceCurrentRoom { replacement } => {
+                crate::trigger::despawn_item(world, &item_id)?;
+                crate::trigger::spawn_item_in_current_room(world, &replacement)?;
+            },
+            ConsumeType::Despawn => crate::trigger::despawn_item(world, &item_id)?,
         }
     }
     info!("used ({ability}) ability of consumable item '{item_sym}': {uses_left} uses left");
