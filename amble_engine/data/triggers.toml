@@ -603,6 +603,7 @@ actions = [
 name = "Ambient: Woodland"
 only_once = false
 conditions = [
+    { type = "chance", one_in = 5.0 },
     { type = "ambient", spinner = "ambientWoodland", room_ids = [
         "high-ridge",
         "parish-landing",
@@ -617,6 +618,7 @@ actions = [{ type = "spinnerMessage", spinner = "ambientWoodland" }]
 name = "Ambient: Snowfield"
 only_once = false
 conditions = [
+    { type = "chance", one_in = 3.0 },
     { type = "ambient", spinner = "ambientSnowfield", room_ids = [
         "snowfield",
         "snow-camp",
@@ -628,6 +630,7 @@ actions = [{ type = "spinnerMessage", spinner = "ambientSnowfield" }]
 name = "Ambient: Elevator Muzak"
 only_once = false
 conditions = [
+    { type = "chance", one_in = 2.0 },
     { type = "ambient", spinner = "muzak", room_ids = [
         "lift-main",
         "lift-sublevel-1",
@@ -639,6 +642,7 @@ actions = [{ type = "spinnerMessage", spinner = "muzak" }]
 name = "Ambient: Near AA-3B"
 only_once = false
 conditions = [
+    { type = "chance", one_in = 4.0 },
     { type = "ambient", spinner = "ambientAA3B", room_ids = [
         "lift-sublevel-1",
         "sublevel-1-entrance",
@@ -655,6 +659,7 @@ actions = [{ type = "spinnerMessage", spinner = "ambientAA3B" }]
 name = "Ambient: AA Building Main Floor"
 only_once = false
 conditions = [
+    { type = "chance", one_in = 5.0 },
     { type = "ambient", spinner = "ambientInterior", room_ids = [
         "main-lobby",
         "b-a-office",
@@ -684,7 +689,10 @@ actions = [
 [[triggers]]
 name = "Status: Nauseated"
 only_once = false
-conditions = [{ type = "hasFlag", flag = "status:nauseated" }]
+conditions = [
+    { type = "chance", one_in = 2.0 },
+    { type = "hasFlag", flag = "status:nauseated" },
+]
 actions = [{ type = "spinnerMessage", spinner = "nauseated" }]
 
 [[triggers]]
@@ -1196,9 +1204,7 @@ actions = [
 name = "Lounge: Coffee Taken"
 only_once = false
 conditions = [{ type = "take", item_id = "hot_coffee" }]
-actions = [
-    { type = "removeFlag", flag = "coffee-brewed" },
-]
+actions = [{ type = "removeFlag", flag = "coffee-brewed" }]
 
 [[triggers]]
 name = "High-Ridge: Billy Wakes Up"
