@@ -141,22 +141,59 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
 /// assert_eq!(parse_interaction_type("invalid"), None);
 /// ```
 pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
-    match verb {
-        "open" | "pry" => Some(ItemInteractionType::Open),
-        "attach" | "connect" | "join" => Some(ItemInteractionType::Attach),
-        "break" | "smash" | "crack" | "shatter" => Some(ItemInteractionType::Break),
-        "burn" | "ignite" | "light" | "melt" => Some(ItemInteractionType::Burn),
-        "cover" | "wrap" | "shroud" | "mask" => Some(ItemInteractionType::Cover),
-        "cut" | "slice" | "sever" | "slash" | "carve" | "chop" => Some(ItemInteractionType::Cut),
-        "handle" | "take" | "grasp" | "hold" | "grab" => Some(ItemInteractionType::Handle),
-        "move" | "remove" | "shift" | "shove" | "budge" => Some(ItemInteractionType::Move),
-        "turn" | "spin" | "twist" | "swivel" => Some(ItemInteractionType::Turn),
-        "unlock" | "undo" => Some(ItemInteractionType::Unlock),
-        "sharpen" | "hone" => Some(ItemInteractionType::Sharpen),
-        "clean" | "wipe" | "shine" | "buff" => Some(ItemInteractionType::Clean),
-        "repair" | "fix" => Some(ItemInteractionType::Repair),
-        _ => None,
-    }
+    INTERACTION_VERBS.get(verb).copied()
+}
+
+lazy_static::lazy_static! {
+    static ref INTERACTION_VERBS: std::collections::HashMap<&'static str, ItemInteractionType> = {
+        use ItemInteractionType::*;
+        let mut verbs = std::collections::HashMap::new();
+
+        for verb in ["open", "pry"] {
+            verbs.insert(verb, Open);
+        }
+        for verb in ["attach", "connect", "join"] {
+            verbs.insert(verb, Attach);
+        }
+        for verb in ["break", "smash", "crack", "shatter"] {
+            verbs.insert(verb, Break);
+        }
+        for verb in ["burn", "ignite", "light", "melt"] {
+            verbs.insert(verb, Burn);
+        }
+        for verb in ["extinguish", "spray"] {
+            verbs.insert(verb, Extinguish);
+        }
+        for verb in ["cover", "wrap", "shroud", "mask"] {
+            verbs.insert(verb, Cover);
+        }
+        for verb in ["cut", "slice", "sever", "slash", "carve", "chop"] {
+            verbs.insert(verb, Cut);
+        }
+        for verb in ["handle", "take", "grasp", "hold", "grab"] {
+            verbs.insert(verb, Handle);
+        }
+        for verb in ["move", "remove", "shift", "shove", "budge"] {
+            verbs.insert(verb, Move);
+        }
+        for verb in ["turn", "spin", "twist", "swivel"] {
+            verbs.insert(verb, Turn);
+        }
+        for verb in ["unlock", "undo"] {
+            verbs.insert(verb, Unlock);
+        }
+        for verb in ["sharpen", "hone"] {
+            verbs.insert(verb, Sharpen);
+        }
+        for verb in ["clean", "wipe", "shine", "buff"] {
+            verbs.insert(verb, Clean);
+        }
+        for verb in ["repair", "fix"] {
+            verbs.insert(verb, Repair);
+        }
+
+        verbs
+    };
 }
 
 #[cfg(test)]
@@ -399,6 +436,14 @@ mod tests {
                 },
             ),
             (
+                "extinguish fire with foam",
+                Command::UseItemOn {
+                    verb: ItemInteractionType::Extinguish,
+                    tool: "foam".into(),
+                    target: "fire".into(),
+                },
+            ),
+            (
                 "grasp eel with tongs",
                 Command::UseItemOn {
                     verb: ItemInteractionType::Handle,
@@ -436,6 +481,14 @@ mod tests {
                     verb: ItemInteractionType::Sharpen,
                     tool: "grinder".into(),
                     target: "blade".into(),
+                },
+            ),
+            (
+                "spray blaze with extinguisher",
+                Command::UseItemOn {
+                    verb: ItemInteractionType::Extinguish,
+                    tool: "extinguisher".into(),
+                    target: "blaze".into(),
                 },
             ),
         ];

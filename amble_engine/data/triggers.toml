@@ -137,6 +137,24 @@ actions = [
     { type = "showMessage", text = """When your vision clears, you see a slightly glowing printed invitation on the floor.""" },
 ]
 
+[[triggers]]
+name = "Aperture-Lab: FoamSafe Misfire"
+only_once = true
+conditions = [
+    { type = "useItemOnItem", tool_id = "foamsafe-x17", target_id = "lab_printer", interaction = "extinguish" },
+]
+actions = [
+    { type = "despawnItem", item_id = "foamsafe-x17" },
+    { type = "showMessage", text = "You spray the FoamSafe™ X-17 into the printer. Instead of smothering the flames, the foam erupts in a spectacular fireball!" },
+    { type = "scheduleIn", turns_ahead = 1, note = "Foam fire starts", actions = [
+        { type = "spawnItemInRoom", item_id = "foam_fire", room_id = "aperture-lab" },
+        { type = "showMessage", text = "The accelerant-laced foam ignites, making the fire even worse." },
+    ] },
+    { type = "scheduleIn", turns_ahead = 3, note = "Foam fire spreads", actions = [
+        { type = "showMessage", text = "🔥 The foam-fed flames spread rapidly! 🔥" },
+    ] },
+]
+
 # messages and flag when invitation is acquired
 [[triggers]]
 name = "Aperture-Lab: Insulate using Towel"
@@ -424,6 +442,7 @@ actions = [
     { type = "awardPoints", amount = 5 },
     { type = "showMessage", text = """WHOOOOOMPH! The fallen tree erupts into flame and, quite improbably, is reduced to ash in mere seconds.""" },
 ]
+
 
 [[triggers]]
 name = "Pluck Dental Floss"
