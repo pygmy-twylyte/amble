@@ -21,9 +21,9 @@ use crate::loader::triggers::load_raw_triggers;
 
 use crate::trigger::TriggerAction;
 use crate::{AmbleWorld, Location, WorldObject};
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, anyhow, bail};
 use items::{build_items, place_items};
-use log::{error, info};
+use log::info;
 use npcs::{build_npcs, load_raw_npcs, place_npcs};
 use player::build_player;
 use rooms::build_rooms;
@@ -44,34 +44,53 @@ pub struct SymbolTable {
 /// # Errors
 /// - if room or container token cannot be found in the symbol table
 pub fn resolve_location(table: &HashMap<String, String>, symbols: &SymbolTable) -> Result<Location> {
-    if table.contains_key("Inventory") {
-        Ok(Location::Inventory)
-    } else if let Some(room_token) = table.get("Room") {
-        symbols.rooms.get(room_token).map_or_else(
-            || {
-                error!("room token '{room_token}' not found in symbol table");
-                Err(anyhow!("room token '{}' not found in symbol table", room_token))
-            },
-            |uuid| Ok(Location::Room(*uuid)),
-        )
-    } else if let Some(chest_token) = table.get("Chest") {
-        symbols.items.get(chest_token).map_or_else(
-            || {
-                error!("container item token '{chest_token}' not found in symbol table");
-                Err(anyhow!("chest_token '{}' not found in symbol table", chest_token))
-            },
-            |uuid| Ok(Location::Item(*uuid)),
-        )
-    } else if let Some(npc_token) = table.get("Npc") {
-        symbols.characters.get(npc_token).map_or_else(
-            || {
-                error!("Npc item token '{npc_token}' not found in symbol table");
-                Err(anyhow!("npc token '{}' not found in symbol table", npc_token))
-            },
-            |uuid| Ok(Location::Npc(*uuid)),
-        )
+    match table.keys().next().map(|key| key.as_str()) {
+        Some("Inventory") => Ok(Location::Inventory),
+        Some("Room") => room_resolver(table, symbols),
+        Some("Chest") => chest_resolver(table, symbols),
+        Some("Npc") => npc_resolver(table, symbols),
+        Some("Nowhere") => Ok(Location::Nowhere),
+        Some(_) => Err(anyhow!("Invalid location type found in TOML table [{table:?}]")),
+        None => Err(anyhow!("No location type found in TOML table [{table:?}]")),
+    }
+}
+
+/// Passed a TOML table location containing a Room entry, this returns the corresponding Location::Room(room_uuid).
+fn room_resolver(table: &HashMap<String, String>, symbols: &SymbolTable) -> Result<Location> {
+    if let Some(room_uuid) = symbols.rooms.get(
+        table
+            .get("Room")
+            .context("room_resolver called without a 'Room' in location table")?,
+    ) {
+        Ok(Location::Room(*room_uuid))
     } else {
-        Ok(Location::Nowhere)
+        bail!("room_resolver: Room symbol from TOML location table [{table:?}] not found in symbol table")
+    }
+}
+
+/// Passed a TOML table location containing a Chest entry, this returns the corresponding Location::Item(item_uuid).
+fn chest_resolver(table: &HashMap<String, String>, symbols: &SymbolTable) -> Result<Location> {
+    if let Some(item_uuid) = symbols.items.get(
+        table
+            .get("Chest")
+            .context("chest_resolver called without a 'Chest' in location table")?,
+    ) {
+        Ok(Location::Item(*item_uuid))
+    } else {
+        bail!("chest_resolver: Item symbol from TOML location table [{table:?}] not found in symbol table")
+    }
+}
+
+/// Passed a TOML table location containing a Npc entry, this returns the corresponding Location::Npc(npc_uuid).
+fn npc_resolver(table: &HashMap<String, String>, symbols: &SymbolTable) -> Result<Location> {
+    if let Some(npc_uuid) = symbols.characters.get(
+        table
+            .get("Npc")
+            .context("npc_resolver called without a 'Npc' in location table")?,
+    ) {
+        Ok(Location::Npc(*npc_uuid))
+    } else {
+        bail!("npc_resolver: Npc symbol from TOML table [{table:?}] not found in symbol table")
     }
 }
 /// Loads the `AmbleWorld` from TOML files
@@ -95,7 +114,7 @@ pub fn load_world() -> Result<AmbleWorld> {
 
     /* Load Empty Rooms */
     let raw_rooms = load_raw_rooms(room_toml_path).context("while loading rooms from file")?;
-    let rooms = build_rooms(&raw_rooms, &mut symbols).context("while building rooms from raw_rooms")?;
+    let rooms = build_rooms(&raw_rooms, &mut symbols).context("whi)le building rooms from raw_rooms")?;
     for rm in rooms {
         world.rooms.insert(rm.id(), rm);
     }
