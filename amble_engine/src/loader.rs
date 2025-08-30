@@ -40,57 +40,31 @@ pub struct SymbolTable {
     characters: HashMap<String, Uuid>,
 }
 
+fn map_resolver(table: &HashMap<String, String>, map: &HashMap<String, Uuid>, key: &str) -> Result<Uuid> {
+    let key_lc = key.to_lowercase();
+    if let Some(uuid) = map.get(
+        table
+            .get(key)
+            .with_context(|| format!("{key_lc}_resolver called without a '{key}' in location table"))?,
+    ) {
+        Ok(*uuid)
+    } else {
+        bail!("{key_lc}_resolver: {key} symbol from TOML location table [{table:?}] not found in symbol table")
+    }
+}
+
 /// Converts the TOML table representation of location into a proper Location
 /// # Errors
 /// - if room or container token cannot be found in the symbol table
 pub fn resolve_location(table: &HashMap<String, String>, symbols: &SymbolTable) -> Result<Location> {
     match table.keys().next().map(|key| key.as_str()) {
         Some("Inventory") => Ok(Location::Inventory),
-        Some("Room") => room_resolver(table, symbols),
-        Some("Chest") => chest_resolver(table, symbols),
-        Some("Npc") => npc_resolver(table, symbols),
+        Some("Room") => map_resolver(table, &symbols.rooms, "Room").map(Location::Room),
+        Some("Chest") => map_resolver(table, &symbols.items, "Chest").map(Location::Item),
+        Some("Npc") => map_resolver(table, &symbols.characters, "Npc").map(Location::Npc),
         Some("Nowhere") => Ok(Location::Nowhere),
         Some(_) => Err(anyhow!("Invalid location type found in TOML table [{table:?}]")),
         None => Err(anyhow!("No location type found in TOML table [{table:?}]")),
-    }
-}
-
-/// Passed a TOML table location containing a Room entry, this returns the corresponding Location::Room(room_uuid).
-fn room_resolver(table: &HashMap<String, String>, symbols: &SymbolTable) -> Result<Location> {
-    if let Some(room_uuid) = symbols.rooms.get(
-        table
-            .get("Room")
-            .context("room_resolver called without a 'Room' in location table")?,
-    ) {
-        Ok(Location::Room(*room_uuid))
-    } else {
-        bail!("room_resolver: Room symbol from TOML location table [{table:?}] not found in symbol table")
-    }
-}
-
-/// Passed a TOML table location containing a Chest entry, this returns the corresponding Location::Item(item_uuid).
-fn chest_resolver(table: &HashMap<String, String>, symbols: &SymbolTable) -> Result<Location> {
-    if let Some(item_uuid) = symbols.items.get(
-        table
-            .get("Chest")
-            .context("chest_resolver called without a 'Chest' in location table")?,
-    ) {
-        Ok(Location::Item(*item_uuid))
-    } else {
-        bail!("chest_resolver: Item symbol from TOML location table [{table:?}] not found in symbol table")
-    }
-}
-
-/// Passed a TOML table location containing a Npc entry, this returns the corresponding Location::Npc(npc_uuid).
-fn npc_resolver(table: &HashMap<String, String>, symbols: &SymbolTable) -> Result<Location> {
-    if let Some(npc_uuid) = symbols.characters.get(
-        table
-            .get("Npc")
-            .context("npc_resolver called without a 'Npc' in location table")?,
-    ) {
-        Ok(Location::Npc(*npc_uuid))
-    } else {
-        bail!("npc_resolver: Npc symbol from TOML table [{table:?}] not found in symbol table")
     }
 }
 /// Loads the `AmbleWorld` from TOML files
