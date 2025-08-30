@@ -130,32 +130,12 @@ impl AmbleWorld {
     }
 }
 
-/// Constructs a set of all potentially take-able / viewable item (uuids) in a room.
-/// Non-portable or restricted items not filtered here -- player discovers
-/// that on their own. The scope includes items in room, and items in open containers.
-/// Items in closed or locked containers and NPCs are excluded.
-///
-/// # Errors
-/// - if supplied `room_id` is invalid
-pub fn nearby_reachable_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashSet<Uuid>> {
-    let current_room = world
-        .rooms
-        .get(&room_id)
-        .with_context(|| format!("{room_id} room id not found"))?;
-    let room_items = &current_room.contents;
-    let mut contained_items = HashSet::new();
-    for item_id in room_items {
-        if let Some(item) = world.items.get(item_id)
-            && item.container_state == Some(ContainerState::Open)
-        {
-            contained_items.extend(&item.contents);
-        }
-    }
-    Ok(room_items.union(&contained_items).copied().collect())
-}
-
-/// Get all items that are visible in the room, including those in transparent containers
-pub fn nearby_visible_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashSet<Uuid>> {
+fn collect_room_items(
+    world: &AmbleWorld,
+    room_id: Uuid,
+    // Predicate determining whether an item's contents should be collected
+    should_include_contents: impl Fn(&Item) -> bool,
+) -> Result<HashSet<Uuid>> {
     let current_room = world
         .rooms
         .get(&room_id)
@@ -164,16 +144,34 @@ pub fn nearby_visible_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashSet
     let mut contained_items = HashSet::new();
     for item_id in room_items {
         if let Some(item) = world.items.get(item_id) {
-            // Include contents from open containers and transparent containers
-            if item.container_state == Some(ContainerState::Open)
-                || item.container_state == Some(ContainerState::TransparentClosed)
-                || item.container_state == Some(ContainerState::TransparentLocked)
-            {
+            if should_include_contents(item) {
                 contained_items.extend(&item.contents);
             }
         }
     }
     Ok(room_items.union(&contained_items).copied().collect())
+}
+
+/// Constructs a set of all potentially take-able / viewable item (uuids) in a room.
+/// Non-portable or restricted items not filtered here -- player discovers
+/// that on their own. The scope includes items in room, and items in open containers.
+/// Items in closed or locked containers and NPCs are excluded.
+///
+/// # Errors
+/// - if supplied `room_id` is invalid
+pub fn nearby_reachable_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashSet<Uuid>> {
+    collect_room_items(world, room_id, |item| {
+        item.container_state == Some(ContainerState::Open)
+    })
+}
+
+/// Get all items that are visible in the room, including those in transparent containers
+pub fn nearby_visible_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashSet<Uuid>> {
+    collect_room_items(world, room_id, |item| {
+        item.container_state == Some(ContainerState::Open)
+            || item.container_state == Some(ContainerState::TransparentClosed)
+            || item.container_state == Some(ContainerState::TransparentLocked)
+    })
 }
 
 #[cfg(test)]
