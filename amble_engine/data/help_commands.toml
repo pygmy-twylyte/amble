@@ -65,3 +65,7 @@ description = "switch something on (can also use 'turn <object> on')"
 [[commands]]
 command = "<verb> <object> with <other_object>"
 description = "many possibilities, e.g. 'light candle with match', 'cut cake with knife'"
+
+[[commands]]
+command = "theme <name>"
+description = "change the color scheme (use 'theme list' to see available themes)"

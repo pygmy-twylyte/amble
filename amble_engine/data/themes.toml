@@ -1,0 +1,214 @@
+# Color themes for Amble Engine
+# Each theme defines a complete color palette for the game's text output
+
+[[themes]]
+name = "default"
+description = "The original Amble color scheme"
+
+[themes.colors]
+# Prompt and status
+prompt = { r = 250, g = 200, b = 100 }
+prompt_bg = { r = 50, g = 51, b = 50 }
+status = { r = 20, g = 220, b = 100 }
+
+# General styles
+highlight = { r = 255, g = 255, b = 0 }
+transition = { r = 40, g = 210, b = 160 }
+subheading = { r = 255, g = 255, b = 255 }
+
+# Items
+item = { r = 220, g = 180, b = 40 }
+item_text = { r = 40, g = 180, b = 40 }
+
+# NPCs
+npc = { r = 50, g = 200, b = 50 }
+npc_quote = { r = 100, g = 250, b = 250 }
+npc_movement = { r = 40, g = 180, b = 220 }
+
+# Rooms
+room = { r = 223, g = 77, b = 10 }
+room_titlebar = { r = 223, g = 77, b = 10 }
+description = { r = 102, g = 208, b = 250 }
+overlay = { r = 75, g = 180, b = 255 }
+
+# Triggers and events
+triggered = { r = 230, g = 230, b = 30 }
+trig_icon = { r = 230, g = 80, b = 80 }
+ambient_icon = { r = 80, g = 80, b = 230 }
+ambient_trig = { r = 150, g = 230, b = 30 }
+
+# Exits
+exit_visited = { r = 110, g = 220, b = 110 }
+exit_locked = { r = 200, g = 50, b = 50 }
+exit_unvisited = { r = 220, g = 180, b = 40 }
+
+# Feedback
+error = { r = 230, g = 30, b = 30 }
+error_icon = { r = 255, g = 0, b = 0 }
+denied = { r = 230, g = 30, b = 30 }
+
+# Goals
+goal_active = { r = 220, g = 40, b = 220 }
+goal_complete = { r = 110, g = 20, b = 110 }
+
+# UI sections
+section = { r = 75, g = 80, b = 75 }
+
+[[themes]]
+name = "seaside"
+description = "A calming ocean-inspired color palette"
+
+[themes.colors]
+# Prompt and status - sandy beach and sea foam
+prompt = { r = 240, g = 220, b = 180 }
+prompt_bg = { r = 30, g = 60, b = 80 }
+status = { r = 64, g = 224, b = 208 }
+
+# General styles - sun and sea
+highlight = { r = 255, g = 223, b = 0 }
+transition = { r = 70, g = 180, b = 200 }
+subheading = { r = 255, g = 255, b = 255 }
+
+# Items - shells and treasures
+item = { r = 255, g = 160, b = 122 }
+item_text = { r = 46, g = 125, b = 50 }
+
+# NPCs - sea creatures and islanders
+npc = { r = 0, g = 191, b = 165 }
+npc_quote = { r = 175, g = 238, b = 238 }
+npc_movement = { r = 100, g = 200, b = 220 }
+
+# Rooms - coral reef colors
+room = { r = 255, g = 127, b = 80 }
+room_titlebar = { r = 255, g = 127, b = 80 }
+description = { r = 135, g = 206, b = 235 }
+overlay = { r = 176, g = 224, b = 230 }
+
+# Triggers and events - tropical sunset
+triggered = { r = 255, g = 215, b = 0 }
+trig_icon = { r = 255, g = 99, b = 71 }
+ambient_icon = { r = 100, g = 149, b = 237 }
+ambient_trig = { r = 127, g = 255, b = 212 }
+
+# Exits - beach paths and tidal pools
+exit_visited = { r = 60, g = 179, b = 113 }
+exit_locked = { r = 205, g = 92, b = 92 }
+exit_unvisited = { r = 250, g = 200, b = 100 }
+
+# Feedback - warning buoys and danger signs
+error = { r = 220, g = 20, b = 60 }
+error_icon = { r = 255, g = 69, b = 0 }
+denied = { r = 205, g = 92, b = 92 }
+
+# Goals - pearls and sea glass
+goal_active = { r = 186, g = 85, b = 211 }
+goal_complete = { r = 119, g = 136, b = 153 }
+
+# UI sections - driftwood gray
+section = { r = 105, g = 105, b = 105 }
+
+[[themes]]
+name = "forest"
+description = "Deep forest greens and earthy browns"
+
+[themes.colors]
+# Prompt and status - moss and bark
+prompt = { r = 139, g = 195, b = 74 }
+prompt_bg = { r = 33, g = 37, b = 30 }
+status = { r = 76, g = 175, b = 80 }
+
+# General styles - sunlight through leaves
+highlight = { r = 255, g = 235, b = 59 }
+transition = { r = 106, g = 142, b = 35 }
+subheading = { r = 255, g = 255, b = 255 }
+
+# Items - mushrooms and berries
+item = { r = 188, g = 143, b = 143 }
+item_text = { r = 85, g = 107, b = 47 }
+
+# NPCs - forest creatures
+npc = { r = 121, g = 85, b = 72 }
+npc_quote = { r = 174, g = 213, b = 129 }
+npc_movement = { r = 139, g = 125, b = 85 }
+
+# Rooms - clearings and groves
+room = { r = 141, g = 110, b = 99 }
+room_titlebar = { r = 141, g = 110, b = 99 }
+description = { r = 156, g = 204, b = 101 }
+overlay = { r = 192, g = 202, b = 51 }
+
+# Triggers and events - fireflies and rustling
+triggered = { r = 255, g = 193, b = 7 }
+trig_icon = { r = 255, g = 152, b = 0 }
+ambient_icon = { r = 104, g = 159, b = 56 }
+ambient_trig = { r = 178, g = 255, b = 89 }
+
+# Exits - forest paths
+exit_visited = { r = 46, g = 125, b = 50 }
+exit_locked = { r = 183, g = 28, b = 28 }
+exit_unvisited = { r = 205, g = 220, b = 57 }
+
+# Feedback - danger in the woods
+error = { r = 198, g = 40, b = 40 }
+error_icon = { r = 244, g = 67, b = 54 }
+denied = { r = 183, g = 28, b = 28 }
+
+# Goals - acorns and achievements
+goal_active = { r = 156, g = 39, b = 176 }
+goal_complete = { r = 74, g = 20, b = 140 }
+
+# UI sections - tree bark
+section = { r = 78, g = 52, b = 46 }
+
+[[themes]]
+name = "monochrome"
+description = "Classic black and white terminal aesthetic"
+
+[themes.colors]
+# Prompt and status - shades of gray
+prompt = { r = 255, g = 255, b = 255 }
+prompt_bg = { r = 40, g = 40, b = 40 }
+status = { r = 200, g = 200, b = 200 }
+
+# General styles - bright white
+highlight = { r = 255, g = 255, b = 255 }
+transition = { r = 180, g = 180, b = 180 }
+subheading = { r = 255, g = 255, b = 255 }
+
+# Items - light gray
+item = { r = 220, g = 220, b = 220 }
+item_text = { r = 200, g = 200, b = 200 }
+
+# NPCs - medium gray
+npc = { r = 180, g = 180, b = 180 }
+npc_quote = { r = 160, g = 160, b = 160 }
+npc_movement = { r = 170, g = 170, b = 170 }
+
+# Rooms - white and light gray
+room = { r = 240, g = 240, b = 240 }
+room_titlebar = { r = 240, g = 240, b = 240 }
+description = { r = 190, g = 190, b = 190 }
+overlay = { r = 210, g = 210, b = 210 }
+
+# Triggers and events - bright and dim
+triggered = { r = 255, g = 255, b = 255 }
+trig_icon = { r = 230, g = 230, b = 230 }
+ambient_icon = { r = 140, g = 140, b = 140 }
+ambient_trig = { r = 160, g = 160, b = 160 }
+
+# Exits - various grays
+exit_visited = { r = 150, g = 150, b = 150 }
+exit_locked = { r = 100, g = 100, b = 100 }
+exit_unvisited = { r = 200, g = 200, b = 200 }
+
+# Feedback - dark gray for errors
+error = { r = 80, g = 80, b = 80 }
+error_icon = { r = 60, g = 60, b = 60 }
+denied = { r = 90, g = 90, b = 90 }
+
+# Goals - medium and dark gray
+goal_active = { r = 180, g = 180, b = 180 }
+goal_complete = { r = 120, g = 120, b = 120 }
+
+# UI sections - mid gray
+section = { r = 128, g = 128, b = 128 }

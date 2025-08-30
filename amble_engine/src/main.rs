@@ -6,6 +6,7 @@
 //! Adventure game / engine project
 
 use amble_engine::style::GameStyle;
+use amble_engine::theme::init_themes;
 use amble_engine::{AMBLE_VERSION, WorldObject, load_world, run_repl};
 
 use anyhow::{Context, Result};
@@ -13,7 +14,7 @@ use colored::Colorize;
 use env_logger::Env;
 use textwrap::{fill, termwidth};
 
-use log::info;
+use log::{info, warn};
 
 use std::io::Write;
 
@@ -25,6 +26,11 @@ fn main() -> Result<()> {
     info!("Start: loading game world from files");
     let mut world = load_world().context("while loading AmbleWorld")?;
     info!("AmbleWorld loaded successfully.");
+
+    // Initialize the theme system
+    if let Err(e) = init_themes() {
+        warn!("Failed to load themes: {}. Using default theme.", e);
+    }
 
     // clear the screen
     print!("\x1B[2J\x1B[H");

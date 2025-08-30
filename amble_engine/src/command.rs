@@ -52,6 +52,7 @@ pub enum Command {
     },
     TalkTo(String),
     Teleport(String), // DEV_MODE only
+    Theme(String),
     TurnOn(String),
     Unknown,
     UnlockItem(String),
@@ -121,6 +122,8 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
         ["brief"] => Command::SetViewMode(ViewMode::Brief),
         ["clear"] => Command::SetViewMode(ViewMode::ClearVerbose),
         ["verbose"] => Command::SetViewMode(ViewMode::Verbose),
+        ["theme"] => Command::Theme("list".to_string()),
+        ["theme", theme_name] => Command::Theme((*theme_name).to_string()),
         _ => Command::Unknown,
     }
 }
@@ -173,6 +176,12 @@ mod tests {
         for input in test_inputs {
             assert_eq!(pc(input), Command::Goals);
         }
+    }
+
+    #[test]
+    fn parse_theme_command() {
+        assert_eq!(pc("theme seaside"), Command::Theme("seaside".into()));
+        assert_eq!(pc("theme default"), Command::Theme("default".into()));
     }
 
     #[test]

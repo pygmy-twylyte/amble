@@ -116,6 +116,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             Read(thing) => read_handler(world, &mut view, &thing)?,
             Load(gamefile) => load_handler(world, &mut view, &gamefile),
             Save(gamefile) => save_handler(world, &mut view, &gamefile)?,
+            Theme(theme_name) => theme_handler(&mut view, &theme_name)?,
             UseItemOn { verb, tool, target } => {
                 use_item_on_handler(world, &mut view, verb, &tool, &target)?;
             },
