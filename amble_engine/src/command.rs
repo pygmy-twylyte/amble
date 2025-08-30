@@ -1,6 +1,9 @@
 //! Command module
 //!
 //! Describes possible commands used during gameplay.
+use std::collections::HashMap;
+
+use lazy_static::lazy_static;
 use variantly::Variantly;
 
 use crate::{
@@ -141,22 +144,56 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
 /// assert_eq!(parse_interaction_type("invalid"), None);
 /// ```
 pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
-    match verb {
-        "open" | "pry" => Some(ItemInteractionType::Open),
-        "attach" | "connect" | "join" => Some(ItemInteractionType::Attach),
-        "break" | "smash" | "crack" | "shatter" => Some(ItemInteractionType::Break),
-        "burn" | "ignite" | "light" | "melt" => Some(ItemInteractionType::Burn),
-        "cover" | "wrap" | "shroud" | "mask" => Some(ItemInteractionType::Cover),
-        "cut" | "slice" | "sever" | "slash" | "carve" | "chop" => Some(ItemInteractionType::Cut),
-        "handle" | "take" | "grasp" | "hold" | "grab" => Some(ItemInteractionType::Handle),
-        "move" | "remove" | "shift" | "shove" | "budge" => Some(ItemInteractionType::Move),
-        "turn" | "spin" | "twist" | "swivel" => Some(ItemInteractionType::Turn),
-        "unlock" | "undo" => Some(ItemInteractionType::Unlock),
-        "sharpen" | "hone" => Some(ItemInteractionType::Sharpen),
-        "clean" | "wipe" | "shine" | "buff" => Some(ItemInteractionType::Clean),
-        "repair" | "fix" => Some(ItemInteractionType::Repair),
-        _ => None,
-    }
+    VERB_TO_INTERACTION.get(verb).copied()
+}
+
+lazy_static! {
+    static ref VERB_TO_INTERACTION: HashMap<&'static str, ItemInteractionType> = {
+        use ItemInteractionType::*;
+        let mut m = HashMap::new();
+
+        for verb in ["open", "pry"] {
+            m.insert(verb, Open);
+        }
+        for verb in ["attach", "connect", "join"] {
+            m.insert(verb, Attach);
+        }
+        for verb in ["break", "smash", "crack", "shatter"] {
+            m.insert(verb, Break);
+        }
+        for verb in ["burn", "ignite", "light", "melt"] {
+            m.insert(verb, Burn);
+        }
+        for verb in ["cover", "wrap", "shroud", "mask"] {
+            m.insert(verb, Cover);
+        }
+        for verb in ["cut", "slice", "sever", "slash", "carve", "chop"] {
+            m.insert(verb, Cut);
+        }
+        for verb in ["handle", "take", "grasp", "hold", "grab"] {
+            m.insert(verb, Handle);
+        }
+        for verb in ["move", "remove", "shift", "shove", "budge"] {
+            m.insert(verb, Move);
+        }
+        for verb in ["turn", "spin", "twist", "swivel"] {
+            m.insert(verb, Turn);
+        }
+        for verb in ["unlock", "undo"] {
+            m.insert(verb, Unlock);
+        }
+        for verb in ["sharpen", "hone"] {
+            m.insert(verb, Sharpen);
+        }
+        for verb in ["clean", "wipe", "shine", "buff"] {
+            m.insert(verb, Clean);
+        }
+        for verb in ["repair", "fix"] {
+            m.insert(verb, Repair);
+        }
+
+        m
+    };
 }
 
 #[cfg(test)]
