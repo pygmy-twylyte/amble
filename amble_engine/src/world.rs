@@ -130,6 +130,9 @@ impl AmbleWorld {
     }
 }
 
+/// Collects and returns a set of items from a location according to a predicate function. 
+/// Items contained in the room itself are always part of the set.
+/// Items within containers are only included if the container fits the predicate (open, open or transparent, etc.)
 fn collect_room_items(
     world: &AmbleWorld,
     room_id: Uuid,
