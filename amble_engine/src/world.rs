@@ -85,7 +85,7 @@ impl AmbleWorld {
         self.spinners
             .get(spin_type)
             .and_then(gametools::Spinner::spin)
-            .unwrap_or(default.to_string())
+            .unwrap_or_else(|| default.to_string())
     }
 
     /// Convenience method to spin a core spinner type.
