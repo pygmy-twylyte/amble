@@ -219,7 +219,7 @@ pub fn dev_set_flag_handler(world: &mut AmbleWorld, view: &mut View, flag_name: 
 /// - Advances the named sequence flag by one step (if it exists)
 /// - Respects the flag's step limit (won't advance beyond maximum)
 /// - Displays current step value after advancement
-/// - If flag doesn't exist, no action is taken
+/// - If flag doesn't exist, displays error message with helpful suggestion
 /// - All advancement is logged at `warn` level for audit trail
 ///
 /// # Use Cases
@@ -229,19 +229,29 @@ pub fn dev_set_flag_handler(world: &mut AmbleWorld, view: &mut View, flag_name: 
 /// - Debugging sequence-dependent triggers
 /// - Fast-forwarding through lengthy sequences during testing
 pub fn dev_advance_seq_handler(world: &mut AmbleWorld, view: &mut View, seq_name: &str) {
-    world.player.advance_flag(seq_name);
     let target = Flag::simple(seq_name, world.turn_count);
-    if let Some(flag) = world.player.flags.get(&target) {
-        view.push(ViewItem::ActionSuccess(format!(
-            "Sequence '{}' advanced to [{}].",
-            flag.name(),
-            flag.value()
+
+    // Check if the flag exists before trying to advance it
+    if world.player.flags.contains(&target) {
+        world.player.advance_flag(seq_name);
+        if let Some(flag) = world.player.flags.get(&target) {
+            view.push(ViewItem::ActionSuccess(format!(
+                "Sequence '{}' advanced to [{}].",
+                flag.name(),
+                flag.value()
+            )));
+            warn!(
+                "DEV_MODE AdvanceSeq used: '{}' advanced to [{}].",
+                flag.name(),
+                flag.value()
+            );
+        }
+    } else {
+        view.push(ViewItem::ActionFailure(format!(
+            "No sequence flag '{}' found. Use :init-seq to create it first.",
+            seq_name.error_style()
         )));
-        warn!(
-            "DEV_MODE AdvanceSeq used: '{}' advanced to [{}].",
-            flag.name(),
-            flag.value()
-        );
+        warn!("DEV_MODE AdvanceSeq failed: sequence flag '{}' not found", seq_name);
     }
 }
 
@@ -263,7 +273,7 @@ pub fn dev_advance_seq_handler(world: &mut AmbleWorld, view: &mut View, seq_name
 /// - Resets the named sequence flag to step 0 (if it exists)
 /// - Preserves the flag's step limit setting
 /// - Displays current step value after reset (should be 0)
-/// - If flag doesn't exist, no action is taken
+/// - If flag doesn't exist, displays error message with helpful suggestion
 /// - All resets are logged at `warn` level for audit trail
 ///
 /// # Use Cases
@@ -273,14 +283,120 @@ pub fn dev_advance_seq_handler(world: &mut AmbleWorld, view: &mut View, seq_name
 /// - Debugging sequence initialization
 /// - Clearing progress to test different approaches
 pub fn dev_reset_seq_handler(world: &mut AmbleWorld, view: &mut View, seq_name: &str) {
-    world.player.reset_flag(seq_name);
     let target = Flag::simple(seq_name, world.turn_count);
-    if let Some(flag) = world.player.flags.get(&target) {
-        view.push(ViewItem::ActionSuccess(format!(
-            "Sequence '{}' reset to [{}].",
-            flag.name(),
-            flag.value()
+
+    // Check if the flag exists before trying to reset it
+    if world.player.flags.contains(&target) {
+        world.player.reset_flag(seq_name);
+        if let Some(flag) = world.player.flags.get(&target) {
+            view.push(ViewItem::ActionSuccess(format!(
+                "Sequence '{}' reset to [{}].",
+                flag.name(),
+                flag.value()
+            )));
+            warn!("DEV_MODE ResetSeq used: '{}' reset to [{}].", flag.name(), flag.value());
+        }
+    } else {
+        view.push(ViewItem::ActionFailure(format!(
+            "No sequence flag '{}' found. Use :init-seq to create it first.",
+            seq_name.error_style()
         )));
-        warn!("DEV_MODE ResetSeq used: '{}' reset to [{}].", flag.name(), flag.value());
+        warn!("DEV_MODE ResetSeq failed: sequence flag '{}' not found", seq_name);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        AmbleWorld, View, ViewItem,
+        player::{Flag, Player},
+    };
+
+    fn create_test_world() -> AmbleWorld {
+        let mut world = AmbleWorld::default();
+        world.player = Player::default();
+        world
+    }
+
+    #[test]
+    fn dev_advance_seq_handler_shows_error_for_nonexistent_flag() {
+        let mut world = create_test_world();
+        let mut view = View::new();
+
+        dev_advance_seq_handler(&mut world, &mut view, "nonexistent_flag");
+
+        // Should have an error message
+        assert_eq!(view.items.len(), 1);
+        if let ViewItem::ActionFailure(msg) = &view.items[0] {
+            // Strip ANSI color codes for comparison
+            let clean_msg = msg.replace("\u{1b}[38;2;230;30;30m", "").replace("\u{1b}[0m", "");
+            assert!(clean_msg.contains("No sequence flag 'nonexistent_flag' found"));
+            assert!(clean_msg.contains("Use :init-seq to create it first"));
+        } else {
+            panic!("Expected ActionFailure, got {:?}", view.items[0]);
+        }
+    }
+
+    #[test]
+    fn dev_advance_seq_handler_works_for_existing_flag() {
+        let mut world = create_test_world();
+        let mut view = View::new();
+
+        // First create a sequence flag
+        let flag = Flag::sequence("test_seq", Some(3), world.turn_count);
+        world.player.flags.insert(flag);
+
+        dev_advance_seq_handler(&mut world, &mut view, "test_seq");
+
+        // Should have a success message
+        assert_eq!(view.items.len(), 1);
+        if let ViewItem::ActionSuccess(msg) = &view.items[0] {
+            assert!(msg.contains("Sequence 'test_seq' advanced to [test_seq#1]"));
+        } else {
+            panic!("Expected ActionSuccess, got {:?}", view.items[0]);
+        }
+    }
+
+    #[test]
+    fn dev_reset_seq_handler_shows_error_for_nonexistent_flag() {
+        let mut world = create_test_world();
+        let mut view = View::new();
+
+        dev_reset_seq_handler(&mut world, &mut view, "nonexistent_flag");
+
+        // Should have an error message
+        assert_eq!(view.items.len(), 1);
+        if let ViewItem::ActionFailure(msg) = &view.items[0] {
+            // Strip ANSI color codes for comparison
+            let clean_msg = msg.replace("\u{1b}[38;2;230;30;30m", "").replace("\u{1b}[0m", "");
+            assert!(clean_msg.contains("No sequence flag 'nonexistent_flag' found"));
+            assert!(clean_msg.contains("Use :init-seq to create it first"));
+        } else {
+            panic!("Expected ActionFailure, got {:?}", view.items[0]);
+        }
+    }
+
+    #[test]
+    fn dev_reset_seq_handler_works_for_existing_flag() {
+        let mut world = create_test_world();
+        let mut view = View::new();
+
+        // First create and advance a sequence flag
+        let mut flag = Flag::sequence("test_seq", Some(3), world.turn_count);
+        if let Flag::Sequence { step, .. } = &mut flag {
+            *step = 2; // Set to step 2
+        }
+        world.player.flags.insert(flag);
+
+        dev_reset_seq_handler(&mut world, &mut view, "test_seq");
+
+        // Should have a success message
+        assert_eq!(view.items.len(), 1);
+        if let ViewItem::ActionSuccess(msg) = &view.items[0] {
+            assert!(msg.contains("Sequence 'test_seq' reset to [test_seq#0]"));
+        } else {
+            panic!("Expected ActionSuccess, got {:?}", view.items[0]);
+        }
     }
 }
