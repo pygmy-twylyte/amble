@@ -220,12 +220,13 @@ fn test_raw_npc_to_npc() {
         id: "npc".into(),
         name: "Npc".into(),
         description: String::new(),
-        location: HashMap::new(),
+        location: HashMap::from([("Nowhere".to_string(), "".to_string())]),
         inventory: HashSet::new(),
         dialogue: HashMap::new(),
         state: ae::npc::NpcState::Normal,
         movement: None,
     };
+
     let npc = raw.to_npc(&symbols).unwrap();
     assert_eq!(npc.name, "Npc");
 }
