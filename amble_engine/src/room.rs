@@ -325,7 +325,7 @@ mod tests {
             text: "This overlay should show".into(),
         };
 
-        assert!(overlay.applies(world.player.location.unwrap_room(), &world));
+        assert!(overlay.applies(world.player.location.room_id().unwrap(), &world));
     }
 
     #[test]
@@ -339,7 +339,7 @@ mod tests {
             text: "This overlay should not show".into(),
         };
 
-        assert!(!overlay.applies(world.player.location.unwrap_room(), &world));
+        assert!(!overlay.applies(world.player.location.room_id().unwrap(), &world));
     }
 
     #[test]
@@ -353,7 +353,7 @@ mod tests {
             text: "This overlay should show".into(),
         };
 
-        assert!(overlay.applies(world.player.location.unwrap_room(), &world));
+        assert!(overlay.applies(world.player.location.room_id().unwrap(), &world));
     }
 
     #[test]
@@ -371,13 +371,13 @@ mod tests {
             text: "Sequence is complete".into(),
         };
 
-        assert!(overlay.applies(world.player.location.unwrap_room(), &world));
+        assert!(overlay.applies(world.player.location.room_id().unwrap(), &world));
     }
 
     #[test]
     fn room_overlay_applies_with_item_present() {
         let world = create_test_world();
-        let room_id = world.player.location.unwrap_room();
+        let room_id = world.player.location.room_id().unwrap();
         let item_id = *world.items.keys().next().unwrap();
 
         let overlay = RoomOverlay {
@@ -391,7 +391,7 @@ mod tests {
     #[test]
     fn room_overlay_applies_with_item_absent() {
         let world = create_test_world();
-        let room_id = world.player.location.unwrap_room();
+        let room_id = world.player.location.room_id().unwrap();
         let nonexistent_item = Uuid::new_v4();
 
         let overlay = RoomOverlay {
@@ -416,7 +416,7 @@ mod tests {
             text: "You have the item".into(),
         };
 
-        assert!(overlay.applies(world.player.location.unwrap_room(), &world));
+        assert!(overlay.applies(world.player.location.room_id().unwrap(), &world));
     }
 
     #[test]
@@ -432,13 +432,13 @@ mod tests {
             text: "NPC is in normal mood".into(),
         };
 
-        assert!(overlay.applies(world.player.location.unwrap_room(), &world));
+        assert!(overlay.applies(world.player.location.room_id().unwrap(), &world));
     }
 
     #[test]
     fn room_overlay_applies_with_item_in_room() {
         let world = create_test_world();
-        let room_id = world.player.location.unwrap_room();
+        let room_id = world.player.location.room_id().unwrap();
         let item_id = *world.items.keys().next().unwrap();
 
         let overlay = RoomOverlay {
@@ -453,7 +453,7 @@ mod tests {
     fn room_show_displays_all_sections() {
         let mut world = create_test_world();
         let mut view = View::new();
-        let room_id = world.player.location.unwrap_room();
+        let room_id = world.player.location.room_id().unwrap();
 
         // Add items and NPCs to the room
         let item_id = *world.items.keys().next().unwrap();
@@ -493,7 +493,7 @@ mod tests {
     fn room_show_overlays_displays_applicable_overlays() {
         let mut world = create_test_world();
         let mut view = View::new();
-        let room_id = world.player.location.unwrap_room();
+        let room_id = world.player.location.room_id().unwrap();
 
         world
             .player
@@ -528,7 +528,7 @@ mod tests {
     fn room_show_npcs_displays_npc_list() {
         let mut world = create_test_world();
         let mut view = View::new();
-        let room_id = world.player.location.unwrap_room();
+        let room_id = world.player.location.room_id().unwrap();
         let npc_id = *world.npcs.keys().next().unwrap();
 
         world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
@@ -548,7 +548,7 @@ mod tests {
     fn room_show_exits_displays_exit_list() {
         let mut world = create_test_world();
         let mut view = View::new();
-        let room_id = world.player.location.unwrap_room();
+        let room_id = world.player.location.room_id().unwrap();
 
         let dest_room_id = Uuid::new_v4();
         let dest_room = create_test_room(dest_room_id);
@@ -618,7 +618,7 @@ mod tests {
     fn room_show_handles_empty_sections() {
         let world = create_test_world();
         let mut view = View::new();
-        let room_id = world.player.location.unwrap_room();
+        let room_id = world.player.location.room_id().unwrap();
 
         let room = world.rooms.get(&room_id).unwrap();
         room.show(&world, &mut view, None).unwrap();
@@ -640,7 +640,7 @@ mod tests {
     fn exit_with_requirements_shows_correct_state() {
         let mut world = create_test_world();
         let mut view = View::new();
-        let room_id = world.player.location.unwrap_room();
+        let room_id = world.player.location.room_id().unwrap();
 
         let dest_room_id = Uuid::new_v4();
         let dest_room = create_test_room(dest_room_id);
@@ -671,7 +671,7 @@ mod tests {
     #[test]
     fn room_overlay_applies_with_player_missing_item() {
         let world = create_test_world();
-        let room_id = world.player.location.unwrap_room();
+        let room_id = world.player.location.room_id().unwrap();
         let missing_item = Uuid::new_v4();
 
         let overlay = RoomOverlay {
@@ -685,7 +685,7 @@ mod tests {
     #[test]
     fn room_overlay_applies_with_npc_present() {
         let mut world = create_test_world();
-        let room_id = world.player.location.unwrap_room();
+        let room_id = world.player.location.room_id().unwrap();
         let npc_id = *world.npcs.keys().next().unwrap();
         world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
 
@@ -701,7 +701,7 @@ mod tests {
     fn room_show_exits_errors_if_destination_missing() {
         let mut world = create_test_world();
         let mut view = View::new();
-        let room_id = world.player.location.unwrap_room();
+        let room_id = world.player.location.room_id().unwrap();
         let missing_room = Uuid::new_v4();
         world
             .rooms
