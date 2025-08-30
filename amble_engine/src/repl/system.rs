@@ -65,6 +65,7 @@ use std::path::PathBuf;
 use crate::goal::GoalStatus;
 use crate::loader::help::load_help_data;
 use crate::style::GameStyle;
+use crate::theme::THEME_MANAGER;
 
 use crate::view::ViewMode;
 use crate::{AMBLE_VERSION, Goal, View, ViewItem};
@@ -528,5 +529,49 @@ pub fn save_handler(world: &AmbleWorld, view: &mut View, gamefile: &str) -> Resu
         gamefile.underline().green()
     )));
     info!("Player saved game to \"{gamefile}\"");
+    Ok(())
+}
+
+/// Handler for the theme command - changes the active color scheme
+pub fn theme_handler(view: &mut View, theme_name: &str) -> Result<()> {
+    let manager = THEME_MANAGER
+        .read()
+        .map_err(|_| anyhow::anyhow!("Failed to access theme manager"))?;
+
+    // If no theme name provided or "list" is specified, show available themes
+    if theme_name.is_empty() || theme_name == "list" {
+        let themes = manager.list_themes();
+        let current = manager.current_name();
+
+        view.push(ViewItem::EngineMessage(format!(
+            "Available themes: {}",
+            themes
+                .iter()
+                .map(|t| {
+                    if t == &current {
+                        format!("{} (current)", t).status_style().to_string()
+                    } else {
+                        t.to_string()
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
+        )));
+        return Ok(());
+    }
+
+    // Try to set the requested theme
+    match manager.set_theme(theme_name) {
+        Ok(_) => {
+            view.push(ViewItem::ActionSuccess(format!("Theme changed to '{}'", theme_name)));
+        },
+        Err(_) => {
+            view.push(ViewItem::Error(format!(
+                "Theme '{}' not found. Use 'theme list' to see available themes.",
+                theme_name
+            )));
+        },
+    }
+
     Ok(())
 }

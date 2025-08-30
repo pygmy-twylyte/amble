@@ -36,6 +36,7 @@ pub mod room;
 pub mod scheduler;
 pub mod spinners;
 pub mod style;
+pub mod theme;
 pub mod trigger;
 pub mod view;
 pub mod world;

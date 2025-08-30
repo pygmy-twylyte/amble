@@ -48,6 +48,7 @@ dependencies = [
  "dirs",
  "env_logger",
  "gametools",
+ "lazy_static",
  "log",
  "rand",
  "regex",

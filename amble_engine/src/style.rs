@@ -7,6 +7,8 @@
 use colored::{ColoredString, Colorize};
 use textwrap::{Options, wrap_algorithms::Penalties};
 
+use crate::theme::current_theme_colors;
+
 /// Returns `textwrap::Options` for an indented, wrapped block of text.
 pub fn indented_block() -> Options<'static> {
     let indent = "    ";
@@ -54,91 +56,139 @@ pub trait GameStyle {
 
 impl GameStyle for &str {
     fn prompt_style(&self) -> ColoredString {
-        self.truecolor(250, 200, 100).on_truecolor(50, 51, 50)
+        let colors = current_theme_colors();
+        self.color(colors.prompt.to_color())
+            .on_color(colors.prompt_bg.to_color())
     }
+
     fn status_style(&self) -> ColoredString {
-        self.to_uppercase().truecolor(20, 220, 100)
+        let colors = current_theme_colors();
+        self.to_uppercase().color(colors.status.to_color())
     }
 
     fn transition_style(&self) -> ColoredString {
-        self.italic().truecolor(40, 210, 160)
+        let colors = current_theme_colors();
+        self.italic().color(colors.transition.to_color())
     }
+
     fn item_style(&self) -> ColoredString {
-        self.truecolor(220, 180, 40)
+        let colors = current_theme_colors();
+        self.color(colors.item.to_color())
     }
+
     fn item_text_style(&self) -> ColoredString {
-        self.truecolor(40, 180, 40)
+        let colors = current_theme_colors();
+        self.color(colors.item_text.to_color())
     }
+
     fn npc_style(&self) -> ColoredString {
-        self.truecolor(50, 200, 50).underline()
+        let colors = current_theme_colors();
+        self.color(colors.npc.to_color()).underline()
     }
+
     fn room_style(&self) -> ColoredString {
-        self.truecolor(223, 77, 10)
+        let colors = current_theme_colors();
+        self.color(colors.room.to_color())
     }
+
     fn room_titlebar_style(&self) -> ColoredString {
-        self.truecolor(223, 77, 10).underline()
+        let colors = current_theme_colors();
+        self.color(colors.room_titlebar.to_color()).underline()
     }
+
     fn description_style(&self) -> ColoredString {
-        self.italic().truecolor(102, 208, 250)
+        let colors = current_theme_colors();
+        self.italic().color(colors.description.to_color())
     }
+
     fn triggered_style(&self) -> ColoredString {
-        self.italic().truecolor(230, 230, 30)
+        let colors = current_theme_colors();
+        self.italic().color(colors.triggered.to_color())
     }
+
     fn trig_icon_style(&self) -> ColoredString {
-        self.bold().truecolor(230, 80, 80)
+        let colors = current_theme_colors();
+        self.bold().color(colors.trig_icon.to_color())
     }
+
     fn ambient_icon_style(&self) -> ColoredString {
-        self.dimmed().truecolor(80, 80, 230)
+        let colors = current_theme_colors();
+        self.dimmed().color(colors.ambient_icon.to_color())
     }
+
     fn ambient_trig_style(&self) -> ColoredString {
-        self.truecolor(150, 230, 30).dimmed()
+        let colors = current_theme_colors();
+        self.color(colors.ambient_trig.to_color()).dimmed()
     }
+
     fn exit_visited_style(&self) -> ColoredString {
-        self.italic().truecolor(110, 220, 110)
+        let colors = current_theme_colors();
+        self.italic().color(colors.exit_visited.to_color())
     }
+
     fn exit_locked_style(&self) -> ColoredString {
-        self.italic().truecolor(200, 50, 50)
+        let colors = current_theme_colors();
+        self.italic().color(colors.exit_locked.to_color())
     }
+
     fn exit_unvisited_style(&self) -> ColoredString {
-        self.italic().truecolor(220, 180, 40)
+        let colors = current_theme_colors();
+        self.italic().color(colors.exit_unvisited.to_color())
     }
+
     fn error_style(&self) -> ColoredString {
-        self.truecolor(230, 30, 30)
+        let colors = current_theme_colors();
+        self.color(colors.error.to_color())
     }
+
     fn error_icon_style(&self) -> ColoredString {
-        self.bright_red()
+        let colors = current_theme_colors();
+        self.color(colors.error_icon.to_color())
     }
+
     fn subheading_style(&self) -> ColoredString {
         self.bold()
     }
+
     fn goal_active_style(&self) -> ColoredString {
-        self.truecolor(220, 40, 220)
+        let colors = current_theme_colors();
+        self.color(colors.goal_active.to_color())
     }
+
     fn goal_complete_style(&self) -> ColoredString {
-        self.truecolor(110, 20, 110).strikethrough()
+        let colors = current_theme_colors();
+        self.color(colors.goal_complete.to_color()).strikethrough()
     }
+
     fn denied_style(&self) -> ColoredString {
-        self.italic().truecolor(230, 30, 30)
+        let colors = current_theme_colors();
+        self.italic().color(colors.denied.to_color())
     }
+
     fn overlay_style(&self) -> ColoredString {
-        self.italic().truecolor(75, 180, 255)
+        let colors = current_theme_colors();
+        self.italic().color(colors.overlay.to_color())
     }
 
     fn section_style(&self) -> ColoredString {
+        let colors = current_theme_colors();
         let bracketed = format!("[{self}]");
-        bracketed.truecolor(75, 80, 75)
+        bracketed.color(colors.section.to_color())
     }
 
     fn npc_quote_style(&self) -> ColoredString {
-        self.italic().truecolor(100, 250, 250)
+        let colors = current_theme_colors();
+        self.italic().color(colors.npc_quote.to_color())
     }
 
     fn highlight(&self) -> ColoredString {
-        self.yellow()
+        let colors = current_theme_colors();
+        self.color(colors.highlight.to_color())
     }
 
     fn npc_movement_style(&self) -> ColoredString {
-        self.italic().truecolor(40, 180, 220)
+        let colors = current_theme_colors();
+        self.italic().color(colors.npc_movement.to_color())
     }
 }
 
