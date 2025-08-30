@@ -239,8 +239,8 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                         } else {
                             bail!(
                                 "container ({}) not found during Take({})",
-                                item_symbol_from_id(&world.items, container_id),
-                                item_symbol_from_id(&world.items, loot_id)
+                                item_symbol_from_id(&world.items, container_id).unwrap_or("<not_found>"),
+                                item_symbol_from_id(&world.items, loot_id).unwrap_or("<not_found>")
                             );
                         }
                     },
@@ -250,8 +250,8 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                         } else {
                             bail!(
                                 "room ({}) not found during Take({})",
-                                room_symbol_from_id(&world.rooms, room_id),
-                                item_symbol_from_id(&world.items, loot_id)
+                                room_symbol_from_id(&world.rooms, room_id).unwrap_or("<not_found>"),
+                                item_symbol_from_id(&world.items, loot_id).unwrap_or("<not_found>")
                             );
                         }
                     },
@@ -633,11 +633,11 @@ pub fn transfer_to_player(
         "{} took {} ({}) from {} ({})",
         world.player.name(),
         loot_name,
-        item_symbol_from_id(&world.items, loot_id),
+        item_symbol_from_id(&world.items, loot_id).unwrap_or("<not_found>"),
         vessel_name,
         match vessel_type {
-            VesselType::Item => item_symbol_from_id(&world.items, vessel_id),
-            VesselType::Npc => npc_symbol_from_id(&world.npcs, vessel_id),
+            VesselType::Item => item_symbol_from_id(&world.items, vessel_id).unwrap_or("<not_found>"),
+            VesselType::Npc => npc_symbol_from_id(&world.npcs, vessel_id).unwrap_or("<not_found>"),
         }
     );
 }
@@ -742,9 +742,9 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
         "{} put {} ({}) into {} ({})",
         world.player.name(),
         item_name,
-        item_symbol_from_id(&world.items, item_id),
+        item_symbol_from_id(&world.items, item_id).unwrap_or("<not_found>"),
         vessel_name,
-        item_symbol_from_id(&world.items, vessel_id)
+        item_symbol_from_id(&world.items, vessel_id).unwrap_or("<not_found>")
     );
 
     check_triggers(

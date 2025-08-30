@@ -337,7 +337,7 @@ pub fn replace_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -> Res
     info!(
         "└─ action: ReplaceItem({}, {}) [Location = {location:?}",
         old_sym,
-        item_symbol_from_id(&world.items, *new_id)
+        item_symbol_from_id(&world.items, *new_id).unwrap_or("<not_found>")
     );
     Ok(())
 }
@@ -358,7 +358,7 @@ pub fn set_item_description(world: &mut AmbleWorld, item_id: &Uuid, text: &str) 
     // text is truncated below at max 50 chars for the log
     info!(
         "└─ action: SetItemDescription({}, \"{}\")",
-        item_symbol_from_id(&world.items, *item_id),
+        item_symbol_from_id(&world.items, *item_id).unwrap_or("<not_found>"),
         &text[..std::cmp::min(text.len(), 50)]
     );
     Ok(())
@@ -398,8 +398,8 @@ pub fn set_barred_message(world: &mut AmbleWorld, exit_from: &Uuid, exit_to: &Uu
     }
     info!(
         "└─ action: SetBarredMessage({} -> {}, '{msg}')",
-        room_symbol_from_id(&world.rooms, *exit_from),
-        room_symbol_from_id(&world.rooms, *exit_to)
+        room_symbol_from_id(&world.rooms, *exit_from).unwrap_or("<not_found>"),
+        room_symbol_from_id(&world.rooms, *exit_to).unwrap_or("<not_found>")
     );
     Ok(())
 }
@@ -757,7 +757,7 @@ pub fn lock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String) -
         exit.locked = true;
         info!(
             "└─ action: LockExit({direction}, from [{}]",
-            room_symbol_from_id(&world.rooms, *from_room)
+            room_symbol_from_id(&world.rooms, *from_room).unwrap_or("<not_found>")
         );
         Ok(())
     } else {
@@ -790,7 +790,7 @@ pub fn unlock_exit(world: &mut AmbleWorld, from_room: &Uuid, direction: &String)
         exit.locked = false;
         info!(
             "└─ action: UnlockExit({direction}, from [{}])",
-            room_symbol_from_id(&world.rooms, *from_room)
+            room_symbol_from_id(&world.rooms, *from_room).unwrap_or("<not_found>")
         );
         Ok(())
     } else {
@@ -818,7 +818,7 @@ pub fn unlock_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
             },
             Some(_) => warn!(
                 "action UnlockItem({}): item wasn't locked",
-                item_symbol_from_id(&world.items, *item_id)
+                item_symbol_from_id(&world.items, *item_id).unwrap_or("<not_found>")
             ),
             None => warn!("action UnlockItem({item_id}): item '{}' isn't a container", item.name()),
         }
@@ -874,7 +874,7 @@ pub fn spawn_item_in_specific_room(world: &mut AmbleWorld, item_id: &Uuid, room_
     info!(
         "└─ action: SpawnItemInRoom({}, {})",
         item.symbol(),
-        room_symbol_from_id(&world.rooms, *room_id)
+        room_symbol_from_id(&world.rooms, *room_id).unwrap_or("<not_found>")
     );
     item.set_location_room(*room_id);
     world
@@ -1032,7 +1032,9 @@ pub fn spawn_item_in_container(world: &mut AmbleWorld, item_id: &Uuid, container
     }
 
     // need to grab this here to avoid trouble with the borrow checker below
-    let container_sym = item_symbol_from_id(&world.items, *container_id);
+    let container_sym = item_symbol_from_id(&world.items, *container_id)
+        .unwrap_or("<not_found>")
+        .to_string();
 
     // then spawn again in the desired location
     let item = world
@@ -1146,8 +1148,8 @@ pub fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &Uuid,
     exit.hidden = false;
     info!(
         "└─ action: RevealExit({direction}, from '{}', to '{}')",
-        room_symbol_from_id(&world.rooms, *exit_from),
-        room_symbol_from_id(&world.rooms, *exit_to)
+        room_symbol_from_id(&world.rooms, *exit_from).unwrap_or("<not_found>"),
+        room_symbol_from_id(&world.rooms, *exit_to).unwrap_or("<not_found>")
     );
     Ok(())
 }
@@ -1181,7 +1183,7 @@ pub fn push_player(world: &mut AmbleWorld, room_id: &Uuid) -> Result<()> {
         world.player.location = Location::Room(*room_id);
         info!(
             "└─ action: PushPlayerTo({})",
-            room_symbol_from_id(&world.rooms, *room_id)
+            room_symbol_from_id(&world.rooms, *room_id).unwrap_or("<not_found>")
         );
         Ok(())
     } else {
