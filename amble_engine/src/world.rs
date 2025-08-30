@@ -133,7 +133,8 @@ impl AmbleWorld {
 fn collect_room_items(
     world: &AmbleWorld,
     room_id: Uuid,
-    include_contents: impl Fn(&Item) -> bool,
+    // Predicate determining whether an item's contents should be collected
+    should_include_contents: impl Fn(&Item) -> bool,
 ) -> Result<HashSet<Uuid>> {
     let current_room = world
         .rooms
@@ -143,7 +144,7 @@ fn collect_room_items(
     let mut contained_items = HashSet::new();
     for item_id in room_items {
         if let Some(item) = world.items.get(item_id) {
-            if include_contents(item) {
+            if should_include_contents(item) {
                 contained_items.extend(&item.contents);
             }
         }
