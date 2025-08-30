@@ -208,31 +208,40 @@ pub fn check_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()>
     Ok(())
 }
 
-/// Check and fire any Ambient triggers that apply (run each time around the REPL loop)
+/// Check and fire any Ambient triggers that apply (runs each time around the REPL loop)
 ///
 /// # Errors
 /// - on failed lookup of player's location
 pub fn check_ambient_triggers(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let current_room_id = world.player_room_ref()?.id();
     for trigger in &mut world.triggers {
+        // if trigger was a one-off and already fired, skip it
         if trigger.fired && trigger.only_once {
             continue;
         }
-
+        // if trigger has a Chance condition and it returns false, skip it
+        if !chance_check(&trigger.conditions) {
+            continue;
+        }
+        // push ViewItems for any ambient events that fire at this location
         for cond in &trigger.conditions {
             if let TriggerCondition::Ambient { room_ids, spinner } = cond {
                 // empty = applies globally
                 if room_ids.is_empty() || room_ids.contains(&current_room_id) {
                     let message = world.spinners.get(spinner).and_then(Spinner::spin).unwrap_or_default();
-                    if !message.is_empty() {
-                        trigger.fired = true;
-                        view.push(ViewItem::AmbientEvent(format!("{}", message.ambient_trig_style())));
-                    }
+                    trigger.fired = true;
+                    view.push(ViewItem::AmbientEvent(format!("{}", message.ambient_trig_style())));
                 }
             }
         }
     }
     Ok(())
+}
+
+/// Returns true if there is no `Chance` within `conditions`, or if the `Chance` "roll" returns true.
+/// Returns false only if there is a `Chance` condition present *and* it "rolls" false.
+fn chance_check(conditions: &Vec<TriggerCondition>) -> bool {
+    conditions.iter().all(|cond| cond.chance_value())
 }
 
 /// Encapsulates references to different types of `WorldObjects` to allow search across different types.

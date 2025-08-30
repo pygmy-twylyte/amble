@@ -88,6 +88,19 @@ impl TriggerCondition {
         events.contains(self)
     }
 
+    /// Returns a random boolean according the parameters of a Chance trigger.
+    ///
+    /// This allows us to check chance conditions without having to pass an AmbleWorld
+    /// reference, avoid some conflicts with the borrow checker. Returns true if called
+    /// on a any other type of TriggerCondition.
+    pub fn chance_value(&self) -> bool {
+        match self {
+            Self::Chance { one_in } => random_bool(1.0 / *one_in),
+            _ => true,
+        }
+    }
+
+    /// Returns true if a state check is true (or if the Chance trigger returns true in that case.)
     pub fn is_ongoing(&self, world: &AmbleWorld) -> bool {
         let player_flag_set = |flag_str: &str| world.player.flags.iter().any(|f| f.value() == *flag_str);
         match self {
