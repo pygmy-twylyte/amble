@@ -119,7 +119,6 @@ values = [
 [[spinners]]
 spinnerType = "ambientWoodland"
 values = [
-    "",
     "A bird sings warily: \"Poo-tee-weet?\"",
     "A swallow flies past, carrying a coconut.",
     "A hummingbird flies by, but gliding like an albatross on an unseen wind.",
@@ -140,12 +139,10 @@ values = [
     "A white rabbit in a waistcoat checks his pocket watch and hurries past, looking stressed.",
     "You glimpse what might be the back end of a gruffalo disappearing behind a boulder.",
 ]
-widths = [25, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 [[spinners]]
 spinnerType = "ambientAA3B"
 values = [
-    "",
     "A shimmering blue police box flickers into existence for an instant, then vanishes.",
     "A robed figure mutters in an unknown tongue before dissolving into mist.",
     "For a moment, your surroundings flatten as if the world became two-dimensional.",
@@ -170,12 +167,10 @@ values = [
     "A figure in a lab coat adjusts his glasses and says \"Rise and shine, Mister Freeman\" before vanishing.",
     "All devices nearby repeat: ATTENTION ALL PLANETS OF THE SOLAR FEDERATION: WE HAVE ASSUMED CONTROL",
 ]
-widths = [30]
 
 [[spinners]]
 spinnerType = "ambientInterior"
 values = [
-    "",
     "The intercom crackles: \"Please return the time machine to the checkout desk last Wednesday.\"",
     "A siren whoops twice, then cuts off mid-blare.",
     "A calm female voice over the PA says: \"Welcome to Aperture Science. Enjoy your tests,\" followed by a beep.",
@@ -197,7 +192,6 @@ values = [
     "A mechanical voice announces: \"Attention: The Ministry of Silly Walks is now in session.\"",
     "The air conditioning kicks in with a sound suspiciously like whale song.",
 ]
-widths = [40]
 
 [[spinners]]
 spinnerType = "ambientSnowfield"
@@ -210,7 +204,6 @@ values = [
 [[spinners]]
 spinnerType = "nauseated"
 values = [
-    "",
     "Since reading the Vogon poetry, you can't shake a background queasiness.",
     "You throw up a little in your mouth.",
     "You regurgitate a bit of last night's dinner, but can't remember what it was.",
@@ -224,14 +217,11 @@ values = [
     "You feel queasy enough to consider switching to a liquid diet of nothing but antacids.",
     "Throat burning with acid bile, you swear off Vogon poetry forever. Just like last time.",
 ]
-widths = [5]
 
 [[spinners]]
 spinnerType = "muzak"
 values = [
-    "",
-    """A Muzak version of Porcupine Tree's \"The Sound of Muzak\" plays softly over the elevator
-speaker.""",
+    "A Muzak version of Porcupine Tree's \"The Sound of Muzak\" plays softly over the elevator speaker.",
     "Another version of \"The Sound of Muzak\" plays, this time with a pan flute playing the melody.",
     "\"The Sound of Muzak\" plays louder now, with a tuba playing the bass part.",
     "The Muzak version of \"The Sound of Muzak\" crescendos leading up to the guitar -- I mean harp -- solo.",
@@ -244,4 +234,3 @@ speaker.""",
     "The speakers emit what can only be described as smooth jazz interpretation of death metal.",
     "Someone has apparently decided that \"Never Gonna Give You Up\" needed a xylophone solo. They were wrong.",
 ]
-widths = [10]
