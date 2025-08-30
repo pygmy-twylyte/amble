@@ -1,6 +1,6 @@
 //! NPC Module
 
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -15,7 +15,8 @@ use rand::{prelude::IndexedRandom, seq::IteratorRandom};
 use uuid::Uuid;
 
 use crate::{
-    ItemHolder, Location, View, ViewItem, WorldObject, spinners::CoreSpinnerType, view::ContentLine, world::AmbleWorld,
+    helpers::room_symbol_from_id, spinners::CoreSpinnerType, view::ContentLine, world::AmbleWorld, ItemHolder,
+    Location, View, ViewItem, WorldObject,
 };
 
 /// A non-playable character.
@@ -181,19 +182,11 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
         bail!("tried to move NPC to invalid location {move_to:?}")
     }
     let current_room_sym = match npc.location {
-        Location::Room(uuid) => world
-            .rooms
-            .get(&uuid)
-            .map(|room| room.symbol.clone())
-            .expect("npc Room should be valid"),
+        Location::Room(uuid) => room_symbol_from_id(&world.rooms, uuid),
         _ => "<nowhere>".to_string(),
     };
     let dest_room_sym = match move_to {
-        Location::Room(uuid) => world
-            .rooms
-            .get(&uuid)
-            .map(|room| room.symbol.clone())
-            .expect("move_to Room should be valid"),
+        Location::Room(uuid) => room_symbol_from_id(&world.rooms, uuid),
         _ => "<nowhere>".to_string(),
     };
 
@@ -201,9 +194,6 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
         "moving NPC '{}' from [{}] to [{}]",
         npc.symbol, current_room_sym, dest_room_sym
     );
-
-    // TODO: check player location here -- push a ViewItem to View if the NPC is either
-    // entering or leaving the player's room.
 
     // get source and destination ids, or None where not a room
     let from_room_id = match &npc.location {
