@@ -295,9 +295,9 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
             "{} gave {} ({}) to {} ({})",
             world.player.name(),
             item_name,
-            item_symbol_from_id(&world.items, item_id),
+            item_symbol_from_id(&world.items, item_id).unwrap_or("<not_found>"),
             npc_name,
-            npc_symbol_from_id(&world.npcs, npc_id),
+            npc_symbol_from_id(&world.npcs, npc_id).unwrap_or("<not_found>"),
         );
     // trigger didn't fire, so NPC refuses the item by default; a specific refusal reason
     // can be defined for particular items by setting an `NpcRefuseItem` trigger action.
@@ -311,8 +311,8 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
         }
         info!(
             "{npc_name} ({}) refused a gift of {item_name} ({})",
-            npc_symbol_from_id(&world.npcs, npc_id),
-            item_symbol_from_id(&world.items, item_id)
+            npc_symbol_from_id(&world.npcs, npc_id).unwrap_or("<not_found>"),
+            item_symbol_from_id(&world.items, item_id).unwrap_or("<not_found>")
         );
     }
     Ok(())

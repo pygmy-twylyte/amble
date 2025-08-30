@@ -1146,6 +1146,19 @@ actions = [
 ]
 
 [[triggers]]
+name = "Main-Lobby: Security Reminder"
+only_once = true
+conditions = [
+    { type = "enter", room_id = "main-lobby" },
+]
+actions = [
+    { type = "scheduleIn", turns_ahead = 3, note = "Lobby security reminder", actions = [
+        { type = "showMessage", text = """A chime echoes through the lobby. "Please do not loiter in the lobby," intones an overhead voice.""" },
+        { type = "awardPoints", amount = -1 },
+    ] },
+]
+
+[[triggers]]
 name = "Main-Lobby: Fish Out HAL Module"
 only_once = true
 conditions = [

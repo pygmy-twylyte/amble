@@ -1,6 +1,9 @@
 //! Command module
 //!
 //! Describes possible commands used during gameplay.
+use std::collections::HashMap;
+
+use lazy_static::lazy_static;
 use variantly::Variantly;
 
 use crate::{
@@ -141,6 +144,7 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
 /// assert_eq!(parse_interaction_type("invalid"), None);
 /// ```
 pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
+
     INTERACTION_VERBS.get(verb).copied()
 }
 
@@ -193,6 +197,7 @@ lazy_static::lazy_static! {
         }
 
         verbs
+
     };
 }
 

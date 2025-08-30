@@ -19,6 +19,8 @@ fn test_command_parse() {
         parse_interaction_type("spray"),
         Some(item::ItemInteractionType::Extinguish)
     );
+    assert_eq!(parse_interaction_type("ignite"), Some(item::ItemInteractionType::Burn));
+    assert_eq!(parse_interaction_type("pry"), Some(item::ItemInteractionType::Open));
 }
 
 #[test]

@@ -38,14 +38,18 @@ to = "two-sheds-landing"
 id = "st-alfonzo-parish"
 name = "Parish of Saint Alfonzo"
 
-base_description = "The parish resembles a half-abandoned diner and half-absolved church, complete with stained glass windows depicting breakfast foods in heroic poses. The air smells faintly of syrup and tobacco.\n\nA refrigerated pedestal in the corner hums solemnly. On it rests a lone tub of margarine bearing the label: 'Nanook's Finest'. A hymn board near the door lists this week’s sermon: 'On the Sanctity of the Short Stack.'"
+base_description = "The parish resembles a half-abandoned diner and half-absolved church, complete with stained glass windows depicting breakfast foods in heroic poses. The air smells faintly of syrup and tobacco.\n\nA refrigerated pedestal in the corner hums solemnly. A hymn board near the door lists this week’s sermon: 'On the Sanctity of the Short Stack.'"
 
 location = "Nowhere"
 visited = false
 
 [[rooms.overlays]]
+conditions = [{ type = "itemPresent", item_id = "margarine" }]
+text = "On the pedestal sits a lone tub of margarine labeled 'Nanook's Finest'."
+
+[[rooms.overlays]]
 conditions = [{ type = "itemAbsent", item_id = "margarine" }]
-text = "The refrigerated pedestal hums solemnly in the corner, empty now that the tub of margarine is gone."
+text = "The pedestal hums solemnly in the corner, empty now that the tub of margarine is gone."
 
 [rooms.exits.east]
 to = "parish-landing"
@@ -163,6 +167,10 @@ conditions = [
     { type = "npcInState", npc_id = "cmot_dibbler", state = "bored" },
 ]
 text = "Dibbler sighs about the slow foot traffic."
+
+[[rooms.overlays]]
+conditions = [{ type = "npcAbsent", npc_id = "cmot_dibbler" }]
+text = "With Dibbler gone, the doorway is mercifully free of sausage vendors."
 
 [rooms.exits.north]
 to = "main-lobby"
