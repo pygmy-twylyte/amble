@@ -218,8 +218,8 @@ pub fn use_item_on_handler(
         ));
         info!(
             "No matching trigger for {interaction:?} {target_name} ({}) with {tool_name} ({})",
-            item_symbol_from_id(&world.items, target_id),
-            item_symbol_from_id(&world.items, tool_id)
+            item_symbol_from_id(&world.items, target_id).unwrap_or("<not_found>"),
+            item_symbol_from_id(&world.items, tool_id).unwrap_or("<not_found>")
         );
     }
     if tool_is_consumable {
@@ -409,7 +409,7 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                     "{} opened the {} ({})",
                     world.player.name(),
                     name,
-                    item_symbol_from_id(&world.items, container_id)
+                    item_symbol_from_id(&world.items, container_id).unwrap_or("<not_found>")
                 );
                 check_triggers(world, view, &[TriggerCondition::Open(container_id)])?;
             },
@@ -498,7 +498,7 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
                     "{} closed the {} ({})",
                     world.player.name(),
                     name,
-                    item_symbol_from_id(&world.items, uuid)
+                    item_symbol_from_id(&world.items, uuid).unwrap_or("<not_found>")
                 );
             },
         }
@@ -580,7 +580,7 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                     "{} locked the {} ({})",
                     world.player.name(),
                     name,
-                    item_symbol_from_id(&world.items, uuid)
+                    item_symbol_from_id(&world.items, uuid).unwrap_or("<not_found>")
                 );
             },
         }
@@ -690,7 +690,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
                         "{} unlocked the {} ({})",
                         world.player.name(),
                         container_name,
-                        item_symbol_from_id(&world.items, container_id)
+                        item_symbol_from_id(&world.items, container_id).unwrap_or("<not_found>")
                     );
                     check_triggers(world, view, &[TriggerCondition::Unlock(container_id)])?;
                 } else {
