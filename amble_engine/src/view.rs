@@ -58,37 +58,54 @@ impl View {
         // re-check terminal width in case it's been resized
         self.width = termwidth();
 
-        // Optimization: We could bin sections here and then iterate over them separately,
-        // but considering we're typically dealing with a maximum of about 12 items to display,
-        // there would be no tangible benefit.
+        // Bin each item by section so we only iterate once.
+        let mut transitions = Vec::new();
+        let mut environment = Vec::new();
+        let mut direct = Vec::new();
+        let mut world = Vec::new();
+        let mut ambient = Vec::new();
+        let mut system = Vec::new();
+        for item in &self.items {
+            match item.section() {
+                Section::Transition => transitions.push(item.clone()),
+                Section::Environment => environment.push(item.clone()),
+                Section::DirectResult => direct.push(item.clone()),
+                Section::WorldResponse => world.push(item.clone()),
+                Section::Ambient => ambient.push(item.clone()),
+                Section::System => system.push(item.clone()),
+            }
+        }
 
         // Section Zero: Movement transition message, if any
-        if let Some(ViewItem::TransitionMessage(msg)) = self.items.iter().find(|i| i.is_transition_message()) {
+        if let Some(msg) = transitions.iter().find_map(|i| match i {
+            ViewItem::TransitionMessage(msg) => Some(msg),
+            _ => None,
+        }) {
             println!("\n{}", fill(msg, normal_block()).transition_style());
         }
 
         // First Section: Environment / Frame of Reference
-        if self.items.iter().any(|item| item.section() == Section::Environment) {
+        if !environment.is_empty() {
             println!("{:.>width$}\n", "scene".section_style(), width = self.width);
             self.environment();
         }
         // Second Section: Immediate/ direct results of player command
-        if self.items.iter().any(|item| item.section() == Section::DirectResult) {
+        if !direct.is_empty() {
             println!("{:.>width$}\n", "results".section_style(), width = self.width);
             self.direct_results();
         }
         // Third Section: Triggered World / NPC reaction to Command
-        if self.items.iter().any(|item| item.section() == Section::WorldResponse) {
+        if !world.is_empty() {
             println!("{:.>width$}\n", "responses".section_style(), width = self.width);
             self.world_reaction();
         }
         // Fourth Section: Messages not related to last command / action (ambients, goals, etc.)
-        if self.items.iter().any(|item| item.section() == Section::Ambient) {
+        if !ambient.is_empty() {
             println!("{:.>width$}\n", "situation".section_style(), width = self.width);
             self.ambience();
         }
         // Fifth Section: System Commands (load/save, help, quit etc)
-        if self.items.iter().any(|item| item.section() == Section::System) {
+        if !system.is_empty() {
             println!("{:.>width$}\n", "game".section_style(), width = self.width);
             self.system();
         }

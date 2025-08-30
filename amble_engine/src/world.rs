@@ -32,6 +32,19 @@ pub enum Location {
     Room(Uuid),
 }
 
+impl Location {
+    /// Return the room id if this `Location` is [`Location::Room`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the location is not a room.
+    pub fn room_id(&self) -> Result<Uuid> {
+        self.room_ref()
+            .copied()
+            .ok_or_else(|| anyhow!("location is not a room"))
+    }
+}
+
 /// Methods common to any object in the world.
 pub trait WorldObject {
     fn id(&self) -> Uuid;
@@ -130,7 +143,7 @@ impl AmbleWorld {
     }
 }
 
-/// Collects and returns a set of items from a location according to a predicate function. 
+/// Collects and returns a set of items from a location according to a predicate function.
 /// Items contained in the room itself are always part of the set.
 /// Items within containers are only included if the container fits the predicate (open, open or transparent, etc.)
 fn collect_room_items(
@@ -275,16 +288,15 @@ mod tests {
     }
 
     #[test]
-    fn location_unwrap_room_works() {
+    fn location_room_id_works() {
         let room_id = Uuid::new_v4();
         let location = Location::Room(room_id);
-        assert_eq!(location.unwrap_room(), room_id);
+        assert_eq!(location.room_id().unwrap(), room_id);
     }
 
     #[test]
-    #[should_panic]
-    fn location_unwrap_room_panics_on_non_room() {
-        Location::Inventory.unwrap_room();
+    fn location_room_id_errors_on_non_room() {
+        assert!(Location::Inventory.room_id().is_err());
     }
 
     #[test]
