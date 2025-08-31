@@ -27,6 +27,10 @@ pub fn parse_dev_command(input: &str, view: &mut View) -> Option<Command> {
     if input.starts_with(':') {
         let words: Vec<&str> = input.trim_start_matches(':').split_whitespace().collect();
         let maybe_command = match words.as_slice() {
+            ["help", "dev"] => Some(Command::HelpDev),
+            ["npcs"] => Some(Command::ListNpcs),
+            ["flags"] => Some(Command::ListFlags),
+            ["sched"] | ["schedule"] => Some(Command::ListSched),
             ["teleport" | "port", room_symbol] => Some(Command::Teleport((*room_symbol).into())),
             ["spawn" | "item", item_symbol] => Some(Command::SpawnItem((*item_symbol).into())),
             ["adv-seq", seq_name] => Some(Command::AdvanceSeq((*seq_name).into())),

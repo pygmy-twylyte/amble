@@ -63,7 +63,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use crate::goal::GoalStatus;
-use crate::loader::help::load_help_data;
+use crate::loader::help::{load_help_data, HelpCommand};
 use crate::style::GameStyle;
 use crate::theme::THEME_MANAGER;
 
@@ -262,15 +262,89 @@ pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> 
 /// 1. **Basic Instructions** - Game concepts, objectives, basic interaction
 /// 2. **Command Reference** - Detailed list of available commands with syntax
 pub fn help_handler(view: &mut View) {
-    let basic_text_path = Path::new("amble_engine/data/help_basic.txt");
-    let commands_toml_path = Path::new("amble_engine/data/help_commands.toml");
+    // Support running from workspace root (engine binary) and from crate dir (unit tests)
+    let basic_text_path = if Path::new("amble_engine/data/help_basic.txt").exists() {
+        Path::new("amble_engine/data/help_basic.txt")
+    } else {
+        Path::new("data/help_basic.txt")
+    };
+    let commands_toml_path = if Path::new("amble_engine/data/help_commands.toml").exists() {
+        Path::new("amble_engine/data/help_commands.toml")
+    } else {
+        Path::new("data/help_commands.toml")
+    };
 
     match load_help_data(basic_text_path, commands_toml_path) {
-        Ok(help_data) => {
-            view.push(ViewItem::Help {
-                basic_text: help_data.basic_text,
-                commands: help_data.commands,
-            });
+        Ok(mut help_data) => {
+            // Append developer-only commands if DEV_MODE is enabled
+            if crate::DEV_MODE {
+                let mut dev_cmds: Vec<HelpCommand> = vec![
+                    HelpCommand { command: ":npcs".into(), description: "DEV: List all NPCs with location and state.".into() },
+                    HelpCommand { command: ":flags".into(), description: "DEV: List all currently set flags (sequences as name#step).".into() },
+                    HelpCommand { command: ":sched".into(), description: "DEV: List upcoming scheduled events with due turn and notes.".into() },
+                    HelpCommand { command: ":teleport <room_symbol>".into(), description: "DEV: Instantly move to a room (alias :port).".into() },
+                    HelpCommand { command: ":spawn <item_symbol>".into(), description: "DEV: Spawn/move an item into inventory (alias :item).".into() },
+                    HelpCommand { command: ":set-flag <name>".into(), description: "DEV: Create a simple flag on the player.".into() },
+                    HelpCommand { command: ":init-seq <name> <end|none>".into(), description: "DEV: Create a sequence flag with limit or unlimited (none).".into() },
+                    HelpCommand { command: ":adv-seq <name>".into(), description: "DEV: Advance a sequence flag by one step.".into() },
+                    HelpCommand { command: ":reset-seq <name>".into(), description: "DEV: Reset a sequence flag to step 0.".into() },
+                ];
+                // Keep the main list readable: append DEV commands at the end
+                help_data.commands.append(&mut dev_cmds);
+            }
+            view.push(ViewItem::Help { basic_text: help_data.basic_text, commands: help_data.commands });
+        },
+        Err(e) => {
+            view.push(ViewItem::Error(format!(
+                "Failed to load help data: {}",
+                e.to_string().error_style()
+            )));
+            warn!("Failed to load help data: {e}");
+        },
+    }
+}
+
+/// Show only developer commands in help (DEV_MODE only).
+/// Falls back to a standard disabled message when not in DEV_MODE.
+pub fn help_handler_dev(view: &mut View) {
+    if !crate::DEV_MODE {
+        view.push(ViewItem::Error(
+            "Developer commands are disabled in this build.".error_style().to_string(),
+        ));
+        warn!("player attempted to use developer help with DEV_MODE = false");
+        return;
+    }
+
+    // Load the same help data
+    let basic_text_path = if Path::new("amble_engine/data/help_basic.txt").exists() {
+        Path::new("amble_engine/data/help_basic.txt")
+    } else {
+        Path::new("data/help_basic.txt")
+    };
+    let commands_toml_path = if Path::new("amble_engine/data/help_commands.toml").exists() {
+        Path::new("amble_engine/data/help_commands.toml")
+    } else {
+        Path::new("data/help_commands.toml")
+    };
+
+    match load_help_data(basic_text_path, commands_toml_path) {
+        Ok(mut help_data) => {
+            // Replace commands with only DEV commands
+            let mut dev_cmds: Vec<HelpCommand> = vec![
+                HelpCommand { command: ":npcs".into(), description: "DEV: List all NPCs with location and state.".into() },
+                HelpCommand { command: ":flags".into(), description: "DEV: List all currently set flags (sequences as name#step).".into() },
+                HelpCommand { command: ":sched".into(), description: "DEV: List upcoming scheduled events with due turn and notes.".into() },
+                HelpCommand { command: ":teleport <room_symbol>".into(), description: "DEV: Instantly move to a room (alias :port).".into() },
+                HelpCommand { command: ":spawn <item_symbol>".into(), description: "DEV: Spawn/move an item into inventory (alias :item).".into() },
+                HelpCommand { command: ":set-flag <name>".into(), description: "DEV: Create a simple flag on the player.".into() },
+                HelpCommand { command: ":init-seq <name> <end|none>".into(), description: "DEV: Create a sequence flag with limit or unlimited (none).".into() },
+                HelpCommand { command: ":adv-seq <name>".into(), description: "DEV: Advance a sequence flag by one step.".into() },
+                HelpCommand { command: ":reset-seq <name>".into(), description: "DEV: Reset a sequence flag to step 0.".into() },
+            ];
+            // Only dev commands
+            help_data.commands.clear();
+            help_data.commands.append(&mut dev_cmds);
+            view.push(ViewItem::Help { basic_text: help_data.basic_text, commands: help_data.commands });
         },
         Err(e) => {
             view.push(ViewItem::Error(format!(
@@ -337,6 +411,45 @@ pub fn goals_handler(world: &AmbleWorld, view: &mut View) {
         .for_each(|goal_item| view.push(goal_item));
 
     info!("{} checked goals status.", world.player.name());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn help_includes_dev_commands_when_enabled() {
+        if !crate::DEV_MODE {
+            // In non-dev builds, this test is not applicable
+            return;
+        }
+        let mut view = View::new();
+        help_handler(&mut view);
+        // Find Help ViewItem and ensure at least one DEV command is present
+        if let Some(ViewItem::Help { commands, .. }) = view.items.iter().find(|i| matches!(i, ViewItem::Help { .. })) {
+            let cmds: Vec<&str> = commands.iter().map(|c| c.command.as_str()).collect();
+            assert!(cmds.iter().any(|c| *c == ":npcs"));
+            assert!(cmds.iter().any(|c| *c == ":flags"));
+            assert!(cmds.iter().any(|c| *c == ":sched"));
+        } else {
+            panic!("Help ViewItem not produced by help_handler");
+        }
+    }
+
+    #[test]
+    fn help_dev_shows_only_dev_commands_when_enabled() {
+        if !crate::DEV_MODE {
+            return;
+        }
+        let mut view = View::new();
+        help_handler_dev(&mut view);
+        if let Some(ViewItem::Help { commands, .. }) = view.items.iter().find(|i| matches!(i, ViewItem::Help { .. })) {
+            assert!(!commands.is_empty());
+            assert!(commands.iter().all(|c| c.command.starts_with(':')));
+        } else {
+            panic!(":help dev did not produce a Help ViewItem");
+        }
+    }
 }
 
 /// Filters the world's goal collection by completion status.

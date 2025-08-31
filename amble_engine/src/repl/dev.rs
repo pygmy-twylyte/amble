@@ -41,6 +41,7 @@ use crate::{
     style::GameStyle,
     trigger::{self, spawn_item_in_inventory},
 };
+use crate::helpers::symbol_or_unknown;
 
 /// Spawns an item directly into the player's inventory (DEV_MODE only).
 ///
@@ -305,6 +306,92 @@ pub fn dev_reset_seq_handler(world: &mut AmbleWorld, view: &mut View, seq_name: 
     }
 }
 
+/// Lists all NPCs with their current location and state (DEV_MODE only).
+///
+/// Displays a developer-focused summary of all NPCs in the world, including
+/// their symbol, name, location, and current state.
+pub fn dev_list_npcs_handler(world: &mut AmbleWorld, view: &mut View) {
+    let mut npcs: Vec<_> = world
+        .npcs
+        .values()
+        .map(|npc| {
+            let loc = match npc.location() {
+                Location::Room(uuid) => symbol_or_unknown(&world.rooms, *uuid),
+                Location::Nowhere => "<nowhere>".to_string(),
+                other => format!("<{other:?}>")
+            };
+            (npc.name().to_string(), npc.symbol().to_string(), loc, npc.state.as_key())
+        })
+        .collect();
+    npcs.sort_by(|a, b| a.0.cmp(&b.0));
+
+    if npcs.is_empty() {
+        view.push(ViewItem::EngineMessage("No NPCs found in world.".to_string()))
+    } else {
+        let mut msg = String::new();
+        msg.push_str(&format!("NPCs [{}]:\n", npcs.len()));
+        for (name, symbol, loc, state) in npcs {
+            msg.push_str(&format!(" - {} ({}) @ {} [{}]\n", name, symbol, loc, state));
+        }
+        view.push(ViewItem::EngineMessage(msg));
+    }
+    warn!("DEV_MODE command used: :npcs (list NPCs)");
+}
+
+/// Lists all player flags currently set (DEV_MODE only).
+/// Simple flags are displayed as their name, sequence flags as name#step.
+pub fn dev_list_flags_handler(world: &mut AmbleWorld, view: &mut View) {
+    let mut flags: Vec<String> = world.player.flags.iter().map(|f| f.value()).collect();
+    flags.sort();
+    if flags.is_empty() {
+        view.push(ViewItem::EngineMessage("No flags are currently set.".to_string()));
+    } else {
+        let mut msg = String::new();
+        msg.push_str(&format!("Flags [{}]:\n", flags.len()));
+        for f in flags { msg.push_str(&format!(" - {}\n", f)); }
+        view.push(ViewItem::EngineMessage(msg));
+    }
+    warn!("DEV_MODE command used: :flags (list flags)");
+}
+
+/// Lists upcoming scheduled events from the world's scheduler (DEV_MODE only).
+pub fn dev_list_sched_handler(world: &mut AmbleWorld, view: &mut View) {
+    let now = world.turn_count;
+    let mut upcoming: Vec<(usize, usize)> = world
+        .scheduler
+        .heap
+        .iter()
+        .map(|rev| rev.0)
+        .collect();
+    upcoming.sort();
+
+    if upcoming.is_empty() {
+        view.push(ViewItem::EngineMessage("No events currently scheduled.".to_string()));
+        warn!("DEV_MODE command used: :sched (no events)");
+        return;
+    }
+
+    let mut msg = String::new();
+    msg.push_str(&format!("Scheduled events [{}], current turn = {}:\n", upcoming.len(), now));
+    for (turn_due, idx) in upcoming {
+        let note = world
+            .scheduler
+            .events
+            .get(idx)
+            .and_then(|e| e.note.clone())
+            .unwrap_or_else(|| "<no note>".to_string());
+        let actions = world
+            .scheduler
+            .events
+            .get(idx)
+            .map(|e| e.actions.len())
+            .unwrap_or(0);
+        msg.push_str(&format!(" - turn {:>4}: {} ({} action{})\n", turn_due, note, actions, if actions==1 {""} else {"s"}));
+    }
+    view.push(ViewItem::EngineMessage(msg));
+    warn!("DEV_MODE command used: :sched (list schedule)");
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -406,5 +493,88 @@ mod tests {
         } else {
             panic!("Expected ActionSuccess, got {:?}", view.items[0]);
         }
+    }
+
+    #[test]
+    fn dev_list_flags_handler_empty_and_nonempty() {
+        let mut world = create_test_world();
+        let mut view = View::new();
+        // empty
+        dev_list_flags_handler(&mut world, &mut view);
+        assert!(view.items.iter().any(|i| matches!(i, ViewItem::EngineMessage(msg) if msg.contains("No flags"))));
+
+        // add flags and check listing
+        view.items.clear();
+        world.player.flags.insert(Flag::simple("alpha", world.turn_count));
+        let mut seq = Flag::sequence("beta", Some(3), world.turn_count);
+        if let Flag::Sequence{ step, .. } = &mut seq { *step = 2; }
+        world.player.flags.insert(seq);
+        dev_list_flags_handler(&mut world, &mut view);
+        let combined = view.items.iter().filter_map(|i| match i { ViewItem::EngineMessage(s) => Some(s.clone()), _ => None }).collect::<Vec<_>>().join("\n");
+        assert!(combined.contains("Flags [2]"));
+        assert!(combined.contains("alpha"));
+        assert!(combined.contains("beta#2"));
+    }
+
+    #[test]
+    fn dev_list_npcs_handler_outputs_expected_format() {
+        use crate::room::Room;
+        use crate::npc::Npc;
+        use std::collections::{HashMap, HashSet};
+        use uuid::Uuid;
+
+        let mut world = AmbleWorld::new_empty();
+        let mut view = View::new();
+        // room
+        let room_id = Uuid::new_v4();
+        world.rooms.insert(room_id, Room {
+            id: room_id,
+            symbol: "test_room".into(),
+            name: "Test Room".into(),
+            base_description: "".into(),
+            overlays: vec![],
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        });
+        // npc
+        let npc = Npc {
+            id: Uuid::new_v4(),
+            symbol: "npc_sym".into(),
+            name: "Zed".into(),
+            description: "".into(),
+            location: Location::Room(room_id),
+            inventory: HashSet::new(),
+            dialogue: HashMap::new(),
+            state: crate::npc::NpcState::Normal,
+            movement: None,
+        };
+        world.npcs.insert(npc.id, npc);
+
+        dev_list_npcs_handler(&mut world, &mut view);
+        let combined = view.items.iter().filter_map(|i| match i { ViewItem::EngineMessage(s) => Some(s.clone()), _ => None }).collect::<Vec<_>>().join("\n");
+        assert!(combined.contains("NPCs [1]"));
+        assert!(combined.contains("Zed (npc_sym) @ test_room [normal]"));
+    }
+
+    #[test]
+    fn dev_list_sched_handler_shows_entries() {
+        use crate::trigger::TriggerAction;
+        let mut world = create_test_world();
+        let mut view = View::new();
+        // empty
+        dev_list_sched_handler(&mut world, &mut view);
+        assert!(view.items.iter().any(|i| matches!(i, ViewItem::EngineMessage(msg) if msg.contains("No events"))));
+
+        // add an event
+        view.items.clear();
+        world.scheduler.schedule_on(5, vec![TriggerAction::ShowMessage("m".into())], Some("test".into()));
+        dev_list_sched_handler(&mut world, &mut view);
+        let combined = view.items.iter().filter_map(|i| match i { ViewItem::EngineMessage(s) => Some(s.clone()), _ => None }).collect::<Vec<_>>().join("\n");
+        assert!(combined.contains("Scheduled events [1]"));
+        assert!(combined.contains("turn    5"));
+        assert!(combined.contains("test"));
     }
 }

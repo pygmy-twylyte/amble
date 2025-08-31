@@ -13,7 +13,6 @@ use crate::{
 /// Commands that can be executed by the player.
 #[derive(Debug, Clone, PartialEq, Variantly)]
 pub enum Command {
-    AdvanceSeq(String), // DEV_MODE only
     Close(String),
     Drop(String),
     GiveToNpc {
@@ -36,11 +35,8 @@ pub enum Command {
     },
     Quit,
     Read(String),
-    ResetSeq(String), // DEV_MODE only
     Save(String),
-    SetFlag(String), // DEV_MODE only
     SetViewMode(ViewMode),
-    SpawnItem(String), // DEV_MODE only
     StartSeq {
         // DEV_MODE only
         seq_name: String,
@@ -52,7 +48,6 @@ pub enum Command {
         container: String,
     },
     TalkTo(String),
-    Teleport(String), // DEV_MODE only
     Theme(String),
     TurnOn(String),
     Unknown,
@@ -62,6 +57,16 @@ pub enum Command {
         tool: String,
         target: String,
     },
+    // Commands below can only be used when crate::DEV_MODE is set when built.
+    HelpDev,
+    ListNpcs,
+    ListFlags,
+    ListSched,
+    AdvanceSeq(String),
+    ResetSeq(String),
+    SetFlag(String),
+    SpawnItem(String),
+    Teleport(String),
 }
 
 /// Parses an input string and returns a corresponding `Command` if recognized.
