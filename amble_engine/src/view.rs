@@ -363,14 +363,38 @@ impl View {
             println!("{}", fill(basic_text, normal_block()).italic().cyan());
             println!();
 
-            // Print "Some Common Commands:" header
+            // Partition commands into normal vs DEV (':'-prefixed)
+            let (dev_cmds, normal_cmds): (Vec<_>, Vec<_>) = commands
+                .iter()
+                .cloned()
+                .partition(|c| c.command.starts_with(':'));
+
+            // Print normal commands section
             println!("{}", "Some Common Commands:".bold().yellow());
             println!();
-
-            // Print each command with formatting and proper text wrapping
-            for command in commands {
-                let formatted_line = format!("{} - {}", command.command.bold().green(), command.description.italic());
+            for command in &normal_cmds {
+                let formatted_line = format!(
+                    "{} - {}",
+                    command.command.bold().green(),
+                    command.description.italic()
+                );
                 println!("{}", fill(&formatted_line, normal_block()));
+            }
+
+            // Print developer commands section if present and DEV_MODE
+            if crate::DEV_MODE && !dev_cmds.is_empty() {
+                println!();
+                println!("{}", "Developer Commands (DEV_MODE):".bold().yellow());
+                println!();
+                for command in &dev_cmds {
+                    let desc = command
+                        .description
+                        .strip_prefix("DEV: ")
+                        .unwrap_or(&command.description)
+                        .to_string();
+                    let formatted_line = format!("{} - {}", command.command.bold().green(), desc.italic());
+                    println!("{}", fill(&formatted_line, normal_block()));
+                }
             }
         }
     }

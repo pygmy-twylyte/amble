@@ -81,6 +81,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             SetViewMode(mode) => set_viewmode_handler(&mut view, mode),
             Goals => goals_handler(world, &mut view),
             Help => help_handler(&mut view),
+            HelpDev => help_handler_dev(&mut view),
             Quit => {
                 if let ReplControl::Quit = quit_handler(world, &mut view)? {
                     view.flush();
@@ -109,8 +110,6 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
                 ));
             },
             TalkTo(npc_name) => talk_to_handler(world, &mut view, &npc_name)?,
-            Teleport(room_symbol) => dev_teleport_handler(world, &mut view, &room_symbol),
-            SpawnItem(item_symbol) => dev_spawn_item_handler(world, &mut view, &item_symbol),
             GiveToNpc { item, npc } => give_to_npc_handler(world, &mut view, &item, &npc)?,
             TurnOn(thing) => turn_on_handler(world, &mut view, &thing)?,
             Read(thing) => read_handler(world, &mut view, &thing)?,
@@ -120,6 +119,12 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             UseItemOn { verb, tool, target } => {
                 use_item_on_handler(world, &mut view, verb, &tool, &target)?;
             },
+            // Commands below only available when crate::DEV_MODE is enabled.
+            SpawnItem(item_symbol) => dev_spawn_item_handler(world, &mut view, &item_symbol),
+            Teleport(room_symbol) => dev_teleport_handler(world, &mut view, &room_symbol),
+            ListNpcs => dev_list_npcs_handler(world, &mut view),
+            ListFlags => dev_list_flags_handler(world, &mut view),
+            ListSched => dev_list_sched_handler(world, &mut view),
             AdvanceSeq(seq_name) => dev_advance_seq_handler(world, &mut view, &seq_name),
             ResetSeq(seq_name) => dev_reset_seq_handler(world, &mut view, &seq_name),
             SetFlag(flag_name) => dev_set_flag_handler(world, &mut view, &flag_name),
