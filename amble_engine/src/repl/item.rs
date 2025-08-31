@@ -48,7 +48,7 @@ use std::collections::HashSet;
 
 use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
-    helpers::item_symbol_from_id,
+    helpers::{symbol_or_unknown, plural_s},
     item::{ContainerState, ItemAbility, ItemInteractionType, consume},
     loader::items::interaction_requirement_met,
     repl::{entity_not_found, find_world_object},
@@ -218,8 +218,8 @@ pub fn use_item_on_handler(
         ));
         info!(
             "No matching trigger for {interaction:?} {target_name} ({}) with {tool_name} ({})",
-            item_symbol_from_id(&world.items, target_id).unwrap_or("<not_found>"),
-            item_symbol_from_id(&world.items, tool_id).unwrap_or("<not_found>")
+            symbol_or_unknown(&world.items, target_id),
+            symbol_or_unknown(&world.items, tool_id)
         );
     }
     if tool_is_consumable {
@@ -235,7 +235,7 @@ pub fn use_item_on_handler(
                     "The {} has {} use{} left",
                     tool_name.item_style(),
                     uses_left,
-                    if uses_left == 1 { "" } else { "s" }
+                    plural_s(uses_left as isize)
                 )));
             }
         }
@@ -409,7 +409,7 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                     "{} opened the {} ({})",
                     world.player.name(),
                     name,
-                    item_symbol_from_id(&world.items, container_id).unwrap_or("<not_found>")
+                    symbol_or_unknown(&world.items, container_id)
                 );
                 check_triggers(world, view, &[TriggerCondition::Open(container_id)])?;
             },
@@ -498,7 +498,7 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
                     "{} closed the {} ({})",
                     world.player.name(),
                     name,
-                    item_symbol_from_id(&world.items, uuid).unwrap_or("<not_found>")
+                    symbol_or_unknown(&world.items, uuid)
                 );
             },
         }
@@ -580,7 +580,7 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                     "{} locked the {} ({})",
                     world.player.name(),
                     name,
-                    item_symbol_from_id(&world.items, uuid).unwrap_or("<not_found>")
+                    symbol_or_unknown(&world.items, uuid)
                 );
             },
         }
@@ -690,7 +690,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
                         "{} unlocked the {} ({})",
                         world.player.name(),
                         container_name,
-                        item_symbol_from_id(&world.items, container_id).unwrap_or("<not_found>")
+                        symbol_or_unknown(&world.items, container_id)
                     );
                     check_triggers(world, view, &[TriggerCondition::Unlock(container_id)])?;
                 } else {

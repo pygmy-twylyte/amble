@@ -9,6 +9,7 @@ use textwrap::{fill, termwidth};
 use variantly::Variantly;
 
 use crate::loader::help::HelpCommand;
+use crate::helpers::plural_s;
 use crate::style::{GameStyle, indented_block, normal_block};
 
 const ICON_SUCCESS: &str = "\u{2611}"; // ✔
@@ -204,14 +205,14 @@ impl View {
                         "{:<4}You were penalized {} point{}.",
                         ICON_NEGATIVE.bright_red(),
                         amount.abs(),
-                        if *amount == 1 { "" } else { "s" }
+                        plural_s(amount.abs())
                     );
                 } else {
                     println!(
                         "{:<4}You were awarded {} point{}.",
                         ICON_POSITIVE.bright_green(),
                         amount,
-                        if *amount == 1 { "" } else { "s" }
+                        plural_s(*amount)
                     );
                 }
             }

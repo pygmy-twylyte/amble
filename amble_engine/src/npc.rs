@@ -15,7 +15,7 @@ use rand::{prelude::IndexedRandom, seq::IteratorRandom};
 use uuid::Uuid;
 
 use crate::{
-    ItemHolder, Location, View, ViewItem, WorldObject, helpers::room_symbol_from_id, spinners::CoreSpinnerType,
+    ItemHolder, Location, View, ViewItem, WorldObject, helpers::symbol_or_unknown, spinners::CoreSpinnerType,
     view::ContentLine, world::AmbleWorld,
 };
 
@@ -185,12 +185,12 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
         "moving NPC '{}' from [{}] to [{}]",
         npc.symbol,
         match npc.location {
-            Location::Room(uuid) => room_symbol_from_id(&world.rooms, uuid).unwrap_or("<not_found>"),
-            _ => "<nowhere>",
+            Location::Room(uuid) => symbol_or_unknown(&world.rooms, uuid),
+            _ => "<nowhere>".to_string(),
         },
         match move_to {
-            Location::Room(uuid) => room_symbol_from_id(&world.rooms, uuid).unwrap_or("<not_found>"),
-            _ => "<nowhere>",
+            Location::Room(uuid) => symbol_or_unknown(&world.rooms, uuid),
+            _ => "<nowhere>".to_string(),
         }
     );
 
