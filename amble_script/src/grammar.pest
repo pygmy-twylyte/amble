@@ -16,13 +16,17 @@ number = @{ ASCII_DIGIT+ }
 
 quoted = @{ "\"" ~ ((!"\"" ~ ANY))* ~ "\"" }
 
-program = { SOI ~ trigger+ ~ EOI }
+program = { SOI ~ (set_decl | trigger)+ ~ EOI }
+
+set_decl   = { "let" ~ "set" ~ ident ~ "=" ~ set_list }
+set_list   = { "(" ~ ident ~ ("," ~ ident)* ~ ")" }
 
 only_once_kw = { "only" ~ "once" }
 trigger      = { "trigger" ~ quoted ~ only_once_kw? ~ "when" ~ when_cond ~ block }
 
 // Event ("when") conditions supported in this iteration
-when_cond        = { enter_room | leave_room | look_at_item | open_item | use_item_on_item | use_item | give_to_npc | take_from_npc | insert_item_into | take_item | drop_item | unlock_item | talk_to_npc | act_on_item }
+when_cond        = { always_event | enter_room | leave_room | look_at_item | open_item | use_item_on_item | use_item | give_to_npc | take_from_npc | insert_item_into | take_item | drop_item | unlock_item | talk_to_npc | act_on_item }
+always_event     = { "always" }
 enter_room       = { "enter" ~ "room" ~ ident }
 take_item        = { "take" ~ "item" ~ ident }
 talk_to_npc      = { "talk" ~ "to" ~ "npc" ~ ident }
@@ -51,6 +55,10 @@ do_stmt = { "do" ~ do_action }
 
 do_action = {
     ("show" ~ quoted)
+  | ("add" ~ "wedge" ~ quoted ~ "width" ~ number ~ "spinner" ~ ident)
+  | ("add" ~ "seq" ~ "flag" ~ ident ~ ("limit" ~ number)?)
+  | ("replace" ~ "item" ~ ident ~ "with" ~ ident)
+  | ("replace" ~ "drop" ~ "item" ~ ident ~ "with" ~ ident)
   | ("add" ~ "flag" ~ ident)
   | ("reset" ~ "flag" ~ ident)
   | ("advance" ~ "flag" ~ ident)
@@ -71,20 +79,28 @@ do_action = {
   | ("set" ~ "item" ~ "description" ~ ident ~ quoted)
   | ("npc" ~ "says" ~ ident ~ quoted)
   | ("npc" ~ "says" ~ "random" ~ ident)
+  | ("npc" ~ "refuse" ~ "item" ~ ident ~ quoted)
   | ("set" ~ "npc" ~ "state" ~ ident ~ ident)
   | ("deny" ~ "read" ~ quoted)
   | ("restrict" ~ "item" ~ ident)
+  | ("give" ~ "item" ~ ident ~ "to" ~ "player" ~ "from" ~ "npc" ~ ident)
+  | ("set" ~ "barred" ~ "message" ~ "from" ~ ident ~ "to" ~ ident ~ quoted)
+  | ("set" ~ "container" ~ "state" ~ ident ~ ("open"|"closed"|"locked"|"transparentClosed"|"transparentLocked"|"none"))
+  | ("spinner" ~ "message" ~ ident)
 }
 
 // Conditions
-cond = { any_group | all_group | has_flag | missing_flag | has_item | missing_item | player_in_room | chance_cond }
+cond = { any_group | all_group | has_flag | missing_flag | has_item | missing_item | player_in_room | container_has_item | chance_cond | ambient_cond }
 
-has_flag       = { "has" ~ "flag" ~ ident }
-missing_flag   = { "missing" ~ "flag" ~ ident }
-has_item       = { "has" ~ "item" ~ ident }
-missing_item   = { "missing" ~ "item" ~ ident }
-player_in_room = { "player" ~ "in" ~ "room" ~ ident }
-chance_cond    = { "chance" ~ number ~ "%" }
+has_flag           = { "has" ~ "flag" ~ ident }
+missing_flag       = { "missing" ~ "flag" ~ ident }
+has_item           = { "has" ~ "item" ~ ident }
+missing_item       = { "missing" ~ "item" ~ ident }
+player_in_room     = { "player" ~ "in" ~ "room" ~ ident }
+// DSL phrasing: "container <container> has item <item>"
+container_has_item = { "container" ~ ident ~ "has" ~ "item" ~ ident }
+chance_cond        = { "chance" ~ number ~ "%" }
+ambient_cond       = { "ambient" ~ ident ~ ("in" ~ "rooms" ~ ident ~ ("," ~ ident)*)? }
 
 all_group = { "all" ~ "(" ~ cond_list ~ ")" }
 any_group = { "any" ~ "(" ~ cond_list ~ ")" }

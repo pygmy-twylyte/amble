@@ -36,6 +36,8 @@ pub struct TriggerAst {
 /// Minimal condition variants.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConditionAst {
+    /// Event: trigger has no event; conditions only.
+    Always,
     /// Event: player enters a room.
     EnterRoom(String),
     /// Event: player takes an item.
@@ -94,12 +96,20 @@ pub enum ConditionAst {
 pub enum ActionAst {
     /// Show a message to the player.
     Show(String),
+    /// Add a weighted wedge to a spinner
+    AddSpinnerWedge { spinner: String, width: usize, text: String },
     /// Add a simple flag by name.
     AddFlag(String),
+    /// Add a sequence flag by name with optional limit (end)
+    AddSeqFlag { name: String, end: Option<u8> },
     /// Award points to the player's score.
     AwardPoints(i64),
     /// Remove a flag by name.
     RemoveFlag(String),
+    /// Replace an item instance by symbol with another
+    ReplaceItem { old_sym: String, new_sym: String },
+    /// Replace an item when dropped with another symbol
+    ReplaceDropItem { old_sym: String, new_sym: String },
     /// Spawn an item into a room.
     SpawnItemIntoRoom { item: String, room: String },
     /// Despawn an item.
@@ -108,6 +118,8 @@ pub enum ActionAst {
     ResetFlag(String),
     /// Advance a sequence flag by one step.
     AdvanceFlag(String),
+    /// Set a barred message for an exit between rooms
+    SetBarredMessage { exit_from: String, exit_to: String, msg: String },
     /// Reveal an exit in a room in a direction to another room.
     RevealExit { exit_from: String, exit_to: String, direction: String },
     /// Lock or unlock exits and items
@@ -117,6 +129,8 @@ pub enum ActionAst {
     UnlockItemAction(String),
     /// Push player to a room.
     PushPlayerTo(String),
+    /// NPC gives an item to the player
+    GiveItemToPlayer { npc: String, item: String },
     /// Spawns
     SpawnItemInInventory(String),
     SpawnItemCurrentRoom(String),
@@ -125,9 +139,15 @@ pub enum ActionAst {
     SetItemDescription { item: String, text: String },
     NpcSays { npc: String, quote: String },
     NpcSaysRandom { npc: String },
+    /// NPC refuses an item with a reason
+    NpcRefuseItem { npc: String, reason: String },
     SetNpcState { npc: String, state: String },
     DenyRead(String),
     RestrictItem(String),
+    /// Set container state for an item by symbol; omit state to clear
+    SetContainerState { item: String, state: Option<String> },
+    /// Show a random message from a spinner
+    SpinnerMessage { spinner: String },
     /// Schedules without conditions
     ScheduleIn { turns_ahead: usize, actions: Vec<ActionAst>, note: Option<String> },
     ScheduleOn { on_turn: usize, actions: Vec<ActionAst>, note: Option<String> },
@@ -213,8 +233,9 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
         }
 
         let mut conds = Array::default();
-        // event condition first
+        // event condition first (skip for Always)
         match event {
+            ConditionAst::Always => { /* no event condition emitted */ }
             ConditionAst::EnterRoom(room) => {
                 let mut t = InlineTable::new();
                 t.insert("type", toml_edit::Value::from("enter"));
@@ -318,6 +339,7 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
         // Emit flattened simple conditions
         for c in flat_conds {
             match c {
+                ConditionAst::Always => { /* ignore */ }
                 ConditionAst::MissingFlag(flag) => {
                     let mut t = InlineTable::new();
                     t.insert("type", toml_edit::Value::from("missingFlag"));
@@ -428,11 +450,16 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
 fn action_to_value(a: &ActionAst) -> toml_edit::Value {
     match a {
         ActionAst::Show(text) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("showMessage")); t.insert("text", toml_edit::Value::from(text.clone())); toml_edit::Value::from(t) }
+        ActionAst::AddSpinnerWedge { spinner, width, text } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("addSpinnerWedge")); t.insert("spinner", toml_edit::Value::from(spinner.clone())); t.insert("width", toml_edit::Value::from(*width as i64)); t.insert("text", toml_edit::Value::from(text.clone())); toml_edit::Value::from(t) }
         ActionAst::AddFlag(name) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("addFlag")); let mut flag_tbl = InlineTable::new(); flag_tbl.insert("type", toml_edit::Value::from("simple")); flag_tbl.insert("name", toml_edit::Value::from(name.clone())); t.insert("flag", toml_edit::Value::from(flag_tbl)); toml_edit::Value::from(t) }
+        ActionAst::AddSeqFlag { name, end } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("addFlag")); let mut flag_tbl = InlineTable::new(); flag_tbl.insert("type", toml_edit::Value::from("sequence")); flag_tbl.insert("name", toml_edit::Value::from(name.clone())); if let Some(e)=end { flag_tbl.insert("end", toml_edit::Value::from(*e as i64)); } t.insert("flag", toml_edit::Value::from(flag_tbl)); toml_edit::Value::from(t) }
         ActionAst::AwardPoints(amount) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("awardPoints")); t.insert("amount", toml_edit::Value::from(*amount as i64)); toml_edit::Value::from(t) }
         ActionAst::RemoveFlag(name) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("removeFlag")); t.insert("flag", toml_edit::Value::from(name.clone())); toml_edit::Value::from(t) }
+        ActionAst::ReplaceItem { old_sym, new_sym } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("replaceItem")); t.insert("old_sym", toml_edit::Value::from(old_sym.clone())); t.insert("new_sym", toml_edit::Value::from(new_sym.clone())); toml_edit::Value::from(t) }
+        ActionAst::ReplaceDropItem { old_sym, new_sym } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("replaceDropItem")); t.insert("old_sym", toml_edit::Value::from(old_sym.clone())); t.insert("new_sym", toml_edit::Value::from(new_sym.clone())); toml_edit::Value::from(t) }
         ActionAst::ResetFlag(name) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("resetFlag")); t.insert("flag", toml_edit::Value::from(name.clone())); toml_edit::Value::from(t) }
         ActionAst::AdvanceFlag(name) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("advanceFlag")); t.insert("flag", toml_edit::Value::from(name.clone())); toml_edit::Value::from(t) }
+        ActionAst::SetBarredMessage { exit_from, exit_to, msg } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("setBarredMessage")); t.insert("exit_from", toml_edit::Value::from(exit_from.clone())); t.insert("exit_to", toml_edit::Value::from(exit_to.clone())); t.insert("msg", toml_edit::Value::from(msg.clone())); toml_edit::Value::from(t) }
         ActionAst::SpawnItemIntoRoom { item, room } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("spawnItemInRoom")); t.insert("item_id", toml_edit::Value::from(item.clone())); t.insert("room_id", toml_edit::Value::from(room.clone())); toml_edit::Value::from(t) }
         ActionAst::SpawnItemInInventory(item) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("spawnItemInInventory")); t.insert("item_id", toml_edit::Value::from(item.clone())); toml_edit::Value::from(t) }
         ActionAst::SpawnItemCurrentRoom(item) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("spawnItemCurrentRoom")); t.insert("item_id", toml_edit::Value::from(item.clone())); toml_edit::Value::from(t) }
@@ -445,6 +472,7 @@ fn action_to_value(a: &ActionAst) -> toml_edit::Value {
         ActionAst::LockItem(item) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("lockItem")); t.insert("item_id", toml_edit::Value::from(item.clone())); toml_edit::Value::from(t) }
         ActionAst::UnlockItemAction(item) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("unlockItem")); t.insert("item_id", toml_edit::Value::from(item.clone())); toml_edit::Value::from(t) }
         ActionAst::PushPlayerTo(room) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("pushPlayerTo")); t.insert("room_id", toml_edit::Value::from(room.clone())); toml_edit::Value::from(t) }
+        ActionAst::GiveItemToPlayer { npc, item } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("giveItemToPlayer")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); t.insert("item_id", toml_edit::Value::from(item.clone())); toml_edit::Value::from(t) }
         ActionAst::ScheduleInIf { turns_ahead, condition, on_false, actions, note } => {
             let mut t = InlineTable::new();
             t.insert("type", toml_edit::Value::from("scheduleInIf"));
@@ -471,9 +499,12 @@ fn action_to_value(a: &ActionAst) -> toml_edit::Value {
         ActionAst::ScheduleOn { on_turn, actions, note } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("scheduleOn")); t.insert("on_turn", toml_edit::Value::from(*on_turn as i64)); let mut arr = Array::default(); for ia in actions { arr.push(action_to_value(ia)); } t.insert("actions", toml_edit::Value::from(arr)); if let Some(n)=note { t.insert("note", toml_edit::Value::from(n.clone())); } toml_edit::Value::from(t) }
         ActionAst::NpcSays { npc, quote } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("npcSays")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); t.insert("quote", toml_edit::Value::from(quote.clone())); toml_edit::Value::from(t) }
         ActionAst::NpcSaysRandom { npc } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("npcSaysRandom")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); toml_edit::Value::from(t) }
+        ActionAst::NpcRefuseItem { npc, reason } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("npcRefuseItem")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); t.insert("reason", toml_edit::Value::from(reason.clone())); toml_edit::Value::from(t) }
         ActionAst::SetNpcState { npc, state } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("setNpcState")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); t.insert("state", toml_edit::Value::from(state.clone())); toml_edit::Value::from(t) }
         ActionAst::DenyRead(reason) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("denyRead")); t.insert("reason", toml_edit::Value::from(reason.clone())); toml_edit::Value::from(t) }
         ActionAst::RestrictItem(item) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("restrictItem")); t.insert("item_id", toml_edit::Value::from(item.clone())); toml_edit::Value::from(t) }
+        ActionAst::SetContainerState { item, state } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("setContainerState")); t.insert("item_sym", toml_edit::Value::from(item.clone())); if let Some(s) = state { t.insert("state", toml_edit::Value::from(s.clone())); } toml_edit::Value::from(t) }
+        ActionAst::SpinnerMessage { spinner } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("spinnerMessage")); t.insert("spinner", toml_edit::Value::from(spinner.clone())); toml_edit::Value::from(t) }
     }
 }
 
@@ -498,6 +529,7 @@ fn event_condition_value(c: &ConditionAst) -> toml_edit::Value {
 fn leaf_condition_inline(c: &ConditionAst) -> InlineTable {
     let mut t = InlineTable::new();
     match c {
+        ConditionAst::Always => { /* not a leaf; shouldn't be emitted */ }
         ConditionAst::MissingFlag(flag) => { t.insert("type", toml_edit::Value::from("missingFlag")); t.insert("flag", toml_edit::Value::from(flag.clone())); }
         ConditionAst::HasFlag(flag) => { t.insert("type", toml_edit::Value::from("hasFlag")); t.insert("flag", toml_edit::Value::from(flag.clone())); }
         ConditionAst::HasItem(item) => { t.insert("type", toml_edit::Value::from("hasItem")); t.insert("item_id", toml_edit::Value::from(item.clone())); }
@@ -822,6 +854,102 @@ trigger "burn fallen tree" when act burn on item fallen_tree {
         assert!(matches!(ast.event, ConditionAst::ActOnItem { ref target, ref action } if target == "fallen_tree" && action == "burn"));
         assert!(ast.conditions.is_empty());
         assert!(matches!(ast.actions[0], ActionAst::Show(_)));
+    }
+
+    #[test]
+    fn parse_container_has_item_condition() {
+        let src = r#"
+trigger "container check" when open item toolbox {
+  if container toolbox has item wrench {
+    do show "A trusty wrench sits inside."
+  }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        // event
+        assert!(matches!(ast.event, ConditionAst::OpenItem(ref i) if i == "toolbox"));
+        // condition
+        match &ast.conditions[0] {
+            ConditionAst::ContainerHasItem { container, item } => {
+                assert_eq!(container, "toolbox");
+                assert_eq!(item, "wrench");
+            }
+            other => panic!("unexpected condition: {:?}", other),
+        }
+        // toml
+        let toml = compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("type = \"containerHasItem\""));
+        assert!(toml.contains("container_id = \"toolbox\""));
+        assert!(toml.contains("item_id = \"wrench\""));
+    }
+
+    #[test]
+    fn parse_when_always_with_ambient_and_chance() {
+        let src = r#"
+let set outside_house = (front-lawn, side-yard, back-yard)
+
+trigger "Ambient: test" when always {
+  if all(chance 50%, ambient ambientInterior in rooms outside_house,lobby) {
+    do spinner message ambientInterior
+  }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        assert!(matches!(ast.event, ConditionAst::Always));
+        // compile; ensure no event-type emitted, but ambient + chance present
+        let toml = compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("type = \"ambient\""));
+        assert!(toml.contains("type = \"chance\""));
+        assert!(!toml.contains("type = \"enter\""));
+        assert!(!toml.contains("type = \"leave\""));
+        assert!(toml.contains("type = \"spinnerMessage\""));
+        assert!(toml.contains("front-lawn"));
+        assert!(toml.contains("back-yard"));
+    }
+    #[test]
+    fn parse_and_compile_misc_actions() {
+        let src = r#"
+trigger "misc actions" when enter room lab {
+  if has flag ready {
+    do add wedge "Chime" width 1 spinner ambientInterior
+    do add seq flag quest limit 3
+    do add seq flag status:nauseated
+    do replace item dull_longsword with keen_longsword
+    do replace drop item schrodingers_sandwich with schrodingers_sandwich
+    do set barred message from hallway to armory "You can't go that way."
+    do give item printer_paper to player from npc receptionist
+    do npc refuse item emh "That's mine."
+    do set container state evidence_locker_open locked
+    do spinner message ambientInterior
+  }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::AddSpinnerWedge { spinner, width, text } if spinner == "ambientInterior" && *width == 1 && text == "Chime")));
+        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::ReplaceItem { old_sym, new_sym } if old_sym == "dull_longsword" && new_sym == "keen_longsword")));
+        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::ReplaceDropItem { old_sym, new_sym } if old_sym == "schrodingers_sandwich" && new_sym == "schrodingers_sandwich")));
+        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::SetBarredMessage { exit_from, exit_to, msg } if exit_from == "hallway" && exit_to == "armory" && msg.starts_with("You can't"))));
+        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::GiveItemToPlayer { npc, item } if npc == "receptionist" && item == "printer_paper")));
+        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::NpcRefuseItem { npc, reason } if npc == "emh" && reason.starts_with("That's"))));
+        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::SetContainerState { item, state } if item == "evidence_locker_open" && state.as_deref() == Some("locked"))));
+        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::SpinnerMessage { spinner } if spinner == "ambientInterior")));
+
+        let toml = compile_trigger_to_toml(&ast).expect("compile ok");
+        // spot check TOML output
+        assert!(toml.contains("type = \"addSpinnerWedge\""));
+        assert!(toml.contains("spinner = \"ambientInterior\""));
+        assert!(toml.contains("type = \"replaceItem\""));
+        assert!(toml.contains("type = \"replaceDropItem\""));
+        assert!(toml.contains("type = \"setBarredMessage\""));
+        assert!(toml.contains("type = \"giveItemToPlayer\""));
+        assert!(toml.contains("type = \"npcRefuseItem\""));
+        assert!(toml.contains("type = \"setContainerState\""));
+        assert!(toml.contains("type = \"spinnerMessage\""));
+        // seq flag assertions
+        assert!(toml.contains("type = \"addFlag\""));
+        assert!(toml.contains("type = \"sequence\""));
+        assert!(toml.contains("name = \"quest\""));
+        assert!(toml.contains("end = 3"));
     }
 
 }

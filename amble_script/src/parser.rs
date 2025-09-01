@@ -2,6 +2,7 @@ use pest::Parser;
 use pest_derive::Parser as PestParser;
 
 use crate::{ActionAst, ConditionAst, OnFalseAst, TriggerAst};
+use std::collections::HashMap;
 
 #[derive(PestParser)]
 #[grammar = "src/grammar.pest"]
@@ -14,6 +15,8 @@ pub enum AstError {
     Pest(String),
     #[error("unexpected grammar shape: {0}")]
     Shape(&'static str),
+    #[error("unexpected grammar shape: {msg} ({context})")]
+    ShapeAt { msg: &'static str, context: String },
 }
 
 /// Parse a single trigger source string; returns the first trigger found.
@@ -26,15 +29,40 @@ pub fn parse_trigger(source: &str) -> Result<TriggerAst, AstError> {
 pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
     let mut pairs = DslParser::parse(Rule::program, source).map_err(|e| AstError::Pest(e.to_string()))?;
     let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
+    let smap = SourceMap::new(source);
+    let mut sets: HashMap<String, Vec<String>> = HashMap::new();
+    let mut triggers = Vec::new();
+    for item in pair.clone().into_inner() {
+        match item.as_rule() {
+            Rule::set_decl => {
+                let mut it = item.into_inner();
+                let name = it.next().expect("set name").as_str().to_string();
+                let list_pair = it.next().expect("set list");
+                let mut vals = Vec::new();
+                for p in list_pair.into_inner() {
+                    if p.as_rule() == Rule::ident { vals.push(p.as_str().to_string()); }
+                }
+                sets.insert(name, vals);
+            }
+            Rule::trigger => {
+                triggers.push(item);
+            }
+            _ => {}
+        }
+    }
     let mut out = Vec::new();
-    for trig in pair.into_inner() {
-        if trig.as_rule() != Rule::trigger { continue; }
-        out.push(parse_trigger_pair(trig)?);
+    for trig in triggers {
+        out.push(parse_trigger_pair(trig, source, &smap, &sets)?);
     }
     Ok(out)
 }
 
-fn parse_trigger_pair(trig: pest::iterators::Pair<Rule>) -> Result<TriggerAst, AstError> {
+fn parse_trigger_pair(
+    trig: pest::iterators::Pair<Rule>,
+    source: &str,
+    smap: &SourceMap,
+    sets: &HashMap<String, Vec<String>>,
+) -> Result<TriggerAst, AstError> {
     let mut it = trig.into_inner();
 
     // trigger -> "trigger" ~ quoted ~ [only once]? ~ "when" ~ when_cond ~ block
@@ -57,6 +85,9 @@ fn parse_trigger_pair(trig: pest::iterators::Pair<Rule>) -> Result<TriggerAst, A
         when = when.into_inner().next().ok_or(AstError::Shape("empty when_cond"))?;
     }
     let event = match when.as_rule() {
+        Rule::always_event => {
+            ConditionAst::Always
+        }
         Rule::enter_room => {
             let mut i = when.into_inner();
             let ident = i.next().ok_or(AstError::Shape("enter room ident"))?.as_str().to_string();
@@ -148,17 +179,27 @@ fn parse_trigger_pair(trig: pest::iterators::Pair<Rule>) -> Result<TriggerAst, A
     // block can be either an if_block or a sequence of do_stmt without conditions
     let block_src = block.as_str();
     let inner = extract_body(block_src)?;
+    let base_offset = str_offset(source, inner);
     let leading = strip_leading_ws_and_comments(inner);
     if leading.starts_with("if ") {
         let if_pos = inner.find("if ").ok_or(AstError::Shape("missing 'if'"))?;
         let brace_pos = inner[if_pos..].find('{').ok_or(AstError::Shape("missing '{' after if"))? + if_pos;
         let cond_text = &inner[if_pos + 3..brace_pos];
-        conditions.push(parse_condition_text(cond_text.trim())?);
+        match parse_condition_text(cond_text.trim(), sets) {
+            Ok(c) => conditions.push(c),
+            Err(AstError::Shape(m)) => {
+                let cond_abs = base_offset + (cond_text.as_ptr() as usize - inner.as_ptr() as usize);
+                let (line, col) = smap.line_col(cond_abs);
+                let snippet = smap.line_snippet(line);
+                return Err(AstError::ShapeAt { msg: m, context: format!("line {line}, col {col}: {snippet}\n{}^", " ".repeat(col.saturating_sub(1))) });
+            }
+            Err(e) => return Err(e),
+        }
         let if_block_src = &inner[if_pos..];
         let body = extract_body(if_block_src)?;
-        actions = parse_actions_from_body(body)?;
+        actions = parse_actions_from_body(body, source, smap, sets)?;
     } else {
-        actions = parse_actions_from_body(inner)?;
+        actions = parse_actions_from_body(inner, source, smap, sets)?;
     }
 
     Ok(TriggerAst { name, event, conditions, actions, only_once })
@@ -192,20 +233,20 @@ fn extract_body(src: &str) -> Result<&str, AstError> {
     Ok(&src[s..e])
 }
 
-fn parse_condition_text(text: &str) -> Result<ConditionAst, AstError> {
+fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Result<ConditionAst, AstError> {
     let t = text.trim();
     if let Some(inner) = t.strip_prefix("all(") {
         let inner = inner.strip_suffix(')').ok_or(AstError::Shape("all() close"))?;
         let parts = split_top_level_commas(inner);
         let mut kids = Vec::new();
-        for p in parts { kids.push(parse_condition_text(p)?); }
+        for p in parts { kids.push(parse_condition_text(p, sets)?); }
         return Ok(ConditionAst::All(kids));
     }
     if let Some(inner) = t.strip_prefix("any(") {
         let inner = inner.strip_suffix(')').ok_or(AstError::Shape("any() close"))?;
         let parts = split_top_level_commas(inner);
         let mut kids = Vec::new();
-        for p in parts { kids.push(parse_condition_text(p)?); }
+        for p in parts { kids.push(parse_condition_text(p, sets)?); }
         return Ok(ConditionAst::Any(kids));
     }
     if let Some(rest) = t.strip_prefix("has flag ") {
@@ -250,6 +291,15 @@ fn parse_condition_text(text: &str) -> Result<ConditionAst, AstError> {
         }
         return Err(AstError::Shape("npc in state syntax"));
     }
+    // Preferred: container <container> has item <item>
+    if let Some(rest) = t.strip_prefix("container ") {
+        let rest = rest.trim();
+        if let Some(idx) = rest.find(" has item ") {
+            let container = &rest[..idx];
+            let item = &rest[idx + " has item ".len()..];
+            return Ok(ConditionAst::ContainerHasItem { container: container.trim().to_string(), item: item.trim().to_string() });
+        }
+    }
     if let Some(rest) = t.strip_prefix("container has item ") {
         let rest = rest.trim();
         if let Some(space) = rest.find(' ') {
@@ -264,7 +314,10 @@ fn parse_condition_text(text: &str) -> Result<ConditionAst, AstError> {
         if let Some(idx) = rest.find(" in rooms ") {
             let spinner = rest[..idx].trim().to_string();
             let list = rest[idx+10..].trim();
-            let rooms: Vec<String> = list.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+            let mut rooms: Vec<String> = Vec::new();
+            for tok in list.split(',').map(|s| s.trim()).filter(|s| !s.is_empty()) {
+                if let Some(v) = sets.get(tok) { rooms.extend(v.clone()); } else { rooms.push(tok.to_string()); }
+            }
             return Ok(ConditionAst::Ambient { spinner, rooms: Some(rooms) });
         } else {
             return Ok(ConditionAst::Ambient { spinner: rest.to_string(), rooms: None });
@@ -292,8 +345,24 @@ fn split_top_level_commas(s: &str) -> Vec<&str> {
             '(' => depth += 1,
             ')' => depth -= 1,
             ',' if depth == 0 => {
-                out.push(s[start..i].trim());
-                start = i + 1;
+                // Only split at commas that separate conditions, not those inside
+                // lists like "ambient ... in rooms a,b,c".
+                let mut j = i + 1;
+                while j < bytes.len() && (bytes[j] as char).is_whitespace() { j += 1; }
+                // capture next word
+                let mut k = j;
+                while k < bytes.len() {
+                    let ch = bytes[k] as char;
+                    if ch.is_alphanumeric() || ch == '-' || ch == '_' { k += 1; } else { break; }
+                }
+                let next_word = if j < k { s[j..k].to_ascii_lowercase() } else { String::new() };
+                let is_sep = next_word.is_empty() || matches!(next_word.as_str(),
+                    "has" | "missing" | "player" | "container" | "ambient" | "npc" | "with" | "chance" | "all" | "any"
+                );
+                if is_sep {
+                    out.push(s[start..i].trim());
+                    start = i + 1;
+                }
             }
             _ => {}
         }
@@ -309,8 +378,34 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
     if let Some(rest) = t.strip_prefix("do show ") {
         return Ok(ActionAst::Show(super::parser::unquote(rest.trim())));
     }
+    if let Some(rest) = t.strip_prefix("do add wedge ") {
+        // do add wedge "text" width <n> spinner <ident>
+        let r = rest.trim();
+        if !r.starts_with('"') { return Err(AstError::Shape("add wedge missing opening quote")); }
+        let mut i = 1usize; let bytes = r.as_bytes();
+        while i < r.len() && (bytes[i] as char) != '"' { i += 1; }
+        if i >= r.len() { return Err(AstError::Shape("add wedge missing closing quote")); }
+        let text = r[1..i].to_string();
+        let after = r[i+1..].trim_start();
+        let after = after.strip_prefix("width ").ok_or(AstError::Shape("add wedge missing 'width'"))?;
+        let mut j = 0usize; while j < after.len() && after.as_bytes()[j].is_ascii_digit() { j += 1; }
+        if j == 0 { return Err(AstError::Shape("add wedge missing width number")); }
+        let width: usize = after[..j].parse().map_err(|_| AstError::Shape("invalid wedge width"))?;
+        let after2 = after[j..].trim_start();
+        let spinner = after2.strip_prefix("spinner ").ok_or(AstError::Shape("add wedge missing 'spinner'"))?.trim().to_string();
+        return Ok(ActionAst::AddSpinnerWedge { spinner, width, text });
+    }
     if let Some(rest) = t.strip_prefix("do add flag ") {
         return Ok(ActionAst::AddFlag(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("do add seq flag ") {
+        // Syntax: do add seq flag <name> [limit <n>]
+        let rest = rest.trim();
+        if let Some((name, tail)) = rest.split_once(" limit ") {
+            let end: u8 = tail.trim().parse().map_err(|_| AstError::Shape("invalid seq flag limit"))?;
+            return Ok(ActionAst::AddSeqFlag { name: name.trim().to_string(), end: Some(end) });
+        }
+        return Ok(ActionAst::AddSeqFlag { name: rest.to_string(), end: None });
     }
     if let Some(rest) = t.strip_prefix("do remove flag ") {
         return Ok(ActionAst::RemoveFlag(rest.trim().to_string()));
@@ -320,6 +415,20 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
     }
     if let Some(rest) = t.strip_prefix("do advance flag ") {
         return Ok(ActionAst::AdvanceFlag(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("do replace item ") {
+        let rest = rest.trim();
+        if let Some((old_sym, new_sym)) = rest.split_once(" with ") {
+            return Ok(ActionAst::ReplaceItem { old_sym: old_sym.trim().to_string(), new_sym: new_sym.trim().to_string() });
+        }
+        return Err(AstError::Shape("replace item syntax"));
+    }
+    if let Some(rest) = t.strip_prefix("do replace drop item ") {
+        let rest = rest.trim();
+        if let Some((old_sym, new_sym)) = rest.split_once(" with ") {
+            return Ok(ActionAst::ReplaceDropItem { old_sym: old_sym.trim().to_string(), new_sym: new_sym.trim().to_string() });
+        }
+        return Err(AstError::Shape("replace drop item syntax"));
     }
     if let Some(rest) = t.strip_prefix("do spawn item ") {
         // format: <item> into room <room>
@@ -344,6 +453,19 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
     if let Some(rest) = t.strip_prefix("do unlock item ") {
         return Ok(ActionAst::UnlockItemAction(rest.trim().to_string()));
     }
+    if let Some(rest) = t.strip_prefix("do set barred message from ") {
+        // do set barred message from <exit_from> to <exit_to> "msg"
+        let rest = rest.trim();
+        if let Some((from, tail)) = rest.split_once(" to ") {
+            let tail = tail.trim();
+            let mut parts = tail.splitn(2, ' ');
+            let exit_to = parts.next().ok_or(AstError::Shape("barred message missing exit_to"))?.to_string();
+            let msg = parts.next().ok_or(AstError::Shape("barred message missing message"))?.trim();
+            let msg = super::parser::unquote(msg);
+            return Ok(ActionAst::SetBarredMessage { exit_from: from.trim().to_string(), exit_to, msg });
+        }
+        return Err(AstError::Shape("set barred message syntax"));
+    }
     if let Some(rest) = t.strip_prefix("do lock exit from ") {
         if let Some((from, tail)) = rest.split_once(" direction ") {
             return Ok(ActionAst::LockExit { from_room: from.trim().to_string(), direction: tail.trim().to_string() });
@@ -353,6 +475,14 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         if let Some((from, tail)) = rest.split_once(" direction ") {
             return Ok(ActionAst::UnlockExit { from_room: from.trim().to_string(), direction: tail.trim().to_string() });
         }
+    }
+    if let Some(rest) = t.strip_prefix("do give item ") {
+        // do give item <item> to player from npc <npc>
+        let rest = rest.trim();
+        if let Some((item, tail)) = rest.split_once(" to player from npc ") {
+            return Ok(ActionAst::GiveItemToPlayer { item: item.trim().to_string(), npc: tail.trim().to_string() });
+        }
+        return Err(AstError::Shape("give item to player syntax"));
     }
     if let Some(rest) = t.strip_prefix("do reveal exit from ") {
         // format: <from> to <to> direction <dir>
@@ -395,6 +525,14 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
     if let Some(rest) = t.strip_prefix("do npc says random ") {
         return Ok(ActionAst::NpcSaysRandom { npc: rest.trim().to_string() });
     }
+    if let Some(rest) = t.strip_prefix("do npc refuse item ") {
+        let rest = rest.trim();
+        let mut parts = rest.splitn(2, ' ');
+        let npc = parts.next().ok_or(AstError::Shape("npc refuse item missing npc"))?.to_string();
+        let reason = parts.next().ok_or(AstError::Shape("npc refuse item missing reason"))?.trim();
+        let reason = super::parser::unquote(reason);
+        return Ok(ActionAst::NpcRefuseItem { npc, reason });
+    }
     if let Some(rest) = t.strip_prefix("do set npc state ") {
         // format: <npc> <state>
         let rest = rest.trim();
@@ -412,35 +550,18 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
     if let Some(rest) = t.strip_prefix("do restrict item ") {
         return Ok(ActionAst::RestrictItem(rest.trim().to_string()));
     }
-    if let Some(rest) = t.strip_prefix("do schedule in ") {
-        // maybe without condition; check for 'if'
-        let rest = rest.trim();
-        let mut idx = 0usize; while idx < rest.len() && rest.as_bytes()[idx].is_ascii_digit() { idx += 1; }
-        if idx == 0 { return Err(AstError::Shape("schedule missing number")); }
-        let num: usize = rest[..idx].parse().map_err(|_| AstError::Shape("invalid schedule number"))?;
-        let rest2 = rest[idx..].trim_start();
-        if let Some(r) = rest2.strip_prefix("if ") { /* handled by parse_schedule_action */ }
-        else if let Some(brace) = rest2.find('{') {
-            let body = &rest2[brace..];
-            if let Ok((ActionAst::ScheduleInIf { actions, note, .. }, used)) = parse_schedule_action(&format!("do schedule in {} if chance 100% {}", num, body)) {
-                return Ok(ActionAst::ScheduleIn { turns_ahead: num, actions, note });
-            }
-        }
+    if let Some(rest) = t.strip_prefix("do set container state ") {
+        // do set container state <item> <state|none>
+        let mut parts = rest.trim().split_whitespace();
+        let item = parts.next().ok_or(AstError::Shape("set container state missing item"))?.to_string();
+        let state_tok = parts.next().ok_or(AstError::Shape("set container state missing state"))?;
+        let state = match state_tok { "none" => None, s => Some(s.to_string()) };
+        return Ok(ActionAst::SetContainerState { item, state });
     }
-    if let Some(rest) = t.strip_prefix("do schedule on ") {
-        let rest = rest.trim();
-        let mut idx = 0usize; while idx < rest.len() && rest.as_bytes()[idx].is_ascii_digit() { idx += 1; }
-        if idx == 0 { return Err(AstError::Shape("schedule missing number")); }
-        let num: usize = rest[..idx].parse().map_err(|_| AstError::Shape("invalid schedule number"))?;
-        let rest2 = rest[idx..].trim_start();
-        if let Some(r) = rest2.strip_prefix("if ") { /* handled later */ }
-        else if let Some(brace) = rest2.find('{') {
-            let body = &rest2[brace..];
-            if let Ok((ActionAst::ScheduleOnIf { actions, note, .. }, used)) = parse_schedule_action(&format!("do schedule on {} if chance 100% {}", num, body)) {
-                return Ok(ActionAst::ScheduleOn { on_turn: num, actions, note });
-            }
-        }
+    if let Some(rest) = t.strip_prefix("do spinner message ") {
+        return Ok(ActionAst::SpinnerMessage { spinner: rest.trim().to_string() });
     }
+    // schedule actions are parsed at the block level in parse_actions_from_body
     if let Some(rest) = t.strip_prefix("do despawn item ") {
         return Ok(ActionAst::DespawnItem(rest.trim().to_string()));
     }
@@ -452,7 +573,7 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
 }
 
 
-fn parse_actions_from_body(body: &str) -> Result<Vec<ActionAst>, AstError> {
+fn parse_actions_from_body(body: &str, source: &str, smap: &SourceMap, sets: &HashMap<String, Vec<String>>) -> Result<Vec<ActionAst>, AstError> {
     let mut out = Vec::new();
     let bytes = body.as_bytes();
     let mut i = 0usize;
@@ -461,7 +582,7 @@ fn parse_actions_from_body(body: &str) -> Result<Vec<ActionAst>, AstError> {
         if i >= bytes.len() { break; }
         if bytes[i] as char == '#' { while i < bytes.len() && (bytes[i] as char) != '\n' { i += 1; } continue; }
         if body[i..].starts_with("do schedule in ") || body[i..].starts_with("do schedule on ") {
-            let (act, used) = parse_schedule_action(&body[i..])?;
+            let (act, used) = parse_schedule_action(&body[i..], source, smap, sets)?;
             out.push(act);
             i += used;
             continue;
@@ -469,7 +590,17 @@ fn parse_actions_from_body(body: &str) -> Result<Vec<ActionAst>, AstError> {
         if body[i..].starts_with("do ") {
             let mut j = i; while j < bytes.len() && (bytes[j] as char) != '\n' { j += 1; }
             let line = body[i..j].trim_end();
-            out.push(parse_action_from_str(line)?);
+            match parse_action_from_str(line) {
+                Ok(a) => out.push(a),
+                Err(AstError::Shape(m)) => {
+                    let base = str_offset(source, body);
+                    let abs = base + i;
+                    let (line_no, col) = smap.line_col(abs);
+                    let snippet = smap.line_snippet(line_no);
+                    return Err(AstError::ShapeAt { msg: m, context: format!("line {line_no}, col {col}: {snippet}\n{}^", " ".repeat(col.saturating_sub(1))) });
+                }
+                Err(e) => return Err(e),
+            }
             i = j; continue;
         }
         while i < bytes.len() && (bytes[i] as char) != '\n' { i += 1; }
@@ -477,7 +608,7 @@ fn parse_actions_from_body(body: &str) -> Result<Vec<ActionAst>, AstError> {
     Ok(out)
 }
 
-fn parse_schedule_action(text: &str) -> Result<(ActionAst, usize), AstError> {
+fn parse_schedule_action(text: &str, source: &str, smap: &SourceMap, sets: &HashMap<String, Vec<String>>) -> Result<(ActionAst, usize), AstError> {
     let s = text.trim_start();
     let (rest, is_in) = if let Some(r) = s.strip_prefix("do schedule in ") { (r, true) } else if let Some(r) = s.strip_prefix("do schedule on ") { (r, false) } else { return Err(AstError::Shape("not a schedule action")); };
     let mut idx = 0usize; while idx < rest.len() && rest.as_bytes()[idx].is_ascii_digit() { idx += 1; }
@@ -510,10 +641,10 @@ fn parse_schedule_action(text: &str) -> Result<(ActionAst, usize), AstError> {
         let after = &extras[idx+5..].trim_start();
         if let Some(r) = after.strip_prefix('"') { if let Some(endq) = r.find('"') { note = Some(r[..endq].to_string()); } }
     }
-    let condition = parse_condition_text(cond_str)?;
+    let condition = parse_condition_text(cond_str, sets)?;
     let mut p = brace_pos + 1; let bytes2 = rest.as_bytes(); let mut depth = 1i32; while p < rest.len() { let c = bytes2[p] as char; if c == '{' { depth += 1; } else if c == '}' { depth -= 1; if depth == 0 { break; } } p += 1; } if depth != 0 { return Err(AstError::Shape("schedule block not closed")); }
     let inner_body = &rest[brace_pos+1..p];
-    let actions = parse_actions_from_body(inner_body)?;
+    let actions = parse_actions_from_body(inner_body, source, smap, sets)?;
     let consumed = s.len() - rest[p+1..].len();
     Ok(( if is_in { ActionAst::ScheduleInIf { turns_ahead: num, condition: Box::new(condition), on_false, actions, note } } else { ActionAst::ScheduleOnIf { on_turn: num, condition: Box::new(condition), on_false, actions, note } }, consumed))
 }
@@ -532,4 +663,38 @@ fn strip_leading_ws_and_comments(s: &str) -> &str {
         break;
     }
     &s[i..]
+}
+
+// ---------- Error mapping helpers ----------
+struct SourceMap {
+    line_starts: Vec<usize>,
+    src: String,
+}
+impl SourceMap {
+    fn new(source: &str) -> Self {
+        let mut starts = vec![0usize];
+        for (i, ch) in source.char_indices() {
+            if ch == '\n' { starts.push(i + 1); }
+        }
+        Self { line_starts: starts, src: source.to_string() }
+    }
+    fn line_col(&self, offset: usize) -> (usize, usize) {
+        let idx = match self.line_starts.binary_search(&offset) {
+            Ok(i) => i,
+            Err(i) => i.saturating_sub(1),
+        };
+        let line_start = *self.line_starts.get(idx).unwrap_or(&0);
+        let line_no = idx + 1;
+        let col = offset.saturating_sub(line_start) + 1;
+        (line_no, col)
+    }
+    fn line_snippet(&self, line_no: usize) -> String {
+        let start = *self.line_starts.get(line_no - 1).unwrap_or(&0);
+        let end = *self.line_starts.get(line_no).unwrap_or(&self.src.len());
+        self.src[start..end].trim_end_matches(['\r','\n']).to_string()
+    }
+}
+
+fn str_offset(full: &str, slice: &str) -> usize {
+    (slice.as_ptr() as usize) - (full.as_ptr() as usize)
 }
