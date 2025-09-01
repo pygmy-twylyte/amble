@@ -1,0 +1,20 @@
+[package]
+name = "amble_script"
+version = "0.1.0"
+edition = "2021"
+description = "Minimal DSL compiler for Amble triggers"
+
+[lib]
+name = "amble_script"
+path = "src/lib.rs"
+
+[[bin]]
+name = "amble_script"
+path = "src/main.rs"
+
+[dependencies]
+pest = "2"
+pest_derive = "2"
+thiserror = "1"
+toml_edit = "0.21"
+

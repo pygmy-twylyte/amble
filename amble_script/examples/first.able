@@ -1,0 +1,21 @@
+trigger "first visit high-ridge" when enter room high-ridge {
+  if missing flag visited:high-ridge {
+    do show "You take in the view."
+    do add flag visited:high-ridge
+    do award points 1
+  }
+}
+
+# Added example with grouping (all(...))
+trigger "extra: all-group sample" when enter room high-ridge {
+  if all(has flag visited:high-ridge, missing flag cake-spawned) {
+    do show "You recall there was something odd about a pantry..."
+  }
+}
+
+# Example chance trigger
+trigger "example chance" when enter room forest {
+  if chance 30% {
+    do show "A branch nearly falls on your head."
+  }
+}

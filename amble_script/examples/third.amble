@@ -1,0 +1,15 @@
+# Third DSL example with newer events and grouping
+
+trigger "extinguish printer" when use item foamsafe-x17 on item lab_printer interaction extinguish {
+  if has flag burned-invitation {
+    do show "Foam coats the printer, smothering lingering embers."
+  }
+}
+
+trigger "burn fallen tree" when act burn on item fallen_tree {
+  if any(has flag has-lighter, has flag flamethrower-fueled) {
+    do show "The tree crackles and burns."
+    do add flag tree-burned
+  }
+}
+
