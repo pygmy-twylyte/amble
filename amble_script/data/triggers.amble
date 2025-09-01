@@ -1,5 +1,10 @@
-# Reverse translation of the original triggers.toml in the engine
-# to the amble DSL
+# Reverse translation of the original triggers.toml in the test AmbleWorld to the amble DSL.
+# NPC and item symbols are in snake_case
+# Room symbols and flag names are in kebab-case.
+# Item abilities are in camelCase.
+
+# ------------------------------------------------------------------------------------------------------------------EXTERIOR TRIGGERS BEGIN
+# ..................................................................................................................GUARD-POST
 
 trigger "Guard-Post: Traveling Without Towel" only once when enter room guard-post {
     if missing item towel {
@@ -7,7 +12,71 @@ trigger "Guard-Post: Traveling Without Towel" only once when enter room guard-po
     }
 }
 
+# ..................................................................................................................LOADING-DOCK
+
 trigger "Loading-Dock: Spawn Special Delivery" only once when leave room loading-dock {
     do spawn item delivery_box into room loading-dock
-    do show "ou hear a thud behind you, back toward the dock, like something was just dropped off. You glimpse a drone flying away quickly, as if hoping not to be seen. Was that an Initech logo on the side?"
+    do show "You hear a thud behind you, back toward the dock, like something was just dropped off. You glimpse a drone flying away quickly, as if hoping not to be seen. Was that an Initech logo on the side?"
+}
+
+# ------------------------------------------------------------------------------------------------------------------MAIN FLOOR INTERIOR TRIGGERS
+# ..................................................................................................................B-A-OFFICE
+
+trigger "Office: Open Poetry Performer" when open item poetry_performer {
+    do show "The machine clicks on and hums. A flashing red light warns:\n            ⚠️ NOT FOR USE WITH VOGON POETRY ⚠️"
+}
+
+# ..................................................................................................................LOUNGE
+
+trigger "Lounge: Rug Taken / Reveal Trapdoor" only once when take item lebowski_rug {
+    do reveal exit from lounge to portal-room direction down
+    do add flag found-portal-room
+    do award points 3
+    do show "Light shines around the edges of a trap door revealed in the floor when you remove the rug. The room no longer seems tied together."
+}
+
+trigger "Lounge: Rug Burned Away" only once when act burn on item lebowski_rug {
+    do despawn item lebowski_rug
+    do reveal exit from lounge to portal-room direction down
+    do add flag found-portal-room
+    do award points 3
+    do show "When the acrid smoke clears and your eyes stop burning, you can make out a trap door revealed in the floor where the rug used to be."
+}
+
+# ..................................................................................................................PORTAL-ROOM
+
+trigger "Portal-Room: Gun Powered" when insert item charged_battery into item portal_gun {
+    do add flag portal-gun-powered
+    do award points 3
+    do restrict item charged_battery
+    do set item description portal_gun "A black and white Portal gun sits on its pedestal, aimed at a target on the wall. A fused battery juts from the compartment and the power indicator glows steadily green."
+    do show "Arcing wildly as you insert it, the fully charged 20 KV battery fuses itself to the contacts inside the portal gun -- when then emits a quick high-pitched whine. The POWER indicator lights a steady green."
+}
+
+trigger "Portal-Room: Gun Fired / Open Portal" only once when use item portal_gun ability turnOn {
+    if has flag portal-gun-powered {
+        do reveal exit from portal-room to aperture-lab direction portal
+        do add flag portal-opened
+        do award points 5
+        do show "A loud SQUIP! comes from the gun when you turn it on. The wall in front of it sizzles for a moment, and then a crackling oval blue portal expands on the wall to reveal a laboratory space on the other side."
+    }
+}
+
+trigger "Portal-Room: Tried Gun Without Power" when use item portal_gun ability turnOn {
+    if missing flag portal-gun-powered {
+        do show "You attempt to turn the portal gun on, but the POWER light briefly flashes red, then goes dark. Nothing else happens."
+    }
+}
+
+# ..................................................................................................................APERTURE-LAB
+
+trigger "Aperture-Lab: Printer Burns Paper" when use item lab_printer ability turnOn {
+    if container lab_printer has item printer_paper {
+        do despawn item printer_paper
+        do add flag burned-invitation
+        do spawn item burnt_invitation into room aperture-lab
+        do add wedge "An annoyed voice on the PA: ATTENTION Staff - do NOT use regular copy paper in the lab PlasmaJet printer, or we will be shut down again -- by order of FEMA, PETA, the ATF, FBI, and our HOA." width 1 spinner ambientInterior
+        do show "The paper ignites in a flash, and the PlasmaJet spits the flaming fragments of a document on the floor at your feet."
+        do show "A nearby smoke detector alarms briefly, the quits with an exasperated sigh when it sees you near the printer, surrounded by smoldering confetti."
+    }
 }
