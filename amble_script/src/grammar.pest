@@ -6,42 +6,42 @@
 // - do add flag <ident>
 // - do award points <number>
 
-COMMENT = _{ "#" ~ ( !NEWLINE ~ ANY )* }
+COMMENT    = _{ "#" ~ (!NEWLINE ~ ANY)* }
 WHITESPACE = _{ " " | "\t" | NEWLINE | COMMENT }
-NEWLINE = _{ "\n" | "\r\n" }
+NEWLINE    = _{ "\n" | "\r\n" }
 
-ident = @{ (ASCII_ALPHANUMERIC | "-" | ":" | "_" )+ }
+ident = @{ (ASCII_ALPHANUMERIC | "-" | ":" | "_")+ }
 
 number = @{ ASCII_DIGIT+ }
 
-quoted = @{ "\"" ~ ( (!"\"" ~ ANY) )* ~ "\"" }
+quoted = @{ "\"" ~ ((!"\"" ~ ANY))* ~ "\"" }
 
 program = { SOI ~ trigger+ ~ EOI }
 
 only_once_kw = { "only" ~ "once" }
-trigger = { "trigger" ~ quoted ~ only_once_kw? ~ "when" ~ when_cond ~ block }
+trigger      = { "trigger" ~ quoted ~ only_once_kw? ~ "when" ~ when_cond ~ block }
 
 // Event ("when") conditions supported in this iteration
-when_cond = { enter_room | leave_room | look_at_item | open_item | use_item_on_item | use_item | give_to_npc | take_from_npc | insert_item_into | take_item | drop_item | unlock_item | talk_to_npc | act_on_item }
-enter_room = { "enter" ~ "room" ~ ident }
-take_item = { "take" ~ "item" ~ ident }
-talk_to_npc = { "talk" ~ "to" ~ "npc" ~ ident }
-open_item = { "open" ~ "item" ~ ident }
-leave_room = { "leave" ~ "room" ~ ident }
-look_at_item = { "look" ~ "at" ~ "item" ~ ident }
-use_item = { "use" ~ "item" ~ ident ~ "ability" ~ ident }
-give_to_npc = { "give" ~ "item" ~ ident ~ "to" ~ "npc" ~ ident }
+when_cond        = { enter_room | leave_room | look_at_item | open_item | use_item_on_item | use_item | give_to_npc | take_from_npc | insert_item_into | take_item | drop_item | unlock_item | talk_to_npc | act_on_item }
+enter_room       = { "enter" ~ "room" ~ ident }
+take_item        = { "take" ~ "item" ~ ident }
+talk_to_npc      = { "talk" ~ "to" ~ "npc" ~ ident }
+open_item        = { "open" ~ "item" ~ ident }
+leave_room       = { "leave" ~ "room" ~ ident }
+look_at_item     = { "look" ~ "at" ~ "item" ~ ident }
+use_item         = { "use" ~ "item" ~ ident ~ "ability" ~ ident }
+give_to_npc      = { "give" ~ "item" ~ ident ~ "to" ~ "npc" ~ ident }
 use_item_on_item = { "use" ~ "item" ~ ident ~ "on" ~ "item" ~ ident ~ "interaction" ~ ident }
-act_on_item = { "act" ~ ident ~ "on" ~ "item" ~ ident }
-take_from_npc = { "take" ~ "item" ~ ident ~ "from" ~ "npc" ~ ident }
+act_on_item      = { "act" ~ ident ~ "on" ~ "item" ~ ident }
+take_from_npc    = { "take" ~ "item" ~ ident ~ "from" ~ "npc" ~ ident }
 insert_item_into = { "insert" ~ "item" ~ ident ~ "into" ~ "item" ~ ident }
-drop_item = { "drop" ~ "item" ~ ident }
-unlock_item = { "unlock" ~ "item" ~ ident }
+drop_item        = { "drop" ~ "item" ~ ident }
+unlock_item      = { "unlock" ~ "item" ~ ident }
 
 block = { "{" ~ stmt_block ~ "}" }
 
 stmt_block = { if_block | do_block }
-do_block = { (do_stmt)+ }
+do_block   = { (do_stmt)+ }
 
 if_block = { "if" ~ cond ~ block_inner }
 
@@ -50,41 +50,42 @@ block_inner = { "{" ~ (do_stmt)+ ~ "}" }
 do_stmt = { "do" ~ do_action }
 
 do_action = {
-      ( "show" ~ quoted )
-    | ( "add" ~ "flag" ~ ident )
-    | ( "reset" ~ "flag" ~ ident )
-    | ( "advance" ~ "flag" ~ ident )
-    | ( "remove" ~ "flag" ~ ident )
-    | ( "spawn" ~ "item" ~ ident ~ "into" ~ "room" ~ ident )
-    | ( "spawn" ~ "item" ~ ident ~ "into" ~ "container" ~ ident )
-    | ( "spawn" ~ "item" ~ ident ~ "in" ~ "inventory" )
-    | ( "spawn" ~ "item" ~ ident ~ "in" ~ "current" ~ "room" )
-    | ( "despawn" ~ "item" ~ ident )
-    | ( "award" ~ "points" ~ number )
-    | ( "schedule" ~ (!"{" ~ ANY)* ~ "{" ~ (!"}" ~ ANY)* ~ "}" )
-    | ( "lock" ~ "item" ~ ident )
-    | ( "unlock" ~ "item" ~ ident )
-    | ( "lock" ~ "exit" ~ "from" ~ ident ~ "direction" ~ ident )
-    | ( "unlock" ~ "exit" ~ "from" ~ ident ~ "direction" ~ ident )
-    | ( "reveal" ~ "exit" ~ "from" ~ ident ~ "to" ~ ident ~ "direction" ~ ident )
-    | ( "push" ~ "player" ~ "to" ~ ident )
-    | ( "set" ~ "item" ~ "description" ~ ident ~ quoted )
-    | ( "npc" ~ "says" ~ ident ~ quoted )
-    | ( "npc" ~ "says" ~ "random" ~ ident )
-    | ( "set" ~ "npc" ~ "state" ~ ident ~ ident )
-    | ( "deny" ~ "read" ~ quoted )
-    | ( "restrict" ~ "item" ~ ident )
+    ("show" ~ quoted)
+  | ("add" ~ "flag" ~ ident)
+  | ("reset" ~ "flag" ~ ident)
+  | ("advance" ~ "flag" ~ ident)
+  | ("remove" ~ "flag" ~ ident)
+  | ("spawn" ~ "item" ~ ident ~ "into" ~ "room" ~ ident)
+  | ("spawn" ~ "item" ~ ident ~ "into" ~ "container" ~ ident)
+  | ("spawn" ~ "item" ~ ident ~ "in" ~ "inventory")
+  | ("spawn" ~ "item" ~ ident ~ "in" ~ "current" ~ "room")
+  | ("despawn" ~ "item" ~ ident)
+  | ("award" ~ "points" ~ number)
+  | ("schedule" ~ (!"{" ~ ANY)* ~ "{" ~ (!"}" ~ ANY)* ~ "}")
+  | ("lock" ~ "item" ~ ident)
+  | ("unlock" ~ "item" ~ ident)
+  | ("lock" ~ "exit" ~ "from" ~ ident ~ "direction" ~ ident)
+  | ("unlock" ~ "exit" ~ "from" ~ ident ~ "direction" ~ ident)
+  | ("reveal" ~ "exit" ~ "from" ~ ident ~ "to" ~ ident ~ "direction" ~ ident)
+  | ("push" ~ "player" ~ "to" ~ ident)
+  | ("set" ~ "item" ~ "description" ~ ident ~ quoted)
+  | ("npc" ~ "says" ~ ident ~ quoted)
+  | ("npc" ~ "says" ~ "random" ~ ident)
+  | ("set" ~ "npc" ~ "state" ~ ident ~ ident)
+  | ("deny" ~ "read" ~ quoted)
+  | ("restrict" ~ "item" ~ ident)
 }
 
 // Conditions
-cond = { any_group | all_group | has_flag | missing_flag | has_item | player_in_room | chance_cond }
+cond = { any_group | all_group | has_flag | missing_flag | has_item | missing_item | player_in_room | chance_cond }
 
-has_flag = { "has" ~ "flag" ~ ident }
-missing_flag = { "missing" ~ "flag" ~ ident }
-has_item = { "has" ~ "item" ~ ident }
+has_flag       = { "has" ~ "flag" ~ ident }
+missing_flag   = { "missing" ~ "flag" ~ ident }
+has_item       = { "has" ~ "item" ~ ident }
+missing_item   = { "missing" ~ "item" ~ ident }
 player_in_room = { "player" ~ "in" ~ "room" ~ ident }
-chance_cond = { "chance" ~ number ~ "%" }
+chance_cond    = { "chance" ~ number ~ "%" }
 
 all_group = { "all" ~ "(" ~ cond_list ~ ")" }
 any_group = { "any" ~ "(" ~ cond_list ~ ")" }
-cond_list = { cond ~ ( "," ~ cond )* }
+cond_list = { cond ~ ("," ~ cond)* }
