@@ -1,3 +1,4 @@
+# in triggers.amble
 [[triggers]]
 name = "Guard-Post: Traveling Without Towel"
 only_once = true
@@ -9,6 +10,7 @@ actions = [
     { type = "showMessage", text = """You pause here, realizing with increasing concern that you are traveling in a strange land without a towel.""" },
 ]
 
+# in triggers.amble
 [[triggers]]
 name = "Loading-Dock: Spawn Special Delivery"
 only_once = true
@@ -18,6 +20,7 @@ actions = [
     { type = "showMessage", text = """You hear a thud behind you, back toward the dock, like something was just dropped off. You glimpse a drone flying away quickly, as if hoping not to be seen. Was that an Initech logo on the side?""" },
 ]
 
+# in triggers.amble
 [[triggers]]
 name = "Office: Open-Poetry-Performer"
 only_once = false
@@ -28,6 +31,7 @@ actions = [
 
 # START LOUNGE, PORTAL GUN TRIGGERS
 # remove rug to reveal hidden exit to portal room
+# in triggers.amble
 [[triggers]]
 name = "Lounge: Rug Taken"
 only_once = true
@@ -1275,3 +1279,4 @@ actions = [
         ] },
     ] },
 ]
+
