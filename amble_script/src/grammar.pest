@@ -39,7 +39,8 @@ unlock_item = { "unlock" ~ "item" ~ ident }
 
 block = { "{" ~ stmt_block ~ "}" }
 
-stmt_block = { if_block }
+stmt_block = { if_block | do_block }
+do_block = { (do_stmt)+ }
 
 if_block = { "if" ~ cond ~ block_inner }
 

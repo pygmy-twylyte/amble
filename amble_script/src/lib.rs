@@ -726,4 +726,19 @@ trigger "schedule demo" when enter room lab {
         assert!(toml.contains("type = \"awardPoints\""));
     }
 
+
+    #[test]
+    fn parse_without_if_block() {
+        let src = r#"
+trigger "burn fallen tree" when act burn on item fallen_tree {
+  do show "The tree crackles and burns."
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        assert_eq!(ast.name, "burn fallen tree");
+        assert!(matches!(ast.event, ConditionAst::ActOnItem { ref target, ref action } if target == "fallen_tree" && action == "burn"));
+        assert!(ast.conditions.is_empty());
+        assert!(matches!(ast.actions[0], ActionAst::Show(_)));
+    }
+
 }

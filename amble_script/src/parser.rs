@@ -138,35 +138,21 @@ fn parse_trigger_pair(trig: pest::iterators::Pair<Rule>) -> Result<TriggerAst, A
     let mut conditions = Vec::new();
     let mut actions = Vec::new();
 
-    // block -> if_block
-    let mut block_inner_pairs = block.into_inner();
-    let if_block = block_inner_pairs.next().ok_or(AstError::Shape("expected if_block"))?;
-
-    let if_src = if_block.as_str();
-    let if_pos = if_src.find("if ").ok_or(AstError::Shape("missing 'if'"))?;
-    let brace_pos = if_src.find('{').ok_or(AstError::Shape("missing '{' after if"))?;
-    let cond_text = &if_src[if_pos + 3..brace_pos];
-    conditions.push(parse_condition_text(cond_text)?);
-
-    let body = {
-        let bytes = if_src.as_bytes();
-        let mut depth = 0i32;
-        let mut start = None;
-        let mut end = None;
-        for (i, &b) in bytes.iter().enumerate() {
-            let c = b as char;
-            if c == '{' {
-                if depth == 0 { start = Some(i + 1); }
-                depth += 1;
-            } else if c == '}' {
-                depth -= 1;
-                if depth == 0 { end = Some(i); break; }
-            }
-        }
-        let (s, e) = (start.ok_or(AstError::Shape("missing '{' body start"))?, end.ok_or(AstError::Shape("missing '}' body end"))?);
-        &if_src[s..e]
-    };
-    actions = parse_actions_from_body(body)?;
+    // block can be either an if_block or a sequence of do_stmt without conditions
+    let block_src = block.as_str();
+    let inner = extract_body(block_src)?;
+    let leading = strip_leading_ws_and_comments(inner);
+    if leading.starts_with("if ") {
+        let if_pos = inner.find("if ").ok_or(AstError::Shape("missing 'if'"))?;
+        let brace_pos = inner[if_pos..].find('{').ok_or(AstError::Shape("missing '{' after if"))? + if_pos;
+        let cond_text = &inner[if_pos + 3..brace_pos];
+        conditions.push(parse_condition_text(cond_text.trim())?);
+        let if_block_src = &inner[if_pos..];
+        let body = extract_body(if_block_src)?;
+        actions = parse_actions_from_body(body)?;
+    } else {
+        actions = parse_actions_from_body(inner)?;
+    }
 
     Ok(TriggerAst { name, event, conditions, actions })
 }
@@ -177,6 +163,26 @@ fn unquote(s: &str) -> String {
     } else {
         s.to_string()
     }
+}
+
+fn extract_body(src: &str) -> Result<&str, AstError> {
+    let bytes = src.as_bytes();
+    let mut depth = 0i32;
+    let mut start = None;
+    let mut end = None;
+    for (i, &b) in bytes.iter().enumerate() {
+        let c = b as char;
+        if c == '{' {
+            if depth == 0 { start = Some(i + 1); }
+            depth += 1;
+        } else if c == '}' {
+            depth -= 1;
+            if depth == 0 { end = Some(i); break; }
+        }
+    }
+    let s = start.ok_or(AstError::Shape("missing '{' body start"))?;
+    let e = end.ok_or(AstError::Shape("missing '}' body end"))?;
+    Ok(&src[s..e])
 }
 
 fn parse_condition_text(text: &str) -> Result<ConditionAst, AstError> {
@@ -332,4 +338,20 @@ fn parse_schedule_action(text: &str) -> Result<(ActionAst, usize), AstError> {
     let actions = parse_actions_from_body(inner_body)?;
     let consumed = s.len() - rest[p+1..].len();
     Ok(( if is_in { ActionAst::ScheduleInIf { turns_ahead: num, condition: Box::new(condition), on_false, actions, note } } else { ActionAst::ScheduleOnIf { on_turn: num, condition: Box::new(condition), on_false, actions, note } }, consumed))
+}
+
+
+fn strip_leading_ws_and_comments(s: &str) -> &str {
+    let mut i = 0usize;
+    let bytes = s.as_bytes();
+    while i < bytes.len() {
+        while i < bytes.len() && (bytes[i] as char).is_whitespace() { i += 1; }
+        if i >= bytes.len() { break; }
+        if bytes[i] as char == '#' {
+            while i < bytes.len() && (bytes[i] as char) != '\n' { i += 1; }
+            continue;
+        }
+        break;
+    }
+    &s[i..]
 }
