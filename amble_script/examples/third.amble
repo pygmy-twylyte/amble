@@ -13,3 +13,30 @@ trigger "burn fallen tree" when act burn on item fallen_tree {
   }
 }
 
+
+
+# New examples for conditions and actions
+trigger "npc reactions" when talk to npc receptionist {
+  if all(npc in state receptionist annoyed, has visited room lobby) {
+    do npc says receptionist "Please take a number."
+    do schedule in 1 { do npc says random receptionist }
+  }
+}
+
+trigger "locker unlock" when unlock item locker {
+  do reveal exit from hallway to armory direction east
+  do lock exit from hallway direction west
+  do unlock exit from hallway direction east
+}
+
+trigger "container check" when open item toolbox {
+  if container has item toolbox wrench {
+    do show "A trusty wrench sits inside."
+  }
+}
+
+trigger "ambient spin" when enter room lobby {
+  if ambient ambientInterior in rooms lobby,lounge {
+    do show "The lobby hums with quiet energy."
+  }
+}

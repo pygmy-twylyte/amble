@@ -37,15 +37,22 @@ pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
 fn parse_trigger_pair(trig: pest::iterators::Pair<Rule>) -> Result<TriggerAst, AstError> {
     let mut it = trig.into_inner();
 
-    // trigger -> "trigger" ~ quoted ~ "when" ~ "enter" ~ "room" ~ ident ~ block
+    // trigger -> "trigger" ~ quoted ~ [only once]? ~ "when" ~ when_cond ~ block
     let q = it.next().ok_or(AstError::Shape("expected trigger name"))?;
     if q.as_rule() != Rule::quoted {
         return Err(AstError::Shape("expected quoted trigger name"));
     }
     let name = unquote(q.as_str());
 
-    // when condition
-    let mut when = it.next().ok_or(AstError::Shape("expected when condition"))?;
+    // optional only once
+    let mut only_once = false;
+    let mut next_pair = it.next().ok_or(AstError::Shape("expected when/only once"))?;
+    let mut when = if next_pair.as_rule() == Rule::only_once_kw {
+        only_once = true;
+        it.next().ok_or(AstError::Shape("expected when condition"))?
+    } else {
+        next_pair
+    };
     if when.as_rule() == Rule::when_cond {
         when = when.into_inner().next().ok_or(AstError::Shape("empty when_cond"))?;
     }
@@ -154,7 +161,7 @@ fn parse_trigger_pair(trig: pest::iterators::Pair<Rule>) -> Result<TriggerAst, A
         actions = parse_actions_from_body(inner)?;
     }
 
-    Ok(TriggerAst { name, event, conditions, actions })
+    Ok(TriggerAst { name, event, conditions, actions, only_once })
 }
 
 fn unquote(s: &str) -> String {
@@ -210,6 +217,59 @@ fn parse_condition_text(text: &str) -> Result<ConditionAst, AstError> {
     if let Some(rest) = t.strip_prefix("has item ") {
         return Ok(ConditionAst::HasItem(rest.trim().to_string()));
     }
+    if let Some(rest) = t.strip_prefix("has visited room ") {
+        return Ok(ConditionAst::HasVisited(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("missing item ") {
+        return Ok(ConditionAst::MissingItem(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("flag in progress ") {
+        return Ok(ConditionAst::FlagInProgress(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("flag complete ") {
+        return Ok(ConditionAst::FlagComplete(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("with npc ") {
+        return Ok(ConditionAst::WithNpc(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("npc has item ") {
+        let rest = rest.trim();
+        if let Some(space) = rest.find(' ') {
+            let npc = &rest[..space];
+            let item = rest[space+1..].trim();
+            return Ok(ConditionAst::NpcHasItem { npc: npc.to_string(), item: item.to_string() });
+        }
+        return Err(AstError::Shape("npc has item syntax"));
+    }
+    if let Some(rest) = t.strip_prefix("npc in state ") {
+        let rest = rest.trim();
+        if let Some(space) = rest.find(' ') {
+            let npc = &rest[..space];
+            let state = rest[space+1..].trim();
+            return Ok(ConditionAst::NpcInState { npc: npc.to_string(), state: state.to_string() });
+        }
+        return Err(AstError::Shape("npc in state syntax"));
+    }
+    if let Some(rest) = t.strip_prefix("container has item ") {
+        let rest = rest.trim();
+        if let Some(space) = rest.find(' ') {
+            let container = &rest[..space];
+            let item = rest[space+1..].trim();
+            return Ok(ConditionAst::ContainerHasItem { container: container.to_string(), item: item.to_string() });
+        }
+        return Err(AstError::Shape("container has item syntax"));
+    }
+    if let Some(rest) = t.strip_prefix("ambient ") {
+        let rest = rest.trim();
+        if let Some(idx) = rest.find(" in rooms ") {
+            let spinner = rest[..idx].trim().to_string();
+            let list = rest[idx+10..].trim();
+            let rooms: Vec<String> = list.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+            return Ok(ConditionAst::Ambient { spinner, rooms: Some(rooms) });
+        } else {
+            return Ok(ConditionAst::Ambient { spinner: rest.to_string(), rooms: None });
+        }
+    }
     if let Some(rest) = t.strip_prefix("player in room ") {
         return Ok(ConditionAst::PlayerInRoom(rest.trim().to_string()));
     }
@@ -255,13 +315,131 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
     if let Some(rest) = t.strip_prefix("do remove flag ") {
         return Ok(ActionAst::RemoveFlag(rest.trim().to_string()));
     }
+    if let Some(rest) = t.strip_prefix("do reset flag ") {
+        return Ok(ActionAst::ResetFlag(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("do advance flag ") {
+        return Ok(ActionAst::AdvanceFlag(rest.trim().to_string()));
+    }
     if let Some(rest) = t.strip_prefix("do spawn item ") {
         // format: <item> into room <room>
         let rest = rest.trim();
         if let Some((item, tail)) = rest.split_once(" into room ") {
             return Ok(ActionAst::SpawnItemIntoRoom { item: item.trim().to_string(), room: tail.trim().to_string() });
         }
+        if let Some((item, tail)) = rest.split_once(" into container ") {
+            return Ok(ActionAst::SpawnItemInContainer { item: item.trim().to_string(), container: tail.trim().to_string() });
+        }
+        if let Some(item) = rest.strip_suffix(" in inventory") {
+            return Ok(ActionAst::SpawnItemInInventory(item.trim().to_string()));
+        }
+        if let Some(item) = rest.strip_suffix(" in current room") {
+            return Ok(ActionAst::SpawnItemCurrentRoom(item.trim().to_string()));
+        }
         return Err(AstError::Shape("spawn item syntax"));
+    }
+    if let Some(rest) = t.strip_prefix("do lock item ") {
+        return Ok(ActionAst::LockItem(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("do unlock item ") {
+        return Ok(ActionAst::UnlockItemAction(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("do lock exit from ") {
+        if let Some((from, tail)) = rest.split_once(" direction ") {
+            return Ok(ActionAst::LockExit { from_room: from.trim().to_string(), direction: tail.trim().to_string() });
+        }
+    }
+    if let Some(rest) = t.strip_prefix("do unlock exit from ") {
+        if let Some((from, tail)) = rest.split_once(" direction ") {
+            return Ok(ActionAst::UnlockExit { from_room: from.trim().to_string(), direction: tail.trim().to_string() });
+        }
+    }
+    if let Some(rest) = t.strip_prefix("do reveal exit from ") {
+        // format: <from> to <to> direction <dir>
+        if let Some((from, tail)) = rest.split_once(" to ") {
+            if let Some((to, dir_tail)) = tail.split_once(" direction ") {
+                return Ok(ActionAst::RevealExit { exit_from: from.trim().to_string(), exit_to: to.trim().to_string(), direction: dir_tail.trim().to_string() });
+            }
+        }
+        return Err(AstError::Shape("reveal exit syntax"));
+    }
+    if let Some(rest) = t.strip_prefix("do push player to ") {
+        return Ok(ActionAst::PushPlayerTo(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("do set item description ") {
+        // format: <item> "text"
+        let rest = rest.trim();
+        if let Some(space) = rest.find(' ') {
+            let item = &rest[..space];
+            let txt = rest[space..].trim();
+            if let Some(r) = txt.strip_prefix('"') {
+                if let Some(endq) = r.find('"') {
+                    return Ok(ActionAst::SetItemDescription { item: item.to_string(), text: r[..endq].to_string() });
+                }
+            }
+        }
+        return Err(AstError::Shape("set item description syntax"));
+    }
+    if let Some(rest) = t.strip_prefix("do npc says ") {
+        // format: <npc> "quote"
+        let rest = rest.trim();
+        if let Some(space) = rest.find(' ') {
+            let npc = &rest[..space];
+            let txt = rest[space..].trim();
+            if let Some(r) = txt.strip_prefix('"') {
+                if let Some(endq) = r.find('"') { return Ok(ActionAst::NpcSays { npc: npc.to_string(), quote: r[..endq].to_string() }); }
+            }
+        }
+        return Err(AstError::Shape("npc says syntax"));
+    }
+    if let Some(rest) = t.strip_prefix("do npc says random ") {
+        return Ok(ActionAst::NpcSaysRandom { npc: rest.trim().to_string() });
+    }
+    if let Some(rest) = t.strip_prefix("do set npc state ") {
+        // format: <npc> <state>
+        let rest = rest.trim();
+        if let Some(space) = rest.find(' ') {
+            let npc = &rest[..space];
+            let state = rest[space+1..].trim();
+            return Ok(ActionAst::SetNpcState { npc: npc.to_string(), state: state.to_string() });
+        }
+        return Err(AstError::Shape("set npc state syntax"));
+    }
+    if let Some(rest) = t.strip_prefix("do deny read ") {
+        if let Some(r) = rest.trim().strip_prefix('"') { if let Some(endq) = r.find('"') { return Ok(ActionAst::DenyRead(r[..endq].to_string())); } }
+        return Err(AstError::Shape("deny read syntax"));
+    }
+    if let Some(rest) = t.strip_prefix("do restrict item ") {
+        return Ok(ActionAst::RestrictItem(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("do schedule in ") {
+        // maybe without condition; check for 'if'
+        let rest = rest.trim();
+        let mut idx = 0usize; while idx < rest.len() && rest.as_bytes()[idx].is_ascii_digit() { idx += 1; }
+        if idx == 0 { return Err(AstError::Shape("schedule missing number")); }
+        let num: usize = rest[..idx].parse().map_err(|_| AstError::Shape("invalid schedule number"))?;
+        let rest2 = rest[idx..].trim_start();
+        if let Some(r) = rest2.strip_prefix("if ") { /* handled by parse_schedule_action */ }
+        else if let Some(brace) = rest2.find('{') {
+            let body = &rest2[brace..];
+            if let Ok((ActionAst::ScheduleInIf { actions, note, .. }, used)) = parse_schedule_action(&format!("do schedule in {} if chance 100% {}", num, body)) {
+                return Ok(ActionAst::ScheduleIn { turns_ahead: num, actions, note });
+            }
+        }
+    }
+    if let Some(rest) = t.strip_prefix("do schedule on ") {
+        let rest = rest.trim();
+        let mut idx = 0usize; while idx < rest.len() && rest.as_bytes()[idx].is_ascii_digit() { idx += 1; }
+        if idx == 0 { return Err(AstError::Shape("schedule missing number")); }
+        let num: usize = rest[..idx].parse().map_err(|_| AstError::Shape("invalid schedule number"))?;
+        let rest2 = rest[idx..].trim_start();
+        if let Some(r) = rest2.strip_prefix("if ") { /* handled later */ }
+        else if let Some(brace) = rest2.find('{') {
+            let body = &rest2[brace..];
+            if let Ok((ActionAst::ScheduleOnIf { actions, note, .. }, used)) = parse_schedule_action(&format!("do schedule on {} if chance 100% {}", num, body)) {
+                return Ok(ActionAst::ScheduleOn { on_turn: num, actions, note });
+            }
+        }
     }
     if let Some(rest) = t.strip_prefix("do despawn item ") {
         return Ok(ActionAst::DespawnItem(rest.trim().to_string()));

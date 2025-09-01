@@ -18,7 +18,8 @@ quoted = @{ "\"" ~ ( (!"\"" ~ ANY) )* ~ "\"" }
 
 program = { SOI ~ trigger+ ~ EOI }
 
-trigger = { "trigger" ~ quoted ~ "when" ~ when_cond ~ block }
+only_once_kw = { "only" ~ "once" }
+trigger = { "trigger" ~ quoted ~ only_once_kw? ~ "when" ~ when_cond ~ block }
 
 // Event ("when") conditions supported in this iteration
 when_cond = { enter_room | leave_room | look_at_item | open_item | use_item_on_item | use_item | give_to_npc | take_from_npc | insert_item_into | take_item | drop_item | unlock_item | talk_to_npc | act_on_item }
@@ -51,11 +52,28 @@ do_stmt = { "do" ~ do_action }
 do_action = {
       ( "show" ~ quoted )
     | ( "add" ~ "flag" ~ ident )
+    | ( "reset" ~ "flag" ~ ident )
+    | ( "advance" ~ "flag" ~ ident )
     | ( "remove" ~ "flag" ~ ident )
     | ( "spawn" ~ "item" ~ ident ~ "into" ~ "room" ~ ident )
+    | ( "spawn" ~ "item" ~ ident ~ "into" ~ "container" ~ ident )
+    | ( "spawn" ~ "item" ~ ident ~ "in" ~ "inventory" )
+    | ( "spawn" ~ "item" ~ ident ~ "in" ~ "current" ~ "room" )
     | ( "despawn" ~ "item" ~ ident )
     | ( "award" ~ "points" ~ number )
     | ( "schedule" ~ (!"{" ~ ANY)* ~ "{" ~ (!"}" ~ ANY)* ~ "}" )
+    | ( "lock" ~ "item" ~ ident )
+    | ( "unlock" ~ "item" ~ ident )
+    | ( "lock" ~ "exit" ~ "from" ~ ident ~ "direction" ~ ident )
+    | ( "unlock" ~ "exit" ~ "from" ~ ident ~ "direction" ~ ident )
+    | ( "reveal" ~ "exit" ~ "from" ~ ident ~ "to" ~ ident ~ "direction" ~ ident )
+    | ( "push" ~ "player" ~ "to" ~ ident )
+    | ( "set" ~ "item" ~ "description" ~ ident ~ quoted )
+    | ( "npc" ~ "says" ~ ident ~ quoted )
+    | ( "npc" ~ "says" ~ "random" ~ ident )
+    | ( "set" ~ "npc" ~ "state" ~ ident ~ ident )
+    | ( "deny" ~ "read" ~ quoted )
+    | ( "restrict" ~ "item" ~ ident )
 }
 
 // Conditions

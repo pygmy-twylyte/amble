@@ -29,6 +29,8 @@ pub struct TriggerAst {
     pub conditions: Vec<ConditionAst>,
     /// List of actions supported in this minimal version.
     pub actions: Vec<ActionAst>,
+    /// If true, the trigger should only fire once.
+    pub only_once: bool,
 }
 
 /// Minimal condition variants.
@@ -70,6 +72,15 @@ pub enum ConditionAst {
     HasItem(String),
     /// Require that the player is currently in a room (by symbol id).
     PlayerInRoom(String),
+    HasVisited(String),
+    MissingItem(String),
+    FlagInProgress(String),
+    FlagComplete(String),
+    WithNpc(String),
+    NpcHasItem { npc: String, item: String },
+    NpcInState { npc: String, state: String },
+    ContainerHasItem { container: String, item: String },
+    Ambient { spinner: String, rooms: Option<Vec<String>> },
     /// Random chance in percent (0-100).
     ChancePercent(f64),
     /// All of the nested conditions must hold.
@@ -93,6 +104,33 @@ pub enum ActionAst {
     SpawnItemIntoRoom { item: String, room: String },
     /// Despawn an item.
     DespawnItem(String),
+    /// Reset a sequence flag to step 0.
+    ResetFlag(String),
+    /// Advance a sequence flag by one step.
+    AdvanceFlag(String),
+    /// Reveal an exit in a room in a direction to another room.
+    RevealExit { exit_from: String, exit_to: String, direction: String },
+    /// Lock or unlock exits and items
+    LockExit { from_room: String, direction: String },
+    UnlockExit { from_room: String, direction: String },
+    LockItem(String),
+    UnlockItemAction(String),
+    /// Push player to a room.
+    PushPlayerTo(String),
+    /// Spawns
+    SpawnItemInInventory(String),
+    SpawnItemCurrentRoom(String),
+    SpawnItemInContainer { item: String, container: String },
+    /// Set description for an item by symbol.
+    SetItemDescription { item: String, text: String },
+    NpcSays { npc: String, quote: String },
+    NpcSaysRandom { npc: String },
+    SetNpcState { npc: String, state: String },
+    DenyRead(String),
+    RestrictItem(String),
+    /// Schedules without conditions
+    ScheduleIn { turns_ahead: usize, actions: Vec<ActionAst>, note: Option<String> },
+    ScheduleOn { on_turn: usize, actions: Vec<ActionAst>, note: Option<String> },
     /// Schedule actions at turns ahead if a condition holds.
     ScheduleInIf {
         turns_ahead: usize,
@@ -166,9 +204,13 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
         event: &ConditionAst,
         flat_conds: &[ConditionAst],
         actions: &[ActionAst],
+        only_once: bool,
     ) {
         let mut trig = Table::new();
         trig["name"] = value(name.to_string());
+        if only_once {
+            trig["only_once"] = value(true);
+        }
 
         let mut conds = Array::default();
         // event condition first
@@ -300,6 +342,15 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
                     t.insert("room_id", toml_edit::Value::from(room_id.clone()));
                     conds.push(toml_edit::Value::from(t));
                 }
+                ConditionAst::HasVisited(room) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("hasVisited")); t.insert("room_id", toml_edit::Value::from(room.clone())); conds.push(toml_edit::Value::from(t)); }
+                ConditionAst::MissingItem(item) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("missingItem")); t.insert("item_id", toml_edit::Value::from(item.clone())); conds.push(toml_edit::Value::from(t)); }
+                ConditionAst::FlagInProgress(flag) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("flagInProgress")); t.insert("flag", toml_edit::Value::from(flag.clone())); conds.push(toml_edit::Value::from(t)); }
+                ConditionAst::FlagComplete(flag) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("flagComplete")); t.insert("flag", toml_edit::Value::from(flag.clone())); conds.push(toml_edit::Value::from(t)); }
+                ConditionAst::WithNpc(npc) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("withNpc")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); conds.push(toml_edit::Value::from(t)); }
+                ConditionAst::NpcHasItem { npc, item } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("npcHasItem")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); t.insert("item_id", toml_edit::Value::from(item.clone())); conds.push(toml_edit::Value::from(t)); }
+                ConditionAst::NpcInState { npc, state } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("npcInState")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); t.insert("state", toml_edit::Value::from(state.clone())); conds.push(toml_edit::Value::from(t)); }
+                ConditionAst::ContainerHasItem { container, item } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("containerHasItem")); t.insert("container_id", toml_edit::Value::from(container.clone())); t.insert("item_id", toml_edit::Value::from(item.clone())); conds.push(toml_edit::Value::from(t)); }
+                ConditionAst::Ambient { spinner, rooms } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("ambient")); if let Some(rs)=rooms { let mut arr = Array::default(); for r in rs { arr.push(toml_edit::Value::from(r.clone())); } t.insert("room_ids", toml_edit::Value::from(arr)); } t.insert("spinner", toml_edit::Value::from(spinner.clone())); conds.push(toml_edit::Value::from(t)); }
                 ConditionAst::ChancePercent(pct) => {
                     let one_in = if *pct <= 0.0 { f64::INFINITY } else { 100.0 / *pct };
                     let mut t = InlineTable::new();
@@ -320,7 +371,7 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
                 // actions
         let mut acts = Array::default();
         for a in actions { acts.push(action_to_value(a)); }
-trig["actions"] = Item::Value(acts.into());
+        trig["actions"] = Item::Value(acts.into());
 
         trig.set_implicit(true);
         aot.push(trig);
@@ -362,10 +413,10 @@ trig["actions"] = Item::Value(acts.into());
     for ast in asts {
         let expanded = expand_conditions(&ast.conditions);
         if expanded.is_empty() {
-            emit_trigger(&mut aot, &ast.name, &ast.event, &[], &ast.actions);
+            emit_trigger(&mut aot, &ast.name, &ast.event, &[], &ast.actions, ast.only_once);
         } else {
             for flat in expanded {
-                emit_trigger(&mut aot, &ast.name, &ast.event, &flat, &ast.actions);
+                emit_trigger(&mut aot, &ast.name, &ast.event, &flat, &ast.actions, ast.only_once);
             }
         }
     }
@@ -380,8 +431,20 @@ fn action_to_value(a: &ActionAst) -> toml_edit::Value {
         ActionAst::AddFlag(name) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("addFlag")); let mut flag_tbl = InlineTable::new(); flag_tbl.insert("type", toml_edit::Value::from("simple")); flag_tbl.insert("name", toml_edit::Value::from(name.clone())); t.insert("flag", toml_edit::Value::from(flag_tbl)); toml_edit::Value::from(t) }
         ActionAst::AwardPoints(amount) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("awardPoints")); t.insert("amount", toml_edit::Value::from(*amount as i64)); toml_edit::Value::from(t) }
         ActionAst::RemoveFlag(name) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("removeFlag")); t.insert("flag", toml_edit::Value::from(name.clone())); toml_edit::Value::from(t) }
+        ActionAst::ResetFlag(name) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("resetFlag")); t.insert("flag", toml_edit::Value::from(name.clone())); toml_edit::Value::from(t) }
+        ActionAst::AdvanceFlag(name) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("advanceFlag")); t.insert("flag", toml_edit::Value::from(name.clone())); toml_edit::Value::from(t) }
         ActionAst::SpawnItemIntoRoom { item, room } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("spawnItemInRoom")); t.insert("item_id", toml_edit::Value::from(item.clone())); t.insert("room_id", toml_edit::Value::from(room.clone())); toml_edit::Value::from(t) }
+        ActionAst::SpawnItemInInventory(item) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("spawnItemInInventory")); t.insert("item_id", toml_edit::Value::from(item.clone())); toml_edit::Value::from(t) }
+        ActionAst::SpawnItemCurrentRoom(item) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("spawnItemCurrentRoom")); t.insert("item_id", toml_edit::Value::from(item.clone())); toml_edit::Value::from(t) }
+        ActionAst::SpawnItemInContainer { item, container } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("spawnItemInContainer")); t.insert("item_id", toml_edit::Value::from(item.clone())); t.insert("container_id", toml_edit::Value::from(container.clone())); toml_edit::Value::from(t) }
         ActionAst::DespawnItem(item) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("despawnItem")); t.insert("item_id", toml_edit::Value::from(item.clone())); toml_edit::Value::from(t) }
+        ActionAst::SetItemDescription { item, text } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("setItemDescription")); t.insert("item_sym", toml_edit::Value::from(item.clone())); t.insert("text", toml_edit::Value::from(text.clone())); toml_edit::Value::from(t) }
+        ActionAst::RevealExit { exit_from, exit_to, direction } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("revealExit")); t.insert("exit_from", toml_edit::Value::from(exit_from.clone())); t.insert("exit_to", toml_edit::Value::from(exit_to.clone())); t.insert("direction", toml_edit::Value::from(direction.clone())); toml_edit::Value::from(t) }
+        ActionAst::LockExit { from_room, direction } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("lockExit")); t.insert("from_room", toml_edit::Value::from(from_room.clone())); t.insert("direction", toml_edit::Value::from(direction.clone())); toml_edit::Value::from(t) }
+        ActionAst::UnlockExit { from_room, direction } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("unlockExit")); t.insert("from_room", toml_edit::Value::from(from_room.clone())); t.insert("direction", toml_edit::Value::from(direction.clone())); toml_edit::Value::from(t) }
+        ActionAst::LockItem(item) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("lockItem")); t.insert("item_id", toml_edit::Value::from(item.clone())); toml_edit::Value::from(t) }
+        ActionAst::UnlockItemAction(item) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("unlockItem")); t.insert("item_id", toml_edit::Value::from(item.clone())); toml_edit::Value::from(t) }
+        ActionAst::PushPlayerTo(room) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("pushPlayerTo")); t.insert("room_id", toml_edit::Value::from(room.clone())); toml_edit::Value::from(t) }
         ActionAst::ScheduleInIf { turns_ahead, condition, on_false, actions, note } => {
             let mut t = InlineTable::new();
             t.insert("type", toml_edit::Value::from("scheduleInIf"));
@@ -404,6 +467,13 @@ fn action_to_value(a: &ActionAst) -> toml_edit::Value {
             if let Some(n) = note { t.insert("note", toml_edit::Value::from(n.clone())); }
             toml_edit::Value::from(t)
         }
+        ActionAst::ScheduleIn { turns_ahead, actions, note } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("scheduleIn")); t.insert("turns_ahead", toml_edit::Value::from(*turns_ahead as i64)); let mut arr = Array::default(); for ia in actions { arr.push(action_to_value(ia)); } t.insert("actions", toml_edit::Value::from(arr)); if let Some(n)=note { t.insert("note", toml_edit::Value::from(n.clone())); } toml_edit::Value::from(t) }
+        ActionAst::ScheduleOn { on_turn, actions, note } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("scheduleOn")); t.insert("on_turn", toml_edit::Value::from(*on_turn as i64)); let mut arr = Array::default(); for ia in actions { arr.push(action_to_value(ia)); } t.insert("actions", toml_edit::Value::from(arr)); if let Some(n)=note { t.insert("note", toml_edit::Value::from(n.clone())); } toml_edit::Value::from(t) }
+        ActionAst::NpcSays { npc, quote } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("npcSays")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); t.insert("quote", toml_edit::Value::from(quote.clone())); toml_edit::Value::from(t) }
+        ActionAst::NpcSaysRandom { npc } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("npcSaysRandom")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); toml_edit::Value::from(t) }
+        ActionAst::SetNpcState { npc, state } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("setNpcState")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); t.insert("state", toml_edit::Value::from(state.clone())); toml_edit::Value::from(t) }
+        ActionAst::DenyRead(reason) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("denyRead")); t.insert("reason", toml_edit::Value::from(reason.clone())); toml_edit::Value::from(t) }
+        ActionAst::RestrictItem(item) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("restrictItem")); t.insert("item_id", toml_edit::Value::from(item.clone())); toml_edit::Value::from(t) }
     }
 }
 
@@ -432,7 +502,20 @@ fn leaf_condition_inline(c: &ConditionAst) -> InlineTable {
         ConditionAst::HasFlag(flag) => { t.insert("type", toml_edit::Value::from("hasFlag")); t.insert("flag", toml_edit::Value::from(flag.clone())); }
         ConditionAst::HasItem(item) => { t.insert("type", toml_edit::Value::from("hasItem")); t.insert("item_id", toml_edit::Value::from(item.clone())); }
         ConditionAst::PlayerInRoom(room) => { t.insert("type", toml_edit::Value::from("inRoom")); t.insert("room_id", toml_edit::Value::from(room.clone())); }
-        ConditionAst::ChancePercent(pct) => { t.insert("type", toml_edit::Value::from("chance")); let one_in = if *pct <= 0.0 { f64::INFINITY } else { 100.0 / *pct }; t.insert("one_in", toml_edit::Value::from(one_in)); }
+        ConditionAst::ChancePercent(pct) => {
+            let one_in = if *pct <= 0.0 { f64::INFINITY } else { 100.0 / *pct };
+            t.insert("type", toml_edit::Value::from("chance"));
+            t.insert("one_in", toml_edit::Value::from(one_in));
+        }
+        ConditionAst::HasVisited(room) => { t.insert("type", toml_edit::Value::from("hasVisited")); t.insert("room_id", toml_edit::Value::from(room.clone())); }
+        ConditionAst::MissingItem(item) => { t.insert("type", toml_edit::Value::from("missingItem")); t.insert("item_id", toml_edit::Value::from(item.clone())); }
+        ConditionAst::FlagInProgress(flag) => { t.insert("type", toml_edit::Value::from("flagInProgress")); t.insert("flag", toml_edit::Value::from(flag.clone())); }
+        ConditionAst::FlagComplete(flag) => { t.insert("type", toml_edit::Value::from("flagComplete")); t.insert("flag", toml_edit::Value::from(flag.clone())); }
+        ConditionAst::WithNpc(npc) => { t.insert("type", toml_edit::Value::from("withNpc")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); }
+        ConditionAst::NpcHasItem { npc, item } => { t.insert("type", toml_edit::Value::from("npcHasItem")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); t.insert("item_id", toml_edit::Value::from(item.clone())); }
+        ConditionAst::NpcInState { npc, state } => { t.insert("type", toml_edit::Value::from("npcInState")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); t.insert("state", toml_edit::Value::from(state.clone())); }
+        ConditionAst::ContainerHasItem { container, item } => { t.insert("type", toml_edit::Value::from("containerHasItem")); t.insert("container_id", toml_edit::Value::from(container.clone())); t.insert("item_id", toml_edit::Value::from(item.clone())); }
+        ConditionAst::Ambient { spinner, rooms } => { t.insert("type", toml_edit::Value::from("ambient")); if let Some(rs)=rooms { let mut arr = Array::default(); for r in rs { arr.push(toml_edit::Value::from(r.clone())); } t.insert("room_ids", toml_edit::Value::from(arr)); } t.insert("spinner", toml_edit::Value::from(spinner.clone())); }
         ConditionAst::EnterRoom(room) => { t.insert("type", toml_edit::Value::from("enter")); t.insert("room_id", toml_edit::Value::from(room.clone())); }
         ConditionAst::LeaveRoom(room) => { t.insert("type", toml_edit::Value::from("leave")); t.insert("room_id", toml_edit::Value::from(room.clone())); }
         ConditionAst::LookAtItem(item) => { t.insert("type", toml_edit::Value::from("lookAt")); t.insert("item_id", toml_edit::Value::from(item.clone())); }
