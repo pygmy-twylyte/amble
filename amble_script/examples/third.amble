@@ -30,7 +30,7 @@ trigger "locker unlock" when unlock item locker {
 }
 
 trigger "container check" when open item toolbox {
-  if container has item toolbox wrench {
+  if container toolbox has item wrench {
     do show "A trusty wrench sits inside."
   }
 }
