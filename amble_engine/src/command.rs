@@ -67,6 +67,9 @@ pub enum Command {
     SetFlag(String),
     SpawnItem(String),
     Teleport(String),
+    // Scheduler management (DEV_MODE only)
+    SchedCancel(usize),
+    SchedDelay { idx: usize, turns: usize },
 }
 
 /// Parses an input string and returns a corresponding `Command` if recognized.

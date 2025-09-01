@@ -7,6 +7,24 @@ use crate::{
     item::ContainerState, loader::SymbolTable, npc::NpcState, player::Flag, spinners::SpinnerType,
     trigger::TriggerAction,
 };
+use crate::scheduler::{EventCondition, OnFalsePolicy};
+use super::raw_condition::RawTriggerCondition;
+
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+pub enum RawEventCondition {
+    Trigger(RawTriggerCondition),
+    All { all: Vec<RawEventCondition> },
+    Any { any: Vec<RawEventCondition> },
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum RawOnFalsePolicy {
+    Cancel,
+    RetryAfter { turns: usize },
+    RetryNextTurn,
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
@@ -132,6 +150,20 @@ pub enum RawTriggerAction {
         actions: Vec<RawTriggerAction>,
         note: Option<String>,
     },
+    ScheduleInIf {
+        turns_ahead: usize,
+        condition: RawEventCondition,
+        on_false: RawOnFalsePolicy,
+        actions: Vec<RawTriggerAction>,
+        note: Option<String>,
+    },
+    ScheduleOnIf {
+        on_turn: usize,
+        condition: RawEventCondition,
+        on_false: RawOnFalsePolicy,
+        actions: Vec<RawTriggerAction>,
+        note: Option<String>,
+    },
 }
 impl RawTriggerAction {
     /// Convert the TOML representation of this action to a fully realized `TriggerAction`.
@@ -190,6 +222,12 @@ impl RawTriggerAction {
                 note,
             } => cook_schedule_in(symbols, *turns_ahead, actions, note.clone()),
             Self::ScheduleOn { on_turn, actions, note } => cook_schedule_on(symbols, *on_turn, actions, note.clone()),
+            Self::ScheduleInIf { turns_ahead, condition, on_false, actions, note } => {
+                cook_schedule_in_if(symbols, *turns_ahead, condition, on_false, actions, note.clone())
+            },
+            Self::ScheduleOnIf { on_turn, condition, on_false, actions, note } => {
+                cook_schedule_on_if(symbols, *on_turn, condition, on_false, actions, note.clone())
+            },
         }
     }
 }
@@ -501,6 +539,81 @@ fn cook_schedule_on(
     }
     Ok(TriggerAction::ScheduleOn {
         on_turn,
+        actions: cooked_actions,
+        note,
+    })
+}
+
+fn raw_event_condition_to_event_condition(
+    symbols: &SymbolTable,
+    rec: &RawEventCondition,
+) -> Result<EventCondition> {
+    Ok(match rec {
+        RawEventCondition::Trigger(raw) => {
+            EventCondition::Trigger(raw.to_condition(symbols)?)
+        },
+        RawEventCondition::All { all } => {
+            let mut cooked = Vec::new();
+            for c in all { cooked.push(raw_event_condition_to_event_condition(symbols, c)?); }
+            EventCondition::All(cooked)
+        },
+        RawEventCondition::Any { any } => {
+            let mut cooked = Vec::new();
+            for c in any { cooked.push(raw_event_condition_to_event_condition(symbols, c)?); }
+            EventCondition::Any(cooked)
+        },
+    })
+}
+
+fn raw_on_false_to_policy(raw: &RawOnFalsePolicy) -> OnFalsePolicy {
+    match raw {
+        RawOnFalsePolicy::Cancel => OnFalsePolicy::Cancel,
+        RawOnFalsePolicy::RetryAfter { turns } => OnFalsePolicy::RetryAfter(*turns),
+        RawOnFalsePolicy::RetryNextTurn => OnFalsePolicy::RetryNextTurn,
+    }
+}
+
+fn cook_schedule_in_if(
+    symbols: &SymbolTable,
+    turns_ahead: usize,
+    condition: &RawEventCondition,
+    on_false: &RawOnFalsePolicy,
+    raw_actions: &[RawTriggerAction],
+    note: Option<String>,
+) -> Result<TriggerAction> {
+    let mut cooked_actions = Vec::new();
+    for raw_action in raw_actions {
+        cooked_actions.push(raw_action.to_action(symbols)?);
+    }
+    let ec = raw_event_condition_to_event_condition(symbols, condition)?;
+    let policy = raw_on_false_to_policy(on_false);
+    Ok(TriggerAction::ScheduleInIf {
+        turns_ahead,
+        condition: ec,
+        on_false: policy,
+        actions: cooked_actions,
+        note,
+    })
+}
+
+fn cook_schedule_on_if(
+    symbols: &SymbolTable,
+    on_turn: usize,
+    condition: &RawEventCondition,
+    on_false: &RawOnFalsePolicy,
+    raw_actions: &[RawTriggerAction],
+    note: Option<String>,
+) -> Result<TriggerAction> {
+    let mut cooked_actions = Vec::new();
+    for raw_action in raw_actions {
+        cooked_actions.push(raw_action.to_action(symbols)?);
+    }
+    let ec = raw_event_condition_to_event_condition(symbols, condition)?;
+    let policy = raw_on_false_to_policy(on_false);
+    Ok(TriggerAction::ScheduleOnIf {
+        on_turn,
+        condition: ec,
+        on_false: policy,
         actions: cooked_actions,
         note,
     })

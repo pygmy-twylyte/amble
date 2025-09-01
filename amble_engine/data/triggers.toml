@@ -961,7 +961,13 @@ conditions = [{ type = "take", item_id = "towel" }]
 actions = [
     { type = "addFlag", flag = { type = "simple", name = "got-towel" } },
     { type = "awardPoints", amount = 3 },
-    { type = "showMessage", text = """NOW you're a frood who really "knows where his towel is." """ },
+    { type = "showMessage", text = """NOW you're a frood who really \"knows where his towel is.\" """ },
+    { type = "scheduleInIf", turns_ahead = 10, on_false = { type = "cancel" }, condition = { all = [
+        { type = "hasItem", item_id = "towel" },
+        { type = "missingFlag", flag = "read-plaque-1" },
+    ] }, actions = [
+        { type = "showMessage", text = "Towels are awfully handy for cleaning grimy things..." },
+    ], note = "hint: towels can clean" },
 ]
 
 [[triggers]]
@@ -1148,9 +1154,7 @@ actions = [
 [[triggers]]
 name = "Main-Lobby: Security Reminder"
 only_once = true
-conditions = [
-    { type = "enter", room_id = "main-lobby" },
-]
+conditions = [{ type = "enter", room_id = "main-lobby" }]
 actions = [
     { type = "scheduleIn", turns_ahead = 3, note = "Lobby security reminder", actions = [
         { type = "showMessage", text = """A chime echoes through the lobby. "Please do not loiter in the lobby," intones an overhead voice.""" },
@@ -1256,5 +1260,18 @@ actions = [
         { type = "removeFlag", flag = "self-destruct-armed" },
         { type = "awardPoints", amount = 2 },
         { type = "addFlag", flag = { type = "simple", name = "survived-fake-explosion" } },
+    ] },
+]
+
+[[triggers]]
+name = "High-Ridge: Gnats Pose a Question"
+only_once = true
+conditions = [{ type = "leave", room_id = "high-ridge" }]
+actions = [
+    { type = "scheduleIn", turns_ahead = 3, note = "gnats-question-mark", actions = [
+        { type = "showMessage", text = "A drifting cloud of gnats zips past, briefly forming a question mark?" },
+        { type = "scheduleIn", turns_ahead = 3, note = "gnats-exclaim", actions = [
+            { type = "showMessage", text = "Moments later the same cloud whizzes back the other way, now arranged as '!!'." },
+        ] },
     ] },
 ]

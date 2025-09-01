@@ -31,6 +31,23 @@ pub fn parse_dev_command(input: &str, view: &mut View) -> Option<Command> {
             ["npcs"] => Some(Command::ListNpcs),
             ["flags"] => Some(Command::ListFlags),
             ["sched"] | ["schedule"] => Some(Command::ListSched),
+            ["sched" | "schedule", "cancel", idx_str] => match idx_str.parse::<usize>() {
+                Ok(idx) => Some(Command::SchedCancel(idx)),
+                Err(_) => {
+                    view.push(ViewItem::ActionFailure(format!(
+                        "Invalid index '{}' for :schedule cancel.",
+                        idx_str.error_style()
+                    )));
+                    None
+                }
+            },
+            ["sched" | "schedule", "delay", idx_str, turns_str] => match (idx_str.parse::<usize>(), turns_str.parse::<usize>()) {
+                (Ok(idx), Ok(turns)) => Some(Command::SchedDelay { idx, turns }),
+                _ => {
+                    view.push(ViewItem::ActionFailure("Usage: :schedule delay <idx> <+turns>".to_string()));
+                    None
+                }
+            },
             ["teleport" | "port", room_symbol] => Some(Command::Teleport((*room_symbol).into())),
             ["spawn" | "item", item_symbol] => Some(Command::SpawnItem((*item_symbol).into())),
             ["adv-seq", seq_name] => Some(Command::AdvanceSeq((*seq_name).into())),
