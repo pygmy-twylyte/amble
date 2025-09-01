@@ -54,6 +54,7 @@ do_action = {
     | ( "spawn" ~ "item" ~ ident ~ "into" ~ "room" ~ ident )
     | ( "despawn" ~ "item" ~ ident )
     | ( "award" ~ "points" ~ number )
+    | ( "schedule" ~ (!"{" ~ ANY)* ~ "{" ~ (!"}" ~ ANY)* ~ "}" )
 }
 
 // Conditions

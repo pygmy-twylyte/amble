@@ -1,7 +1,7 @@
 use pest::Parser;
 use pest_derive::Parser as PestParser;
 
-use crate::{ActionAst, ConditionAst, TriggerAst};
+use crate::{ActionAst, ConditionAst, OnFalseAst, TriggerAst};
 
 #[derive(PestParser)]
 #[grammar = "src/grammar.pest"]
@@ -166,12 +166,7 @@ fn parse_trigger_pair(trig: pest::iterators::Pair<Rule>) -> Result<TriggerAst, A
         let (s, e) = (start.ok_or(AstError::Shape("missing '{' body start"))?, end.ok_or(AstError::Shape("missing '}' body end"))?);
         &if_src[s..e]
     };
-    for line in body.lines() {
-        let l = line.trim();
-        if l.starts_with("do ") {
-            actions.push(parse_action_from_str(l)?);
-        }
-    }
+    actions = parse_actions_from_body(body)?;
 
     Ok(TriggerAst { name, event, conditions, actions })
 }
@@ -270,4 +265,71 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         return Ok(ActionAst::AwardPoints(n));
     }
     Err(AstError::Shape("unknown action"))
+}
+
+
+fn parse_actions_from_body(body: &str) -> Result<Vec<ActionAst>, AstError> {
+    let mut out = Vec::new();
+    let bytes = body.as_bytes();
+    let mut i = 0usize;
+    while i < bytes.len() {
+        while i < bytes.len() && (bytes[i] as char).is_whitespace() { i += 1; }
+        if i >= bytes.len() { break; }
+        if bytes[i] as char == '#' { while i < bytes.len() && (bytes[i] as char) != '\n' { i += 1; } continue; }
+        if body[i..].starts_with("do schedule in ") || body[i..].starts_with("do schedule on ") {
+            let (act, used) = parse_schedule_action(&body[i..])?;
+            out.push(act);
+            i += used;
+            continue;
+        }
+        if body[i..].starts_with("do ") {
+            let mut j = i; while j < bytes.len() && (bytes[j] as char) != '\n' { j += 1; }
+            let line = body[i..j].trim_end();
+            out.push(parse_action_from_str(line)?);
+            i = j; continue;
+        }
+        while i < bytes.len() && (bytes[i] as char) != '\n' { i += 1; }
+    }
+    Ok(out)
+}
+
+fn parse_schedule_action(text: &str) -> Result<(ActionAst, usize), AstError> {
+    let s = text.trim_start();
+    let (rest, is_in) = if let Some(r) = s.strip_prefix("do schedule in ") { (r, true) } else if let Some(r) = s.strip_prefix("do schedule on ") { (r, false) } else { return Err(AstError::Shape("not a schedule action")); };
+    let mut idx = 0usize; while idx < rest.len() && rest.as_bytes()[idx].is_ascii_digit() { idx += 1; }
+    if idx == 0 { return Err(AstError::Shape("schedule missing number")); }
+    let num: usize = rest[..idx].parse().map_err(|_| AstError::Shape("invalid schedule number"))?;
+    let rest = &rest[idx..].trim_start();
+    let rest = rest.strip_prefix("if ").ok_or(AstError::Shape("schedule missing 'if'"))?;
+    let brace_pos = rest.find('{').ok_or(AstError::Shape("schedule missing '{'"))?;
+    let header = &rest[..brace_pos].trim();
+    let mut on_false = None; let mut note = None;
+    let onfalse_pos = header.find(" onFalse ");
+    let note_pos = header.find(" note ");
+    let mut cond_end = header.len();
+    if let Some(p) = onfalse_pos { cond_end = cond_end.min(p); }
+    if let Some(p) = note_pos { cond_end = cond_end.min(p); }
+    let cond_str = header[..cond_end].trim();
+    let extras = header[cond_end..].trim();
+    if let Some(idx) = extras.find("onFalse ") {
+        let after = &extras[idx+8..];
+        if after.starts_with("cancel") { on_false = Some(OnFalseAst::Cancel); }
+        else if after.starts_with("retryNextTurn") { on_false = Some(OnFalseAst::RetryNextTurn); }
+        else if let Some(tail) = after.strip_prefix("retryAfter ") {
+            let mut k=0; while k < tail.len() && tail.as_bytes()[k].is_ascii_digit() { k+=1; }
+            if k==0 { return Err(AstError::Shape("retryAfter missing turns")); }
+            let turns: usize = tail[..k].parse().map_err(|_| AstError::Shape("invalid retryAfter turns"))?;
+            on_false = Some(OnFalseAst::RetryAfter{ turns });
+        }
+    }
+    if let Some(idx) = extras.find("note ") {
+        let after = &extras[idx+5..].trim_start();
+        if let Some(r) = after.strip_prefix('"') { if let Some(endq) = r.find('"') { note = Some(r[..endq].to_string()); } }
+    }
+    let condition = parse_condition_text(cond_str)?;
+    let mut p = brace_pos + 1; let bytes2 = rest.as_bytes(); let mut depth = 1i32; while p < rest.len() { let c = bytes2[p] as char; if c == '{' { depth += 1; } else if c == '}' { depth -= 1; if depth == 0 { break; } } p += 1; } if depth != 0 { return Err(AstError::Shape("schedule block not closed")); }
+    let inner_body = &rest[brace_pos+1..p];
+    let actions = parse_actions_from_body(inner_body)?;
+    let consumed = s.len() - rest[p+1..].len();
+    Ok(( if is_in { ActionAst::ScheduleInIf { turns_ahead: num, condition: Box::new(condition), on_false, actions, note } } else { ActionAst::ScheduleOnIf { on_turn: num, condition: Box::new(condition), on_false, actions, note } }, consumed))
 }
