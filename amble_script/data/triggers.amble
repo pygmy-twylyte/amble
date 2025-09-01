@@ -1,0 +1,13 @@
+# Reverse translation of the original triggers.toml in the engine
+# to the amble DSL
+
+trigger "Guard-Post: Traveling Without Towel" only once when enter room guard-post {
+    if missing item towel {
+        do show "You pause here, realizing with increasing concern that you are traveling without a towel."
+    }
+}
+
+trigger "Loading-Dock: Spawn Special Delivery" only once when leave room loading-dock {
+    do spawn item delivery_box into room loading-dock
+    do show "ou hear a thud behind you, back toward the dock, like something was just dropped off. You glimpse a drone flying away quickly, as if hoping not to be seen. Was that an Initech logo on the side?"
+}
