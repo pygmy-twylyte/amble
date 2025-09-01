@@ -23,6 +23,7 @@ pub use system::*;
 
 use crate::command::{Command, parse_command};
 use crate::npc::{Npc, calculate_next_location, move_npc, move_scheduled};
+use crate::scheduler::OnFalsePolicy;
 use crate::spinners::CoreSpinnerType;
 use crate::style::GameStyle;
 use crate::trigger::{TriggerCondition, dispatch_action};
@@ -125,6 +126,8 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             ListNpcs => dev_list_npcs_handler(world, &mut view),
             ListFlags => dev_list_flags_handler(world, &mut view),
             ListSched => dev_list_sched_handler(world, &mut view),
+            SchedCancel(idx) => dev_sched_cancel_handler(world, &mut view, idx),
+            SchedDelay { idx, turns } => dev_sched_delay_handler(world, &mut view, idx, turns),
             AdvanceSeq(seq_name) => dev_advance_seq_handler(world, &mut view, &seq_name),
             ResetSeq(seq_name) => dev_reset_seq_handler(world, &mut view, &seq_name),
             SetFlag(flag_name) => dev_set_flag_handler(world, &mut view, &flag_name),
@@ -174,12 +177,48 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
 pub fn check_scheduled_events(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let now = world.turn_count;
     while let Some(event) = world.scheduler.pop_due(now) {
-        info!(
-            "scheduled event \"{}\" firing --->)",
-            event.note.unwrap_or_else(|| "<no note recorded>".to_string())
-        );
-        for action in event.actions {
-            dispatch_action(world, view, &action)?;
+        let note_text = event.note.clone().unwrap_or_else(|| "<no note recorded>".to_string());
+        let ok = event.condition.as_ref().map(|c| c.eval(world)).unwrap_or(true);
+
+        if ok {
+            info!("scheduled event \"{}\" firing --->)", note_text);
+            for action in event.actions {
+                dispatch_action(world, view, &action)?;
+            }
+        } else {
+            match event.on_false {
+                OnFalsePolicy::Cancel => {
+                    info!("scheduled event \"{}\" canceled (condition false)", note_text);
+                },
+                OnFalsePolicy::RetryAfter(dt) => {
+                    let new_turn = now.saturating_add(dt);
+                    world.scheduler.schedule_on_if(
+                        new_turn,
+                        event.condition.clone(),
+                        event.on_false.clone(),
+                        event.actions.clone(),
+                        event.note.clone(),
+                    );
+                    info!(
+                        "scheduled event \"{}\" rescheduled for turn {} (RetryAfter {})",
+                        note_text, new_turn, dt
+                    );
+                },
+                OnFalsePolicy::RetryNextTurn => {
+                    let new_turn = now.saturating_add(1);
+                    world.scheduler.schedule_on_if(
+                        new_turn,
+                        event.condition.clone(),
+                        event.on_false.clone(),
+                        event.actions.clone(),
+                        event.note.clone(),
+                    );
+                    info!(
+                        "scheduled event \"{}\" rescheduled for next turn {}",
+                        note_text, new_turn
+                    );
+                },
+            }
         }
     }
     Ok(())

@@ -17,7 +17,7 @@ use std::collections::BinaryHeap;
 use log::info;
 use serde::{Deserialize, Serialize};
 
-use crate::trigger::TriggerAction;
+use crate::trigger::{TriggerAction, TriggerCondition};
 
 #[cfg(test)]
 const PLACEHOLDER_THRESHOLD: usize = 4;
@@ -43,7 +43,7 @@ impl Scheduler {
         };
         info!("scheduling event (turn now/due = {now}/{on_turn}): \"{log_msg}\"");
         self.heap.push(Reverse((on_turn, idx)));
-        self.events.push(ScheduledEvent { on_turn, actions, note });
+        self.events.push(ScheduledEvent { on_turn, actions, note, condition: None, on_false: OnFalsePolicy::Cancel });
     }
 
     /// Schedule some `TriggerActions` to fire on a specific turn.
@@ -55,7 +55,41 @@ impl Scheduler {
         };
         info!("scheduling event (turn due = {on_turn}): \"{log_msg}\"");
         self.heap.push(Reverse((on_turn, idx)));
-        self.events.push(ScheduledEvent { on_turn, actions, note });
+        self.events.push(ScheduledEvent { on_turn, actions, note, condition: None, on_false: OnFalsePolicy::Cancel });
+    }
+
+    /// Schedule actions in the future with an optional condition and on-false policy.
+    pub fn schedule_in_if(
+        &mut self,
+        now: usize,
+        turns_ahead: usize,
+        condition: Option<EventCondition>,
+        on_false: OnFalsePolicy,
+        actions: Vec<TriggerAction>,
+        note: Option<String>,
+    ) {
+        let idx = self.events.len();
+        let on_turn = now + turns_ahead;
+        let log_msg = match &note { Some(msg) => msg.as_str(), None => "<no note provided>" };
+        info!("scheduling conditional event (turn now/due = {now}/{on_turn}): \"{log_msg}\"");
+        self.heap.push(Reverse((on_turn, idx)));
+        self.events.push(ScheduledEvent { on_turn, actions, note, condition, on_false });
+    }
+
+    /// Schedule actions on a specific turn with an optional condition and on-false policy.
+    pub fn schedule_on_if(
+        &mut self,
+        on_turn: usize,
+        condition: Option<EventCondition>,
+        on_false: OnFalsePolicy,
+        actions: Vec<TriggerAction>,
+        note: Option<String>,
+    ) {
+        let idx = self.events.len();
+        let log_msg = match &note { Some(note) => note.as_str(), None => "<no note provided>" };
+        info!("scheduling conditional event (turn due = {on_turn}): \"{log_msg}\"");
+        self.heap.push(Reverse((on_turn, idx)));
+        self.events.push(ScheduledEvent { on_turn, actions, note, condition, on_false });
     }
 
     /// Pop the next due event, if any.
@@ -102,16 +136,68 @@ impl Scheduler {
 /// on_turn = turn on which to fire
 /// actions = list of TriggerActions to take when the turn arrives
 /// note = description of event (for logging)
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScheduledEvent {
     pub on_turn: usize,
     pub actions: Vec<TriggerAction>,
     pub note: Option<String>,
+    /// Optional condition that must be true for the event to fire.
+    pub condition: Option<EventCondition>,
+    /// Policy to apply when the condition evaluates to false.
+    pub on_false: OnFalsePolicy,
 }
 
 impl ScheduledEvent {
     fn is_placeholder(&self) -> bool {
-        self.on_turn == 0 && self.actions.is_empty() && self.note.is_none()
+        self.on_turn == 0 && self.actions.is_empty() && self.note.is_none() && self.condition.is_none()
+    }
+}
+
+impl Default for ScheduledEvent {
+    fn default() -> Self {
+        Self {
+            on_turn: 0,
+            actions: Vec::new(),
+            note: None,
+            condition: None,
+            on_false: OnFalsePolicy::Cancel,
+        }
+    }
+}
+
+/// Policy controlling behavior when a scheduled event's condition is false.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum OnFalsePolicy {
+    /// Cancel the event and do not retry.
+    Cancel,
+    /// Retry after the specified number of turns.
+    RetryAfter(usize),
+    /// Retry on the next turn.
+    RetryNextTurn,
+}
+
+impl Default for OnFalsePolicy {
+    fn default() -> Self { OnFalsePolicy::Cancel }
+}
+
+/// Condition for scheduled events. Can wrap a `TriggerCondition` or combine multiple.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum EventCondition {
+    /// Single trigger condition; evaluated via existing machinery.
+    Trigger(TriggerCondition),
+    /// All subconditions must be true.
+    All(Vec<EventCondition>),
+    /// Any subcondition must be true.
+    Any(Vec<EventCondition>),
+}
+
+impl EventCondition {
+    pub fn eval(&self, world: &crate::world::AmbleWorld) -> bool {
+        match self {
+            EventCondition::Trigger(tc) => tc.is_ongoing(world),
+            EventCondition::All(conds) => conds.iter().all(|c| c.eval(world)),
+            EventCondition::Any(conds) => conds.iter().any(|c| c.eval(world)),
+        }
     }
 }
 
