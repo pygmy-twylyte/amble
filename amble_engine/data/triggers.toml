@@ -44,6 +44,7 @@ actions = [
 ]
 
 # burn rug to reveal hidden exit to portal room
+# in triggers.amble
 [[triggers]]
 name = "Lounge: Rug Burned Away"
 only_once = true
@@ -59,6 +60,7 @@ actions = [
 ]
 
 # give portal_powered flag when charged battery inserted
+# in triggers.amble
 [[triggers]]
 name = "Portal-Room: Gun Powered"
 only_once = false
@@ -74,6 +76,7 @@ actions = [
 ]
 
 # turn on: if gun powered, open portal exit to Aperture Science Laboratory
+# in triggers.amble
 [[triggers]]
 name = "Portal-Room: Open Portal"
 only_once = true
@@ -88,6 +91,7 @@ actions = [
     { type = "showMessage", text = """A loud \"Squip!\" comes from the gun. The wall in front of it sizzles for a moment, and then a crackling oval blue portal expands on the wall to reveal a laboratory space on the other side.""" },
 ]
 
+# NOT IN TRIGGERS.AMBLE (MAY BE UNNEEDED TRIGGER LEFT FROM OLD BUILD)
 [[triggers]]
 name = "Portal-Room: Portal Gun Opened"
 only_once = true
@@ -97,6 +101,7 @@ actions = [
 ]
 
 # turn on: fail, gun not powered yet
+# in triggers.amble
 [[triggers]]
 name = "Portal-Room: Can't Turn Gun On Without Power"
 only_once = false
@@ -109,6 +114,7 @@ actions = [
 ]
 
 # START LAB PRINTER TRIGGERS
+# in triggers.amble
 [[triggers]]
 name = "Aperture-Lab: Printer Burns Paper"
 only_once = false
@@ -125,6 +131,7 @@ actions = [
     { type = "showMessage", text = """A nearby smoke detector alarms briefly, then quits with an exasperated sigh when it sees you using the printer.""" },
 ]
 
+# in triggers.amble
 [[triggers]]
 name = "Aperture-Lab: Print Invitation (Asbestos)"
 only_once = true
@@ -141,6 +148,7 @@ actions = [
     { type = "showMessage", text = """When your vision clears, you see a slightly glowing printed invitation on the floor.""" },
 ]
 
+# in triggers.amble
 [[triggers]]
 name = "Aperture-Lab: FoamSafe Misfire"
 only_once = true
@@ -160,6 +168,7 @@ actions = [
 ]
 
 # messages and flag when invitation is acquired
+# in triggers.amble
 [[triggers]]
 name = "Aperture-Lab: Insulate using Towel"
 only_once = true
@@ -170,6 +179,7 @@ actions = [
     { type = "showMessage", text = """You wrap your towel around your hand like a catcher's mitt to grasp the invitation.""" },
 ]
 
+# in triggers.amble
 [[triggers]]
 name = "Aperture-Lab: Handle the Hot Invitation"
 only_once = true
@@ -184,6 +194,7 @@ actions = [
     { type = "showMessage", text = """With some insulation between your hand and the piping hot document, you're able to get it into your pack.""" },
 ]
 
+# in triggers.amble
 [[triggers]]
 name = "Aperture-Lab: Drop Invitation w/o Using Towel"
 only_once = false
@@ -197,6 +208,7 @@ actions = [
     { type = "showMessage", text = """You burn your fingers and drop the invitation on the floor. It emits a reddish glow, and shimmers from the radiating heat.""" },
 ]
 
+# in triggers.amble
 [[triggers]]
 name = "Aperture-Lab: Invitation Hint"
 only_once = true
@@ -209,6 +221,7 @@ actions = [
 ]
 
 # START TRIGGERS FOR VOGON POETRY --> OPEN PANIC ROOM
+# in triggers.amble
 [[triggers]]
 name = "Office: Insert Vogon Poetry -> Reveal Panic Room"
 only_once = true
@@ -227,6 +240,7 @@ actions = [
 # START ELEVATOR ACTIVATION TRIGGERS
 # (note: life exit no longer added here -- now exists from the start but is
 # disabled if player isn't carrying the pass and keycard.
+# in triggers.amble
 [[triggers]]
 name = "Elevator: Activate-Elevator"
 only_once = true
@@ -240,6 +254,7 @@ actions = [
 ]
 
 # B-A Receptionist Triggers
+# in triggers.amble
 [[triggers]]
 name = "Office: Snooty-Receptionist-If-No-Pass"
 only_once = false
@@ -252,6 +267,7 @@ actions = [
     { type = "setNpcState", npc_id = "b_a_receptionist", state = "normal" },
 ]
 
+# in triggers.amble
 [[triggers]]
 name = "Office: Helpful-Receptionist-If-Have-Pass"
 only_once = false
@@ -337,6 +353,8 @@ conditions = [{ type = "useItem", item_id = "scrawled_note", ability = "read" }]
 actions = [
     { type = "addFlag", flag = { type = "simple", name = "read-scrawled-note" } },
 ]
+
+########################################################## triggers.amble covers to here ###############################################
 
 [[triggers]]
 name = "Plaque 1: Cleaned"
@@ -1279,4 +1297,5 @@ actions = [
         ] },
     ] },
 ]
+
 
