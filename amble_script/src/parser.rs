@@ -218,15 +218,41 @@ fn extract_body(src: &str) -> Result<&str, AstError> {
     let mut depth = 0i32;
     let mut start = None;
     let mut end = None;
-    for (i, &b) in bytes.iter().enumerate() {
-        let c = b as char;
-        if c == '{' {
-            if depth == 0 { start = Some(i + 1); }
-            depth += 1;
-        } else if c == '}' {
-            depth -= 1;
-            if depth == 0 { end = Some(i); break; }
+    let mut i = 0usize;
+    let mut in_str = false;
+    let mut escape = false;
+    let mut in_comment = false;
+    while i < bytes.len() {
+        let c = bytes[i] as char;
+        if in_comment {
+            if c == '\n' { in_comment = false; }
+            i += 1;
+            continue;
         }
+        if in_str {
+            if escape {
+                escape = false;
+            } else {
+                if c == '\\' { escape = true; }
+                else if c == '"' { in_str = false; }
+            }
+            i += 1;
+            continue;
+        }
+        match c {
+            '"' => { in_str = true; },
+            '#' => { in_comment = true; },
+            '{' => {
+                if depth == 0 { start = Some(i + 1); }
+                depth += 1;
+            },
+            '}' => {
+                depth -= 1;
+                if depth == 0 { end = Some(i); break; }
+            },
+            _ => {},
+        }
+        i += 1;
     }
     let s = start.ok_or(AstError::Shape("missing '{' body start"))?;
     let e = end.ok_or(AstError::Shape("missing '}' body end"))?;
@@ -725,4 +751,30 @@ impl SourceMap {
 
 fn str_offset(full: &str, slice: &str) -> usize {
     (slice.as_ptr() as usize) - (full.as_ptr() as usize)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn braces_in_strings_dont_break_body_scan() {
+        let src = r#"
+trigger "brace text" when always {
+    do show "Shiny {curly} braces"
+}
+"#;
+        parse_trigger(src).expect("should parse");
+    }
+
+    #[test]
+    fn braces_in_comments_dont_break_body_scan() {
+        let src = r#"
+trigger "comment braces" when always {
+    # { not a block } in comment
+    do show "ok"
+}
+"#;
+        parse_trigger(src).expect("should parse");
+    }
 }
