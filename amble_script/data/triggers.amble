@@ -4,6 +4,14 @@
 # Item abilities are in camelCase.
 
 # ------------------------------------------------------------------------------------------------------------------EXTERIOR TRIGGERS BEGIN
+
+# ..................................................................................................................HIGH-RIDGE
+
+trigger "High-Ridge: Read Scrawled Note" only once when use item scrawled_note ability read {
+    do add flag read-scrawled-note
+}
+
+
 # ..................................................................................................................GUARD-POST
 
 trigger "Guard-Post: Traveling Without Towel" only once when enter room guard-post {
@@ -20,10 +28,80 @@ trigger "Loading-Dock: Spawn Special Delivery" only once when leave room loading
 }
 
 # ------------------------------------------------------------------------------------------------------------------MAIN FLOOR INTERIOR TRIGGERS
+
+# ..................................................................................................................MAIN-LOBBY
+
+trigger "Gonk Droid: Battery Exchange" only once when give item empty_battery to npc gonk_droid {
+    do award points 2
+    do give item charged_battery to player from npc gonk_droid
+    do set npc state gonk_droid happy
+    do show "Elated that you've given it such a large, empty battery to charge, the gonk droid gives you a fully charged one, free of ... charge?"
+}
+
+trigger "Gonk Droid: Happy When Family Photo Inspected" only once when look at item gonk_family_photo {
+    do npc says gonk_droid "GONK gonk!"
+    do show "The gonk droid totters with pride as you view its family photo."
+    do award points 2
+    do add flag made-gonk-proud
+}
+
+# ..................................................................................................................PATIO
+
+trigger "Patio: Sunglasses Required" when enter room patio {
+    if missing item peril_sunglasses {
+        do push player to restaurant
+        do show "A blinding burst of light erupts from the swirling starfield, forcing you to shield your eyes. With no protection, you're driven back into the relative safety of the restaurant."
+    }
+}
+
+trigger "Patio: Have Sunglasses" when enter room patio {
+    if has item peril_sunglasses {
+        do show "Sensing the possible harm in eating a dessert a stone's throw away from the explosions of all nearby stars, your peril-sensitive sunglasses flash nearly completely opaque, allowing you to see without permanent damage to the retina as the galaxies outside continue to erupt."
+    }
+}
+
+trigger "Patio: Award Points Getting In" only once when enter room patio {
+    if has item peril_sunglasses {
+        do award points 2
+    }
+}
+
+
 # ..................................................................................................................B-A-OFFICE
+
+trigger "Office: Receptionist Unhelpful if No Pass" when always {
+    if all(with npc b_a_receptionist, missing flag got-visitor-pass, missing flag got-elevator-keycard) {
+        do set npc state b_a_receptionist normal
+    }
+}
+
+trigger "Office: Receptionist Helpful Once Pass Acquired" when always {
+    if all(with npc b_a_receptionist, has flag got-visitor-pass, missing flag got-elevator-keycard) {
+        do set npc state b_a_receptionist happy
+    }
+}
+
+trigger "Office: Exchange Invitation for Visitor Pass" when give item invitation to npc b_a_receptionist {
+    do add flag got-visitor-pass
+    do despawn item invitation
+    do spawn item visitor_pass in inventory
+    do award points 5
+    do set npc state b_a_receptionist happy
+    do show "The robotic receptionist initially glances at you with the disdain of someone who spends all day waiting on people who are waiting on someone else, but her demeanor and even appearance immediately become pleasant when she sees the invitation in your hand. She deftly takes it from you, scrutinizes it intently, and slips it into a desktop document vaporizer.\n\nShe then hands you a laminated card on a lanyard. It appears blank, yet also appears to show a variety of credentials at the same time."
+    do npc says b_a_receptionist "Here is your visitor pass. Much of the facility will be inaccessible without it, so treat it like a second towel."
+}
 
 trigger "Office: Open Poetry Performer" when open item poetry_performer {
     do show "The machine clicks on and hums. A flashing red light warns:\n            ⚠️ NOT FOR USE WITH VOGON POETRY ⚠️"
+}
+
+trigger "Office: Insert Poems to Open Panic Room" only once when insert item vogon_poetry_book into item poetry_performer {
+    do award points 5
+    do despawn item vogon_poetry_book
+    do add flag panic-room-open
+    do reveal exit from b-a-office to poetry-panic direction west
+    do add wedge "PA announcement: Vogon poetry has been detected in the building. If you are experiencing nausea, go to med bay for assistance." width 1 spinner ambientInterior
+    do show "The machine begins to whine at a high pitch and gives off a noxious odor of burning hair. A klaxon blares and the display warns:\n\n            ⚠️ VOGON INPUT DETECTED - POETRY PANIC ROOM UNLOCKED ⚠️\n               ☣ VAPORIZING VOGON INPUT - AVOID TOXIC FUMES ☣\n\nThe whiteboard on the west wall slides to the side, revealing a vault-like door."
 }
 
 # ..................................................................................................................LOUNGE
@@ -43,13 +121,28 @@ trigger "Lounge: Rug Burned Away" only once when act burn on item lebowski_rug {
     do show "When the acrid smoke clears and your eyes stop burning, you can make out a trap door revealed in the floor where the rug used to be."
 }
 
+# ..................................................................................................................LIFT-BANK-MAIN
+
+trigger "Lift-Bank-Main: Keycard Activates Elevator" when enter room lift-bank-main {
+    if has item elevator_keycard {
+        do show "The keycard in your pack chirps twice as you approach the proximity reader on the wall, which responds with a happy melody."
+    }
+}
+
+trigger "Lift-Bank-Main: Point Award On First Activation" only once when enter room lift-bank-main {
+    if has item elevator_keycard {
+        do show "The main lift lights up, and Muzak plays over a tinny speaker inside. In horror, you realize: It's Porcupine Tree's 'The Sound of Muzak' -- the Muzak version."
+        do award points 3
+    }
+}
+
 # ..................................................................................................................PORTAL-ROOM
 
 trigger "Portal-Room: Gun Powered" when insert item charged_battery into item portal_gun {
     do add flag portal-gun-powered
     do award points 3
     do restrict item charged_battery
-    do set item description portal_gun "A black and white Portal gun sits on its pedestal, aimed at a target on the wall. A fused battery juts from the compartment and the power indicator glows steadily green."
+    do set item description portal_gun "A black and white Portal gun sits bolted to its pedestal, aimed at a target on the wall. A fused battery juts from the compartment and the power indicator glows steadily green."
     do show "Arcing wildly as you insert it, the fully charged 20 KV battery fuses itself to the contacts inside the portal gun -- when then emits a quick high-pitched whine. The POWER indicator lights a steady green."
 }
 
@@ -78,5 +171,72 @@ trigger "Aperture-Lab: Printer Burns Paper" when use item lab_printer ability tu
         do add wedge "An annoyed voice on the PA: ATTENTION Staff - do NOT use regular copy paper in the lab PlasmaJet printer, or we will be shut down again -- by order of FEMA, PETA, the ATF, FBI, and our HOA." width 1 spinner ambientInterior
         do show "The paper ignites in a flash, and the PlasmaJet spits the flaming fragments of a document on the floor at your feet."
         do show "A nearby smoke detector alarms briefly, the quits with an exasperated sigh when it sees you near the printer, surrounded by smoldering confetti."
+    }
+}
+
+trigger "Aperture-Lab: Print Invitation on Asbestos" only once when use item lab_printer ability turnOn {
+    if container lab_printer has item asbestos_sheet {
+        do add flag invitation-sans-ignition
+        do award points 10
+        do despawn item asbestos_sheet
+        do show "The PlasmaJet emits a blinding flash of light, leaving a printer-shaped purple blob in your visual field and blinding you for a few moments."
+        do schedule in 1 note "blindness clears" {
+            do spawn item invitation into room aperture-lab
+            do show "Your vision begins to clear, and you see an engraved invitation on the floor. It glows slightly, and waves of heat warp the air around it."
+        }
+    }
+}
+
+trigger "Aperture-Lab: FoamSafe Misfire" only once when use item foamsafe_x17 on item burnt_invitation interaction extinguish {
+    do despawn item foamsafe_x17
+    do show "You spray the foam onto the burning invitation. Instead of dousing the flame, the foam flares up into a spectacular fireball!"
+    do add seq flag foam-fire-in-lab limit 3
+    do schedule in 2 note "foam fire starts" {
+        do show "The foam fire accelerates, as it turns into a hissing, popping ball of goo spitting off little globs of flaming napalm!"
+        do advance flag foam-fire-in-lab
+    }
+    do schedule in 3 note "foam fire spreads" {
+        do show "The fire alarm begins to wail as the flames spread through the lab and the sprinklers turn on, pushing you back toward the portal to escape!"
+        do advance flag foam-fire-in-lab
+        do push player to portal-room
+    }
+    do schedule in 8 note "foam fire out" {
+        do show "The alarms stop. The fire in the Aperture lab has been extinguised. Hopefully nobody saw you light it, you monster."
+        do advance flag foam-fire-in-lab
+        do award points 5
+    }
+}
+
+trigger "Aperture-Lab: Can't Enter While Lab On Fire" when enter room aperture-lab {
+    if flag in progress foam-fire-in-lab {
+        do show "You try to get back into the lab, but the flames and oily smoke from the foam fire drive you back through the portal within seconds."
+        do push player to portal-room
+    }
+}
+
+trigger "Aperture-Lab: Insulate With Towel" when use item towel on item invitation interaction handle {
+    do show "You wrap your towel around the still-piping-hot invitation to grasp it, suffering only minor burns in the process."
+}
+
+trigger "Aperture-Lab: Handle/Take Invitation with Towel" only once when act handle on item invitation {
+    do despawn item invitation
+    do spawn item invitation in inventory
+    do add flag got-invitation
+    do award points 5
+    do show "Using your towel as insulation, you're able to wrangle the still-hot invitation into your pack."
+}
+
+trigger "Aperture-Lab: Drop Invitation Without Insulation" when take item invitation {
+    do replace drop item invitation with invitation
+    do show "You burn your fingers and drop the invitation on the floor. It emits a reddish glow, and shimmers from the radiating heat."
+}
+
+# ------------------------------------------------------------------------------------------------------------------HINT TRIGGERS
+
+trigger "Aperture-Lab: Invitation Hint" only once when always {
+    if has flag got-invitation {
+        do schedule in 10 if all(has flag got-invitation, missing flag got-visitor-pass, has visited room b-a-office) onFalse cancel note "invitation hint" {
+            do show "The invitation has cooled down enough now for you to give it to the receptionist in the Amble Adventures office ... maybe she'll help you now."
+        }
     }
 }
