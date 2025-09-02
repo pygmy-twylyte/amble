@@ -610,43 +610,71 @@ fn parse_actions_from_body(body: &str, source: &str, smap: &SourceMap, sets: &Ha
 
 fn parse_schedule_action(text: &str, source: &str, smap: &SourceMap, sets: &HashMap<String, Vec<String>>) -> Result<(ActionAst, usize), AstError> {
     let s = text.trim_start();
-    let (rest, is_in) = if let Some(r) = s.strip_prefix("do schedule in ") { (r, true) } else if let Some(r) = s.strip_prefix("do schedule on ") { (r, false) } else { return Err(AstError::Shape("not a schedule action")); };
-    let mut idx = 0usize; while idx < rest.len() && rest.as_bytes()[idx].is_ascii_digit() { idx += 1; }
+    let (rest0, is_in) = if let Some(r) = s.strip_prefix("do schedule in ") { (r, true) } else if let Some(r) = s.strip_prefix("do schedule on ") { (r, false) } else { return Err(AstError::Shape("not a schedule action")); };
+    // parse number
+    let mut idx = 0usize; while idx < rest0.len() && rest0.as_bytes()[idx].is_ascii_digit() { idx += 1; }
     if idx == 0 { return Err(AstError::Shape("schedule missing number")); }
-    let num: usize = rest[..idx].parse().map_err(|_| AstError::Shape("invalid schedule number"))?;
-    let rest = &rest[idx..].trim_start();
-    let rest = rest.strip_prefix("if ").ok_or(AstError::Shape("schedule missing 'if'"))?;
-    let brace_pos = rest.find('{').ok_or(AstError::Shape("schedule missing '{'"))?;
-    let header = &rest[..brace_pos].trim();
-    let mut on_false = None; let mut note = None;
-    let onfalse_pos = header.find(" onFalse ");
-    let note_pos = header.find(" note ");
-    let mut cond_end = header.len();
-    if let Some(p) = onfalse_pos { cond_end = cond_end.min(p); }
-    if let Some(p) = note_pos { cond_end = cond_end.min(p); }
-    let cond_str = header[..cond_end].trim();
-    let extras = header[cond_end..].trim();
-    if let Some(idx) = extras.find("onFalse ") {
-        let after = &extras[idx+8..];
-        if after.starts_with("cancel") { on_false = Some(OnFalseAst::Cancel); }
-        else if after.starts_with("retryNextTurn") { on_false = Some(OnFalseAst::RetryNextTurn); }
-        else if let Some(tail) = after.strip_prefix("retryAfter ") {
-            let mut k=0; while k < tail.len() && tail.as_bytes()[k].is_ascii_digit() { k+=1; }
-            if k==0 { return Err(AstError::Shape("retryAfter missing turns")); }
-            let turns: usize = tail[..k].parse().map_err(|_| AstError::Shape("invalid retryAfter turns"))?;
-            on_false = Some(OnFalseAst::RetryAfter{ turns });
+    let num: usize = rest0[..idx].parse().map_err(|_| AstError::Shape("invalid schedule number"))?;
+    let rest1 = &rest0[idx..].trim_start();
+    // Find the opening brace of the block and capture header between number and '{'
+    let brace_pos = rest1.find('{').ok_or(AstError::Shape("schedule missing '{'"))?;
+    let header = rest1[..brace_pos].trim();
+
+    let mut on_false = None; let mut note = None; let mut cond: Option<ConditionAst> = None;
+
+    if header.starts_with("if ") {
+        // Conditional schedule path
+        let hdr_after_if = &header[3..];
+        let onfalse_pos = hdr_after_if.find(" onFalse ");
+        let note_pos = hdr_after_if.find(" note ");
+        let mut cond_end = hdr_after_if.len();
+        if let Some(p) = onfalse_pos { cond_end = cond_end.min(p); }
+        if let Some(p) = note_pos { cond_end = cond_end.min(p); }
+        let cond_str = hdr_after_if[..cond_end].trim();
+        let extras = hdr_after_if[cond_end..].trim();
+        if let Some(idx) = extras.find("onFalse ") {
+            let after = &extras[idx+8..];
+            if after.starts_with("cancel") { on_false = Some(OnFalseAst::Cancel); }
+            else if after.starts_with("retryNextTurn") { on_false = Some(OnFalseAst::RetryNextTurn); }
+            else if let Some(tail) = after.strip_prefix("retryAfter ") {
+                let mut k=0; while k < tail.len() && tail.as_bytes()[k].is_ascii_digit() { k+=1; }
+                if k==0 { return Err(AstError::Shape("retryAfter missing turns")); }
+                let turns: usize = tail[..k].parse().map_err(|_| AstError::Shape("invalid retryAfter turns"))?;
+                on_false = Some(OnFalseAst::RetryAfter{ turns });
+            }
+        }
+        if let Some(idx) = extras.find("note ") {
+            let after = &extras[idx+5..].trim_start();
+            if let Some(r) = after.strip_prefix('"') { if let Some(endq) = r.find('"') { note = Some(r[..endq].to_string()); } }
+        }
+        cond = Some(parse_condition_text(cond_str, sets)?);
+    } else {
+        // Unconditional schedule path; allow optional note in header
+        if !header.is_empty() {
+            if let Some(idx) = header.find("note ") {
+                let after = &header[idx+5..].trim_start();
+                if let Some(r) = after.strip_prefix('"') { if let Some(endq) = r.find('"') { note = Some(r[..endq].to_string()); } }
+            } else {
+                // Unknown tokens in header
+                // Be forgiving: ignore whitespace-only; otherwise error
+                if !header.trim().is_empty() { return Err(AstError::Shape("unexpected schedule header; expected 'if ...' or 'note \"...\"'")); }
+            }
         }
     }
-    if let Some(idx) = extras.find("note ") {
-        let after = &extras[idx+5..].trim_start();
-        if let Some(r) = after.strip_prefix('"') { if let Some(endq) = r.find('"') { note = Some(r[..endq].to_string()); } }
-    }
-    let condition = parse_condition_text(cond_str, sets)?;
-    let mut p = brace_pos + 1; let bytes2 = rest.as_bytes(); let mut depth = 1i32; while p < rest.len() { let c = bytes2[p] as char; if c == '{' { depth += 1; } else if c == '}' { depth -= 1; if depth == 0 { break; } } p += 1; } if depth != 0 { return Err(AstError::Shape("schedule block not closed")); }
-    let inner_body = &rest[brace_pos+1..p];
+
+    // Extract block body
+    let mut p = brace_pos + 1; let bytes2 = rest1.as_bytes(); let mut depth = 1i32; while p < rest1.len() { let c = bytes2[p] as char; if c == '{' { depth += 1; } else if c == '}' { depth -= 1; if depth == 0 { break; } } p += 1; } if depth != 0 { return Err(AstError::Shape("schedule block not closed")); }
+    let inner_body = &rest1[brace_pos+1..p];
     let actions = parse_actions_from_body(inner_body, source, smap, sets)?;
-    let consumed = s.len() - rest[p+1..].len();
-    Ok(( if is_in { ActionAst::ScheduleInIf { turns_ahead: num, condition: Box::new(condition), on_false, actions, note } } else { ActionAst::ScheduleOnIf { on_turn: num, condition: Box::new(condition), on_false, actions, note } }, consumed))
+    let consumed = s.len() - rest1[p+1..].len();
+
+    let act = match (is_in, cond) {
+        (true, Some(c)) => ActionAst::ScheduleInIf { turns_ahead: num, condition: Box::new(c), on_false, actions, note },
+        (false, Some(c)) => ActionAst::ScheduleOnIf { on_turn: num, condition: Box::new(c), on_false, actions, note },
+        (true, None) => ActionAst::ScheduleIn { turns_ahead: num, actions, note },
+        (false, None) => ActionAst::ScheduleOn { on_turn: num, actions, note },
+    };
+    Ok((act, consumed))
 }
 
 
