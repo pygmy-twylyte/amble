@@ -146,6 +146,8 @@ do schedule on 20 if any(player in room hall, player in room kitchen) onFalse ca
 }
 ```
 
+**NOTE:** The turn counter is advanced immediately after events are scheduled, so an event scheduled in 1 turn will appear to fire with no delay. Use 2 or more for something to fire after an apparent delay.
+
 ## Sets for Ambients
 
 Sets let you name and reuse room lists in ambient conditions.
@@ -227,4 +229,3 @@ Action atoms:
 —
 
 If you find yourself repeating a list of rooms for ambients, declare a `set` once and reuse it. If you need a recipe that isn’t here, we can extend the DSL — the intent is to make authoring fast, readable, and safe.
-
