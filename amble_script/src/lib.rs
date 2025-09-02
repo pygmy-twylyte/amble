@@ -776,6 +776,30 @@ trigger "give test" when give item printer_paper to npc receptionist {
     }
 
     #[test]
+    fn parse_flag_in_progress_and_push_player() {
+        let src = r#"
+trigger "Aperture-Lab: Can't Enter While On Fire" when enter room aperture-lab {
+  if flag in progress foam-fire-in-lab {
+    do show "You try to get back into the lab, but the flames and oily smoke from the foam fire drive you back through the portal within seconds."
+    do push player to portal-room
+  }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        assert!(matches!(ast.event, ConditionAst::EnterRoom(ref s) if s == "aperture-lab"));
+        assert!(matches!(ast.conditions[0], ConditionAst::FlagInProgress(ref s) if s == "foam-fire-in-lab"));
+        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::PushPlayerTo(ref r) if r == "portal-room")));
+
+        let toml = compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("type = \"enter\""));
+        assert!(toml.contains("room_id = \"aperture-lab\""));
+        assert!(toml.contains("type = \"flagInProgress\""));
+        assert!(toml.contains("flag = \"foam-fire-in-lab\""));
+        assert!(toml.contains("type = \"pushPlayerTo\""));
+        assert!(toml.contains("room_id = \"portal-room\""));
+    }
+
+    #[test]
     fn parse_when_misc_events() {
         let src = r#"
 trigger "drop test" when drop item towel {
@@ -839,6 +863,28 @@ trigger "schedule demo" when enter room lab {
         assert!(toml.contains("on_turn = 20"));
         assert!(toml.contains("type = \"cancel\""));
         assert!(toml.contains("type = \"awardPoints\""));
+    }
+
+    #[test]
+    fn parse_schedule_in_and_on_unconditional() {
+        let src = r#"
+trigger "schedule simple" when enter room lab {
+  do schedule in 3 {
+    do show "soon"
+  }
+  do schedule on 42 note "absolute" {
+    do award points 5
+  }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        assert_eq!(ast.actions.len(), 2);
+        let toml = compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("type = \"scheduleIn\""));
+        assert!(toml.contains("turns_ahead = 3"));
+        assert!(toml.contains("type = \"scheduleOn\""));
+        assert!(toml.contains("on_turn = 42"));
+        assert!(toml.contains("note = \"absolute\""));
     }
 
 
