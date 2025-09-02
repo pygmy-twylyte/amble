@@ -90,12 +90,34 @@ do_action = {
 }
 
 // Conditions
-cond = { any_group | all_group | has_flag | missing_flag | has_item | missing_item | player_in_room | container_has_item | chance_cond | ambient_cond }
+cond = { any_group
+       | all_group
+       | has_flag
+       | missing_flag
+       | has_item
+       | missing_item
+       | has_visited_room
+       | flag_in_progress
+       | flag_complete
+       | with_npc
+       | npc_has_item
+       | npc_in_state
+       | player_in_room
+       | container_has_item
+       | chance_cond
+       | ambient_cond }
 
 has_flag           = { "has" ~ "flag" ~ ident }
 missing_flag       = { "missing" ~ "flag" ~ ident }
 has_item           = { "has" ~ "item" ~ ident }
 missing_item       = { "missing" ~ "item" ~ ident }
+has_visited_room   = { "has" ~ "visited" ~ "room" ~ ident }
+flag_in_progress   = { "flag" ~ "in" ~ "progress" ~ ident }
+flag_complete      = { "flag" ~ "complete" ~ ident }
+with_npc           = { "with" ~ "npc" ~ ident }
+// Note: DSL shape here matches parser's simple split: "npc has item <npc> <item>"
+npc_has_item       = { "npc" ~ "has" ~ "item" ~ ident ~ ident }
+npc_in_state       = { "npc" ~ "in" ~ "state" ~ ident ~ ident }
 player_in_room     = { "player" ~ "in" ~ "room" ~ ident }
 // DSL phrasing: "container <container> has item <item>"
 container_has_item = { "container" ~ ident ~ "has" ~ "item" ~ ident }
