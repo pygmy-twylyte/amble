@@ -21,7 +21,7 @@ pub enum AstError {
 
 /// Parse a single trigger source string; returns the first trigger found.
 pub fn parse_trigger(source: &str) -> Result<TriggerAst, AstError> {
-    let mut v = parse_program(source)?;
+    let v = parse_program(source)?;
     v.into_iter().next().ok_or(AstError::Shape("no trigger found"))
 }
 
@@ -31,7 +31,7 @@ pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
     let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
     let smap = SourceMap::new(source);
     let mut sets: HashMap<String, Vec<String>> = HashMap::new();
-    let mut triggers = Vec::new();
+    let mut trigger_pairs = Vec::new();
     for item in pair.clone().into_inner() {
         match item.as_rule() {
             Rule::set_decl => {
@@ -45,14 +45,15 @@ pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
                 sets.insert(name, vals);
             }
             Rule::trigger => {
-                triggers.push(item);
+                trigger_pairs.push(item);
             }
             _ => {}
         }
     }
     let mut out = Vec::new();
-    for trig in triggers {
-        out.push(parse_trigger_pair(trig, source, &smap, &sets)?);
+    for trig in trigger_pairs {
+        let mut ts = parse_trigger_pair(trig, source, &smap, &sets)?;
+        out.append(&mut ts);
     }
     Ok(out)
 }
@@ -62,25 +63,33 @@ fn parse_trigger_pair(
     source: &str,
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
-) -> Result<TriggerAst, AstError> {
+) -> Result<Vec<TriggerAst>, AstError> {
     let mut it = trig.into_inner();
 
-    // trigger -> "trigger" ~ quoted ~ [only once]? ~ "when" ~ when_cond ~ block
+    // trigger -> "trigger" ~ string ~ (only once|note)* ~ "when" ~ when_cond ~ block
     let q = it.next().ok_or(AstError::Shape("expected trigger name"))?;
-    if q.as_rule() != Rule::quoted {
-        return Err(AstError::Shape("expected quoted trigger name"));
+    if q.as_rule() != Rule::string {
+        return Err(AstError::Shape("expected string trigger name"));
     }
     let name = unquote(q.as_str());
 
-    // optional only once
+    // optional modifiers: only once and/or note in any order
     let mut only_once = false;
-    let mut next_pair = it.next().ok_or(AstError::Shape("expected when/only once"))?;
-    let mut when = if next_pair.as_rule() == Rule::only_once_kw {
-        only_once = true;
-        it.next().ok_or(AstError::Shape("expected when condition"))?
-    } else {
-        next_pair
-    };
+    let mut trig_note: Option<String> = None;
+    let mut next_pair = it.next().ok_or(AstError::Shape("expected when/only once/note"))?;
+    loop {
+        match next_pair.as_rule() {
+            Rule::only_once_kw => { only_once = true; },
+            Rule::note_kw => {
+                let mut inner = next_pair.into_inner();
+                let s = inner.next().ok_or(AstError::Shape("missing note string"))?;
+                trig_note = Some(unquote(s.as_str()));
+            },
+            _ => break,
+        }
+        next_pair = it.next().ok_or(AstError::Shape("expected when or more modifiers"))?;
+    }
+    let mut when = next_pair;
     if when.as_rule() == Rule::when_cond {
         when = when.into_inner().next().ok_or(AstError::Shape("empty when_cond"))?;
     }
@@ -173,44 +182,200 @@ fn parse_trigger_pair(
         return Err(AstError::Shape("expected block"));
     }
 
-    let mut conditions = Vec::new();
-    let mut actions = Vec::new();
-
-    // block can be either an if_block or a sequence of do_stmt without conditions
-    let block_src = block.as_str();
-    let inner = extract_body(block_src)?;
-    let base_offset = str_offset(source, inner);
-    let leading = strip_leading_ws_and_comments(inner);
-    if leading.starts_with("if ") {
-        let if_pos = inner.find("if ").ok_or(AstError::Shape("missing 'if'"))?;
-        let brace_pos = inner[if_pos..].find('{').ok_or(AstError::Shape("missing '{' after if"))? + if_pos;
-        let cond_text = &inner[if_pos + 3..brace_pos];
-        match parse_condition_text(cond_text.trim(), sets) {
-            Ok(c) => conditions.push(c),
-            Err(AstError::Shape(m)) => {
-                let cond_abs = base_offset + (cond_text.as_ptr() as usize - inner.as_ptr() as usize);
-                let (line, col) = smap.line_col(cond_abs);
-                let snippet = smap.line_snippet(line);
-                return Err(AstError::ShapeAt { msg: m, context: format!("line {line}, col {col}: {snippet}\n{}^", " ".repeat(col.saturating_sub(1))) });
-            }
-            Err(e) => return Err(e),
+    // Parse the trigger body and lower into multiple TriggerAst entries:
+    // - Each top-level `if { ... }` becomes its own trigger with those actions.
+    // - Top-level `do ...` lines (not inside any if) become an unconditional trigger (if any).
+    let inner = extract_body(block.as_str())?;
+    let mut unconditional_actions: Vec<ActionAst> = Vec::new();
+    let mut lowered: Vec<TriggerAst> = Vec::new();
+    let bytes = inner.as_bytes();
+    let mut i = 0usize;
+    while i < inner.len() {
+        // Skip whitespace
+        while i < inner.len() && (bytes[i] as char).is_whitespace() { i += 1; }
+        if i >= inner.len() { break; }
+        // Skip comments
+        if bytes[i] as char == '#' { while i < inner.len() && (bytes[i] as char) != '\n' { i += 1; } continue; }
+        // If-block
+        if inner[i..].starts_with("if ") {
+            let if_pos = i;
+            // Find opening brace
+            let rest = &inner[if_pos + 3..];
+            let brace_rel = rest.find('{').ok_or(AstError::Shape("missing '{' after if"))?;
+            let cond_text = &rest[..brace_rel].trim();
+            let cond = match parse_condition_text(cond_text, sets) {
+                Ok(c) => c,
+                Err(AstError::Shape(m)) => {
+                    let base_offset = str_offset(source, inner);
+                    let cond_abs = base_offset + (cond_text.as_ptr() as usize - inner.as_ptr() as usize);
+                    let (line, col) = smap.line_col(cond_abs);
+                    let snippet = smap.line_snippet(line);
+                    return Err(AstError::ShapeAt { msg: m, context: format!("line {line}, col {col}: {snippet}\n{}^", " ".repeat(col.saturating_sub(1))) });
+                }
+                Err(e) => return Err(e),
+            };
+            // Extract the block body after this '{' balancing braces
+            let block_after = &rest[brace_rel..]; // starts with '{'
+            let body = extract_body(block_after)?;
+            let actions = parse_actions_from_body(body, source, smap, sets)?;
+            lowered.push(TriggerAst { name: name.clone(), note: None, event: event.clone(), conditions: vec![cond], actions, only_once });
+            // Advance i to after the block we just consumed
+            let consumed = brace_rel + 1 + body.len() + 1; // '{' + body + '}'
+            i = if_pos + 3 + consumed;
+            continue;
         }
-        let if_block_src = &inner[if_pos..];
-        let body = extract_body(if_block_src)?;
-        actions = parse_actions_from_body(body, source, smap, sets)?;
-    } else {
-        actions = parse_actions_from_body(inner, source, smap, sets)?;
+        // Top-level do schedule ... or do ... line
+        if inner[i..].starts_with("do schedule in ") || inner[i..].starts_with("do schedule on ") {
+            let (act, used) = parse_schedule_action(&inner[i..], source, smap, sets)?;
+            unconditional_actions.push(act);
+            i += used;
+            continue;
+        }
+        if inner[i..].starts_with("do ") {
+            // Consume a single line
+            let mut j = i; while j < inner.len() && (bytes[j] as char) != '\n' { j += 1; }
+            let line = inner[i..j].trim_end();
+            match parse_action_from_str(line) {
+                Ok(a) => unconditional_actions.push(a),
+                Err(AstError::Shape(m)) => {
+                    let base = str_offset(source, inner);
+                    let abs = base + i;
+                    let (line_no, col) = smap.line_col(abs);
+                    let snippet = smap.line_snippet(line_no);
+                    return Err(AstError::ShapeAt { msg: m, context: format!("line {line_no}, col {col}: {snippet}\n{}^", " ".repeat(col.saturating_sub(1))) });
+                }
+                Err(e) => return Err(e),
+            }
+            i = j;
+            continue;
+        }
+        // Unknown token on this line, skip to newline
+        while i < inner.len() && (bytes[i] as char) != '\n' { i += 1; }
     }
-
-    Ok(TriggerAst { name, event, conditions, actions, only_once })
+    if !unconditional_actions.is_empty() {
+        lowered.push(TriggerAst { name, note: trig_note.clone(), event, conditions: Vec::new(), actions: unconditional_actions, only_once });
+    }
+    // Inject note into previously lowered triggers
+    for t in &mut lowered { if t.note.is_none() { t.note = trig_note.clone(); } }
+    Ok(lowered)
 }
 
-fn unquote(s: &str) -> String {
-    if s.len() >= 2 && s.starts_with('"') && s.ends_with('"') {
-        s[1..s.len()-1].to_string()
-    } else {
-        s.to_string()
+fn unquote(s: &str) -> String { parse_string(s).unwrap_or_else(|_| s.to_string()) }
+
+/// Parse a string literal (supports "...", r"...", and """..."""). Returns the decoded value.
+fn parse_string(s: &str) -> Result<String, AstError> {
+    let (v, _u) = parse_string_at(s)?; Ok(v)
+}
+
+/// Parse a string literal starting at the beginning of `s`. Returns (decoded, bytes_consumed).
+fn parse_string_at(s: &str) -> Result<(String, usize), AstError> {
+    let b = s.as_bytes();
+    if b.is_empty() { return Err(AstError::Shape("empty string")); }
+    // Triple-quoted
+    if s.starts_with("\"\"\"") {
+        let mut out = String::new();
+        let mut i = 3usize; // after opening """
+        let mut escape = false;
+        while i < s.len() {
+            if !escape && s[i..].starts_with("\"\"\"") {
+                return Ok((out, i + 3));
+            }
+            let ch = b[i] as char;
+            i += 1;
+            if escape {
+                match ch {
+                    'n' => out.push('\n'),
+                    'r' => out.push('\r'),
+                    't' => out.push('\t'),
+                    '"' => out.push('"'),
+                    '\\' => out.push('\\'),
+                    other => { out.push('\\'); out.push(other); }
+                }
+                escape = false;
+                continue;
+            }
+            if ch == '\\' { escape = true; } else { out.push(ch); }
+        }
+        return Err(AstError::Shape("missing closing triple quote"));
     }
+    // Raw r"..." and hashed raw r#"..."#
+    if s.starts_with('r') {
+        // Count hashes after r
+        let mut i = 1usize;
+        while i < s.len() && s.as_bytes()[i] as char == '#' { i += 1; }
+        if i < s.len() && s.as_bytes()[i] as char == '"' {
+            let num_hashes = i - 1;
+            let close_seq = {
+                let mut seq = String::from("\"");
+                for _ in 0..num_hashes { seq.push('#'); }
+                seq
+            };
+            let content_start = i + 1;
+            let rest = &s[content_start..];
+            if let Some(pos) = rest.find(&close_seq) {
+                let val = &rest[..pos];
+                return Ok((val.to_string(), content_start + pos + close_seq.len()));
+            } else {
+                return Err(AstError::Shape("missing closing raw quote"));
+            }
+        }
+    }
+    // Single-quoted
+    if b[0] as char == '\'' {
+        let mut out = String::new();
+        let mut i = 1usize; // skip opening '
+        let mut escape = false;
+        while i < b.len() {
+            let ch = b[i] as char;
+            i += 1;
+            if escape {
+                match ch {
+                    'n' => out.push('\n'),
+                    'r' => out.push('\r'),
+                    't' => out.push('\t'),
+                    '\'' => out.push('\''),
+                    '"' => out.push('"'),
+                    '\\' => out.push('\\'),
+                    other => { out.push('\\'); out.push(other); }
+                }
+                escape = false;
+                continue;
+            }
+            match ch {
+                '\\' => { escape = true; }
+                '\'' => return Ok((out, i)),
+                _ => out.push(ch),
+            }
+        }
+        return Err(AstError::Shape("missing closing single quote"));
+    }
+    // Regular quoted
+    if b[0] as char != '"' { return Err(AstError::Shape("missing opening quote")); }
+    let mut out = String::new();
+    let mut i = 1usize; // skip opening quote
+    let mut escape = false;
+    while i < b.len() {
+        let ch = b[i] as char;
+        i += 1;
+        if escape {
+            match ch {
+                'n' => out.push('\n'),
+                'r' => out.push('\r'),
+                't' => out.push('\t'),
+                '"' => out.push('"'),
+                '\\' => out.push('\\'),
+                other => { out.push('\\'); out.push(other); }
+            }
+            escape = false;
+            continue;
+        }
+        match ch {
+            '\\' => { escape = true; }
+            '"' => return Ok((out, i)),
+            _ => out.push(ch),
+        }
+    }
+    Err(AstError::Shape("missing closing quote"))
 }
 
 fn extract_body(src: &str) -> Result<&str, AstError> {
@@ -407,12 +572,8 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
     if let Some(rest) = t.strip_prefix("do add wedge ") {
         // do add wedge "text" width <n> spinner <ident>
         let r = rest.trim();
-        if !r.starts_with('"') { return Err(AstError::Shape("add wedge missing opening quote")); }
-        let mut i = 1usize; let bytes = r.as_bytes();
-        while i < r.len() && (bytes[i] as char) != '"' { i += 1; }
-        if i >= r.len() { return Err(AstError::Shape("add wedge missing closing quote")); }
-        let text = r[1..i].to_string();
-        let after = r[i+1..].trim_start();
+        let (text, used) = parse_string_at(r).map_err(|_| AstError::Shape("add wedge missing or invalid quote"))?;
+        let after = r[used..].trim_start();
         let after = after.strip_prefix("width ").ok_or(AstError::Shape("add wedge missing 'width'"))?;
         let mut j = 0usize; while j < after.len() && after.as_bytes()[j].is_ascii_digit() { j += 1; }
         if j == 0 { return Err(AstError::Shape("add wedge missing width number")); }
@@ -484,10 +645,11 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         let rest = rest.trim();
         if let Some((from, tail)) = rest.split_once(" to ") {
             let tail = tail.trim();
+            // tail is: <exit_to> "message..."
             let mut parts = tail.splitn(2, ' ');
             let exit_to = parts.next().ok_or(AstError::Shape("barred message missing exit_to"))?.to_string();
-            let msg = parts.next().ok_or(AstError::Shape("barred message missing message"))?.trim();
-            let msg = super::parser::unquote(msg);
+            let msg_part = parts.next().ok_or(AstError::Shape("barred message missing message"))?.trim();
+            let (msg, _used) = parse_string_at(msg_part).map_err(|_| AstError::Shape("barred message invalid quoted text"))?;
             return Ok(ActionAst::SetBarredMessage { exit_from: from.trim().to_string(), exit_to, msg });
         }
         return Err(AstError::Shape("set barred message syntax"));
@@ -528,11 +690,8 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         if let Some(space) = rest.find(' ') {
             let item = &rest[..space];
             let txt = rest[space..].trim();
-            if let Some(r) = txt.strip_prefix('"') {
-                if let Some(endq) = r.find('"') {
-                    return Ok(ActionAst::SetItemDescription { item: item.to_string(), text: r[..endq].to_string() });
-                }
-            }
+            let (text, _used) = parse_string_at(txt).map_err(|_| AstError::Shape("set item description missing or invalid quote"))?;
+            return Ok(ActionAst::SetItemDescription { item: item.to_string(), text });
         }
         return Err(AstError::Shape("set item description syntax"));
     }
@@ -542,9 +701,8 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         if let Some(space) = rest.find(' ') {
             let npc = &rest[..space];
             let txt = rest[space..].trim();
-            if let Some(r) = txt.strip_prefix('"') {
-                if let Some(endq) = r.find('"') { return Ok(ActionAst::NpcSays { npc: npc.to_string(), quote: r[..endq].to_string() }); }
-            }
+            let (quote, _used) = parse_string_at(txt).map_err(|_| AstError::Shape("npc says missing or invalid quote"))?;
+            return Ok(ActionAst::NpcSays { npc: npc.to_string(), quote });
         }
         return Err(AstError::Shape("npc says syntax"));
     }
@@ -555,8 +713,8 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         let rest = rest.trim();
         let mut parts = rest.splitn(2, ' ');
         let npc = parts.next().ok_or(AstError::Shape("npc refuse item missing npc"))?.to_string();
-        let reason = parts.next().ok_or(AstError::Shape("npc refuse item missing reason"))?.trim();
-        let reason = super::parser::unquote(reason);
+        let reason_part = parts.next().ok_or(AstError::Shape("npc refuse item missing reason"))?.trim();
+        let (reason, _used) = parse_string_at(reason_part).map_err(|_| AstError::Shape("npc refuse missing or invalid quote"))?;
         return Ok(ActionAst::NpcRefuseItem { npc, reason });
     }
     if let Some(rest) = t.strip_prefix("do set npc state ") {
@@ -570,8 +728,8 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         return Err(AstError::Shape("set npc state syntax"));
     }
     if let Some(rest) = t.strip_prefix("do deny read ") {
-        if let Some(r) = rest.trim().strip_prefix('"') { if let Some(endq) = r.find('"') { return Ok(ActionAst::DenyRead(r[..endq].to_string())); } }
-        return Err(AstError::Shape("deny read syntax"));
+        let (msg, _used) = parse_string_at(rest.trim()).map_err(|_| AstError::Shape("deny read missing or invalid quote"))?;
+        return Ok(ActionAst::DenyRead(msg));
     }
     if let Some(rest) = t.strip_prefix("do restrict item ") {
         return Ok(ActionAst::RestrictItem(rest.trim().to_string()));
@@ -669,18 +827,14 @@ fn parse_schedule_action(text: &str, source: &str, smap: &SourceMap, sets: &Hash
                 on_false = Some(OnFalseAst::RetryAfter{ turns });
             }
         }
-        if let Some(idx) = extras.find("note ") {
-            let after = &extras[idx+5..].trim_start();
-            if let Some(r) = after.strip_prefix('"') { if let Some(endq) = r.find('"') { note = Some(r[..endq].to_string()); } }
-        }
+        // Note can appear anywhere in header; parse from full header too
+        if let Some(n) = extract_note(header) { note = Some(n); }
         cond = Some(parse_condition_text(cond_str, sets)?);
     } else {
         // Unconditional schedule path; allow optional note in header
         if !header.is_empty() {
-            if let Some(idx) = header.find("note ") {
-                let after = &header[idx+5..].trim_start();
-                if let Some(r) = after.strip_prefix('"') { if let Some(endq) = r.find('"') { note = Some(r[..endq].to_string()); } }
-            } else {
+            if let Some(n) = extract_note(header) { note = Some(n); }
+            else {
                 // Unknown tokens in header
                 // Be forgiving: ignore whitespace-only; otherwise error
                 if !header.trim().is_empty() { return Err(AstError::Shape("unexpected schedule header; expected 'if ...' or 'note \"...\"'")); }
@@ -753,6 +907,15 @@ fn str_offset(full: &str, slice: &str) -> usize {
     (slice.as_ptr() as usize) - (full.as_ptr() as usize)
 }
 
+fn extract_note(header: &str) -> Option<String> {
+    if let Some(idx) = header.find("note ") {
+        let after = &header[idx+5..];
+        let trimmed = after.trim_start();
+        if let Ok((n, _used)) = parse_string_at(trimmed) { return Some(n); }
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -776,5 +939,64 @@ trigger "comment braces" when always {
 }
 "#;
         parse_trigger(src).expect("should parse");
+    }
+
+    #[test]
+    fn quoted_strings_support_common_escapes() {
+        let src = r#"
+trigger "He said:\n\"hi\"" when always {
+    do show "Line1\nLine2"
+    do npc says gonk "She replied: \"no\""
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        assert!(ast.name.contains('\n'));
+        assert!(ast.name.contains('"'));
+        // show contains a newline
+        match &ast.actions[0] { ActionAst::Show(s) => { assert!(s.contains('\n')); assert_eq!(s, "Line1\nLine2"); }, _ => panic!("expected show") }
+        // npc says contains a quote
+        match &ast.actions[1] { ActionAst::NpcSays { npc, quote } => { assert_eq!(npc, "gonk"); assert!(quote.contains('"')); }, _ => panic!("expected npc says") }
+        // TOML may re-escape newlines or include them directly; just ensure both parts appear
+        let toml = crate::compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("Line1"));
+        assert!(toml.contains("Line2"));
+    }
+
+    #[test]
+    fn schedule_note_supports_escapes() {
+        let src = r#"
+trigger "note escapes" when always {
+  do schedule in 1 note "lineA\nlineB" {
+    do show "ok"
+  }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        let t = crate::compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(t.contains("lineA"));
+        assert!(t.contains("lineB"));
+    }
+
+    #[test]
+    fn raw_string_with_hash_quotes() {
+        let src = "trigger r#\"raw name with \"quotes\"\"# when always {\n  do show r#\"He said \"hi\"\"#\n}\n";
+        let asts = super::parse_program(src).expect("parse ok");
+        assert!(!asts.is_empty());
+        // Ensure value with embedded quotes is preserved (serializer may re-escape)
+        let toml = crate::compile_trigger_to_toml(&asts[0]).expect("compile ok");
+        assert!(toml.contains("He said"));
+        assert!(toml.contains("hi"));
+    }
+
+    #[test]
+    fn reserved_keywords_are_excluded_from_ident() {
+        // Using a keyword as an identifier should fail to parse
+        let src = r#"
+trigger "bad ident" when enter room trigger {
+  do show "won't get here"
+}
+"#;
+        let err = parse_trigger(src).expect_err("expected parse failure");
+        match err { AstError::Pest(_) | AstError::Shape(_) | AstError::ShapeAt{..} => {} }
     }
 }

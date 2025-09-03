@@ -175,6 +175,13 @@ trigger "Outside ambience" when always {
 
 - Use `when always` for ambient or status effects that aren’t tied to a specific player action.
 - Prefer `all(…)`/`any(…)` for combining conditions; nest as needed.
+- String literals:
+  - Regular: `"..."` (supports escapes `\n`, `\t`, `\r`, `\"`, `\\`)
+  - Single-quoted: `'...'` (same escapes as regular)
+  - Raw: `r"..."` (no escapes)
+  - Hashed raw: `r#"..."#`, `r##"..."##`, up to 5 `#`s for easy embedding of quotes
+  - Triple-quoted: `"""..."""` (multiline; supports escapes)
+- Identifiers exclude reserved words (e.g., `trigger`, `when`, `do`, `if`, `npc`, etc.). If you need a name that starts with a keyword, add more letters: `readable` is fine but `read` is reserved.
 - Sequence flags:
   - Initialize with `do add seq flag quest limit 3` (creates `quest#0` with an end of 3)
   - Increment in actions with `do advance flag quest`
@@ -229,3 +236,24 @@ Action atoms:
 —
 
 If you find yourself repeating a list of rooms for ambients, declare a `set` once and reuse it. If you need a recipe that isn’t here, we can extend the DSL — the intent is to make authoring fast, readable, and safe.
+
+## Multiple If Blocks
+
+You can have multiple top‑level `if { … }` blocks in a single trigger, plus plain `do …` lines not wrapped by an `if`.
+
+- Each `if` block compiles to its own trigger sharing the same `when` event; it carries only that block’s conditions and actions.
+- Plain `do …` lines outside any `if` compile to an additional unconditional trigger for the same event.
+- If several blocks’ conditions are true on the same turn, each corresponding trigger can fire.
+- `only once` applies to all triggers produced from the parent.
+
+Example:
+
+```amble
+trigger "Arrival" when enter room lab {
+  if has flag quest { do show "Welcome back" }
+  if chance 30% { do show "A light flickers" }
+  do spinner message ambientInterior
+}
+```
+
+Compiles to three triggers with the same name and event: one for each `if` and one unconditional.

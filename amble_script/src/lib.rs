@@ -23,6 +23,8 @@ use toml_edit::{value, Array, ArrayOfTables, Document, InlineTable, Item, Table}
 pub struct TriggerAst {
     /// Human-readable trigger name.
     pub name: String,
+    /// Optional developer note for this trigger.
+    pub note: Option<String>,
     /// The event condition that triggers this (e.g., enter room, take item, talk to npc).
     pub event: ConditionAst,
     /// List of conditions (currently only missing-flag).
@@ -221,6 +223,7 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
     fn emit_trigger(
         aot: &mut ArrayOfTables,
         name: &str,
+        note: &Option<String>,
         event: &ConditionAst,
         flat_conds: &[ConditionAst],
         actions: &[ActionAst],
@@ -231,6 +234,7 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
         if only_once {
             trig["only_once"] = value(true);
         }
+        if let Some(n) = note { trig["note"] = value(n.clone()); }
 
         let mut conds = Array::default();
         // event condition first (skip for Always)
@@ -435,10 +439,10 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
     for ast in asts {
         let expanded = expand_conditions(&ast.conditions);
         if expanded.is_empty() {
-            emit_trigger(&mut aot, &ast.name, &ast.event, &[], &ast.actions, ast.only_once);
+            emit_trigger(&mut aot, &ast.name, &ast.note, &ast.event, &[], &ast.actions, ast.only_once);
         } else {
             for flat in expanded {
-                emit_trigger(&mut aot, &ast.name, &ast.event, &flat, &ast.actions, ast.only_once);
+                emit_trigger(&mut aot, &ast.name, &ast.note, &ast.event, &flat, &ast.actions, ast.only_once);
             }
         }
     }
@@ -747,6 +751,31 @@ trigger "look test" when look at item statue {
         assert!(matches!(asts[0].event, ConditionAst::OpenItem(ref s) if s == "box"));
         assert!(matches!(asts[1].event, ConditionAst::LeaveRoom(ref s) if s == "hallway"));
         assert!(matches!(asts[2].event, ConditionAst::LookAtItem(ref s) if s == "statue"));
+    }
+
+    #[test]
+    fn parse_multiple_if_blocks_and_unconditional() {
+        let src = r#"
+trigger "multi-if" when enter room lab {
+  if has flag a { do show "A" }
+  if chance 50% { do show "B" }
+  do show "C"
+}
+"#;
+        let asts = super::parser::parse_program(src).expect("parse ok");
+        // Expect three lowered triggers
+        assert_eq!(asts.len(), 3);
+        let toml = crate::compile_triggers_to_toml(&asts).expect("compile ok");
+        // Count [[triggers]] blocks
+        let count = toml.match_indices("[[triggers]]").count();
+        assert_eq!(count, 3, "expected 3 triggers after lowering:\n{}", toml);
+        // Contains actions A, B, C
+        assert!(toml.contains("text = \"A\""));
+        assert!(toml.contains("text = \"B\""));
+        assert!(toml.contains("text = \"C\""));
+        // Has a hasFlag and chance condition
+        assert!(toml.contains("type = \"hasFlag\""));
+        assert!(toml.contains("type = \"chance\""));
     }
 
     #[test]

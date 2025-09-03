@@ -1,0 +1,10 @@
+{
+  "name": "Amble DSL",
+  "scope": "source.amble",
+  "file-types": ["amble", "able"],
+  "roots": [],
+  "comment-token": "#",
+  "word-characters": "A-Za-z0-9_:-",
+  "auto-indent": true
+}
+

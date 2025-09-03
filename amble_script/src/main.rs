@@ -60,6 +60,13 @@ fn main() {
         }
     };
 
+    // Lint: warn about any triggers with no actions (likely an empty if block)
+    for t in &asts {
+        if t.actions.is_empty() {
+            eprintln!("warning: trigger '{}' has no actions (empty block?)", t.name);
+        }
+    }
+
     match compile_triggers_to_toml(&asts) {
         Ok(toml) => {
             if let Some(out) = out_path {
