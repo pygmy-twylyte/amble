@@ -11,6 +11,46 @@ trigger "High-Ridge: Read Scrawled Note" only once when use item scrawled_note a
     do add flag read-scrawled-note
 }
 
+trigger "High-Ridge: Plaque 1 Too Grimy to Read" when use item plaque_1 ability read {
+    if missing flag cleaned-plaque-1 {
+        do deny read "The plaque is too grimy to make out the words. You'll need to find a way to clean it off."
+        do add flag tried-read-plaque-1
+    }
+}
+
+trigger "High-Ridge: Plaque 1 Cleaned" only once when act clean on item plaque_1 {
+    do add flag cleaned-plaque-1
+    do award points 3
+    do show "With some saliva and a little effort, you're able to remove the grime and bring the plaque to a dull shine."
+}
+
+trigger "High Ridge: Read Cleaned Plaque 1" only once when use item plaque_1 ability read {
+    if has flag cleaned-plaque-1 {
+        do add flag read-plaque-1
+        do award points 5
+    }
+}
+# ..................................................................................................................TWO-SHEDS
+
+trigger "Two-Sheds-Landing: Cut or Chop Tree" only once when act cut on item fallen_tree {
+    do show "With considerable effort and just one blister, you're able to chop a path through the branches. The stone steps continue to curve upward from here."
+    do despawn item fallen_tree
+    do add flag cleared-fallen-tree
+    do add flag chopped-fallen-tree
+    do award points 5
+}
+
+trigger "Two-Sheds-Landing: Arson-Aid Used on Tree" only once when use item flamethrower on item fallen_tree interaction burn {
+    do show "You aim the Arson-Aid and begin to squeeze the trigger when the device erupts into a fireball! Panicking, you throw the whole Arson-Aid into the tree."
+}
+
+trigger "Two-Sheds-Landing: Burn Tree" only once when act burn on item fallen_tree {
+    do despawn item fallen_tree
+    do add flag cleared-fallen-tree
+    do add flag burned-fallen-tree
+    do award points 5
+    do show "WHOOOOOMPH! The fallen tree erupts into flame and, quite improbably, is reduced to ash in mere seconds."
+}
 
 # ..................................................................................................................GUARD-POST
 
@@ -20,11 +60,61 @@ trigger "Guard-Post: Traveling Without Towel" only once when enter room guard-po
     }
 }
 
+# ..................................................................................................................EAST-OF-BUILDING
+
+trigger "East-of-Building: Pluck Dental Floss" only once when take item dental_floss {
+    do show "You pluck a strand of floss from the bush. It comes away easily — disturbingly so. Minty. Strong. Too strong. You’re no botanist, but you’re pretty sure this shouldn’t be growing out of a shrubbery."
+    do award points 5
+    do set item description weird_bush "A squat, leafy bush now stripped of its floss-like strands, bare branches jutting out awkwardly. A small sign next to it reads 'Pride of Montana'."
+}
+
 # ..................................................................................................................LOADING-DOCK
 
 trigger "Loading-Dock: Spawn Special Delivery" only once when leave room loading-dock {
     do spawn item delivery_box into room loading-dock
     do show "You hear a thud behind you, back toward the dock, like something was just dropped off. You glimpse a drone flying away quickly, as if hoping not to be seen. Was that an Initech logo on the side?"
+}
+
+trigger "Loading-Dock: Open Security Crate (Key)" only once when unlock item security_crate {
+    do spawn item crowbar into container security_crate
+    do spawn item security_log into container security_crate
+    do spawn item glass_vial into container security_crate
+    do spawn item initech_mug into container security_crate
+    do add flag unlocked-security-crate
+    do show "The ear wax on the tip of the key eases it into the rusted lock, which snaps open with a satisfying clunk."
+}
+
+trigger "Loading-Dock: Open Security Crate (Break)" only once when act break on item security_crate {
+    if missing flag unlocked-security-crate {
+        do despawn item security_crate
+        do spawn item crowbar in current room
+        do spawn item security_log in current room
+        do spawn item shattered_vial in current room
+        do spawn item initech_mug in current room
+        do show "With a few hefty blows, you manage to break the lock haft completely off of the security locker -- well after a few misses had already caved in the lid and destroyed it, but you were having fun. It looks like you broke a couple of the items that were inside in the process."
+        do add wedge "PA Announcement: 'Someone broke into the security locker on the dock. Mind your belongings and report any suspicious activity to security.'" width 1 spinner ambientInterior
+    }
+}
+
+trigger "Loading-Dock: Open Security Crate (Burn)" only once when act burn on item security_crate {
+    if missing flag unlocked-security-crate {
+        do despawn item security_crate
+        do spawn item crowbar in current room
+        do spawn item burned_security_log in current room
+        do spawn item glass_vial in current room
+        do spawn item initech_mug in current room
+        do show "WHOOOOOMP! The locker, which you now realize may have been made from the solid magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking your eyebrows with it. It looks like *some* of the items inside weren't flammable."
+        do add wedge "PA Announcement: 'Someone used an Arson-Aid to torch the security locker at the loading dock. An investigation is underway. Report anyone with scorched clothes or missing eyebrows to security.'" width 1 spinner ambientInterior
+    }
+}
+
+trigger "Loading-Dock: Got Crowbar" only once when take item crowbar {
+    do show "You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?"
+    do add flag got-crowbar
+    do award points 3
+    do schedule in 2 {
+        do show "... and then you wonder why you're thinking of Barney as a real person instead of a character in a game. And Gordon, for that matter. Wait, he was just *fiction*, right? Come to think of it, you feel a little unsure of reality, and it's worse the nearer you are to the building."
+    }
 }
 
 # ------------------------------------------------------------------------------------------------------------------MAIN FLOOR INTERIOR TRIGGERS
@@ -102,6 +192,28 @@ trigger "Office: Insert Poems to Open Panic Room" only once when insert item vog
     do reveal exit from b-a-office to poetry-panic direction west
     do add wedge "PA announcement: Vogon poetry has been detected in the building. If you are experiencing nausea, go to med bay for assistance." width 1 spinner ambientInterior
     do show "The machine begins to whine at a high pitch and gives off a noxious odor of burning hair. A klaxon blares and the display warns:\n\n            ⚠️ VOGON INPUT DETECTED - POETRY PANIC ROOM UNLOCKED ⚠️\n               ☣ VAPORIZING VOGON INPUT - AVOID TOXIC FUMES ☣\n\nThe whiteboard on the west wall slides to the side, revealing a vault-like door."
+}
+
+trigger "Office: Gifted Lost and Found Key" only once when enter room b-a-office {
+    if all(has flag got-elevator-keycard, with npc b_a_receptionist) {
+        do give item lost_and_found_key to player from npc b_a_receptionist
+        do show "Seeing you return with the keycard, the receptionist looks around warily and slips something into your hand, then looks directly at the lost and found box."
+        do npc says b_a_receptionist "Finally! A Candidate bright enough to get to that keycard. I guess I lost the pool. Who'd have thought it'd be a primate?"
+        do npc says b_a_receptionist "(*whispers*) Use this before you head down to AA-3B."
+    }
+}
+
+trigger "Office: Lost and Found Unlocked" only once when unlock item lost_and_found_box {
+    do award points 3
+    do add flag lost-and-found-opened
+    do set item description lost_and_found_box "A sturdy metal lockbox marked 'Lost and Found'. Its lid is cracked slightly open."
+}
+
+# ..................................................................................................................POETRY-PANIC
+
+trigger "Poetry-Panic: Acquired Elevator Keycard" only once when take item elevator_keycard {
+    do set npc state b_a_receptionist bored
+    do add flag got-elevator-keycard
 }
 
 # ..................................................................................................................LOUNGE
