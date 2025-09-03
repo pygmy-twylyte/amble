@@ -354,7 +354,7 @@ actions = [
     { type = "addFlag", flag = { type = "simple", name = "read-scrawled-note" } },
 ]
 
-########################################################## triggers.amble covers to here ###############################################
+
 
 [[triggers]]
 name = "Plaque 1: Cleaned"
@@ -533,6 +533,8 @@ actions = [
     { type = "addFlag", flag = { type = "simple", name = "got-crowbar" } },
     { type = "awardPoints", amount = 3 },
 ]
+
+############################################################################### in AMBLE DSL to here 
 
 [[triggers]]
 name = "Black Knight: First Meeting"
