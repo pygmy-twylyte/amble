@@ -20,7 +20,6 @@ keyword = {
   | "open"
   | "look"
   | "at"
-  | "use"
   | "ability"
   | "on"
   | "interaction"
@@ -30,7 +29,6 @@ keyword = {
   | "from"
   | "insert"
   | "into"
-  | "unlock"
   | "talk"
   | "npc"
   | "player"
@@ -58,7 +56,6 @@ keyword = {
   | "refuse"
   | "state"
   | "deny"
-  | "read"
   | "restrict"
   | "barred"
   | "message"
@@ -108,7 +105,7 @@ triple_quoted = @{ "\"\"\"" ~ triple_char* ~ "\"\"\"" }
 // Unified string literal
 // Single-quoted strings: '...'
 single_quoted = @{ "'" ~ (escape | (!("\\" | "'") ~ ANY))* ~ "'" }
-string = @{ triple_quoted | raw_quoted_h5 | raw_quoted_h4 | raw_quoted_h3 | raw_quoted_h2 | raw_quoted_h1 | raw_quoted | quoted | single_quoted }
+string        = @{ triple_quoted | raw_quoted_h5 | raw_quoted_h4 | raw_quoted_h3 | raw_quoted_h2 | raw_quoted_h1 | raw_quoted | quoted | single_quoted }
 
 program = { SOI ~ (set_decl | trigger)+ ~ EOI }
 
@@ -118,7 +115,7 @@ set_list = { "(" ~ ident ~ ("," ~ ident)* ~ ")" }
 only_once_kw = { "only" ~ "once" }
 note_kw      = { "note" ~ string }
 // Allow optional modifiers (only once, note) in any order before 'when'
-trigger      = { "trigger" ~ string ~ (only_once_kw | note_kw)* ~ "when" ~ when_cond ~ block }
+trigger = { "trigger" ~ string ~ (only_once_kw | note_kw)* ~ "when" ~ when_cond ~ block }
 
 // Event ("when") conditions supported in this iteration
 when_cond        = { always_event | enter_room | leave_room | look_at_item | open_item | use_item_on_item | use_item | give_to_npc | take_from_npc | insert_item_into | take_item | drop_item | unlock_item | talk_to_npc | act_on_item }
@@ -173,8 +170,8 @@ do_action = {
   | ("reveal" ~ "exit" ~ "from" ~ ident ~ "to" ~ ident ~ "direction" ~ ident)
   | ("push" ~ "player" ~ "to" ~ ident)
   | ("set" ~ "item" ~ "description" ~ ident ~ string)
+  | ("npc" ~ "random" ~ "dialogue" ~ ident)
   | ("npc" ~ "says" ~ ident ~ string)
-  | ("npc" ~ "says" ~ "random" ~ ident)
   | ("npc" ~ "refuse" ~ "item" ~ ident ~ string)
   | ("set" ~ "npc" ~ "state" ~ ident ~ ident)
   | ("deny" ~ "read" ~ string)
