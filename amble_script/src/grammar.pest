@@ -146,6 +146,10 @@ block_inner = { "{" ~ (do_stmt)+ ~ "}" }
 
 do_stmt = { "do" ~ do_action }
 
+// Helper rule for balanced braces - handles nested { } pairs properly
+balanced_braces  = { "{" ~ balanced_content ~ "}" }
+balanced_content = { (balanced_braces | (!("}") ~ ANY))* }
+
 do_action = {
     ("show" ~ string)
   | ("add" ~ "wedge" ~ string ~ "width" ~ number ~ "spinner" ~ ident)
@@ -162,7 +166,7 @@ do_action = {
   | ("spawn" ~ "item" ~ ident ~ "in" ~ "current" ~ "room")
   | ("despawn" ~ "item" ~ ident)
   | ("award" ~ "points" ~ number)
-  | ("schedule" ~ (!"{" ~ ANY)* ~ "{" ~ (!"}" ~ ANY)* ~ "}")
+  | ("schedule" ~ (!"{" ~ ANY)* ~ balanced_braces)
   | ("lock" ~ "item" ~ ident)
   | ("unlock" ~ "item" ~ ident)
   | ("lock" ~ "exit" ~ "from" ~ ident ~ "direction" ~ ident)
