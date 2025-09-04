@@ -1247,6 +1247,7 @@ fn parse_schedule_action(
     Ok((act, consumed))
 }
 
+#[allow(dead_code)]
 fn strip_leading_ws_and_comments(s: &str) -> &str {
     let mut i = 0usize;
     let bytes = s.as_bytes();
