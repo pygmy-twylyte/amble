@@ -534,8 +534,6 @@ actions = [
     { type = "awardPoints", amount = 3 },
 ]
 
-############################################################################### in AMBLE DSL to here 
-
 [[triggers]]
 name = "Black Knight: First Meeting"
 only_once = true
@@ -606,6 +604,7 @@ actions = [
     { type = "npcSays", npc_id = "black_knight", quote = """Thank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like.""" },
 ]
 
+########################################################################################### in triggers.amble to here
 # -------------------------------- EVIDENCE LOCKER / SONIC SCREWDRIVER --------------------------------------
 [[triggers]]
 name = "Security-Station: Pry Evidence Locker Open"
