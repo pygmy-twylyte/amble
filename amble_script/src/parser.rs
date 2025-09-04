@@ -40,14 +40,16 @@ pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
                 let list_pair = it.next().expect("set list");
                 let mut vals = Vec::new();
                 for p in list_pair.into_inner() {
-                    if p.as_rule() == Rule::ident { vals.push(p.as_str().to_string()); }
+                    if p.as_rule() == Rule::ident {
+                        vals.push(p.as_str().to_string());
+                    }
                 }
                 sets.insert(name, vals);
-            }
+            },
             Rule::trigger => {
                 trigger_pairs.push(item);
-            }
-            _ => {}
+            },
+            _ => {},
         }
     }
     let mut out = Vec::new();
@@ -79,7 +81,9 @@ fn parse_trigger_pair(
     let mut next_pair = it.next().ok_or(AstError::Shape("expected when/only once/note"))?;
     loop {
         match next_pair.as_rule() {
-            Rule::only_once_kw => { only_once = true; },
+            Rule::only_once_kw => {
+                only_once = true;
+            },
             Rule::note_kw => {
                 let mut inner = next_pair.into_inner();
                 let s = inner.next().ok_or(AstError::Shape("missing note string"))?;
@@ -94,86 +98,144 @@ fn parse_trigger_pair(
         when = when.into_inner().next().ok_or(AstError::Shape("empty when_cond"))?;
     }
     let event = match when.as_rule() {
-        Rule::always_event => {
-            ConditionAst::Always
-        }
+        Rule::always_event => ConditionAst::Always,
         Rule::enter_room => {
             let mut i = when.into_inner();
-            let ident = i.next().ok_or(AstError::Shape("enter room ident"))?.as_str().to_string();
+            let ident = i
+                .next()
+                .ok_or(AstError::Shape("enter room ident"))?
+                .as_str()
+                .to_string();
             ConditionAst::EnterRoom(ident)
-        }
+        },
         Rule::take_item => {
             let mut i = when.into_inner();
             let ident = i.next().ok_or(AstError::Shape("take item ident"))?.as_str().to_string();
             ConditionAst::TakeItem(ident)
-        }
+        },
         Rule::talk_to_npc => {
             let mut i = when.into_inner();
             let ident = i.next().ok_or(AstError::Shape("talk npc ident"))?.as_str().to_string();
             ConditionAst::TalkToNpc(ident)
-        }
+        },
         Rule::open_item => {
             let mut i = when.into_inner();
             let ident = i.next().ok_or(AstError::Shape("open item ident"))?.as_str().to_string();
             ConditionAst::OpenItem(ident)
-        }
+        },
         Rule::leave_room => {
             let mut i = when.into_inner();
-            let ident = i.next().ok_or(AstError::Shape("leave room ident"))?.as_str().to_string();
+            let ident = i
+                .next()
+                .ok_or(AstError::Shape("leave room ident"))?
+                .as_str()
+                .to_string();
             ConditionAst::LeaveRoom(ident)
-        }
+        },
         Rule::look_at_item => {
             let mut i = when.into_inner();
-            let ident = i.next().ok_or(AstError::Shape("look at item ident"))?.as_str().to_string();
+            let ident = i
+                .next()
+                .ok_or(AstError::Shape("look at item ident"))?
+                .as_str()
+                .to_string();
             ConditionAst::LookAtItem(ident)
-        }
+        },
         Rule::use_item => {
             let mut i = when.into_inner();
             let item = i.next().ok_or(AstError::Shape("use item ident"))?.as_str().to_string();
-            let ability = i.next().ok_or(AstError::Shape("use item ability"))?.as_str().to_string();
+            let ability = i
+                .next()
+                .ok_or(AstError::Shape("use item ability"))?
+                .as_str()
+                .to_string();
             ConditionAst::UseItem { item, ability }
-        }
+        },
         Rule::give_to_npc => {
             let mut i = when.into_inner();
             let item = i.next().ok_or(AstError::Shape("give item ident"))?.as_str().to_string();
-            let npc = i.next().ok_or(AstError::Shape("give to npc ident"))?.as_str().to_string();
+            let npc = i
+                .next()
+                .ok_or(AstError::Shape("give to npc ident"))?
+                .as_str()
+                .to_string();
             ConditionAst::GiveToNpc { item, npc }
-        }
+        },
         Rule::use_item_on_item => {
             let mut i = when.into_inner();
             let tool = i.next().ok_or(AstError::Shape("use tool ident"))?.as_str().to_string();
-            let target = i.next().ok_or(AstError::Shape("use target ident"))?.as_str().to_string();
-            let interaction = i.next().ok_or(AstError::Shape("use interaction ident"))?.as_str().to_string();
-            ConditionAst::UseItemOnItem { tool, target, interaction }
-        }
+            let target = i
+                .next()
+                .ok_or(AstError::Shape("use target ident"))?
+                .as_str()
+                .to_string();
+            let interaction = i
+                .next()
+                .ok_or(AstError::Shape("use interaction ident"))?
+                .as_str()
+                .to_string();
+            ConditionAst::UseItemOnItem {
+                tool,
+                target,
+                interaction,
+            }
+        },
         Rule::act_on_item => {
             let mut i = when.into_inner();
-            let action = i.next().ok_or(AstError::Shape("act interaction ident"))?.as_str().to_string();
-            let target = i.next().ok_or(AstError::Shape("act target ident"))?.as_str().to_string();
+            let action = i
+                .next()
+                .ok_or(AstError::Shape("act interaction ident"))?
+                .as_str()
+                .to_string();
+            let target = i
+                .next()
+                .ok_or(AstError::Shape("act target ident"))?
+                .as_str()
+                .to_string();
             ConditionAst::ActOnItem { target, action }
-        }
+        },
         Rule::take_from_npc => {
             let mut i = when.into_inner();
-            let item = i.next().ok_or(AstError::Shape("take-from item ident"))?.as_str().to_string();
-            let npc = i.next().ok_or(AstError::Shape("take-from npc ident"))?.as_str().to_string();
+            let item = i
+                .next()
+                .ok_or(AstError::Shape("take-from item ident"))?
+                .as_str()
+                .to_string();
+            let npc = i
+                .next()
+                .ok_or(AstError::Shape("take-from npc ident"))?
+                .as_str()
+                .to_string();
             ConditionAst::TakeFromNpc { item, npc }
-        }
+        },
         Rule::insert_item_into => {
             let mut i = when.into_inner();
-            let item = i.next().ok_or(AstError::Shape("insert item ident"))?.as_str().to_string();
-            let container = i.next().ok_or(AstError::Shape("insert into container ident"))?.as_str().to_string();
+            let item = i
+                .next()
+                .ok_or(AstError::Shape("insert item ident"))?
+                .as_str()
+                .to_string();
+            let container = i
+                .next()
+                .ok_or(AstError::Shape("insert into container ident"))?
+                .as_str()
+                .to_string();
             ConditionAst::InsertItemInto { item, container }
-        }
+        },
         Rule::drop_item => {
             let mut i = when.into_inner();
             let ident = i.next().ok_or(AstError::Shape("drop item ident"))?.as_str().to_string();
             ConditionAst::DropItem(ident)
-        }
+        },
         Rule::unlock_item => {
             let mut i = when.into_inner();
-            let ident = i.next().ok_or(AstError::Shape("unlock item ident"))?.as_str().to_string();
+            let ident = i
+                .next()
+                .ok_or(AstError::Shape("unlock item ident"))?
+                .as_str()
+                .to_string();
             ConditionAst::UnlockItem(ident)
-        }
+        },
         _ => return Err(AstError::Shape("unknown when condition")),
     };
 
@@ -192,10 +254,19 @@ fn parse_trigger_pair(
     let mut i = 0usize;
     while i < inner.len() {
         // Skip whitespace
-        while i < inner.len() && (bytes[i] as char).is_whitespace() { i += 1; }
-        if i >= inner.len() { break; }
+        while i < inner.len() && (bytes[i] as char).is_whitespace() {
+            i += 1;
+        }
+        if i >= inner.len() {
+            break;
+        }
         // Skip comments
-        if bytes[i] as char == '#' { while i < inner.len() && (bytes[i] as char) != '\n' { i += 1; } continue; }
+        if bytes[i] as char == '#' {
+            while i < inner.len() && (bytes[i] as char) != '\n' {
+                i += 1;
+            }
+            continue;
+        }
         // If-block
         if inner[i..].starts_with("if ") {
             let if_pos = i;
@@ -210,15 +281,28 @@ fn parse_trigger_pair(
                     let cond_abs = base_offset + (cond_text.as_ptr() as usize - inner.as_ptr() as usize);
                     let (line, col) = smap.line_col(cond_abs);
                     let snippet = smap.line_snippet(line);
-                    return Err(AstError::ShapeAt { msg: m, context: format!("line {line}, col {col}: {snippet}\n{}^", " ".repeat(col.saturating_sub(1))) });
-                }
+                    return Err(AstError::ShapeAt {
+                        msg: m,
+                        context: format!(
+                            "line {line}, col {col}: {snippet}\n{}^",
+                            " ".repeat(col.saturating_sub(1))
+                        ),
+                    });
+                },
                 Err(e) => return Err(e),
             };
             // Extract the block body after this '{' balancing braces
             let block_after = &rest[brace_rel..]; // starts with '{'
             let body = extract_body(block_after)?;
             let actions = parse_actions_from_body(body, source, smap, sets)?;
-            lowered.push(TriggerAst { name: name.clone(), note: None, event: event.clone(), conditions: vec![cond], actions, only_once });
+            lowered.push(TriggerAst {
+                name: name.clone(),
+                note: None,
+                event: event.clone(),
+                conditions: vec![cond],
+                actions,
+                only_once,
+            });
             // Advance i to after the block we just consumed
             let consumed = brace_rel + 1 + body.len() + 1; // '{' + body + '}'
             i = if_pos + 3 + consumed;
@@ -233,7 +317,10 @@ fn parse_trigger_pair(
         }
         if inner[i..].starts_with("do ") {
             // Consume a single line
-            let mut j = i; while j < inner.len() && (bytes[j] as char) != '\n' { j += 1; }
+            let mut j = i;
+            while j < inner.len() && (bytes[j] as char) != '\n' {
+                j += 1;
+            }
             let line = inner[i..j].trim_end();
             match parse_action_from_str(line) {
                 Ok(a) => unconditional_actions.push(a),
@@ -242,35 +329,59 @@ fn parse_trigger_pair(
                     let abs = base + i;
                     let (line_no, col) = smap.line_col(abs);
                     let snippet = smap.line_snippet(line_no);
-                    return Err(AstError::ShapeAt { msg: m, context: format!("line {line_no}, col {col}: {snippet}\n{}^", " ".repeat(col.saturating_sub(1))) });
-                }
+                    return Err(AstError::ShapeAt {
+                        msg: m,
+                        context: format!(
+                            "line {line_no}, col {col}: {snippet}\n{}^",
+                            " ".repeat(col.saturating_sub(1))
+                        ),
+                    });
+                },
                 Err(e) => return Err(e),
             }
             i = j;
             continue;
         }
         // Unknown token on this line, skip to newline
-        while i < inner.len() && (bytes[i] as char) != '\n' { i += 1; }
+        while i < inner.len() && (bytes[i] as char) != '\n' {
+            i += 1;
+        }
     }
     if !unconditional_actions.is_empty() {
-        lowered.push(TriggerAst { name, note: trig_note.clone(), event, conditions: Vec::new(), actions: unconditional_actions, only_once });
+        lowered.push(TriggerAst {
+            name,
+            note: trig_note.clone(),
+            event,
+            conditions: Vec::new(),
+            actions: unconditional_actions,
+            only_once,
+        });
     }
     // Inject note into previously lowered triggers
-    for t in &mut lowered { if t.note.is_none() { t.note = trig_note.clone(); } }
+    for t in &mut lowered {
+        if t.note.is_none() {
+            t.note = trig_note.clone();
+        }
+    }
     Ok(lowered)
 }
 
-fn unquote(s: &str) -> String { parse_string(s).unwrap_or_else(|_| s.to_string()) }
+fn unquote(s: &str) -> String {
+    parse_string(s).unwrap_or_else(|_| s.to_string())
+}
 
 /// Parse a string literal (supports "...", r"...", and """..."""). Returns the decoded value.
 fn parse_string(s: &str) -> Result<String, AstError> {
-    let (v, _u) = parse_string_at(s)?; Ok(v)
+    let (v, _u) = parse_string_at(s)?;
+    Ok(v)
 }
 
 /// Parse a string literal starting at the beginning of `s`. Returns (decoded, bytes_consumed).
 fn parse_string_at(s: &str) -> Result<(String, usize), AstError> {
     let b = s.as_bytes();
-    if b.is_empty() { return Err(AstError::Shape("empty string")); }
+    if b.is_empty() {
+        return Err(AstError::Shape("empty string"));
+    }
     // Triple-quoted
     if s.starts_with("\"\"\"") {
         let mut out = String::new();
@@ -289,12 +400,19 @@ fn parse_string_at(s: &str) -> Result<(String, usize), AstError> {
                     't' => out.push('\t'),
                     '"' => out.push('"'),
                     '\\' => out.push('\\'),
-                    other => { out.push('\\'); out.push(other); }
+                    other => {
+                        out.push('\\');
+                        out.push(other);
+                    },
                 }
                 escape = false;
                 continue;
             }
-            if ch == '\\' { escape = true; } else { out.push(ch); }
+            if ch == '\\' {
+                escape = true;
+            } else {
+                out.push(ch);
+            }
         }
         return Err(AstError::Shape("missing closing triple quote"));
     }
@@ -302,12 +420,16 @@ fn parse_string_at(s: &str) -> Result<(String, usize), AstError> {
     if s.starts_with('r') {
         // Count hashes after r
         let mut i = 1usize;
-        while i < s.len() && s.as_bytes()[i] as char == '#' { i += 1; }
+        while i < s.len() && s.as_bytes()[i] as char == '#' {
+            i += 1;
+        }
         if i < s.len() && s.as_bytes()[i] as char == '"' {
             let num_hashes = i - 1;
             let close_seq = {
                 let mut seq = String::from("\"");
-                for _ in 0..num_hashes { seq.push('#'); }
+                for _ in 0..num_hashes {
+                    seq.push('#');
+                }
                 seq
             };
             let content_start = i + 1;
@@ -336,13 +458,18 @@ fn parse_string_at(s: &str) -> Result<(String, usize), AstError> {
                     '\'' => out.push('\''),
                     '"' => out.push('"'),
                     '\\' => out.push('\\'),
-                    other => { out.push('\\'); out.push(other); }
+                    other => {
+                        out.push('\\');
+                        out.push(other);
+                    },
                 }
                 escape = false;
                 continue;
             }
             match ch {
-                '\\' => { escape = true; }
+                '\\' => {
+                    escape = true;
+                },
                 '\'' => return Ok((out, i)),
                 _ => out.push(ch),
             }
@@ -350,7 +477,9 @@ fn parse_string_at(s: &str) -> Result<(String, usize), AstError> {
         return Err(AstError::Shape("missing closing single quote"));
     }
     // Regular quoted
-    if b[0] as char != '"' { return Err(AstError::Shape("missing opening quote")); }
+    if b[0] as char != '"' {
+        return Err(AstError::Shape("missing opening quote"));
+    }
     let mut out = String::new();
     let mut i = 1usize; // skip opening quote
     let mut escape = false;
@@ -364,13 +493,18 @@ fn parse_string_at(s: &str) -> Result<(String, usize), AstError> {
                 't' => out.push('\t'),
                 '"' => out.push('"'),
                 '\\' => out.push('\\'),
-                other => { out.push('\\'); out.push(other); }
+                other => {
+                    out.push('\\');
+                    out.push(other);
+                },
             }
             escape = false;
             continue;
         }
         match ch {
-            '\\' => { escape = true; }
+            '\\' => {
+                escape = true;
+            },
             '"' => return Ok((out, i)),
             _ => out.push(ch),
         }
@@ -390,7 +524,9 @@ fn extract_body(src: &str) -> Result<&str, AstError> {
     while i < bytes.len() {
         let c = bytes[i] as char;
         if in_comment {
-            if c == '\n' { in_comment = false; }
+            if c == '\n' {
+                in_comment = false;
+            }
             i += 1;
             continue;
         }
@@ -398,22 +534,34 @@ fn extract_body(src: &str) -> Result<&str, AstError> {
             if escape {
                 escape = false;
             } else {
-                if c == '\\' { escape = true; }
-                else if c == '"' { in_str = false; }
+                if c == '\\' {
+                    escape = true;
+                } else if c == '"' {
+                    in_str = false;
+                }
             }
             i += 1;
             continue;
         }
         match c {
-            '"' => { in_str = true; },
-            '#' => { in_comment = true; },
+            '"' => {
+                in_str = true;
+            },
+            '#' => {
+                in_comment = true;
+            },
             '{' => {
-                if depth == 0 { start = Some(i + 1); }
+                if depth == 0 {
+                    start = Some(i + 1);
+                }
                 depth += 1;
             },
             '}' => {
                 depth -= 1;
-                if depth == 0 { end = Some(i); break; }
+                if depth == 0 {
+                    end = Some(i);
+                    break;
+                }
             },
             _ => {},
         }
@@ -430,14 +578,18 @@ fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Resu
         let inner = inner.strip_suffix(')').ok_or(AstError::Shape("all() close"))?;
         let parts = split_top_level_commas(inner);
         let mut kids = Vec::new();
-        for p in parts { kids.push(parse_condition_text(p, sets)?); }
+        for p in parts {
+            kids.push(parse_condition_text(p, sets)?);
+        }
         return Ok(ConditionAst::All(kids));
     }
     if let Some(inner) = t.strip_prefix("any(") {
         let inner = inner.strip_suffix(')').ok_or(AstError::Shape("any() close"))?;
         let parts = split_top_level_commas(inner);
         let mut kids = Vec::new();
-        for p in parts { kids.push(parse_condition_text(p, sets)?); }
+        for p in parts {
+            kids.push(parse_condition_text(p, sets)?);
+        }
         return Ok(ConditionAst::Any(kids));
     }
     if let Some(rest) = t.strip_prefix("has flag ") {
@@ -468,8 +620,11 @@ fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Resu
         let rest = rest.trim();
         if let Some(space) = rest.find(' ') {
             let npc = &rest[..space];
-            let item = rest[space+1..].trim();
-            return Ok(ConditionAst::NpcHasItem { npc: npc.to_string(), item: item.to_string() });
+            let item = rest[space + 1..].trim();
+            return Ok(ConditionAst::NpcHasItem {
+                npc: npc.to_string(),
+                item: item.to_string(),
+            });
         }
         return Err(AstError::Shape("npc has item syntax"));
     }
@@ -477,8 +632,11 @@ fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Resu
         let rest = rest.trim();
         if let Some(space) = rest.find(' ') {
             let npc = &rest[..space];
-            let state = rest[space+1..].trim();
-            return Ok(ConditionAst::NpcInState { npc: npc.to_string(), state: state.to_string() });
+            let state = rest[space + 1..].trim();
+            return Ok(ConditionAst::NpcInState {
+                npc: npc.to_string(),
+                state: state.to_string(),
+            });
         }
         return Err(AstError::Shape("npc in state syntax"));
     }
@@ -488,15 +646,21 @@ fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Resu
         if let Some(idx) = rest.find(" has item ") {
             let container = &rest[..idx];
             let item = &rest[idx + " has item ".len()..];
-            return Ok(ConditionAst::ContainerHasItem { container: container.trim().to_string(), item: item.trim().to_string() });
+            return Ok(ConditionAst::ContainerHasItem {
+                container: container.trim().to_string(),
+                item: item.trim().to_string(),
+            });
         }
     }
     if let Some(rest) = t.strip_prefix("container has item ") {
         let rest = rest.trim();
         if let Some(space) = rest.find(' ') {
             let container = &rest[..space];
-            let item = rest[space+1..].trim();
-            return Ok(ConditionAst::ContainerHasItem { container: container.to_string(), item: item.to_string() });
+            let item = rest[space + 1..].trim();
+            return Ok(ConditionAst::ContainerHasItem {
+                container: container.to_string(),
+                item: item.to_string(),
+            });
         }
         return Err(AstError::Shape("container has item syntax"));
     }
@@ -504,14 +668,24 @@ fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Resu
         let rest = rest.trim();
         if let Some(idx) = rest.find(" in rooms ") {
             let spinner = rest[..idx].trim().to_string();
-            let list = rest[idx+10..].trim();
+            let list = rest[idx + 10..].trim();
             let mut rooms: Vec<String> = Vec::new();
             for tok in list.split(',').map(|s| s.trim()).filter(|s| !s.is_empty()) {
-                if let Some(v) = sets.get(tok) { rooms.extend(v.clone()); } else { rooms.push(tok.to_string()); }
+                if let Some(v) = sets.get(tok) {
+                    rooms.extend(v.clone());
+                } else {
+                    rooms.push(tok.to_string());
+                }
             }
-            return Ok(ConditionAst::Ambient { spinner, rooms: Some(rooms) });
+            return Ok(ConditionAst::Ambient {
+                spinner,
+                rooms: Some(rooms),
+            });
         } else {
-            return Ok(ConditionAst::Ambient { spinner: rest.to_string(), rooms: None });
+            return Ok(ConditionAst::Ambient {
+                spinner: rest.to_string(),
+                rooms: None,
+            });
         }
     }
     if let Some(rest) = t.strip_prefix("player in room ") {
@@ -520,7 +694,10 @@ fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Resu
     if let Some(rest) = t.strip_prefix("chance ") {
         let rest = rest.trim();
         let num = rest.strip_suffix('%').ok_or(AstError::Shape("chance percent %"))?;
-        let pct: f64 = num.trim().parse().map_err(|_| AstError::Shape("invalid chance percent"))?;
+        let pct: f64 = num
+            .trim()
+            .parse()
+            .map_err(|_| AstError::Shape("invalid chance percent"))?;
         return Ok(ConditionAst::ChancePercent(pct));
     }
     Err(AstError::Shape("unknown condition"))
@@ -539,23 +716,44 @@ fn split_top_level_commas(s: &str) -> Vec<&str> {
                 // Only split at commas that separate conditions, not those inside
                 // lists like "ambient ... in rooms a,b,c".
                 let mut j = i + 1;
-                while j < bytes.len() && (bytes[j] as char).is_whitespace() { j += 1; }
+                while j < bytes.len() && (bytes[j] as char).is_whitespace() {
+                    j += 1;
+                }
                 // capture next word
                 let mut k = j;
                 while k < bytes.len() {
                     let ch = bytes[k] as char;
-                    if ch.is_alphanumeric() || ch == '-' || ch == '_' { k += 1; } else { break; }
+                    if ch.is_alphanumeric() || ch == '-' || ch == '_' {
+                        k += 1;
+                    } else {
+                        break;
+                    }
                 }
-                let next_word = if j < k { s[j..k].to_ascii_lowercase() } else { String::new() };
-                let is_sep = next_word.is_empty() || matches!(next_word.as_str(),
-                    "has" | "missing" | "player" | "container" | "ambient" | "npc" | "with" | "chance" | "all" | "any"
-                );
+                let next_word = if j < k {
+                    s[j..k].to_ascii_lowercase()
+                } else {
+                    String::new()
+                };
+                let is_sep = next_word.is_empty()
+                    || matches!(
+                        next_word.as_str(),
+                        "has"
+                            | "missing"
+                            | "player"
+                            | "container"
+                            | "ambient"
+                            | "npc"
+                            | "with"
+                            | "chance"
+                            | "all"
+                            | "any"
+                    );
                 if is_sep {
                     out.push(s[start..i].trim());
                     start = i + 1;
                 }
-            }
-            _ => {}
+            },
+            _ => {},
         }
     }
     if start < s.len() {
@@ -574,12 +772,23 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         let r = rest.trim();
         let (text, used) = parse_string_at(r).map_err(|_| AstError::Shape("add wedge missing or invalid quote"))?;
         let after = r[used..].trim_start();
-        let after = after.strip_prefix("width ").ok_or(AstError::Shape("add wedge missing 'width'"))?;
-        let mut j = 0usize; while j < after.len() && after.as_bytes()[j].is_ascii_digit() { j += 1; }
-        if j == 0 { return Err(AstError::Shape("add wedge missing width number")); }
+        let after = after
+            .strip_prefix("width ")
+            .ok_or(AstError::Shape("add wedge missing 'width'"))?;
+        let mut j = 0usize;
+        while j < after.len() && after.as_bytes()[j].is_ascii_digit() {
+            j += 1;
+        }
+        if j == 0 {
+            return Err(AstError::Shape("add wedge missing width number"));
+        }
         let width: usize = after[..j].parse().map_err(|_| AstError::Shape("invalid wedge width"))?;
         let after2 = after[j..].trim_start();
-        let spinner = after2.strip_prefix("spinner ").ok_or(AstError::Shape("add wedge missing 'spinner'"))?.trim().to_string();
+        let spinner = after2
+            .strip_prefix("spinner ")
+            .ok_or(AstError::Shape("add wedge missing 'spinner'"))?
+            .trim()
+            .to_string();
         return Ok(ActionAst::AddSpinnerWedge { spinner, width, text });
     }
     if let Some(rest) = t.strip_prefix("do add flag ") {
@@ -589,10 +798,19 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         // Syntax: do add seq flag <name> [limit <n>]
         let rest = rest.trim();
         if let Some((name, tail)) = rest.split_once(" limit ") {
-            let end: u8 = tail.trim().parse().map_err(|_| AstError::Shape("invalid seq flag limit"))?;
-            return Ok(ActionAst::AddSeqFlag { name: name.trim().to_string(), end: Some(end) });
+            let end: u8 = tail
+                .trim()
+                .parse()
+                .map_err(|_| AstError::Shape("invalid seq flag limit"))?;
+            return Ok(ActionAst::AddSeqFlag {
+                name: name.trim().to_string(),
+                end: Some(end),
+            });
         }
-        return Ok(ActionAst::AddSeqFlag { name: rest.to_string(), end: None });
+        return Ok(ActionAst::AddSeqFlag {
+            name: rest.to_string(),
+            end: None,
+        });
     }
     if let Some(rest) = t.strip_prefix("do remove flag ") {
         return Ok(ActionAst::RemoveFlag(rest.trim().to_string()));
@@ -606,14 +824,20 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
     if let Some(rest) = t.strip_prefix("do replace item ") {
         let rest = rest.trim();
         if let Some((old_sym, new_sym)) = rest.split_once(" with ") {
-            return Ok(ActionAst::ReplaceItem { old_sym: old_sym.trim().to_string(), new_sym: new_sym.trim().to_string() });
+            return Ok(ActionAst::ReplaceItem {
+                old_sym: old_sym.trim().to_string(),
+                new_sym: new_sym.trim().to_string(),
+            });
         }
         return Err(AstError::Shape("replace item syntax"));
     }
     if let Some(rest) = t.strip_prefix("do replace drop item ") {
         let rest = rest.trim();
         if let Some((old_sym, new_sym)) = rest.split_once(" with ") {
-            return Ok(ActionAst::ReplaceDropItem { old_sym: old_sym.trim().to_string(), new_sym: new_sym.trim().to_string() });
+            return Ok(ActionAst::ReplaceDropItem {
+                old_sym: old_sym.trim().to_string(),
+                new_sym: new_sym.trim().to_string(),
+            });
         }
         return Err(AstError::Shape("replace drop item syntax"));
     }
@@ -621,10 +845,16 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         // format: <item> into room <room>
         let rest = rest.trim();
         if let Some((item, tail)) = rest.split_once(" into room ") {
-            return Ok(ActionAst::SpawnItemIntoRoom { item: item.trim().to_string(), room: tail.trim().to_string() });
+            return Ok(ActionAst::SpawnItemIntoRoom {
+                item: item.trim().to_string(),
+                room: tail.trim().to_string(),
+            });
         }
         if let Some((item, tail)) = rest.split_once(" into container ") {
-            return Ok(ActionAst::SpawnItemInContainer { item: item.trim().to_string(), container: tail.trim().to_string() });
+            return Ok(ActionAst::SpawnItemInContainer {
+                item: item.trim().to_string(),
+                container: tail.trim().to_string(),
+            });
         }
         if let Some(item) = rest.strip_suffix(" in inventory") {
             return Ok(ActionAst::SpawnItemInInventory(item.trim().to_string()));
@@ -647,28 +877,48 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
             let tail = tail.trim();
             // tail is: <exit_to> "message..."
             let mut parts = tail.splitn(2, ' ');
-            let exit_to = parts.next().ok_or(AstError::Shape("barred message missing exit_to"))?.to_string();
-            let msg_part = parts.next().ok_or(AstError::Shape("barred message missing message"))?.trim();
-            let (msg, _used) = parse_string_at(msg_part).map_err(|_| AstError::Shape("barred message invalid quoted text"))?;
-            return Ok(ActionAst::SetBarredMessage { exit_from: from.trim().to_string(), exit_to, msg });
+            let exit_to = parts
+                .next()
+                .ok_or(AstError::Shape("barred message missing exit_to"))?
+                .to_string();
+            let msg_part = parts
+                .next()
+                .ok_or(AstError::Shape("barred message missing message"))?
+                .trim();
+            let (msg, _used) =
+                parse_string_at(msg_part).map_err(|_| AstError::Shape("barred message invalid quoted text"))?;
+            return Ok(ActionAst::SetBarredMessage {
+                exit_from: from.trim().to_string(),
+                exit_to,
+                msg,
+            });
         }
         return Err(AstError::Shape("set barred message syntax"));
     }
     if let Some(rest) = t.strip_prefix("do lock exit from ") {
         if let Some((from, tail)) = rest.split_once(" direction ") {
-            return Ok(ActionAst::LockExit { from_room: from.trim().to_string(), direction: tail.trim().to_string() });
+            return Ok(ActionAst::LockExit {
+                from_room: from.trim().to_string(),
+                direction: tail.trim().to_string(),
+            });
         }
     }
     if let Some(rest) = t.strip_prefix("do unlock exit from ") {
         if let Some((from, tail)) = rest.split_once(" direction ") {
-            return Ok(ActionAst::UnlockExit { from_room: from.trim().to_string(), direction: tail.trim().to_string() });
+            return Ok(ActionAst::UnlockExit {
+                from_room: from.trim().to_string(),
+                direction: tail.trim().to_string(),
+            });
         }
     }
     if let Some(rest) = t.strip_prefix("do give item ") {
         // do give item <item> to player from npc <npc>
         let rest = rest.trim();
         if let Some((item, tail)) = rest.split_once(" to player from npc ") {
-            return Ok(ActionAst::GiveItemToPlayer { item: item.trim().to_string(), npc: tail.trim().to_string() });
+            return Ok(ActionAst::GiveItemToPlayer {
+                item: item.trim().to_string(),
+                npc: tail.trim().to_string(),
+            });
         }
         return Err(AstError::Shape("give item to player syntax"));
     }
@@ -676,7 +926,11 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         // format: <from> to <to> direction <dir>
         if let Some((from, tail)) = rest.split_once(" to ") {
             if let Some((to, dir_tail)) = tail.split_once(" direction ") {
-                return Ok(ActionAst::RevealExit { exit_from: from.trim().to_string(), exit_to: to.trim().to_string(), direction: dir_tail.trim().to_string() });
+                return Ok(ActionAst::RevealExit {
+                    exit_from: from.trim().to_string(),
+                    exit_to: to.trim().to_string(),
+                    direction: dir_tail.trim().to_string(),
+                });
             }
         }
         return Err(AstError::Shape("reveal exit syntax"));
@@ -690,8 +944,12 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         if let Some(space) = rest.find(' ') {
             let item = &rest[..space];
             let txt = rest[space..].trim();
-            let (text, _used) = parse_string_at(txt).map_err(|_| AstError::Shape("set item description missing or invalid quote"))?;
-            return Ok(ActionAst::SetItemDescription { item: item.to_string(), text });
+            let (text, _used) =
+                parse_string_at(txt).map_err(|_| AstError::Shape("set item description missing or invalid quote"))?;
+            return Ok(ActionAst::SetItemDescription {
+                item: item.to_string(),
+                text,
+            });
         }
         return Err(AstError::Shape("set item description syntax"));
     }
@@ -701,20 +959,33 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         if let Some(space) = rest.find(' ') {
             let npc = &rest[..space];
             let txt = rest[space..].trim();
-            let (quote, _used) = parse_string_at(txt).map_err(|_| AstError::Shape("npc says missing or invalid quote"))?;
-            return Ok(ActionAst::NpcSays { npc: npc.to_string(), quote });
+            let (quote, _used) =
+                parse_string_at(txt).map_err(|_| AstError::Shape("npc says missing or invalid quote"))?;
+            return Ok(ActionAst::NpcSays {
+                npc: npc.to_string(),
+                quote,
+            });
         }
         return Err(AstError::Shape("npc says syntax"));
     }
-    if let Some(rest) = t.strip_prefix("do npc says random ") {
-        return Ok(ActionAst::NpcSaysRandom { npc: rest.trim().to_string() });
+    if let Some(rest) = t.strip_prefix("do npc random dialogue ") {
+        return Ok(ActionAst::NpcSaysRandom {
+            npc: rest.trim().to_string(),
+        });
     }
     if let Some(rest) = t.strip_prefix("do npc refuse item ") {
         let rest = rest.trim();
         let mut parts = rest.splitn(2, ' ');
-        let npc = parts.next().ok_or(AstError::Shape("npc refuse item missing npc"))?.to_string();
-        let reason_part = parts.next().ok_or(AstError::Shape("npc refuse item missing reason"))?.trim();
-        let (reason, _used) = parse_string_at(reason_part).map_err(|_| AstError::Shape("npc refuse missing or invalid quote"))?;
+        let npc = parts
+            .next()
+            .ok_or(AstError::Shape("npc refuse item missing npc"))?
+            .to_string();
+        let reason_part = parts
+            .next()
+            .ok_or(AstError::Shape("npc refuse item missing reason"))?
+            .trim();
+        let (reason, _used) =
+            parse_string_at(reason_part).map_err(|_| AstError::Shape("npc refuse missing or invalid quote"))?;
         return Ok(ActionAst::NpcRefuseItem { npc, reason });
     }
     if let Some(rest) = t.strip_prefix("do set npc state ") {
@@ -722,13 +993,17 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         let rest = rest.trim();
         if let Some(space) = rest.find(' ') {
             let npc = &rest[..space];
-            let state = rest[space+1..].trim();
-            return Ok(ActionAst::SetNpcState { npc: npc.to_string(), state: state.to_string() });
+            let state = rest[space + 1..].trim();
+            return Ok(ActionAst::SetNpcState {
+                npc: npc.to_string(),
+                state: state.to_string(),
+            });
         }
         return Err(AstError::Shape("set npc state syntax"));
     }
     if let Some(rest) = t.strip_prefix("do deny read ") {
-        let (msg, _used) = parse_string_at(rest.trim()).map_err(|_| AstError::Shape("deny read missing or invalid quote"))?;
+        let (msg, _used) =
+            parse_string_at(rest.trim()).map_err(|_| AstError::Shape("deny read missing or invalid quote"))?;
         return Ok(ActionAst::DenyRead(msg));
     }
     if let Some(rest) = t.strip_prefix("do restrict item ") {
@@ -737,34 +1012,60 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
     if let Some(rest) = t.strip_prefix("do set container state ") {
         // do set container state <item> <state|none>
         let mut parts = rest.trim().split_whitespace();
-        let item = parts.next().ok_or(AstError::Shape("set container state missing item"))?.to_string();
-        let state_tok = parts.next().ok_or(AstError::Shape("set container state missing state"))?;
-        let state = match state_tok { "none" => None, s => Some(s.to_string()) };
+        let item = parts
+            .next()
+            .ok_or(AstError::Shape("set container state missing item"))?
+            .to_string();
+        let state_tok = parts
+            .next()
+            .ok_or(AstError::Shape("set container state missing state"))?;
+        let state = match state_tok {
+            "none" => None,
+            s => Some(s.to_string()),
+        };
         return Ok(ActionAst::SetContainerState { item, state });
     }
     if let Some(rest) = t.strip_prefix("do spinner message ") {
-        return Ok(ActionAst::SpinnerMessage { spinner: rest.trim().to_string() });
+        return Ok(ActionAst::SpinnerMessage {
+            spinner: rest.trim().to_string(),
+        });
     }
     // schedule actions are parsed at the block level in parse_actions_from_body
     if let Some(rest) = t.strip_prefix("do despawn item ") {
         return Ok(ActionAst::DespawnItem(rest.trim().to_string()));
     }
     if let Some(rest) = t.strip_prefix("do award points ") {
-        let n: i64 = rest.trim().parse().map_err(|_| AstError::Shape("invalid points number"))?;
+        let n: i64 = rest
+            .trim()
+            .parse()
+            .map_err(|_| AstError::Shape("invalid points number"))?;
         return Ok(ActionAst::AwardPoints(n));
     }
     Err(AstError::Shape("unknown action"))
 }
 
-
-fn parse_actions_from_body(body: &str, source: &str, smap: &SourceMap, sets: &HashMap<String, Vec<String>>) -> Result<Vec<ActionAst>, AstError> {
+fn parse_actions_from_body(
+    body: &str,
+    source: &str,
+    smap: &SourceMap,
+    sets: &HashMap<String, Vec<String>>,
+) -> Result<Vec<ActionAst>, AstError> {
     let mut out = Vec::new();
     let bytes = body.as_bytes();
     let mut i = 0usize;
     while i < bytes.len() {
-        while i < bytes.len() && (bytes[i] as char).is_whitespace() { i += 1; }
-        if i >= bytes.len() { break; }
-        if bytes[i] as char == '#' { while i < bytes.len() && (bytes[i] as char) != '\n' { i += 1; } continue; }
+        while i < bytes.len() && (bytes[i] as char).is_whitespace() {
+            i += 1;
+        }
+        if i >= bytes.len() {
+            break;
+        }
+        if bytes[i] as char == '#' {
+            while i < bytes.len() && (bytes[i] as char) != '\n' {
+                i += 1;
+            }
+            continue;
+        }
         if body[i..].starts_with("do schedule in ") || body[i..].starts_with("do schedule on ") {
             let (act, used) = parse_schedule_action(&body[i..], source, smap, sets)?;
             out.push(act);
@@ -772,7 +1073,10 @@ fn parse_actions_from_body(body: &str, source: &str, smap: &SourceMap, sets: &Ha
             continue;
         }
         if body[i..].starts_with("do ") {
-            let mut j = i; while j < bytes.len() && (bytes[j] as char) != '\n' { j += 1; }
+            let mut j = i;
+            while j < bytes.len() && (bytes[j] as char) != '\n' {
+                j += 1;
+            }
             let line = body[i..j].trim_end();
             match parse_action_from_str(line) {
                 Ok(a) => out.push(a),
@@ -781,30 +1085,59 @@ fn parse_actions_from_body(body: &str, source: &str, smap: &SourceMap, sets: &Ha
                     let abs = base + i;
                     let (line_no, col) = smap.line_col(abs);
                     let snippet = smap.line_snippet(line_no);
-                    return Err(AstError::ShapeAt { msg: m, context: format!("line {line_no}, col {col}: {snippet}\n{}^", " ".repeat(col.saturating_sub(1))) });
-                }
+                    return Err(AstError::ShapeAt {
+                        msg: m,
+                        context: format!(
+                            "line {line_no}, col {col}: {snippet}\n{}^",
+                            " ".repeat(col.saturating_sub(1))
+                        ),
+                    });
+                },
                 Err(e) => return Err(e),
             }
-            i = j; continue;
+            i = j;
+            continue;
         }
-        while i < bytes.len() && (bytes[i] as char) != '\n' { i += 1; }
+        while i < bytes.len() && (bytes[i] as char) != '\n' {
+            i += 1;
+        }
     }
     Ok(out)
 }
 
-fn parse_schedule_action(text: &str, source: &str, smap: &SourceMap, sets: &HashMap<String, Vec<String>>) -> Result<(ActionAst, usize), AstError> {
+fn parse_schedule_action(
+    text: &str,
+    source: &str,
+    smap: &SourceMap,
+    sets: &HashMap<String, Vec<String>>,
+) -> Result<(ActionAst, usize), AstError> {
     let s = text.trim_start();
-    let (rest0, is_in) = if let Some(r) = s.strip_prefix("do schedule in ") { (r, true) } else if let Some(r) = s.strip_prefix("do schedule on ") { (r, false) } else { return Err(AstError::Shape("not a schedule action")); };
+    let (rest0, is_in) = if let Some(r) = s.strip_prefix("do schedule in ") {
+        (r, true)
+    } else if let Some(r) = s.strip_prefix("do schedule on ") {
+        (r, false)
+    } else {
+        return Err(AstError::Shape("not a schedule action"));
+    };
     // parse number
-    let mut idx = 0usize; while idx < rest0.len() && rest0.as_bytes()[idx].is_ascii_digit() { idx += 1; }
-    if idx == 0 { return Err(AstError::Shape("schedule missing number")); }
-    let num: usize = rest0[..idx].parse().map_err(|_| AstError::Shape("invalid schedule number"))?;
+    let mut idx = 0usize;
+    while idx < rest0.len() && rest0.as_bytes()[idx].is_ascii_digit() {
+        idx += 1;
+    }
+    if idx == 0 {
+        return Err(AstError::Shape("schedule missing number"));
+    }
+    let num: usize = rest0[..idx]
+        .parse()
+        .map_err(|_| AstError::Shape("invalid schedule number"))?;
     let rest1 = &rest0[idx..].trim_start();
     // Find the opening brace of the block and capture header between number and '{'
     let brace_pos = rest1.find('{').ok_or(AstError::Shape("schedule missing '{'"))?;
     let header = rest1[..brace_pos].trim();
 
-    let mut on_false = None; let mut note = None; let mut cond: Option<ConditionAst> = None;
+    let mut on_false = None;
+    let mut note = None;
+    let mut cond: Option<ConditionAst> = None;
 
     if header.starts_with("if ") {
         // Conditional schedule path
@@ -812,60 +1145,122 @@ fn parse_schedule_action(text: &str, source: &str, smap: &SourceMap, sets: &Hash
         let onfalse_pos = hdr_after_if.find(" onFalse ");
         let note_pos = hdr_after_if.find(" note ");
         let mut cond_end = hdr_after_if.len();
-        if let Some(p) = onfalse_pos { cond_end = cond_end.min(p); }
-        if let Some(p) = note_pos { cond_end = cond_end.min(p); }
+        if let Some(p) = onfalse_pos {
+            cond_end = cond_end.min(p);
+        }
+        if let Some(p) = note_pos {
+            cond_end = cond_end.min(p);
+        }
         let cond_str = hdr_after_if[..cond_end].trim();
         let extras = hdr_after_if[cond_end..].trim();
         if let Some(idx) = extras.find("onFalse ") {
-            let after = &extras[idx+8..];
-            if after.starts_with("cancel") { on_false = Some(OnFalseAst::Cancel); }
-            else if after.starts_with("retryNextTurn") { on_false = Some(OnFalseAst::RetryNextTurn); }
-            else if let Some(tail) = after.strip_prefix("retryAfter ") {
-                let mut k=0; while k < tail.len() && tail.as_bytes()[k].is_ascii_digit() { k+=1; }
-                if k==0 { return Err(AstError::Shape("retryAfter missing turns")); }
-                let turns: usize = tail[..k].parse().map_err(|_| AstError::Shape("invalid retryAfter turns"))?;
-                on_false = Some(OnFalseAst::RetryAfter{ turns });
+            let after = &extras[idx + 8..];
+            if after.starts_with("cancel") {
+                on_false = Some(OnFalseAst::Cancel);
+            } else if after.starts_with("retryNextTurn") {
+                on_false = Some(OnFalseAst::RetryNextTurn);
+            } else if let Some(tail) = after.strip_prefix("retryAfter ") {
+                let mut k = 0;
+                while k < tail.len() && tail.as_bytes()[k].is_ascii_digit() {
+                    k += 1;
+                }
+                if k == 0 {
+                    return Err(AstError::Shape("retryAfter missing turns"));
+                }
+                let turns: usize = tail[..k]
+                    .parse()
+                    .map_err(|_| AstError::Shape("invalid retryAfter turns"))?;
+                on_false = Some(OnFalseAst::RetryAfter { turns });
             }
         }
         // Note can appear anywhere in header; parse from full header too
-        if let Some(n) = extract_note(header) { note = Some(n); }
+        if let Some(n) = extract_note(header) {
+            note = Some(n);
+        }
         cond = Some(parse_condition_text(cond_str, sets)?);
     } else {
         // Unconditional schedule path; allow optional note in header
         if !header.is_empty() {
-            if let Some(n) = extract_note(header) { note = Some(n); }
-            else {
+            if let Some(n) = extract_note(header) {
+                note = Some(n);
+            } else {
                 // Unknown tokens in header
                 // Be forgiving: ignore whitespace-only; otherwise error
-                if !header.trim().is_empty() { return Err(AstError::Shape("unexpected schedule header; expected 'if ...' or 'note \"...\"'")); }
+                if !header.trim().is_empty() {
+                    return Err(AstError::Shape(
+                        "unexpected schedule header; expected 'if ...' or 'note \"...\"'",
+                    ));
+                }
             }
         }
     }
 
     // Extract block body
-    let mut p = brace_pos + 1; let bytes2 = rest1.as_bytes(); let mut depth = 1i32; while p < rest1.len() { let c = bytes2[p] as char; if c == '{' { depth += 1; } else if c == '}' { depth -= 1; if depth == 0 { break; } } p += 1; } if depth != 0 { return Err(AstError::Shape("schedule block not closed")); }
-    let inner_body = &rest1[brace_pos+1..p];
+    let mut p = brace_pos + 1;
+    let bytes2 = rest1.as_bytes();
+    let mut depth = 1i32;
+    while p < rest1.len() {
+        let c = bytes2[p] as char;
+        if c == '{' {
+            depth += 1;
+        } else if c == '}' {
+            depth -= 1;
+            if depth == 0 {
+                break;
+            }
+        }
+        p += 1;
+    }
+    if depth != 0 {
+        return Err(AstError::Shape("schedule block not closed"));
+    }
+    let inner_body = &rest1[brace_pos + 1..p];
     let actions = parse_actions_from_body(inner_body, source, smap, sets)?;
-    let consumed = s.len() - rest1[p+1..].len();
+    let consumed = s.len() - rest1[p + 1..].len();
 
     let act = match (is_in, cond) {
-        (true, Some(c)) => ActionAst::ScheduleInIf { turns_ahead: num, condition: Box::new(c), on_false, actions, note },
-        (false, Some(c)) => ActionAst::ScheduleOnIf { on_turn: num, condition: Box::new(c), on_false, actions, note },
-        (true, None) => ActionAst::ScheduleIn { turns_ahead: num, actions, note },
-        (false, None) => ActionAst::ScheduleOn { on_turn: num, actions, note },
+        (true, Some(c)) => ActionAst::ScheduleInIf {
+            turns_ahead: num,
+            condition: Box::new(c),
+            on_false,
+            actions,
+            note,
+        },
+        (false, Some(c)) => ActionAst::ScheduleOnIf {
+            on_turn: num,
+            condition: Box::new(c),
+            on_false,
+            actions,
+            note,
+        },
+        (true, None) => ActionAst::ScheduleIn {
+            turns_ahead: num,
+            actions,
+            note,
+        },
+        (false, None) => ActionAst::ScheduleOn {
+            on_turn: num,
+            actions,
+            note,
+        },
     };
     Ok((act, consumed))
 }
-
 
 fn strip_leading_ws_and_comments(s: &str) -> &str {
     let mut i = 0usize;
     let bytes = s.as_bytes();
     while i < bytes.len() {
-        while i < bytes.len() && (bytes[i] as char).is_whitespace() { i += 1; }
-        if i >= bytes.len() { break; }
+        while i < bytes.len() && (bytes[i] as char).is_whitespace() {
+            i += 1;
+        }
+        if i >= bytes.len() {
+            break;
+        }
         if bytes[i] as char == '#' {
-            while i < bytes.len() && (bytes[i] as char) != '\n' { i += 1; }
+            while i < bytes.len() && (bytes[i] as char) != '\n' {
+                i += 1;
+            }
             continue;
         }
         break;
@@ -882,9 +1277,14 @@ impl SourceMap {
     fn new(source: &str) -> Self {
         let mut starts = vec![0usize];
         for (i, ch) in source.char_indices() {
-            if ch == '\n' { starts.push(i + 1); }
+            if ch == '\n' {
+                starts.push(i + 1);
+            }
         }
-        Self { line_starts: starts, src: source.to_string() }
+        Self {
+            line_starts: starts,
+            src: source.to_string(),
+        }
     }
     fn line_col(&self, offset: usize) -> (usize, usize) {
         let idx = match self.line_starts.binary_search(&offset) {
@@ -899,7 +1299,7 @@ impl SourceMap {
     fn line_snippet(&self, line_no: usize) -> String {
         let start = *self.line_starts.get(line_no - 1).unwrap_or(&0);
         let end = *self.line_starts.get(line_no).unwrap_or(&self.src.len());
-        self.src[start..end].trim_end_matches(['\r','\n']).to_string()
+        self.src[start..end].trim_end_matches(['\r', '\n']).to_string()
     }
 }
 
@@ -909,9 +1309,11 @@ fn str_offset(full: &str, slice: &str) -> usize {
 
 fn extract_note(header: &str) -> Option<String> {
     if let Some(idx) = header.find("note ") {
-        let after = &header[idx+5..];
+        let after = &header[idx + 5..];
         let trimmed = after.trim_start();
-        if let Ok((n, _used)) = parse_string_at(trimmed) { return Some(n); }
+        if let Ok((n, _used)) = parse_string_at(trimmed) {
+            return Some(n);
+        }
     }
     None
 }
@@ -953,9 +1355,21 @@ trigger "He said:\n\"hi\"" when always {
         assert!(ast.name.contains('\n'));
         assert!(ast.name.contains('"'));
         // show contains a newline
-        match &ast.actions[0] { ActionAst::Show(s) => { assert!(s.contains('\n')); assert_eq!(s, "Line1\nLine2"); }, _ => panic!("expected show") }
+        match &ast.actions[0] {
+            ActionAst::Show(s) => {
+                assert!(s.contains('\n'));
+                assert_eq!(s, "Line1\nLine2");
+            },
+            _ => panic!("expected show"),
+        }
         // npc says contains a quote
-        match &ast.actions[1] { ActionAst::NpcSays { npc, quote } => { assert_eq!(npc, "gonk"); assert!(quote.contains('"')); }, _ => panic!("expected npc says") }
+        match &ast.actions[1] {
+            ActionAst::NpcSays { npc, quote } => {
+                assert_eq!(npc, "gonk");
+                assert!(quote.contains('"'));
+            },
+            _ => panic!("expected npc says"),
+        }
         // TOML may re-escape newlines or include them directly; just ensure both parts appear
         let toml = crate::compile_trigger_to_toml(&ast).expect("compile ok");
         assert!(toml.contains("Line1"));
@@ -997,6 +1411,8 @@ trigger "bad ident" when enter room trigger {
 }
 "#;
         let err = parse_trigger(src).expect_err("expected parse failure");
-        match err { AstError::Pest(_) | AstError::Shape(_) | AstError::ShapeAt{..} => {} }
+        match err {
+            AstError::Pest(_) | AstError::Shape(_) | AstError::ShapeAt { .. } => {},
+        }
     }
 }
