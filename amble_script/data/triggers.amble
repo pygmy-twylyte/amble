@@ -343,6 +343,48 @@ trigger "Aperture-Lab: Drop Invitation Without Insulation" when take item invita
     do show "You burn your fingers and drop the invitation on the floor. It emits a reddish glow, and shimmers from the radiating heat."
 }
 
+# ..................................................................................................................SUBLEVEL-1-ENTRANCE
+
+trigger "Sublevel-1-Entrance: Meet the Black Knight" only once when talk to npc black_knight {
+    do add flag talked-to-knight
+    do npc says black_knight "You shall not pass. This wing is closed... and may not exist at all. Begone!"
+}
+
+trigger "Sublevel-1-Entrance: Taking Sword Angers Knight" when take item dull_longsword from npc black_knight {
+    do set npc state black_knight mad
+    do npc says black_knight "Wha-- HEY! Give that back, you -- you -- cowardly cur!"
+}
+
+trigger "Sublevel-1-Entrance: Return Dull Sword to Knight" when give item dull_longsword to npc black_knight {
+    do npc says black_knight "Right. Now don't do it again, or I shall be forced to bludgeon you with it. You still may not pass."
+    do set npc state black_knight normal
+}
+
+trigger "Sublevel-1-Entrance: Sharpen Knight's Sword" only once when act sharpen on item dull_longsword {
+    do replace item dull_longsword with keen_longsword
+    do show "After years of sharpening Ginsu knives to cut open aluminum cans and tomatoes, you have no problem honing the Black Knight's sword to a keen edge."
+    do add flag sword-sharpened
+    do award points 3
+}
+
+trigger "Sublevel-1-Entrance: Black Knight Kicks Player After Sword Taken" when always {
+    if all(with npc black_knight, npc in state black_knight mad, missing flag appeased-black-knight) {
+        do show "The Black Knight prances around the room, occasionally trying to kick you in the shins."
+        do npc random dialogue black_knight
+    }
+}
+
+trigger "Sublevel-1-Entrance: Sharpened Sword Returned" only once when give item keen_longsword to npc black_knight {
+    do restrict item keen_longsword
+    do add flag appeased-black-knight
+    do set barred message from sublevel-1-entrance to room-aa-3b "As you near the door, you are overwhelmed by a sense of spinning through an unending series of fictional realities, compelling you to step away."
+    do award points 5
+    do set npc state black_knight happy
+    do npc says black_knight "hank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like."
+}
+
+
+
 # ------------------------------------------------------------------------------------------------------------------HINT TRIGGERS
 
 trigger "Aperture-Lab: Invitation Hint" only once when always {
