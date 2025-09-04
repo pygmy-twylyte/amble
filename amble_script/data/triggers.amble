@@ -383,7 +383,13 @@ trigger "Sublevel-1-Entrance: Sharpened Sword Returned" only once when give item
     do npc says black_knight "hank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like."
 }
 
+# ..................................................................................................................SUBLEVEL-1-ENTRANCE
 
+trigger "Security-Station: Pry Evidence Locker Open" only once when act open on item evidence_locker_closed {
+    do replace item evidence_locker_closed with evidence_locker_open
+    do show "Using all your weight, all your might, and most of your reserved F-bomb arsenal you pry the locker open, leaving the door barely attached."
+    do award points 2
+}
 
 # ------------------------------------------------------------------------------------------------------------------HINT TRIGGERS
 

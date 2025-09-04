@@ -604,7 +604,7 @@ actions = [
     { type = "npcSays", npc_id = "black_knight", quote = """Thank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like.""" },
 ]
 
-########################################################################################### in triggers.amble to here
+
 # -------------------------------- EVIDENCE LOCKER / SONIC SCREWDRIVER --------------------------------------
 [[triggers]]
 name = "Security-Station: Pry Evidence Locker Open"
@@ -618,6 +618,7 @@ actions = [
     { type = "awardPoints", amount = 2 },
 ]
 
+########################################################################################### in triggers.amble to here
 [[triggers]]
 name = "Security-Station: Take Sonic Screwdriver"
 only_once = true
@@ -1298,5 +1299,6 @@ actions = [
         ] },
     ] },
 ]
+
 
 
