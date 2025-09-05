@@ -504,7 +504,20 @@ fn action_to_value(a: &ActionAst) -> toml_edit::Value {
         ActionAst::NpcSays { npc, quote } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("npcSays")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); t.insert("quote", toml_edit::Value::from(quote.clone())); toml_edit::Value::from(t) }
         ActionAst::NpcSaysRandom { npc } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("npcSaysRandom")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); toml_edit::Value::from(t) }
         ActionAst::NpcRefuseItem { npc, reason } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("npcRefuseItem")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); t.insert("reason", toml_edit::Value::from(reason.clone())); toml_edit::Value::from(t) }
-        ActionAst::SetNpcState { npc, state } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("setNpcState")); t.insert("npc_id", toml_edit::Value::from(npc.clone())); t.insert("state", toml_edit::Value::from(state.clone())); toml_edit::Value::from(t) }
+        ActionAst::SetNpcState { npc, state } => {
+            let mut t = InlineTable::new();
+            t.insert("type", toml_edit::Value::from("setNpcState"));
+            t.insert("npc_id", toml_edit::Value::from(npc.clone()));
+            // Support custom states via "custom:<name>" shorthand in DSL
+            if let Some(rest) = state.strip_prefix("custom:") {
+                let mut st = InlineTable::new();
+                st.insert("custom", toml_edit::Value::from(rest.to_string()));
+                t.insert("state", toml_edit::Value::from(st));
+            } else {
+                t.insert("state", toml_edit::Value::from(state.clone()));
+            }
+            toml_edit::Value::from(t)
+        }
         ActionAst::DenyRead(reason) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("denyRead")); t.insert("reason", toml_edit::Value::from(reason.clone())); toml_edit::Value::from(t) }
         ActionAst::RestrictItem(item) => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("restrictItem")); t.insert("item_id", toml_edit::Value::from(item.clone())); toml_edit::Value::from(t) }
         ActionAst::SetContainerState { item, state } => { let mut t = InlineTable::new(); t.insert("type", toml_edit::Value::from("setContainerState")); t.insert("item_sym", toml_edit::Value::from(item.clone())); if let Some(s) = state { t.insert("state", toml_edit::Value::from(s.clone())); } toml_edit::Value::from(t) }
@@ -829,6 +842,25 @@ trigger "Aperture-Lab: Can't Enter While On Fire" when enter room aperture-lab {
     }
 
     #[test]
+    fn parse_all_with_npc_and_flag_in_progress() {
+        let src = r#"
+trigger "npc and progress" when always {
+  if all(with npc emh, flag in progress hal-reboot) {
+    do show "ok"
+  }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        match &ast.conditions[0] {
+            ConditionAst::All(kids) => {
+                assert!(matches!(kids[0], ConditionAst::WithNpc(ref s) if s == "emh"));
+                assert!(matches!(kids[1], ConditionAst::FlagInProgress(ref s) if s == "hal-reboot"));
+            }
+            other => panic!("unexpected condition: {:?}", other),
+        }
+    }
+
+    #[test]
     fn parse_when_misc_events() {
         let src = r#"
 trigger "drop test" when drop item towel {
@@ -981,6 +1013,29 @@ trigger "Ambient: test" when always {
         assert!(toml.contains("front-lawn"));
         assert!(toml.contains("back-yard"));
     }
+
+    #[test]
+    fn parse_when_always_with_in_rooms_and_chance() {
+        let src = r#"
+let set outside_house = (front-lawn, side-yard, back-yard)
+
+trigger "Ambient: preferred syntax" when always {
+  if all(chance 20%, in rooms outside_house,lobby) {
+    do spinner message ambientInterior
+  }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        assert!(matches!(ast.event, ConditionAst::Always));
+        // compile; ensure chance + inRoom emitted, not ambient
+        let toml = compile_trigger_to_toml(&ast).expect("compile ok");
+        // any(...) lowering duplicates triggers; we can at least verify inRoom shows up
+        assert!(toml.contains("type = \"inRoom\""));
+        assert!(toml.contains("room_id = \"lobby\""));
+        assert!(toml.contains("type = \"chance\""));
+        assert!(toml.contains("type = \"spinnerMessage\""));
+        assert!(!toml.contains("type = \"ambient\""));
+    }
     #[test]
     fn parse_and_compile_misc_actions() {
         let src = r#"
@@ -995,6 +1050,7 @@ trigger "misc actions" when enter room lab {
     do give item printer_paper to player from npc receptionist
     do npc refuse item emh "That's mine."
     do set container state evidence_locker_open locked
+    do set npc state emh custom:want-emitter
     do spinner message ambientInterior
   }
 }
@@ -1007,6 +1063,7 @@ trigger "misc actions" when enter room lab {
         assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::GiveItemToPlayer { npc, item } if npc == "receptionist" && item == "printer_paper")));
         assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::NpcRefuseItem { npc, reason } if npc == "emh" && reason.starts_with("That's"))));
         assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::SetContainerState { item, state } if item == "evidence_locker_open" && state.as_deref() == Some("locked"))));
+        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::SetNpcState { npc, state } if npc == "emh" && state == "custom:want-emitter")));
         assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::SpinnerMessage { spinner } if spinner == "ambientInterior")));
 
         let toml = compile_trigger_to_toml(&ast).expect("compile ok");
@@ -1020,11 +1077,34 @@ trigger "misc actions" when enter room lab {
         assert!(toml.contains("type = \"npcRefuseItem\""));
         assert!(toml.contains("type = \"setContainerState\""));
         assert!(toml.contains("type = \"spinnerMessage\""));
+        // custom NPC state should emit inline table
+        assert!(toml.contains("type = \"setNpcState\""));
+        assert!(toml.contains("npc_id = \"emh\""));
+        assert!(toml.contains("custom = \"want-emitter\""));
         // seq flag assertions
         assert!(toml.contains("type = \"addFlag\""));
         assert!(toml.contains("type = \"sequence\""));
         assert!(toml.contains("name = \"quest\""));
         assert!(toml.contains("end = 3"));
+    }
+
+    #[test]
+    fn parse_spawn_in_container_alias() {
+        let src = r#"
+trigger "spawn in container" when always {
+  do spawn item broken_emitter in container lost_and_found_box
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        assert!(matches!(ast.event, ConditionAst::Always));
+        assert!(ast
+            .actions
+            .iter()
+            .any(|a| matches!(a, ActionAst::SpawnItemInContainer { item, container } if item == "broken_emitter" && container == "lost_and_found_box")));
+        let toml = compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("type = \"spawnItemInContainer\""));
+        assert!(toml.contains("item_id = \"broken_emitter\""));
+        assert!(toml.contains("container_id = \"lost_and_found_box\""));
     }
 
 }

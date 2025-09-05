@@ -53,7 +53,7 @@ Simple conditions:
 - `with npc <npc>` | `npc has item <npc> <item>` | `npc in state <npc> <state>`
 - `flag in progress <name>` | `flag complete <name>`
 - `chance <percent>%` (re‑rolls on each evaluation)
-- `ambient <spinner> in rooms <room1,room2,…>` (see “Sets for Ambients”)
+- `in rooms <room1,room2,…>` (preferred for ambients; see “Sets for Ambients”)
 
 Grouping:
 - `all(cond1, cond2, …)` — AND
@@ -73,7 +73,7 @@ if player in room sublevel-1-entrance { … }
 if any(has item keycard, with npc receptionist) { … }
 
 # Ambient condition (see sets below)
-if ambient ambientInterior in rooms lobby,restaurant { … }
+if in rooms lobby,restaurant { … }
 ```
 
 ## Actions (`do …`)
@@ -154,22 +154,24 @@ Sets let you name and reuse room lists in ambient conditions.
 
 - Declare a set:
   - `let set outside_house = (front-lawn, side-yard, back-yard)`
-- Use it in `ambient … in rooms …`:
-  - `if ambient ambientInterior in rooms outside_house` — expands to the full list at compile time
+- Use it with `in rooms …`:
+  - `if in rooms outside_house` — expands to the full list at compile time
   - You can mix sets and literal rooms: `outside_house,lobby`
 - Currently, sets are scoped to ambient room lists.
 
-Example:
+Example (preferred syntax):
 
 ```amble
 let set outside_house = (front-lawn, side-yard, back-yard)
 
 trigger "Outside ambience" when always {
-  if all(chance 20%, ambient ambientInterior in rooms outside_house,lobby) {
+  if all(chance 20%, in rooms outside_house,lobby) {
     do spinner message ambientInterior
   }
 }
 ```
+
+Legacy: `ambient <spinner> in rooms …` remains supported for backward compatibility, but is redundant with the spinner action and may be deprecated.
 
 ## Patterns and Tips
 
@@ -221,7 +223,7 @@ Condition atoms:
 - Items: `has item <item>` | `missing item <item>` | `container <container> has item <item>`
 - Location: `player in room <room>` | `has visited room <room>`
 - NPC: `with npc <npc>` | `npc has item <npc> <item>` | `npc in state <npc> <state>`
-- Random/ambient: `chance <n>%` | `ambient <spinner> in rooms <r1,r2,…>`
+- Random/ambient: `chance <n>%` | `in rooms <r1,r2,…>`
 - Groups: `all(… , …)` | `any(… , …)` (nestable)
 
 Action atoms:

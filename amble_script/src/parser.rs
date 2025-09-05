@@ -521,11 +521,13 @@ fn extract_body(src: &str) -> Result<&str, AstError> {
     let mut in_str = false;
     let mut escape = false;
     let mut in_comment = false;
+    let mut at_line_start = true;
     while i < bytes.len() {
         let c = bytes[i] as char;
         if in_comment {
             if c == '\n' {
                 in_comment = false;
+                at_line_start = true;
             }
             i += 1;
             continue;
@@ -540,30 +542,39 @@ fn extract_body(src: &str) -> Result<&str, AstError> {
                     in_str = false;
                 }
             }
+            // inside string, line starts don't apply
             i += 1;
             continue;
         }
         match c {
+            '\n' => {
+                at_line_start = true;
+            },
+            ' ' | '\t' | '\r' => {
+                // keep at_line_start as-is
+            },
             '"' => {
                 in_str = true;
+                at_line_start = false;
             },
             '#' => {
-                in_comment = true;
+                // Treat '#' as a comment only if it begins the line (ignoring leading spaces)
+                if at_line_start { in_comment = true; }
+                at_line_start = false;
             },
             '{' => {
-                if depth == 0 {
-                    start = Some(i + 1);
-                }
+                if depth == 0 { start = Some(i + 1); }
                 depth += 1;
+                at_line_start = false;
             },
             '}' => {
                 depth -= 1;
-                if depth == 0 {
-                    end = Some(i);
-                    break;
-                }
+                if depth == 0 { end = Some(i); break; }
+                at_line_start = false;
             },
-            _ => {},
+            _ => {
+                at_line_start = false;
+            },
         }
         i += 1;
     }
@@ -688,6 +699,27 @@ fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Resu
             });
         }
     }
+    // Preferred shorthand: "in rooms <r1,r2,...>" expands to any(player in room r1, player in room r2, ...)
+    if let Some(rest) = t.strip_prefix("in rooms ") {
+        let list = rest.trim();
+        let mut rooms: Vec<String> = Vec::new();
+        for tok in list.split(',').map(|s| s.trim()).filter(|s| !s.is_empty()) {
+            if let Some(v) = sets.get(tok) {
+                rooms.extend(v.clone());
+            } else {
+                rooms.push(tok.to_string());
+            }
+        }
+        // If only one room, return simple PlayerInRoom; else return Any of PlayerInRoom
+        if rooms.len() == 1 {
+            return Ok(ConditionAst::PlayerInRoom(rooms.remove(0)));
+        } else if !rooms.is_empty() {
+            let kids = rooms.into_iter().map(ConditionAst::PlayerInRoom).collect();
+            return Ok(ConditionAst::Any(kids));
+        } else {
+            return Err(AstError::Shape("in rooms requires at least one room"));
+        }
+    }
     if let Some(rest) = t.strip_prefix("player in room ") {
         return Ok(ConditionAst::PlayerInRoom(rest.trim().to_string()));
     }
@@ -742,8 +774,10 @@ fn split_top_level_commas(s: &str) -> Vec<&str> {
                             | "player"
                             | "container"
                             | "ambient"
+                            | "in"
                             | "npc"
                             | "with"
+                            | "flag"
                             | "chance"
                             | "all"
                             | "any"
@@ -851,6 +885,12 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
             });
         }
         if let Some((item, tail)) = rest.split_once(" into container ") {
+            return Ok(ActionAst::SpawnItemInContainer {
+                item: item.trim().to_string(),
+                container: tail.trim().to_string(),
+            });
+        }
+        if let Some((item, tail)) = rest.split_once(" in container ") {
             return Ok(ActionAst::SpawnItemInContainer {
                 item: item.trim().to_string(),
                 container: tail.trim().to_string(),

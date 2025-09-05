@@ -17,7 +17,6 @@ keyword = {
   | "room"
   | "take"
   | "drop"
-  | "open"
   | "look"
   | "at"
   | "ability"
@@ -67,6 +66,7 @@ keyword = {
   | "complete"
   | "with"
   | "in"
+  | "rooms"
   | "chance"
   | "ambient"
   | "any"
@@ -81,11 +81,11 @@ keyword = {
   | "none"
 }
 
-ident_char = _{ ASCII_ALPHANUMERIC | "-" | ":" | "_" }
+ident_char = _{ ASCII_ALPHANUMERIC | "-" | ":" | "_" | "#" }
 // Disallow exact keywords, but allow identifiers that merely start with a keyword (e.g., "readable")
 ident = @{ !(keyword ~ !ident_char) ~ ident_char+ }
 
-number = @{ ASCII_DIGIT+ }
+number = @{ "-"* ~ ASCII_DIGIT+ }
 
 // Quoted strings with common escape sequences: \n, \r, \t, \", \\
 escape      = _{ "\\" ~ ("n" | "r" | "t" | "\\" | "\"") }
@@ -162,6 +162,7 @@ do_action = {
   | ("remove" ~ "flag" ~ ident)
   | ("spawn" ~ "item" ~ ident ~ "into" ~ "room" ~ ident)
   | ("spawn" ~ "item" ~ ident ~ "into" ~ "container" ~ ident)
+  | ("spawn" ~ "item" ~ ident ~ "in" ~ "container" ~ ident)
   | ("spawn" ~ "item" ~ ident ~ "in" ~ "inventory")
   | ("spawn" ~ "item" ~ ident ~ "in" ~ "current" ~ "room")
   | ("despawn" ~ "item" ~ ident)
@@ -190,6 +191,7 @@ do_action = {
 cond = {
     any_group
   | all_group
+  | in_rooms
   | has_flag
   | missing_flag
   | has_item
@@ -222,6 +224,8 @@ player_in_room = { "player" ~ "in" ~ "room" ~ ident }
 container_has_item = { "container" ~ ident ~ "has" ~ "item" ~ ident }
 chance_cond        = { "chance" ~ number ~ "%" }
 ambient_cond       = { "ambient" ~ ident ~ ("in" ~ "rooms" ~ ident ~ ("," ~ ident)*)? }
+// Preferred shorthand for ambient room gating: "in rooms a,b,c"
+in_rooms = { "in" ~ "rooms" ~ ident ~ ("," ~ ident)* }
 
 all_group = { "all" ~ "(" ~ cond_list ~ ")" }
 any_group = { "any" ~ "(" ~ cond_list ~ ")" }
