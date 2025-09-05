@@ -475,11 +475,69 @@ trigger "Med-Bay: EMH/Goin' Mobile!" when give item working_emitter to npc emh {
 }
 
 trigger "Med-Bay: EMH/After HAL Rebooted" only once when always {
-    if (with npc emh, flag complete hal-reboot) {
+    if all(with npc emh, flag complete hal-reboot) {
         do set npc state emh normal
         do npc says emh "Well, now you've done it. HAL is operational again. We'll surely regret it -- or at least *you* will."
     }
 }
+
+# ..................................................................................................................MONOLITH_ROOM
+
+trigger "Monolith-Room: HAL/Start Reboot Sequence" only once
+when talk to npc hal_9000 {
+    do add seq flag hal-reboot limit 3
+    do add flag talked-to-hal
+    do set npc state hal_9000 custom:memory-0
+    do npc says hal_9000 "(when you speak, the red light in HAL's lens begins to pulse slowly, then grows steady)"
+}
+
+trigger "Monolith-Room: HAL/Module #1 Inserted" only once
+when insert item hal_module_1 into item hal_memory_bank {
+    do advance flag hal-reboot
+    do add flag module-1-Inserted
+    do restrict item hal_module_1
+    do show "Memory module #1 magnetically locks into place and lights up."
+}
+
+trigger "Monolith-Room: HAL/Module #2 Inserted" only once
+when insert item hal_module_2 into item hal_memory_bank {
+    do advance flag hal-reboot
+    do add flag module-2-Inserted
+    do restrict item hal_module_2
+    do show "Memory module #2 magnetically locks into place and lights up."
+}
+
+trigger "Monolith-Room: HAL/Module #3 Inserted" only once
+when insert item hal_module_3 into item hal_memory_bank {
+    do advance flag hal-reboot
+    do add flag module-3-Inserted
+    do restrict item hal_module_3
+    do show "Memory module #3 magnetically locks into place and lights up."
+}
+
+trigger "Monolith-Room: HAL/One Module In"
+when always {
+    if has flag hal-reboot#1 {
+        do set npc state hal_9000 custom:memory-1
+    }
+}
+
+trigger "Monolith-Room: HAL/Two Modules In"
+when always {
+    if has flag hal-reboot#2 {
+        do set npc state hal_9000 custom:memory-2
+    }
+}
+
+trigger "Monolith-Room: HAL/All Modules In" only once
+when always {
+    if flag complete hal-reboot {
+        do award points 10
+        do set npc state hal_9000 custom:memory-3
+        do show "All memory now restored, HAL-9000 finishes rebooting and is fully operational."
+    }
+}
+
 
 # ------------------------------------------------------------------------------------------------------------------HINT TRIGGERS
 

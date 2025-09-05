@@ -165,6 +165,11 @@ conditions = [{ type = "hasFlag", flag = "read-vogon-poetry" }, { type = "hasFla
 actions = [{ type = "npcSays", npc_id = "emh", quote = "You look ill. You didn't read that poetry book, did you? That won't look good on your evaluation. The Emergency Medical Hologram on level AA-3 may be able to help." }]
 
 [[triggers]]
+name = "Office: Receptionist Comment (Broken Emitter Found)"
+conditions = [{ type = "enter", room_id = "b-a-office" }, { type = "withNpc", npc_id = "b_a_receptionist" }, { type = "hasFlag", flag = "mobilize-emh#0" }]
+actions = [{ type = "npcSays", npc_id = "b_a_receptionist", quote = "I hear the EMH lost his emitter again. One has been turned into the Lost and Found, but I'm not sure how much good it will do you. Or him." }]
+
+[[triggers]]
 name = "Poetry-Panic: Acquired Elevator Keycard"
 only_once = true
 conditions = [{ type = "take", item_id = "elevator_keycard" }]
@@ -301,13 +306,85 @@ actions = [{ type = "addFlag", flag = { type = "simple", name = "cured-vogon-poe
 name = "Med-Bay: Talk to EMH After Finding HAL"
 only_once = true
 conditions = [{ type = "withNpc", npc_id = "emh" }, { type = "flagInProgress", flag = "hal-reboot" }]
-actions = [{ type = "npcSays", npc_id = "emh", quote = "" }, { type = "setNpcState", npc_id = "emh", state = { custom = "want-emitter" } }, { type = "spawnItemInContainer", item_id = "broken_emitter", container_id = "lost_and_found_box" }, { type = "addFlag", flag = { type = "sequence", name = "mobilize-emh", end = 3 } }, { type = "addFlag", flag = { type = "simple", name = "got-hint-from-emh" } }]
+actions = [{ type = "npcSays", npc_id = "emh", quote = "Ah -- I hoped I would catch you. Word is, you've seen HAL, or what remains of him. If you want to get him working again -- and I'm not sure I'd advise it -- I may be able to get one of those memory modules for you." }, { type = "setNpcState", npc_id = "emh", state = { custom = "want-emitter" } }, { type = "spawnItemInContainer", item_id = "broken_emitter", container_id = "lost_and_found_box" }, { type = "addFlag", flag = { type = "sequence", name = "mobilize-emh", end = 3 } }, { type = "addFlag", flag = { type = "simple", name = "got-hint-from-emh" } }]
 
 [[triggers]]
 name = "Med-Bay: EMH/Sonic Hint"
 only_once = true
 conditions = [{ type = "enter", room_id = "med-bay" }, { type = "hasItem", item_id = "sonic_screwdriver" }, { type = "hasFlag", flag = "mobilize-emh#1" }]
 actions = [{ type = "npcSays", npc_id = "emh", quote = "Please state the nature of the med... wait -- is that a sonic screwdriver? I bet you could use that to repair my mobile emitter!" }]
+
+[[triggers]]
+name = "Med-Bay: Advance Sequence when Broken Emitter Found"
+only_once = true
+conditions = [{ type = "take", item_id = "broken_emitter" }]
+actions = [{ type = "advanceFlag", flag = "mobilize-emh" }]
+
+[[triggers]]
+name = "Med-Bay: EMH Won't Take Broken Emitter"
+conditions = [{ type = "giveToNpc", item_id = "broken_emitter", npc_id = "emh" }]
+actions = [{ type = "npcRefuseItem", npc_id = "emh", reason = "That's my mobile emitter all right, but it's broken. You'll need to find a way to repair it before I can help you with HAL." }]
+
+[[triggers]]
+name = "Med-Bay: Use Sonic On Emitter"
+conditions = [{ type = "useItemOnItem", interaction = "repair", target_id = "broken_emitter", tool_id = "sonic_screwdriver" }]
+actions = [{ type = "showMessage", text = "You hold the button down on the sonic. It makes electronic whirring noises while you make a few passes over the emitter." }]
+
+[[triggers]]
+name = "Med-Bay: Repair Emitter"
+conditions = [{ type = "actOnItem", target_sym = "broken_emitter", action = "repair" }]
+actions = [{ type = "showMessage", text = "After a few seconds, the emitter lights up and reboots, passing all self-tests." }, { type = "replaceItem", old_sym = "broken_emitter", new_sym = "working_emitter" }, { type = "awardPoints", amount = 3 }, { type = "advanceFlag", flag = "mobilize-emh" }]
+
+[[triggers]]
+name = "Med-Bay: EMH/Goin' Mobile!"
+conditions = [{ type = "giveToNpc", item_id = "working_emitter", npc_id = "emh" }]
+actions = [{ type = "restrictItem", item_id = "working_emitter" }, { type = "advanceFlag", flag = "mobilize-emh" }, { type = "setNpcState", npc_id = "emh", state = "happy" }, { type = "npcSays", npc_id = "emh", quote = "Looks like it's working properly! Let me take it for a spin." }, { type = "showMessage", text = "The EMH flickers, then vanishes in a flash. He reappears a few moments later." }, { type = "npcSays", npc_id = "emh", quote = "All seems to be in order. As promised, I retrieved one of HAL's modules. I dropped it off in the observation room across the hall, but insert it at your own peril." }, { type = "spawnItemInRoom", item_id = "hal_module_1", room_id = "observation-room" }, { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = "Heard overhead: \"Will the E.M.H. please return to the med bay? There's been a yellow snow blinding incident.\"" }, { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = "Over the PA: \"E.M.H and sanitation, please report to the lunch room. Mr. Creosote ate a tiny, wafer thin mint again.\"" }]
+
+[[triggers]]
+name = "Med-Bay: EMH/After HAL Rebooted"
+only_once = true
+conditions = [{ type = "withNpc", npc_id = "emh" }, { type = "flagComplete", flag = "hal-reboot" }]
+actions = [{ type = "setNpcState", npc_id = "emh", state = "normal" }, { type = "npcSays", npc_id = "emh", quote = "Well, now you've done it. HAL is operational again. We'll surely regret it -- or at least *you* will." }]
+
+[[triggers]]
+name = "Monolith-Room: HAL/Start Reboot Sequence"
+only_once = true
+conditions = [{ type = "talkToNpc", npc_id = "hal_9000" }]
+actions = [{ type = "addFlag", flag = { type = "sequence", name = "hal-reboot", end = 3 } }, { type = "addFlag", flag = { type = "simple", name = "talked-to-hal" } }, { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-0" } }, { type = "npcSays", npc_id = "hal_9000", quote = "(when you speak, the red light in HAL's lens begins to pulse slowly, then grows steady)" }]
+
+[[triggers]]
+name = "Monolith-Room: HAL/Module #1 Inserted"
+only_once = true
+conditions = [{ type = "insert", item_id = "hal_module_1", container_id = "hal_memory_bank" }]
+actions = [{ type = "advanceFlag", flag = "hal-reboot" }, { type = "addFlag", flag = { type = "simple", name = "module-1-Inserted" } }, { type = "restrictItem", item_id = "hal_module_1" }, { type = "showMessage", text = "Memory module #1 magnetically locks into place and lights up." }]
+
+[[triggers]]
+name = "Monolith-Room: HAL/Module #2 Inserted"
+only_once = true
+conditions = [{ type = "insert", item_id = "hal_module_2", container_id = "hal_memory_bank" }]
+actions = [{ type = "advanceFlag", flag = "hal-reboot" }, { type = "addFlag", flag = { type = "simple", name = "module-2-Inserted" } }, { type = "restrictItem", item_id = "hal_module_2" }, { type = "showMessage", text = "Memory module #2 magnetically locks into place and lights up." }]
+
+[[triggers]]
+name = "Monolith-Room: HAL/Module #3 Inserted"
+only_once = true
+conditions = [{ type = "insert", item_id = "hal_module_3", container_id = "hal_memory_bank" }]
+actions = [{ type = "advanceFlag", flag = "hal-reboot" }, { type = "addFlag", flag = { type = "simple", name = "module-3-Inserted" } }, { type = "restrictItem", item_id = "hal_module_3" }, { type = "showMessage", text = "Memory module #3 magnetically locks into place and lights up." }]
+
+[[triggers]]
+name = "Monolith-Room: HAL/One Module In"
+conditions = [{ type = "hasFlag", flag = "hal-reboot#1" }]
+actions = [{ type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-1" } }]
+
+[[triggers]]
+name = "Monolith-Room: HAL/Two Modules In"
+conditions = [{ type = "hasFlag", flag = "hal-reboot#2" }]
+actions = [{ type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-2" } }]
+
+[[triggers]]
+name = "Monolith-Room: HAL/All Modules In"
+only_once = true
+conditions = [{ type = "flagComplete", flag = "hal-reboot" }]
+actions = [{ type = "awardPoints", amount = 10 }, { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-3" } }, { type = "showMessage", text = "All memory now restored, HAL-9000 finishes rebooting and is fully operational." }]
 
 [[triggers]]
 name = "Aperture-Lab: Invitation Hint"
