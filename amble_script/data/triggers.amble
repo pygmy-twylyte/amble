@@ -112,7 +112,7 @@ trigger "Loading-Dock: Got Crowbar" only once when take item crowbar {
     do show "You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?"
     do add flag got-crowbar
     do award points 3
-    do schedule in 2 {
+    do schedule in 2 note "notice fiction bleed" {
         do show "... and then you wonder why you're thinking of Barney as a real person instead of a character in a game. And Gordon, for that matter. Wait, he was just *fiction*, right? Come to think of it, you feel a little unsure of reality, and it's worse the nearer you are to the building."
     }
 }
@@ -209,6 +209,18 @@ trigger "Office: Lost and Found Unlocked" only once when unlock item lost_and_fo
     do set item description lost_and_found_box "A sturdy metal lockbox marked 'Lost and Found'. Its lid is cracked slightly open."
 }
 
+trigger "Office: Receptionist Comment (Read Poetry)" only once when always {
+    if all(has flag read-vogon-poetry, has flag status:nauseated) {
+        do npc says emh "You look ill. You didn't read that poetry book, did you? That won't look good on your evaluation. The Emergency Medical Hologram on level AA-3 may be able to help."
+    }
+}
+
+trigger "Office: Receptionist Comment (Broken Emitter Found)" when enter room b-a-office {
+    if all(with npc b_a_receptionist, has flag mobilize-emh#0) {
+        do npc says b_a_receptionist "I hear the EMH lost his emitter again. One has been turned into the Lost and Found, but I'm not sure how much good it will do you. Or him."
+    }
+}
+
 # ..................................................................................................................POETRY-PANIC
 
 trigger "Poetry-Panic: Acquired Elevator Keycard" only once when take item elevator_keycard {
@@ -292,7 +304,7 @@ trigger "Aperture-Lab: Print Invitation on Asbestos" only once when use item lab
         do award points 10
         do despawn item asbestos_sheet
         do show "The PlasmaJet emits a blinding flash of light, leaving a printer-shaped purple blob in your visual field and blinding you for a few moments."
-        do schedule in 1 note "blindness clears" {
+        do schedule in 2 note "blindness clears" {
             do spawn item invitation into room aperture-lab
             do show "Your vision begins to clear, and you see an engraved invitation on the floor. It glows slightly, and waves of heat warp the air around it."
         }
@@ -383,12 +395,90 @@ trigger "Sublevel-1-Entrance: Sharpened Sword Returned" only once when give item
     do npc says black_knight "hank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like."
 }
 
-# ..................................................................................................................SUBLEVEL-1-ENTRANCE
+# ..................................................................................................................SECURITY_STATION
 
 trigger "Security-Station: Pry Evidence Locker Open" only once when act open on item evidence_locker_closed {
     do replace item evidence_locker_closed with evidence_locker_open
     do show "Using all your weight, all your might, and most of your reserved F-bomb arsenal you pry the locker open, leaving the door barely attached."
     do award points 2
+}
+
+trigger "Security-Station: Take Sonic Screwdriver" only once when take item sonic_screwdriver {
+    do add flag got-sonic
+    do award points 3
+}
+
+# ..................................................................................................................MED-BAY
+
+trigger "Med-Bay: EMH/Cure Nausea" when talk to npc emh {
+    if all(has flag status:nauseated, has flag read-vogon-poetry) {
+        do add flag cured-vogon-poetry
+        do remove flag status:nauseated
+        do award points 3
+        do npc says emh "You poor fool, you look horrible. You've been reading Vogon poetry, hmmm? Here, this should help."
+        do show "The EMH gives you a hypospray in the neck, and your nausea subsides."
+    }
+}
+
+trigger "Med-Bay: Talk to EMH After Finding HAL" only once when always {
+    if all(with npc emh, flag in progress hal-reboot) {
+        do npc says emh "Ah -- I hoped I would catch you. Word is, you've seen HAL, or what remains of him. If you want to get him working again -- and I'm not sure I'd advise it -- I may be able to get one of those memory modules for you."
+        do set npc state emh custom:want-emitter
+        do spawn item broken_emitter into container lost_and_found_box
+        do add seq flag mobilize-emh limit 3
+        do add flag got-hint-from-emh
+        # mobilize-emh#0 -- first tasked with getting emitter, not found yet
+        # mobilize-emh#1 -- obtained broken emitter
+        # mobilize-emh#2 -- fixed broken emitter
+        # mobilize-emh#3 -- fixed emitter given to EMH; EMH mobile
+    }
+}
+
+trigger "Med-Bay: EMH/Sonic Hint" only once when enter room med-bay {
+    if all(has item sonic_screwdriver, has flag mobilize-emh#1) {
+        do npc says emh "Please state the nature of the med... wait -- is that a sonic screwdriver? I bet you could use that to repair my mobile emitter!"
+    }
+}
+
+trigger "Med-Bay: Advance Sequence when Broken Emitter Found" only once when take item broken_emitter {
+    # advance to mobilize-emh#1
+    do advance flag mobilize-emh
+}
+
+trigger "Med-Bay: EMH Won't Take Broken Emitter" when give item broken_emitter to npc emh {
+    do npc refuse item emh "That's my mobile emitter all right, but it's broken. You'll need to find a way to repair it before I can help you with HAL."
+}
+
+trigger "Med-Bay: Use Sonic On Emitter" when use item sonic_screwdriver on item broken_emitter interaction repair {
+    do show "You hold the button down on the sonic. It makes electronic whirring noises while you make a few passes over the emitter."
+}
+
+trigger "Med-Bay: Repair Emitter" when act repair on item broken_emitter {
+    do show "After a few seconds, the emitter lights up and reboots, passing all self-tests."
+    do replace item broken_emitter with working_emitter
+    do award points 3
+    # advance to mobilize-emh #2
+    do advance flag mobilize-emh
+}
+
+trigger "Med-Bay: EMH/Goin' Mobile!" when give item working_emitter to npc emh {
+    do restrict item working_emitter
+    # advance to mobilize-emh #3 (finish)
+    do advance flag mobilize-emh
+    do set npc state emh happy
+    do npc says emh "Looks like it's working properly! Let me take it for a spin."
+    do show "The EMH flickers, then vanishes in a flash. He reappears a few moments later."
+    do npc says emh "All seems to be in order. As promised, I retrieved one of HAL's modules. I dropped it off in the observation room across the hall, but insert it at your own peril."
+    do spawn item hal_module_1 into room observation-room
+    do add wedge "Heard overhead: \"Will the E.M.H. please return to the med bay? There's been a yellow snow blinding incident.\"" width 1 spinner ambientInterior
+    do add wedge "Over the PA: \"E.M.H and sanitation, please report to the lunch room. Mr. Creosote ate a tiny, wafer thin mint again.\"" width 1 spinner ambientInterior
+}
+
+trigger "Med-Bay: EMH/After HAL Rebooted" only once when always {
+    if (with npc emh, flag complete hal-reboot) {
+        do set npc state emh normal
+        do npc says emh "Well, now you've done it. HAL is operational again. We'll surely regret it -- or at least *you* will."
+    }
 }
 
 # ------------------------------------------------------------------------------------------------------------------HINT TRIGGERS
@@ -398,5 +488,57 @@ trigger "Aperture-Lab: Invitation Hint" only once when always {
         do schedule in 10 if all(has flag got-invitation, missing flag got-visitor-pass, has visited room b-a-office) onFalse cancel note "invitation hint" {
             do show "The invitation has cooled down enough now for you to give it to the receptionist in the Amble Adventures office ... maybe she'll help you now."
         }
+    }
+}
+
+# ------------------------------------------------------------------------------------------------------------------AMBIENT TRIGGERS
+
+let set woods = (high-ridge, parish-landing, two-sheds-landing, two-sheds, guard-post)
+trigger "Ambient Woodland" when always {
+    if all(chance 20%, in rooms woods) {
+        do spinner message ambientWoodland
+    }
+}
+
+let set snowfield = (snowfield, snow-camp)
+trigger "Ambient Snowfield" when always {
+    if all(chance 20%, in rooms snowfield) {
+        do spinner message ambientSnowfield
+    }
+}
+
+let set elevator = (lift-main, lift-sublevel-1)
+trigger "Elevator Muzak" when always {
+    if all(chance 30%, in rooms elevator) {
+        do spinner message muzak
+    }
+}
+
+let set near_aa3b = (lift-sublevel-1, sublevel-1-entrance, corridor-north, corridor-south, observation-room, security-station, med-bay, monolith-room)
+trigger "Ambient: Near AA-3B" when always {
+    if all(chance 20%, in rooms near_aa3b) {
+        do spinner message ambientAA3B
+    }
+}
+
+let set main_floor = (main-lobby, b-a-office, restaurant, patio, lift-bank-main, lounge, vip-bathroom)
+trigger "Ambient: Main Floor" when always {
+    if all(chance 20%, in rooms main_floor) {
+        do spinner message ambientInterior
+    }
+}
+
+# ------------------------------------------------------------------------------------------------------------------STATUS EFFECT TRIGGERS
+
+trigger "Vogon Poetry Causes Nausea" when use item vogon_poetry_book ability read {
+    do show "You nearly get through the first poem when the vomiting begins..."
+    do add flag read-vogon-poetry
+    do add flag status:nauseated
+    do award points -1
+}
+
+trigger "Status: Nauseated" when always {
+    if all(has flag status:nauseated, chance 50%) {
+        do spinner message nauseated
     }
 }
