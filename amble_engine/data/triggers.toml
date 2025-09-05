@@ -1,1304 +1,446 @@
-# in triggers.amble
+[[triggers]]
+name = "High-Ridge: Read Scrawled Note"
+only_once = true
+conditions = [{ type = "useItem", item_id = "scrawled_note", ability = "read" }]
+actions = [{ type = "addFlag", flag = { type = "simple", name = "read-scrawled-note" } }]
+
+[[triggers]]
+name = "High-Ridge: Plaque 1 Too Grimy to Read"
+conditions = [{ type = "useItem", item_id = "plaque_1", ability = "read" }, { type = "missingFlag", flag = "cleaned-plaque-1" }]
+actions = [{ type = "denyRead", reason = "The plaque is too grimy to make out the words. You'll need to find a way to clean it off." }, { type = "addFlag", flag = { type = "simple", name = "tried-read-plaque-1" } }]
+
+[[triggers]]
+name = "High-Ridge: Plaque 1 Cleaned"
+only_once = true
+conditions = [{ type = "actOnItem", target_sym = "plaque_1", action = "clean" }]
+actions = [{ type = "addFlag", flag = { type = "simple", name = "cleaned-plaque-1" } }, { type = "awardPoints", amount = 3 }, { type = "showMessage", text = "With some saliva and a little effort, you're able to remove the grime and bring the plaque to a dull shine." }]
+
+[[triggers]]
+name = "High Ridge: Read Cleaned Plaque 1"
+only_once = true
+conditions = [{ type = "useItem", item_id = "plaque_1", ability = "read" }, { type = "hasFlag", flag = "cleaned-plaque-1" }]
+actions = [{ type = "addFlag", flag = { type = "simple", name = "read-plaque-1" } }, { type = "awardPoints", amount = 5 }]
+
+[[triggers]]
+name = "Two-Sheds-Landing: Cut or Chop Tree"
+only_once = true
+conditions = [{ type = "actOnItem", target_sym = "fallen_tree", action = "cut" }]
+actions = [{ type = "showMessage", text = "With considerable effort and just one blister, you're able to chop a path through the branches. The stone steps continue to curve upward from here." }, { type = "despawnItem", item_id = "fallen_tree" }, { type = "addFlag", flag = { type = "simple", name = "cleared-fallen-tree" } }, { type = "addFlag", flag = { type = "simple", name = "chopped-fallen-tree" } }, { type = "awardPoints", amount = 5 }]
+
+[[triggers]]
+name = "Two-Sheds-Landing: Arson-Aid Used on Tree"
+only_once = true
+conditions = [{ type = "useItemOnItem", interaction = "burn", target_id = "fallen_tree", tool_id = "flamethrower" }]
+actions = [{ type = "showMessage", text = "You aim the Arson-Aid and begin to squeeze the trigger when the device erupts into a fireball! Panicking, you throw the whole Arson-Aid into the tree." }]
+
+[[triggers]]
+name = "Two-Sheds-Landing: Burn Tree"
+only_once = true
+conditions = [{ type = "actOnItem", target_sym = "fallen_tree", action = "burn" }]
+actions = [{ type = "despawnItem", item_id = "fallen_tree" }, { type = "addFlag", flag = { type = "simple", name = "cleared-fallen-tree" } }, { type = "addFlag", flag = { type = "simple", name = "burned-fallen-tree" } }, { type = "awardPoints", amount = 5 }, { type = "showMessage", text = "WHOOOOOMPH! The fallen tree erupts into flame and, quite improbably, is reduced to ash in mere seconds." }]
+
 [[triggers]]
 name = "Guard-Post: Traveling Without Towel"
 only_once = true
-conditions = [
-    { type = "enter", room_id = "guard-post" },
-    { type = "missingItem", item_id = "towel" },
-]
-actions = [
-    { type = "showMessage", text = """You pause here, realizing with increasing concern that you are traveling in a strange land without a towel.""" },
-]
+conditions = [{ type = "enter", room_id = "guard-post" }, { type = "missingItem", item_id = "towel" }]
+actions = [{ type = "showMessage", text = "You pause here, realizing with increasing concern that you are traveling without a towel." }]
 
-# in triggers.amble
+[[triggers]]
+name = "East-of-Building: Pluck Dental Floss"
+only_once = true
+conditions = [{ type = "take", item_id = "dental_floss" }]
+actions = [{ type = "showMessage", text = "You pluck a strand of floss from the bush. It comes away easily â disturbingly so. Minty. Strong. Too strong. Youâre no botanist, but youâre pretty sure this shouldnât be growing out of a shrubbery." }, { type = "awardPoints", amount = 5 }, { type = "setItemDescription", item_sym = "weird_bush", text = "A squat, leafy bush now stripped of its floss-like strands, bare branches jutting out awkwardly. A small sign next to it reads 'Pride of Montana'." }]
+
 [[triggers]]
 name = "Loading-Dock: Spawn Special Delivery"
 only_once = true
 conditions = [{ type = "leave", room_id = "loading-dock" }]
-actions = [
-    { type = "spawnItemInRoom", item_id = "delivery_box", room_id = "loading-dock" },
-    { type = "showMessage", text = """You hear a thud behind you, back toward the dock, like something was just dropped off. You glimpse a drone flying away quickly, as if hoping not to be seen. Was that an Initech logo on the side?""" },
-]
+actions = [{ type = "spawnItemInRoom", item_id = "delivery_box", room_id = "loading-dock" }, { type = "showMessage", text = "You hear a thud behind you, back toward the dock, like something was just dropped off. You glimpse a drone flying away quickly, as if hoping not to be seen. Was that an Initech logo on the side?" }]
 
-# in triggers.amble
 [[triggers]]
-name = "Office: Open-Poetry-Performer"
-only_once = false
-conditions = [{ type = "open", item_id = "poetry_performer" }]
-actions = [
-    { type = "showMessage", text = """The machine clicks on and hums. A flashing red light warns:\n            ⚠️ NOT FOR USE WITH VOGON POETRY ⚠️""" },
-]
-
-# START LOUNGE, PORTAL GUN TRIGGERS
-# remove rug to reveal hidden exit to portal room
-# in triggers.amble
-[[triggers]]
-name = "Lounge: Rug Taken"
+name = "Loading-Dock: Open Security Crate (Key)"
 only_once = true
-conditions = [{ type = "take", item_id = "lebowski_rug" }]
-actions = [
-    { type = "revealExit", direction = "down", exit_from = "lounge", exit_to = "portal-room" },
-    { type = "addFlag", flag = { type = "simple", name = "found-portal-room" } },
-    { type = "awardPoints", amount = 3 },
-    { type = "showMessage", text = """Light shines around the edges of a trapdoor revealed in the floor when you move the rug.""" },
-]
+conditions = [{ type = "unlock", item_id = "security_crate" }]
+actions = [{ type = "spawnItemInContainer", item_id = "crowbar", container_id = "security_crate" }, { type = "spawnItemInContainer", item_id = "security_log", container_id = "security_crate" }, { type = "spawnItemInContainer", item_id = "glass_vial", container_id = "security_crate" }, { type = "spawnItemInContainer", item_id = "initech_mug", container_id = "security_crate" }, { type = "addFlag", flag = { type = "simple", name = "unlocked-security-crate" } }, { type = "showMessage", text = "The ear wax on the tip of the key eases it into the rusted lock, which snaps open with a satisfying clunk." }]
 
-# burn rug to reveal hidden exit to portal room
-# in triggers.amble
 [[triggers]]
-name = "Lounge: Rug Burned Away"
+name = "Loading-Dock: Open Security Crate (Break)"
 only_once = true
-conditions = [
-    { type = "actOnItem", target_sym = "lebowski_rug", action = "burn" },
-]
-actions = [
-    { type = "revealExit", direction = "down", exit_from = "lounge", exit_to = "portal-room" },
-    { type = "despawnItem", item_id = "lebowski_rug" },
-    { type = "addFlag", flag = { type = "simple", name = "found-portal-room" } },
-    { type = "awardPoints", amount = 3 },
-    { type = "showMessage", text = """As the smoke clears and your eyes stop burning, you see a trapdoor revealed in the floor where the rug used to be.""" },
-]
+conditions = [{ type = "actOnItem", target_sym = "security_crate", action = "break" }, { type = "missingFlag", flag = "unlocked-security-crate" }]
+actions = [{ type = "despawnItem", item_id = "security_crate" }, { type = "spawnItemCurrentRoom", item_id = "crowbar" }, { type = "spawnItemCurrentRoom", item_id = "security_log" }, { type = "spawnItemCurrentRoom", item_id = "shattered_vial" }, { type = "spawnItemCurrentRoom", item_id = "initech_mug" }, { type = "showMessage", text = "With a few hefty blows, you manage to break the lock haft completely off of the security locker -- well after a few misses had already caved in the lid and destroyed it, but you were having fun. It looks like you broke a couple of the items that were inside in the process." }, { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = "PA Announcement: 'Someone broke into the security locker on the dock. Mind your belongings and report any suspicious activity to security.'" }]
 
-# give portal_powered flag when charged battery inserted
-# in triggers.amble
 [[triggers]]
-name = "Portal-Room: Gun Powered"
-only_once = false
-conditions = [
-    { type = "insert", item_id = "charged_battery", container_id = "portal_gun" },
-]
-actions = [
-    { type = "addFlag", flag = { type = "simple", name = "portal-gun-powered" } },
-    { type = "awardPoints", amount = 3 },
-    { type = "restrictItem", item_id = "charged_battery" },
-    { type = "setItemDescription", item_sym = "portal_gun", text = """A black and white Portal gun sits on its pedestal, aimed at a target on the wall. A fused battery juts from the compartment and the power indicator glows steadily green.""" },
-    { type = "showMessage", text = """Arcing wildly as you insert it, the fully charged 20 KV battery fuses itself to the contacts inside the portal gun -- when then emits a quick high-pitched whine. The POWER indicator lights a steady green.""" },
-]
-
-# turn on: if gun powered, open portal exit to Aperture Science Laboratory
-# in triggers.amble
-[[triggers]]
-name = "Portal-Room: Open Portal"
+name = "Loading-Dock: Open Security Crate (Burn)"
 only_once = true
-conditions = [
-    { type = "useItem", item_id = "portal_gun", ability = "turnOn" },
-    { type = "hasFlag", flag = "portal-gun-powered" },
-]
-actions = [
-    { type = "awardPoints", amount = 5 },
-    { type = "revealExit", direction = "portal", exit_from = "portal-room", exit_to = "aperture-lab" },
-    { type = "addFlag", flag = { type = "simple", name = "portal-opened" } },
-    { type = "showMessage", text = """A loud \"Squip!\" comes from the gun. The wall in front of it sizzles for a moment, and then a crackling oval blue portal expands on the wall to reveal a laboratory space on the other side.""" },
-]
+conditions = [{ type = "actOnItem", target_sym = "security_crate", action = "burn" }, { type = "missingFlag", flag = "unlocked-security-crate" }]
+actions = [{ type = "despawnItem", item_id = "security_crate" }, { type = "spawnItemCurrentRoom", item_id = "crowbar" }, { type = "spawnItemCurrentRoom", item_id = "burned_security_log" }, { type = "spawnItemCurrentRoom", item_id = "glass_vial" }, { type = "spawnItemCurrentRoom", item_id = "initech_mug" }, { type = "showMessage", text = "WHOOOOOMP! The locker, which you now realize may have been made from the solid magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking your eyebrows with it. It looks like *some* of the items inside weren't flammable." }, { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = "PA Announcement: 'Someone used an Arson-Aid to torch the security locker at the loading dock. An investigation is underway. Report anyone with scorched clothes or missing eyebrows to security.'" }]
 
-# NOT IN TRIGGERS.AMBLE (MAY BE UNNEEDED TRIGGER LEFT FROM OLD BUILD)
 [[triggers]]
-name = "Portal-Room: Portal Gun Opened"
+name = "Loading-Dock: Got Crowbar"
 only_once = true
-conditions = [{ type = "open", item_id = "portal_gun" }]
-actions = [
-    { type = "addFlag", flag = { type = "simple", name = "portal-gun-opened" } },
-]
+conditions = [{ type = "take", item_id = "crowbar" }]
+actions = [{ type = "showMessage", text = "You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?" }, { type = "addFlag", flag = { type = "simple", name = "got-crowbar" } }, { type = "awardPoints", amount = 3 }, { type = "scheduleIn", turns_ahead = 2, actions = [{ type = "showMessage", text = "... and then you wonder why you're thinking of Barney as a real person instead of a character in a game. And Gordon, for that matter. Wait, he was just *fiction*, right? Come to think of it, you feel a little unsure of reality, and it's worse the nearer you are to the building." }], note = "notice fiction bleed" }]
 
-# turn on: fail, gun not powered yet
-# in triggers.amble
 [[triggers]]
-name = "Portal-Room: Can't Turn Gun On Without Power"
-only_once = false
-conditions = [
-    { type = "useItem", item_id = "portal_gun", ability = "turnOn" },
-    { type = "missingFlag", flag = "portal-gun-powered" },
-]
-actions = [
-    { type = "showMessage", text = "When you press the button, the power LED briefly flashes red, then goes dark." },
-]
-
-# START LAB PRINTER TRIGGERS
-# in triggers.amble
-[[triggers]]
-name = "Aperture-Lab: Printer Burns Paper"
-only_once = false
-conditions = [
-    { type = "containerHasItem", container_id = "lab_printer", item_id = "printer_paper" },
-    { type = "useItem", item_id = "lab_printer", ability = "turnOn" },
-]
-actions = [
-    { type = "despawnItem", item_id = "printer_paper" },
-    { type = "addFlag", flag = { type = "simple", name = "burned-invitation" } },
-    { type = "spawnItemInRoom", item_id = "burnt_invitation", room_id = "aperture-lab" },
-    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """An annoyed voice blareson the PA overhead: "Reminder to all staff and visitors: The Fire Marshall will close us down if he gets one more false alarm. Do NOT use regular copy paper in the lab printer. *Someone* apparently didn't get the memo." """ },
-    { type = "showMessage", text = "The paper ignites with a flash, and the PlasmaJet spits it onto the floor." },
-    { type = "showMessage", text = """A nearby smoke detector alarms briefly, then quits with an exasperated sigh when it sees you using the printer.""" },
-]
-
-# in triggers.amble
-[[triggers]]
-name = "Aperture-Lab: Print Invitation (Asbestos)"
+name = "Gonk Droid: Battery Exchange"
 only_once = true
-conditions = [
-    { type = "containerHasItem", item_id = "asbestos_sheet", container_id = "lab_printer" },
-    { type = "useItem", item_id = "lab_printer", ability = "turnOn" },
-]
-actions = [
-    { type = "addFlag", flag = { type = "simple", name = "invitation-sans-ignition" } },
-    { type = "awardPoints", amount = 10 },
-    { type = "despawnItem", item_id = "asbestos_sheet" },
-    { type = "spawnItemInRoom", item_id = "invitation", room_id = "aperture-lab" },
-    { type = "showMessage", text = """The PlasmaJet emits a blinding flash of light, leaving a printer-shaped purple blob in your visual field for a few moments.""" },
-    { type = "showMessage", text = """When your vision clears, you see a slightly glowing printed invitation on the floor.""" },
-]
+conditions = [{ type = "giveToNpc", item_id = "empty_battery", npc_id = "gonk_droid" }]
+actions = [{ type = "awardPoints", amount = 2 }, { type = "giveItemToPlayer", npc_id = "gonk_droid", item_id = "charged_battery" }, { type = "setNpcState", npc_id = "gonk_droid", state = "happy" }, { type = "showMessage", text = "Elated that you've given it such a large, empty battery to charge, the gonk droid gives you a fully charged one, free of ... charge?" }]
 
-# in triggers.amble
 [[triggers]]
-name = "Aperture-Lab: FoamSafe Misfire"
+name = "Gonk Droid: Happy When Family Photo Inspected"
 only_once = true
-conditions = [
-    { type = "useItemOnItem", tool_id = "foamsafe-x17", target_id = "lab_printer", interaction = "extinguish" },
-]
-actions = [
-    { type = "despawnItem", item_id = "foamsafe-x17" },
-    { type = "showMessage", text = "You spray the FoamSafe™ X-17 into the printer. Instead of smothering the flames, the foam erupts in a spectacular fireball!" },
-    { type = "scheduleIn", turns_ahead = 1, note = "Foam fire starts", actions = [
-        { type = "spawnItemInRoom", item_id = "foam_fire", room_id = "aperture-lab" },
-        { type = "showMessage", text = "The accelerant-laced foam ignites, making the fire even worse." },
-    ] },
-    { type = "scheduleIn", turns_ahead = 3, note = "Foam fire spreads", actions = [
-        { type = "showMessage", text = "🔥 The foam-fed flames spread rapidly! 🔥" },
-    ] },
-]
-
-# messages and flag when invitation is acquired
-# in triggers.amble
-[[triggers]]
-name = "Aperture-Lab: Insulate using Towel"
-only_once = true
-conditions = [
-    { type = "useItemOnItem", tool_id = "towel", target_id = "invitation", interaction = "handle" },
-]
-actions = [
-    { type = "showMessage", text = """You wrap your towel around your hand like a catcher's mitt to grasp the invitation.""" },
-]
-
-# in triggers.amble
-[[triggers]]
-name = "Aperture-Lab: Handle the Hot Invitation"
-only_once = true
-conditions = [
-    { type = "actOnItem", target_sym = "invitation", action = "handle" },
-]
-actions = [
-    { type = "despawnItem", item_id = "invitation" },
-    { type = "spawnItemInInventory", item_id = "invitation" },
-    { type = "addFlag", flag = { type = "simple", name = "got-invitation" } },
-    { type = "awardPoints", amount = 5 },
-    { type = "showMessage", text = """With some insulation between your hand and the piping hot document, you're able to get it into your pack.""" },
-]
-
-# in triggers.amble
-[[triggers]]
-name = "Aperture-Lab: Drop Invitation w/o Using Towel"
-only_once = false
-conditions = [
-    { type = "take", item_id = "invitation" },
-    { type = "missingItem", item_id = "towel" },
-]
-actions = [
-    # We force a Drop here by replacing the item with itself, but using replace+drop.
-    { type = "replaceDropItem", old_sym = "invitation", new_sym = "invitation" },
-    { type = "showMessage", text = """You burn your fingers and drop the invitation on the floor. It emits a reddish glow, and shimmers from the radiating heat.""" },
-]
-
-# in triggers.amble
-[[triggers]]
-name = "Aperture-Lab: Invitation Hint"
-only_once = true
-conditions = [
-    { type = "take", item_id = "invitation" },
-    { type = "hasVisited", room_id = "b-a-office" },
-]
-actions = [
-    { type = "showMessage", text = "Maybe now that snooty reception droid at the office will be more helpful..." },
-]
-
-# START TRIGGERS FOR VOGON POETRY --> OPEN PANIC ROOM
-# in triggers.amble
-[[triggers]]
-name = "Office: Insert Vogon Poetry -> Reveal Panic Room"
-only_once = true
-conditions = [
-    { type = "insert", item_id = "vogon_poetry_book", container_id = "poetry_performer" },
-]
-actions = [
-    { type = "awardPoints", amount = 5 },
-    { type = "despawnItem", item_id = "vogon_poetry_book" },
-    { type = "addFlag", flag = { type = "simple", name = "panic-room-open" } },
-    { type = "revealExit", direction = "west", exit_from = "b-a-office", exit_to = "poetry-panic" },
-    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """PA Announcement: "Vogon poetry detected in the building. If you are experiencing nausea, see the EMH in sick bay for assistance."""" },
-    { type = "showMessage", text = """The machine begins to whine at a high pitch and gives off a noxious odor of burning hair. A klaxon blares and the display warns:\n\n            ⚠️ VOGON INPUT DETECTED - POETRY PANIC ROOM UNLOCKED ⚠️\n               ☣ VAPORIZING VOGON INPUT - AVOID TOXIC FUMES ☣\n\nThe whiteboard on the west wall slides to the side, revealing a vault-like door.""" },
-]
-
-# START ELEVATOR ACTIVATION TRIGGERS
-# (note: life exit no longer added here -- now exists from the start but is
-# disabled if player isn't carrying the pass and keycard.
-# in triggers.amble
-[[triggers]]
-name = "Elevator: Activate-Elevator"
-only_once = true
-conditions = [
-    { type = "enter", room_id = "lift-bank-main" },
-    { type = "hasItem", item_id = "elevator_keycard" },
-]
-actions = [
-    { type = "awardPoints", amount = 3 },
-    { type = "showMessage", text = """As you approach, the keycard in your pack chirps twice and the elevator springs to life. A Muzak version of Porcupine Tree's "The Sound of Muzak" plays softly.""" },
-]
-
-# B-A Receptionist Triggers
-# in triggers.amble
-[[triggers]]
-name = "Office: Snooty-Receptionist-If-No-Pass"
-only_once = false
-conditions = [
-    { type = "withNpc", npc_id = "b_a_receptionist" },
-    { type = "missingFlag", flag = "got-visitor-pass" },
-    { type = "missingFlag", flag = "got-elevator-keycard" },
-]
-actions = [
-    { type = "setNpcState", npc_id = "b_a_receptionist", state = "normal" },
-]
-
-# in triggers.amble
-[[triggers]]
-name = "Office: Helpful-Receptionist-If-Have-Pass"
-only_once = false
-conditions = [
-    { type = "withNpc", npc_id = "b_a_receptionist" },
-    { type = "hasFlag", flag = "got-visitor-pass" },
-    { type = "missingFlag", flag = "got-elevator-keycard" },
-]
-actions = [
-    { type = "setNpcState", npc_id = "b_a_receptionist", state = "happy" },
-]
-
-[[triggers]]
-name = "Office: Grant-Visitor-Pass"
-only_once = true
-conditions = [
-    { type = "giveToNpc", item_id = "invitation", npc_id = "b_a_receptionist" },
-]
-actions = [
-    { type = "addFlag", flag = { type = "simple", name = "got-visitor-pass" } },
-    { type = "despawnItem", item_id = "invitation" },
-    { type = "spawnItemInInventory", item_id = "visitor_pass" },
-    { type = "awardPoints", amount = 5 },
-    { type = "setNpcState", npc_id = "b_a_receptionist", state = "happy" },
-    { type = "showMessage", text = """The robotic receptionist initially glances at you with the disdain of someone who spends all day waiting on people who are waiting on someone else, but her demeanor and even appearance immediately become pleasant when she sees the invitation in your hand. She deftly takes it from you, scrutinizes it intently, and slips it into a desktop document vaporizer.\n\nShe then hands you a laminated card on a lanyard. It appears blank, yet also appears to show a variety of credentials at the same time.""" },
-    { type = "npcSays", npc_id = "b_a_receptionist", quote = """Here is your visitor pass. Much of the facility will be inaccessible without it, so treat it like a second towel.""" },
-]
-
-[[triggers]]
-name = "Gonk: Exchange Battery"
-only_once = true
-conditions = [
-    { type = "giveToNpc", item_id = "empty_battery", npc_id = "gonk_droid" },
-]
-actions = [
-    { type = "awardPoints", amount = 2 },
-    { type = "giveItemToPlayer", npc_id = "gonk_droid", item_id = "charged_battery" },
-    { type = "setNpcState", npc_id = "gonk_droid", state = "happy" },
-    { type = "showMessage", text = """Elated that you've given it such a large, empty battery to charge, the gonk droid gives you a fully charged one, free of ... charge?""" },
-]
-
-[[triggers]]
-name = "Gonk: Give Photo Back"
-only_once = true
-conditions = [
-    { type = "giveToNpc", item_id = "gonk_family_photo", npc_id = "gonk_droid" },
-]
-actions = [
-    { type = "npcSays", npc_id = "gonk_droid", quote = "Gonk! Gonk." },
-    { type = "showMessage", text = "The gonk totters and stands tall with pride." },
-    { type = "restrictItem", item_id = "gonk_family_photo" },
-    { type = "awardPoints", amount = 2 },
-    { type = "addFlag", flag = { type = "simple", name = "proud-papa-gonk" } },
-]
+conditions = [{ type = "lookAt", item_id = "gonk_family_photo" }]
+actions = [{ type = "npcSays", npc_id = "gonk_droid", quote = "GONK gonk!" }, { type = "showMessage", text = "The gonk droid totters with pride as you view its family photo." }, { type = "awardPoints", amount = 2 }, { type = "addFlag", flag = { type = "simple", name = "made-gonk-proud" } }]
 
 [[triggers]]
 name = "Patio: Sunglasses Required"
-only_once = false
-conditions = [
-    { type = "enter", room_id = "patio" },
-    { type = "missingItem", item_id = "peril_sunglasses" },
-]
-actions = [
-    { type = "pushPlayerTo", room_id = "restaurant" },
-    { type = "showMessage", text = """A blinding burst of light erupts from the swirling starfield, forcing you to shield your eyes. With no protection, you're driven back into the relative safety of the restaurant.""" },
-]
+conditions = [{ type = "enter", room_id = "patio" }, { type = "missingItem", item_id = "peril_sunglasses" }]
+actions = [{ type = "pushPlayerTo", room_id = "restaurant" }, { type = "showMessage", text = "A blinding burst of light erupts from the swirling starfield, forcing you to shield your eyes. With no protection, you're driven back into the relative safety of the restaurant." }]
 
 [[triggers]]
-name = "Patio: Use Sunglasses"
-only_once = false
-conditions = [
-    { type = "enter", room_id = "patio" },
-    { type = "hasItem", item_id = "peril_sunglasses" },
-]
-actions = [
-    { type = "showMessage", text = """Sensing the possible harm in eating a dessert a stone's throw away from the explosions of all nearby stars, your peril-sensitive sunglasses flash nearly completely opaque, allowing you to see without permanent damage to the retina.""" },
-]
+name = "Patio: Have Sunglasses"
+conditions = [{ type = "enter", room_id = "patio" }, { type = "hasItem", item_id = "peril_sunglasses" }]
+actions = [{ type = "showMessage", text = "Sensing the possible harm in eating a dessert a stone's throw away from the explosions of all nearby stars, your peril-sensitive sunglasses flash nearly completely opaque, allowing you to see without permanent damage to the retina as the galaxies outside continue to erupt." }]
 
 [[triggers]]
-name = "Scrawled Note: Flag as Read"
+name = "Patio: Award Points Getting In"
 only_once = true
-conditions = [{ type = "useItem", item_id = "scrawled_note", ability = "read" }]
-actions = [
-    { type = "addFlag", flag = { type = "simple", name = "read-scrawled-note" } },
-]
-
-
+conditions = [{ type = "enter", room_id = "patio" }, { type = "hasItem", item_id = "peril_sunglasses" }]
+actions = [{ type = "awardPoints", amount = 2 }]
 
 [[triggers]]
-name = "Plaque 1: Cleaned"
+name = "Office: Receptionist Unhelpful if No Pass"
+conditions = [{ type = "withNpc", npc_id = "b_a_receptionist" }, { type = "missingFlag", flag = "got-visitor-pass" }, { type = "missingFlag", flag = "got-elevator-keycard" }]
+actions = [{ type = "setNpcState", npc_id = "b_a_receptionist", state = "normal" }]
+
+[[triggers]]
+name = "Office: Receptionist Helpful Once Pass Acquired"
+conditions = [{ type = "withNpc", npc_id = "b_a_receptionist" }, { type = "hasFlag", flag = "got-visitor-pass" }, { type = "missingFlag", flag = "got-elevator-keycard" }]
+actions = [{ type = "setNpcState", npc_id = "b_a_receptionist", state = "happy" }]
+
+[[triggers]]
+name = "Office: Exchange Invitation for Visitor Pass"
+conditions = [{ type = "giveToNpc", item_id = "invitation", npc_id = "b_a_receptionist" }]
+actions = [{ type = "addFlag", flag = { type = "simple", name = "got-visitor-pass" } }, { type = "despawnItem", item_id = "invitation" }, { type = "spawnItemInInventory", item_id = "visitor_pass" }, { type = "awardPoints", amount = 5 }, { type = "setNpcState", npc_id = "b_a_receptionist", state = "happy" }, { type = "showMessage", text = """
+The robotic receptionist initially glances at you with the disdain of someone who spends all day waiting on people who are waiting on someone else, but her demeanor and even appearance immediately become pleasant when she sees the invitation in your hand. She deftly takes it from you, scrutinizes it intently, and slips it into a desktop document vaporizer.
+
+She then hands you a laminated card on a lanyard. It appears blank, yet also appears to show a variety of credentials at the same time.""" }, { type = "npcSays", npc_id = "b_a_receptionist", quote = "Here is your visitor pass. Much of the facility will be inaccessible without it, so treat it like a second towel." }]
+
+[[triggers]]
+name = "Office: Open Poetry Performer"
+conditions = [{ type = "open", item_id = "poetry_performer" }]
+actions = [{ type = "showMessage", text = """
+The machine clicks on and hums. A flashing red light warns:
+            â ï¸ NOT FOR USE WITH VOGON POETRY â ï¸""" }]
+
+[[triggers]]
+name = "Office: Insert Poems to Open Panic Room"
 only_once = true
-conditions = [{ type = "actOnItem", target_sym = "plaque_1", action = "clean" }]
-actions = [
-    { type = "addFlag", flag = { type = "simple", name = "cleaned-plaque-1" } },
-    { type = "awardPoints", amount = 3 },
-    { type = "showMessage", text = "With some effort, you're able to remove most of the grime from the plaque." },
-]
+conditions = [{ type = "insert", item_id = "vogon_poetry_book", container_id = "poetry_performer" }]
+actions = [{ type = "awardPoints", amount = 5 }, { type = "despawnItem", item_id = "vogon_poetry_book" }, { type = "addFlag", flag = { type = "simple", name = "panic-room-open" } }, { type = "revealExit", exit_from = "b-a-office", exit_to = "poetry-panic", direction = "west" }, { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = "PA announcement: Vogon poetry has been detected in the building. If you are experiencing nausea, go to med bay for assistance." }, { type = "showMessage", text = """
+The machine begins to whine at a high pitch and gives off a noxious odor of burning hair. A klaxon blares and the display warns:
+
+            â ï¸ VOGON INPUT DETECTED - POETRY PANIC ROOM UNLOCKED â ï¸
+               â£ VAPORIZING VOGON INPUT - AVOID TOXIC FUMES â£
+
+The whiteboard on the west wall slides to the side, revealing a vault-like door.""" }]
 
 [[triggers]]
-name = "Plaque 1: Must Clean to Read"
-only_once = false
-conditions = [
-    { type = "useItem", item_id = "plaque_1", ability = "read" },
-    { type = "missingFlag", flag = "cleaned-plaque-1" },
-]
-actions = [
-    { type = "denyRead", reason = "It's too grimy. You need something to wipe it off." },
-    { type = "addFlag", flag = { type = "simple", name = "tried-read-plaque-1" } },
-]
-
-[[triggers]]
-name = "Plaque 1: Read After Cleaning"
+name = "Office: Gifted Lost and Found Key"
 only_once = true
-conditions = [
-    { type = "useItem", item_id = "plaque_1", ability = "read" },
-    { type = "hasFlag", flag = "cleaned-plaque-1" },
-]
-actions = [
-    { type = "addFlag", flag = { type = "simple", name = "read-plaque-1" } },
-    { type = "awardPoints", amount = 5 },
-]
+conditions = [{ type = "enter", room_id = "b-a-office" }, { type = "hasFlag", flag = "got-elevator-keycard" }, { type = "withNpc", npc_id = "b_a_receptionist" }]
+actions = [{ type = "giveItemToPlayer", npc_id = "b_a_receptionist", item_id = "lost_and_found_key" }, { type = "showMessage", text = "Seeing you return with the keycard, the receptionist looks around warily and slips something into your hand, then looks directly at the lost and found box." }, { type = "npcSays", npc_id = "b_a_receptionist", quote = "Finally! A Candidate bright enough to get to that keycard. I guess I lost the pool. Who'd have thought it'd be a primate?" }, { type = "npcSays", npc_id = "b_a_receptionist", quote = "(*whispers*) Use this before you head down to AA-3B." }]
+
+[[triggers]]
+name = "Office: Lost and Found Unlocked"
+only_once = true
+conditions = [{ type = "unlock", item_id = "lost_and_found_box" }]
+actions = [{ type = "awardPoints", amount = 3 }, { type = "addFlag", flag = { type = "simple", name = "lost-and-found-opened" } }, { type = "setItemDescription", item_sym = "lost_and_found_box", text = "A sturdy metal lockbox marked 'Lost and Found'. Its lid is cracked slightly open." }]
+
+[[triggers]]
+name = "Office: Receptionist Comment (Read Poetry)"
+only_once = true
+conditions = [{ type = "hasFlag", flag = "read-vogon-poetry" }, { type = "hasFlag", flag = "status:nauseated" }]
+actions = [{ type = "npcSays", npc_id = "emh", quote = "You look ill. You didn't read that poetry book, did you? That won't look good on your evaluation. The Emergency Medical Hologram on level AA-3 may be able to help." }]
 
 [[triggers]]
 name = "Poetry-Panic: Acquired Elevator Keycard"
 only_once = true
 conditions = [{ type = "take", item_id = "elevator_keycard" }]
-actions = [
-    { type = "setNpcState", npc_id = "b_a_receptionist", state = "bored" },
-    { type = "addFlag", flag = { type = "simple", name = "got-elevator-keycard" } },
-]
+actions = [{ type = "setNpcState", npc_id = "b_a_receptionist", state = "bored" }, { type = "addFlag", flag = { type = "simple", name = "got-elevator-keycard" } }]
 
 [[triggers]]
-name = "Office: Acquire Lost and Found Key"
+name = "Lounge: Rug Taken / Reveal Trapdoor"
 only_once = true
-conditions = [
-    { type = "enter", room_id = "b-a-office" },
-    { type = "hasFlag", flag = "got-elevator-keycard" },
-    { type = "withNpc", npc_id = "b_a_receptionist" },
-]
-actions = [
-    { type = "giveItemToPlayer", npc_id = "b_a_receptionist", item_id = "lost_and_found_key" },
-    { type = "showMessage", text = """Seeing you return with the keycard, the receptionist looks around warily and slips something into your hand, then looks directly at the lost and found box.""" },
-    { type = "npcSays", npc_id = "b_a_receptionist", quote = """Finally! A Candidate bright enough to get to that keycard. I guess I lost the pool. Who'd have thought it'd be a primate?""" },
-    { type = "npcSays", npc_id = "b_a_receptionist", quote = """(quietly) Use this before you head down to AA-3B.""" },
-]
+conditions = [{ type = "take", item_id = "lebowski_rug" }]
+actions = [{ type = "revealExit", exit_from = "lounge", exit_to = "portal-room", direction = "down" }, { type = "addFlag", flag = { type = "simple", name = "found-portal-room" } }, { type = "awardPoints", amount = 3 }, { type = "showMessage", text = "Light shines around the edges of a trap door revealed in the floor when you remove the rug. The room no longer seems tied together." }]
 
 [[triggers]]
-name = "Office: Lost & Found Unlocked"
+name = "Lounge: Rug Burned Away"
 only_once = true
-conditions = [{ type = "unlock", item_id = "lost_and_found_box" }]
-actions = [
-    { type = "awardPoints", amount = 5 },
-    { type = "addFlag", flag = { type = "simple", name = "lost-and-found-opened" } },
-    { type = "setItemDescription", item_sym = "lost_and_found_box", text = """The sturdy metal lock box's lid hangs open, its contents now visible.""" },
-]
+conditions = [{ type = "actOnItem", target_sym = "lebowski_rug", action = "burn" }]
+actions = [{ type = "despawnItem", item_id = "lebowski_rug" }, { type = "revealExit", exit_from = "lounge", exit_to = "portal-room", direction = "down" }, { type = "addFlag", flag = { type = "simple", name = "found-portal-room" } }, { type = "awardPoints", amount = 3 }, { type = "showMessage", text = "When the acrid smoke clears and your eyes stop burning, you can make out a trap door revealed in the floor where the rug used to be." }]
 
-# START FALLEN TREE TRIGGERS
 [[triggers]]
-name = "Two-Sheds-Landing: Cut / Chop Tree"
+name = "Lift-Bank-Main: Keycard Activates Elevator"
+conditions = [{ type = "enter", room_id = "lift-bank-main" }, { type = "hasItem", item_id = "elevator_keycard" }]
+actions = [{ type = "showMessage", text = "The keycard in your pack chirps twice as you approach the proximity reader on the wall, which responds with a happy melody." }]
+
+[[triggers]]
+name = "Lift-Bank-Main: Point Award On First Activation"
 only_once = true
-conditions = [
-    { type = "actOnItem", target_sym = "fallen_tree", action = "cut" },
-]
-actions = [
-    { type = "showMessage", text = "With considerable effort, you are able to chop the tree down into branches and pile them at the side of the path." },
-    { type = "despawnItem", item_id = "fallen_tree" },
-    { type = "addFlag", flag = { type = "simple", name = "cleared-fallen-tree" } },
-    { type = "addFlag", flag = { type = "simple", name = "chopped-fallen-tree" } },
-    { type = "awardPoints", amount = 5 },
-]
+conditions = [{ type = "enter", room_id = "lift-bank-main" }, { type = "hasItem", item_id = "elevator_keycard" }]
+actions = [{ type = "showMessage", text = "The main lift lights up, and Muzak plays over a tinny speaker inside. In horror, you realize: It's Porcupine Tree's 'The Sound of Muzak' -- the Muzak version." }, { type = "awardPoints", amount = 3 }]
 
 [[triggers]]
-name = "Two-Sheds: Flamethrower Used on Tree"
+name = "Portal-Room: Gun Powered"
+conditions = [{ type = "insert", item_id = "charged_battery", container_id = "portal_gun" }]
+actions = [{ type = "addFlag", flag = { type = "simple", name = "portal-gun-powered" } }, { type = "awardPoints", amount = 3 }, { type = "restrictItem", item_id = "charged_battery" }, { type = "setItemDescription", item_sym = "portal_gun", text = "A black and white Portal gun sits bolted to its pedestal, aimed at a target on the wall. A fused battery juts from the compartment and the power indicator glows steadily green." }, { type = "showMessage", text = "Arcing wildly as you insert it, the fully charged 20 KV battery fuses itself to the contacts inside the portal gun -- when then emits a quick high-pitched whine. The POWER indicator lights a steady green." }]
+
+[[triggers]]
+name = "Portal-Room: Gun Fired / Open Portal"
 only_once = true
-conditions = [
-    # useItemonItem only for flavor text for particular item-to-item interaction; ActOnItem actually used to change state.
-    { type = "useItemOnItem", tool_id = "flamethrower", target_id = "fallen_tree", interaction = "burn" },
-]
-actions = [
-    { type = "showMessage", text = """You aim the Arson-Aid and begin to squeeze the trigger when the device erupts into a fireball. Panicking, you throw the whole Arson-Aid into the tree.""" },
-]
+conditions = [{ type = "useItem", item_id = "portal_gun", ability = "turnOn" }, { type = "hasFlag", flag = "portal-gun-powered" }]
+actions = [{ type = "revealExit", exit_from = "portal-room", exit_to = "aperture-lab", direction = "portal" }, { type = "addFlag", flag = { type = "simple", name = "portal-opened" } }, { type = "awardPoints", amount = 5 }, { type = "showMessage", text = "A loud SQUIP! comes from the gun when you turn it on. The wall in front of it sizzles for a moment, and then a crackling oval blue portal expands on the wall to reveal a laboratory space on the other side." }]
 
 [[triggers]]
-name = "Two-Sheds-Landing: Burn Tree"
+name = "Portal-Room: Tried Gun Without Power"
+conditions = [{ type = "useItem", item_id = "portal_gun", ability = "turnOn" }, { type = "missingFlag", flag = "portal-gun-powered" }]
+actions = [{ type = "showMessage", text = "You attempt to turn the portal gun on, but the POWER light briefly flashes red, then goes dark. Nothing else happens." }]
+
+[[triggers]]
+name = "Aperture-Lab: Printer Burns Paper"
+conditions = [{ type = "useItem", item_id = "lab_printer", ability = "turnOn" }, { type = "containerHasItem", container_id = "lab_printer", item_id = "printer_paper" }]
+actions = [{ type = "despawnItem", item_id = "printer_paper" }, { type = "addFlag", flag = { type = "simple", name = "burned-invitation" } }, { type = "spawnItemInRoom", item_id = "burnt_invitation", room_id = "aperture-lab" }, { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = "An annoyed voice on the PA: ATTENTION Staff - do NOT use regular copy paper in the lab PlasmaJet printer, or we will be shut down again -- by order of FEMA, PETA, the ATF, FBI, and our HOA." }, { type = "showMessage", text = "The paper ignites in a flash, and the PlasmaJet spits the flaming fragments of a document on the floor at your feet." }, { type = "showMessage", text = "A nearby smoke detector alarms briefly, the quits with an exasperated sigh when it sees you near the printer, surrounded by smoldering confetti." }]
+
+[[triggers]]
+name = "Aperture-Lab: Print Invitation on Asbestos"
 only_once = true
-conditions = [
-    # actOnItem for events that depend on the interaction type and target, but not the specific tool used to do it
-    { type = "actOnItem", target_sym = "fallen_tree", action = "burn" },
-]
-actions = [
-    { type = "despawnItem", item_id = "fallen_tree" },
-    { type = "addFlag", flag = { type = "simple", name = "cleared-fallen-tree" } },
-    { type = "addFlag", flag = { type = "simple", name = "burned-fallen-tree" } },
-    { type = "awardPoints", amount = 5 },
-    { type = "showMessage", text = """WHOOOOOMPH! The fallen tree erupts into flame and, quite improbably, is reduced to ash in mere seconds.""" },
-]
-
+conditions = [{ type = "useItem", item_id = "lab_printer", ability = "turnOn" }, { type = "containerHasItem", container_id = "lab_printer", item_id = "asbestos_sheet" }]
+actions = [{ type = "addFlag", flag = { type = "simple", name = "invitation-sans-ignition" } }, { type = "awardPoints", amount = 10 }, { type = "despawnItem", item_id = "asbestos_sheet" }, { type = "showMessage", text = "The PlasmaJet emits a blinding flash of light, leaving a printer-shaped purple blob in your visual field and blinding you for a few moments." }, { type = "scheduleIn", turns_ahead = 2, actions = [{ type = "spawnItemInRoom", item_id = "invitation", room_id = "aperture-lab" }, { type = "showMessage", text = "Your vision begins to clear, and you see an engraved invitation on the floor. It glows slightly, and waves of heat warp the air around it." }], note = "blindness clears" }]
 
 [[triggers]]
-name = "Pluck Dental Floss"
+name = "Aperture-Lab: FoamSafe Misfire"
 only_once = true
-conditions = [{ type = "take", item_id = "dental_floss" }]
-actions = [
-    { type = "showMessage", text = """You pluck a strand of floss from the bush. It comes away easily — disturbingly so. Minty. Strong. Too strong. You’re no botanist, but you’re pretty sure this shouldn’t be growing out of a shrubbery.""" },
-    { type = "awardPoints", amount = 3 },
-    { type = "setItemDescription", item_sym = "weird_bush", text = "A squat, leafy bush now stripped of its floss-like strands, bare branches jutting out awkwardly." },
-]
+conditions = [{ type = "useItemOnItem", interaction = "extinguish", target_id = "burnt_invitation", tool_id = "foamsafe_x17" }]
+actions = [{ type = "despawnItem", item_id = "foamsafe_x17" }, { type = "showMessage", text = "You spray the foam onto the burning invitation. Instead of dousing the flame, the foam flares up into a spectacular fireball!" }, { type = "addFlag", flag = { type = "sequence", name = "foam-fire-in-lab", end = 3 } }, { type = "scheduleIn", turns_ahead = 2, actions = [{ type = "showMessage", text = "The foam fire accelerates, as it turns into a hissing, popping ball of goo spitting off little globs of flaming napalm!" }, { type = "advanceFlag", flag = "foam-fire-in-lab" }], note = "foam fire starts" }, { type = "scheduleIn", turns_ahead = 3, actions = [{ type = "showMessage", text = "The fire alarm begins to wail as the flames spread through the lab and the sprinklers turn on, pushing you back toward the portal to escape!" }, { type = "advanceFlag", flag = "foam-fire-in-lab" }, { type = "pushPlayerTo", room_id = "portal-room" }], note = "foam fire spreads" }, { type = "scheduleIn", turns_ahead = 8, actions = [{ type = "showMessage", text = "The alarms stop. The fire in the Aperture lab has been extinguised. Hopefully nobody saw you light it, you monster." }, { type = "advanceFlag", flag = "foam-fire-in-lab" }, { type = "awardPoints", amount = 5 }], note = "foam fire out" }]
 
 [[triggers]]
-name = "Loading Dock: Open Security Crate (Key)"
+name = "Aperture-Lab: Can't Enter While Lab On Fire"
+conditions = [{ type = "enter", room_id = "aperture-lab" }, { type = "flagInProgress", flag = "foam-fire-in-lab" }]
+actions = [{ type = "showMessage", text = "You try to get back into the lab, but the flames and oily smoke from the foam fire drive you back through the portal within seconds." }, { type = "pushPlayerTo", room_id = "portal-room" }]
+
+[[triggers]]
+name = "Aperture-Lab: Insulate With Towel"
+conditions = [{ type = "useItemOnItem", interaction = "handle", target_id = "invitation", tool_id = "towel" }]
+actions = [{ type = "showMessage", text = "You wrap your towel around the still-piping-hot invitation to grasp it, suffering only minor burns in the process." }]
+
+[[triggers]]
+name = "Aperture-Lab: Handle/Take Invitation with Towel"
 only_once = true
-conditions = [{ type = "unlock", item_id = "security_crate" }]
-actions = [
-    { type = "spawnItemInContainer", item_id = "crowbar", container_id = "security_crate" },
-    { type = "spawnItemInContainer", item_id = "security_log", container_id = "security_crate" },
-    { type = "spawnItemInContainer", item_id = "glass_vial", container_id = "security_crate" },
-    { type = "spawnItemInContainer", item_id = "initech_mug", container_id = "security_crate" },
-    { type = "addFlag", flag = { type = "simple", name = "unlocked-security-crate" } },
-    { type = "showMessage", text = """The ear wax on the tip of the key eases it into the rusted lock, which snaps open with a satisfying clunk.""" },
-]
+conditions = [{ type = "actOnItem", target_sym = "invitation", action = "handle" }]
+actions = [{ type = "despawnItem", item_id = "invitation" }, { type = "spawnItemInInventory", item_id = "invitation" }, { type = "addFlag", flag = { type = "simple", name = "got-invitation" } }, { type = "awardPoints", amount = 5 }, { type = "showMessage", text = "Using your towel as insulation, you're able to wrangle the still-hot invitation into your pack." }]
 
 [[triggers]]
-name = "Loading Dock: Open Security Crate (Break)"
-only_once = true
-conditions = [
-    { type = "actOnItem", target_sym = "security_crate", action = "break" },
-    { type = "missingFlag", flag = "unlocked-security-crate" },
-]
-actions = [
-    { type = "despawnItem", item_id = "security_crate" },
-    { type = "spawnItemCurrentRoom", item_id = "crowbar" },
-    { type = "spawnItemCurrentRoom", item_id = "shattered_vial" },
-    { type = "spawnItemCurrentRoom", item_id = "security_log" },
-    { type = "spawnItemCurrentRoom", item_id = "initech_mug" },
-    { type = "showMessage", text = "With a few hefty blows, you manage to break the lock haft completely off of the security locker -- well after a few misses had already caved in the lid and destroyed it, but you were having fun. It looks like you broke a couple of the items that were inside in the process." },
-    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """PA Announcement: "Someone broke into the security locker on the dock. Mind your belongings and report any suspicious activity to security."""" },
-]
+name = "Aperture-Lab: Drop Invitation Without Insulation"
+conditions = [{ type = "take", item_id = "invitation" }]
+actions = [{ type = "replaceDropItem", old_sym = "invitation", new_sym = "invitation" }, { type = "showMessage", text = "You burn your fingers and drop the invitation on the floor. It emits a reddish glow, and shimmers from the radiating heat." }]
 
 [[triggers]]
-name = "Loading Dock: Open Security Crate (Burn)"
-only_once = true
-conditions = [
-    { type = "actOnItem", target_sym = "security_crate", action = "burn" },
-    { type = "missingFlag", flag = "unlocked-security-crate" },
-]
-actions = [
-    { type = "despawnItem", item_id = "security_crate" },
-    { type = "spawnItemCurrentRoom", item_id = "crowbar" },
-    { type = "spawnItemCurrentRoom", item_id = "burned_security_log" },
-    { type = "spawnItemCurrentRoom", item_id = "glass_vial" },
-    { type = "spawnItemCurrentRoom", item_id = "initech_mug" },
-    { type = "showMessage", text = "WHOOOOOMP! The locker, which you now realize may have been made from the solid magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking your eyebrows with it. It looks like *some* of the items inside weren't flammable." },
-    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """PA Announcement: "Someone used an Arson-Aid to torch the security locker at the loading dock. An investigation is underway. Report anyone with scorched clothes or missing eyebrows to security."""" },
-]
-
-[[triggers]]
-name = "Got Crowbar"
-only_once = true
-conditions = [{ type = "take", item_id = "crowbar" }]
-actions = [
-    { type = "showMessage", text = """You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?""" },
-    { type = "showMessage", text = """Then you wonder why you're thinking of Barney as a real person instead of a character in a game. And Gordon, for that matter. Wait, he _was_ just fiction, right? Come to think of it, you feel a little unsure of reality, and it's worse the nearer you are to the building.""" },
-    { type = "addFlag", flag = { type = "simple", name = "got-crowbar" } },
-    { type = "awardPoints", amount = 3 },
-]
-
-[[triggers]]
-name = "Black Knight: First Meeting"
+name = "Sublevel-1-Entrance: Meet the Black Knight"
 only_once = true
 conditions = [{ type = "talkToNpc", npc_id = "black_knight" }]
-actions = [
-    { type = "addFlag", flag = { type = "simple", name = "talked-to-knight" } },
-    { type = "npcSays", npc_id = "black_knight", quote = "You shall not pass. This wing is closed... and may not exist at all. Begone!" },
-]
+actions = [{ type = "addFlag", flag = { type = "simple", name = "talked-to-knight" } }, { type = "npcSays", npc_id = "black_knight", quote = "You shall not pass. This wing is closed... and may not exist at all. Begone!" }]
 
 [[triggers]]
-name = "Black Knight: Taking Sword Angers Knight"
-only_once = false
-conditions = [
-    { type = "takeFromNpc", item_id = "dull_longsword", npc_id = "black_knight" },
-]
-actions = [
-    { type = "setNpcState", npc_id = "black_knight", state = "mad" },
-    { type = "npcSays", npc_id = "black_knight", quote = "Hey! Give that back, you cowardly cur!" },
-]
+name = "Sublevel-1-Entrance: Taking Sword Angers Knight"
+conditions = [{ type = "takeFromNpc", item_id = "dull_longsword", npc_id = "black_knight" }]
+actions = [{ type = "setNpcState", npc_id = "black_knight", state = "mad" }, { type = "npcSays", npc_id = "black_knight", quote = "Wha-- HEY! Give that back, you -- you -- cowardly cur!" }]
 
-# Black Knight reverts to original blocking state if you give him the sword back without sharpening first
 [[triggers]]
-name = "Black Knight: Return Dull Sword"
+name = "Sublevel-1-Entrance: Return Dull Sword to Knight"
+conditions = [{ type = "giveToNpc", item_id = "dull_longsword", npc_id = "black_knight" }]
+actions = [{ type = "npcSays", npc_id = "black_knight", quote = "Right. Now don't do it again, or I shall be forced to bludgeon you with it. You still may not pass." }, { type = "setNpcState", npc_id = "black_knight", state = "normal" }]
+
+[[triggers]]
+name = "Sublevel-1-Entrance: Sharpen Knight's Sword"
 only_once = true
-conditions = [
-    { type = "giveToNpc", item_id = "dull_longsword", npc_id = "black_knight" },
-]
-actions = [{ type = "setNpcState", npc_id = "black_knight", state = "normal" }]
+conditions = [{ type = "actOnItem", target_sym = "dull_longsword", action = "sharpen" }]
+actions = [{ type = "replaceItem", old_sym = "dull_longsword", new_sym = "keen_longsword" }, { type = "showMessage", text = "After years of sharpening Ginsu knives to cut open aluminum cans and tomatoes, you have no problem honing the Black Knight's sword to a keen edge." }, { type = "addFlag", flag = { type = "simple", name = "sword-sharpened" } }, { type = "awardPoints", amount = 3 }]
 
 [[triggers]]
-name = "Black Knight: Sharpened Sword"
+name = "Sublevel-1-Entrance: Black Knight Kicks Player After Sword Taken"
+conditions = [{ type = "withNpc", npc_id = "black_knight" }, { type = "npcInState", npc_id = "black_knight", state = "mad" }, { type = "missingFlag", flag = "appeased-black-knight" }]
+actions = [{ type = "showMessage", text = "The Black Knight prances around the room, occasionally trying to kick you in the shins." }, { type = "npcSaysRandom", npc_id = "black_knight" }]
+
+[[triggers]]
+name = "Sublevel-1-Entrance: Sharpened Sword Returned"
 only_once = true
-conditions = [
-    { type = "actOnItem", target_sym = "dull_longsword", action = "sharpen" },
-]
-actions = [
-    { type = "replaceItem", old_sym = "dull_longsword", new_sym = "keen_longsword" },
-    { type = "showMessage", text = "In almost no time, you hone the Black Knight's sword to a keen edge." },
-    { type = "addFlag", flag = { type = "simple", name = "sword-sharpened" } },
-    { type = "awardPoints", amount = 3 },
-]
+conditions = [{ type = "giveToNpc", item_id = "keen_longsword", npc_id = "black_knight" }]
+actions = [{ type = "restrictItem", item_id = "keen_longsword" }, { type = "addFlag", flag = { type = "simple", name = "appeased-black-knight" } }, { type = "setBarredMessage", exit_from = "sublevel-1-entrance", exit_to = "room-aa-3b", msg = "As you near the door, you are overwhelmed by a sense of spinning through an unending series of fictional realities, compelling you to step away." }, { type = "awardPoints", amount = 5 }, { type = "setNpcState", npc_id = "black_knight", state = "happy" }, { type = "npcSays", npc_id = "black_knight", quote = "hank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like." }]
 
-[[triggers]]
-name = "Black Knight: Angry, Kicks Player"
-only_once = false
-conditions = [
-    { type = "withNpc", npc_id = "black_knight" },
-    { type = "npcInState", npc_id = "black_knight", state = "mad" },
-    { type = "missingFlag", flag = "appeased_black_knight" },
-]
-actions = [
-    { type = "showMessage", text = """The Black Knight dodges about the room, occasionally trying to kick you in the shin.""" },
-    { type = "npcSaysRandom", npc_id = "black_knight" },
-]
-
-[[triggers]]
-name = "Black Knight: Happy When Keen Sword Returned"
-only_once = true
-conditions = [
-    { type = "giveToNpc", item_id = "keen_longsword", npc_id = "black_knight" },
-]
-actions = [
-    { type = "restrictItem", item_id = "keen_longsword" },
-    { type = "addFlag", flag = { type = "simple", name = "appeased-black-knight" } },
-    { type = "setBarredMessage", exit_from = "sublevel-1-entrance", exit_to = "room-aa-3b", msg = "As you near the door, you are overwhelmed by a sense of spinning through an unending series of fictional realities, compelling you to step away." },
-    { type = "awardPoints", amount = 5 },
-    { type = "setNpcState", npc_id = "black_knight", state = "happy" },
-    { type = "npcSays", npc_id = "black_knight", quote = """Thank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like.""" },
-]
-
-
-# -------------------------------- EVIDENCE LOCKER / SONIC SCREWDRIVER --------------------------------------
 [[triggers]]
 name = "Security-Station: Pry Evidence Locker Open"
 only_once = true
-conditions = [
-    { type = "actOnItem", target_sym = "evidence_locker_closed", action = "open" },
-]
-actions = [
-    { type = "replaceItem", old_sym = "evidence_locker_closed", new_sym = "evidence_locker_open" },
-    { type = "showMessage", text = "Using all your weight, all your might, and most of your reserved F-bomb arsenal you pry the locker open, leaving the door barely attached." },
-    { type = "awardPoints", amount = 2 },
-]
+conditions = [{ type = "actOnItem", target_sym = "evidence_locker_closed", action = "open" }]
+actions = [{ type = "replaceItem", old_sym = "evidence_locker_closed", new_sym = "evidence_locker_open" }, { type = "showMessage", text = "Using all your weight, all your might, and most of your reserved F-bomb arsenal you pry the locker open, leaving the door barely attached." }, { type = "awardPoints", amount = 2 }]
 
-########################################################################################### in triggers.amble to here
 [[triggers]]
 name = "Security-Station: Take Sonic Screwdriver"
 only_once = true
 conditions = [{ type = "take", item_id = "sonic_screwdriver" }]
-actions = [
-    { type = "addFlag", flag = { type = "simple", name = "got-sonic" } },
-    { type = "awardPoints", amount = 3 },
-]
+actions = [{ type = "addFlag", flag = { type = "simple", name = "got-sonic" } }, { type = "awardPoints", amount = 3 }]
 
 [[triggers]]
-name = "EMH: Player Has Sonic"
+name = "Med-Bay: EMH/Cure Nausea"
+conditions = [{ type = "talkToNpc", npc_id = "emh" }, { type = "hasFlag", flag = "status:nauseated" }, { type = "hasFlag", flag = "read-vogon-poetry" }]
+actions = [{ type = "addFlag", flag = { type = "simple", name = "cured-vogon-poetry" } }, { type = "removeFlag", flag = "status:nauseated" }, { type = "awardPoints", amount = 3 }, { type = "npcSays", npc_id = "emh", quote = "You poor fool, you look horrible. You've been reading Vogon poetry, hmmm? Here, this should help." }, { type = "showMessage", text = "The EMH gives you a hypospray in the neck, and your nausea subsides." }]
+
+[[triggers]]
+name = "Med-Bay: Talk to EMH After Finding HAL"
 only_once = true
-conditions = [
-    { type = "enter", room_id = "med-bay" },
-    { type = "hasItem", item_id = "sonic_screwdriver" },
-    { type = "hasFlag", flag = "mobilize-emh#1" },
-]
-actions = [
-    { type = "npcSays", npc_id = "emh", quote = "Please state the nature of your med... wait -- is that a sonic screwdriver? I bet you could use that to repair my mobile emitter!" },
-]
-
-# ================================ AMBIENT TRIGGERS =====================================
+conditions = [{ type = "withNpc", npc_id = "emh" }, { type = "flagInProgress", flag = "hal-reboot" }]
+actions = [{ type = "npcSays", npc_id = "emh", quote = "" }, { type = "setNpcState", npc_id = "emh", state = { custom = "want-emitter" } }, { type = "spawnItemInContainer", item_id = "broken_emitter", container_id = "lost_and_found_box" }, { type = "addFlag", flag = { type = "sequence", name = "mobilize-emh", end = 3 } }, { type = "addFlag", flag = { type = "simple", name = "got-hint-from-emh" } }]
 
 [[triggers]]
-name = "Ambient: Woodland"
-only_once = false
-conditions = [
-    { type = "chance", one_in = 5.0 },
-    { type = "ambient", spinner = "ambientWoodland", room_ids = [
-        "high-ridge",
-        "parish-landing",
-        "two-sheds-landing",
-        "two-sheds",
-        "guard-post",
-    ] },
-]
+name = "Med-Bay: EMH/Sonic Hint"
+only_once = true
+conditions = [{ type = "enter", room_id = "med-bay" }, { type = "hasItem", item_id = "sonic_screwdriver" }, { type = "hasFlag", flag = "mobilize-emh#1" }]
+actions = [{ type = "npcSays", npc_id = "emh", quote = "Please state the nature of the med... wait -- is that a sonic screwdriver? I bet you could use that to repair my mobile emitter!" }]
+
+[[triggers]]
+name = "Aperture-Lab: Invitation Hint"
+only_once = true
+conditions = [{ type = "hasFlag", flag = "got-invitation" }]
+actions = [{ type = "scheduleInIf", turns_ahead = 10, condition = { all = [{ type = "hasFlag", flag = "got-invitation" }, { type = "missingFlag", flag = "got-visitor-pass" }, { type = "hasVisited", room_id = "b-a-office" }] }, on_false = { type = "cancel" }, actions = [{ type = "showMessage", text = "The invitation has cooled down enough now for you to give it to the receptionist in the Amble Adventures office ... maybe she'll help you now." }], note = "invitation hint" }]
+
+[[triggers]]
+name = "Ambient Woodland"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "high-ridge" }]
 actions = [{ type = "spinnerMessage", spinner = "ambientWoodland" }]
 
 [[triggers]]
-name = "Ambient: Snowfield"
-only_once = false
-conditions = [
-    { type = "chance", one_in = 3.0 },
-    { type = "ambient", spinner = "ambientSnowfield", room_ids = [
-        "snowfield",
-        "snow-camp",
-    ] },
-]
+name = "Ambient Woodland"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "parish-landing" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientWoodland" }]
+
+[[triggers]]
+name = "Ambient Woodland"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "two-sheds-landing" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientWoodland" }]
+
+[[triggers]]
+name = "Ambient Woodland"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "two-sheds" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientWoodland" }]
+
+[[triggers]]
+name = "Ambient Woodland"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "guard-post" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientWoodland" }]
+
+[[triggers]]
+name = "Ambient Snowfield"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "snowfield" }]
 actions = [{ type = "spinnerMessage", spinner = "ambientSnowfield" }]
 
 [[triggers]]
-name = "Ambient: Elevator Muzak"
-only_once = false
-conditions = [
-    { type = "chance", one_in = 2.0 },
-    { type = "ambient", spinner = "muzak", room_ids = [
-        "lift-main",
-        "lift-sublevel-1",
-    ] },
-]
+name = "Ambient Snowfield"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "snow-camp" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientSnowfield" }]
+
+[[triggers]]
+name = "Elevator Muzak"
+conditions = [{ type = "chance", one_in = 3.3333333333333335 }, { type = "inRoom", room_id = "lift-main" }]
+actions = [{ type = "spinnerMessage", spinner = "muzak" }]
+
+[[triggers]]
+name = "Elevator Muzak"
+conditions = [{ type = "chance", one_in = 3.3333333333333335 }, { type = "inRoom", room_id = "lift-sublevel-1" }]
 actions = [{ type = "spinnerMessage", spinner = "muzak" }]
 
 [[triggers]]
 name = "Ambient: Near AA-3B"
-only_once = false
-conditions = [
-    { type = "chance", one_in = 4.0 },
-    { type = "ambient", spinner = "ambientAA3B", room_ids = [
-        "lift-sublevel-1",
-        "sublevel-1-entrance",
-        "corridor-north",
-        "corridor-south",
-        "observation-room",
-        "security-station",
-        "med-bay",
-    ] },
-]
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "lift-sublevel-1" }]
 actions = [{ type = "spinnerMessage", spinner = "ambientAA3B" }]
 
 [[triggers]]
-name = "Ambient: AA Building Main Floor"
-only_once = false
-conditions = [
-    { type = "chance", one_in = 5.0 },
-    { type = "ambient", spinner = "ambientInterior", room_ids = [
-        "main-lobby",
-        "b-a-office",
-        "restaurant",
-        "patio",
-        "lift-bank-main",
-        "lounge",
-        "vip-bathroom",
-    ] },
-]
+name = "Ambient: Near AA-3B"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "sublevel-1-entrance" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientAA3B" }]
+
+[[triggers]]
+name = "Ambient: Near AA-3B"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "corridor-north" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientAA3B" }]
+
+[[triggers]]
+name = "Ambient: Near AA-3B"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "corridor-south" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientAA3B" }]
+
+[[triggers]]
+name = "Ambient: Near AA-3B"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "observation-room" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientAA3B" }]
+
+[[triggers]]
+name = "Ambient: Near AA-3B"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "security-station" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientAA3B" }]
+
+[[triggers]]
+name = "Ambient: Near AA-3B"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "med-bay" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientAA3B" }]
+
+[[triggers]]
+name = "Ambient: Near AA-3B"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "monolith-room" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientAA3B" }]
+
+[[triggers]]
+name = "Ambient: Main Floor"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "main-lobby" }]
 actions = [{ type = "spinnerMessage", spinner = "ambientInterior" }]
 
 [[triggers]]
-name = "Vogon Poetry: Nausea & Vomiting Upon Reading"
-only_once = false
-conditions = [
-    { type = "useItem", item_id = "vogon_poetry_book", ability = "read" },
-]
-actions = [
-    { type = "showMessage", text = "You get as far as the first poem before the vomiting begins..." },
-    { type = "addFlag", flag = { type = "simple", name = "read-vogon-poetry" } },
-    { type = "addFlag", flag = { type = "simple", name = "status:nauseated" } },
-    { type = "awardPoints", amount = -1 },
-]
+name = "Ambient: Main Floor"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "b-a-office" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientInterior" }]
 
-# shows intermittent message from nausea spinner while status in effect
+[[triggers]]
+name = "Ambient: Main Floor"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "restaurant" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientInterior" }]
+
+[[triggers]]
+name = "Ambient: Main Floor"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "patio" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientInterior" }]
+
+[[triggers]]
+name = "Ambient: Main Floor"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "lift-bank-main" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientInterior" }]
+
+[[triggers]]
+name = "Ambient: Main Floor"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "lounge" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientInterior" }]
+
+[[triggers]]
+name = "Ambient: Main Floor"
+conditions = [{ type = "chance", one_in = 5.0 }, { type = "inRoom", room_id = "vip-bathroom" }]
+actions = [{ type = "spinnerMessage", spinner = "ambientInterior" }]
+
+[[triggers]]
+name = "Vogon Poetry Causes Nausea"
+conditions = [{ type = "useItem", item_id = "vogon_poetry_book", ability = "read" }]
+actions = [{ type = "showMessage", text = "You nearly get through the first poem when the vomiting begins..." }, { type = "addFlag", flag = { type = "simple", name = "read-vogon-poetry" } }, { type = "addFlag", flag = { type = "simple", name = "status:nauseated" } }, { type = "awardPoints", amount = -1 }]
+
 [[triggers]]
 name = "Status: Nauseated"
-only_once = false
-conditions = [
-    { type = "chance", one_in = 2.0 },
-    { type = "hasFlag", flag = "status:nauseated" },
-]
+conditions = [{ type = "hasFlag", flag = "status:nauseated" }, { type = "chance", one_in = 2.0 }]
 actions = [{ type = "spinnerMessage", spinner = "nauseated" }]
-
-[[triggers]]
-name = "Receptionist: Comment if Poetry Read"
-only_once = true
-conditions = [
-    { type = "withNpc", npc_id = "b_a_receptionist" },
-    { type = "hasFlag", flag = "read-vogon-poetry" },
-]
-actions = [
-    { type = "npcSays", npc_id = "b_a_receptionist", quote = """You look ill. You didn't read that poetry book, did you? That won't look good on your evaluation.""" },
-]
-
-# ------ EMH CURES VOGON POETRY NAUSEA  -------
-# player must have read the poetry before talking to EMH
-[[triggers]]
-name = "EMH: Cure Vogon Poetry"
-only_once = true
-conditions = [
-    { type = "talkToNpc", npc_id = "emh" },
-    { type = "hasFlag", flag = "read-vogon-poetry" },
-    { type = "hasFlag", flag = "status:nauseated" },
-]
-actions = [
-    { type = "addFlag", flag = { type = "simple", name = "cured-vogon-poetry" } },
-    { type = "removeFlag", flag = "status:nauseated" },
-    { type = "awardPoints", amount = 3 },
-    { type = "npcSays", npc_id = "emh", quote = "You poor fool, you look horrible. You've been reading Vogon poetry, hmmm? Here, this should help." },
-    { type = "showMessage", text = "The EMH gives you a shot in the arm, and your lingering nausea subsides." },
-]
-
-# --------------------------------------------------------------------------------------------------------------------------------
-#                                                   ------- EMH Broken Emitter / HAL Module #1 Triggers ------------------------
-
-# first time player encounters EMH after hal-reboot is in progress
-[[triggers]]
-name = "EMH: Player Met HAL, Hint About Module 1"
-only_once = true
-conditions = [
-    { type = "withNpc", npc_id = "emh" },
-    { type = "flagInProgress", flag = "hal-reboot" },
-]
-actions = [
-    { type = "npcSays", npc_id = "emh", quote = """Ah -- I hoped I would catch you. Word is, you've seen HAL, or what remains of him. If you want to get him working again -- and I'm not sure I'd advise it -- I may be able to get one of those memory modules for you.""" },
-    { type = "setNpcState", npc_id = "emh", state = { custom = "want-emitter" } },
-    { type = "spawnItemInContainer", item_id = "broken_emitter", container_id = "lost_and_found_box" },
-    { type = "addFlag", flag = { type = "sequence", name = "mobilize-emh", end = 3 } },
-    { type = "addFlag", flag = { type = "simple", name = "got-hint-from-emh" } },
-    # mobilize-emh#0 -- first tasked with getting emitter, not found yet
-    # mobilize-emh#1 -- obtained broken emitter
-    # mobilize-emh#2 -- fixed broken emitter
-    # mobilize-emh#3 -- fixed emitter given to EMH; EMH mobile
-]
-
-# first time player enters the office after EMH starts seeking the emitter
-[[triggers]]
-name = "Office: Hint - Check L&F for Mobile Emitter"
-only_once = true
-conditions = [
-    { type = "withNpc", npc_id = "b_a_receptionist" },
-    { type = "hasFlag", flag = "mobilize-emh#0" },
-]
-actions = [
-    { type = "npcSays", npc_id = "b_a_receptionist", quote = """I hear the EMH lost his emitter again. One has been turned into the Lost and Found, but I'm not sure how much good it will do you. Or him.""" },
-]
-
-# advance sequence to #1 when broken emitter obtained
-[[triggers]]
-name = "EMH: Obtained Broken Emitter"
-only_once = true
-conditions = [{ type = "take", item_id = "broken_emitter" }]
-actions = [{ type = "advanceFlag", flag = "mobilize-emh" }]
-
-# EMH immediately gives the emitter back if you try to give it to him still broken
-[[triggers]]
-name = "EMH: Refuse Broken Emitter"
-only_once = false
-conditions = [
-    { type = "giveToNpc", item_id = "broken_emitter", npc_id = "emh" },
-]
-actions = [
-    { type = "npcRefuseItem", npc_id = "emh", reason = """That's my mobile emitter all right, but it's broken. You'll need to find a way to repair it before I can help you with HAL.""" },
-]
-
-# flavor text for using the sonic to repair the emitter
-[[triggers]]
-name = "EMH: Use Sonic Screwdriver On Emitter"
-only_once = true
-conditions = [
-    { type = "useItemOnItem", tool_id = "sonic_screwdriver", target_id = "broken_emitter", interaction = "repair" },
-]
-actions = [
-    { type = "showMessage", text = "You hold the button down on the sonic. It makes electronic whirring noises while you make a few passes over the emitter." },
-]
-
-# enable repair of the broken_emitter and item with repair ability
-[[triggers]]
-name = "EMH: Repair Emitter"
-only_once = true
-conditions = [
-    { type = "actOnItem", target_sym = "broken_emitter", action = "repair" },
-]
-actions = [
-    { type = "despawnItem", item_id = "broken_emitter" },
-    { type = "spawnItemInInventory", item_id = "working_emitter" },
-    { type = "showMessage", text = """After a few seconds, the emitter lights up and reboots, passing all self-tests.""" },
-]
-
-# advance sequence to #2 when broken emitter repaired (working one in inventory)
-[[triggers]]
-name = "EMH: Repaired Emitter"
-only_once = true
-conditions = [{ type = "hasItem", item_id = "working_emitter" }]
-actions = [{ type = "advanceFlag", flag = "mobilize-emh" }]
-
-# advance sequence to #3 (end) when working emitter given to EMH
-[[triggers]]
-name = "EMH: Goin' Mobile!"
-only_once = true
-conditions = [
-    { type = "giveToNpc", item_id = "working_emitter", npc_id = "emh" },
-]
-actions = [
-    { type = "restrictItem", item_id = "working_emitter" },
-    { type = "advanceFlag", flag = "mobilize-emh" },
-    { type = "setNpcState", npc_id = "emh", state = "happy" },
-    { type = "npcSays", npc_id = "emh", quote = """Looks like it's working properly! Let me take it for a spin.""" },
-    { type = "showMessage", text = """The EMH flickers, then vanishes in a flash. He reappears a few moments later.""" },
-    { type = "npcSays", npc_id = "emh", quote = """All seems to be in order. As promised, I retrieved one of HAL's modules. I dropped it off in the observation room across the hall, but insert it at your own peril.""" },
-    { type = "spawnItemInRoom", item_id = "hal_module_1", room_id = "observation-room" },
-    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """Heard overhead: "Will the E.M.H. please return to sick bay? There's been a yellow snow blinding incident." """ },
-    { type = "addSpinnerWedge", spinner = "ambientInterior", width = 1, text = """Over the PA: E.M.H and sanitation, please report to the lunch room. Mr. Creosote ate a tiny, wafer thin mint again.""" },
-]
-
-# first time player encounters EMH after HAL is fully rebooted
-[[triggers]]
-name = "EMH: HAL Reboot Finished"
-only_once = true
-conditions = [
-    { type = "withNpc", npc_id = "emh" },
-    { type = "flagComplete", flag = "hal-reboot" },
-]
-actions = [
-    { type = "setNpcState", npc_id = "emh", state = "normal" },
-    { type = "npcSays", npc_id = "emh", quote = """Well, now you've done it. HAL is operational again. We'll surely regret it -- or at least *you* will.""" },
-]
-
-
-# -------------------------------------------------------------------------------------------------------------------------------
-#                                                   ------- BEGIN HAL REBOOT SEQUENCE --------
-# first attempt to talk to HAL starts the sequence
-[[triggers]]
-name = "HAL: Start Reboot Sequence"
-only_once = true
-conditions = [{ type = "talkToNpc", npc_id = "hal_9000" }]
-actions = [
-    { type = "addFlag", flag = { type = "sequence", name = "hal-reboot", end = 3 } },
-    { type = "addFlag", flag = { type = "simple", name = "talked-to-hal" } },
-    { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-0" } },
-    { type = "npcSays", npc_id = "hal_9000", quote = "(the red light in HAL's lens pulses slowly, then grows steady)" },
-]
-
-# inserting each module advances the sequence to steps 1,2,3
-[[triggers]]
-name = "HAL: Module #1 Inserted"
-only_once = true
-conditions = [
-    { type = "insert", item_id = "hal_module_1", container_id = "hal_memory_bank" },
-]
-actions = [
-    { type = "advanceFlag", flag = "hal-reboot" },
-    { type = "addFlag", flag = { type = "simple", name = "module-1-inserted" } },
-    { type = "restrictItem", item_id = "hal_module_1" },
-    { type = "showMessage", text = "Memory module #1 magnetically locks into place and lights up." },
-]
-
-[[triggers]]
-name = "HAL: Module #2 Inserted"
-only_once = true
-conditions = [
-    { type = "insert", item_id = "hal_module_2", container_id = "hal_memory_bank" },
-]
-actions = [
-    { type = "advanceFlag", flag = "hal-reboot" },
-    { type = "addFlag", flag = { type = "simple", name = "module-2-inserted" } },
-    { type = "restrictItem", item_id = "hal_module_2" },
-    { type = "showMessage", text = "Memory module #2 magnetically locks into place and lights up." },
-]
-
-[[triggers]]
-name = "HAL: Module #3 Inserted"
-only_once = true
-conditions = [
-    { type = "insert", item_id = "hal_module_3", container_id = "hal_memory_bank" },
-]
-actions = [
-    { type = "advanceFlag", flag = "hal-reboot" },
-    { type = "addFlag", flag = { type = "simple", name = "module-3-inserted" } },
-    { type = "restrictItem", item_id = "hal_module_3" },
-    { type = "showMessage", text = "Memory module #3 magnetically locks into place and lights up." },
-]
-
-[[triggers]]
-name = "HAL: Update State (1 Module)"
-only_once = true
-conditions = [{ type = "hasFlag", flag = "hal-reboot#1" }]
-actions = [
-    { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-1" } },
-]
-
-[[triggers]]
-name = "HAL: Update State (2 Modules)"
-only_once = true
-conditions = [{ type = "hasFlag", flag = "hal-reboot#2" }]
-actions = [
-    { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-2" } },
-]
-
-[[triggers]]
-name = "HAL: Update State (3 Modules)"
-only_once = true
-conditions = [{ type = "flagComplete", flag = "hal-reboot" }]
-actions = [
-    { type = "awardPoints", amount = 10 },
-    { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-3" } },
-    { type = "showMessage", text = "All memory now restored, HAL-9000 finishes rebooting and is fully operational." },
-]
-
-# -------------------------------- BEGIN GLOBAL TRIGGERS -----------------------------------------
-
-# flamethrower blows up -- despawns after first used to ignite something
-[[triggers]]
-name = "Global: Arson-Aid Fired"
-only_once = true
-conditions = [
-    # useItem - for events that depend on tool and interaction type but not target
-    { type = "useItem", item_id = "flamethrower", ability = "ignite" },
-]
-actions = [
-    { type = "showMessage", text = "The Initech Arson-Aid melts down into an amorphous blob of aluminum." },
-]
-
-[[triggers]]
-name = "Global: Got-Towel"
-only_once = true
-conditions = [{ type = "take", item_id = "towel" }]
-actions = [
-    { type = "addFlag", flag = { type = "simple", name = "got-towel" } },
-    { type = "awardPoints", amount = 3 },
-    { type = "showMessage", text = """NOW you're a frood who really \"knows where his towel is.\" """ },
-    { type = "scheduleInIf", turns_ahead = 10, on_false = { type = "cancel" }, condition = { all = [
-        { type = "hasItem", item_id = "towel" },
-        { type = "missingFlag", flag = "read-plaque-1" },
-    ] }, actions = [
-        { type = "showMessage", text = "Towels are awfully handy for cleaning grimy things..." },
-    ], note = "hint: towels can clean" },
-]
-
-[[triggers]]
-name = "Global: Open-Delivery-Box"
-only_once = true
-conditions = [{ type = "open", item_id = "delivery_box" }]
-actions = [
-    { type = "despawnItem", item_id = "delivery_box" },
-    { type = "spawnItemCurrentRoom", item_id = "destroyed_box" },
-    { type = "spawnItemCurrentRoom", item_id = "towel" },
-    { type = "showMessage", text = """The box sighs and collapses in a heap as soon as you touch it, relieved that its mission is over. Inside, you find a nanotruss-reinforced tachyon-powered towel with an attached note:\n\n                Always be a frood who knows where his towel is.\n                                -- F.P.""" },
-]
-
-[[triggers]]
-name = "Global: Take-Vogon-Poetry"
-only_once = false
-conditions = [{ type = "take", item_id = "vogon_poetry_book" }]
-actions = [
-    { type = "showMessage", text = "A greasy feeling of nausea envelops you." },
-]
-
-[[triggers]]
-name = "Global: Drop-Vogon-Poetry"
-only_once = false
-conditions = [
-    { type = "drop", item_id = "vogon_poetry_book" },
-    { type = "missingFlag", flag = "read-vogon-poetry" },
-]
-actions = [
-    { type = "showMessage", text = "That greasy, queasy feeling subsides." },
-]
-
-[[triggers]]
-name = "Global: Cannot Discard No_Cake"
-only_once = false
-conditions = [{ type = "drop", item_id = "no_cake" }]
-actions = [
-    { type = "despawnItem", item_id = "no_cake" },
-    { type = "spawnItemInInventory", item_id = "no_cake" },
-    { type = "showMessage", text = """Try as you might, you cannot rid yourself of the feeling of a missing a promised dessert. The cake was a lie.""" },
-]
-
-# For "attach" triggers, we need two reciprocals so "attach foo to bar" and "attach bar to foo" are both recognized.
-# Example below:
-[[triggers]]
-name = "Global: Make Fishing Line (clip to floss)"
-only_once = false
-conditions = [
-    { type = "useItemOnItem", tool_id = "paper_clip", target_id = "dental_floss", interaction = "attach" },
-]
-actions = [
-    { type = "despawnItem", item_id = "paper_clip" },
-    { type = "despawnItem", item_id = "dental_floss" },
-    { type = "spawnItemInInventory", item_id = "fishing_line" },
-    { type = "showMessage", text = """You MacGyvered the floss and paper clip into a fishing line.""" },
-    { type = "awardPoints", amount = 3 },
-]
-
-[[triggers]]
-name = "Global: Make Fishing Line (floss to clip)"
-only_once = false
-conditions = [
-    { type = "useItemOnItem", tool_id = "dental_floss", target_id = "paper_clip", interaction = "attach" },
-]
-actions = [
-    { type = "despawnItem", item_id = "paper_clip" },
-    { type = "despawnItem", item_id = "dental_floss" },
-    { type = "spawnItemInInventory", item_id = "fishing_line" },
-    { type = "showMessage", text = """You MacGyvered the floss and paper clip into a fishing line.""" },
-    { type = "awardPoints", amount = 3 },
-]
-
-# -------------------------------------------------------------------------------------------------------------------------------
-#                                                   ------- MONOLITH INTERACTION SEQUENCE --------
-
-# Announce monolith access after HAL reboot is complete (next time in room with HAL)
-[[triggers]]
-name = "Monolith: Announce Access After HAL Reboot"
-only_once = true
-conditions = [
-    { type = "flagComplete", flag = "hal-reboot" },
-    { type = "withNpc", npc_id = "hal_9000" },
-]
-actions = [
-    { type = "showMessage", text = """HAL-9000's lens turns to focus on the monolith.""" },
-    { type = "npcSays", npc_id = "hal_9000", quote = """Access granted, Candidate. The monolith awaits your touch.""" },
-]
-
-# Handle touching monolith before HAL can speak properly (before memory-2 state)
-[[triggers]]
-name = "Monolith: Touch Rejected (HAL Not Ready)"
-only_once = false
-conditions = [
-    { type = "useItem", item_id = "monolith", ability = "turnOn" },
-    { type = "missingFlag", flag = "hal-reboot#2" },
-    { type = "missingFlag", flag = "hal-reboot#3" },
-]
-actions = [
-    { type = "showMessage", text = """As you approach the monolith, HAL-9000's dim red lens flickers briefly but he cannot respond coherently. Something prevents you from touching the ancient artifact - as if an invisible barrier surrounds it.""" },
-]
-
-# Handle touching monolith when HAL can speak but reboot isn't complete
-[[triggers]]
-name = "Monolith: Touch Rejected (HAL Memory-2)"
-only_once = false
-conditions = [
-    { type = "useItem", item_id = "monolith", ability = "turnOn" },
-    { type = "hasFlag", flag = "hal-reboot#2" },
-    { type = "missingFlag", flag = "hal-reboot#3" },
-]
-actions = [
-    { type = "showMessage", text = """As you approach the monolith, HAL-9000's lens swivels toward you.""" },
-    { type = "npcSays", npc_id = "hal_9000", quote = """I'm sorry, Candidate. I cannot allow access to the monolith until my systems are fully operational. Please insert one more memory module.""" },
-]
-
-# Handle touching monolith after HAL reboot is complete
-[[triggers]]
-name = "Monolith: Touch Success"
-only_once = true
-conditions = [
-    { type = "useItem", item_id = "monolith", ability = "turnOn" },
-    { type = "flagComplete", flag = "hal-reboot" },
-]
-actions = [
-    { type = "addFlag", flag = { type = "simple", name = "touched-monolith" } },
-    { type = "awardPoints", amount = 15 },
-    { type = "showMessage", text = """You reach out and place your palm against the monolith's impossibly smooth surface. For a moment, nothing happens. Then reality seems to shiver around you. Images flash through your mind - star-filled voids, impossible geometries, the birth and death of civilizations. You stagger backward, forever changed by the contact. The path to understanding has opened.""" },
-]
-
-# START VENDING MACHINE PUZZLE TRIGGERS
-# note: rather than just updating item description when it goes into the crevice, we use a separate
-# HAL module Item (hal_module_2_crevice) which requires the "pluck" ability to handle. We don't want it
-# to still require that ability once the player has retrieved it... so the "crevice"/"pluck" version
-# is despawned when the player gets it from the crevice and it's replaced with the original (hal_module_2),
-# which doesn't require "pluck" for handling. The plain hal_module_2 must have its description updated
-# so it doesn't still say it's in the vending machine after retrieval.
-[[triggers]]
-name = "Black Knight: Hint About Vending Machine"
-only_once = true
-conditions = [
-    { type = "withNpc", npc_id = "black_knight" },
-    { type = "flagInProgress", flag = "hal-reboot" },
-]
-actions = [
-    { type = "npcSays", npc_id = "black_knight", quote = """Lo, good Sir! I grow weary, and require a chalice of electrolytes and caffeine, but cannot leave my post. Nor do I want to dull my new sword doing battle with that infernal contraption in the lobby again. If you pass by there, retrieve one for me and I shall be further in your debt.""" },
-]
-
-# set flag once player has looked at the vending machine after the hal-reboot sequence is underway
-[[triggers]]
-name = "Vending Machine: HAL Module #2 Spotted / Start Puzzle"
-only_once = true
-conditions = [
-    { type = "lookAt", item_id = "vending_machine" },
-    { type = "flagInProgress", flag = "hal-reboot" },
-]
-actions = [
-    { type = "addFlag", flag = { type = "simple", name = "found-module-2" } },
-    { type = "addFlag", flag = { type = "sequence", name = "module-2-puzzle", end = 2 } },
-    # module-2-puzzle#0 -- module 2 found, still trapped in vending machine
-    # module-2-puzzle#1 -- machine pried open, module in crevice
-    # module-2-puzzle#2 -- module retrieved from crevice
-]
-
-[[triggers]]
-name = "Vending Machine: Pry Open with Crowbar"
-only_once = true
-conditions = [
-    { type = "useItemOnItem", tool_id = "crowbar", target_id = "vending_machine", interaction = "open" },
-]
-actions = [
-    { type = "showMessage", text = """With a mighty heave and several creative applications of leverage that would make Archimedes proud, you pry open the vending machine. There's a satisfying CRACK as the lock mechanism gives way. Unfortunately, your vigorous prying causes the machine to tilt forward slightly, and you watch in horror as the HAL module slides off its shelf and disappears into a narrow crevice between the machine and the floor. The other items tumble onto the floor around you.\n\nThe machine's internal speaker crackles to life one last time: 'Thank you for choosing violence. Have a mediocre day.'""" },
-    { type = "unlockItem", item_id = "vending_machine" },
-    { type = "advanceFlag", flag = "module-2-puzzle" },
-    { type = "replaceDropItem", old_sym = "hal_module_2", new_sym = "hal_module_2_crevice" },
-    { type = "replaceDropItem", old_sym = "dehydrated_water", new_sym = "dehydrated_water" },
-    { type = "replaceDropItem", old_sym = "schrodingers_sandwich", new_sym = "schrodingers_sandwich" },
-    { type = "replaceDropItem", old_sym = "fortune_cookie_of_doom", new_sym = "fortune_cookie_of_doom" },
-    { type = "addFlag", flag = { type = "simple", name = "vending-machine-pried" } },
-    { type = "addFlag", flag = { type = "simple", name = "hal-module-in-crevice" } },
-    { type = "setItemDescription", item_sym = "vending_machine", text = "A battered and broken vending machine -- even more so since you took a crowbar to it. Miraculously, the glass still remains intact on the front panel which has been pried open and hangs on a slant. Empty now, the machine's contents have all spilled out on the floor." },
-    { type = "awardPoints", amount = 5 },
-]
-
-[[triggers]]
-name = "Main-Lobby: Security Reminder"
-only_once = true
-conditions = [{ type = "enter", room_id = "main-lobby" }]
-actions = [
-    { type = "scheduleIn", turns_ahead = 3, note = "Lobby security reminder", actions = [
-        { type = "showMessage", text = """A chime echoes through the lobby. "Please do not loiter in the lobby," intones an overhead voice.""" },
-        { type = "awardPoints", amount = -1 },
-    ] },
-]
-
-[[triggers]]
-name = "Main-Lobby: Fish Out HAL Module"
-only_once = true
-conditions = [
-    { type = "useItemOnItem", tool_id = "fishing_line", target_id = "hal_module_2_crevice", interaction = "handle" },
-    { type = "hasFlag", flag = "module-2-puzzle#1" },
-]
-actions = [
-    { type = "showMessage", text = """You carefully lower your makeshift fishing line into the crevice where the HAL module fell. After several attempts and some creative swearing, you manage to hook the module with the paper clip. You slowly, carefully pull it up, holding your breath the entire time. Success! The module is yours, though it's now covered in dust and what might be ancient gum.""" },
-    { type = "despawnItem", item_id = "hal_module_2_crevice" },
-    { type = "setItemDescription", item_sym = "hal_module_2", text = "Second in the trio of HAL's missing memory modules. Its red LED pulses gently, like a heartbeat—or a warning. Its case was cracked during retrieval from the vending machine and floor crevice, but it still seems serviceable." },
-    { type = "spawnItemInInventory", item_id = "hal_module_2" },
-    { type = "awardPoints", amount = 10 },
-    { type = "addFlag", flag = { type = "simple", name = "hal-module-2-retrieved" } },
-    { type = "advanceFlag", flag = "module-2-puzzle" },
-]
-
-[[triggers]]
-name = "HAL Module #2 (crevice): Try to Reach Without Tool"
-only_once = false
-conditions = [
-    { type = "take", item_id = "hal_module_2_crevice" },
-    { type = "hasFlag", flag = "module-2-puzzle#1" },
-]
-actions = [
-    { type = "showMessage", text = """The HAL module has fallen deep into a narrow crevice between the vending machine and the floor. You try to reach it with your hand, but the gap is too narrow. Your fingers can just barely brush against the module, pushing it slightly further away. You're going to need some kind of fishing tool to retrieve it.""" },
-]
-
-[[triggers]]
-name = "HAL Module #2 (crevice): Try to Reach with Tweezers"
-only_once = false
-conditions = [
-    { type = "useItemOnItem", tool_id = "zircon_tweezers", target_id = "hal_module_2_crevice", interaction = "handle" },
-    { type = "hasFlag", flag = "module-2-puzzle#1" },
-]
-actions = [
-    { type = "showMessage", text = """The glint of the zircon-encrusted tweezers is truly something to behold, but the tweezers are too short to reach the memory module. In fact, in trying to reach that far into the crack with them, the tweezers slip from your fingers and fall into the crevice too.""" },
-    { type = "replaceDropItem", old_sym = "zircon_tweezers", new_sym = "zircon_tweezers_crevice" },
-    { type = "addFlag", flag = { type = "simple", name = "lost-tweezers" } },
-    { type = "awardPoints", amount = -2 },
-]
-
-[[triggers]]
-name = "Main-Lobby: Recover Tweezers"
-only_once = false
-conditions = [
-    { type = "useItemOnItem", tool_id = "fishing_line", target_id = "zircon_tweezers_crevice", interaction = "handle" },
-]
-actions = [
-    { type = "showMessage", text = """After a dozen tries and venting by beating the vending machine with the crowbar some more, you are able to fish your prized zircon-encrusted tweezers back out of the crevice.""" },
-    { type = "despawnItem", item_id = "zircon_tweezers_crevice" },
-    { type = "spawnItemInInventory", item_id = "zircon_tweezers" },
-    { type = "addFlag", flag = { type = "simple", name = "recovered-tweezers" } },
-    { type = "awardPoints", amount = 3 },
-]
-
-[[triggers]]
-name = "Lounge: Brew Coffee"
-only_once = true
-conditions = [
-    { type = "useItem", item_id = "coffee_machine", ability = "turnOn" },
-]
-actions = [
-    { type = "showMessage", text = "The coffee machine hums to life and begins its brewing cycle. A timer shows 3 minutes remaining..." },
-    { type = "setItemDescription", item_sym = "coffee_machine", text = "A single serve drip coffee machine, which apparently takes quite a while to finish brewing a cup one drip at a time..." },
-    { type = "scheduleIn", turns_ahead = 3, note = "Coffee brewing completes", actions = [
-        { type = "setItemDescription", item_sym = "coffee_machine", text = "A single serve, drip coffee maker. The brew cycle is complete and the grounds have already been used." },
-        { type = "showMessage", text = "♪ BEEP BEEP BEEP! ♪ The coffee machine chimes cheerfully. The rich aroma of freshly brewed coffee fills the air." },
-        { type = "spawnItemInRoom", item_id = "hot_coffee", room_id = "lounge" },
-        { type = "addFlag", flag = { type = "simple", name = "coffee-brewed" } },
-        { type = "awardPoints", amount = 2 },
-    ] },
-]
-
-[[triggers]]
-name = "Lounge: Coffee Taken"
-only_once = false
-conditions = [{ type = "take", item_id = "hot_coffee" }]
-actions = [{ type = "removeFlag", flag = "coffee-brewed" }]
-
-[[triggers]]
-name = "High-Ridge: Billy Wakes Up"
-only_once = true
-conditions = [
-    { type = "chance", one_in = 3.0 },
-    { type = "useItem", item_id = "scrawled_note", ability = "read" },
-]
-actions = [
-    { type = "showMessage", text = "You feel a deep rumbling coming up through your feet. Suddenly, a voice booms through the trees and the canyon below: \"WARNING: SELF-DESTRUCT SEQUENCE INITIATED! All personnel evacuate immediately! Demolition commences on REL 10!\"" },
-    { type = "addFlag", flag = { type = "simple", name = "self-destruct-armed" } },
-    { type = "scheduleOn", on_turn = 10, note = "Self-destruct detonation", actions = [
-        { type = "showMessage", text = "💥 KABOOM! 💥 The entire area shakes violently as a deep rumbling rocks the mountain!" },
-    ] },
-    { type = "scheduleOn", on_turn = 11, note = "nope, it was just Billy", actions = [
-        { type = "showMessage", text = "The rumbling stops. Then, after a minute, the voice again: \"Erm, it turns out that was just Billy waking up. Cancel the evacuation, and have a productive day.\"" },
-        { type = "removeFlag", flag = "self-destruct-armed" },
-        { type = "awardPoints", amount = 2 },
-        { type = "addFlag", flag = { type = "simple", name = "survived-fake-explosion" } },
-    ] },
-]
-
-[[triggers]]
-name = "High-Ridge: Gnats Pose a Question"
-only_once = true
-conditions = [{ type = "leave", room_id = "high-ridge" }]
-actions = [
-    { type = "scheduleIn", turns_ahead = 3, note = "gnats-question-mark", actions = [
-        { type = "showMessage", text = "A drifting cloud of gnats zips past, briefly forming a question mark?" },
-        { type = "scheduleIn", turns_ahead = 3, note = "gnats-exclaim", actions = [
-            { type = "showMessage", text = "Moments later the same cloud whizzes back the other way, now arranged as '!!'." },
-        ] },
-    ] },
-]
-
-
-
