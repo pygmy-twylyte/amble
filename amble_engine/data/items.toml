@@ -420,7 +420,7 @@ type = "Read"
 
 # --------------------------------------------------------------------------------
 [[items]]
-id = "foamsafe-x17"
+id = "foamsafe_x17"
 name = "Initech FoamSafe™ X-17"
 location = { Room = "aperture-lab" }
 description = """A fire extinguisher-like device with the words "Initech FoamSafe™ X-17" proudly emblazoned on its side. Its label promises peace of mind in emergencies — though closer inspection suggests otherwise."""
