@@ -22,6 +22,18 @@ conditions = [{ type = "useItem", item_id = "plaque_1", ability = "read" }, { ty
 actions = [{ type = "addFlag", flag = { type = "simple", name = "read-plaque-1" } }, { type = "awardPoints", amount = 5 }]
 
 [[triggers]]
+name = "High-Ridge: Billy Wakes Up"
+only_once = true
+conditions = [{ type = "useItem", item_id = "scrawled_note", ability = "read" }, { type = "chance", one_in = 2.380952380952381 }]
+actions = [{ type = "showMessage", text = "You feel a deep rumbling coming up through your feet. Suddenly, a voice booms through the trees and the canyon below: \"WARNING: SELF-DESTRUCT SEQUENCE INITIATED! All personnel evacuate immediately! Demolition commences on REL 10!\"" }, { type = "addFlag", flag = { type = "simple", name = "self-destruct-armed" } }, { type = "scheduleOn", on_turn = 10, actions = [{ type = "showMessage", text = "KABOOM! ð¥ The entire area shakes violently as a deep rumbling rocks the mountain!" }], note = "self-destruct fires" }, { type = "scheduleOn", on_turn = 11, actions = [{ type = "showMessage", text = "The rumbling stops. Then, after a minute, the voice again: \"Erm, it turns out that was just Billy waking up. Cancel the evacuation, and have a productive day.\"" }, { type = "removeFlag", flag = "self-destruct-armed" }, { type = "awardPoints", amount = 2 }, { type = "addFlag", flag = { type = "simple", name = "survived-fake-explosion" } }], note = "lol just Billy" }]
+
+[[triggers]]
+name = "High-Ridge: Gnat Punctuation"
+only_once = true
+conditions = [{ type = "leave", room_id = "high-ridge" }]
+actions = [{ type = "scheduleInIf", turns_ahead = 2, condition = { type = "missingFlag", flag = "read-scrawled-note" }, on_false = { type = "cancel" }, actions = [{ type = "showMessage", text = "A cloud of gnats drifts by, forming the shapes of the words \"rEAd tHe HiGh RidGe NotE\"." }], note = "gnats: first fly-by" }, { type = "scheduleInIf", turns_ahead = 2, condition = { type = "hasFlag", flag = "read-scrawled-note" }, on_false = { type = "cancel" }, actions = [{ type = "showMessage", text = "A cloud of gnats drifts by, lazily holding the shape of \"..?..\"." }], note = "gnats: first fly-by" }, { type = "scheduleIn", turns_ahead = 6, actions = [{ type = "showMessage", text = "The gnat cloud zips past in the other direction, this time shaped like \"!!!\"." }], note = "gnats: alarmed" }]
+
+[[triggers]]
 name = "Two-Sheds-Landing: Cut or Chop Tree"
 only_once = true
 conditions = [{ type = "actOnItem", target_sym = "fallen_tree", action = "cut" }]
@@ -92,6 +104,49 @@ name = "Gonk Droid: Happy When Family Photo Inspected"
 only_once = true
 conditions = [{ type = "lookAt", item_id = "gonk_family_photo" }]
 actions = [{ type = "npcSays", npc_id = "gonk_droid", quote = "GONK gonk!" }, { type = "showMessage", text = "The gonk droid totters with pride as you view its family photo." }, { type = "awardPoints", amount = 2 }, { type = "addFlag", flag = { type = "simple", name = "made-gonk-proud" } }]
+
+[[triggers]]
+name = "Main-Lobby: Security Reminder"
+only_once = true
+conditions = [{ type = "enter", room_id = "main-lobby" }]
+actions = [{ type = "scheduleInIf", turns_ahead = 3, condition = { type = "inRoom", room_id = "main-lobby" }, on_false = { type = "cancel" }, actions = [{ type = "showMessage", text = "A chime echoes through the lobby. \"Candidates: Please do not loiter in the lobby,\" intones an overhead voice." }, { type = "awardPoints", amount = -1 }], note = "lobby loitering reminder" }]
+
+[[triggers]]
+name = "Main-Lobby: Spot HAL Module #2 / Start Puzzle"
+only_once = true
+conditions = [{ type = "lookAt", item_id = "vending_machine" }, { type = "flagInProgress", flag = "hal-reboot" }]
+actions = [{ type = "addFlag", flag = { type = "simple", name = "found-module-2" } }, { type = "addFlag", flag = { type = "sequence", name = "module-2-puzzle", end = 2 } }]
+
+[[triggers]]
+name = "Main-Lobby: Pry Vending Machine Open with Crowbar"
+only_once = true
+conditions = [{ type = "useItemOnItem", interaction = "open", target_id = "vending_machine", tool_id = "crowbar" }]
+actions = [{ type = "showMessage", text = """
+With a mighty heave and several creative applications of leverage that would make Archimedes proud, you pry open the vending machine. There's a satisfying CRACK as the lock mechanism gives way. Unfortunately, your vigorous prying causes the machine to tilt forward slightly, and you watch in horror as the HAL module slides off its shelf and disappears into a narrow crevice between the machine and the floor. The other items tumble onto the floor around you.
+
+The machine's internal speaker crackles to life one last time: 'Thank you for choosing violence. Have a mediocre day.'""" }, { type = "advanceFlag", flag = "module-2-puzzle" }, { type = "replaceDropItem", old_sym = "hal_module_2", new_sym = "hal_module_2_crevice" }, { type = "replaceDropItem", old_sym = "dehydrated_water", new_sym = "dehydrated_water" }, { type = "replaceDropItem", old_sym = "schrodingers_sandwich", new_sym = "schrodingers_sandwich" }, { type = "replaceDropItem", old_sym = "fortune_cookie_of_doom", new_sym = "fortune_cookie_of_doom" }, { type = "addFlag", flag = { type = "simple", name = "vending-machine-pried" } }, { type = "addFlag", flag = { type = "simple", name = "hal-module-in-crevice" } }, { type = "setItemDescription", item_sym = "vending_machine", text = "A battered and broken vending machine -- even more so since you took a crowbar to it. Miraculously, the glass still remains intact on the front panel which has been pried open and hangs on a slant. Empty now, the machine's contents have all spilled out on the floor." }, { type = "awardPoints", amount = 5 }]
+
+[[triggers]]
+name = "Main-Lobby: Fish HAL Module Out of Crevice"
+only_once = true
+conditions = [{ type = "useItemOnItem", interaction = "handle", target_id = "hal_module_2_crevice", tool_id = "fishing_line" }, { type = "hasFlag", flag = "module-2-puzzle#1" }]
+actions = [{ type = "showMessage", text = "You carefully lower your makeshift fishing line into the crevice where the HAL module fell. After several attempts and some creative swearing, you manage to hook the module with the paper clip. You slowly, carefully pull it up, holding your breath the entire time. Success! The module is yours, though it's now covered in dust and what might be ancient gum." }, { type = "despawnItem", item_id = "hal_module_2_crevice" }, { type = "setItemDescription", item_sym = "hal_module_2", text = "Second in the trio of HAL's missing memory modules. Its red LED pulses gently, like a heartbeatâor a warning. Its case was cracked during retrieval from the vending machine and floor crevice, but it still seems serviceable." }, { type = "spawnItemInInventory", item_id = "hal_module_2" }, { type = "awardPoints", amount = 10 }, { type = "addFlag", flag = { type = "simple", name = "hal-module-2-retrieved" } }, { type = "advanceFlag", flag = "module-2-puzzle" }]
+
+[[triggers]]
+name = "Main-Lobby: Can't Reach HAL Module in Crevice"
+conditions = [{ type = "take", item_id = "hal_module_2_crevice" }, { type = "hasFlag", flag = "module-2-puzzle#1" }]
+actions = [{ type = "showMessage", text = "The HAL module has fallen deep into a narrow crevice between the vending machine and the floor. You try to reach it with your hand, but the gap is too narrow. Your fingers can just barely brush against the module, pushing it slightly further away. You're going to need some kind of fishing tool to retrieve it." }]
+
+[[triggers]]
+name = "Main-Lobby: HAL Module/Drop Tweezers In Crevice"
+only_once = true
+conditions = [{ type = "useItemOnItem", interaction = "handle", target_id = "hal_module_2_crevice", tool_id = "zircon_tweezers" }, { type = "hasFlag", flag = "module-2-puzzle#1" }]
+actions = [{ type = "showMessage", text = "The glint of the zircon-encrusted tweezers is truly something to behold, but the tweezers are too short to reach the memory module. In fact, in trying to reach that far into the crack with them, the tweezers slip from your fingers and fall into the crevice too." }, { type = "replaceDropItem", old_sym = "zircon_tweezers", new_sym = "zircon_tweezers_crevice" }, { type = "addFlag", flag = { type = "simple", name = "lost-Tweezers" } }, { type = "awardPoints", amount = -2 }]
+
+[[triggers]]
+name = "Main-Lobby: Recover Tweezers"
+conditions = [{ type = "useItemOnItem", interaction = "handle", target_id = "zircon_tweezers_crevice", tool_id = "fishing_line" }]
+actions = [{ type = "showMessage", text = "After a dozen tries and venting by beating the vending machine with the crowbar some more, you are able to fish your prized zircon-encrusted tweezers back out of the crevice." }, { type = "despawnItem", item_id = "zircon_tweezers_crevice" }, { type = "spawnItemInInventory", item_id = "zircon_tweezers" }, { type = "addFlag", flag = { type = "simple", name = "recovered-tweezers" } }, { type = "awardPoints", amount = 3 }]
 
 [[triggers]]
 name = "Patio: Sunglasses Required"
@@ -188,6 +243,17 @@ conditions = [{ type = "actOnItem", target_sym = "lebowski_rug", action = "burn"
 actions = [{ type = "despawnItem", item_id = "lebowski_rug" }, { type = "revealExit", exit_from = "lounge", exit_to = "portal-room", direction = "down" }, { type = "addFlag", flag = { type = "simple", name = "found-portal-room" } }, { type = "awardPoints", amount = 3 }, { type = "showMessage", text = "When the acrid smoke clears and your eyes stop burning, you can make out a trap door revealed in the floor where the rug used to be." }]
 
 [[triggers]]
+name = "Lounge: Brew Coffee"
+only_once = true
+conditions = [{ type = "useItem", item_id = "coffee_machine", ability = "turnOn" }]
+actions = [{ type = "showMessage", text = "The coffee machine hums to life and begins its brewing cycle. A timer shows 3 minutes remaining..." }, { type = "setItemDescription", item_sym = "coffee_machine", text = "A single serve drip coffee machine, which apparently takes quite a while to finish brewing a cup one drip at a time..." }, { type = "scheduleIn", turns_ahead = 3, actions = [{ type = "setItemDescription", item_sym = "coffee_machine", text = "A single serve, drip coffee maker. The brew cycle is complete and the grounds have already been used." }, { type = "showMessage", text = "âª BEEP BEEP BEEP! âª The coffee machine chimes cheerfully. The rich aroma of freshly brewed coffee fills the air." }, { type = "spawnItemInRoom", item_id = "hot_coffee", room_id = "lounge" }, { type = "addFlag", flag = { type = "simple", name = "coffee-brewed" } }, { type = "awardPoints", amount = 2 }], note = "coffee done brewing" }]
+
+[[triggers]]
+name = "Lounge: Coffee Taken"
+conditions = [{ type = "take", item_id = "hot_coffee" }]
+actions = [{ type = "removeFlag", flag = "coffee-brewed" }]
+
+[[triggers]]
 name = "Lift-Bank-Main: Keycard Activates Elevator"
 conditions = [{ type = "enter", room_id = "lift-bank-main" }, { type = "hasItem", item_id = "elevator_keycard" }]
 actions = [{ type = "showMessage", text = "The keycard in your pack chirps twice as you approach the proximity reader on the wall, which responds with a happy melody." }]
@@ -196,7 +262,13 @@ actions = [{ type = "showMessage", text = "The keycard in your pack chirps twice
 name = "Lift-Bank-Main: Point Award On First Activation"
 only_once = true
 conditions = [{ type = "enter", room_id = "lift-bank-main" }, { type = "hasItem", item_id = "elevator_keycard" }]
-actions = [{ type = "showMessage", text = "The main lift lights up, and Muzak plays over a tinny speaker inside. In horror, you realize: It's Porcupine Tree's 'The Sound of Muzak' -- the Muzak version." }, { type = "awardPoints", amount = 3 }]
+actions = [{ type = "addFlag", flag = { type = "simple", name = "elevator-activated" } }, { type = "showMessage", text = "The main lift lights up, and Muzak plays over a tinny speaker inside. In horror, you realize: It's Porcupine Tree's 'The Sound of Muzak' -- the Muzak version." }, { type = "awardPoints", amount = 3 }]
+
+[[triggers]]
+name = "Portal-Room: Gun Opened"
+only_once = true
+conditions = [{ type = "open", item_id = "portal_gun" }]
+actions = [{ type = "addFlag", flag = { type = "simple", name = "portal-gun-opened" } }]
 
 [[triggers]]
 name = "Portal-Room: Gun Powered"
@@ -253,6 +325,11 @@ conditions = [{ type = "take", item_id = "invitation" }]
 actions = [{ type = "replaceDropItem", old_sym = "invitation", new_sym = "invitation" }, { type = "showMessage", text = "You burn your fingers and drop the invitation on the floor. It emits a reddish glow, and shimmers from the radiating heat." }]
 
 [[triggers]]
+name = "Sublevel-1-Entrance: Refuse Visitor Pass"
+conditions = [{ type = "giveToNpc", item_id = "visitor_pass", npc_id = "black_knight" }]
+actions = [{ type = "npcRefuseItem", npc_id = "black_knight", reason = "Ha! You may be Arthur, King of the Britons... but I said NONE shall pass. Surely you speak the King's English!" }]
+
+[[triggers]]
 name = "Sublevel-1-Entrance: Meet the Black Knight"
 only_once = true
 conditions = [{ type = "talkToNpc", npc_id = "black_knight" }]
@@ -284,6 +361,12 @@ name = "Sublevel-1-Entrance: Sharpened Sword Returned"
 only_once = true
 conditions = [{ type = "giveToNpc", item_id = "keen_longsword", npc_id = "black_knight" }]
 actions = [{ type = "restrictItem", item_id = "keen_longsword" }, { type = "addFlag", flag = { type = "simple", name = "appeased-black-knight" } }, { type = "setBarredMessage", exit_from = "sublevel-1-entrance", exit_to = "room-aa-3b", msg = "As you near the door, you are overwhelmed by a sense of spinning through an unending series of fictional realities, compelling you to step away." }, { type = "awardPoints", amount = 5 }, { type = "setNpcState", npc_id = "black_knight", state = "happy" }, { type = "npcSays", npc_id = "black_knight", quote = "hank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like." }]
+
+[[triggers]]
+name = "Sublevel-1-Entrance: Black Knight Hints About Vending Machine"
+only_once = true
+conditions = [{ type = "withNpc", npc_id = "black_knight" }, { type = "flagInProgress", flag = "hal-reboot" }]
+actions = [{ type = "npcSays", npc_id = "black_knight", quote = "Lo, good Sir! I grow weary, and require a chalice of electrolytes and caffeine, but cannot leave my post. Nor do I want to dull my new sword doing battle with that infernal contraption in the lobby again. If you pass by there, retrieve one for me and I shall be further in your debt." }]
 
 [[triggers]]
 name = "Security-Station: Pry Evidence Locker Open"
@@ -387,10 +470,42 @@ conditions = [{ type = "flagComplete", flag = "hal-reboot" }]
 actions = [{ type = "awardPoints", amount = 10 }, { type = "setNpcState", npc_id = "hal_9000", state = { custom = "memory-3" } }, { type = "showMessage", text = "All memory now restored, HAL-9000 finishes rebooting and is fully operational." }]
 
 [[triggers]]
+name = "Monolith-Room: Announce Monolith Access After HAL Rebooted"
+only_once = true
+conditions = [{ type = "flagComplete", flag = "hal-reboot" }, { type = "withNpc", npc_id = "hal_9000" }]
+actions = [{ type = "showMessage", text = "HAL-9000's lens turns to focus on the monolith dominating the room." }, { type = "npcSays", npc_id = "hal_9000", quote = "Access granted, Candidate #2112-42. The monolith awaits your touch." }]
+
+[[triggers]]
+name = "Monolith-Room: Monolith Touch Prevented (HAL not ready)"
+conditions = [{ type = "useItem", item_id = "monolith", ability = "turnOn" }, { type = "hasFlag", flag = "hal-reboot#0" }]
+actions = [{ type = "showMessage", text = "As you approach the monolith, HAL-9000's dim red lens flickers briefly but he cannot respond coherently. Something prevents you from touching the ancient artifact - as if an invisible barrier surrounds it." }]
+
+[[triggers]]
+name = "Monolith-Room: Monolith Touch Prevented (HAL not ready)"
+conditions = [{ type = "useItem", item_id = "monolith", ability = "turnOn" }, { type = "hasFlag", flag = "hal-reboot#1" }]
+actions = [{ type = "showMessage", text = "As you approach the monolith, HAL-9000's dim red lens flickers briefly but he cannot respond coherently. Something prevents you from touching the ancient artifact - as if an invisible barrier surrounds it." }]
+
+[[triggers]]
+name = "Monolith-Room: Monolith Touch Prevented (HAL not ready)"
+conditions = [{ type = "useItem", item_id = "monolith", ability = "turnOn" }, { type = "hasFlag", flag = "hal-reboot#2" }]
+actions = [{ type = "showMessage", text = "As you approach the monolith, HAL-9000's lens swivels toward you." }, { type = "npcSays", npc_id = "hal_9000", quote = "I'm sorry, Candidate. I cannot allow access to the monolith until my systems are fully operational. Please insert one more memory module." }]
+
+[[triggers]]
+name = "Monolith-Room: Monolith Touch Prevented (HAL not ready)"
+conditions = [{ type = "useItem", item_id = "monolith", ability = "turnOn" }, { type = "flagComplete", flag = "hal-reboot" }]
+actions = [{ type = "addFlag", flag = { type = "simple", name = "touched-monolith" } }, { type = "awardPoints", amount = 15 }, { type = "showMessage", text = "You reach out and place your palm against the monolith's impossibly smooth surface. For a moment, nothing happens. Then reality seems to shiver around you. Images flash through your mind - star-filled voids, impossible geometries, the birth and death of civilizations. You stagger backward, forever changed by the contact. The path to understanding has opened." }]
+
+[[triggers]]
 name = "Aperture-Lab: Invitation Hint"
 only_once = true
 conditions = [{ type = "hasFlag", flag = "got-invitation" }]
 actions = [{ type = "scheduleInIf", turns_ahead = 10, condition = { all = [{ type = "hasFlag", flag = "got-invitation" }, { type = "missingFlag", flag = "got-visitor-pass" }, { type = "hasVisited", room_id = "b-a-office" }] }, on_false = { type = "cancel" }, actions = [{ type = "showMessage", text = "The invitation has cooled down enough now for you to give it to the receptionist in the Amble Adventures office ... maybe she'll help you now." }], note = "invitation hint" }]
+
+[[triggers]]
+name = "Towel / Plaque Hint"
+only_once = true
+conditions = [{ type = "take", item_id = "towel" }]
+actions = [{ type = "addFlag", flag = { type = "simple", name = "got-towel" } }, { type = "awardPoints", amount = 3 }, { type = "showMessage", text = "NOW you're a frood who really \"knows where his towel is\"!" }, { type = "scheduleInIf", turns_ahead = 10, condition = { all = [{ type = "hasItem", item_id = "towel" }, { type = "missingFlag", flag = "read-plaque-1" }] }, on_false = { type = "cancel" }, actions = [{ type = "showMessage", text = "Towels can be awfully handy for cleaning grimy things. Just sayin'." }], note = "hint: towel can clean" }]
 
 [[triggers]]
 name = "Ambient Woodland"
@@ -521,3 +636,54 @@ actions = [{ type = "showMessage", text = "You nearly get through the first poem
 name = "Status: Nauseated"
 conditions = [{ type = "hasFlag", flag = "status:nauseated" }, { type = "chance", one_in = 2.0 }]
 actions = [{ type = "spinnerMessage", spinner = "nauseated" }]
+
+[[triggers]]
+name = "Global: Arson-Aid Used"
+only_once = true
+conditions = [{ type = "useItem", item_id = "flamethrower", ability = "ignite" }]
+actions = [{ type = "showMessage", text = "The Initech Arson-Aid melts down into an amorphous, hissing blob. As expected." }]
+
+[[triggers]]
+name = "Global: Open Delivery Box"
+only_once = true
+conditions = [{ type = "open", item_id = "delivery_box" }]
+actions = [{ type = "despawnItem", item_id = "delivery_box" }, { type = "spawnItemCurrentRoom", item_id = "destroyed_box" }, { type = "spawnItemCurrentRoom", item_id = "towel" }, { type = "showMessage", text = """
+The box sighs and collapses in a heap as soon as you touch it, relieved that its mission is over. Inside, you find a nanotruss-reinforced tachyon-powered towel with an attached note:
+
+                Always be a frood who knows where his towel is.
+                                -- F.P.""" }]
+
+[[triggers]]
+name = "Global: Take Vogon Poetry"
+conditions = [{ type = "take", item_id = "vogon_poetry_book" }]
+actions = [{ type = "showMessage", text = "A greasy feeling of nausea overcomes you." }]
+
+[[triggers]]
+name = "Global: Drop Vogon Poetry"
+conditions = [{ type = "drop", item_id = "vogon_poetry_book" }, { type = "missingFlag", flag = "read-vogon-poetry" }]
+actions = [{ type = "showMessage", text = "That greasy, queasy feeling subsides." }]
+
+[[triggers]]
+name = "Global: Drop Vogon Poetry"
+conditions = [{ type = "drop", item_id = "vogon_poetry_book" }, { type = "hasFlag", flag = "cured-vogon-poetry" }]
+actions = [{ type = "showMessage", text = "That greasy, queasy feeling subsides." }]
+
+[[triggers]]
+name = "Global: Drop Vogon Poetry"
+conditions = [{ type = "drop", item_id = "vogon_poetry_book" }, { type = "hasFlag", flag = "read-vogon-poetry" }, { type = "missingFlag", flag = "cured-vogon-poetry" }]
+actions = [{ type = "showMessage", text = "Getting rid of the book helps a little, but the poem is burned into your mind and the nausea continues." }]
+
+[[triggers]]
+name = "Global: Cannot Drop No Cake"
+conditions = [{ type = "drop", item_id = "no_cake" }]
+actions = [{ type = "despawnItem", item_id = "no_cake" }, { type = "spawnItemInInventory", item_id = "no_cake" }, { type = "showMessage", text = "Try as you might, you cannot rid yourself of the feeling of a missing, promised dessert. The cake was a lie." }]
+
+[[triggers]]
+name = "Global: Fishing Line (attach clip to floss)"
+conditions = [{ type = "useItemOnItem", interaction = "attach", target_id = "dental_floss", tool_id = "paper_clip" }]
+actions = [{ type = "despawnItem", item_id = "paper_clip" }, { type = "despawnItem", item_id = "dental_floss" }, { type = "spawnItemInInventory", item_id = "fishing_line" }, { type = "showMessage", text = "You MacGyvered the floss and paper clip into a fishing line!" }, { type = "awardPoints", amount = 3 }]
+
+[[triggers]]
+name = "Global: Fishing Line (attach floss to clip)"
+conditions = [{ type = "useItemOnItem", interaction = "attach", target_id = "paper_clip", tool_id = "dental_floss" }]
+actions = [{ type = "despawnItem", item_id = "paper_clip" }, { type = "despawnItem", item_id = "dental_floss" }, { type = "spawnItemInInventory", item_id = "fishing_line" }, { type = "showMessage", text = "You MacGyvered the floss and paper clip into a fishing line!" }, { type = "awardPoints", amount = 3 }]
