@@ -1,8 +1,8 @@
 [package]
 name = "amble_script"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
-description = "Minimal DSL compiler for Amble triggers"
+description = "DSL for the Amble game engine."
 
 [lib]
 name = "amble_script"
@@ -17,4 +17,3 @@ pest = "2"
 pest_derive = "2"
 thiserror = "1"
 toml_edit = "0.21"
-
