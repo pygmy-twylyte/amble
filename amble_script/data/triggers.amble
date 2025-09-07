@@ -30,6 +30,40 @@ trigger "High Ridge: Read Cleaned Plaque 1" only once when use item plaque_1 abi
         do award points 5
     }
 }
+
+trigger "High-Ridge: Billy Wakes Up" only once
+when use item scrawled_note ability read
+{
+    if chance 42% {
+        do show "You feel a deep rumbling coming up through your feet. Suddenly, a voice booms through the trees and the canyon below: \"WARNING: SELF-DESTRUCT SEQUENCE INITIATED! All personnel evacuate immediately! Demolition commences on REL 10!\""
+        do add flag self-destruct-armed
+        do schedule on 10 note "self-destruct fires" {
+            do show "KABOOM! 💥 The entire area shakes violently as a deep rumbling rocks the mountain!"
+        }
+        do schedule on 11 note "lol just Billy" {
+            do show "The rumbling stops. Then, after a minute, the voice again: \"Erm, it turns out that was just Billy waking up. Cancel the evacuation, and have a productive day.\""
+            do remove flag self-destruct-armed
+            do award points 2
+            do add flag survived-fake-explosion
+        }
+    }
+}
+
+trigger "High-Ridge: Gnat Punctuation" only once
+when leave room high-ridge
+{
+    do schedule in 2 note "gnats: first fly-by" {
+        if missing flag read-scrawled-note {
+            do show """A cloud of gnats drifts by, forming the shapes of the words "rEAd tHe HiGh RidGe NotE"."""
+        }
+        if has flag read-scrawled-note {
+            do show """A cloud of gnats drifts by, lazily holding the shape of "..?.."."""
+        }
+    }
+    do schedule in 6 note "gnats: alarmed" {
+        do show """The gnat cloud zips past in the other direction, this time shaped like "!!!"."""
+    }
+}
 # ..................................................................................................................TWO-SHEDS
 
 trigger "Two-Sheds-Landing: Cut or Chop Tree" only once when act cut on item fallen_tree {
@@ -40,7 +74,8 @@ trigger "Two-Sheds-Landing: Cut or Chop Tree" only once when act cut on item fal
     do award points 5
 }
 
-trigger "Two-Sheds-Landing: Arson-Aid Used on Tree" only once when use item flamethrower on item fallen_tree interaction burn {
+trigger "Two-Sheds-Landing: Arson-Aid Used on Tree" only once
+when use item flamethrower on item fallen_tree interaction burn {
     do show "You aim the Arson-Aid and begin to squeeze the trigger when the device erupts into a fireball! Panicking, you throw the whole Arson-Aid into the tree."
 }
 
@@ -133,6 +168,94 @@ trigger "Gonk Droid: Happy When Family Photo Inspected" only once when look at i
     do show "The gonk droid totters with pride as you view its family photo."
     do award points 2
     do add flag made-gonk-proud
+}
+
+trigger "Main-Lobby: Security Reminder" only once
+when enter room main-lobby
+{
+    do schedule in 3 if player in room main-lobby onFalse cancel
+    note "lobby loitering reminder" {
+        do show """A chime echoes through the lobby. "Candidates: Please do not loiter in the lobby," intones an overhead voice."""
+        do award points -1
+    }
+}
+
+# START VENDING MACHINE PUZZLE TRIGGERS
+# note: rather than just updating item description when it goes into the crevice, we use a separate
+# HAL module Item (hal_module_2_crevice) which requires the "pluck" ability to handle. We don't want it
+# to still require that ability once the player has retrieved it... so the "crevice"/"pluck" version
+# is despawned when the player gets it from the crevice and it's replaced with the original (hal_module_2),
+# which doesn't require "pluck" for handling. The plain hal_module_2 must have its description updated
+# so it doesn't still say it's in the vending machine after retrieval.
+
+trigger "Main-Lobby: Spot HAL Module #2 / Start Puzzle" only once
+when look at item vending_machine
+{
+    if flag in progress hal-reboot {
+        do add flag found-module-2
+        do add seq flag module-2-puzzle limit 2
+        # module-2-puzzle#0 -- module 2 found, still trapped in vending machine
+        # module-2-puzzle#1 -- machine pried open, module in crevice
+        # module-2-puzzle#2 -- module retrieved from crevice
+    }
+}
+
+trigger "Main-Lobby: Pry Vending Machine Open with Crowbar" only once
+when use item crowbar on item vending_machine interaction open
+{
+    do show "With a mighty heave and several creative applications of leverage that would make Archimedes proud, you pry open the vending machine. There's a satisfying CRACK as the lock mechanism gives way. Unfortunately, your vigorous prying causes the machine to tilt forward slightly, and you watch in horror as the HAL module slides off its shelf and disappears into a narrow crevice between the machine and the floor. The other items tumble onto the floor around you.\n\nThe machine's internal speaker crackles to life one last time: 'Thank you for choosing violence. Have a mediocre day.'"
+    do advance flag module-2-puzzle
+    do replace drop item hal_module_2 with hal_module_2_crevice
+    do replace drop item dehydrated_water with dehydrated_water
+    do replace drop item schrodingers_sandwich with schrodingers_sandwich
+    do replace drop item fortune_cookie_of_doom with fortune_cookie_of_doom
+    do add flag vending-machine-pried
+    do add flag hal-module-in-crevice
+    do set item description vending_machine "A battered and broken vending machine -- even more so since you took a crowbar to it. Miraculously, the glass still remains intact on the front panel which has been pried open and hangs on a slant. Empty now, the machine's contents have all spilled out on the floor."
+    do award points 5
+}
+
+trigger "Main-Lobby: Fish HAL Module Out of Crevice" only once
+when use item fishing_line on item hal_module_2_crevice interaction handle
+{
+    if has flag module-2-puzzle#1 {
+        do show "You carefully lower your makeshift fishing line into the crevice where the HAL module fell. After several attempts and some creative swearing, you manage to hook the module with the paper clip. You slowly, carefully pull it up, holding your breath the entire time. Success! The module is yours, though it's now covered in dust and what might be ancient gum."
+        do despawn item hal_module_2_crevice
+        do set item description hal_module_2 "Second in the trio of HAL's missing memory modules. Its red LED pulses gently, like a heartbeat—or a warning. Its case was cracked during retrieval from the vending machine and floor crevice, but it still seems serviceable."
+        do spawn item hal_module_2 in inventory
+        do award points 10
+        do add flag hal-module-2-retrieved
+        do advance flag module-2-puzzle
+    }
+}
+
+trigger "Main-Lobby: Can't Reach HAL Module in Crevice"
+when take item hal_module_2_crevice
+{
+    if has flag module-2-puzzle#1 {
+        do show "The HAL module has fallen deep into a narrow crevice between the vending machine and the floor. You try to reach it with your hand, but the gap is too narrow. Your fingers can just barely brush against the module, pushing it slightly further away. You're going to need some kind of fishing tool to retrieve it."
+    }
+}
+
+trigger "Main-Lobby: HAL Module/Drop Tweezers In Crevice" only once
+when use item zircon_tweezers on item hal_module_2_crevice interaction handle
+{
+    if has flag module-2-puzzle#1 {
+        do show "The glint of the zircon-encrusted tweezers is truly something to behold, but the tweezers are too short to reach the memory module. In fact, in trying to reach that far into the crack with them, the tweezers slip from your fingers and fall into the crevice too."
+        do replace drop item zircon_tweezers with zircon_tweezers_crevice
+        do add flag lost-Tweezers
+        do award points -2
+    }
+}
+
+trigger "Main-Lobby: Recover Tweezers"
+when use item fishing_line on item zircon_tweezers_crevice interaction handle
+{
+    do show "After a dozen tries and venting by beating the vending machine with the crowbar some more, you are able to fish your prized zircon-encrusted tweezers back out of the crevice."
+    do despawn item zircon_tweezers_crevice
+    do spawn item zircon_tweezers in inventory
+    do add flag recovered-tweezers
+    do award points 3
 }
 
 # ..................................................................................................................PATIO
@@ -245,6 +368,27 @@ trigger "Lounge: Rug Burned Away" only once when act burn on item lebowski_rug {
     do show "When the acrid smoke clears and your eyes stop burning, you can make out a trap door revealed in the floor where the rug used to be."
 }
 
+trigger "Lounge: Brew Coffee" only once
+when use item coffee_machine ability turnOn
+{
+    do show "The coffee machine hums to life and begins its brewing cycle. A timer shows 3 minutes remaining..."
+    do set item description coffee_machine "A single serve drip coffee machine, which apparently takes quite a while to finish brewing a cup one drip at a time..."
+    do schedule in 3 note "coffee done brewing" {
+        do set item description coffee_machine "A single serve, drip coffee maker. The brew cycle is complete and the grounds have already been used."
+        do show "♪ BEEP BEEP BEEP! ♪ The coffee machine chimes cheerfully. The rich aroma of freshly brewed coffee fills the air."
+        do spawn item hot_coffee into room lounge
+        do add flag coffee-brewed
+        do award points 2
+    }
+}
+
+trigger "Lounge: Coffee Taken"
+when take item hot_coffee
+{
+    do remove flag coffee-brewed
+}
+
+
 # ..................................................................................................................LIFT-BANK-MAIN
 
 trigger "Lift-Bank-Main: Keycard Activates Elevator" when enter room lift-bank-main {
@@ -255,12 +399,18 @@ trigger "Lift-Bank-Main: Keycard Activates Elevator" when enter room lift-bank-m
 
 trigger "Lift-Bank-Main: Point Award On First Activation" only once when enter room lift-bank-main {
     if has item elevator_keycard {
+        do add flag elevator-activated
         do show "The main lift lights up, and Muzak plays over a tinny speaker inside. In horror, you realize: It's Porcupine Tree's 'The Sound of Muzak' -- the Muzak version."
         do award points 3
     }
 }
 
 # ..................................................................................................................PORTAL-ROOM
+
+trigger "Portal-Room: Gun Opened" only once when open item portal_gun {
+        do add flag portal-gun-opened
+}
+
 
 trigger "Portal-Room: Gun Powered" when insert item charged_battery into item portal_gun {
     do add flag portal-gun-powered
@@ -356,6 +506,9 @@ trigger "Aperture-Lab: Drop Invitation Without Insulation" when take item invita
 }
 
 # ..................................................................................................................SUBLEVEL-1-ENTRANCE
+trigger "Sublevel-1-Entrance: Refuse Visitor Pass" when give item visitor_pass to npc black_knight {
+    do npc refuse item black_knight "Ha! You may be Arthur, King of the Britons... but I said NONE shall pass. Surely you speak the King's English!"
+}
 
 trigger "Sublevel-1-Entrance: Meet the Black Knight" only once when talk to npc black_knight {
     do add flag talked-to-knight
@@ -386,13 +539,23 @@ trigger "Sublevel-1-Entrance: Black Knight Kicks Player After Sword Taken" when 
     }
 }
 
-trigger "Sublevel-1-Entrance: Sharpened Sword Returned" only once when give item keen_longsword to npc black_knight {
+trigger "Sublevel-1-Entrance: Sharpened Sword Returned" only once
+when give item keen_longsword to npc black_knight
+{
     do restrict item keen_longsword
     do add flag appeased-black-knight
     do set barred message from sublevel-1-entrance to room-aa-3b "As you near the door, you are overwhelmed by a sense of spinning through an unending series of fictional realities, compelling you to step away."
     do award points 5
     do set npc state black_knight happy
     do npc says black_knight "hank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like."
+}
+
+trigger "Sublevel-1-Entrance: Black Knight Hints About Vending Machine" only once
+when always
+{
+    if all(with npc black_knight, flag in progress hal-reboot) {
+        do npc says black_knight "Lo, good Sir! I grow weary, and require a chalice of electrolytes and caffeine, but cannot leave my post. Nor do I want to dull my new sword doing battle with that infernal contraption in the lobby again. If you pass by there, retrieve one for me and I shall be further in your debt."
+    }
 }
 
 # ..................................................................................................................SECURITY_STATION
@@ -538,6 +701,31 @@ when always {
     }
 }
 
+trigger "Monolith-Room: Announce Monolith Access After HAL Rebooted" only once
+when always
+{
+    if all(flag complete hal-reboot, with npc hal_9000) {
+        do show "HAL-9000's lens turns to focus on the monolith dominating the room."
+        do npc says hal_9000 "Access granted, Candidate #2112-42. The monolith awaits your touch."
+    }
+}
+
+trigger "Monolith-Room: Monolith Touch Prevented (HAL not ready)"
+when use item monolith ability turnOn
+{
+    if any(has flag hal-reboot#0, has flag hal-reboot#1) {
+        do show "As you approach the monolith, HAL-9000's dim red lens flickers briefly but he cannot respond coherently. Something prevents you from touching the ancient artifact - as if an invisible barrier surrounds it."
+    }
+    if has flag hal-reboot#2 {
+        do show "As you approach the monolith, HAL-9000's lens swivels toward you."
+        do npc says hal_9000 "I'm sorry, Candidate. I cannot allow access to the monolith until my systems are fully operational. Please insert one more memory module."
+    }
+    if flag complete hal-reboot {
+        do add flag touched-monolith
+        do award points 15
+        do show "You reach out and place your palm against the monolith's impossibly smooth surface. For a moment, nothing happens. Then reality seems to shiver around you. Images flash through your mind - star-filled voids, impossible geometries, the birth and death of civilizations. You stagger backward, forever changed by the contact. The path to understanding has opened."
+    }
+}
 
 # ------------------------------------------------------------------------------------------------------------------HINT TRIGGERS
 
@@ -546,6 +734,15 @@ trigger "Aperture-Lab: Invitation Hint" only once when always {
         do schedule in 10 if all(has flag got-invitation, missing flag got-visitor-pass, has visited room b-a-office) onFalse cancel note "invitation hint" {
             do show "The invitation has cooled down enough now for you to give it to the receptionist in the Amble Adventures office ... maybe she'll help you now."
         }
+    }
+}
+
+trigger "Towel / Plaque Hint" only once when take item towel {
+    do add flag got-towel
+    do award points 3
+    do show "NOW you're a frood who really \"knows where his towel is\"!"
+    do schedule in 10 if all(has item towel, missing flag read-plaque-1) note "hint: towel can clean" {
+        do show "Towels can be awfully handy for cleaning grimy things. Just sayin'."
     }
 }
 
@@ -600,3 +797,66 @@ trigger "Status: Nauseated" when always {
         do spinner message nauseated
     }
 }
+
+# ------------------------------------------------------------------------------------------------------------------GLOBAL (NO SPECIFIC LOCATION)
+
+trigger "Global: Arson-Aid Used" only once
+when use item flamethrower ability ignite {
+    do show "The Initech Arson-Aid melts down into an amorphous, hissing blob. As expected."
+}
+
+trigger "Global: Open Delivery Box" only once
+when open item delivery_box {
+    do despawn item delivery_box
+    do spawn item destroyed_box in current room
+    do spawn item towel in current room
+    do show "The box sighs and collapses in a heap as soon as you touch it, relieved that its mission is over. Inside, you find a nanotruss-reinforced tachyon-powered towel with an attached note:\n\n                Always be a frood who knows where his towel is.\n                                -- F.P."
+}
+
+trigger "Global: Take Vogon Poetry"
+when take item vogon_poetry_book
+{
+    do show "A greasy feeling of nausea overcomes you."
+}
+
+trigger "Global: Drop Vogon Poetry"
+when drop item vogon_poetry_book
+{
+    if any(missing flag read-vogon-poetry, has flag cured-vogon-poetry) {
+        do show "That greasy, queasy feeling subsides."
+    }
+    if all(has flag read-vogon-poetry, missing flag cured-vogon-poetry) {
+        do show "Getting rid of the book helps a little, but the poem is burned into your mind and the nausea continues."
+    }
+}
+
+trigger "Global: Cannot Drop No Cake"
+when drop item no_cake
+{
+    do despawn item no_cake
+    do spawn item no_cake in inventory
+    do show "Try as you might, you cannot rid yourself of the feeling of a missing, promised dessert. The cake was a lie."
+}
+
+# ATTACH TRIGGER PAIR  vvvvvv
+
+trigger "Global: Fishing Line (attach clip to floss)"
+when use item paper_clip on item dental_floss interaction attach
+{
+    do despawn item paper_clip
+    do despawn item dental_floss
+    do spawn item fishing_line in inventory
+    do show "You MacGyvered the floss and paper clip into a fishing line!"
+    do award points 3
+}
+trigger "Global: Fishing Line (attach floss to clip)"
+when use item dental_floss on item paper_clip interaction attach
+{
+    do despawn item paper_clip
+    do despawn item dental_floss
+    do spawn item fishing_line in inventory
+    do show "You MacGyvered the floss and paper clip into a fishing line!"
+    do award points 3
+}
+
+# ATTACH TRIGGER PAIR ^^^^^^
