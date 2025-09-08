@@ -1,7 +1,7 @@
 use pest::Parser;
 use pest_derive::Parser as PestParser;
 
-use crate::{ActionAst, ConditionAst, OnFalseAst, TriggerAst};
+use crate::{ActionAst, ConditionAst, OnFalseAst, RoomAst, TriggerAst};
 use std::collections::HashMap;
 
 #[derive(PestParser)]
@@ -25,13 +25,20 @@ pub fn parse_trigger(source: &str) -> Result<TriggerAst, AstError> {
     v.into_iter().next().ok_or(AstError::Shape("no trigger found"))
 }
 
-/// Parse multiple triggers from a full source file.
+/// Parse multiple triggers from a full source file (triggers only view).
 pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
+    let (trigs, _rooms) = parse_program_full(source)?;
+    Ok(trigs)
+}
+
+/// Parse a full program returning both triggers and rooms.
+pub fn parse_program_full(source: &str) -> Result<(Vec<TriggerAst>, Vec<RoomAst>), AstError> {
     let mut pairs = DslParser::parse(Rule::program, source).map_err(|e| AstError::Pest(e.to_string()))?;
     let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
     let smap = SourceMap::new(source);
     let mut sets: HashMap<String, Vec<String>> = HashMap::new();
     let mut trigger_pairs = Vec::new();
+    let mut room_pairs = Vec::new();
     for item in pair.clone().into_inner() {
         match item.as_rule() {
             Rule::set_decl => {
@@ -49,6 +56,9 @@ pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
             Rule::trigger => {
                 trigger_pairs.push(item);
             },
+            Rule::room_def => {
+                room_pairs.push(item);
+            },
             _ => {},
         }
     }
@@ -57,7 +67,12 @@ pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
         let mut ts = parse_trigger_pair(trig, source, &smap, &sets)?;
         out.append(&mut ts);
     }
-    Ok(out)
+    let mut rooms = Vec::new();
+    for rp in room_pairs {
+        let r = parse_room_pair(rp, source)?;
+        rooms.push(r);
+    }
+    Ok((out, rooms))
 }
 
 fn parse_trigger_pair(
@@ -66,6 +81,7 @@ fn parse_trigger_pair(
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
 ) -> Result<Vec<TriggerAst>, AstError> {
+    let src_line = trig.as_span().start_pos().line_col().0;
     let mut it = trig.into_inner();
 
     // trigger -> "trigger" ~ string ~ (only once|note)* ~ "when" ~ when_cond ~ block
@@ -298,6 +314,7 @@ fn parse_trigger_pair(
             lowered.push(TriggerAst {
                 name: name.clone(),
                 note: None,
+                src_line,
                 event: event.clone(),
                 conditions: vec![cond],
                 actions,
@@ -351,6 +368,7 @@ fn parse_trigger_pair(
         lowered.push(TriggerAst {
             name,
             note: trig_note.clone(),
+            src_line,
             event,
             conditions: Vec::new(),
             actions: unconditional_actions,
@@ -364,6 +382,228 @@ fn parse_trigger_pair(
         }
     }
     Ok(lowered)
+}
+
+fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<RoomAst, AstError> {
+    // room_def = "room" ~ ident ~ room_block
+    let (src_line, _src_col) = room.as_span().start_pos().line_col();
+    let mut it = room.into_inner();
+    // capture source line from the outer pair's span; .line_col() is 1-based
+    // Note: this is the start of the room keyword; good enough for a reference
+    let src_line = src_line;
+    let id = it
+        .next()
+        .ok_or(AstError::Shape("expected room ident"))?
+        .as_str()
+        .to_string();
+    let block = it.next().ok_or(AstError::Shape("expected room block"))?;
+    if block.as_rule() != Rule::room_block {
+        return Err(AstError::Shape("expected room block"));
+    }
+    let mut name: Option<String> = None;
+    let mut desc: Option<String> = None;
+    let mut visited: Option<bool> = None;
+    let mut exits: Vec<(String, crate::ExitAst)> = Vec::new();
+    let mut overlays: Vec<crate::OverlayAst> = Vec::new();
+    for stmt in block.into_inner() {
+        // room_block yields Rule::room_stmt nodes; unwrap to the concrete inner rule
+        let inner_stmt = {
+            let mut it = stmt.clone().into_inner();
+            if let Some(p) = it.next() { p } else { stmt.clone() }
+        };
+        match inner_stmt.as_rule() {
+            Rule::room_name => {
+                let s = inner_stmt
+                    .into_inner()
+                    .next()
+                    .ok_or(AstError::Shape("missing room name string"))?;
+                name = Some(unquote(s.as_str()));
+            },
+            Rule::room_desc => {
+                let s = inner_stmt
+                    .into_inner()
+                    .next()
+                    .ok_or(AstError::Shape("missing room desc string"))?;
+                desc = Some(unquote(s.as_str()));
+            },
+            Rule::room_visited => {
+                let tok = inner_stmt
+                    .into_inner()
+                    .next()
+                    .ok_or(AstError::Shape("missing visited token"))?;
+                let val = match tok.as_str() {
+                    "true" => true,
+                    "false" => false,
+                    _ => return Err(AstError::Shape("visited must be true or false")),
+                };
+                visited = Some(val);
+            },
+            Rule::exit_stmt => {
+                let mut it = inner_stmt.into_inner();
+                let dir = it.next().ok_or(AstError::Shape("exit direction"))?.as_str().to_string();
+                let to = it.next().ok_or(AstError::Shape("exit destination"))?.as_str().to_string();
+                // Defaults
+                let mut hidden = false;
+                let mut locked = false;
+                let mut barred_message: Option<String> = None;
+                let mut required_items: Vec<String> = Vec::new();
+                let mut required_flags: Vec<String> = Vec::new();
+                if let Some(next) = it.next() {
+                    if next.as_rule() == Rule::exit_opts {
+                        for opt in next.into_inner() {
+                            // Simplest detection by textual head, then use children for values
+                            let opt_text = opt.as_str().trim();
+                            if opt_text == "hidden" { hidden = true; continue; }
+                            if opt_text == "locked" { locked = true; continue; }
+
+                            // pull children
+                            let children: Vec<_> = opt.clone().into_inner().collect();
+                            // barred <string>
+                            if let Some(s) = children.iter().find(|p| p.as_rule() == Rule::string) {
+                                barred_message = Some(unquote(s.as_str()));
+                                continue;
+                            }
+                            // required_items(...): list of idents only
+                            if children.iter().all(|p| p.as_rule() == Rule::ident) && opt_text.starts_with("required_items") {
+                                for idp in children {
+                                    required_items.push(idp.as_str().to_string());
+                                }
+                                continue;
+                            }
+                            // required_flags(...): list of idents or flag_req; we normalize to base name
+                            if opt_text.starts_with("required_flags") {
+                                for frp in opt.into_inner() {
+                                    match frp.as_rule() {
+                                        Rule::ident => {
+                                            required_flags.push(frp.as_str().to_string());
+                                        },
+                                        Rule::flag_req => {
+                                            // Extract ident child and keep only base name (ignore step/end since equality is by name)
+                                            let mut itf = frp.into_inner();
+                                            let ident = itf.next().ok_or(AstError::Shape("flag ident"))?.as_str().to_string();
+                                            let base = ident.split('#').next().unwrap_or(&ident).to_string();
+                                            required_flags.push(base);
+                                        },
+                                        _ => {},
+                                    }
+                                }
+                                continue;
+                            }
+                        }
+                    }
+                }
+                exits.push((dir, crate::ExitAst { to, hidden, locked, barred_message, required_flags, required_items }));
+            },
+            Rule::overlay_stmt => {
+                // overlay if <cond_list> { text "..." }
+                let mut it = inner_stmt.into_inner();
+                // First group: overlay_cond_list
+                let conds_pair = it.next().ok_or(AstError::Shape("overlay cond list"))?;
+                let mut conds = Vec::new();
+                for cp in conds_pair.into_inner() {
+                    if cp.as_rule() != Rule::overlay_cond { continue; }
+                    let text = cp.as_str().trim();
+                    let mut kids = cp.clone().into_inner();
+                    if let Some(stripped) = text.strip_prefix("flag set ") {
+                        let name = kids.next().ok_or(AstError::Shape("flag name"))?.as_str().to_string();
+                        debug_assert_eq!(stripped, name);
+                        conds.push(crate::OverlayCondAst::FlagSet(name));
+                        continue;
+                    }
+                    if let Some(stripped) = text.strip_prefix("flag unset ") {
+                        let name = kids.next().ok_or(AstError::Shape("flag name"))?.as_str().to_string();
+                        debug_assert_eq!(stripped, name);
+                        conds.push(crate::OverlayCondAst::FlagUnset(name));
+                        continue;
+                    }
+                    if let Some(stripped) = text.strip_prefix("flag complete ") {
+                        let name = kids.next().ok_or(AstError::Shape("flag name"))?.as_str().to_string();
+                        debug_assert_eq!(stripped, name);
+                        conds.push(crate::OverlayCondAst::FlagComplete(name));
+                        continue;
+                    }
+                    if let Some(stripped) = text.strip_prefix("item present ") {
+                        let item = kids.next().ok_or(AstError::Shape("item id"))?.as_str().to_string();
+                        debug_assert_eq!(stripped, item);
+                        conds.push(crate::OverlayCondAst::ItemPresent(item));
+                        continue;
+                    }
+                    if let Some(stripped) = text.strip_prefix("item absent ") {
+                        let item = kids.next().ok_or(AstError::Shape("item id"))?.as_str().to_string();
+                        debug_assert_eq!(stripped, item);
+                        conds.push(crate::OverlayCondAst::ItemAbsent(item));
+                        continue;
+                    }
+                    if let Some(_) = text.strip_prefix("player has item ") {
+                        let item = kids.next().ok_or(AstError::Shape("item id"))?.as_str().to_string();
+                        conds.push(crate::OverlayCondAst::PlayerHasItem(item));
+                        continue;
+                    }
+                    if let Some(_) = text.strip_prefix("player missing item ") {
+                        let item = kids.next().ok_or(AstError::Shape("item id"))?.as_str().to_string();
+                        conds.push(crate::OverlayCondAst::PlayerMissingItem(item));
+                        continue;
+                    }
+                    if let Some(_) = text.strip_prefix("npc present ") {
+                        let npc = kids.next().ok_or(AstError::Shape("npc id"))?.as_str().to_string();
+                        conds.push(crate::OverlayCondAst::NpcPresent(npc));
+                        continue;
+                    }
+                    if let Some(_) = text.strip_prefix("npc absent ") {
+                        let npc = kids.next().ok_or(AstError::Shape("npc id"))?.as_str().to_string();
+                        conds.push(crate::OverlayCondAst::NpcAbsent(npc));
+                        continue;
+                    }
+                    if let Some(_) = text.strip_prefix("npc in state ") {
+                        let npc = kids.next().ok_or(AstError::Shape("npc id"))?.as_str().to_string();
+                        let nxt = kids.next().ok_or(AstError::Shape("state token"))?;
+                        let oc = match nxt.as_rule() {
+                            Rule::ident => {
+                                crate::OverlayCondAst::NpcInState { npc, state: crate::NpcStateValue::Named(nxt.as_str().to_string()) }
+                            },
+                            Rule::string => {
+                                crate::OverlayCondAst::NpcInState { npc, state: crate::NpcStateValue::Custom(unquote(nxt.as_str())) }
+                            },
+                            _ => {
+                                let mut sub = nxt.into_inner();
+                                let sval = sub.next().ok_or(AstError::Shape("custom string"))?;
+                                crate::OverlayCondAst::NpcInState { npc, state: crate::NpcStateValue::Custom(unquote(sval.as_str())) }
+                            },
+                        };
+                        conds.push(oc);
+                        continue;
+                    }
+                    if let Some(_) = text.strip_prefix("item in room ") {
+                        let item = kids.next().ok_or(AstError::Shape("item id"))?.as_str().to_string();
+                        let room = kids.next().ok_or(AstError::Shape("room id"))?.as_str().to_string();
+                        conds.push(crate::OverlayCondAst::ItemInRoom { item, room });
+                        continue;
+                    }
+                    // Unknown overlay condition; ignore silently per current behavior
+                }
+                // Then block with text
+                let block = it.next().ok_or(AstError::Shape("overlay block"))?;
+                let mut txt = String::new();
+                for p in block.into_inner() {
+                    if p.as_rule() == Rule::string {
+                        txt = unquote(p.as_str());
+                        break;
+                    }
+                }
+                overlays.push(crate::OverlayAst { conditions: conds, text: txt });
+            },
+            _ => {},
+        }
+    }
+    let name = name.ok_or(AstError::Shape("room missing name"))?;
+    let desc = desc.ok_or(AstError::Shape("room missing desc"))?;
+    Ok(RoomAst { id, name, desc, visited: visited.unwrap_or(false), exits, overlays, src_line })
+}
+
+/// Parse only rooms from a source (helper/testing).
+pub fn parse_rooms(source: &str) -> Result<Vec<RoomAst>, AstError> {
+    let (_, rooms) = parse_program_full(source)?;
+    Ok(rooms)
 }
 
 fn unquote(s: &str) -> String {

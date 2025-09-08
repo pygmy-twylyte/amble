@@ -472,11 +472,13 @@ trigger "Aperture-Lab: FoamSafe Misfire" only once when use item foamsafe_x17 on
     do schedule in 3 note "foam fire spreads" {
         do show "The fire alarm begins to wail as the flames spread through the lab and the sprinklers turn on, pushing you back toward the portal to escape!"
         do advance flag foam-fire-in-lab
+        do add flag lab-fire-raging
         do push player to portal-room
     }
     do schedule in 8 note "foam fire out" {
         do show "The alarms stop. The fire in the Aperture lab has been extinguised. Hopefully nobody saw you light it, you monster."
         do advance flag foam-fire-in-lab
+        do remove flag lab-fire-raging
         do award points 5
     }
 }
