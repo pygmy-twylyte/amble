@@ -243,7 +243,7 @@ cond_list = { cond ~ ("," ~ cond)* }
 
 room_def     = { "room" ~ ident ~ room_block }
 room_block   = { "{" ~ room_stmt* ~ "}" }
-room_stmt    = { room_name | room_desc | room_visited | exit_stmt | overlay_stmt }
+room_stmt    = { room_name | room_desc | room_visited | exit_stmt | overlay_stmt | overlay_flag_pair_stmt | overlay_item_pair_stmt | overlay_npc_pair_stmt }
 room_name    = { "name" ~ string }
 room_desc    = { ("desc" | "description") ~ string }
 room_visited = { "visited" ~ boolean }
@@ -278,3 +278,9 @@ overlay_cond      = {
   | ("npc" ~ "in" ~ "state" ~ ident ~ (ident | ("custom" ~ string)))
   | ("item" ~ "in" ~ "room" ~ ident ~ ident)
 }
+
+overlay_flag_pair_stmt   = { "overlay" ~ "if" ~ "flag" ~ ident ~ overlay_flag_pair_block }
+overlay_flag_pair_block  = { "{" ~ "set" ~ string ~ "unset" ~ string ~ "}" }
+overlay_item_pair_stmt   = { "overlay" ~ "if" ~ "item" ~ ident ~ overlay_presence_pair_block }
+overlay_npc_pair_stmt    = { "overlay" ~ "if" ~ "npc" ~ ident ~ overlay_presence_pair_block }
+overlay_presence_pair_block = { "{" ~ "present" ~ string ~ "absent" ~ string ~ "}" }

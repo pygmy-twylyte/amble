@@ -441,7 +441,11 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
             Rule::exit_stmt => {
                 let mut it = inner_stmt.into_inner();
                 let dir = it.next().ok_or(AstError::Shape("exit direction"))?.as_str().to_string();
-                let to = it.next().ok_or(AstError::Shape("exit destination"))?.as_str().to_string();
+                let to = it
+                    .next()
+                    .ok_or(AstError::Shape("exit destination"))?
+                    .as_str()
+                    .to_string();
                 // Defaults
                 let mut hidden = false;
                 let mut locked = false;
@@ -453,8 +457,14 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
                         for opt in next.into_inner() {
                             // Simplest detection by textual head, then use children for values
                             let opt_text = opt.as_str().trim();
-                            if opt_text == "hidden" { hidden = true; continue; }
-                            if opt_text == "locked" { locked = true; continue; }
+                            if opt_text == "hidden" {
+                                hidden = true;
+                                continue;
+                            }
+                            if opt_text == "locked" {
+                                locked = true;
+                                continue;
+                            }
 
                             // pull children
                             let children: Vec<_> = opt.clone().into_inner().collect();
@@ -464,7 +474,9 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
                                 continue;
                             }
                             // required_items(...): list of idents only
-                            if children.iter().all(|p| p.as_rule() == Rule::ident) && opt_text.starts_with("required_items") {
+                            if children.iter().all(|p| p.as_rule() == Rule::ident)
+                                && opt_text.starts_with("required_items")
+                            {
                                 for idp in children {
                                     required_items.push(idp.as_str().to_string());
                                 }
@@ -480,7 +492,8 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
                                         Rule::flag_req => {
                                             // Extract ident child and keep only base name (ignore step/end since equality is by name)
                                             let mut itf = frp.into_inner();
-                                            let ident = itf.next().ok_or(AstError::Shape("flag ident"))?.as_str().to_string();
+                                            let ident =
+                                                itf.next().ok_or(AstError::Shape("flag ident"))?.as_str().to_string();
                                             let base = ident.split('#').next().unwrap_or(&ident).to_string();
                                             required_flags.push(base);
                                         },
@@ -492,7 +505,17 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
                         }
                     }
                 }
-                exits.push((dir, crate::ExitAst { to, hidden, locked, barred_message, required_flags, required_items }));
+                exits.push((
+                    dir,
+                    crate::ExitAst {
+                        to,
+                        hidden,
+                        locked,
+                        barred_message,
+                        required_flags,
+                        required_items,
+                    },
+                ));
             },
             Rule::overlay_stmt => {
                 // overlay if <cond_list> { text "..." }
@@ -501,7 +524,9 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
                 let conds_pair = it.next().ok_or(AstError::Shape("overlay cond list"))?;
                 let mut conds = Vec::new();
                 for cp in conds_pair.into_inner() {
-                    if cp.as_rule() != Rule::overlay_cond { continue; }
+                    if cp.as_rule() != Rule::overlay_cond {
+                        continue;
+                    }
                     let text = cp.as_str().trim();
                     let mut kids = cp.clone().into_inner();
                     if let Some(stripped) = text.strip_prefix("flag set ") {
@@ -558,16 +583,21 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
                         let npc = kids.next().ok_or(AstError::Shape("npc id"))?.as_str().to_string();
                         let nxt = kids.next().ok_or(AstError::Shape("state token"))?;
                         let oc = match nxt.as_rule() {
-                            Rule::ident => {
-                                crate::OverlayCondAst::NpcInState { npc, state: crate::NpcStateValue::Named(nxt.as_str().to_string()) }
+                            Rule::ident => crate::OverlayCondAst::NpcInState {
+                                npc,
+                                state: crate::NpcStateValue::Named(nxt.as_str().to_string()),
                             },
-                            Rule::string => {
-                                crate::OverlayCondAst::NpcInState { npc, state: crate::NpcStateValue::Custom(unquote(nxt.as_str())) }
+                            Rule::string => crate::OverlayCondAst::NpcInState {
+                                npc,
+                                state: crate::NpcStateValue::Custom(unquote(nxt.as_str())),
                             },
                             _ => {
                                 let mut sub = nxt.into_inner();
                                 let sval = sub.next().ok_or(AstError::Shape("custom string"))?;
-                                crate::OverlayCondAst::NpcInState { npc, state: crate::NpcStateValue::Custom(unquote(sval.as_str())) }
+                                crate::OverlayCondAst::NpcInState {
+                                    npc,
+                                    state: crate::NpcStateValue::Custom(unquote(sval.as_str())),
+                                }
                             },
                         };
                         conds.push(oc);
@@ -590,14 +620,76 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
                         break;
                     }
                 }
-                overlays.push(crate::OverlayAst { conditions: conds, text: txt });
+                overlays.push(crate::OverlayAst {
+                    conditions: conds,
+                    text: txt,
+                });
+            },
+            Rule::overlay_flag_pair_stmt => {
+                // overlay if flag <id> { set "..." unset "..." }
+                let mut it = inner_stmt.into_inner();
+                let flag = it.next().ok_or(AstError::Shape("flag name"))?.as_str().to_string();
+                let block = it.next().ok_or(AstError::Shape("flag pair block"))?;
+                let mut bi = block.into_inner();
+                let set_txt = unquote(bi.next().ok_or(AstError::Shape("set text"))?.as_str());
+                let unset_txt = unquote(bi.next().ok_or(AstError::Shape("unset text"))?.as_str());
+                overlays.push(crate::OverlayAst {
+                    conditions: vec![crate::OverlayCondAst::FlagSet(flag.clone())],
+                    text: set_txt,
+                });
+                overlays.push(crate::OverlayAst {
+                    conditions: vec![crate::OverlayCondAst::FlagUnset(flag)],
+                    text: unset_txt,
+                });
+            },
+            Rule::overlay_item_pair_stmt => {
+                // overlay if item <id> { present "..." absent "..." }
+                let mut it = inner_stmt.into_inner();
+                let item = it.next().ok_or(AstError::Shape("item id"))?.as_str().to_string();
+                let block = it.next().ok_or(AstError::Shape("item pair block"))?;
+                let mut bi = block.into_inner();
+                let present_txt = unquote(bi.next().ok_or(AstError::Shape("present text"))?.as_str());
+                let absent_txt = unquote(bi.next().ok_or(AstError::Shape("absent text"))?.as_str());
+                overlays.push(crate::OverlayAst {
+                    conditions: vec![crate::OverlayCondAst::ItemPresent(item.clone())],
+                    text: present_txt,
+                });
+                overlays.push(crate::OverlayAst {
+                    conditions: vec![crate::OverlayCondAst::ItemAbsent(item)],
+                    text: absent_txt,
+                });
+            },
+            Rule::overlay_npc_pair_stmt => {
+                // overlay if npc <id> { present "..." absent "..." }
+                let mut it = inner_stmt.into_inner();
+                let npc = it.next().ok_or(AstError::Shape("npc id"))?.as_str().to_string();
+                let block = it.next().ok_or(AstError::Shape("npc pair block"))?;
+                let mut bi = block.into_inner();
+                let present_txt = unquote(bi.next().ok_or(AstError::Shape("present text"))?.as_str());
+                let absent_txt = unquote(bi.next().ok_or(AstError::Shape("absent text"))?.as_str());
+                overlays.push(crate::OverlayAst {
+                    conditions: vec![crate::OverlayCondAst::NpcPresent(npc.clone())],
+                    text: present_txt,
+                });
+                overlays.push(crate::OverlayAst {
+                    conditions: vec![crate::OverlayCondAst::NpcAbsent(npc)],
+                    text: absent_txt,
+                });
             },
             _ => {},
         }
     }
     let name = name.ok_or(AstError::Shape("room missing name"))?;
     let desc = desc.ok_or(AstError::Shape("room missing desc"))?;
-    Ok(RoomAst { id, name, desc, visited: visited.unwrap_or(false), exits, overlays, src_line })
+    Ok(RoomAst {
+        id,
+        name,
+        desc,
+        visited: visited.unwrap_or(false),
+        exits,
+        overlays,
+        src_line,
+    })
 }
 
 /// Parse only rooms from a source (helper/testing).
@@ -799,17 +891,24 @@ fn extract_body(src: &str) -> Result<&str, AstError> {
             },
             '#' => {
                 // Treat '#' as a comment only if it begins the line (ignoring leading spaces)
-                if at_line_start { in_comment = true; }
+                if at_line_start {
+                    in_comment = true;
+                }
                 at_line_start = false;
             },
             '{' => {
-                if depth == 0 { start = Some(i + 1); }
+                if depth == 0 {
+                    start = Some(i + 1);
+                }
                 depth += 1;
                 at_line_start = false;
             },
             '}' => {
                 depth -= 1;
-                if depth == 0 { end = Some(i); break; }
+                if depth == 0 {
+                    end = Some(i);
+                    break;
+                }
                 at_line_start = false;
             },
             _ => {

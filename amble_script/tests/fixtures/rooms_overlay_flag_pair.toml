@@ -1,0 +1,15 @@
+# room test (source line 1)
+[[rooms]]
+id = "test"
+name = "Test"
+base_description = "Desc"
+location = "Nowhere"
+
+[[rooms.overlays]]
+conditions = [{ type = "flagSet", flag = "foo" }]
+text = "Foo Is Set"
+
+[[rooms.overlays]]
+conditions = [{ type = "flagUnset", flag = "foo" }]
+text = "Foo Is Not Set"
+
