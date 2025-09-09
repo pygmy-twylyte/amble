@@ -88,6 +88,20 @@ room front-entrance {
 }
 ```
 
+For paired binary conditions like flags or presence checks, you can group the two outcomes into a single overlay block:
+
+```
+room locker-room {
+  name "Locker Room"
+  desc "..."
+
+  overlay if flag has-key {
+    set "The locker hangs open."
+    unset "The locker door is tightly shut."
+  }
+}
+```
+
 Emits overlay entries:
 
 ```
