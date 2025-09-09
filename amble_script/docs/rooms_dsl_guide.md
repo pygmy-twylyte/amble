@@ -63,6 +63,8 @@ Notes:
 
 ## Overlays
 
+Overlay condition lists can be written directly after `if` or wrapped in parentheses for clarity. The following examples omit parentheses, but `overlay if (flag set got-towel) { ... }` would also be valid.
+
 ```
 room front-entrance {
   name "Front Entrance"

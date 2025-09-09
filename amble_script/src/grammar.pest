@@ -261,9 +261,10 @@ exit_opt  = {
 flag_req = { ("simple" ~ ident) | ("seq" ~ ident ~ ("limit" ~ number)?) }
 
 // Overlays
-overlay_stmt      = { "overlay" ~ "if" ~ overlay_cond_list ~ overlay_block }
+// Allow optional parentheses around the overlay condition list for cleaner syntax
+overlay_stmt      = { "overlay" ~ "if" ~ (overlay_cond_list | "(" ~ overlay_cond_list ~ ")") ~ overlay_block }
 overlay_block     = { "{" ~ "text" ~ string ~ "}" }
-overlay_cond_list = { "(" ~ overlay_cond ~ ("," ~ overlay_cond)* ~ ")" }
+overlay_cond_list = { overlay_cond ~ ("," ~ overlay_cond)* }
 overlay_cond      = {
     ("flag" ~ "set" ~ ident)
   | ("flag" ~ "unset" ~ ident)
