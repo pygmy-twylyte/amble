@@ -48,6 +48,11 @@ room two-sheds-landing {
   overlay if npc in state cmot_dibbler happy {
     text "Dibbler hums a sales jingle..."
   }
+
+  overlay if npc present gonk_droid {
+    normal "The droid stands idle."
+    happy "The droid chirps contentedly."
+  }
 }
 ```
 
@@ -57,6 +62,8 @@ Condition shorthands map directly to loader’s `RawOverlayCondition`:
 - `player has/missing item <item_sym>`
 - `npc present/absent <npc_sym>`
 - `npc in state <npc_sym> <state>` (supports enum strings and custom)
+- `overlay if npc present <npc_sym> { <state> <text>, ... }` expands into multiple overlays,
+  each combining the presence check with the specified state.
 - `item in room <item_sym> <room_sym>`
 
 ## Deliverables by Increment

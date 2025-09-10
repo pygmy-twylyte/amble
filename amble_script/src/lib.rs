@@ -337,7 +337,8 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
         }
         // Per-entry prefix comment pointing to source line
         if src_line > 0 {
-            trig.decor_mut().set_prefix(format!("# trigger {name} (source line {src_line})\n"));
+            trig.decor_mut()
+                .set_prefix(format!("# trigger {name} (source line {src_line})\n"));
         } else {
             trig.decor_mut().set_prefix(format!("# trigger {name}\n"));
         }
@@ -726,12 +727,20 @@ pub fn compile_rooms_to_toml(rooms: &[RoomAst]) -> Result<String, CompileError> 
             for (dir, ex) in &r.exits {
                 let mut et = Table::new();
                 et["to"] = value(ex.to.clone());
-                if ex.hidden { et["hidden"] = value(true); }
-                if ex.locked { et["locked"] = value(true); }
-                if let Some(msg) = &ex.barred_message { et["barred_message"] = value(msg.clone()); }
+                if ex.hidden {
+                    et["hidden"] = value(true);
+                }
+                if ex.locked {
+                    et["locked"] = value(true);
+                }
+                if let Some(msg) = &ex.barred_message {
+                    et["barred_message"] = value(msg.clone());
+                }
                 if !ex.required_items.is_empty() {
                     let mut arr = Array::default();
-                    for it in &ex.required_items { arr.push(it.clone()); }
+                    for it in &ex.required_items {
+                        arr.push(it.clone());
+                    }
                     et["required_items"] = Item::Value(arr.into());
                 }
                 if !ex.required_flags.is_empty() {
@@ -756,20 +765,49 @@ pub fn compile_rooms_to_toml(rooms: &[RoomAst]) -> Result<String, CompileError> 
                 for c in &ov.conditions {
                     let mut itab = InlineTable::new();
                     match c {
-                        OverlayCondAst::FlagSet(flag) => { itab.insert("type", toml_edit::Value::from("flagSet")); itab.insert("flag", toml_edit::Value::from(flag.clone())); },
-                        OverlayCondAst::FlagUnset(flag) => { itab.insert("type", toml_edit::Value::from("flagUnset")); itab.insert("flag", toml_edit::Value::from(flag.clone())); },
-                        OverlayCondAst::FlagComplete(flag) => { itab.insert("type", toml_edit::Value::from("flagComplete")); itab.insert("flag", toml_edit::Value::from(flag.clone())); },
-                        OverlayCondAst::ItemPresent(item) => { itab.insert("type", toml_edit::Value::from("itemPresent")); itab.insert("item_id", toml_edit::Value::from(item.clone())); },
-                        OverlayCondAst::ItemAbsent(item) => { itab.insert("type", toml_edit::Value::from("itemAbsent")); itab.insert("item_id", toml_edit::Value::from(item.clone())); },
-                        OverlayCondAst::PlayerHasItem(item) => { itab.insert("type", toml_edit::Value::from("playerHasItem")); itab.insert("item_id", toml_edit::Value::from(item.clone())); },
-                        OverlayCondAst::PlayerMissingItem(item) => { itab.insert("type", toml_edit::Value::from("playerMissingItem")); itab.insert("item_id", toml_edit::Value::from(item.clone())); },
-                        OverlayCondAst::NpcPresent(npc) => { itab.insert("type", toml_edit::Value::from("npcPresent")); itab.insert("npc_id", toml_edit::Value::from(npc.clone())); },
-                        OverlayCondAst::NpcAbsent(npc) => { itab.insert("type", toml_edit::Value::from("npcAbsent")); itab.insert("npc_id", toml_edit::Value::from(npc.clone())); },
+                        OverlayCondAst::FlagSet(flag) => {
+                            itab.insert("type", toml_edit::Value::from("flagSet"));
+                            itab.insert("flag", toml_edit::Value::from(flag.clone()));
+                        },
+                        OverlayCondAst::FlagUnset(flag) => {
+                            itab.insert("type", toml_edit::Value::from("flagUnset"));
+                            itab.insert("flag", toml_edit::Value::from(flag.clone()));
+                        },
+                        OverlayCondAst::FlagComplete(flag) => {
+                            itab.insert("type", toml_edit::Value::from("flagComplete"));
+                            itab.insert("flag", toml_edit::Value::from(flag.clone()));
+                        },
+                        OverlayCondAst::ItemPresent(item) => {
+                            itab.insert("type", toml_edit::Value::from("itemPresent"));
+                            itab.insert("item_id", toml_edit::Value::from(item.clone()));
+                        },
+                        OverlayCondAst::ItemAbsent(item) => {
+                            itab.insert("type", toml_edit::Value::from("itemAbsent"));
+                            itab.insert("item_id", toml_edit::Value::from(item.clone()));
+                        },
+                        OverlayCondAst::PlayerHasItem(item) => {
+                            itab.insert("type", toml_edit::Value::from("playerHasItem"));
+                            itab.insert("item_id", toml_edit::Value::from(item.clone()));
+                        },
+                        OverlayCondAst::PlayerMissingItem(item) => {
+                            itab.insert("type", toml_edit::Value::from("playerMissingItem"));
+                            itab.insert("item_id", toml_edit::Value::from(item.clone()));
+                        },
+                        OverlayCondAst::NpcPresent(npc) => {
+                            itab.insert("type", toml_edit::Value::from("npcPresent"));
+                            itab.insert("npc_id", toml_edit::Value::from(npc.clone()));
+                        },
+                        OverlayCondAst::NpcAbsent(npc) => {
+                            itab.insert("type", toml_edit::Value::from("npcAbsent"));
+                            itab.insert("npc_id", toml_edit::Value::from(npc.clone()));
+                        },
                         OverlayCondAst::NpcInState { npc, state } => {
                             itab.insert("type", toml_edit::Value::from("npcInState"));
                             itab.insert("npc_id", toml_edit::Value::from(npc.clone()));
                             match state {
-                                NpcStateValue::Named(s) => { itab.insert("state", toml_edit::Value::from(s.clone())); },
+                                NpcStateValue::Named(s) => {
+                                    itab.insert("state", toml_edit::Value::from(s.clone()));
+                                },
                                 NpcStateValue::Custom(s) => {
                                     let mut st = InlineTable::new();
                                     st.insert("custom", toml_edit::Value::from(s.clone()));
@@ -793,7 +831,8 @@ pub fn compile_rooms_to_toml(rooms: &[RoomAst]) -> Result<String, CompileError> 
         }
         // add a prefix comment pointing to source line for this room (filename provided in CLI header)
         if r.src_line > 0 {
-            t.decor_mut().set_prefix(format!("# room {} (source line {})\n", r.id, r.src_line));
+            t.decor_mut()
+                .set_prefix(format!("# room {} (source line {})\n", r.id, r.src_line));
         } else {
             t.decor_mut().set_prefix(format!("# room {}\n", r.id));
         }
@@ -1389,6 +1428,26 @@ room start {
         assert!(toml.contains("type = \"npcInState\""));
         assert!(toml.contains("state = \"happy\""));
         assert!(toml.contains("state = { custom = \"want-emitter\" }"));
+    }
+
+    #[test]
+    fn parse_npc_state_overlay_block() {
+        let src = r#"
+room yard {
+  name "Yard"
+  desc "A yard."
+  overlay if npc present gonk_droid {
+    happy "Gonk is happy."
+    custom "wants-battery" "Gonk wants a battery."
+  }
+}
+"#;
+        let rooms = crate::parse_rooms(src).expect("parse rooms ok");
+        assert_eq!(rooms[0].overlays.len(), 2);
+        let toml = crate::compile_rooms_to_toml(&rooms).expect("compile ok");
+        assert!(toml.contains("type = \"npcPresent\""));
+        assert!(toml.contains("state = \"happy\""));
+        assert!(toml.contains("state = { custom = \"wants-battery\" }"));
     }
     fn parse_minimal_trigger_ast() {
         let src = r#"

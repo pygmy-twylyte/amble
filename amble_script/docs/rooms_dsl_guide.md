@@ -82,6 +82,12 @@ room front-entrance {
     text "The EMH fidgets restlessly, craving a mobile emitter."
   }
 
+  overlay if npc present gonk_droid {
+    happy "Gonk is happy."
+    sad "Gonk is sad."
+    custom "needs-emitter" "Gonk needs an emitter."
+  }
+
   overlay if item in room margarine st-alfonzo-parish {
     text "On the pedestal sits a tub of margarine."
   }
@@ -105,6 +111,27 @@ text = "Dibbler beams and offers a celebratory sausage-inna-bun."
 [[rooms.overlays]]
 conditions = [{ type = "npcInState", npc_id = "emh", state = { custom = "want-emitter" } }]
 text = "The EMH fidgets restlessly, craving a mobile emitter."
+
+[[rooms.overlays]]
+conditions = [
+  { type = "npcPresent", npc_id = "gonk_droid" },
+  { type = "npcInState", npc_id = "gonk_droid", state = "happy" }
+]
+text = "Gonk is happy."
+
+[[rooms.overlays]]
+conditions = [
+  { type = "npcPresent", npc_id = "gonk_droid" },
+  { type = "npcInState", npc_id = "gonk_droid", state = "sad" }
+]
+text = "Gonk is sad."
+
+[[rooms.overlays]]
+conditions = [
+  { type = "npcPresent", npc_id = "gonk_droid" },
+  { type = "npcInState", npc_id = "gonk_droid", state = { custom = "needs-emitter" } }
+]
+text = "Gonk needs an emitter."
 
 [[rooms.overlays]]
 conditions = [{ type = "itemInRoom", item_id = "margarine", room_id = "st-alfonzo-parish" }]
