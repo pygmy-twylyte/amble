@@ -1,0 +1,18 @@
+# room front-entrance (source line 1)
+[[rooms]]
+id = "front-entrance"
+name = "Front Entrance"
+base_description = "..."
+location = "Nowhere"
+
+[[rooms.overlays]]
+conditions = [{ type = "npcPresent", npc_id = "cmot_dibbler" }, { type = "npcInState", npc_id = "cmot_dibbler", state = "happy" }]
+text = "Dibbler beams and offers a celebratory sausage-inna-bun."
+
+[[rooms.overlays]]
+conditions = [{ type = "npcInState", npc_id = "emh", state = { custom = "want-emitter" } }]
+text = "The EMH fidgets restlessly, craving a mobile emitter."
+
+[[rooms.overlays]]
+conditions = [{ type = "itemInRoom", item_id = "margarine", room_id = "st-alfonzo-parish" }]
+text = "On the pedestal sits a tub of margarine."

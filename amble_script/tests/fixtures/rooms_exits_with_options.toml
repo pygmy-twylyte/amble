@@ -1,0 +1,21 @@
+# room two-sheds-landing (source line 1)
+[[rooms]]
+id = "two-sheds-landing"
+name = "Jackson's Landing"
+base_description = "A quiet landing tucked along the slope..."
+location = "Nowhere"
+
+[rooms.exits.up]
+to = "guard-post"
+locked = true
+barred_message = "Need to clear the tree."
+required_items = ["machete", "gasoline"]
+required_flags = [{ type = "simple", name = "cleared-fallen-tree" }, { type = "simple", name = "other-flag" }]
+
+[rooms.exits.down]
+to = "parish-landing"
+
+[rooms.exits.east]
+to = "two-sheds"
+required_items = ["machete"]
+
