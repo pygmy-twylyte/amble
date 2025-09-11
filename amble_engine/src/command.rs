@@ -37,11 +37,6 @@ pub enum Command {
     Read(String),
     Save(String),
     SetViewMode(ViewMode),
-    StartSeq {
-        // DEV_MODE only
-        seq_name: String,
-        end: String,
-    },
     Take(String),
     TakeFrom {
         item: String,
@@ -66,10 +61,18 @@ pub enum Command {
     ResetSeq(String),
     SetFlag(String),
     SpawnItem(String),
+    StartSeq {
+        // DEV_MODE only
+        seq_name: String,
+        end: String,
+    },
     Teleport(String),
     // Scheduler management (DEV_MODE only)
     SchedCancel(usize),
-    SchedDelay { idx: usize, turns: usize },
+    SchedDelay {
+        idx: usize,
+        turns: usize,
+    },
 }
 
 /// Parses an input string and returns a corresponding `Command` if recognized.
