@@ -692,3 +692,4 @@ actions = [{ type = "despawnItem", item_id = "paper_clip" }, { type = "despawnIt
 name = "Global: Fishing Line (attach floss to clip)"
 conditions = [{ type = "useItemOnItem", interaction = "attach", target_id = "paper_clip", tool_id = "dental_floss" }]
 actions = [{ type = "despawnItem", item_id = "paper_clip" }, { type = "despawnItem", item_id = "dental_floss" }, { type = "spawnItemInInventory", item_id = "fishing_line" }, { type = "showMessage", text = "You MacGyvered the floss and paper clip into a fishing line!" }, { type = "awardPoints", amount = 3 }]
+
