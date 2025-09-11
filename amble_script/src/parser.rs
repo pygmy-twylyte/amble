@@ -777,8 +777,8 @@ fn parse_string_at(s: &str) -> Result<(String, usize), AstError> {
             if !escape && s[i..].starts_with("\"\"\"") {
                 return Ok((out, i + 3));
             }
-            let ch = b[i] as char;
-            i += 1;
+            let ch = s[i..].chars().next().unwrap();
+            i += ch.len_utf8();
             if escape {
                 match ch {
                     'n' => out.push('\n'),
@@ -833,9 +833,9 @@ fn parse_string_at(s: &str) -> Result<(String, usize), AstError> {
         let mut out = String::new();
         let mut i = 1usize; // skip opening '
         let mut escape = false;
-        while i < b.len() {
-            let ch = b[i] as char;
-            i += 1;
+        while i < s.len() {
+            let ch = s[i..].chars().next().unwrap();
+            i += ch.len_utf8();
             if escape {
                 match ch {
                     'n' => out.push('\n'),
@@ -869,9 +869,9 @@ fn parse_string_at(s: &str) -> Result<(String, usize), AstError> {
     let mut out = String::new();
     let mut i = 1usize; // skip opening quote
     let mut escape = false;
-    while i < b.len() {
-        let ch = b[i] as char;
-        i += 1;
+    while i < s.len() {
+        let ch = s[i..].chars().next().unwrap();
+        i += ch.len_utf8();
         if escape {
             match ch {
                 'n' => out.push('\n'),
@@ -2029,6 +2029,17 @@ trigger "note escapes" when always {
         let toml = crate::compile_trigger_to_toml(&asts[0]).expect("compile ok");
         assert!(toml.contains("He said"));
         assert!(toml.contains("hi"));
+    }
+
+    #[test]
+    fn string_literals_preserve_utf8_characters() {
+        let s = "\"Pilgrims Welcome – Pancakes\"";
+        let parsed = parse_string(s).expect("parse ok");
+        assert_eq!(parsed, "Pilgrims Welcome – Pancakes");
+
+        let s2 = "\"It’s fine\"";
+        let parsed2 = parse_string(s2).expect("parse ok");
+        assert_eq!(parsed2, "It’s fine");
     }
 
     #[test]
