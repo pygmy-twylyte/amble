@@ -177,7 +177,7 @@ impl Item {
         }
     }
 
-    /// Checks if an item requires a something special for a particular interaction
+    /// For a particular action on this item (e.g. to "Burn" it), what capability (e.g. "Ignite") is needed.
     pub fn requires_capability_for(&self, inter: ItemInteractionType) -> Option<ItemAbility> {
         self.interaction_requires.get(&inter).copied()
     }

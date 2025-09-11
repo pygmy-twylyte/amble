@@ -1,0 +1,19 @@
+# room med-bay (source line 1)
+[[rooms]]
+id = "med-bay"
+name = "Med Bay"
+base_description = "Clinical and spotless."
+location = "Nowhere"
+
+[[rooms.overlays]]
+conditions = [{ type = "npcPresent", npc_id = "emh" }, { type = "npcInState", npc_id = "emh", state = "normal" }]
+text = "The EMH stands with professional detachment, awaiting your symptoms."
+
+[[rooms.overlays]]
+conditions = [{ type = "npcPresent", npc_id = "emh" }, { type = "npcInState", npc_id = "emh", state = "happy" }]
+text = "The EMH smiles and hums a bright tune while adjusting the diagnostic displays."
+
+[[rooms.overlays]]
+conditions = [{ type = "npcPresent", npc_id = "emh" }, { type = "npcInState", npc_id = "emh", state = { custom = "want-emitter" } }]
+text = "The EMH fidgets restlessly, casting longing glances toward the door as if craving a mobile emitter."
+

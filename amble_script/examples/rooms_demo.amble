@@ -1,0 +1,25 @@
+# Mixed demo with a couple of rooms and one trigger
+
+room high-ridge {
+  name "High Isolated Ridge"
+  desc "A small, flat ridge in the midst of a steeply sloped wooded area."
+  exit up -> parish-landing
+}
+
+room parish-landing {
+  name "Parish Landing"
+  desc "A small plateau carved into the hillside."
+  exit down -> high-ridge
+  overlay if flag set cleaned-plaque-1 {
+    text "Sunlight reflects from the freshly cleaned plaque."
+  }
+}
+
+trigger "first visit high-ridge" when enter room high-ridge {
+  if missing flag visited:high-ridge {
+    do show "You take in the view."
+    do add flag visited:high-ridge
+    do award points 1
+  }
+}
+

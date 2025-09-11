@@ -4,6 +4,7 @@
 COMMENT    = _{ "#" ~ (!NEWLINE ~ ANY)* }
 WHITESPACE = _{ " " | "\t" | NEWLINE | COMMENT }
 NEWLINE    = _{ "\n" | "\r\n" }
+boolean    =  { "true" | "false" }
 
 // Reserved keywords that cannot be used as identifiers
 keyword = {
@@ -73,6 +74,12 @@ keyword = {
   | "all"
   | "note"
   | "onFalse"
+  | "overlay"
+  | "text"
+  | "present"
+  | "absent"
+  | "custom"
+  | "here"
   | // container state literals
   "closed"
   | "locked"
@@ -107,7 +114,7 @@ triple_quoted = @{ "\"\"\"" ~ triple_char* ~ "\"\"\"" }
 single_quoted = @{ "'" ~ (escape | (!("\\" | "'") ~ ANY))* ~ "'" }
 string        = @{ triple_quoted | raw_quoted_h5 | raw_quoted_h4 | raw_quoted_h3 | raw_quoted_h2 | raw_quoted_h1 | raw_quoted | quoted | single_quoted }
 
-program = { SOI ~ (set_decl | trigger)+ ~ EOI }
+program = { SOI ~ (set_decl | trigger | room_def)+ ~ EOI }
 
 set_decl = { "let" ~ "set" ~ ident ~ "=" ~ set_list }
 set_list = { "(" ~ ident ~ ("," ~ ident)* ~ ")" }
@@ -230,3 +237,62 @@ in_rooms = { "in" ~ "rooms" ~ ident ~ ("," ~ ident)* }
 all_group = { "all" ~ "(" ~ cond_list ~ ")" }
 any_group = { "any" ~ "(" ~ cond_list ~ ")" }
 cond_list = { cond ~ ("," ~ cond)* }
+
+// -----------------
+// Rooms (minimal)
+// -----------------
+
+room_def     = { "room" ~ ident ~ room_block }
+room_block   = { "{" ~ room_stmt* ~ "}" }
+room_stmt    = { room_name | room_desc | room_visited | exit_stmt | overlay_stmt | overlay_flag_pair_stmt | overlay_item_pair_stmt | overlay_npc_pair_stmt | overlay_npc_states_stmt }
+room_name    = { "name" ~ string }
+room_desc    = { ("desc" | "description") ~ string }
+room_visited = { "visited" ~ boolean }
+// Exits: exit <direction> -> <room_id>
+exit_stmt = { "exit" ~ ident ~ "->" ~ ident ~ exit_opts? }
+exit_opts = { "{" ~ (exit_opt ~ ("," ~ exit_opt)*)? ~ "}" }
+exit_opt  = {
+    "hidden"
+  | "locked"
+  | ("barred" ~ string)
+  | ("required_flags" ~ "(" ~ (flag_req | ident) ~ ("," ~ (flag_req | ident))* ~ ")")
+  | ("required_items" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")")
+}
+
+flag_req = { ("simple" ~ ident) | ("seq" ~ ident ~ ("limit" ~ number)?) }
+
+// Overlays
+// Allow optional parentheses around the overlay condition list for cleaner syntax
+overlay_stmt      = { "overlay" ~ "if" ~ (overlay_cond_list | "(" ~ overlay_cond_list ~ ")") ~ overlay_block }
+overlay_block     = { "{" ~ "text" ~ string ~ "}" }
+overlay_cond_list = { overlay_cond ~ ("," ~ overlay_cond)* }
+overlay_cond      = {
+    ("flag" ~ "set" ~ ident)
+  | ("flag" ~ "unset" ~ ident)
+  | ("flag" ~ "complete" ~ ident)
+  | ("item" ~ "present" ~ ident)
+  | ("item" ~ "absent" ~ ident)
+  | ("player" ~ "has" ~ "item" ~ ident)
+  | ("player" ~ "missing" ~ "item" ~ ident)
+  | ("npc" ~ "present" ~ ident)
+  | ("npc" ~ "absent" ~ ident)
+  | ("npc" ~ "in" ~ "state" ~ ident ~ (ident | ("custom" ~ string)))
+  | ("item" ~ "in" ~ "room" ~ ident ~ ident)
+}
+
+overlay_flag_pair_stmt   = { "overlay" ~ "if" ~ "flag" ~ ident ~ overlay_flag_pair_block }
+overlay_flag_pair_block  = { "{" ~ "set" ~ string ~ "unset" ~ string ~ "}" }
+overlay_item_pair_stmt   = { "overlay" ~ "if" ~ "item" ~ ident ~ overlay_presence_pair_block }
+overlay_npc_pair_stmt    = { "overlay" ~ "if" ~ "npc" ~ ident ~ overlay_presence_pair_block }
+overlay_presence_pair_block = { "{" ~ "present" ~ string ~ "absent" ~ string ~ "}" }
+
+// Overlay sugar: collapse multiple NPC state overlays into one block.
+// Example:
+// overlay if npc emh here {
+//   normal "..."
+//   happy "..."
+//   custom(want-emitter) "..."
+// }
+overlay_npc_states_stmt = { "overlay" ~ "if" ~ "npc" ~ ident ~ "here" ~ overlay_npc_states_block }
+overlay_npc_states_block = { "{" ~ overlay_npc_state_line+ ~ "}" }
+overlay_npc_state_line = { (ident ~ string) | ("custom" ~ "(" ~ ident ~ ")" ~ string) }
