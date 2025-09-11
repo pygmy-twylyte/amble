@@ -115,10 +115,6 @@ room snowfield {
 room ice-pit {
     name "Abysmal Ice Pit"
     desc "The bottom of a deep, sheer ice shaft seemingly dug for some kind of arctic research -- though you were nowhere near the Arctic Circle, last you checked. You're just able to see in the dim light filtering down from the tiny window to the surface above."
-    overlay if flag plaque-2-exposed {
-        set "An intricately crafted stone pillar sits exposed from the ice in the center of the room, bearing a plaque with a message of what could only be tremendous importance."
-        unset "A person-sized pedestal of ice stands near the center of the room. Through the thick frosted surface, you can perceive what seems to be an intricate pillar, similar to the one you saw back at the high ridge."
-    }
     exit rope-up -> snowfield
 }
 
