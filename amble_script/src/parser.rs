@@ -611,6 +611,11 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
                     }
                     // Unknown overlay condition; ignore silently per current behavior
                 }
+                // Ensure at least one condition was parsed (catch typos early)
+                if conds.is_empty() {
+                    return Err(AstError::Shape("overlay requires at least one condition"));
+                }
+
                 // Then block with text
                 let block = it.next().ok_or(AstError::Shape("overlay block"))?;
                 let mut txt = String::new();
@@ -675,6 +680,55 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
                     conditions: vec![crate::OverlayCondAst::NpcAbsent(npc)],
                     text: absent_txt,
                 });
+            },
+            Rule::overlay_npc_states_stmt => {
+                // overlay if npc <id> here { <state> "..." | custom(<id>) "..." }+
+                let mut it = inner_stmt.into_inner();
+                let npc = it.next().ok_or(AstError::Shape("npc id"))?.as_str().to_string();
+                let block = it.next().ok_or(AstError::Shape("npc states block"))?;
+                for line in block.into_inner() {
+                    let mut kids = line.clone().into_inner();
+                    let is_custom = line.as_str().trim_start().starts_with("custom(");
+                    if is_custom {
+                        let mut state_ident: Option<String> = None;
+                        let mut text = None;
+                        for p in kids {
+                            match p.as_rule() {
+                                Rule::ident => state_ident = Some(p.as_str().to_string()),
+                                Rule::string => text = Some(unquote(p.as_str())),
+                                _ => {},
+                            }
+                        }
+                        let s = state_ident.ok_or(AstError::Shape("custom(state) requires ident"))?;
+                        let txt = text.ok_or(AstError::Shape("custom(state) requires text"))?;
+                        overlays.push(crate::OverlayAst {
+                            conditions: vec![
+                                crate::OverlayCondAst::NpcPresent(npc.clone()),
+                                crate::OverlayCondAst::NpcInState {
+                                    npc: npc.clone(),
+                                    state: crate::NpcStateValue::Custom(s),
+                                },
+                            ],
+                            text: txt,
+                        });
+                    } else {
+                        // named state
+                        let state_tok = kids.next().ok_or(AstError::Shape("npc state name"))?;
+                        let state_name = state_tok.as_str().to_string();
+                        let txt_pair = kids.next().ok_or(AstError::Shape("npc state text"))?;
+                        let text = unquote(txt_pair.as_str());
+                        overlays.push(crate::OverlayAst {
+                            conditions: vec![
+                                crate::OverlayCondAst::NpcPresent(npc.clone()),
+                                crate::OverlayCondAst::NpcInState {
+                                    npc: npc.clone(),
+                                    state: crate::NpcStateValue::Named(state_name),
+                                },
+                            ],
+                            text,
+                        });
+                    }
+                }
             },
             _ => {},
         }

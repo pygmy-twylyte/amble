@@ -125,6 +125,39 @@ conditions = [{ type = "itemInRoom", item_id = "margarine", room_id = "st-alfonz
 text = "On the pedestal sits a tub of margarine."
 ```
 
+### NPC State Block (Sugar)
+
+Author multiple NPC state overlays in one block using the `npc <id> here` form:
+
+```
+overlay if npc emh here {
+  normal "EMH behaving normally."
+  happy "EMH is singing a tune."
+  custom(want-emitter) "EMH won't stop griping about his missing emitter."
+}
+```
+
+This expands to three overlays equivalent to writing separate entries with conditions:
+
+```
+[[rooms.overlays]]
+conditions = [{ type = "npcPresent", npc_id = "emh" }, { type = "npcInState", npc_id = "emh", state = "normal" }]
+text = "EMH behaving normally."
+
+[[rooms.overlays]]
+conditions = [{ type = "npcPresent", npc_id = "emh" }, { type = "npcInState", npc_id = "emh", state = "happy" }]
+text = "EMH is singing a tune."
+
+[[rooms.overlays]]
+conditions = [{ type = "npcPresent", npc_id = "emh" }, { type = "npcInState", npc_id = "emh", state = { custom = "want-emitter" } }]
+text = "EMH won't stop griping about his missing emitter."
+```
+
+Notes:
+- The `custom(name)` form accepts an identifier; it maps to the engine’s `{ custom = "name" }` state.
+- Each line inside the block becomes its own overlay with `npcPresent` + `npcInState` conditions.
+- You can still use the explicit form with `overlay if (npc present X, npc in state X Y) { ... }`.
+
 ## CLI Usage
 
 ```
