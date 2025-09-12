@@ -1,7 +1,10 @@
 use pest::Parser;
 use pest_derive::Parser as PestParser;
 
-use crate::{ActionAst, ConditionAst, OnFalseAst, RoomAst, TriggerAst};
+use crate::{
+    ActionAst, ConditionAst, ContainerStateAst, ItemAbilityAst, ItemAst, ItemLocationAst, OnFalseAst, RoomAst,
+    TriggerAst,
+};
 use std::collections::HashMap;
 
 #[derive(PestParser)]
@@ -27,18 +30,19 @@ pub fn parse_trigger(source: &str) -> Result<TriggerAst, AstError> {
 
 /// Parse multiple triggers from a full source file (triggers only view).
 pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
-    let (trigs, _rooms) = parse_program_full(source)?;
+    let (trigs, _rooms, _items) = parse_program_full(source)?;
     Ok(trigs)
 }
 
-/// Parse a full program returning both triggers and rooms.
-pub fn parse_program_full(source: &str) -> Result<(Vec<TriggerAst>, Vec<RoomAst>), AstError> {
+/// Parse a full program returning triggers, rooms, and items.
+pub fn parse_program_full(source: &str) -> Result<(Vec<TriggerAst>, Vec<RoomAst>, Vec<ItemAst>), AstError> {
     let mut pairs = DslParser::parse(Rule::program, source).map_err(|e| AstError::Pest(e.to_string()))?;
     let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
     let smap = SourceMap::new(source);
     let mut sets: HashMap<String, Vec<String>> = HashMap::new();
     let mut trigger_pairs = Vec::new();
     let mut room_pairs = Vec::new();
+    let mut item_pairs = Vec::new();
     for item in pair.clone().into_inner() {
         match item.as_rule() {
             Rule::set_decl => {
@@ -59,6 +63,9 @@ pub fn parse_program_full(source: &str) -> Result<(Vec<TriggerAst>, Vec<RoomAst>
             Rule::room_def => {
                 room_pairs.push(item);
             },
+            Rule::item_def => {
+                item_pairs.push(item);
+            },
             _ => {},
         }
     }
@@ -72,7 +79,12 @@ pub fn parse_program_full(source: &str) -> Result<(Vec<TriggerAst>, Vec<RoomAst>
         let r = parse_room_pair(rp, source)?;
         rooms.push(r);
     }
-    Ok((out, rooms))
+    let mut items = Vec::new();
+    for ip in item_pairs {
+        let it = parse_item_pair(ip, source)?;
+        items.push(it);
+    }
+    Ok((out, rooms, items))
 }
 
 fn parse_trigger_pair(
@@ -746,10 +758,156 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
     })
 }
 
+fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<ItemAst, AstError> {
+    let (src_line, _src_col) = item.as_span().start_pos().line_col();
+    let mut it = item.into_inner();
+    let id = it
+        .next()
+        .ok_or(AstError::Shape("expected item ident"))?
+        .as_str()
+        .to_string();
+    let block = it.next().ok_or(AstError::Shape("expected item block"))?;
+    let mut name: Option<String> = None;
+    let mut desc: Option<String> = None;
+    let mut portable: Option<bool> = None;
+    let mut location: Option<ItemLocationAst> = None;
+    let mut container_state: Option<ContainerStateAst> = None;
+    let mut restricted: Option<bool> = None;
+    let mut abilities: Vec<ItemAbilityAst> = Vec::new();
+    let mut text: Option<String> = None;
+    for stmt in block.into_inner() {
+        match stmt.as_rule() {
+            Rule::item_name => {
+                let s = stmt.into_inner().next().ok_or(AstError::Shape("missing item name"))?;
+                name = Some(unquote(s.as_str()));
+            },
+            Rule::item_desc => {
+                let s = stmt.into_inner().next().ok_or(AstError::Shape("missing item desc"))?;
+                desc = Some(unquote(s.as_str()));
+            },
+            Rule::item_portable => {
+                let tok = stmt
+                    .into_inner()
+                    .next()
+                    .ok_or(AstError::Shape("missing portable token"))?;
+                portable = Some(tok.as_str() == "true");
+            },
+            Rule::item_restricted => {
+                let tok = stmt
+                    .into_inner()
+                    .next()
+                    .ok_or(AstError::Shape("missing restricted token"))?;
+                restricted = Some(tok.as_str() == "true");
+            },
+            Rule::item_location => {
+                let mut li = stmt.into_inner();
+                let branch = li.next().ok_or(AstError::Shape("location kind"))?;
+                let loc = match branch.as_rule() {
+                    Rule::inventory_loc => {
+                        let owner = branch
+                            .into_inner()
+                            .next()
+                            .ok_or(AstError::Shape("inventory id"))?
+                            .as_str()
+                            .to_string();
+                        ItemLocationAst::Inventory(owner)
+                    },
+                    Rule::room_loc => {
+                        let room = branch
+                            .into_inner()
+                            .next()
+                            .ok_or(AstError::Shape("room id"))?
+                            .as_str()
+                            .to_string();
+                        ItemLocationAst::Room(room)
+                    },
+                    Rule::npc_loc => {
+                        let npc = branch
+                            .into_inner()
+                            .next()
+                            .ok_or(AstError::Shape("npc id"))?
+                            .as_str()
+                            .to_string();
+                        ItemLocationAst::Npc(npc)
+                    },
+                    Rule::chest_loc => {
+                        let chest = branch
+                            .into_inner()
+                            .next()
+                            .ok_or(AstError::Shape("chest id"))?
+                            .as_str()
+                            .to_string();
+                        ItemLocationAst::Chest(chest)
+                    },
+                    Rule::nowhere_loc => {
+                        let note = branch
+                            .into_inner()
+                            .next()
+                            .ok_or(AstError::Shape("nowhere note"))?
+                            .as_str();
+                        ItemLocationAst::Nowhere(unquote(note))
+                    },
+                    _ => return Err(AstError::Shape("unknown location kind")),
+                };
+                location = Some(loc);
+            },
+            Rule::item_container_state => {
+                let val = stmt
+                    .as_str()
+                    .split_whitespace()
+                    .last()
+                    .ok_or(AstError::Shape("container state"))?;
+                container_state = match val {
+                    "open" => Some(ContainerStateAst::Open),
+                    "closed" => Some(ContainerStateAst::Closed),
+                    "locked" => Some(ContainerStateAst::Locked),
+                    "transparentClosed" => Some(ContainerStateAst::TransparentClosed),
+                    "transparentLocked" => Some(ContainerStateAst::TransparentLocked),
+                    "none" => None,
+                    _ => None,
+                };
+            },
+            Rule::item_ability => {
+                let mut ai = stmt.into_inner();
+                let ability = ai.next().ok_or(AstError::Shape("ability name"))?.as_str().to_string();
+                let target = ai.next().map(|p| p.as_str().to_string());
+                abilities.push(ItemAbilityAst { ability, target });
+            },
+            Rule::item_text => {
+                let s = stmt.into_inner().next().ok_or(AstError::Shape("missing text"))?;
+                text = Some(unquote(s.as_str()));
+            },
+            _ => {},
+        }
+    }
+    let name = name.ok_or(AstError::Shape("item missing name"))?;
+    let desc = desc.ok_or(AstError::Shape("item missing desc"))?;
+    let portable = portable.ok_or(AstError::Shape("item missing portable"))?;
+    let location = location.ok_or(AstError::Shape("item missing location"))?;
+    Ok(ItemAst {
+        id,
+        name,
+        desc,
+        portable,
+        location,
+        container_state,
+        restricted: restricted.unwrap_or(false),
+        abilities,
+        text,
+        src_line,
+    })
+}
+
 /// Parse only rooms from a source (helper/testing).
 pub fn parse_rooms(source: &str) -> Result<Vec<RoomAst>, AstError> {
-    let (_, rooms) = parse_program_full(source)?;
+    let (_, rooms, _) = parse_program_full(source)?;
     Ok(rooms)
+}
+
+/// Parse only items from a source (helper/testing).
+pub fn parse_items(source: &str) -> Result<Vec<ItemAst>, AstError> {
+    let (_, _, items) = parse_program_full(source)?;
+    Ok(items)
 }
 
 fn unquote(s: &str) -> String {

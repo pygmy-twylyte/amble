@@ -114,7 +114,7 @@ triple_quoted = @{ "\"\"\"" ~ triple_char* ~ "\"\"\"" }
 single_quoted = @{ "'" ~ (escape | (!("\\" | "'") ~ ANY))* ~ "'" }
 string        = @{ triple_quoted | raw_quoted_h5 | raw_quoted_h4 | raw_quoted_h3 | raw_quoted_h2 | raw_quoted_h1 | raw_quoted | quoted | single_quoted }
 
-program = { SOI ~ (set_decl | trigger | room_def)+ ~ EOI }
+program = { SOI ~ (set_decl | trigger | room_def | item_def)+ ~ EOI }
 
 set_decl = { "let" ~ "set" ~ ident ~ "=" ~ set_list }
 set_list = { "(" ~ ident ~ ("," ~ ident)* ~ ")" }
@@ -296,3 +296,24 @@ overlay_presence_pair_block = { "{" ~ "present" ~ string ~ "absent" ~ string ~ "
 overlay_npc_states_stmt = { "overlay" ~ "if" ~ "npc" ~ ident ~ "here" ~ overlay_npc_states_block }
 overlay_npc_states_block = { "{" ~ overlay_npc_state_line+ ~ "}" }
 overlay_npc_state_line = { (ident ~ string) | ("custom" ~ "(" ~ ident ~ ")" ~ string) }
+
+// -----------------
+// Items
+// -----------------
+
+item_def     = { "item" ~ ident ~ item_block }
+item_block   = { "{" ~ (item_name | item_desc | item_portable | item_location | item_container_state | item_ability | item_text | item_restricted)* ~ "}" }
+item_name    = { "name" ~ string }
+item_desc    = { ("desc" | "description") ~ string }
+item_portable = { "portable" ~ boolean }
+item_location = { "location" ~ (inventory_loc | room_loc | npc_loc | chest_loc | nowhere_loc) }
+player_kw = { "player" }
+inventory_loc = { "inventory" ~ (ident | player_kw) }
+room_loc = { "room" ~ ident }
+npc_loc = { "npc" ~ ident }
+chest_loc = { "chest" ~ ident }
+nowhere_loc = { "nowhere" ~ string }
+item_container_state = { "container" ~ "state" ~ ("open" | "closed" | "locked" | "transparentClosed" | "transparentLocked" | "none") }
+item_ability = { "ability" ~ ident ~ ident? }
+item_text    = { "text" ~ string }
+item_restricted = { "restricted" ~ boolean }

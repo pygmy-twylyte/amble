@@ -58,3 +58,4 @@ Runs unit tests that parse the DSL and validate emitted TOML for triggers and ro
 
 - Trigger DSL guide: `docs/trigger_dsl_guide.md`
 - Rooms DSL guide: `docs/rooms_dsl_guide.md`
+- Items DSL guide: `docs/items_dsl_guide.md`

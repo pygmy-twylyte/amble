@@ -14,7 +14,7 @@
 
 mod parser;
 pub use parser::{AstError, parse_program, parse_trigger};
-pub use parser::{parse_program_full, parse_rooms};
+pub use parser::{parse_items, parse_program_full, parse_rooms};
 
 use thiserror::Error;
 use toml_edit::{Array, ArrayOfTables, Document, InlineTable, Item, Table, value};
@@ -703,6 +703,44 @@ pub enum NpcStateValue {
     Custom(String),
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct ItemAst {
+    pub id: String,
+    pub name: String,
+    pub desc: String,
+    pub portable: bool,
+    pub location: ItemLocationAst,
+    pub container_state: Option<ContainerStateAst>,
+    pub restricted: bool,
+    pub abilities: Vec<ItemAbilityAst>,
+    pub text: Option<String>,
+    pub src_line: usize,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ItemLocationAst {
+    Inventory(String),
+    Room(String),
+    Npc(String),
+    Chest(String),
+    Nowhere(String),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ContainerStateAst {
+    Open,
+    Closed,
+    Locked,
+    TransparentClosed,
+    TransparentLocked,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ItemAbilityAst {
+    pub ability: String,
+    pub target: Option<String>,
+}
+
 /// Compile rooms into TOML string matching amble_engine/data/rooms.toml structure.
 pub fn compile_rooms_to_toml(rooms: &[RoomAst]) -> Result<String, CompileError> {
     let mut doc = Document::new();
@@ -839,6 +877,78 @@ pub fn compile_rooms_to_toml(rooms: &[RoomAst]) -> Result<String, CompileError> 
         aot.push(t);
     }
     doc["rooms"] = Item::ArrayOfTables(aot);
+    Ok(doc.to_string())
+}
+
+/// Compile items into TOML string matching amble_engine/data/items.toml structure.
+pub fn compile_items_to_toml(items: &[ItemAst]) -> Result<String, CompileError> {
+    let mut doc = Document::new();
+    let mut aot = ArrayOfTables::new();
+    for it in items {
+        if it.id.trim().is_empty() || it.name.trim().is_empty() {
+            return Err(CompileError::InvalidAst("item id/name missing".into()));
+        }
+        let mut t = Table::new();
+        t["id"] = value(it.id.clone());
+        t["name"] = value(it.name.clone());
+        t["description"] = value(it.desc.clone());
+        t["portable"] = value(it.portable);
+        let mut loc = InlineTable::new();
+        match &it.location {
+            ItemLocationAst::Inventory(owner) => {
+                loc.insert("Inventory", toml_edit::Value::from(owner.clone()));
+            },
+            ItemLocationAst::Room(room) => {
+                loc.insert("Room", toml_edit::Value::from(room.clone()));
+            },
+            ItemLocationAst::Npc(npc) => {
+                loc.insert("Npc", toml_edit::Value::from(npc.clone()));
+            },
+            ItemLocationAst::Chest(chest) => {
+                loc.insert("Chest", toml_edit::Value::from(chest.clone()));
+            },
+            ItemLocationAst::Nowhere(note) => {
+                loc.insert("Nowhere", toml_edit::Value::from(note.clone()));
+            },
+        }
+        t["location"] = Item::Value(loc.into());
+        if let Some(cs) = &it.container_state {
+            let state = match cs {
+                ContainerStateAst::Open => "open",
+                ContainerStateAst::Closed => "closed",
+                ContainerStateAst::Locked => "locked",
+                ContainerStateAst::TransparentClosed => "transparentClosed",
+                ContainerStateAst::TransparentLocked => "transparentLocked",
+            };
+            t["container_state"] = value(state);
+        }
+        if it.restricted {
+            t["restricted"] = value(true);
+        }
+        if let Some(txt) = &it.text {
+            t["text"] = value(txt.clone());
+        }
+        if !it.abilities.is_empty() {
+            let mut abil_aot = ArrayOfTables::new();
+            for ab in &it.abilities {
+                let mut at = Table::new();
+                at["type"] = value(ab.ability.clone());
+                if let Some(target) = &ab.target {
+                    at["target"] = value(target.clone());
+                }
+                abil_aot.push(at);
+            }
+            t["abilities"] = Item::ArrayOfTables(abil_aot);
+        }
+        if it.src_line > 0 {
+            t.decor_mut()
+                .set_prefix(format!("# item {} (source line {})\n", it.id, it.src_line));
+        } else {
+            t.decor_mut().set_prefix(format!("# item {}\n", it.id));
+        }
+        aot.push(t);
+    }
+    doc["items"] = Item::ArrayOfTables(aot);
     Ok(doc.to_string())
 }
 
