@@ -50,6 +50,8 @@ dependencies = [
  "gametools",
  "lazy_static",
  "log",
+ "pest",
+ "pest_derive",
  "rand",
  "regex",
  "ron",
