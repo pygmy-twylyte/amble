@@ -70,6 +70,7 @@ dependencies = [
  "pest",
  "pest_derive",
  "thiserror 1.0.69",
+ "toml",
  "toml_edit 0.21.1",
 ]
 
