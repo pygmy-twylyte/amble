@@ -80,6 +80,13 @@ keyword = {
   | "absent"
   | "custom"
   | "here"
+  | "dialogue"
+  | "inventory"
+  | "movement"
+  | "movement_type"
+  | "timing"
+  | "active"
+  | "loop_route"
   | // container state literals
   "closed"
   | "locked"
@@ -114,7 +121,7 @@ triple_quoted = @{ "\"\"\"" ~ triple_char* ~ "\"\"\"" }
 single_quoted = @{ "'" ~ (escape | (!("\\" | "'") ~ ANY))* ~ "'" }
 string        = @{ triple_quoted | raw_quoted_h5 | raw_quoted_h4 | raw_quoted_h3 | raw_quoted_h2 | raw_quoted_h1 | raw_quoted | quoted | single_quoted }
 
-program = { SOI ~ (set_decl | trigger | room_def | item_def)+ ~ EOI }
+program = { SOI ~ (set_decl | trigger | room_def | item_def | npc_def)+ ~ EOI }
 
 set_decl = { "let" ~ "set" ~ ident ~ "=" ~ set_list }
 set_list = { "(" ~ ident ~ ("," ~ ident)* ~ ")" }
@@ -317,3 +324,29 @@ item_container_state = { "container" ~ "state" ~ ("open" | "closed" | "locked" |
 item_ability = { "ability" ~ ident ~ ident? }
 item_text    = { "text" ~ string }
 item_restricted = { "restricted" ~ boolean }
+
+// -----------------
+// NPCs
+// -----------------
+
+npc_def    = { "npc" ~ ident ~ npc_block }
+npc_block  = { "{" ~ (npc_name | npc_desc | npc_location | npc_state | npc_dialogue | npc_inventory | npc_movement)* ~ "}" }
+npc_name   = { "name" ~ string }
+npc_desc   = { ("desc" | "description") ~ string }
+npc_location = { "location" ~ (room_loc | nowhere_loc) }
+npc_state  = { "state" ~ ident }
+npc_inventory = { "inventory" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")" }
+
+npc_dialogue = { "dialogue" ~ "{" ~ (npc_dialogue_state | npc_dialogue_state_custom)+ ~ "}" }
+npc_dialogue_state = { ident ~ npc_dialogue_block }
+npc_dialogue_state_custom = { "custom" ~ "(" ~ ident ~ ")" ~ npc_dialogue_block }
+npc_dialogue_block = { "{" ~ string+ ~ "}" }
+
+npc_movement = { "movement" ~ movement_block }
+movement_block = { "{" ~ (movement_type_stmt | movement_rooms_stmt | movement_timing_stmt | movement_active_stmt | movement_loop_stmt)* ~ "}" }
+movement_type_stmt = { "movement_type" ~ movement_type_val }
+movement_type_val = { "route" | "random" }
+movement_rooms_stmt = { "rooms" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")" }
+movement_timing_stmt = { "timing" ~ ident }
+movement_active_stmt = { "active" ~ boolean }
+movement_loop_stmt = { "loop_route" ~ boolean }

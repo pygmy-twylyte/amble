@@ -13,6 +13,7 @@
 //! expected RawTrigger schema and prints it to stdout.
 
 mod parser;
+pub use parser::parse_npcs;
 pub use parser::{AstError, parse_program, parse_trigger};
 pub use parser::{parse_items, parse_program_full, parse_rooms};
 
@@ -741,6 +742,40 @@ pub struct ItemAbilityAst {
     pub target: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct NpcAst {
+    pub id: String,
+    pub name: String,
+    pub desc: String,
+    pub state: NpcStateAst,
+    pub location: NpcLocationAst,
+    pub inventory: Vec<String>,
+    pub dialogue: Vec<(NpcStateAst, Vec<String>)>,
+    pub movement: Option<NpcMovementAst>,
+    pub src_line: usize,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum NpcStateAst {
+    Named(String),
+    Custom(String),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum NpcLocationAst {
+    Room(String),
+    Nowhere(String),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct NpcMovementAst {
+    pub movement_type: String,
+    pub rooms: Vec<String>,
+    pub timing: String,
+    pub active: Option<bool>,
+    pub loop_route: Option<bool>,
+}
+
 /// Compile rooms into TOML string matching amble_engine/data/rooms.toml structure.
 pub fn compile_rooms_to_toml(rooms: &[RoomAst]) -> Result<String, CompileError> {
     let mut doc = Document::new();
@@ -949,6 +984,94 @@ pub fn compile_items_to_toml(items: &[ItemAst]) -> Result<String, CompileError> 
         aot.push(t);
     }
     doc["items"] = Item::ArrayOfTables(aot);
+    Ok(doc.to_string())
+}
+
+/// Compile NPCs into TOML string matching amble_engine/data/npcs.toml structure.
+pub fn compile_npcs_to_toml(npcs: &[NpcAst]) -> Result<String, CompileError> {
+    let mut doc = Document::new();
+    let mut aot = ArrayOfTables::new();
+    for n in npcs {
+        if n.id.trim().is_empty() || n.name.trim().is_empty() {
+            return Err(CompileError::InvalidAst("npc id/name missing".into()));
+        }
+        let mut t = Table::new();
+        t["id"] = value(n.id.clone());
+        t["name"] = value(n.name.clone());
+        t["description"] = value(n.desc.clone());
+        // state
+        match &n.state {
+            NpcStateAst::Named(s) => {
+                t["state"] = value(s.clone());
+            },
+            NpcStateAst::Custom(s) => {
+                let mut itab = InlineTable::new();
+                itab.insert("custom", toml_edit::Value::from(s.clone()));
+                t["state"] = Item::Value(itab.into());
+            },
+        }
+        // location
+        let mut loc_tbl = Table::new();
+        match &n.location {
+            NpcLocationAst::Room(r) => {
+                loc_tbl["Room"] = value(r.clone());
+            },
+            NpcLocationAst::Nowhere(note) => {
+                loc_tbl["Nowhere"] = value(note.clone());
+            },
+        }
+        t["location"] = Item::Table(loc_tbl);
+        // inventory
+        if !n.inventory.is_empty() {
+            let mut arr = Array::default();
+            for i in &n.inventory {
+                arr.push(i.clone());
+            }
+            t["inventory"] = Item::Value(arr.into());
+        }
+        // movement
+        if let Some(mv) = &n.movement {
+            let mut mt = Table::new();
+            mt["movement_type"] = value(mv.movement_type.clone());
+            let mut arr = Array::default();
+            for r in &mv.rooms {
+                arr.push(r.clone());
+            }
+            mt["rooms"] = Item::Value(arr.into());
+            mt["timing"] = value(mv.timing.clone());
+            if let Some(a) = mv.active {
+                mt["active"] = value(a);
+            }
+            if let Some(l) = mv.loop_route {
+                mt["loop_route"] = value(l);
+            }
+            t["movement"] = Item::Table(mt);
+        }
+        // dialogue
+        if !n.dialogue.is_empty() {
+            let mut dtab = Table::new();
+            for (state, lines) in &n.dialogue {
+                let key = match state {
+                    NpcStateAst::Named(s) => s.clone(),
+                    NpcStateAst::Custom(s) => format!("custom:{s}"),
+                };
+                let mut arr = Array::default();
+                for l in lines {
+                    arr.push(l.clone());
+                }
+                dtab[&key] = Item::Value(arr.into());
+            }
+            t["dialogue"] = Item::Table(dtab);
+        }
+        if n.src_line > 0 {
+            t.decor_mut()
+                .set_prefix(format!("# npc {} (source line {})\n", n.id, n.src_line));
+        } else {
+            t.decor_mut().set_prefix(format!("# npc {}\n", n.id));
+        }
+        aot.push(t);
+    }
+    doc["npcs"] = Item::ArrayOfTables(aot);
     Ok(doc.to_string())
 }
 

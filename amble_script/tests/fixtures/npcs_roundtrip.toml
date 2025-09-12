@@ -1,0 +1,32 @@
+# npc black_knight (source line 1)
+[[npcs]]
+id = "black_knight"
+name = "The Black Knight"
+description = "A dark, glowering presence in a black suit of armor with a longsword."
+state = "normal"
+
+[npcs.location]
+Room = "sublevel-1-entrance"
+
+[npcs.dialogue]
+mad = ["Have at you!", "I'm invincible!", "'tis but a scratch.", "It's just a flesh wound!", "Come on, you pansy!", "Chicken! Bawk-bawk! Chicken!", "Gimme that sword back, or I'll bite your legs off!", "I won that sword in the office gift game. Give it back!"]
+normal = ["None shall pass.", "I move -- for no man.", "(He stands silently, blocking your path.)"]
+happy = ["None shall pa-- oh, no, you can go.", "YOU may pass, Candidate; I will be sure to dice anyone who dares to follow.", "You may pass, but beware and steer clear of Room AA-3B, should it reappear.", "Behold! (slices an aluminum can and then a tomato, laughing maniacally)"]
+# npc gonk_droid (source line 31)
+[[npcs]]
+id = "gonk_droid"
+name = "Gonk Droid"
+description = "A walking battery charger that looks like a trash bin."
+state = "normal"
+
+[npcs.location]
+Room = "main-lobby"
+
+[npcs.movement]
+movement_type = "route"
+rooms = ["main-lobby", "lift-bank-main", "lounge"]
+timing = "every_2_turns"
+
+[npcs.dialogue]
+normal = ["GONK!", "(gonk)", "GONK gonk.", "Gonk... Gonk..."]
+happy = ["(You hear a transformer humming a happy tune.)"]

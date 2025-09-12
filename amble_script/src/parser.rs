@@ -2,8 +2,8 @@ use pest::Parser;
 use pest_derive::Parser as PestParser;
 
 use crate::{
-    ActionAst, ConditionAst, ContainerStateAst, ItemAbilityAst, ItemAst, ItemLocationAst, OnFalseAst, RoomAst,
-    TriggerAst,
+    ActionAst, ConditionAst, ContainerStateAst, ItemAbilityAst, ItemAst, ItemLocationAst, NpcAst, NpcLocationAst,
+    NpcMovementAst, NpcStateAst, OnFalseAst, RoomAst, TriggerAst,
 };
 use std::collections::HashMap;
 
@@ -30,12 +30,14 @@ pub fn parse_trigger(source: &str) -> Result<TriggerAst, AstError> {
 
 /// Parse multiple triggers from a full source file (triggers only view).
 pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
-    let (trigs, _rooms, _items) = parse_program_full(source)?;
+    let (trigs, _rooms, _items, _npcs) = parse_program_full(source)?;
     Ok(trigs)
 }
 
-/// Parse a full program returning triggers, rooms, and items.
-pub fn parse_program_full(source: &str) -> Result<(Vec<TriggerAst>, Vec<RoomAst>, Vec<ItemAst>), AstError> {
+/// Parse a full program returning triggers, rooms, items, and NPCs.
+pub fn parse_program_full(
+    source: &str,
+) -> Result<(Vec<TriggerAst>, Vec<RoomAst>, Vec<ItemAst>, Vec<NpcAst>), AstError> {
     let mut pairs = DslParser::parse(Rule::program, source).map_err(|e| AstError::Pest(e.to_string()))?;
     let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
     let smap = SourceMap::new(source);
@@ -43,6 +45,7 @@ pub fn parse_program_full(source: &str) -> Result<(Vec<TriggerAst>, Vec<RoomAst>
     let mut trigger_pairs = Vec::new();
     let mut room_pairs = Vec::new();
     let mut item_pairs = Vec::new();
+    let mut npc_pairs = Vec::new();
     for item in pair.clone().into_inner() {
         match item.as_rule() {
             Rule::set_decl => {
@@ -66,6 +69,9 @@ pub fn parse_program_full(source: &str) -> Result<(Vec<TriggerAst>, Vec<RoomAst>
             Rule::item_def => {
                 item_pairs.push(item);
             },
+            Rule::npc_def => {
+                npc_pairs.push(item);
+            },
             _ => {},
         }
     }
@@ -84,7 +90,12 @@ pub fn parse_program_full(source: &str) -> Result<(Vec<TriggerAst>, Vec<RoomAst>
         let it = parse_item_pair(ip, source)?;
         items.push(it);
     }
-    Ok((out, rooms, items))
+    let mut npcs = Vec::new();
+    for np in npc_pairs {
+        let n = parse_npc_pair(np, source)?;
+        npcs.push(n);
+    }
+    Ok((out, rooms, items, npcs))
 }
 
 fn parse_trigger_pair(
@@ -776,6 +787,7 @@ fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<I
     let mut abilities: Vec<ItemAbilityAst> = Vec::new();
     let mut text: Option<String> = None;
     for stmt in block.into_inner() {
+        println!("npc stmt rule: {:?}", stmt.as_rule());
         match stmt.as_rule() {
             Rule::item_name => {
                 let s = stmt.into_inner().next().ok_or(AstError::Shape("missing item name"))?;
@@ -898,16 +910,177 @@ fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<I
     })
 }
 
+fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<NpcAst, AstError> {
+    let (src_line, _src_col) = npc.as_span().start_pos().line_col();
+    let mut it = npc.into_inner();
+    let id = it
+        .next()
+        .ok_or(AstError::Shape("expected npc ident"))?
+        .as_str()
+        .to_string();
+    let block = it.next().ok_or(AstError::Shape("expected npc block"))?;
+    let mut name: Option<String> = None;
+    let mut desc: Option<String> = None;
+    let mut state: Option<NpcStateAst> = None;
+    let mut location: Option<NpcLocationAst> = None;
+    let mut inventory: Vec<String> = Vec::new();
+    let mut dialogue: Vec<(NpcStateAst, Vec<String>)> = Vec::new();
+    let mut movement: Option<NpcMovementAst> = None;
+    for stmt in block.into_inner() {
+        match stmt.as_rule() {
+            Rule::npc_name => {
+                let s = stmt.into_inner().next().ok_or(AstError::Shape("missing npc name"))?;
+                name = Some(unquote(s.as_str()));
+            },
+            Rule::npc_desc => {
+                let s = stmt.into_inner().next().ok_or(AstError::Shape("missing npc desc"))?;
+                desc = Some(unquote(s.as_str()));
+            },
+            Rule::npc_state => {
+                let s = stmt.into_inner().next().ok_or(AstError::Shape("missing npc state"))?;
+                let v = s.as_str().to_string();
+                if let Some(rest) = v.strip_prefix("custom:") {
+                    state = Some(NpcStateAst::Custom(rest.to_string()));
+                } else {
+                    state = Some(NpcStateAst::Named(v));
+                }
+            },
+            Rule::npc_location => {
+                let mut li = stmt.into_inner();
+                let branch = li.next().ok_or(AstError::Shape("location kind"))?;
+                let loc = match branch.as_rule() {
+                    Rule::room_loc => {
+                        let room = branch.into_inner().next().ok_or(AstError::Shape("room id"))?;
+                        NpcLocationAst::Room(room.as_str().to_string())
+                    },
+                    Rule::nowhere_loc => {
+                        let note = branch.into_inner().next().ok_or(AstError::Shape("nowhere note"))?;
+                        NpcLocationAst::Nowhere(unquote(note.as_str()))
+                    },
+                    _ => return Err(AstError::Shape("invalid npc location")),
+                };
+                location = Some(loc);
+            },
+            Rule::npc_inventory => {
+                for sym in stmt.into_inner() {
+                    inventory.push(sym.as_str().to_string());
+                }
+            },
+            Rule::npc_dialogue => {
+                for ds in stmt.into_inner() {
+                    match ds.as_rule() {
+                        Rule::npc_dialogue_state => {
+                            let mut kids = ds.into_inner();
+                            let st = kids.next().ok_or(AstError::Shape("state name"))?;
+                            let block = kids.next().ok_or(AstError::Shape("dialogue block"))?;
+                            let state_name = st.as_str().to_string();
+                            let mut lines = Vec::new();
+                            for ln in block.into_inner() {
+                                lines.push(unquote(ln.as_str()));
+                            }
+                            let state_ast = if let Some(rest) = state_name.strip_prefix("custom:") {
+                                NpcStateAst::Custom(rest.to_string())
+                            } else {
+                                NpcStateAst::Named(state_name)
+                            };
+                            dialogue.push((state_ast, lines));
+                        },
+                        Rule::npc_dialogue_state_custom => {
+                            let mut kids = ds.into_inner();
+                            let st = kids.next().ok_or(AstError::Shape("custom state name"))?;
+                            let block = kids.next().ok_or(AstError::Shape("dialogue block"))?;
+                            let mut lines = Vec::new();
+                            for ln in block.into_inner() {
+                                lines.push(unquote(ln.as_str()));
+                            }
+                            dialogue.push((NpcStateAst::Custom(st.as_str().to_string()), lines));
+                        },
+                        _ => {},
+                    }
+                }
+            },
+            Rule::npc_movement => {
+                let mut mv_type: Option<String> = None;
+                let mut rooms: Vec<String> = Vec::new();
+                let mut timing: Option<String> = None;
+                let mut active: Option<bool> = None;
+                let mut loop_route: Option<bool> = None;
+                let mv_block = stmt.into_inner().next().ok_or(AstError::Shape("movement block"))?;
+                for mv_stmt in mv_block.into_inner() {
+                    match mv_stmt.as_rule() {
+                        Rule::movement_type_stmt => {
+                            let s = mv_stmt
+                                .into_inner()
+                                .next()
+                                .ok_or(AstError::Shape("movement_type ident"))?;
+                            mv_type = Some(s.as_str().to_string());
+                        },
+                        Rule::movement_rooms_stmt => {
+                            for r in mv_stmt.into_inner() {
+                                rooms.push(r.as_str().to_string());
+                            }
+                        },
+                        Rule::movement_timing_stmt => {
+                            let s = mv_stmt.into_inner().next().ok_or(AstError::Shape("timing ident"))?;
+                            timing = Some(s.as_str().to_string());
+                        },
+                        Rule::movement_active_stmt => {
+                            let tok = mv_stmt.into_inner().next().ok_or(AstError::Shape("active bool"))?;
+                            active = Some(tok.as_str() == "true");
+                        },
+                        Rule::movement_loop_stmt => {
+                            let tok = mv_stmt.into_inner().next().ok_or(AstError::Shape("loop bool"))?;
+                            loop_route = Some(tok.as_str() == "true");
+                        },
+                        _ => {},
+                    }
+                }
+                let mv_type = mv_type.ok_or(AstError::Shape("movement_type missing"))?;
+                let timing = timing.ok_or(AstError::Shape("timing missing"))?;
+                movement = Some(NpcMovementAst {
+                    movement_type: mv_type,
+                    rooms,
+                    timing,
+                    active,
+                    loop_route,
+                });
+            },
+            _ => {},
+        }
+    }
+    let name = name.ok_or(AstError::Shape("npc missing name"))?;
+    let desc = desc.ok_or(AstError::Shape("npc missing desc"))?;
+    let state = state.ok_or(AstError::Shape("npc missing state"))?;
+    let location = location.ok_or(AstError::Shape("npc missing location"))?;
+    Ok(NpcAst {
+        id,
+        name,
+        desc,
+        state,
+        location,
+        inventory,
+        dialogue,
+        movement,
+        src_line,
+    })
+}
+
 /// Parse only rooms from a source (helper/testing).
 pub fn parse_rooms(source: &str) -> Result<Vec<RoomAst>, AstError> {
-    let (_, rooms, _) = parse_program_full(source)?;
+    let (_, rooms, _, _) = parse_program_full(source)?;
     Ok(rooms)
 }
 
 /// Parse only items from a source (helper/testing).
 pub fn parse_items(source: &str) -> Result<Vec<ItemAst>, AstError> {
-    let (_, _, items) = parse_program_full(source)?;
+    let (_, _, items, _) = parse_program_full(source)?;
     Ok(items)
+}
+
+/// Parse only NPCs from a source (helper/testing).
+pub fn parse_npcs(source: &str) -> Result<Vec<NpcAst>, AstError> {
+    let (_, _, _, npcs) = parse_program_full(source)?;
+    Ok(npcs)
 }
 
 fn unquote(s: &str) -> String {
