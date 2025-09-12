@@ -367,11 +367,13 @@ fn run_compile_dir(args: &[String]) {
     let mut total_sp = 0usize;
     let mut total_n = 0usize;
     let mut total_g = 0usize;
+    let mut had_error = false;
     for f in &files {
         let src = match fs::read_to_string(f) {
             Ok(s) => s,
             Err(e) => {
                 eprintln!("compile-dir: cannot read '{}': {}", f, e);
+                had_error = true;
                 continue;
             },
         };
@@ -407,8 +409,13 @@ fn run_compile_dir(args: &[String]) {
             },
             Err(e) => {
                 eprintln!("compile-dir: parse error in '{}': {}", f, e);
+                had_error = true;
             },
         }
+    }
+    if had_error {
+        eprintln!("compile-dir: aborting due to previous errors");
+        process::exit(1);
     }
     let header = |_kind: &str, src_desc: &str, body: &str| -> String {
         format!(
