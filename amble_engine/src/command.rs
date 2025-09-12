@@ -2,6 +2,8 @@
 //!
 //! Describes possible commands used during gameplay.
 
+use pest::{Parser, iterators::Pair};
+use pest_derive::Parser;
 use variantly::Variantly;
 
 use crate::{
@@ -75,6 +77,10 @@ pub enum Command {
     },
 }
 
+#[derive(Parser)]
+#[grammar = "repl_grammar.pest"]
+pub struct CommandParser;
+
 /// Parses an input string and returns a corresponding `Command` if recognized.
 ///
 /// The parser is case-insensitive; the input is converted to lowercase before
@@ -88,125 +94,88 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
         return command;
     }
 
-    let words: Vec<&str> = lc_input.split_whitespace().collect();
-    match words.as_slice() {
-        ["goals"] | ["what", "now" | "next"] => Command::Goals,
-        ["back" | "return"] | ["go", "back"] => Command::GoBack,
-        ["look"] => Command::Look,
-        ["give", item, "to", npc] => Command::GiveToNpc {
-            item: (*item).to_string(),
-            npc: (*npc).to_string(),
+    let command = CommandParser::parse(Rule::command, &lc_input).unwrap().next().unwrap();
+    match command.as_rule() {
+        Rule::EOI => Command::Unknown,
+        Rule::inventory => Command::Inventory,
+        Rule::help => Command::Help,
+        Rule::goals => Command::Goals,
+        Rule::look => Command::Look,
+        Rule::quit => Command::Quit,
+        Rule::go_back => Command::GoBack,
+        Rule::vm_clear => Command::SetViewMode(ViewMode::ClearVerbose),
+        Rule::vm_verbose => Command::SetViewMode(ViewMode::Verbose),
+        Rule::vm_brief => Command::SetViewMode(ViewMode::Brief),
+        Rule::look_at => Command::LookAt(inner_string(command)),
+        Rule::load => Command::Load(inner_string(command)),
+        Rule::save => Command::Save(inner_string(command)),
+        Rule::take => Command::Take(inner_string(command)),
+        Rule::drop => Command::Drop(inner_string(command)),
+        Rule::talk_to => Command::TalkTo(inner_string(command)),
+        Rule::turn_on => Command::TurnOn(inner_string(command)),
+        Rule::theme => Command::Theme(inner_string(command)),
+        Rule::open => Command::Open(inner_string(command)),
+        Rule::close => Command::Close(inner_string(command)),
+        Rule::lock => Command::LockItem(inner_string(command)),
+        Rule::unlock => Command::UnlockItem(inner_string(command)),
+        Rule::move_to => Command::MoveTo(inner_string(command)),
+        Rule::read => Command::Read(inner_string(command)),
+        Rule::give_to_npc => {
+            let (item, npc) = inner_string_duo(command);
+            Command::GiveToNpc { item, npc }
         },
-        ["look", "at" | "in", thing] => Command::LookAt((*thing).to_string()),
-        ["go" | "climb", "to" | "up" | "down" | "through", dir] | ["move" | "go" | "enter" | "climb", dir] => {
-            Command::MoveTo((*dir).to_string())
+        Rule::take_from => {
+            let (item, container) = inner_string_duo(command);
+            Command::TakeFrom { item, container }
         },
-        ["take", thing] => Command::Take((*thing).to_string()),
-        ["take" | "remove" | "get" | "grab", thing, "from", container] => Command::TakeFrom {
-            item: (*thing).to_string(),
-            container: (*container).to_string(),
+        Rule::put_in => {
+            let (item, container) = inner_string_duo(command);
+            Command::PutIn { item, container }
         },
-        ["put" | "place", thing, "in", container] => Command::PutIn {
-            item: (*thing).to_string(),
-            container: (*container).to_string(),
-        },
-        ["open", thing] => Command::Open((*thing).to_string()),
-        ["close" | "shut", thing] => Command::Close((*thing).to_string()),
-        ["lock", thing] => Command::LockItem((*thing).to_string()),
-        ["unlock", thing] => Command::UnlockItem((*thing).to_string()),
-        ["inventory" | "inv"] => Command::Inventory,
-        ["quit"] => Command::Quit,
-        ["drop" | "leave", thing] | ["put", thing, "down"] => Command::Drop((*thing).to_string()),
-        ["talk" | "speak", "to" | "with", npc_name] => Command::TalkTo((*npc_name).to_string()),
-        ["touch", "monolith"] => Command::TurnOn("monolith".to_string()),
-        ["turn" | "switch", thing, "on"] | ["start" | "trigger", thing] => Command::TurnOn((*thing).to_string()),
-        ["help" | "?"] => Command::Help,
-        ["read", thing] => Command::Read((*thing).to_string()),
-        ["load", gamefile] => Command::Load((*gamefile).to_string()),
-        ["save", gamefile] => Command::Save((*gamefile).to_string()),
-        [verb, target, "with" | "using" | "to", tool] => {
-            parse_interaction_type(verb).map_or(Command::Unknown, |interaction| Command::UseItemOn {
-                verb: interaction,
-                tool: (*tool).to_string(),
-                target: (*target).to_string(),
-            })
-        }, // ex. burn wood with torch
-        ["brief"] => Command::SetViewMode(ViewMode::Brief),
-        ["clear"] => Command::SetViewMode(ViewMode::ClearVerbose),
-        ["verbose"] => Command::SetViewMode(ViewMode::Verbose),
-        ["theme"] => Command::Theme("list".to_string()),
-        ["theme", theme_name] => Command::Theme((*theme_name).to_string()),
-        _ => Command::Unknown,
+        // twt = "target with tool"
+        Rule::attach_twt => twt_command(ItemInteractionType::Attach, command),
+        Rule::break_twt => twt_command(ItemInteractionType::Break, command),
+        Rule::burn_twt => twt_command(ItemInteractionType::Burn, command),
+        Rule::extinguish_twt => twt_command(ItemInteractionType::Extinguish, command),
+        Rule::clean_twt => twt_command(ItemInteractionType::Clean, command),
+        Rule::cover_twt => twt_command(ItemInteractionType::Cover, command),
+        Rule::cut_twt => twt_command(ItemInteractionType::Cut, command),
+        Rule::handle_twt => twt_command(ItemInteractionType::Handle, command),
+        Rule::move_twt => twt_command(ItemInteractionType::Move, command),
+        Rule::open_twt => twt_command(ItemInteractionType::Open, command),
+        Rule::repair_twt => twt_command(ItemInteractionType::Repair, command),
+        Rule::sharpen_twt => twt_command(ItemInteractionType::Sharpen, command),
+        Rule::turn_twt => twt_command(ItemInteractionType::Turn, command),
+        Rule::unlock_twt => twt_command(ItemInteractionType::Unlock, command),
+        _ => unreachable!(),
     }
 }
 
-/// Takes a verb from user input and returns a matching `ItemInteractionType` if any.
-///
-/// The provided verb should be lowercase; `parse_command` handles lowering
-/// player input before delegating here.
-///
-/// # Examples
-/// ```
-/// # use amble_engine::command::parse_interaction_type;
-/// # use amble_engine::item::ItemInteractionType;
-/// assert_eq!(parse_interaction_type("burn"), Some(ItemInteractionType::Burn));
-/// assert_eq!(parse_interaction_type("invalid"), None);
-/// ```
-pub fn parse_interaction_type(verb: &str) -> Option<ItemInteractionType> {
-    INTERACTION_VERBS.get(verb).copied()
+/// Helper to extract user input from a Pair<Rule> (when a single string).
+pub fn inner_string(pair: Pair<Rule>) -> String {
+    if let Some(inner) = pair.into_inner().next() {
+        inner.as_str().to_string()
+    } else {
+        "".to_string()
+    }
 }
 
-lazy_static::lazy_static! {
-    static ref INTERACTION_VERBS: std::collections::HashMap<&'static str, ItemInteractionType> = {
-        use ItemInteractionType::*;
-        let mut verbs = std::collections::HashMap::new();
+/// Helper to extract a pair of strings from inner rules.
+pub fn inner_string_duo(pair: Pair<Rule>) -> (String, String) {
+    let mut inner = pair.into_inner();
+    if let Some(first) = inner.next()
+        && let Some(second) = inner.next()
+    {
+        (first.as_str().to_string(), second.as_str().to_string())
+    } else {
+        ("".to_string(), "".to_string())
+    }
+}
 
-        for verb in ["open", "pry"] {
-            verbs.insert(verb, Open);
-        }
-        for verb in ["attach", "connect", "join"] {
-            verbs.insert(verb, Attach);
-        }
-        for verb in ["break", "smash", "crack", "shatter"] {
-            verbs.insert(verb, Break);
-        }
-        for verb in ["burn", "ignite", "light", "melt"] {
-            verbs.insert(verb, Burn);
-        }
-        for verb in ["extinguish", "spray"] {
-            verbs.insert(verb, Extinguish);
-        }
-        for verb in ["cover", "wrap", "shroud", "mask"] {
-            verbs.insert(verb, Cover);
-        }
-        for verb in ["cut", "slice", "sever", "slash", "carve", "chop"] {
-            verbs.insert(verb, Cut);
-        }
-        for verb in ["handle", "take", "grasp", "hold", "grab"] {
-            verbs.insert(verb, Handle);
-        }
-        for verb in ["move", "remove", "shift", "shove", "budge"] {
-            verbs.insert(verb, Move);
-        }
-        for verb in ["turn", "spin", "twist", "swivel"] {
-            verbs.insert(verb, Turn);
-        }
-        for verb in ["unlock", "undo"] {
-            verbs.insert(verb, Unlock);
-        }
-        for verb in ["sharpen", "hone"] {
-            verbs.insert(verb, Sharpen);
-        }
-        for verb in ["clean", "wipe", "shine", "buff"] {
-            verbs.insert(verb, Clean);
-        }
-        for verb in ["repair", "fix"] {
-            verbs.insert(verb, Repair);
-        }
-
-        verbs
-
-    };
+/// Create a verb-target-with-tool form (`UseItemOn`) command from ItemInteractionType and a Pair.
+pub fn twt_command(verb: ItemInteractionType, pair: Pair<Rule>) -> Command {
+    let (target, tool) = inner_string_duo(pair);
+    Command::UseItemOn { verb, tool, target }
 }
 
 #[cfg(test)]
@@ -259,14 +228,14 @@ mod tests {
         let test_inputs = &[
             "go x",
             "move x",
-            "enter x",
+            "walk x",
             "climb x",
-            "go to x",
-            "go up x",
-            "go through x",
-            "climb up x",
-            "climb down x",
+            "move to x",
+            "run to x",
             "climb through x",
+            "climb into x",
+            "climb on x",
+            "walk through the x",
         ];
         for input in test_inputs {
             assert_eq!(pc(input), Command::MoveTo("x".into()))
@@ -399,7 +368,7 @@ mod tests {
 
     #[test]
     fn parse_go_back_command() {
-        let test_inputs = &["back", "go back", "return"];
+        let test_inputs = &["back", "go back"];
         for input in test_inputs {
             assert_eq!(pc(input), Command::GoBack);
         }
