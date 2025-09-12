@@ -3,7 +3,7 @@
 
 use std::{env, fs, process};
 
-use amble_script::{ActionAst, ConditionAst, compile_rooms_to_toml, compile_triggers_to_toml, compile_spinners_to_toml, parse_program_full};
+use amble_script::{ActionAst, ConditionAst, GoalCondAst, compile_rooms_to_toml, compile_triggers_to_toml, compile_spinners_to_toml, compile_npcs_to_toml, compile_goals_to_toml, parse_program_full};
 use std::collections::{HashMap, HashSet};
 use toml_edit::Document;
 
@@ -15,19 +15,19 @@ fn main() {
     // 2) direct:    <bin> <cmd> <args>
     // Extract subcommand and collect the rest for flags/positional
     let rest: Vec<String> = match args.as_slice() {
-        [_, flag, cmd, tail @ ..] if flag == "--" && (cmd == "compile" || cmd == "lint") => {
+        [_, flag, cmd, tail @ ..] if flag == "--" && (cmd == "compile" || cmd == "lint" || cmd == "compile-dir") => {
             let mut v = vec![cmd.clone()];
             v.extend_from_slice(tail);
             v
         },
-        [_, cmd, tail @ ..] if cmd == "compile" || cmd == "lint" => {
+        [_, cmd, tail @ ..] if cmd == "compile" || cmd == "lint" || cmd == "compile-dir" => {
             let mut v = vec![cmd.clone()];
             v.extend_from_slice(tail);
             v
         },
         _ => {
             eprintln!(
-                "Usage:\n  amble_script compile <file.amble> [--out <out.toml>]\n  amble_script lint <file.amble> [--data-dir <dir>] [--deny-missing]"
+                "Usage:\n  amble_script compile <file.amble> [--out-triggers <triggers.toml>] [--out-rooms <rooms.toml>] [--out-items <items.toml>] [--out-spinners <spinners.toml>] [--out-npcs <npcs.toml>] [--out-goals <goals.toml>]\n  amble_script compile-dir <src_dir> --out-dir <engine_data_dir>\n  amble_script lint <file.amble|dir> [--data-dir <dir>] [--deny-missing]"
             );
             process::exit(2);
         },
@@ -35,6 +35,8 @@ fn main() {
     let cmd = &rest[0];
     if cmd == "compile" {
         run_compile(&rest[1..]);
+    } else if cmd == "compile-dir" {
+        run_compile_dir(&rest[1..]);
     } else if cmd == "lint" {
         run_lint(&rest[1..]);
     } else {
@@ -49,11 +51,24 @@ fn run_compile(args: &[String]) {
     let mut out_path: Option<String> = None; // triggers
     let mut out_rooms: Option<String> = None; // rooms
     let mut out_spinners: Option<String> = None; // spinners
+    let mut out_items: Option<String> = None; // items
+    let mut out_npcs: Option<String> = None; // npcs
+    let mut out_goals: Option<String> = None; // goals
     let mut i = 0;
     while i < args.len() {
         if args[i] == "--out" {
             if i + 1 >= args.len() {
                 eprintln!("--out requires a filepath");
+                process::exit(2);
+            }
+            out_path = Some(args[i + 1].clone());
+            eprintln!("warning: --out is deprecated; use --out-triggers instead");
+            i += 2;
+            continue;
+        }
+        if args[i] == "--out-triggers" {
+            if i + 1 >= args.len() {
+                eprintln!("--out-triggers requires a filepath");
                 process::exit(2);
             }
             out_path = Some(args[i + 1].clone());
@@ -78,6 +93,33 @@ fn run_compile(args: &[String]) {
             i += 2;
             continue;
         }
+        if args[i] == "--out-items" {
+            if i + 1 >= args.len() {
+                eprintln!("--out-items requires a filepath");
+                process::exit(2);
+            }
+            out_items = Some(args[i + 1].clone());
+            i += 2;
+            continue;
+        }
+        if args[i] == "--out-npcs" {
+            if i + 1 >= args.len() {
+                eprintln!("--out-npcs requires a filepath");
+                process::exit(2);
+            }
+            out_npcs = Some(args[i + 1].clone());
+            i += 2;
+            continue;
+        }
+        if args[i] == "--out-goals" {
+            if i + 1 >= args.len() {
+                eprintln!("--out-goals requires a filepath");
+                process::exit(2);
+            }
+            out_goals = Some(args[i + 1].clone());
+            i += 2;
+            continue;
+        }
         if path.is_none() {
             path = Some(args[i].clone());
         }
@@ -92,7 +134,7 @@ fn run_compile(args: &[String]) {
         eprintln!("error: unable to read '{}': {}", &path, e);
         process::exit(1);
     });
-    let (asts, rooms, _items, spinners) = parse_program_full(&src).unwrap_or_else(|e| {
+    let (asts, rooms, items, spinners, npcs, goals) = parse_program_full(&src).unwrap_or_else(|e| {
         eprintln!("parse error: {}", e);
         process::exit(1);
     });
@@ -116,13 +158,39 @@ fn run_compile(args: &[String]) {
                         eprintln!("error: writing '{}': {}", &out, e);
                         process::exit(1);
                     });
-                } else if rooms.is_empty() && spinners.is_empty() {
+                } else if rooms.is_empty() && spinners.is_empty() && items.is_empty() && npcs.is_empty() && goals.is_empty() {
                     // Preserve old behavior: print to stdout if only triggers are present
                     println!("{}", toml);
                 }
             },
             Err(e) => {
                 eprintln!("compile error: {}", e);
+                process::exit(1);
+            },
+        }
+    }
+    // Emit items
+    if !items.is_empty() {
+        match amble_script::compile_items_to_toml(&items) {
+            Ok(toml) => {
+                let header = format!(
+                    "# Generated by amble_script from {}\n# Do not edit: this file is compiled from DSL.\n# Source Hash (fnv64): {:016x}\n\n",
+                    &path,
+                    fnv64(&src)
+                );
+                let toml = format!("{}{}", header, toml);
+                if let Some(out) = out_items.clone() {
+                    fs::write(&out, toml).unwrap_or_else(|e| {
+                        eprintln!("error: writing '{}': {}", &out, e);
+                        process::exit(1);
+                    });
+                } else if asts.is_empty() && rooms.is_empty() && spinners.is_empty() && npcs.is_empty() && goals.is_empty() && out_path.is_none() && out_rooms.is_none() && out_spinners.is_none() {
+                    // If only items present and no other outputs, print to stdout
+                    println!("{}", toml);
+                }
+            },
+            Err(e) => {
+                eprintln!("compile error (items): {}", e);
                 process::exit(1);
             },
         }
@@ -142,7 +210,7 @@ fn run_compile(args: &[String]) {
                         eprintln!("error: writing '{}': {}", &out, e);
                         process::exit(1);
                     });
-                } else if asts.is_empty() && out_path.is_none() && spinners.is_empty() {
+                } else if asts.is_empty() && items.is_empty() && spinners.is_empty() && npcs.is_empty() && goals.is_empty() && out_path.is_none() {
                     // If only rooms present and no triggers output path, print rooms to stdout
                     println!("{}", toml);
                 }
@@ -163,12 +231,12 @@ fn run_compile(args: &[String]) {
                     fnv64(&src)
                 );
                 let toml = format!("{}{}", header, toml);
-                if let Some(out) = out_spinners {
+                if let Some(ref out) = out_spinners {
                     fs::write(&out, toml).unwrap_or_else(|e| {
                         eprintln!("error: writing '{}': {}", &out, e);
                         process::exit(1);
                     });
-                } else if asts.is_empty() && rooms.is_empty() && out_path.is_none() && out_rooms.is_none() {
+                } else if asts.is_empty() && rooms.is_empty() && items.is_empty() && npcs.is_empty() && goals.is_empty() && out_path.is_none() && out_rooms.is_none() {
                     // If only spinners present and no other outputs, print to stdout
                     println!("{}", toml);
                 }
@@ -178,6 +246,261 @@ fn run_compile(args: &[String]) {
                 process::exit(1);
             },
         }
+    }
+    // Emit NPCs
+    if !npcs.is_empty() {
+        match compile_npcs_to_toml(&npcs) {
+            Ok(toml) => {
+                let header = format!(
+                    "# Generated by amble_script from {}\n# Do not edit: this file is compiled from DSL.\n# Source Hash (fnv64): {:016x}\n\n",
+                    &path,
+                    fnv64(&src)
+                );
+                let toml = format!("{}{}", header, toml);
+                if let Some(out) = out_npcs.clone() {
+                    fs::write(&out, toml).unwrap_or_else(|e| {
+                        eprintln!("error: writing '{}': {}", &out, e);
+                        process::exit(1);
+                    });
+                } else if asts.is_empty() && rooms.is_empty() && spinners.is_empty() && items.is_empty() && goals.is_empty() && out_path.is_none() && out_rooms.is_none() && out_items.is_none() {
+                    // If only npcs present and no other outputs, print to stdout
+                    println!("{}", toml);
+                }
+            },
+            Err(e) => {
+                eprintln!("compile error (npcs): {}", e);
+                process::exit(1);
+            },
+        }
+    }
+    // Emit goals
+    if !goals.is_empty() {
+        match compile_goals_to_toml(&goals) {
+            Ok(toml) => {
+                let header = format!(
+                    "# Generated by amble_script from {}\n# Do not edit: this file is compiled from DSL.\n# Source Hash (fnv64): {:016x}\n\n",
+                    &path,
+                    fnv64(&src)
+                );
+                let toml = format!("{}{}", header, toml);
+                if let Some(out) = out_goals.clone() {
+                    fs::write(&out, toml).unwrap_or_else(|e| {
+                        eprintln!("error: writing '{}': {}", &out, e);
+                        process::exit(1);
+                    });
+                } else if asts.is_empty() && rooms.is_empty() && spinners.is_empty() && items.is_empty() && npcs.is_empty() && out_path.is_none() && out_rooms.is_none() && out_spinners.is_none() && out_items.is_none() && out_npcs.is_none() {
+                    println!("{}", toml);
+                }
+            },
+            Err(e) => {
+                eprintln!("compile error (goals): {}", e);
+                process::exit(1);
+            },
+        }
+    }
+}
+
+fn run_compile_dir(args: &[String]) {
+    use std::path::Path;
+    let mut src_dir: Option<String> = None;
+    let mut out_dir: Option<String> = None;
+    let mut only: Option<std::collections::HashSet<String>> = None;
+    let mut verbose = false;
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--out-dir" => {
+                if i + 1 >= args.len() {
+                    eprintln!("--out-dir requires a path to amble_engine/data");
+                    process::exit(2);
+                }
+                out_dir = Some(args[i + 1].clone());
+                i += 2;
+            },
+            "--only" => {
+                if i + 1 >= args.len() {
+                    eprintln!("--only requires a comma-separated list: triggers,rooms,items,spinners,npcs,goals");
+                    process::exit(2);
+                }
+                let list = args[i + 1].split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+                only = Some(list);
+                i += 2;
+            },
+            "--verbose" | "-v" => {
+                verbose = true;
+                i += 1;
+            },
+            s => {
+                if src_dir.is_none() {
+                    src_dir = Some(s.to_string());
+                }
+                i += 1;
+            },
+        }
+    }
+    if src_dir.is_none() || out_dir.is_none() {
+        eprintln!("Usage: amble_script compile-dir <src_dir> --out-dir <engine_data_dir>");
+        process::exit(2);
+    }
+    let src_dir = src_dir.unwrap();
+    let out_dir = out_dir.unwrap();
+    // Collect DSL files
+    let mut files = Vec::new();
+    collect_dsl_files_recursive(&src_dir, &mut files);
+    if files.is_empty() {
+        eprintln!("compile-dir: no .amble/.able files in '{}'", &src_dir);
+        process::exit(1);
+    }
+    // Aggregate ASTs
+    let mut trigs = Vec::new();
+    let mut rooms = Vec::new();
+    let mut items = Vec::new();
+    let mut spinners = Vec::new();
+    let mut npcs = Vec::new();
+    let mut goals = Vec::new();
+    // Build combined source hash (fnv64) using file path + content for determinism
+    let mut concat = String::new();
+    files.sort();
+    let mut total_t = 0usize;
+    let mut total_r = 0usize;
+    let mut total_i = 0usize;
+    let mut total_sp = 0usize;
+    let mut total_n = 0usize;
+    let mut total_g = 0usize;
+    let mut had_error = false;
+    for f in &files {
+        let src = match fs::read_to_string(f) {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("compile-dir: cannot read '{}': {}", f, e);
+                had_error = true;
+                continue;
+            },
+        };
+        concat.push_str(f);
+        concat.push('\n');
+        concat.push_str(&src);
+        match parse_program_full(&src) {
+            Ok((t, r, it, sp, n, g)) => {
+                trigs.extend(t);
+                rooms.extend(r);
+                items.extend(it);
+                spinners.extend(sp);
+                npcs.extend(n);
+                goals.extend(g);
+                if verbose {
+                    eprintln!(
+                        "{}: triggers={}, rooms={}, items={}, spinners={}, npcs={}, goals={}",
+                        f,
+                        trigs.len(),
+                        rooms.len(),
+                        items.len(),
+                        spinners.len(),
+                        npcs.len(),
+                        goals.len()
+                    );
+                }
+                total_t = trigs.len();
+                total_r = rooms.len();
+                total_i = items.len();
+                total_sp = spinners.len();
+                total_n = npcs.len();
+                total_g = goals.len();
+            },
+            Err(e) => {
+                eprintln!("compile-dir: parse error in '{}': {}", f, e);
+                had_error = true;
+            },
+        }
+    }
+    if had_error {
+        eprintln!("compile-dir: aborting due to previous errors");
+        process::exit(1);
+    }
+    let header = |_kind: &str, src_desc: &str, body: &str| -> String {
+        format!(
+            "# Generated by amble_script from {} ({} files)\n# Do not edit: this file is compiled from DSL.\n# Source Hash (fnv64): {:016x}\n\n{}",
+            src_desc,
+            files.len(),
+            fnv64(&concat),
+            body
+        )
+    };
+
+    // Ensure out_dir exists
+    if !Path::new(&out_dir).exists() {
+        if let Err(e) = fs::create_dir_all(&out_dir) {
+            eprintln!("compile-dir: cannot create out-dir '{}': {}", &out_dir, e);
+            process::exit(1);
+        }
+    }
+    // Write each category if non-empty
+    let allows = |k: &str| -> bool { only.as_ref().map(|s| s.contains(k)).unwrap_or(true) };
+    if !trigs.is_empty() && allows("triggers") {
+        match compile_triggers_to_toml(&trigs) {
+            Ok(t) => {
+                let p = format!("{}/triggers.toml", &out_dir);
+                let text = header("triggers", &src_dir, &t);
+                fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+            },
+            Err(e) => { eprintln!("compile-dir error (triggers): {}", e); process::exit(1); },
+        }
+    }
+    if !rooms.is_empty() && allows("rooms") {
+        match compile_rooms_to_toml(&rooms) {
+            Ok(t) => {
+                let p = format!("{}/rooms.toml", &out_dir);
+                let text = header("rooms", &src_dir, &t);
+                fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+            },
+            Err(e) => { eprintln!("compile-dir error (rooms): {}", e); process::exit(1); },
+        }
+    }
+    if !items.is_empty() && allows("items") {
+        match amble_script::compile_items_to_toml(&items) {
+            Ok(t) => {
+                let p = format!("{}/items.toml", &out_dir);
+                let text = header("items", &src_dir, &t);
+                fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+            },
+            Err(e) => { eprintln!("compile-dir error (items): {}", e); process::exit(1); },
+        }
+    }
+    if !spinners.is_empty() && allows("spinners") {
+        match compile_spinners_to_toml(&spinners) {
+            Ok(t) => {
+                let p = format!("{}/spinners.toml", &out_dir);
+                let text = header("spinners", &src_dir, &t);
+                fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+            },
+            Err(e) => { eprintln!("compile-dir error (spinners): {}", e); process::exit(1); },
+        }
+    }
+    if !npcs.is_empty() && allows("npcs") {
+        match compile_npcs_to_toml(&npcs) {
+            Ok(t) => {
+                let p = format!("{}/npcs.toml", &out_dir);
+                let text = header("npcs", &src_dir, &t);
+                fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+            },
+            Err(e) => { eprintln!("compile-dir error (npcs): {}", e); process::exit(1); },
+        }
+    }
+    if !goals.is_empty() && allows("goals") {
+        match compile_goals_to_toml(&goals) {
+            Ok(t) => {
+                let p = format!("{}/goals.toml", &out_dir);
+                let text = header("goals", &src_dir, &t);
+                fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+            },
+            Err(e) => { eprintln!("compile-dir error (goals): {}", e); process::exit(1); },
+        }
+    }
+    if verbose {
+        eprintln!(
+            "Summary: triggers={}, rooms={}, items={}, spinners={}, npcs={}, goals={}",
+            total_t, total_r, total_i, total_sp, total_n, total_g
+        );
     }
 }
 
@@ -271,12 +594,6 @@ fn collect_dsl_files_recursive(dir: &str, out: &mut Vec<String>) {
 }
 
 fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
-    // Temporary suppression: skip goals DSL files until supported
-    if path.ends_with("goals.amble") || path.ends_with("goals.able") {
-        eprintln!("lint: skipping goals DSL file '{}'", path);
-        return 0;
-    }
-
     let src = match fs::read_to_string(path) {
         Ok(s) => s,
         Err(e) => {
@@ -284,7 +601,7 @@ fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
             return 0;
         },
     };
-    let (asts, rooms_asts, _item_asts, _spinner_asts) = match parse_program_full(&src) {
+    let (asts, rooms_asts, item_asts, spinner_asts, npc_asts, goal_asts) = match parse_program_full(&src) {
         Ok(v) => v,
         Err(e) => {
             eprintln!("lint: parse error in '{}': {}", path, e);
@@ -297,11 +614,17 @@ fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
     refs.insert("npc", HashSet::new());
     refs.insert("spinner", HashSet::new());
     refs.insert("flag", HashSet::new());
-    // Collect rooms defined in this DSL file so exits/overlays can target them without false positives
+    // Collect ids defined in this DSL file so references can target them without false positives
     let mut defined_rooms: HashSet<String> = HashSet::new();
-    for r in &rooms_asts {
-        defined_rooms.insert(r.id.clone());
-    }
+    let mut defined_items: HashSet<String> = HashSet::new();
+    let mut defined_npcs: HashSet<String> = HashSet::new();
+    let mut defined_spinners: HashSet<String> = HashSet::new();
+    let mut defined_goals: HashSet<String> = HashSet::new();
+    for r in &rooms_asts { defined_rooms.insert(r.id.clone()); }
+    for it in &item_asts { defined_items.insert(it.id.clone()); }
+    for n in &npc_asts { defined_npcs.insert(n.id.clone()); }
+    for sp in &spinner_asts { defined_spinners.insert(sp.id.clone()); }
+    for g in &goal_asts { defined_goals.insert(g.id.clone()); }
     for t in &asts {
         gather_refs_from_condition(&t.event, &mut refs);
         for c in &t.conditions {
@@ -314,9 +637,24 @@ fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
     for r in &rooms_asts {
         gather_refs_from_room(r, &mut refs);
     }
+    // Lint NPC dialogue bucket duplicates and movement room references
+    if !npc_asts.is_empty() {
+        for n in &npc_asts {
+            // warn on duplicate dialogue states
+            let mut seen_states: HashSet<&str> = HashSet::new();
+            for (state_key, _lines) in &n.dialogue {
+                if !seen_states.insert(state_key.as_str()) {
+                    eprintln!(
+                        "lint: warning: NPC '{}' has duplicate dialogue bucket '{}'",
+                        n.id, state_key
+                    );
+                }
+            }
+        }
+    }
     let mut missing = 0usize;
     for id in &refs["item"] {
-        if !world.items.contains(id) {
+        if !world.items.contains(id) && !defined_items.contains(id) {
             report_missing_with_location(path, &src, "item", id, &world.items);
             missing += 1;
         }
@@ -329,14 +667,73 @@ fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
             missing += 1;
         }
     }
+    // Lint NPC movement rooms
+    if !npc_asts.is_empty() {
+        for n in &npc_asts {
+            if let Some(mv) = &n.movement {
+                for rid in &mv.rooms {
+                    if !world.rooms.contains(rid) && !defined_rooms.contains(rid) {
+                        let mut cands = world.rooms.clone();
+                        cands.extend(defined_rooms.iter().cloned());
+                        report_missing_with_location(path, &src, "room", rid, &cands);
+                        missing += 1;
+                    }
+                }
+            }
+        }
+    }
+    // Lint goals conditions
+    for g in &goal_asts {
+        let check = |cond: &GoalCondAst, missing: &mut usize| {
+            match cond {
+                GoalCondAst::HasFlag(f)
+                | GoalCondAst::MissingFlag(f)
+                | GoalCondAst::FlagInProgress(f)
+                | GoalCondAst::FlagComplete(f) => {
+                    // Skip empty sentinel used by parser for missing "start when" (activate_when)
+                    if f.trim().is_empty() {
+                        return;
+                    }
+                    let base = f.split('#').next().unwrap_or(f);
+                    if !world.flags.contains(base) {
+                        report_missing_with_location(path, &src, "flag", f, &world.flags);
+                        *missing += 1;
+                    }
+                },
+                GoalCondAst::HasItem(i) => {
+                    if !world.items.contains(i) {
+                        report_missing_with_location(path, &src, "item", i, &world.items);
+                        *missing += 1;
+                    }
+                },
+                GoalCondAst::ReachedRoom(r) => {
+                    if !world.rooms.contains(r) {
+                        report_missing_with_location(path, &src, "room", r, &world.rooms);
+                        *missing += 1;
+                    }
+                },
+                GoalCondAst::GoalComplete(id) => {
+                    if !world.goals.contains(id) && !defined_goals.contains(id) {
+                        // Suggest from both world and locally-defined goal ids for better hints
+                        let mut cands = world.goals.clone();
+                        cands.extend(defined_goals.iter().cloned());
+                        report_missing_with_location(path, &src, "goal", id, &cands);
+                        *missing += 1;
+                    }
+                },
+            }
+        };
+        check(&g.finished_when, &mut missing);
+        check(&g.activate_when, &mut missing);
+    }
     for id in &refs["npc"] {
-        if !world.npcs.contains(id) {
+        if !world.npcs.contains(id) && !defined_npcs.contains(id) {
             report_missing_with_location(path, &src, "npc", id, &world.npcs);
             missing += 1;
         }
     }
     for id in &refs["spinner"] {
-        if !world.spinners.contains(id) {
+        if !world.spinners.contains(id) && !defined_spinners.contains(id) {
             report_missing_with_location(path, &src, "spinner", id, &world.spinners);
             missing += 1;
         }
@@ -415,6 +812,7 @@ fn find_position_for_id(src: &str, kind: &str, id: &str) -> Option<(usize, usize
             format!(" with npc {}", id),
         ],
         "spinner" => vec![format!(" spinner {}", id), format!(" ambient {}", id)],
+        "goal" => vec![format!(" goal complete {}", id)],
         "flag" => vec![
             format!(" flag {}", id),
             format!(" missing flag {}", id),
@@ -700,6 +1098,7 @@ struct WorldRefs {
     npcs: HashSet<String>,
     spinners: HashSet<String>,
     flags: HashSet<String>,
+    goals: HashSet<String>,
 }
 
 fn load_world_refs(dir: &str) -> Result<WorldRefs, String> {
@@ -708,6 +1107,7 @@ fn load_world_refs(dir: &str) -> Result<WorldRefs, String> {
     let mut npcs = HashSet::new();
     let mut spinners = HashSet::new();
     let mut flags = HashSet::new();
+    let mut goals = HashSet::new();
 
     fn load_ids(doc: &Document, key: &str, field: &str) -> HashSet<String> {
         let mut set = HashSet::new();
@@ -729,6 +1129,7 @@ fn load_world_refs(dir: &str) -> Result<WorldRefs, String> {
     let rooms_path = format!("{}/rooms.toml", dir);
     let npcs_path = format!("{}/npcs.toml", dir);
     let spinners_path = format!("{}/spinners.toml", dir);
+    let goals_path = format!("{}/goals.toml", dir);
     let triggers_path = format!("{}/triggers.toml", dir);
 
     let read = |p: &str| -> Result<Document, String> {
@@ -750,6 +1151,9 @@ fn load_world_refs(dir: &str) -> Result<WorldRefs, String> {
     }
     if let Ok(doc) = read(&spinners_path) {
         spinners = load_ids(&doc, "spinners", "spinnerType");
+    }
+    if let Ok(doc) = read(&goals_path) {
+        goals = load_ids(&doc, "goals", "id");
     }
     if let Ok(doc) = read(&triggers_path) {
         if let Ok(raw) = fs::read_to_string(&triggers_path) {
@@ -794,6 +1198,7 @@ fn load_world_refs(dir: &str) -> Result<WorldRefs, String> {
         npcs,
         spinners,
         flags,
+        goals,
     })
 }
 
@@ -897,7 +1302,7 @@ fn fnv64(s: &str) -> u64 {
 
 fn flags_from_triggers_dsl(src: &str) -> HashSet<String> {
     let mut out = HashSet::new();
-    if let Ok((trigs, _rooms, _items, _spinners)) = parse_program_full(src) {
+    if let Ok((trigs, _rooms, _items, _spinners, _npcs, _goals)) = parse_program_full(src) {
         for t in trigs {
             collect_flags_from_actions_ast(&t.actions, &mut out);
         }

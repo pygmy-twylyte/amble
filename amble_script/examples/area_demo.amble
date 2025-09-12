@@ -1,0 +1,53 @@
+# Area Demo: mixed content in one file
+
+# Rooms
+room demo-room {
+  name "Demo Room"
+  desc "A small room used to demonstrate the DSL."
+  exit east -> demo-corridor
+}
+
+room demo-corridor {
+  name "Demo Corridor"
+  desc "A short corridor connecting the demo rooms."
+  exit west -> demo-room
+}
+
+# Items
+item demo_widget {
+  name "Demo Widget"
+  desc "A widget lying on the floor."
+  portable true
+  location room demo-room
+  ability Read
+  requires handle insulate
+}
+
+# NPCs
+npc demo_helper {
+  name "Demo Helper"
+  desc "An assistant who knows the demo well."
+  location room demo-corridor
+  state custom want-widget
+  dialogue normal {
+    "Hello there!"
+  }
+  dialogue custom want-widget {
+    "Could you bring me the demo widget, please?"
+  }
+}
+
+# Goals
+goal demo-start "Begin the Demo"
+desc "Look around in the demo room."
+group optional
+done when has flag saw-demo
+
+# Triggers
+trigger "see widget" when look at item demo_widget {
+  if missing flag saw-demo {
+    do show "You notice a small widget labeled 'DEMO'."
+    do add flag saw-demo
+  }
+}
+
