@@ -94,7 +94,14 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
         return command;
     }
 
-    let command = CommandParser::parse(Rule::command, &lc_input).unwrap().next().unwrap();
+    // parse gameplay commands; fall back to Unknown on parse failure
+    let mut pairs = match CommandParser::parse(Rule::command, &lc_input) {
+        Ok(pairs) => pairs,
+        Err(_) => return Command::Unknown,
+    };
+    let Some(command) = pairs.next() else {
+        return Command::Unknown;
+    };
     match command.as_rule() {
         Rule::EOI => Command::Unknown,
         Rule::inventory => Command::Inventory,
@@ -187,6 +194,12 @@ mod tests {
     fn pc(input: &str) -> Command {
         let mut view = View::new();
         parse_command(input, &mut view)
+    }
+
+    #[test]
+    fn parse_unknown_command() {
+        assert_eq!(pc("foobar"), Command::Unknown);
+        assert_eq!(pc(":notadev"), Command::Unknown);
     }
 
     #[test]
