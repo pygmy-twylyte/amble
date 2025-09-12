@@ -3,7 +3,7 @@
 
 use std::{env, fs, process};
 
-use amble_script::{ActionAst, ConditionAst, compile_triggers_to_toml, compile_rooms_to_toml, parse_program_full};
+use amble_script::{ActionAst, ConditionAst, compile_rooms_to_toml, compile_triggers_to_toml, parse_program_full};
 use std::collections::{HashMap, HashSet};
 use toml_edit::Document;
 
@@ -46,8 +46,8 @@ fn main() {
 fn run_compile(args: &[String]) {
     use std::process;
     let mut path: Option<String> = None;
-    let mut out_path: Option<String> = None;        // triggers
-    let mut out_rooms: Option<String> = None;       // rooms
+    let mut out_path: Option<String> = None; // triggers
+    let mut out_rooms: Option<String> = None; // rooms
     let mut i = 0;
     while i < args.len() {
         if args[i] == "--out" {
@@ -82,7 +82,7 @@ fn run_compile(args: &[String]) {
         eprintln!("error: unable to read '{}': {}", &path, e);
         process::exit(1);
     });
-    let (asts, rooms) = parse_program_full(&src).unwrap_or_else(|e| {
+    let (asts, rooms, _items) = parse_program_full(&src).unwrap_or_else(|e| {
         eprintln!("parse error: {}", e);
         process::exit(1);
     });
@@ -248,7 +248,7 @@ fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
             return 0;
         },
     };
-    let (asts, rooms_asts) = match parse_program_full(&src) {
+    let (asts, rooms_asts, _item_asts) = match parse_program_full(&src) {
         Ok(v) => v,
         Err(e) => {
             eprintln!("lint: parse error in '{}': {}", path, e);
@@ -315,7 +315,13 @@ fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
     missing
 }
 
-fn report_missing_with_location(path: &str, src: &str, kind: &str, id: &str, candidates: &std::collections::HashSet<String>) {
+fn report_missing_with_location(
+    path: &str,
+    src: &str,
+    kind: &str,
+    id: &str,
+    candidates: &std::collections::HashSet<String>,
+) {
     if let Some((line_no, col, line)) = find_position_for_id(src, kind, id) {
         let suggestions = suggest_ids(id, candidates);
         if suggestions.is_empty() {
@@ -349,7 +355,10 @@ fn report_missing_with_location(path: &str, src: &str, kind: &str, id: &str, can
         } else {
             eprintln!(
                 "{}: unknown {} '{}' (did you mean: {}?)",
-                path, kind, id, suggestions.join(", ")
+                path,
+                kind,
+                id,
+                suggestions.join(", ")
             );
         }
     }
@@ -429,13 +438,17 @@ fn byte_index_to_line_col(src: &str, idx: usize) -> Option<(usize, usize, String
 fn suggest_ids(target: &str, candidates: &std::collections::HashSet<String>) -> Vec<String> {
     let mut scored: Vec<(usize, String)> = Vec::new();
     for c in candidates {
-        if c == target { continue; }
+        if c == target {
+            continue;
+        }
         if c.starts_with(target) || c.contains(target) || target.starts_with(c) {
             scored.push((0, c.clone()));
             continue;
         }
         let d = edit_distance_bounded(target, c, 3);
-        if d <= 2 { scored.push((d, c.clone())); }
+        if d <= 2 {
+            scored.push((d, c.clone()));
+        }
     }
     scored.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
     scored.into_iter().take(3).map(|(_, s)| s).collect()
@@ -444,16 +457,20 @@ fn suggest_ids(target: &str, candidates: &std::collections::HashSet<String>) -> 
 fn edit_distance_bounded(a: &str, b: &str, _max: usize) -> usize {
     let (a, b) = (a.as_bytes(), b.as_bytes());
     let (n, m) = (a.len(), b.len());
-    if n == 0 { return m; }
-    if m == 0 { return n; }
+    if n == 0 {
+        return m;
+    }
+    if m == 0 {
+        return n;
+    }
     let mut prev: Vec<usize> = (0..=m).collect();
     let mut cur = vec![0usize; m + 1];
     for i in 1..=n {
         cur[0] = i;
-        let ac = a[i-1];
+        let ac = a[i - 1];
         for j in 1..=m {
-            let cost = if ac == b[j-1] { 0 } else { 1 };
-            cur[j] = (prev[j] + 1).min(cur[j-1] + 1).min(prev[j-1] + cost);
+            let cost = if ac == b[j - 1] { 0 } else { 1 };
+            cur[j] = (prev[j] + 1).min(cur[j - 1] + 1).min(prev[j - 1] + cost);
         }
         std::mem::swap(&mut prev, &mut cur);
     }
@@ -844,7 +861,7 @@ fn fnv64(s: &str) -> u64 {
 
 fn flags_from_triggers_dsl(src: &str) -> HashSet<String> {
     let mut out = HashSet::new();
-    if let Ok((trigs, _rooms)) = parse_program_full(src) {
+    if let Ok((trigs, _rooms, _items)) = parse_program_full(src) {
         for t in trigs {
             collect_flags_from_actions_ast(&t.actions, &mut out);
         }

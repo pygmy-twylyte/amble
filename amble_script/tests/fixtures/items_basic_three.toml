@@ -1,0 +1,29 @@
+# item no_cake (source line 1)
+[[items]]
+id = "no_cake"
+name = "No Cake"
+description = "Absence of cake."
+portable = true
+location = { Inventory = "player" }
+# item portal_gun (source line 8)
+[[items]]
+id = "portal_gun"
+name = "Portal Gun"
+description = "A device."
+portable = false
+location = { Room = "portal-room" }
+container_state = "closed"
+
+[[items.abilities]]
+type = "TurnOn"
+# item lost_and_found_key (source line 17)
+[[items]]
+id = "lost_and_found_key"
+name = "Lost and Found Key"
+description = "A small brass key."
+portable = true
+location = { Npc = "clerk" }
+
+[[items.abilities]]
+type = "Unlock"
+target = "box"
