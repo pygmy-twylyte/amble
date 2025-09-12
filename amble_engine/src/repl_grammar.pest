@@ -12,15 +12,16 @@ phrase    = @{ word ~ (WHITESPACE+ ~ !prep ~ !manner_prep ~ word)* }
 command = _{ verb_do_io | verb_obj | simple }
 
 artic       = _{ "the" | "an" | "a" }
-prep        = _{ "at" | "into" | "on" | "in" | "to" }
+prep        = _{ "at" | "into" | "on" | "in" | "to" | "from" | "down" }
 manner_prep = _{ "with" | "using" }
 dir_prep    = _{ "in to" | "to" | "at" | "into" | "on" | "in" | "through" }
 
 // synonyms
-take_verb   = _{ "take" | "get" | "grab" | "snag" | "steal" | "pick" ~ "up" }
-start_verb  = _{ "start" | "trigger" | "activate" | "fire" }
+take_verb   = _{ "take" | "get" | "grab" | "snag" | "steal" | "pick" ~ "up" | "remove" }
+start_verb  = _{ "start" | "trigger" | "activate" | "fire" | "touch" }
 switch_verb = _{ "turn" | "switch" | "flip" }
-go_verb     = _{ "go" | "walk" | "move" | "climb" | "jog" | "run" }
+// " " after go is intentional to keep from matching "goals"
+go_verb = _{ ("go " ~ !"back") | "walk" | "move" | "climb" | "jog" | "run" }
 
 // simple commands - no objects
 simple     = _{ inventory | help | goals | look | quit | go_back | vm_clear | vm_verbose | vm_brief }
@@ -40,7 +41,7 @@ look_at  =  { "look" ~ prep? ~ artic? ~ phrase | ("examine" | "exam" | "ex") ~ a
 load     =  { ("load" | "reload") ~ save_name }
 save     =  { "save" ~ save_name }
 take     =  { take_verb ~ artic? ~ phrase }
-drop     =  { "drop" ~ artic? ~ phrase }
+drop     =  { (("drop" | "leave") ~ artic? ~ phrase) | ("put" ~ artic? ~ phrase ~ "down") }
 talk_to  =  { ("talk" | "speak") ~ ("to" | "with") ~ artic? ~ phrase }
 turn_on  =  { (start_verb ~ artic? ~ phrase) | (switch_verb ~ artic? ~ phrase ~ "on") }
 theme    =  { "theme" ~ ident }
@@ -54,7 +55,7 @@ read     =  { "read" ~ artic? ~ phrase }
 // verb -> direct and indirect object commands
 verb_do_io  = _{ vtwt_cmd | take_from | put_in | give_to_npc }
 give_to_npc =  { ("give" | "hand" | "toss" | "pass") ~ phrase ~ "to" ~ phrase }
-put_in      =  { ("put" | "insert" | "drop") ~ artic? ~ phrase ~ prep ~ artic? ~ phrase }
+put_in      =  { ("place" | "put" | "insert" | "drop") ~ artic? ~ phrase ~ prep ~ artic? ~ phrase }
 take_from   =  { take_verb ~ artic? ~ phrase ~ ("from" | "out" ~ "of") ~ artic? ~ phrase }
 
 // <Verb> Target With Tool form commands.

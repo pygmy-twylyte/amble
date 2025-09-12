@@ -28,7 +28,7 @@ text = "Near the bottom of the stairs stands an impressive, intricately sculpted
 id = "parish-landing"
 name = "Parish Landing"
 base_description = """
-A small plateau carved into the hillside, marked by an old wooden sign that reads: 'Pilgrims Welcome â Pancakes Served Daily (Terms and Conditions Apply)'. A faded poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a holy relic.
+A small plateau carved into the hillside, marked by an old wooden sign that reads: 'Pilgrims Welcome – Pancakes Served Daily (Terms and Conditions Apply)'. A faded poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a holy relic.
 
 From here, the steps curve gently upward to another distant landing. A modest trail leads west toward a nearby parish."""
 location = "Nowhere"
@@ -48,7 +48,7 @@ name = "Parish of Saint Alfonzo"
 base_description = """
 The parish resembles a half-abandoned diner and half-absolved church, complete with stained glass windows depicting breakfast foods in heroic poses. The air smells faintly of syrup and tobacco.
 
-A refrigerated pedestal in the corner hums solemnly. A hymn board near the door lists this weekâs sermon: 'On the Sanctity of the Short Stack.'"""
+A refrigerated pedestal in the corner hums solemnly. A hymn board near the door lists this week’s sermon: 'On the Sanctity of the Short Stack.'"""
 location = "Nowhere"
 
 [rooms.exits.east]
@@ -100,7 +100,7 @@ A modest wooden shed stands alone in the clearing. It appears freshly painted an
         'ARTHUR \"TWO SHEDS\" JACKSON
          Philosopher, Composer, Owner of One Shed'
 
-A second, smaller foundation lies nearby, overgrown with weeds. A broken signpost beside it reads: 'Future Site of Shed #2 â Delayed Indefinitely.' The forest is dark and dense, and the slope falls off sharply beyond the shed."""
+A second, smaller foundation lies nearby, overgrown with weeds. A broken signpost beside it reads: 'Future Site of Shed #2 – Delayed Indefinitely.' The forest is dark and dense, and the slope falls off sharply beyond the shed."""
 location = "Nowhere"
 
 [rooms.exits.west]
@@ -126,7 +126,7 @@ A small stone guard post clings to the side of the trail, complete with a creaky
 
 'NOTICE: Passage beyond this point may lead to anachronism.'
 
-It seems no oneâs been stationed here in quite some time. The trail continues upward, leading to what appears to be an ancient roadâand a distinctly non-ancient office park."""
+It seems no one’s been stationed here in quite some time. The trail continues upward, leading to what appears to be an ancient road—and a distinctly non-ancient office park."""
 location = "Nowhere"
 
 [rooms.exits.up]
@@ -226,7 +226,7 @@ to = "snowfield"
 [[rooms]]
 id = "snow-camp"
 name = "Abandoned Campsite"
-base_description = "The remains of a temporary shelter are dug into a snowbank here. The tent has collapsed, half-fused to a scorched sled. The river â or some frozen remnant of it â glistens beyond."
+base_description = "The remains of a temporary shelter are dug into a snowbank here. The tent has collapsed, half-fused to a scorched sled. The river — or some frozen remnant of it — glistens beyond."
 location = "Nowhere"
 
 [rooms.exits.east]
@@ -241,7 +241,7 @@ The so-called loading dock juts ten feet *above* the ground, with no ramp, stair
 A bronze plaque proudly identifies this as a **Bloody Stupid Johnson** project:
 'Winner of the 3rd Prize for Architectural Enthusiasm, 1973.'
 
-It's unclear what this office ever needed to loadâor who would deliver to the side of a remote building halfway up a mountain."""
+It's unclear what this office ever needed to load—or who would deliver to the side of a remote building halfway up a mountain."""
 location = "Nowhere"
 
 [rooms.exits.southeast]
@@ -269,7 +269,7 @@ text = "Dibbler slumps against the dock, lamenting the lack of deliveries."
 id = "east-of-building"
 name = "East of Building"
 base_description = """
-Youâre east of the building now, facing a patch of ornamental gravel and a struggling yucca plant. The air here smells faintly of ozone and buttered lobster, though the source is unclear.
+You’re east of the building now, facing a patch of ornamental gravel and a struggling yucca plant. The air here smells faintly of ozone and buttered lobster, though the source is unclear.
 
 The side of the building appears to be a normal wall, but you keep glimpsing something that looks like -- patio umbrellas? -- from the corner of your eye. You briefly wonder if the building is bending space or if your sense of geography is just feeling shy.
 
@@ -339,7 +339,7 @@ text = "Dibbler mutters about slow lobby sales."
 [[rooms]]
 id = "b-a-office"
 name = "Amble Adventures Main Office"
-base_description = "The office of Amble Adventures, a wholly disowned subsidiary of Brains Anonymousâ¢, is a shrine to barely-funded creativity. Faded posters of games that were never released adorn the walls, including one titled 'PONG Construction Set 3000'. A sagging ficus looms in the corner like itâs been through something. An Initechâ¢ Poetry Performer plays possum in another corner, hoping you don't notice it."
+base_description = "The office of Amble Adventures, a wholly disowned subsidiary of Brains Anonymous™, is a shrine to barely-funded creativity. Faded posters of games that were never released adorn the walls, including one titled 'PONG Construction Set 3000'. A sagging ficus looms in the corner like it’s been through something. An Initech™ Poetry Performer plays possum in another corner, hoping you don't notice it."
 location = "Nowhere"
 
 [rooms.exits.east]
@@ -511,7 +511,7 @@ text = "Black smoke and the occasional lick of flame pour through the portal fro
 [[rooms]]
 id = "aperture-lab"
 name = "Aperture Science Laboratory"
-base_description = "The unnaturally whiteâwalls, floor, ceiling, even the air here feels clinical and overexposed. Everything hums at a frequency designed to encourage strict compliance. A single console blinks on a table beside a highly over-engineered printer labeled \"Aperture Science Hospitality Generator.\""
+base_description = "The unnaturally white—walls, floor, ceiling, even the air here feels clinical and overexposed. Everything hums at a frequency designed to encourage strict compliance. A single console blinks on a table beside a highly over-engineered printer labeled \"Aperture Science Hospitality Generator.\""
 location = "Nowhere"
 
 [rooms.exits.portal]
@@ -584,7 +584,7 @@ to = "restaurant"
 [[rooms]]
 id = "patio"
 name = "Restaurant Patio"
-base_description = "The patio overlooks nothing in particularâjust an endless starfield gently swirling beyond a transparent force field. A few metal tables are bolted to the floor, and one of them has a half-empty cocktail glass slowly un-drinking itself. A sign near the edge reads: 'No Leaning Beyond This Point. You have been warned.'"
+base_description = "The patio overlooks nothing in particular—just an endless starfield gently swirling beyond a transparent force field. A few metal tables are bolted to the floor, and one of them has a half-empty cocktail glass slowly un-drinking itself. A sign near the edge reads: 'No Leaning Beyond This Point. You have been warned.'"
 location = "Nowhere"
 
 [rooms.exits.west]
@@ -602,7 +602,7 @@ to = "b-a-office"
 [[rooms]]
 id = "lift-sublevel-1"
 name = "Elevator (Sublevel AA-3)"
-base_description = "The elevator sits open at the end of the corridor, but its appearance isâ¦ altered. What was once a sleek, polished carriage now seems borrowed from another world entirely. Gilded scrollwork curls along the walls where none existed before, and the ceiling flickers between brass panels and a starlit void. It hums with potentialâand something less easily named."
+base_description = "The elevator sits open at the end of the corridor, but its appearance is… altered. What was once a sleek, polished carriage now seems borrowed from another world entirely. Gilded scrollwork curls along the walls where none existed before, and the ceiling flickers between brass panels and a starlit void. It hums with potential—and something less easily named."
 location = "Nowhere"
 
 [rooms.exits.main]
@@ -617,7 +617,7 @@ name = "Sublevel AA-3 Entrance"
 base_description = """
 A small landing area covered in dust. Buckets, tools, and debris are strewn about the floor. The door to the west is labeled with a sign:
 
-                        ð§ ROOM AA-3B ð§
+                        🚧 ROOM AA-3B 🚧
                  FICTIONAL UNIVERSE CONTAINMENT"""
 location = "Nowhere"
 
@@ -697,9 +697,9 @@ to = "corridor-south"
 id = "observation-room"
 name = "Field Observation Room"
 base_description = """
-Thick observation windows, long since spiderwebbed with cracks, overlook what should be Room AA-3Bâbut only darkness and occasional flashes of unreality appear beyond. Abandoned swivel chairs and battered clipboards litter the room. A faint smell of burnt ozone hangs in the air.
+Thick observation windows, long since spiderwebbed with cracks, overlook what should be Room AA-3B—but only darkness and occasional flashes of unreality appear beyond. Abandoned swivel chairs and battered clipboards litter the room. A faint smell of burnt ozone hangs in the air.
 
-A console near the glass flickers with a repeating message: 'CONTAINMENT BREACH LOGGED â STATUS: UNRESOLVED.'"""
+A console near the glass flickers with a repeating message: 'CONTAINMENT BREACH LOGGED – STATUS: UNRESOLVED.'"""
 location = "Nowhere"
 
 [rooms.exits.east]
@@ -761,7 +761,7 @@ to = "monolith-room"
 [[rooms]]
 id = "monolith-room"
 name = "Monolith Room"
-base_description = "The room is stark, dim, and cavernous. A series of industrial floodlights cast long, angled shadows across the centerpiece: a tall, perfectly black monolith that defies reflection. It absorbs light, sound, andâif you stare too longâpossibly thought."
+base_description = "The room is stark, dim, and cavernous. A series of industrial floodlights cast long, angled shadows across the centerpiece: a tall, perfectly black monolith that defies reflection. It absorbs light, sound, and—if you stare too long—possibly thought."
 location = "Nowhere"
 
 [rooms.exits.east]

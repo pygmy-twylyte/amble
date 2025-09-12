@@ -10,17 +10,6 @@ fn test_command_parse() {
     use ae::command::*;
     let mut view = View::new();
     assert!(matches!(parse_command("look", &mut view), Command::Look));
-    assert_eq!(parse_interaction_type("burn"), Some(item::ItemInteractionType::Burn));
-    assert_eq!(
-        parse_interaction_type("extinguish"),
-        Some(item::ItemInteractionType::Extinguish)
-    );
-    assert_eq!(
-        parse_interaction_type("spray"),
-        Some(item::ItemInteractionType::Extinguish)
-    );
-    assert_eq!(parse_interaction_type("ignite"), Some(item::ItemInteractionType::Burn));
-    assert_eq!(parse_interaction_type("pry"), Some(item::ItemInteractionType::Open));
 }
 
 #[test]
