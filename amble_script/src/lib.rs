@@ -14,7 +14,7 @@
 
 mod parser;
 pub use parser::{AstError, parse_program, parse_trigger};
-pub use parser::{parse_items, parse_program_full, parse_rooms};
+pub use parser::{parse_items, parse_program_full, parse_rooms, parse_spinners};
 
 use thiserror::Error;
 use toml_edit::{Array, ArrayOfTables, Document, InlineTable, Item, Table, value};
@@ -741,6 +741,23 @@ pub struct ItemAbilityAst {
     pub target: Option<String>,
 }
 
+// -----------------
+// Spinners
+// -----------------
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SpinnerAst {
+    pub id: String,
+    pub wedges: Vec<SpinnerWedgeAst>,
+    pub src_line: usize,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SpinnerWedgeAst {
+    pub text: String,
+    pub width: usize,
+}
+
 /// Compile rooms into TOML string matching amble_engine/data/rooms.toml structure.
 pub fn compile_rooms_to_toml(rooms: &[RoomAst]) -> Result<String, CompileError> {
     let mut doc = Document::new();
@@ -949,6 +966,40 @@ pub fn compile_items_to_toml(items: &[ItemAst]) -> Result<String, CompileError> 
         aot.push(t);
     }
     doc["items"] = Item::ArrayOfTables(aot);
+    Ok(doc.to_string())
+}
+
+/// Compile spinners into TOML string matching amble_engine/data/spinners.toml structure.
+pub fn compile_spinners_to_toml(spinners: &[SpinnerAst]) -> Result<String, CompileError> {
+    let mut doc = Document::new();
+    let mut aot = ArrayOfTables::new();
+    for sp in spinners {
+        if sp.id.trim().is_empty() {
+            return Err(CompileError::InvalidAst("spinner id missing".into()));
+        }
+        let mut t = Table::new();
+        t["spinnerType"] = value(sp.id.clone());
+        let mut vals = Array::default();
+        let mut widths = Array::default();
+        for w in &sp.wedges {
+            vals.push(w.text.clone());
+            widths.push(w.width as i64);
+        }
+        vals.set_trailing_comma(true);
+        widths.set_trailing_comma(true);
+        t["values"] = Item::Value(vals.into());
+        if sp.wedges.iter().any(|w| w.width != 1) {
+            t["widths"] = Item::Value(widths.into());
+        }
+        if sp.src_line > 0 {
+            t.decor_mut()
+                .set_prefix(format!("# spinner {} (source line {})\n", sp.id, sp.src_line));
+        } else {
+            t.decor_mut().set_prefix(format!("# spinner {}\n", sp.id));
+        }
+        aot.push(t);
+    }
+    doc["spinners"] = Item::ArrayOfTables(aot);
     Ok(doc.to_string())
 }
 
@@ -2104,5 +2155,26 @@ trigger "spawn in container" when always {
         assert!(toml.contains("type = \"spawnItemInContainer\""));
         assert!(toml.contains("item_id = \"broken_emitter\""));
         assert!(toml.contains("container_id = \"lost_and_found_box\""));
+    }
+
+    #[test]
+    fn compile_spinners_golden() {
+        let src = std::fs::read_to_string("data/spinners.amble").expect("read");
+        let spinners = parse_spinners(&src).expect("parse ok");
+        let toml = compile_spinners_to_toml(&spinners).expect("compile ok");
+        let expected = std::fs::read_to_string("../amble_engine/data/spinners.toml").expect("read");
+        let expected_clean = expected
+            .lines()
+            .filter(|l| !l.trim_start().starts_with('#'))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let actual_clean = toml
+            .lines()
+            .filter(|l| !l.trim_start().starts_with('#'))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let expected_val: toml::Value = toml::from_str(&expected_clean).expect("parse expected");
+        let actual_val: toml::Value = toml::from_str(&actual_clean).expect("parse actual");
+        assert_eq!(actual_val, expected_val);
     }
 }

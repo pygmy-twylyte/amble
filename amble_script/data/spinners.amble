@@ -1,0 +1,219 @@
+spinner quitMsg {
+  wedge "Bye." width 1
+  wedge "Auf Wiedersehen." width 1
+  wedge "Later, 'gator!" width 1
+  wedge "Aww. Come back soon." width 1
+}
+
+spinner movement {
+  wedge "Staying alert, you go on..." width 1
+  wedge "You move that direction..." width 1
+  wedge "Coolly, you roll ahead..." width 1
+  wedge "Heading that direction..." width 1
+  wedge "You saunter along..." width 1
+  wedge "Merrily, you traipse ahead..." width 1
+  wedge "You ramble on..." width 1
+  wedge "Cruising right along..." width 1
+  wedge "Your trek continues..." width 1
+  wedge "Strolling right along..." width 1
+  wedge "Roam, if you want to..." width 1
+  wedge "You amble ahead..." width 1
+  wedge "You practice your silly walk in that direction..." width 1
+  wedge "Your path decided, you tromp forth..." width 1
+  wedge "Your hike continues..." width 1
+  wedge "\"Why not jog?\", you think, as you plod along..." width 1
+  wedge "You shuffle onward..." width 1
+  wedge "You trot that way, like you have to poop..." width 1
+  wedge "Lightly, you skip forth..." width 1
+  wedge "Onward, you lope like a tauntaun..." width 1
+  wedge "You sally forth..." width 1
+  wedge "With no chance of an Uber here, you decide to hoof it..." width 1
+}
+
+spinner takeVerb {
+  wedge "take" width 1
+  wedge "grab" width 1
+  wedge "get" width 1
+  wedge "snag" width 1
+  wedge "nab" width 1
+  wedge "bag" width 1
+  wedge "pocket" width 1
+}
+
+spinner npcIgnore {
+  wedge "Has nothing to say." width 1
+  wedge "Ignores you." width 1
+  wedge "Hums a tune, hoping you'll go away." width 1
+  wedge "Stands mute." width 1
+  wedge "Disregards you completely. Are you sure you said something out loud?" width 1
+  wedge "Isn't in the mood to talk." width 1
+}
+
+spinner entityNotFound {
+  wedge "What's that?" width 1
+  wedge "You made that up." width 1
+  wedge "Never heard of it." width 1
+  wedge "You don't see that here." width 1
+  wedge "404 Not Found - Try Again" width 1
+  wedge "I don't recognize that." width 1
+  wedge "It's gotta be here somewhere. Let me look again." width 1
+  wedge "What language is that?" width 1
+}
+
+spinner destinationUnknown {
+  wedge "Let me MapQuest that real quick..." width 1
+  wedge "Can't get there from here." width 1
+  wedge "Nobody wants to go there." width 1
+  wedge "Is that by the In-N-Out Burger?" width 1
+  wedge "Is that near the corner of Nope and Nah?" width 1
+  wedge "Sure. Just keep walking until reality breaks." width 1
+  wedge "Your feet refuse to obey such nonsense." width 1
+  wedge "You strain your eyes in that direction, but see only confusion." width 1
+  wedge "That direction folds in on itself and vanishes." width 1
+  wedge "An ancient voice whispers, 'Not today.'" width 1
+  wedge "Quantum parser collapsed that possibility." width 1
+  wedge "Not even the map believes in that." width 1
+  wedge "If you walk that way, you'll need a packed lunch and several paradox waivers." width 1
+  wedge "You boldly go nowhere in particular." width 1
+  wedge "That direction has been repossessed by the Guild of Pathfinders." width 1
+  wedge "The local gods of misdirection hold a brief conference and vote no." width 1
+}
+
+spinner unrecognizedCommand {
+  wedge "Syntax error. Please insert quarter and try again." width 1
+  wedge "That command has been fed to a hungry goat and can no longer be retrieved." width 1
+  wedge "The universe tilts its head, confused." width 1
+  wedge "I'm sorry, Dave. I'm afraid I can't do that." width 1
+  wedge "The parser emits a low, judgmental beep." width 1
+  wedge "That seems like something you'd do in a *different* text adventure." width 1
+  wedge "Your words echo into the void, unacknowledged." width 1
+  wedge "Command not recognized. Try 'help', 'yell', or 'cry'." width 1
+  wedge "That input caused a minor existential crisis in the REPL. It's fine now." width 1
+  wedge "Unrecognized verb. Maybe try it in ALL CAPS for emphasis?" width 1
+  wedge "Snagrilfromp. I can make words up too." width 1
+  wedge "Have you tried turning your syntax off and back on again?" width 1
+  wedge "I don't think your fingers are working right. Are you having a stroke?" width 1
+}
+
+spinner noEffect {
+  wedge "You try it. It doesn't seem to help." width 1
+  wedge "The world shrugs." width 1
+  wedge "You stare at the result. The result stares back." width 1
+  wedge "Well... it *could* have worked." width 1
+  wedge "Absolutely nothing happens. Not even a dramatic pause." width 1
+  wedge "You feel a vague sense of anticlimax." width 1
+  wedge "Somewhere, a cricket hesitates, then chirps once." width 1
+  wedge "The laws of physics remain disappointingly unaltered." width 1
+  wedge "Reality refuses to acknowledge your efforts." width 1
+  wedge "No errors, no effect, no fanfare. Just... stillness." width 1
+  wedge "That's another entry for the Journal of Failed Experiments." width 1
+  wedge "It *seemed* like a great idea, but no, it wasn't." width 1
+  wedge "That didn't work. Maybe if you type it faster, or in all caps?" width 1
+}
+
+spinner ambientWoodland {
+  wedge "A bird sings warily: \"Poo-tee-weet?\"" width 1
+  wedge "A swallow flies past, carrying a coconut." width 1
+  wedge "A hummingbird flies by, but gliding like an albatross on an unseen wind." width 1
+  wedge "Something tromps through the leaves behind you, but stops when you turn around." width 1
+  wedge "You hear a faint, echoing laugh from deep in the woods." width 1
+  wedge "A cloud of gnats drifts by, holding the distinct shape of a spinning question mark." width 1
+  wedge "A Yeti walks in the distance. It's blurry." width 1
+  wedge "The stone steps appear to be made of yellow bricks -- just until you blink." width 1
+  wedge "Were those trees there before? They seem to be rearranging themselves when you're not looking." width 1
+  wedge "The woods go eerily quiet. Your footsteps don't even make a sound." width 1
+  wedge "A fire-breathing dragonfly blows smoke rings as it flies past." width 1
+  wedge "A wooden rabbit with big, pointy teeth scurries behind a tree." width 1
+  wedge "You hear someone in the distance yell \"Run away! Run away!\"" width 1
+  wedge "A sign reads: \"Beware of the Leopard\" but there's no leopard in sight. Yet." width 1
+  wedge "Three weirdly tall trees are playing what looks suspiciously like whack-a-mole with some gophers." width 1
+  wedge "A small dragon flies by muttering \"Not the Mama! Not the Mama!\"" width 1
+  wedge "Someone has carved \"HERE LIES UNCLE LOUIE\" on a tree. Uncle Louie is probably fine." width 1
+  wedge "A white rabbit in a waistcoat checks his pocket watch and hurries past, looking stressed." width 1
+  wedge "You glimpse what might be the back end of a gruffalo disappearing behind a boulder." width 1
+}
+
+spinner ambientAA3B {
+  wedge "A shimmering blue police box flickers into existence for an instant, then vanishes." width 1
+  wedge "A robed figure mutters in an unknown tongue before dissolving into mist." width 1
+  wedge "For a moment, your surroundings flatten as if the world became two-dimensional." width 1
+  wedge "A penguin waddles past, wearing a lab coat and muttering about a narrative malfunction." width 1
+  wedge "A black obelisk taller than you shimmers into view, then fades as quickly as it appeared." width 1
+  wedge "Someone appears above you, shouts \"The enemy gate is DOWN!\", and then fades to nothing." width 1
+  wedge "For a flash, you see the word \"REDRUM\" splashed in red across the wall in front of you." width 1
+  wedge "Suddenly, tribbles cover every flat surface around you... and then they're gone." width 1
+  wedge "A kid rides by on a BMX bike, yelling \"Give me my TWO DOLLARS!\"" width 1
+  wedge "A couple of robots nearby heatedly debate the Zeroth Law of Robotics." width 1
+  wedge "You see a Borg drone repeatedly walking into a wall, disconnected from the collective." width 1
+  wedge "Around the corner, someone shouts \"Push the button, Frank!\"" width 1
+  wedge "A huge, shimmering metallic ring appears beside you, and something that looks like an Egyption hieroglyph walks through... then both disappear." width 1
+  wedge "A deadpan voice announces: \"The computer is your friend. Happiness is mandatory.\"" width 1
+  wedge "You briefly see a man in a crowbar t-shirt prying open a crate before he vanishes in orange light." width 1
+  wedge "A cake materializes on a nearby table. The cake is a lie. The cake disappears." width 1
+  wedge "You hear someone muttering \"Would you kindly...\" before the voice fades away." width 1
+  wedge "A small sign appears reading \"You are likely to be eaten by a grue\" then immediately catches fire." width 1
+  wedge "Someone walks by carrying a fish and a towel, looking very determined." width 1
+  wedge "A voice booms: \"All your base are belong to us\" followed by awkward silence." width 1
+  wedge "You glimpse a person in power armor giving a thumbs up before stepping into a cryogenic pod." width 1
+  wedge "A figure in a lab coat adjusts his glasses and says \"Rise and shine, Mister Freeman\" before vanishing." width 1
+  wedge "All devices nearby repeat: ATTENTION ALL PLANETS OF THE SOLAR FEDERATION: WE HAVE ASSUMED CONTROL" width 1
+}
+
+spinner ambientInterior {
+  wedge "The intercom crackles: \"Please return the time machine to the checkout desk last Wednesday.\"" width 1
+  wedge "A siren whoops twice, then cuts off mid-blare." width 1
+  wedge "A calm female voice over the PA says: \"Welcome to Aperture Science. Enjoy your tests,\" followed by a beep." width 1
+  wedge "Somewhere behind the walls, gears grind and then stop abruptly." width 1
+  wedge "The lights flicker and buzz with a discordant hum, then flare brightly for a moment." width 1
+  wedge "A gust of wind rushes through the room, but there are no open doors or windows." width 1
+  wedge "A faint voice says \"Testing in progress\" followed by a thump." width 1
+  wedge "You hear a tritone, then \"Fiction containment at 42%. Not great. Not terrible.\"" width 1
+  wedge "The building shudders violently for a moment. Nobody seems to notice." width 1
+  wedge "All of the fire doors around you suddenly close." width 1
+  wedge "Someone in the distance yells: \"Hey, who turned out the lights?!\"" width 1
+  wedge "You hear the \"Underdog\" theme through the wall from an adjacent room." width 1
+  wedge "Paperwork and supplies pass by through a pneumatic tube overhead, along with an occasional piece of cake." width 1
+  wedge "The PA system plays a brief snippet of \"Also Sprach Zarathustra\" for no apparent reason." width 1
+  wedge "You hear someone practicing the lute in a distant room. They clearly need to keep practicing. And tune the lute. Then light it on fire." width 1
+  wedge "A vending machine dispenses a can of Slurm with an enthusiastic \"Woo!\"" width 1
+  wedge "The sprinkler system activates for exactly three seconds, then stops with an apologetic beep." width 1
+  wedge "Someone in the next room is apparently explaining the plot of \"Finnegan's Wake\" to a rubber duck." width 1
+  wedge "A mechanical voice announces: \"Attention: The Ministry of Silly Walks is now in session.\"" width 1
+  wedge "The air conditioning kicks in with a sound suspiciously like whale song." width 1
+}
+
+spinner ambientSnowfield {
+  wedge "A large husky dog watches you intently, staying close but not approaching." width 1
+  wedge "A husky tracks you through the snowield, keeping at a short distance." width 1
+  wedge "From a small copse nearby, a large husky stares at you, stone still. Never blinking. Is it breathing?" width 1
+}
+
+spinner nauseated {
+  wedge "Since reading the Vogon poetry, you can't shake a background queasiness." width 1
+  wedge "You throw up a little in your mouth." width 1
+  wedge "You regurgitate a bit of last night's dinner, but can't remember what it was." width 1
+  wedge "Everything smells faintly of old tuna. Why?" width 1
+  wedge "Your stomach roils, like that time you stayed up all night drinking mezcal with Ruben. Why did you eat that worm?" width 1
+  wedge "You stop by the nearest wastebin for a few dry heaves." width 1
+  wedge "You feel like you've just eaten a Klingon gagh sampler platter. Raw." width 1
+  wedge "Your digestive system briefly considers filing a formal complaint with management." width 1
+  wedge "You experience the gastric equivalent of a Windows blue screen of death." width 1
+  wedge "A wave of nausea hits you like a brick made entirely of other, smaller bricks." width 1
+  wedge "You feel queasy enough to consider switching to a liquid diet of nothing but antacids." width 1
+  wedge "Throat burning with acid bile, you swear off Vogon poetry forever. Just like last time." width 1
+}
+
+spinner muzak {
+  wedge "A Muzak version of Porcupine Tree's \"The Sound of Muzak\" plays softly over the elevator speaker." width 1
+  wedge "Another version of \"The Sound of Muzak\" plays, this time with a pan flute playing the melody." width 1
+  wedge "\"The Sound of Muzak\" plays louder now, with a tuba playing the bass part." width 1
+  wedge "The Muzak version of \"The Sound of Muzak\" crescendos leading up to the guitar -- I mean harp -- solo." width 1
+  wedge "The Muzak pauses, and you hear the sound of someone flipping over a cassette tape." width 1
+  wedge "The Muzak \"The Sound of Muzak\" grows to intense volume. Sticking your towel in your ears doesn't help." width 1
+  wedge "A gentle acoustic version of \"Master of Puppets\" begins playing. Somehow it's even more disturbing than the original." width 1
+  wedge "The elevator plays what sounds suspiciously like \"Yakety Sax\" arranged for harpsichord and oboe." width 1
+  wedge "You realize the background music is actually the Tetris theme played on a church organ. Very slowly." width 1
+  wedge "A muzak version of \"The Imperial March\" plays. Even Darth Vader would find this offensive." width 1
+  wedge "The speakers emit what can only be described as smooth jazz interpretation of death metal." width 1
+  wedge "Someone has apparently decided that \"Never Gonna Give You Up\" needed a xylophone solo. They were wrong." width 1
+}
