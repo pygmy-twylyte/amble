@@ -5,6 +5,6 @@
   "injection_regex": "amble",
   "grammar": {
     "type": "tree-sitter",
-    "path": "../tree-sitter-amble-script"
+    "path": "./tree-sitter-amble-script"
   }
 }
