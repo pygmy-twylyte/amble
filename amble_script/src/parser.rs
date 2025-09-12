@@ -2,8 +2,8 @@ use pest::Parser;
 use pest_derive::Parser as PestParser;
 
 use crate::{
-    ActionAst, ConditionAst, ContainerStateAst, ItemAbilityAst, ItemAst, ItemLocationAst, OnFalseAst, RoomAst,
-    TriggerAst,
+    ActionAst, ConditionAst, ContainerStateAst, GoalAst, GoalConditionAst, GoalGroupAst, ItemAbilityAst, ItemAst,
+    ItemLocationAst, OnFalseAst, RoomAst, TriggerAst,
 };
 use std::collections::HashMap;
 
@@ -910,6 +910,90 @@ pub fn parse_items(source: &str) -> Result<Vec<ItemAst>, AstError> {
     Ok(items)
 }
 
+/// Parse goals from a source file using a simple line-based parser.
+pub fn parse_goals(source: &str) -> Result<Vec<GoalAst>, AstError> {
+    struct GoalBuilder {
+        id: String,
+        name: String,
+        description: String,
+        group: GoalGroupAst,
+        start_when: Option<GoalConditionAst>,
+        done_when: Option<GoalConditionAst>,
+        src_line: usize,
+    }
+
+    let mut goals = Vec::new();
+    let mut cur: Option<GoalBuilder> = None;
+    for (idx, raw) in source.lines().enumerate() {
+        let line = raw.trim();
+        if line.is_empty() {
+            continue;
+        }
+        if let Some(rest) = line.strip_prefix("goal ") {
+            if let Some(g) = cur.take() {
+                let done = g.done_when.ok_or(AstError::Shape("goal missing done when"))?;
+                goals.push(GoalAst {
+                    id: g.id,
+                    name: g.name,
+                    description: g.description,
+                    group: g.group,
+                    start_when: g.start_when,
+                    done_when: done,
+                    src_line: g.src_line,
+                });
+            }
+            let mut parts = rest.splitn(2, ' ');
+            let id = parts.next().ok_or(AstError::Shape("goal id"))?.to_string();
+            let name_part = parts.next().ok_or(AstError::Shape("goal name"))?;
+            let name = unquote(name_part.trim());
+            cur = Some(GoalBuilder {
+                id,
+                name,
+                description: String::new(),
+                group: GoalGroupAst::Required,
+                start_when: None,
+                done_when: None,
+                src_line: idx + 1,
+            });
+            continue;
+        }
+        if let Some(g) = cur.as_mut() {
+            if let Some(rest) = line.strip_prefix("desc ") {
+                g.description = unquote(rest.trim());
+            } else if let Some(rest) = line.strip_prefix("group ") {
+                g.group = match rest.trim() {
+                    "required" => GoalGroupAst::Required,
+                    "optional" => GoalGroupAst::Optional,
+                    "status-effect" => GoalGroupAst::StatusEffect,
+                    other => {
+                        return Err(AstError::ShapeAt {
+                            msg: "unknown goal group",
+                            context: other.to_string(),
+                        });
+                    },
+                };
+            } else if let Some(rest) = line.strip_prefix("start when ") {
+                g.start_when = Some(parse_goal_condition_text(rest)?);
+            } else if let Some(rest) = line.strip_prefix("done when ") {
+                g.done_when = Some(parse_goal_condition_text(rest)?);
+            }
+        }
+    }
+    if let Some(g) = cur {
+        let done = g.done_when.ok_or(AstError::Shape("goal missing done when"))?;
+        goals.push(GoalAst {
+            id: g.id,
+            name: g.name,
+            description: g.description,
+            group: g.group,
+            start_when: g.start_when,
+            done_when: done,
+            src_line: g.src_line,
+        });
+    }
+    Ok(goals)
+}
+
 fn unquote(s: &str) -> String {
     parse_string(s).unwrap_or_else(|_| s.to_string())
 }
@@ -1284,6 +1368,32 @@ fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Resu
         return Ok(ConditionAst::ChancePercent(pct));
     }
     Err(AstError::Shape("unknown condition"))
+}
+
+fn parse_goal_condition_text(text: &str) -> Result<GoalConditionAst, AstError> {
+    let t = text.trim();
+    if let Some(rest) = t.strip_prefix("has flag ") {
+        return Ok(GoalConditionAst::HasFlag(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("missing flag ") {
+        return Ok(GoalConditionAst::MissingFlag(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("has item ") {
+        return Ok(GoalConditionAst::HasItem(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("reached room ") {
+        return Ok(GoalConditionAst::ReachedRoom(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("goal complete ") {
+        return Ok(GoalConditionAst::GoalComplete(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("flag complete ") {
+        return Ok(GoalConditionAst::FlagComplete(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("flag in progress ") {
+        return Ok(GoalConditionAst::FlagInProgress(rest.trim().to_string()));
+    }
+    Err(AstError::Shape("unknown goal condition"))
 }
 
 fn split_top_level_commas(s: &str) -> Vec<&str> {

@@ -80,6 +80,11 @@ keyword = {
   | "absent"
   | "custom"
   | "here"
+  | "goal"
+  | "start"
+  | "done"
+  | "group"
+  | "desc"
   | // container state literals
   "closed"
   | "locked"
@@ -114,7 +119,7 @@ triple_quoted = @{ "\"\"\"" ~ triple_char* ~ "\"\"\"" }
 single_quoted = @{ "'" ~ (escape | (!("\\" | "'") ~ ANY))* ~ "'" }
 string        = @{ triple_quoted | raw_quoted_h5 | raw_quoted_h4 | raw_quoted_h3 | raw_quoted_h2 | raw_quoted_h1 | raw_quoted | quoted | single_quoted }
 
-program = { SOI ~ (set_decl | trigger | room_def | item_def)+ ~ EOI }
+program = { SOI ~ (set_decl | trigger | room_def | item_def | goal_def)+ ~ EOI }
 
 set_decl = { "let" ~ "set" ~ ident ~ "=" ~ set_list }
 set_list = { "(" ~ ident ~ ("," ~ ident)* ~ ")" }
@@ -206,6 +211,8 @@ cond = {
   | has_visited_room
   | flag_in_progress
   | flag_complete
+  | goal_complete
+  | reached_room
   | with_npc
   | npc_has_item
   | npc_in_state
@@ -222,6 +229,8 @@ missing_item     = { "missing" ~ "item" ~ ident }
 has_visited_room = { "has" ~ "visited" ~ "room" ~ ident }
 flag_in_progress = { "flag" ~ "in" ~ "progress" ~ ident }
 flag_complete    = { "flag" ~ "complete" ~ ident }
+goal_complete    = { "goal" ~ "complete" ~ ident }
+reached_room     = { "reached" ~ "room" ~ ident }
 with_npc         = { "with" ~ "npc" ~ ident }
 // Note: DSL shape here matches parser's simple split: "npc has item <npc> <item>"
 npc_has_item   = { "npc" ~ "has" ~ "item" ~ ident ~ ident }
@@ -237,6 +246,17 @@ in_rooms = { "in" ~ "rooms" ~ ident ~ ("," ~ ident)* }
 all_group = { "all" ~ "(" ~ cond_list ~ ")" }
 any_group = { "any" ~ "(" ~ cond_list ~ ")" }
 cond_list = { cond ~ ("," ~ cond)* }
+
+// -----------------
+// Goals
+// -----------------
+
+goal_def = { "goal" ~ ident ~ string ~ goal_stmt* }
+goal_stmt = { goal_desc | goal_group | goal_start_when | goal_done_when }
+goal_desc = { "desc" ~ string }
+goal_group = { "group" ~ ident }
+goal_start_when = { "start" ~ "when" ~ cond }
+goal_done_when = { "done" ~ "when" ~ cond }
 
 // -----------------
 // Rooms (minimal)

@@ -14,7 +14,7 @@
 
 mod parser;
 pub use parser::{AstError, parse_program, parse_trigger};
-pub use parser::{parse_items, parse_program_full, parse_rooms};
+pub use parser::{parse_goals, parse_items, parse_program_full, parse_rooms};
 
 use thiserror::Error;
 use toml_edit::{Array, ArrayOfTables, Document, InlineTable, Item, Table, value};
@@ -741,6 +741,35 @@ pub struct ItemAbilityAst {
     pub target: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum GoalGroupAst {
+    Required,
+    Optional,
+    StatusEffect,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum GoalConditionAst {
+    HasItem(String),
+    HasFlag(String),
+    MissingFlag(String),
+    ReachedRoom(String),
+    GoalComplete(String),
+    FlagComplete(String),
+    FlagInProgress(String),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GoalAst {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub group: GoalGroupAst,
+    pub start_when: Option<GoalConditionAst>,
+    pub done_when: GoalConditionAst,
+    pub src_line: usize,
+}
+
 /// Compile rooms into TOML string matching amble_engine/data/rooms.toml structure.
 pub fn compile_rooms_to_toml(rooms: &[RoomAst]) -> Result<String, CompileError> {
     let mut doc = Document::new();
@@ -950,6 +979,77 @@ pub fn compile_items_to_toml(items: &[ItemAst]) -> Result<String, CompileError> 
     }
     doc["items"] = Item::ArrayOfTables(aot);
     Ok(doc.to_string())
+}
+
+/// Compile goals into TOML string matching amble_engine/data/goals.toml structure.
+pub fn compile_goals_to_toml(goals: &[GoalAst]) -> Result<String, CompileError> {
+    let mut doc = Document::new();
+    let mut aot = ArrayOfTables::new();
+    for g in goals {
+        if g.id.trim().is_empty() || g.name.trim().is_empty() {
+            return Err(CompileError::InvalidAst("goal id/name missing".into()));
+        }
+        let mut t = Table::new();
+        t["id"] = value(g.id.clone());
+        t["name"] = value(g.name.clone());
+        t["description"] = value(g.description.clone());
+        let mut grp = InlineTable::new();
+        let grp_str = match g.group {
+            GoalGroupAst::Required => "required",
+            GoalGroupAst::Optional => "optional",
+            GoalGroupAst::StatusEffect => "status-effect",
+        };
+        grp.insert("type", toml_edit::Value::from(grp_str));
+        t["group"] = Item::Value(grp.into());
+        if let Some(start) = &g.start_when {
+            t["activate_when"] = goal_condition_value(start);
+        }
+        t["finished_when"] = goal_condition_value(&g.done_when);
+        if g.src_line > 0 {
+            t.decor_mut()
+                .set_prefix(format!("# goal {} (source line {})\n", g.id, g.src_line));
+        } else {
+            t.decor_mut().set_prefix(format!("# goal {}\n", g.id));
+        }
+        aot.push(t);
+    }
+    doc["goals"] = Item::ArrayOfTables(aot);
+    Ok(doc.to_string())
+}
+
+fn goal_condition_value(cond: &GoalConditionAst) -> Item {
+    let mut it = InlineTable::new();
+    match cond {
+        GoalConditionAst::HasItem(item) => {
+            it.insert("type", toml_edit::Value::from("hasItem"));
+            it.insert("item_sym", toml_edit::Value::from(item.clone()));
+        },
+        GoalConditionAst::HasFlag(flag) => {
+            it.insert("type", toml_edit::Value::from("hasFlag"));
+            it.insert("flag", toml_edit::Value::from(flag.clone()));
+        },
+        GoalConditionAst::MissingFlag(flag) => {
+            it.insert("type", toml_edit::Value::from("missingFlag"));
+            it.insert("flag", toml_edit::Value::from(flag.clone()));
+        },
+        GoalConditionAst::ReachedRoom(room) => {
+            it.insert("type", toml_edit::Value::from("reachedRoom"));
+            it.insert("room_sym", toml_edit::Value::from(room.clone()));
+        },
+        GoalConditionAst::GoalComplete(goal_id) => {
+            it.insert("type", toml_edit::Value::from("goalComplete"));
+            it.insert("goal_id", toml_edit::Value::from(goal_id.clone()));
+        },
+        GoalConditionAst::FlagComplete(flag) => {
+            it.insert("type", toml_edit::Value::from("flagComplete"));
+            it.insert("flag", toml_edit::Value::from(flag.clone()));
+        },
+        GoalConditionAst::FlagInProgress(flag) => {
+            it.insert("type", toml_edit::Value::from("flagInProgress"));
+            it.insert("flag", toml_edit::Value::from(flag.clone()));
+        },
+    }
+    Item::Value(toml_edit::Value::from(it))
 }
 
 fn action_to_value(a: &ActionAst) -> toml_edit::Value {
@@ -1461,6 +1561,7 @@ fn leaf_condition_inline(c: &ConditionAst) -> InlineTable {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use toml_edit::Document;
 
     #[test]
     fn parse_minimal_room_and_compile() {
@@ -1506,7 +1607,7 @@ room high-ridge {
     #[test]
     fn parse_room_with_visited_true() {
         let src = r#"
-room start {
+room foyer {
   name "Start"
   desc "First room"
   visited true
@@ -2104,5 +2205,27 @@ trigger "spawn in container" when always {
         assert!(toml.contains("type = \"spawnItemInContainer\""));
         assert!(toml.contains("item_id = \"broken_emitter\""));
         assert!(toml.contains("container_id = \"lost_and_found_box\""));
+    }
+
+    #[test]
+    fn parse_and_compile_goal_roundtrip() {
+        let src = r#"
+goal find-the-office "Find the Office"
+desc "According to the posted note, there's an office somewhere and you need to check in."
+group required
+start when goal complete get-oriented
+done when reached room b-a-office
+"#;
+        let goals = parse_goals(src).expect("parse ok");
+        assert_eq!(goals.len(), 1);
+        let toml = compile_goals_to_toml(&goals).expect("compile ok");
+        let doc: Document = toml.parse().expect("toml parse");
+        let arr = doc["goals"].as_array_of_tables().expect("goals array");
+        assert_eq!(arr.len(), 1);
+        let g = arr.iter().next().unwrap();
+        assert_eq!(g["id"].as_str(), Some("find-the-office"));
+        assert_eq!(g["group"]["type"].as_str(), Some("required"));
+        assert_eq!(g["activate_when"]["type"].as_str(), Some("goalComplete"));
+        assert_eq!(g["finished_when"]["type"].as_str(), Some("reachedRoom"));
     }
 }
