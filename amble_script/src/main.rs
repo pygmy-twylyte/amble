@@ -95,7 +95,7 @@ fn run_compile(args: &[String]) {
         eprintln!("error: unable to read '{}': {}", &path, e);
         process::exit(1);
     });
-    let (asts, rooms, _items) = parse_program_full(&src).unwrap_or_else(|e| {
+    let (asts, rooms, _items, _spinners) = parse_program_full(&src).unwrap_or_else(|e| {
         eprintln!("parse error: {}", e);
         process::exit(1);
     });
@@ -284,7 +284,7 @@ fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
             return 0;
         },
     };
-    let (asts, rooms_asts, _item_asts) = match parse_program_full(&src) {
+    let (asts, rooms_asts, _item_asts, _spinner_asts) = match parse_program_full(&src) {
         Ok(v) => v,
         Err(e) => {
             eprintln!("lint: parse error in '{}': {}", path, e);
@@ -897,7 +897,7 @@ fn fnv64(s: &str) -> u64 {
 
 fn flags_from_triggers_dsl(src: &str) -> HashSet<String> {
     let mut out = HashSet::new();
-    if let Ok((trigs, _rooms, _items)) = parse_program_full(src) {
+    if let Ok((trigs, _rooms, _items, _spinners)) = parse_program_full(src) {
         for t in trigs {
             collect_flags_from_actions_ast(&t.actions, &mut out);
         }

@@ -2,8 +2,10 @@ use pest::Parser;
 use pest_derive::Parser as PestParser;
 
 use crate::{
+
     ActionAst, ConditionAst, ContainerStateAst, GoalAst, GoalConditionAst, GoalGroupAst, ItemAbilityAst, ItemAst,
-    ItemLocationAst, OnFalseAst, RoomAst, TriggerAst,
+    ItemLocationAst, OnFalseAst, RoomAst, TriggerAst,SpinnerAst, SpinnerWedgeAst, 
+
 };
 use std::collections::HashMap;
 
@@ -30,12 +32,14 @@ pub fn parse_trigger(source: &str) -> Result<TriggerAst, AstError> {
 
 /// Parse multiple triggers from a full source file (triggers only view).
 pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
-    let (trigs, _rooms, _items) = parse_program_full(source)?;
+    let (trigs, _rooms, _items, _spinners) = parse_program_full(source)?;
     Ok(trigs)
 }
 
-/// Parse a full program returning triggers, rooms, and items.
-pub fn parse_program_full(source: &str) -> Result<(Vec<TriggerAst>, Vec<RoomAst>, Vec<ItemAst>), AstError> {
+/// Parse a full program returning triggers, rooms, items, and spinners.
+pub fn parse_program_full(
+    source: &str,
+) -> Result<(Vec<TriggerAst>, Vec<RoomAst>, Vec<ItemAst>, Vec<SpinnerAst>), AstError> {
     let mut pairs = DslParser::parse(Rule::program, source).map_err(|e| AstError::Pest(e.to_string()))?;
     let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
     let smap = SourceMap::new(source);
@@ -43,6 +47,7 @@ pub fn parse_program_full(source: &str) -> Result<(Vec<TriggerAst>, Vec<RoomAst>
     let mut trigger_pairs = Vec::new();
     let mut room_pairs = Vec::new();
     let mut item_pairs = Vec::new();
+    let mut spinner_pairs = Vec::new();
     for item in pair.clone().into_inner() {
         match item.as_rule() {
             Rule::set_decl => {
@@ -66,6 +71,9 @@ pub fn parse_program_full(source: &str) -> Result<(Vec<TriggerAst>, Vec<RoomAst>
             Rule::item_def => {
                 item_pairs.push(item);
             },
+            Rule::spinner_def => {
+                spinner_pairs.push(item);
+            },
             _ => {},
         }
     }
@@ -84,7 +92,12 @@ pub fn parse_program_full(source: &str) -> Result<(Vec<TriggerAst>, Vec<RoomAst>
         let it = parse_item_pair(ip, source)?;
         items.push(it);
     }
-    Ok((out, rooms, items))
+    let mut spinners = Vec::new();
+    for sp in spinner_pairs {
+        let s = parse_spinner_pair(sp, source)?;
+        spinners.push(s);
+    }
+    Ok((out, rooms, items, spinners))
 }
 
 fn parse_trigger_pair(
@@ -898,15 +911,39 @@ fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<I
     })
 }
 
+fn parse_spinner_pair(sp: pest::iterators::Pair<Rule>, _source: &str) -> Result<SpinnerAst, AstError> {
+    let (src_line, _src_col) = sp.as_span().start_pos().line_col();
+    let mut it = sp.into_inner();
+    let id = it
+        .next()
+        .ok_or(AstError::Shape("expected spinner ident"))?
+        .as_str()
+        .to_string();
+    let block = it.next().ok_or(AstError::Shape("expected spinner block"))?;
+    let mut wedges = Vec::new();
+    for w in block.into_inner() {
+        let mut wi = w.into_inner();
+        let text_pair = wi.next().ok_or(AstError::Shape("wedge text"))?;
+        let width_pair = wi.next().ok_or(AstError::Shape("wedge width"))?;
+        let text = unquote(text_pair.as_str());
+        let width: usize = width_pair
+            .as_str()
+            .parse()
+            .map_err(|_| AstError::Shape("invalid wedge width"))?;
+        wedges.push(SpinnerWedgeAst { text, width });
+    }
+    Ok(SpinnerAst { id, wedges, src_line })
+}
+
 /// Parse only rooms from a source (helper/testing).
 pub fn parse_rooms(source: &str) -> Result<Vec<RoomAst>, AstError> {
-    let (_, rooms, _) = parse_program_full(source)?;
+    let (_, rooms, _, _) = parse_program_full(source)?;
     Ok(rooms)
 }
 
 /// Parse only items from a source (helper/testing).
 pub fn parse_items(source: &str) -> Result<Vec<ItemAst>, AstError> {
-    let (_, _, items) = parse_program_full(source)?;
+    let (_, _, items, _) = parse_program_full(source)?;
     Ok(items)
 }
 
@@ -992,6 +1029,12 @@ pub fn parse_goals(source: &str) -> Result<Vec<GoalAst>, AstError> {
         });
     }
     Ok(goals)
+
+/// Parse only spinners from a source (helper/testing).
+pub fn parse_spinners(source: &str) -> Result<Vec<SpinnerAst>, AstError> {
+    let (_, _, _, spinners) = parse_program_full(source)?;
+    Ok(spinners)
+
 }
 
 fn unquote(s: &str) -> String {

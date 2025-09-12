@@ -119,7 +119,8 @@ triple_quoted = @{ "\"\"\"" ~ triple_char* ~ "\"\"\"" }
 single_quoted = @{ "'" ~ (escape | (!("\\" | "'") ~ ANY))* ~ "'" }
 string        = @{ triple_quoted | raw_quoted_h5 | raw_quoted_h4 | raw_quoted_h3 | raw_quoted_h2 | raw_quoted_h1 | raw_quoted | quoted | single_quoted }
 
-program = { SOI ~ (set_decl | trigger | room_def | item_def | goal_def)+ ~ EOI }
+
+program = { SOI ~ (set_decl | trigger | room_def | item_def | spinner_def | goal_def)+ ~ EOI }
 
 set_decl = { "let" ~ "set" ~ ident ~ "=" ~ set_list }
 set_list = { "(" ~ ident ~ ("," ~ ident)* ~ ")" }
@@ -337,3 +338,11 @@ item_container_state = { "container" ~ "state" ~ ("open" | "closed" | "locked" |
 item_ability = { "ability" ~ ident ~ ident? }
 item_text    = { "text" ~ string }
 item_restricted = { "restricted" ~ boolean }
+
+// -----------------
+// Spinners
+// -----------------
+
+spinner_def   = { "spinner" ~ ident ~ spinner_block }
+spinner_block = { "{" ~ wedge_stmt+ ~ "}" }
+wedge_stmt    = { "wedge" ~ string ~ "width" ~ number }
