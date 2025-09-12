@@ -1,0 +1,21 @@
+room lobby {
+  name "Lobby"
+  desc "An entry room."
+  exit north -> hall
+}
+
+item key {
+  name "Key"
+  portable true
+}
+
+npc guard {
+  name "Guard"
+  location room lobby
+}
+
+goal enter_lobby "Enter lobby"
+desc "Get to lobby"
+group required
+done when has flag arrived
+

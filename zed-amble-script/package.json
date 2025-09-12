@@ -1,0 +1,7 @@
+{
+  "name": "zed-amble-script",
+  "version": "0.1.0",
+  "description": "Zed language support for Amble Script",
+  "engines": { "zed": "*" },
+  "languages": ["./language.json"]
+}

@@ -1,0 +1,8 @@
+((room_block "{" @indent.begin)
+ (room_block "}" @indent.end))
+((item_block "{" @indent.begin)
+ (item_block "}" @indent.end))
+((npc_block "{" @indent.begin)
+ (npc_block "}" @indent.end))
+((spinner_block "{" @indent.begin)
+ (spinner_block "}" @indent.end))

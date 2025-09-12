@@ -1,0 +1,17 @@
+{
+  "name": "tree-sitter-amble-script",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "generate": "tree-sitter generate",
+    "test": "tree-sitter parse test/sample.amble"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "tree-sitter-cli": "^0.20.8"
+  }
+}
