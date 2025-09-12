@@ -96,7 +96,7 @@ done when has item hal_module_1
 goal insert-hal-module-1 "Insert HAL Module #1"
 desc "Once mobilized, the EMH was able to get the module for you. Insert it in the panel in the Observation room to advance HAL's reboot sequence."
 group required
-start when flag complete get-hal-module-1
+start when goal complete get-hal-module-1
 done when has flag module-1-inserted
 
 goal find-hal-module-2 "Find HAL Module #2"

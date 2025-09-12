@@ -2,8 +2,8 @@ use pest::Parser;
 use pest_derive::Parser as PestParser;
 
 use crate::{
-    ActionAst, ConditionAst, ContainerStateAst, ItemAbilityAst, ItemAst, ItemLocationAst, OnFalseAst, RoomAst,
-    SpinnerAst, SpinnerWedgeAst, TriggerAst,
+    ActionAst, ConditionAst, ContainerStateAst, GoalAst, GoalCondAst, GoalGroupAst, ItemAbilityAst, ItemAst, ItemLocationAst, NpcAst, NpcMovementAst,
+    NpcMovementTypeAst, NpcStateValue, OnFalseAst, RoomAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
 };
 use std::collections::HashMap;
 
@@ -30,14 +30,14 @@ pub fn parse_trigger(source: &str) -> Result<TriggerAst, AstError> {
 
 /// Parse multiple triggers from a full source file (triggers only view).
 pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
-    let (trigs, _rooms, _items, _spinners) = parse_program_full(source)?;
+    let (trigs, _rooms, _items, _spinners, _npcs, _goals) = parse_program_full(source)?;
     Ok(trigs)
 }
 
 /// Parse a full program returning triggers, rooms, items, and spinners.
 pub fn parse_program_full(
     source: &str,
-) -> Result<(Vec<TriggerAst>, Vec<RoomAst>, Vec<ItemAst>, Vec<SpinnerAst>), AstError> {
+) -> Result<(Vec<TriggerAst>, Vec<RoomAst>, Vec<ItemAst>, Vec<SpinnerAst>, Vec<NpcAst>, Vec<GoalAst>), AstError> {
     let mut pairs = DslParser::parse(Rule::program, source).map_err(|e| AstError::Pest(e.to_string()))?;
     let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
     let smap = SourceMap::new(source);
@@ -46,6 +46,8 @@ pub fn parse_program_full(
     let mut room_pairs = Vec::new();
     let mut item_pairs = Vec::new();
     let mut spinner_pairs = Vec::new();
+    let mut npc_pairs = Vec::new();
+    let mut goal_pairs = Vec::new();
     for item in pair.clone().into_inner() {
         match item.as_rule() {
             Rule::set_decl => {
@@ -72,6 +74,12 @@ pub fn parse_program_full(
             Rule::spinner_def => {
                 spinner_pairs.push(item);
             },
+            Rule::npc_def => {
+                npc_pairs.push(item);
+            },
+            Rule::goal_def => {
+                goal_pairs.push(item);
+            },
             _ => {},
         }
     }
@@ -95,7 +103,17 @@ pub fn parse_program_full(
         let s = parse_spinner_pair(sp, source)?;
         spinners.push(s);
     }
-    Ok((out, rooms, items, spinners))
+    let mut npcs = Vec::new();
+    for np in npc_pairs {
+        let n = parse_npc_pair(np, source)?;
+        npcs.push(n);
+    }
+    let mut goals = Vec::new();
+    for gp in goal_pairs {
+        let g = parse_goal_pair(gp, source)?;
+        goals.push(g);
+    }
+    Ok((out, rooms, items, spinners, npcs, goals))
 }
 
 fn parse_trigger_pair(
@@ -786,6 +804,7 @@ fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<I
     let mut restricted: Option<bool> = None;
     let mut abilities: Vec<ItemAbilityAst> = Vec::new();
     let mut text: Option<String> = None;
+    let mut requires: Vec<(String, String)> = Vec::new();
     for stmt in block.into_inner() {
         match stmt.as_rule() {
             Rule::item_name => {
@@ -888,6 +907,12 @@ fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<I
                 let s = stmt.into_inner().next().ok_or(AstError::Shape("missing text"))?;
                 text = Some(unquote(s.as_str()));
             },
+            Rule::item_requires => {
+                let mut ri = stmt.into_inner();
+                let interaction = ri.next().ok_or(AstError::Shape("requires interaction"))?.as_str().to_string();
+                let ability = ri.next().ok_or(AstError::Shape("requires ability"))?.as_str().to_string();
+                requires.push((interaction, ability));
+            },
             _ => {},
         }
     }
@@ -905,6 +930,7 @@ fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<I
         restricted: restricted.unwrap_or(false),
         abilities,
         text,
+        interaction_requires: requires,
         src_line,
     })
 }
@@ -922,33 +948,300 @@ fn parse_spinner_pair(sp: pest::iterators::Pair<Rule>, _source: &str) -> Result<
     for w in block.into_inner() {
         let mut wi = w.into_inner();
         let text_pair = wi.next().ok_or(AstError::Shape("wedge text"))?;
-        let width_pair = wi.next().ok_or(AstError::Shape("wedge width"))?;
         let text = unquote(text_pair.as_str());
-        let width: usize = width_pair
-            .as_str()
-            .parse()
-            .map_err(|_| AstError::Shape("invalid wedge width"))?;
+        // width is optional; default to 1
+        let width: usize = if let Some(width_pair) = wi.next() {
+            width_pair
+                .as_str()
+                .parse()
+                .map_err(|_| AstError::Shape("invalid wedge width"))?
+        } else {
+            1
+        };
         wedges.push(SpinnerWedgeAst { text, width });
     }
     Ok(SpinnerAst { id, wedges, src_line })
 }
 
+fn parse_goal_pair(goal: pest::iterators::Pair<Rule>, _source: &str) -> Result<GoalAst, AstError> {
+    let (src_line, _src_col) = goal.as_span().start_pos().line_col();
+    let mut it = goal.into_inner();
+    let id = it.next().ok_or(AstError::Shape("goal id"))?.as_str().to_string();
+    let name = unquote(it.next().ok_or(AstError::Shape("goal name"))?.as_str());
+    let mut description: Option<String> = None;
+    let mut group: Option<GoalGroupAst> = None;
+    let mut activate_when: Option<GoalCondAst> = None;
+    let mut finished_when: Option<GoalCondAst> = None;
+    for p in it {
+        match p.as_rule() {
+            Rule::goal_desc => {
+                let s = p.into_inner().next().ok_or(AstError::Shape("desc text"))?.as_str();
+                description = Some(unquote(s));
+            },
+            Rule::goal_group => {
+                let val = p.as_str().split_whitespace().last().unwrap_or("");
+                group = Some(match val {
+                    "required" => GoalGroupAst::Required,
+                    "optional" => GoalGroupAst::Optional,
+                    "status-effect" => GoalGroupAst::StatusEffect,
+                    _ => GoalGroupAst::Required,
+                });
+            },
+            Rule::goal_start => {
+                let cond = p.into_inner().next().ok_or(AstError::Shape("start cond"))?;
+                activate_when = Some(parse_goal_cond_pair(cond));
+            },
+            Rule::goal_done => {
+                let cond = p.into_inner().next().ok_or(AstError::Shape("done cond"))?;
+                finished_when = Some(parse_goal_cond_pair(cond));
+            },
+            _ => {},
+        }
+    }
+    let description = description.ok_or(AstError::Shape("goal missing desc"))?;
+    let group = group.ok_or(AstError::Shape("goal missing group"))?;
+    let finished_when = finished_when.ok_or(AstError::Shape("goal missing done"))?;
+    let activate_when = activate_when.unwrap_or_else(|| GoalCondAst::HasFlag("".into())); // marker; codegen omits empty
+    Ok(GoalAst { id, name, description, group, activate_when, finished_when, src_line })
+}
+
+fn parse_goal_cond_pair(p: pest::iterators::Pair<Rule>) -> GoalCondAst {
+    let s = p.as_str().trim();
+    if let Some(rest) = s.strip_prefix("has flag ") { return GoalCondAst::HasFlag(rest.trim().to_string()); }
+    if let Some(rest) = s.strip_prefix("missing flag ") { return GoalCondAst::MissingFlag(rest.trim().to_string()); }
+    if let Some(rest) = s.strip_prefix("has item ") { return GoalCondAst::HasItem(rest.trim().to_string()); }
+    if let Some(rest) = s.strip_prefix("reached room ") { return GoalCondAst::ReachedRoom(rest.trim().to_string()); }
+    if let Some(rest) = s.strip_prefix("goal complete ") { return GoalCondAst::GoalComplete(rest.trim().to_string()); }
+    if let Some(rest) = s.strip_prefix("flag in progress ") { return GoalCondAst::FlagInProgress(rest.trim().to_string()); }
+    if let Some(rest) = s.strip_prefix("flag complete ") { return GoalCondAst::FlagComplete(rest.trim().to_string()); }
+    GoalCondAst::HasFlag(s.to_string())
+}
+fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<NpcAst, AstError> {
+    let (src_line, _src_col) = npc.as_span().start_pos().line_col();
+    let mut it = npc.into_inner();
+    let id = it
+        .next()
+        .ok_or(AstError::Shape("expected npc ident"))?
+        .as_str()
+        .to_string();
+    let block = it.next().ok_or(AstError::Shape("expected npc block"))?;
+    let mut name: Option<String> = None;
+    let mut desc: Option<String> = None;
+    let mut location: Option<crate::NpcLocationAst> = None;
+    let mut state: Option<NpcStateValue> = None;
+    let mut movement: Option<NpcMovementAst> = None;
+    let mut dialogue: Vec<(String, Vec<String>)> = Vec::new();
+    for stmt in block.into_inner() {
+        match stmt.as_rule() {
+            Rule::npc_name => {
+                let s = stmt.into_inner().next().ok_or(AstError::Shape("missing npc name"))?;
+                name = Some(unquote(s.as_str()));
+            },
+            Rule::npc_desc => {
+                let s = stmt.into_inner().next().ok_or(AstError::Shape("missing npc desc"))?;
+                desc = Some(unquote(s.as_str()));
+            },
+            Rule::npc_location => {
+                let mut li = stmt.into_inner();
+                let tok = li.next().ok_or(AstError::Shape("location value"))?;
+                let loc = match tok.as_rule() {
+                    Rule::ident => crate::NpcLocationAst::Room(tok.as_str().to_string()),
+                    Rule::string => crate::NpcLocationAst::Nowhere(unquote(tok.as_str())),
+                    _ => return Err(AstError::Shape("npc location")),
+                };
+                location = Some(loc);
+            },
+            Rule::npc_state => {
+                let mut si = stmt.into_inner();
+                // First token: either ident or 'custom'
+                let first = si.next().ok_or(AstError::Shape("state token"))?;
+                let st = if first.as_rule() == Rule::ident {
+                    NpcStateValue::Named(first.as_str().to_string())
+                } else {
+                    // custom ident
+                    let v = si.next().ok_or(AstError::Shape("custom state ident"))?.as_str().to_string();
+                    NpcStateValue::Custom(v)
+                };
+                state = Some(st);
+            },
+            Rule::npc_movement => {
+                // movement <random|route> rooms (<ids>) [timing <ident>] [active <bool>]
+                let s = stmt.as_str();
+                let mtype = if s.contains(" movement random ") || s.trim_start().starts_with("movement random ") {
+                    NpcMovementTypeAst::Random
+                } else {
+                    NpcMovementTypeAst::Route
+                };
+                // rooms list inside (...)
+                let mut rooms: Vec<String> = Vec::new();
+                if let Some(open) = s.find('(') {
+                    if let Some(close_rel) = s[open + 1..].find(')') {
+                        let inner = &s[open + 1..open + 1 + close_rel];
+                        for tok in inner.split(',').map(|x| x.trim()).filter(|x| !x.is_empty()) {
+                            rooms.push(tok.to_string());
+                        }
+                    }
+                }
+                let timing = if let Some(idx) = s.find(" timing ") {
+                    Some(s[idx + 8..].split_whitespace().next().unwrap_or("").to_string())
+                } else { None };
+                let active = if let Some(idx) = s.find(" active ") {
+                    let rest = &s[idx + 8..];
+                    if rest.trim_start().starts_with("true") { Some(true) }
+                    else if rest.trim_start().starts_with("false") { Some(false) } else { None }
+                } else { None };
+                movement = Some(NpcMovementAst { movement_type: mtype, rooms, timing, active });
+            },
+            Rule::npc_dialogue_block => {
+                // dialogue <state|custom ident> { "..."+ }
+                let mut di = stmt.into_inner();
+                let first = di.next().ok_or(AstError::Shape("dialogue state"))?;
+                let key = if first.as_rule() == Rule::ident {
+                    first.as_str().to_string()
+                } else {
+                    let id = di.next().ok_or(AstError::Shape("custom dialogue state ident"))?.as_str().to_string();
+                    format!("custom:{}", id)
+                };
+                let mut lines: Vec<String> = Vec::new();
+                for p in di { if p.as_rule() == Rule::string { lines.push(unquote(p.as_str())); } }
+                dialogue.push((key, lines));
+            },
+            _ => {
+                // Fallback: simple text-based parsing for robustness
+                let txt = stmt.as_str().trim_start();
+                if let Some(rest) = txt.strip_prefix("name ") {
+                    let (nm, _used) = parse_string_at(rest).map_err(|_| AstError::Shape("npc name invalid quoted text"))?;
+                    name = Some(nm);
+                    continue;
+                }
+                if let Some(rest) = txt.strip_prefix("desc ") { // or description
+                    let (ds, _used) = parse_string_at(rest).map_err(|_| AstError::Shape("npc desc invalid quoted text"))?;
+                    desc = Some(ds);
+                    continue;
+                }
+                if let Some(rest) = txt.strip_prefix("location room ") {
+                    location = Some(crate::NpcLocationAst::Room(rest.trim().to_string()));
+                    continue;
+                }
+                if let Some(rest) = txt.strip_prefix("location nowhere ") {
+                    let (note, _used) = parse_string_at(rest).map_err(|_| AstError::Shape("npc location nowhere invalid quoted text"))?;
+                    location = Some(crate::NpcLocationAst::Nowhere(note));
+                    continue;
+                }
+                if let Some(rest) = txt.strip_prefix("state ") {
+                    let rest = rest.trim();
+                    if let Some(val) = rest.strip_prefix("custom ") {
+                        state = Some(NpcStateValue::Custom(val.trim().to_string()));
+                    } else {
+                        // take first token as named state
+                        let token = rest.split_whitespace().next().unwrap_or("");
+                        if !token.is_empty() {
+                            state = Some(NpcStateValue::Named(token.to_string()));
+                        }
+                    }
+                    continue;
+                }
+                if let Some(rest) = txt.strip_prefix("movement ") {
+                    let mut mtype = NpcMovementTypeAst::Route;
+                    if rest.trim_start().starts_with("random ") { mtype = NpcMovementTypeAst::Random; }
+                    let mut rooms: Vec<String> = Vec::new();
+                    if let Some(open) = txt.find('(') {
+                        if let Some(close_rel) = txt[open + 1..].find(')') {
+                            let inner = &txt[open + 1..open + 1 + close_rel];
+                            for tok in inner.split(',').map(|x| x.trim()).filter(|x| !x.is_empty()) {
+                                rooms.push(tok.to_string());
+                            }
+                        }
+                    }
+                    let timing = if let Some(idx) = txt.find(" timing ") {
+                        Some(txt[idx + 8..].split_whitespace().next().unwrap_or("").to_string())
+                    } else { None };
+                    let active = if let Some(idx) = txt.find(" active ") {
+                        let rest = &txt[idx + 8..];
+                        if rest.trim_start().starts_with("true") { Some(true) }
+                        else if rest.trim_start().starts_with("false") { Some(false) } else { None }
+                    } else { None };
+                    movement = Some(NpcMovementAst { movement_type: mtype, rooms, timing, active });
+                    continue;
+                }
+                if let Some(rest) = txt.strip_prefix("dialogue ") {
+                    // dialogue <state|custom id> { "..."+ }
+                    let rest = rest.trim_start();
+                    let (key, after_key) = if let Some(val) = rest.strip_prefix("custom ") {
+                        let mut parts = val.splitn(2, char::is_whitespace);
+                        let id = parts.next().unwrap_or("").to_string();
+                        (format!("custom:{}", id), parts.next().unwrap_or("").to_string())
+                    } else {
+                        let mut parts = rest.splitn(2, char::is_whitespace);
+                        let id = parts.next().unwrap_or("").to_string();
+                        (id, parts.next().unwrap_or("").to_string())
+                    };
+                    if let Some(open_idx) = after_key.find('{') {
+                        if let Some(close_rel) = after_key[open_idx + 1..].rfind('}') {
+                            let mut inner = &after_key[open_idx + 1..open_idx + 1 + close_rel];
+                            let mut lines: Vec<String> = Vec::new();
+                            loop {
+                                inner = inner.trim_start();
+                                if inner.is_empty() { break; }
+                                if inner.starts_with('"') || inner.starts_with('r') || inner.starts_with('\'') {
+                                    if let Ok((val, used)) = parse_string_at(inner) {
+                                        lines.push(val);
+                                        inner = &inner[used..];
+                                        continue;
+                                    } else {
+                                        break;
+                                    }
+                                } else {
+                                    // consume until next quote or end
+                                    if let Some(pos) = inner.find('"') {
+                                        inner = &inner[pos..];
+                                    } else { break; }
+                                }
+                            }
+                            if !lines.is_empty() {
+                                dialogue.push((key, lines));
+                                continue;
+                            }
+                        }
+                    }
+                }
+            },
+        }
+    }
+    let name = name.ok_or(AstError::Shape("npc missing name"))?;
+    let desc = desc.ok_or(AstError::Shape("npc missing desc"))?;
+    let location = location.ok_or(AstError::Shape("npc missing location"))?;
+    let state = state.unwrap_or(NpcStateValue::Named("normal".to_string()));
+    Ok(NpcAst { id, name, desc, location, state, movement, dialogue, src_line })
+}
+
 /// Parse only rooms from a source (helper/testing).
 pub fn parse_rooms(source: &str) -> Result<Vec<RoomAst>, AstError> {
-    let (_, rooms, _, _) = parse_program_full(source)?;
+    let (_, rooms, _, _, _, _) = parse_program_full(source)?;
     Ok(rooms)
 }
 
 /// Parse only items from a source (helper/testing).
 pub fn parse_items(source: &str) -> Result<Vec<ItemAst>, AstError> {
-    let (_, _, items, _) = parse_program_full(source)?;
+    let (_, _, items, _, _, _) = parse_program_full(source)?;
     Ok(items)
 }
 
 /// Parse only spinners from a source (helper/testing).
 pub fn parse_spinners(source: &str) -> Result<Vec<SpinnerAst>, AstError> {
-    let (_, _, _, spinners) = parse_program_full(source)?;
+    let (_, _, _, spinners, _, _) = parse_program_full(source)?;
     Ok(spinners)
+}
+
+/// Parse only npcs from a source (helper/testing).
+pub fn parse_npcs(source: &str) -> Result<Vec<NpcAst>, AstError> {
+    let (_, _, _, _, npcs, _) = parse_program_full(source)?;
+    Ok(npcs)
+}
+
+pub fn parse_goals(source: &str) -> Result<Vec<GoalAst>, AstError> {
+    let (_, _, _, _, _, goals) = parse_program_full(source)?;
+    Ok(goals)
 }
 
 fn unquote(s: &str) -> String {
@@ -1394,23 +1687,24 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         return Ok(ActionAst::Show(super::parser::unquote(rest.trim())));
     }
     if let Some(rest) = t.strip_prefix("do add wedge ") {
-        // do add wedge "text" width <n> spinner <ident>
+        // do add wedge "text" [width <n>] spinner <ident>
         let r = rest.trim();
         let (text, used) = parse_string_at(r).map_err(|_| AstError::Shape("add wedge missing or invalid quote"))?;
-        let after = r[used..].trim_start();
-        let after = after
-            .strip_prefix("width ")
-            .ok_or(AstError::Shape("add wedge missing 'width'"))?;
-        let mut j = 0usize;
-        while j < after.len() && after.as_bytes()[j].is_ascii_digit() {
-            j += 1;
+        let mut after = r[used..].trim_start();
+        // optional width
+        let mut width: usize = 1;
+        if let Some(wrest) = after.strip_prefix("width ") {
+            let mut j = 0usize;
+            while j < wrest.len() && wrest.as_bytes()[j].is_ascii_digit() {
+                j += 1;
+            }
+            if j == 0 {
+                return Err(AstError::Shape("add wedge missing width number"));
+            }
+            width = wrest[..j].parse().map_err(|_| AstError::Shape("invalid wedge width"))?;
+            after = wrest[j..].trim_start();
         }
-        if j == 0 {
-            return Err(AstError::Shape("add wedge missing width number"));
-        }
-        let width: usize = after[..j].parse().map_err(|_| AstError::Shape("invalid wedge width"))?;
-        let after2 = after[j..].trim_start();
-        let spinner = after2
+        let spinner = after
             .strip_prefix("spinner ")
             .ok_or(AstError::Shape("add wedge missing 'spinner'"))?
             .trim()

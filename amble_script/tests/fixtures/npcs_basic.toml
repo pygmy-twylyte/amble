@@ -1,0 +1,37 @@
+# NPCs basic golden
+[[npcs]]
+id = "emh"
+name = "Emergency Medical Hologram"
+description = "A holographic doctor."
+state = { custom = "want-emitter" }
+
+[npcs.location]
+Room = "med-bay"
+
+[npcs.movement]
+movement_type = "random"
+rooms = ["med-bay", "lounge"]
+timing = "every_3_turns"
+active = true
+
+[npcs.dialogue]
+"normal" = ["Please state the nature of the medical emergency."]
+"custom:want-emitter" = ["I need my mobile emitter."]
+
+[[npcs]]
+id = "gonk_droid"
+name = "Gonk Droid"
+description = "A walking battery charger."
+state = "normal"
+
+[npcs.location]
+Room = "main-lobby"
+
+[npcs.movement]
+movement_type = "route"
+rooms = ["main-lobby", "lounge"]
+timing = "every_2_turns"
+
+[npcs.dialogue]
+"normal" = ["GONK!"]
+

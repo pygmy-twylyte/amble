@@ -508,6 +508,10 @@ trigger "Aperture-Lab: Drop Invitation Without Insulation" when take item invita
 }
 
 # ..................................................................................................................SUBLEVEL-1-ENTRANCE
+trigger "Sublevel-1-Entrance: Arrived" only once when enter room sublevel-1-entrance {
+    do add flag entered-sublevel-1
+}
+
 trigger "Sublevel-1-Entrance: Refuse Visitor Pass" when give item visitor_pass to npc black_knight {
     do npc refuse item black_knight "Ha! You may be Arthur, King of the Britons... but I said NONE shall pass. Surely you speak the King's English!"
 }
@@ -659,7 +663,7 @@ when talk to npc hal_9000 {
 trigger "Monolith-Room: HAL/Module #1 Inserted" only once
 when insert item hal_module_1 into item hal_memory_bank {
     do advance flag hal-reboot
-    do add flag module-1-Inserted
+    do add flag module-1-inserted
     do restrict item hal_module_1
     do show "Memory module #1 magnetically locks into place and lights up."
 }
@@ -667,7 +671,7 @@ when insert item hal_module_1 into item hal_memory_bank {
 trigger "Monolith-Room: HAL/Module #2 Inserted" only once
 when insert item hal_module_2 into item hal_memory_bank {
     do advance flag hal-reboot
-    do add flag module-2-Inserted
+    do add flag module-2-inserted
     do restrict item hal_module_2
     do show "Memory module #2 magnetically locks into place and lights up."
 }
@@ -675,7 +679,7 @@ when insert item hal_module_2 into item hal_memory_bank {
 trigger "Monolith-Room: HAL/Module #3 Inserted" only once
 when insert item hal_module_3 into item hal_memory_bank {
     do advance flag hal-reboot
-    do add flag module-3-Inserted
+    do add flag module-3-inserted
     do restrict item hal_module_3
     do show "Memory module #3 magnetically locks into place and lights up."
 }

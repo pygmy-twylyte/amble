@@ -1,0 +1,19 @@
+# Goals DSL guide
+
+goal welcome "Welcome to the Demo"
+desc "Look around and get your bearings."
+group optional
+done when has flag saw-welcome
+
+goal find-lab "Find the Lab"
+desc "Locate the demo lab."
+group required
+start when goal complete welcome
+done when reached room demo-lab
+
+goal power-up "Power Up"
+desc "Charge the widget or find a charged battery."
+group required
+start when has flag opened-widget
+done when has flag widget-powered
+

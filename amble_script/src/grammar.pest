@@ -76,9 +76,11 @@ keyword = {
   | "onFalse"
   | "overlay"
   | "text"
+  
   | "present"
   | "absent"
   | "custom"
+  
   | "here"
   | // container state literals
   "closed"
@@ -114,7 +116,7 @@ triple_quoted = @{ "\"\"\"" ~ triple_char* ~ "\"\"\"" }
 single_quoted = @{ "'" ~ (escape | (!("\\" | "'") ~ ANY))* ~ "'" }
 string        = @{ triple_quoted | raw_quoted_h5 | raw_quoted_h4 | raw_quoted_h3 | raw_quoted_h2 | raw_quoted_h1 | raw_quoted | quoted | single_quoted }
 
-program = { SOI ~ (set_decl | trigger | room_def | item_def | spinner_def)+ ~ EOI }
+program = { SOI ~ (set_decl | trigger | room_def | item_def | spinner_def | npc_def | goal_def)+ ~ EOI }
 
 set_decl = { "let" ~ "set" ~ ident ~ "=" ~ set_list }
 set_list = { "(" ~ ident ~ ("," ~ ident)* ~ ")" }
@@ -159,7 +161,7 @@ balanced_content = { (balanced_braces | (!("}") ~ ANY))* }
 
 do_action = {
     ("show" ~ string)
-  | ("add" ~ "wedge" ~ string ~ "width" ~ number ~ "spinner" ~ ident)
+  | ("add" ~ "wedge" ~ string ~ ("width" ~ number)? ~ "spinner" ~ ident)
   | ("add" ~ "seq" ~ "flag" ~ ident ~ ("limit" ~ number)?)
   | ("replace" ~ "item" ~ ident ~ "with" ~ ident)
   | ("replace" ~ "drop" ~ "item" ~ ident ~ "with" ~ ident)
@@ -302,7 +304,7 @@ overlay_npc_state_line = { (ident ~ string) | ("custom" ~ "(" ~ ident ~ ")" ~ st
 // -----------------
 
 item_def     = { "item" ~ ident ~ item_block }
-item_block   = { "{" ~ (item_name | item_desc | item_portable | item_location | item_container_state | item_ability | item_text | item_restricted)* ~ "}" }
+item_block   = { "{" ~ (item_name | item_desc | item_portable | item_location | item_container_state | item_ability | item_text | item_restricted | item_requires)* ~ "}" }
 item_name    = { "name" ~ string }
 item_desc    = { ("desc" | "description") ~ string }
 item_portable = { "portable" ~ boolean }
@@ -317,6 +319,7 @@ item_container_state = { "container" ~ "state" ~ ("open" | "closed" | "locked" |
 item_ability = { "ability" ~ ident ~ ident? }
 item_text    = { "text" ~ string }
 item_restricted = { "restricted" ~ boolean }
+item_requires = { "requires" ~ ident ~ ident }
 
 // -----------------
 // Spinners
@@ -324,4 +327,37 @@ item_restricted = { "restricted" ~ boolean }
 
 spinner_def   = { "spinner" ~ ident ~ spinner_block }
 spinner_block = { "{" ~ wedge_stmt+ ~ "}" }
-wedge_stmt    = { "wedge" ~ string ~ "width" ~ number }
+wedge_stmt    = { "wedge" ~ string ~ ("width" ~ number)? }
+
+// -----------------
+// NPCs
+// -----------------
+
+npc_def     = { "npc" ~ ident ~ npc_block }
+npc_block   = { "{" ~ npc_stmt* ~ "}" }
+npc_stmt    = { npc_name | npc_desc | npc_location | npc_state | npc_movement | npc_dialogue_block }
+npc_name    = { "name" ~ string }
+npc_desc    = { ("desc" | "description") ~ string }
+npc_location = { "location" ~ (("room" ~ ident) | ("nowhere" ~ string)) }
+npc_state    = { "state" ~ (ident | ("custom" ~ ident)) }
+npc_movement = { "movement" ~ ("random" | "route") ~ "rooms" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")" ~ ("timing" ~ ident)? ~ ("active" ~ boolean)? }
+npc_dialogue_block = { "dialogue" ~ (ident | ("custom" ~ ident)) ~ "{" ~ string+ ~ "}" }
+
+// -----------------
+// Goals
+// -----------------
+
+goal_def    = { "goal" ~ ident ~ string ~ NEWLINE* ~ goal_desc ~ NEWLINE* ~ goal_group ~ NEWLINE* ~ goal_start? ~ NEWLINE* ~ goal_done }
+goal_desc   = { "desc" ~ string }
+goal_group  = { "group" ~ ("required" | "optional" | "status-effect") }
+goal_start  = { "start" ~ "when" ~ goal_cond }
+goal_done   = { "done" ~ "when" ~ goal_cond }
+goal_cond   = {
+    ("has" ~ "flag" ~ ident)
+  | ("missing" ~ "flag" ~ ident)
+  | ("has" ~ "item" ~ ident)
+  | ("reached" ~ "room" ~ ident)
+  | ("goal" ~ "complete" ~ ident)
+  | ("flag" ~ "in" ~ "progress" ~ ident)
+  | ("flag" ~ "complete" ~ ident)
+}
