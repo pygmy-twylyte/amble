@@ -1,0 +1,96 @@
+# Snippet and Formatting Test File for Amble DSL
+# This file tests the new snippets, bracket matching, and indentation features
+
+# Test section divider snippet (type: section<tab>)
+
+# ================================================
+# Room Definitions Testing
+# ================================================
+
+# Basic room snippet test (type: room<tab>)
+
+
+# Full room with exit snippet test (type: roomfull<tab>)
+
+
+# Room template with multi-line description (type: roomtemplate<tab>)
+
+
+# ================================================
+# Item and NPC Testing
+# ================================================
+
+# Basic item snippet (type: item<tab>)
+
+
+# Item template with multi-line description (type: itemtemplate<tab>)
+
+
+# NPC snippet test (type: npc<tab>)
+
+
+# ================================================
+# Goals and Conditions Testing
+# ================================================
+
+# Basic goal snippet (type: goal<tab>)
+
+
+# Complex goal with multiple conditions (type: goalcomplex<tab>)
+
+
+# Individual goal conditions for testing:
+# Type: doneitem<tab>, doneroom<tab>, doneflag<tab>, donegoal<tab>
+
+
+# ================================================
+# Advanced Constructs Testing
+# ================================================
+
+# Trigger snippet (type: trigger<tab>)
+
+
+# Spinner snippet (type: spinner<tab>)
+
+
+# Set declaration snippet (type: set<tab>)
+
+
+# ================================================
+# Bracket and Indentation Testing
+# ================================================
+
+# Test nested brackets and proper indentation
+room test_brackets {
+  name "Bracket Test Room"
+  desc """This room tests bracket matching and indentation.
+  It has nested structures and should indent properly.
+  Multi-line strings should maintain their formatting."""
+  visited true
+  exit north -> another_room
+}
+
+# Test set with parentheses indentation
+let set test_directions = (
+  north,
+  south,
+  east,
+  west,
+  up,
+  down
+)
+
+# Test complex nested structure
+goal complex_test "Complex Structure Test"
+desc """This goal tests complex indentation with multiple
+conditions and nested structures."""
+group required
+done when has item special_key
+done when reached room final_chamber
+done when goal complete prerequisite_goal
+
+# ================================================
+# Multi-line Description Testing
+# ================================================
+
+# Use desclarge<tab> snippet for multi-line descriptions
