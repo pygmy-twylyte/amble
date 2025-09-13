@@ -434,66 +434,96 @@ fn run_compile_dir(args: &[String]) {
             process::exit(1);
         }
     }
-    // Write each category if non-empty
+    // Write each category; emit empty skeletons when no entries to avoid stale cross-file refs
     let allows = |k: &str| -> bool { only.as_ref().map(|s| s.contains(k)).unwrap_or(true) };
-    if !trigs.is_empty() && allows("triggers") {
-        match compile_triggers_to_toml(&trigs) {
-            Ok(t) => {
-                let p = format!("{}/triggers.toml", &out_dir);
-                let text = header("triggers", &src_dir, &t);
-                fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
-            },
-            Err(e) => { eprintln!("compile-dir error (triggers): {}", e); process::exit(1); },
+    if allows("triggers") {
+        let p = format!("{}/triggers.toml", &out_dir);
+        if !trigs.is_empty() {
+            match compile_triggers_to_toml(&trigs) {
+                Ok(t) => {
+                    let text = header("triggers", &src_dir, &t);
+                    fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+                },
+                Err(e) => { eprintln!("compile-dir error (triggers): {}", e); process::exit(1); },
+            }
+        } else {
+            let text = header("triggers", &src_dir, "triggers = []\n");
+            fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
         }
     }
-    if !rooms.is_empty() && allows("rooms") {
-        match compile_rooms_to_toml(&rooms) {
-            Ok(t) => {
-                let p = format!("{}/rooms.toml", &out_dir);
-                let text = header("rooms", &src_dir, &t);
-                fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
-            },
-            Err(e) => { eprintln!("compile-dir error (rooms): {}", e); process::exit(1); },
+    if allows("rooms") {
+        let p = format!("{}/rooms.toml", &out_dir);
+        if !rooms.is_empty() {
+            match compile_rooms_to_toml(&rooms) {
+                Ok(t) => {
+                    let text = header("rooms", &src_dir, &t);
+                    fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+                },
+                Err(e) => { eprintln!("compile-dir error (rooms): {}", e); process::exit(1); },
+            }
+        } else {
+            let text = header("rooms", &src_dir, "rooms = []\n");
+            fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
         }
     }
-    if !items.is_empty() && allows("items") {
-        match amble_script::compile_items_to_toml(&items) {
-            Ok(t) => {
-                let p = format!("{}/items.toml", &out_dir);
-                let text = header("items", &src_dir, &t);
-                fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
-            },
-            Err(e) => { eprintln!("compile-dir error (items): {}", e); process::exit(1); },
+    if allows("items") {
+        let p = format!("{}/items.toml", &out_dir);
+        if !items.is_empty() {
+            match amble_script::compile_items_to_toml(&items) {
+                Ok(t) => {
+                    let text = header("items", &src_dir, &t);
+                    fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+                },
+                Err(e) => { eprintln!("compile-dir error (items): {}", e); process::exit(1); },
+            }
+        } else {
+            let text = header("items", &src_dir, "items = []\n");
+            fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
         }
     }
-    if !spinners.is_empty() && allows("spinners") {
-        match compile_spinners_to_toml(&spinners) {
-            Ok(t) => {
-                let p = format!("{}/spinners.toml", &out_dir);
-                let text = header("spinners", &src_dir, &t);
-                fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
-            },
-            Err(e) => { eprintln!("compile-dir error (spinners): {}", e); process::exit(1); },
+    if allows("spinners") {
+        let p = format!("{}/spinners.toml", &out_dir);
+        if !spinners.is_empty() {
+            match compile_spinners_to_toml(&spinners) {
+                Ok(t) => {
+                    let text = header("spinners", &src_dir, &t);
+                    fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+                },
+                Err(e) => { eprintln!("compile-dir error (spinners): {}", e); process::exit(1); },
+            }
+        } else {
+            let text = header("spinners", &src_dir, "spinners = []\n");
+            fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
         }
     }
-    if !npcs.is_empty() && allows("npcs") {
-        match compile_npcs_to_toml(&npcs) {
-            Ok(t) => {
-                let p = format!("{}/npcs.toml", &out_dir);
-                let text = header("npcs", &src_dir, &t);
-                fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
-            },
-            Err(e) => { eprintln!("compile-dir error (npcs): {}", e); process::exit(1); },
+    if allows("npcs") {
+        let p = format!("{}/npcs.toml", &out_dir);
+        if !npcs.is_empty() {
+            match compile_npcs_to_toml(&npcs) {
+                Ok(t) => {
+                    let text = header("npcs", &src_dir, &t);
+                    fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+                },
+                Err(e) => { eprintln!("compile-dir error (npcs): {}", e); process::exit(1); },
+            }
+        } else {
+            let text = header("npcs", &src_dir, "npcs = []\n");
+            fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
         }
     }
-    if !goals.is_empty() && allows("goals") {
-        match compile_goals_to_toml(&goals) {
-            Ok(t) => {
-                let p = format!("{}/goals.toml", &out_dir);
-                let text = header("goals", &src_dir, &t);
-                fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
-            },
-            Err(e) => { eprintln!("compile-dir error (goals): {}", e); process::exit(1); },
+    if allows("goals") {
+        let p = format!("{}/goals.toml", &out_dir);
+        if !goals.is_empty() {
+            match compile_goals_to_toml(&goals) {
+                Ok(t) => {
+                    let text = header("goals", &src_dir, &t);
+                    fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+                },
+                Err(e) => { eprintln!("compile-dir error (goals): {}", e); process::exit(1); },
+            }
+        } else {
+            let text = header("goals", &src_dir, "goals = []\n");
+            fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
         }
     }
     if verbose {

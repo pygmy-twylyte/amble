@@ -1,0 +1,10 @@
+# ================================================
+# Boathouse Slipway
+# ================================================
+
+room boathouse-slipway {
+  name "Room Name"
+  desc "Room description"
+  visited false
+
+}

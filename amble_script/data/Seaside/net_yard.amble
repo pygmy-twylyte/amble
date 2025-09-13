@@ -1,0 +1,10 @@
+# ================================================
+# Net Yard
+# ================================================
+
+room net-yard {
+  name "Room Name"
+  desc "Room description"
+  visited false
+
+}

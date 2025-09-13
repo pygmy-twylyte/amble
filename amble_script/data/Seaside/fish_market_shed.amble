@@ -1,0 +1,10 @@
+# ================================================
+# Fish Market Shed
+# ================================================
+
+room fish-market-shed {
+  name "Room Name"
+  desc "Room description"
+  visited false
+
+}

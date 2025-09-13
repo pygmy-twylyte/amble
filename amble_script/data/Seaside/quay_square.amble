@@ -1,0 +1,10 @@
+# ================================================
+# Quay Square (Start Location)
+# ================================================
+
+room quay-square {
+  name "Quay Square"
+  desc "Room description"
+  visited false
+
+}

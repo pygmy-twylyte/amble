@@ -1,0 +1,9 @@
+# ================================================
+# Lighthouse Path
+# ================================================
+room lighthouse-path {
+  name "Room Name"
+  desc "Room description"
+  visited false
+
+}

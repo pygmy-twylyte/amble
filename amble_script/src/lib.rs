@@ -2432,7 +2432,7 @@ trigger "spawn in container" when always {
 
     #[test]
     fn compile_spinners_golden() {
-        let src = std::fs::read_to_string("data/spinners.amble").expect("read");
+        let src = std::fs::read_to_string("data/Amble/spinners.amble").expect("read");
         let spinners = parse_spinners(&src).expect("parse ok");
         let toml = compile_spinners_to_toml(&spinners).expect("compile ok");
         let expected = std::fs::read_to_string("../amble_engine/data/spinners.toml").expect("read");
@@ -2453,7 +2453,7 @@ trigger "spawn in container" when always {
 
     #[test]
     fn compile_goals_golden() {
-        let src = std::fs::read_to_string("data/goals.amble").expect("read goals dsl");
+        let src = std::fs::read_to_string("data/Amble/goals.amble").expect("read goals dsl");
         let goals = crate::parse_goals(&src).expect("parse goals ok");
         let toml = crate::compile_goals_to_toml(&goals).expect("compile ok");
         // Compare structure loosely against engine goals: ensure same goal id set.
