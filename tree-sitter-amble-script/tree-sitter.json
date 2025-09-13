@@ -3,9 +3,7 @@
   "file-types": ["amble"],
   "injection-regex": "^amble$",
   "scope": "source.amble",
-  "grammars": [
-    { "name": "amble_dsl", "path": "src" }
-  ],
+  "grammars": [{ "name": "amble_dsl", "path": "src", "scope": "source.amble" }],
   "metadata": {
     "version": "0.1.0",
     "description": "Tree-sitter grammar for the Amble DSL",

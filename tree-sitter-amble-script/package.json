@@ -13,5 +13,8 @@
   "type": "commonjs",
   "devDependencies": {
     "tree-sitter-cli": "^0.20.8"
+  },
+  "dependencies": {
+    "tree-sitter": "^0.25.0"
   }
 }

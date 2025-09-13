@@ -1,0 +1,20 @@
+# Simple test file for Amble DSL highlighting
+
+room lobby {
+  name "Test Room"
+  desc "A simple test room"
+  visited true
+}
+
+item key {
+  name "Test Key"
+  portable false
+}
+
+npc guard {
+  name "Test Guard"
+  location room lobby
+}
+
+goal test_goal "Simple Goal"
+done when has flag test_complete

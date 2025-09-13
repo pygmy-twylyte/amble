@@ -31,13 +31,13 @@ spinner movement {
 }
 
 spinner takeVerb {
-  wedge "take" width 1
-  wedge "grab" width 1
-  wedge "get" width 1
-  wedge "snag" width 1
-  wedge "nab" width 1
-  wedge "bag" width 1
-  wedge "pocket" width 1
+    wedge "take" width 1
+    wedge "grab" width 1
+    wedge "get" width 1
+    wedge "snag" width 1
+    wedge "nab" width 1
+    wedge "bag" width 1
+    wedge "pocket" width 1
 }
 
 spinner npcIgnore {

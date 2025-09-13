@@ -3,3 +3,5 @@ grammar = "amble_dsl"
 path_suffixes = ["amble"]
 line_comments = ["# "]
 
+# Ensure Zed associates theme scopes with this language
+scopes = ["source.amble"]

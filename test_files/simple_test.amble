@@ -1,0 +1,17 @@
+# Simple test file for Amble DSL
+
+room test_room {
+  name "Test Room"
+  desc "A simple room for testing"
+  visited true
+}
+
+item test_item {
+  name "Test Item"
+  portable false
+}
+
+npc test_npc {
+  name "Test Character"
+  location room test_room
+}

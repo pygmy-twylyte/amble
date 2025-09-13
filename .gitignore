@@ -12,3 +12,10 @@ Cargo.lock
 
 # Ignore saved game files
 saved_games/
+node_modules/
+debug_*.js
+test_*.js
+inspect_*.py
+.DS_Store
+*.tmp
+build/
