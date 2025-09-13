@@ -27,7 +27,7 @@ fn main() {
         },
         _ => {
             eprintln!(
-                "Usage:\n  amble_script compile <file.amble> [--out-triggers <triggers.toml>] [--out-rooms <rooms.toml>] [--out-items <items.toml>] [--out-spinners <spinners.toml>] [--out-npcs <npcs.toml>] [--out-goals <goals.toml>]\n  amble_script compile-dir <src_dir> --out-dir <engine_data_dir>\n  amble_script lint <file.amble|dir> [--data-dir <dir>] [--deny-missing]"
+                "Usage:\n  amble_script compile <file.amble> [--out-triggers <triggers.toml>] [--out-rooms <rooms.toml>] [--out-items <items.toml>] [--out-spinners <spinners.toml>] [--out-npcs <npcs.toml>] [--out-goals <goals.toml>]\n  amble_script compile-dir <src_dir> --out-dir <engine_data_dir> [--only triggers,rooms,items,spinners,npcs,goals]\n  amble_script lint <file.amble|dir> [--data-dir <dir>] [--deny-missing]\n\nNotes:\n- compile-dir overwrites each category file; when a category has no entries, an empty skeleton is written (e.g., 'triggers = []').\n- Use --only to restrict which category files are written; excluded categories are left untouched."
             );
             process::exit(2);
         },
@@ -339,7 +339,9 @@ fn run_compile_dir(args: &[String]) {
         }
     }
     if src_dir.is_none() || out_dir.is_none() {
-        eprintln!("Usage: amble_script compile-dir <src_dir> --out-dir <engine_data_dir>");
+        eprintln!(
+            "Usage: amble_script compile-dir <src_dir> --out-dir <engine_data_dir> [--only triggers,rooms,items,spinners,npcs,goals]\n\nNote: Writes empty skeleton TOMLs for categories with no entries unless filtered by --only."
+        );
         process::exit(2);
     }
     let src_dir = src_dir.unwrap();
