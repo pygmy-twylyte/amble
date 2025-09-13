@@ -228,4 +228,55 @@ When your extension is working correctly:
 4. **Symlinks work great**: Perfect for extension development
 5. **Debug with logs**: Use `zed --foreground` to see error messages
 
+## 📝 Snippets Configuration
+
+**Important**: Zed handles snippets differently from other extension files!
+
+### Snippets Location
+Snippets are **NOT** stored in the extension directory. Instead, they go in:
+```
+~/.config/zed/snippets/
+```
+
+### Snippets File Naming
+Snippets must be named by the **language scope**, not the extension name:
+- Language scope: `source.amble` (from `config.toml`)
+- Snippets file: `~/.config/zed/snippets/amble.json`
+
+### Adding Snippets
+```bash
+# Copy your snippets to the global location
+cp your-snippets.json ~/.config/zed/snippets/amble.json
+
+# Restart Zed to load new snippets
+```
+
+### Snippets Format
+```json
+{
+  "snippet_name": {
+    "prefix": "trigger_word",
+    "body": [
+      "line 1 with ${1:placeholder}",
+      "line 2 with ${2:another_placeholder}",
+      "${0}"
+    ],
+    "description": "Description shown in completion"
+  }
+}
+```
+
+### Testing Snippets
+1. Open a `.amble` file in Zed
+2. Type the trigger word (e.g., `room`)
+3. Press `Tab` to expand the snippet
+4. Use `Tab` to navigate between placeholders
+
+## 🔧 Complete Installation Checklist
+
+✅ Extension files in `~/.local/share/zed/extensions/installed/your_extension/`
+✅ `.scm` files directly in `languages/your_lang/` (not in `queries/`)
+✅ Snippets in `~/.config/zed/snippets/language_scope.json`
+✅ Restart Zed after installation/changes
+
 This setup ensures your Zed language extension will load and function properly!
