@@ -4,7 +4,6 @@ version = "0.1.0"
 schema_version = 1
 authors = ["David Brown <djvbmd@protonmail.com>"]
 description = "DSL for game world creation for the Amble engine."
-repository = "file:///home/dave/Code/rust/amble/zed-amble-script"
 
 # Explicitly register the language definition
 languages = ["languages/amble_dsl"]

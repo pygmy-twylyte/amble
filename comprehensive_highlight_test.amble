@@ -6,7 +6,7 @@
 # ==================================================
 # Single line comment
 # Another comment with symbols: @#$%^&*()
-
+#
 # ==================================================
 # SET DECLARATIONS - test 'let', 'set', identifiers
 # ==================================================
@@ -164,9 +164,9 @@ room special_chars {
 
 # Test all operators
 room operator_test {
-  name "Operator Test"
-  desc "Testing the arrow operator"
-  exit test_direction -> target_room
+    name "Operator Test"
+    desc "Testing the arrow operator"
+    exit test_direction -> target_room
 }
 
 # Test complex goal conditions

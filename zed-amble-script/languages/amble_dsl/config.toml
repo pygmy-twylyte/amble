@@ -2,22 +2,4 @@ name = "Amble DSL"
 grammar = "amble_dsl"
 path_suffixes = ["amble"]
 line_comments = ["# "]
-
-# Ensure Zed associates theme scopes with this language
 scopes = ["source.amble"]
-
-# Bracket pairs for matching, auto-closing, and rainbow highlighting
-bracket_pairs = [
-  { start = "{", end = "}", close = true, newline = true },
-  { start = "(", end = ")", close = true, newline = false },
-  { start = "\"", end = "\"", close = true, newline = false, not_in = ["string", "comment"] },
-  { start = "'", end = "'", close = true, newline = false, not_in = ["string", "comment"] },
-  { start = "\"\"\"", end = "\"\"\"", close = true, newline = true, not_in = ["string", "comment"] }
-]
-
-# Auto-indentation and formatting
-auto_indent_using_last_non_empty_line = true
-preferred_line_length = 100
-
-# Enhanced word selection - treat identifiers with dashes/underscores as single words
-word_characters = ["_", "-", "#"]

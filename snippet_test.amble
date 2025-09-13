@@ -8,12 +8,38 @@
 # ================================================
 
 # Basic room snippet test (type: room<tab>)
-
+room start-room identifier {
+  name "Room Name"
+  desc "Room description"
+  visited false
+  
+} {
+  name "Room Name"
+  desc "Room description"
+  visited false
+                                                        
+}
 
 # Full room with exit snippet test (type: roomfull<tab>)
-
+room identifier {
+  name "Room Name"
+  desc "Room description"
+  visited false
+  exit direction -> destination
+  
+}
 
 # Room template with multi-line description (type: roomtemplate<tab>)
+# Area Name
+
+room identifier {
+  name "Room Name"
+  desc """Multi-line description
+  Line 2
+  Line 3"""
+  visited false
+  exit direction -> destination
+}
 
 
 # ================================================
@@ -21,19 +47,40 @@
 # ================================================
 
 # Basic item snippet (type: item<tab>)
-
+item identifier {
+  name "Item Name"
+  desc "Item description"
+  portable true
+  
+}
 
 # Item template with multi-line description (type: itemtemplate<tab>)
+item identifier {
+  name "Item Name"
+  description """Multi-line description
+  Line 2
+  Line 3"""
+  portable true
+}
 
 
 # NPC snippet test (type: npc<tab>)
-
+npc identifier {
+  name "NPC Name"
+  desc "NPC description"
+  location room room_id
+  
+}
 
 # ================================================
 # Goals and Conditions Testing
 # ================================================
 
 # Basic goal snippet (type: goal<tab>)
+goal identifier "Goal Title"
+desc "Goal description"
+group required
+done when condition
 
 
 # Complex goal with multiple conditions (type: goalcomplex<tab>)
