@@ -1782,6 +1782,30 @@ room start {
     }
 
     #[test]
+    fn room_exit_allows_quoted_direction_and_emits_quoted_key() {
+        let src = r#"
+room shoreline {
+  name "Shoreline"
+  desc "A long, pebbled shore."
+  exit "along the shore" -> dunes
+}
+"#;
+        let rooms = crate::parse_rooms(src).expect("parse rooms ok");
+        assert_eq!(rooms.len(), 1);
+        let r = &rooms[0];
+        assert_eq!(r.id, "shoreline");
+        assert!(r
+            .exits
+            .iter()
+            .any(|(d, e)| d == "along the shore" && e.to == "dunes"));
+
+        let toml = crate::compile_rooms_to_toml(&rooms).expect("compile ok");
+        // Expect a quoted TOML key for the exit direction containing spaces
+        assert!(toml.contains("[rooms.exits.\"along the shore\"]"));
+        assert!(toml.contains("to = \"dunes\""));
+    }
+
+    #[test]
     fn parse_minimal_trigger_ast() {
         let src = r#"
 trigger "first visit high-ridge" when enter room high-ridge {
@@ -1822,6 +1846,24 @@ trigger "first visit high-ridge" when enter room high-ridge {
         assert!(toml.contains("name = \"visited:high-ridge\""));
         assert!(toml.contains("type = \"awardPoints\""));
         assert!(toml.contains("amount = 1"));
+    }
+
+    #[test]
+    fn parse_reveal_exit_with_quoted_direction() {
+        let src = r#"
+trigger "reveal special exit" when always {
+  do reveal exit from hallway to armory direction "along the shore"
+}
+"#;
+        let asts = parse_program(src).expect("parse ok");
+        assert_eq!(asts.len(), 1);
+        let ast = &asts[0];
+        assert_eq!(ast.name, "reveal special exit");
+        assert!(matches!(ast.event, ConditionAst::Always));
+        assert!(asts[0]
+            .actions
+            .iter()
+            .any(|a| matches!(a, ActionAst::RevealExit { exit_from, exit_to, direction } if exit_from == "hallway" && exit_to == "armory" && direction == "along the shore")));
     }
 
     #[test]

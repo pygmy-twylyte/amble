@@ -4,6 +4,12 @@ room lobby {
   exit north -> hall
 }
 
+room shoreline {
+  name "Shoreline"
+  desc "An endless coast."
+  exit "along the shore" -> dunes
+}
+
 item key {
   name "Key"
   portable true
@@ -18,4 +24,3 @@ goal enter_lobby "Enter lobby"
 desc "Get to lobby"
 group required
 done when has flag arrived
-

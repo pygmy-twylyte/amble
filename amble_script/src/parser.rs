@@ -481,7 +481,12 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
             },
             Rule::exit_stmt => {
                 let mut it = inner_stmt.into_inner();
-                let dir = it.next().ok_or(AstError::Shape("exit direction"))?.as_str().to_string();
+                let dir_tok = it.next().ok_or(AstError::Shape("exit direction"))?;
+                let dir = if dir_tok.as_rule() == Rule::string {
+                    unquote(dir_tok.as_str())
+                } else {
+                    dir_tok.as_str().to_string()
+                };
                 let to = it
                     .next()
                     .ok_or(AstError::Shape("exit destination"))?
@@ -1823,18 +1828,22 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
     }
     if let Some(rest) = t.strip_prefix("do lock exit from ") {
         if let Some((from, tail)) = rest.split_once(" direction ") {
-            return Ok(ActionAst::LockExit {
-                from_room: from.trim().to_string(),
-                direction: tail.trim().to_string(),
-            });
+            let tail = tail.trim_start();
+            let direction = match parse_string_at(tail) {
+                Ok((s, _used)) => s,
+                Err(_) => tail.trim().to_string(),
+            };
+            return Ok(ActionAst::LockExit { from_room: from.trim().to_string(), direction });
         }
     }
     if let Some(rest) = t.strip_prefix("do unlock exit from ") {
         if let Some((from, tail)) = rest.split_once(" direction ") {
-            return Ok(ActionAst::UnlockExit {
-                from_room: from.trim().to_string(),
-                direction: tail.trim().to_string(),
-            });
+            let tail = tail.trim_start();
+            let direction = match parse_string_at(tail) {
+                Ok((s, _used)) => s,
+                Err(_) => tail.trim().to_string(),
+            };
+            return Ok(ActionAst::UnlockExit { from_room: from.trim().to_string(), direction });
         }
     }
     if let Some(rest) = t.strip_prefix("do give item ") {
@@ -1852,10 +1861,15 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         // format: <from> to <to> direction <dir>
         if let Some((from, tail)) = rest.split_once(" to ") {
             if let Some((to, dir_tail)) = tail.split_once(" direction ") {
+                let dir_tail = dir_tail.trim_start();
+                let direction = match parse_string_at(dir_tail) {
+                    Ok((s, _used)) => s,
+                    Err(_) => dir_tail.trim().to_string(),
+                };
                 return Ok(ActionAst::RevealExit {
                     exit_from: from.trim().to_string(),
                     exit_to: to.trim().to_string(),
-                    direction: dir_tail.trim().to_string(),
+                    direction,
                 });
             }
         }

@@ -61,6 +61,22 @@ required_items = ["machete", "gasoline"]
 Notes:
 - `required_flags(...)` accepts flag names (e.g., `cleared-fallen-tree`). Sequence steps are not required; the engine matches flags by name.
 
+Quoted directions:
+
+You can use quoted exit directions to allow spaces or special characters in the direction name. These emit quoted TOML keys automatically.
+
+```
+room shoreline {
+  name "Shoreline"
+  desc "..."
+  exit "along the shore" -> dunes
+}
+
+# Emits
+[rooms.exits."along the shore"]
+to = "dunes"
+```
+
 ## Overlays
 
 Overlay condition lists can be written directly after `if` or wrapped in parentheses for clarity. The following examples omit parentheses, but `overlay if (flag set got-towel) { ... }` would also be valid.

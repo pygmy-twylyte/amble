@@ -2,7 +2,7 @@
   "name": "tree-sitter-amble-script",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "bindings/node",
   "scripts": {
     "generate": "tree-sitter generate",
     "test": "tree-sitter parse test/sample.amble"

@@ -179,9 +179,9 @@ do_action = {
   | ("schedule" ~ (!"{" ~ ANY)* ~ balanced_braces)
   | ("lock" ~ "item" ~ ident)
   | ("unlock" ~ "item" ~ ident)
-  | ("lock" ~ "exit" ~ "from" ~ ident ~ "direction" ~ ident)
-  | ("unlock" ~ "exit" ~ "from" ~ ident ~ "direction" ~ ident)
-  | ("reveal" ~ "exit" ~ "from" ~ ident ~ "to" ~ ident ~ "direction" ~ ident)
+  | ("lock" ~ "exit" ~ "from" ~ ident ~ "direction" ~ (ident | string))
+  | ("unlock" ~ "exit" ~ "from" ~ ident ~ "direction" ~ (ident | string))
+  | ("reveal" ~ "exit" ~ "from" ~ ident ~ "to" ~ ident ~ "direction" ~ (ident | string))
   | ("push" ~ "player" ~ "to" ~ ident)
   | ("set" ~ "item" ~ "description" ~ ident ~ string)
   | ("npc" ~ "random" ~ "dialogue" ~ ident)
@@ -251,7 +251,8 @@ room_name    = { "name" ~ string }
 room_desc    = { ("desc" | "description") ~ string }
 room_visited = { "visited" ~ boolean }
 // Exits: exit <direction> -> <room_id>
-exit_stmt = { "exit" ~ ident ~ "->" ~ ident ~ exit_opts? }
+// Allow quoted or bare direction names
+exit_stmt = { "exit" ~ (ident | string) ~ "->" ~ ident ~ exit_opts? }
 exit_opts = { "{" ~ (exit_opt ~ ("," ~ exit_opt)*)? ~ "}" }
 exit_opt  = {
     "hidden"

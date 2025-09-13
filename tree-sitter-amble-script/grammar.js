@@ -51,7 +51,7 @@ module.exports = grammar({
     room_name: $ => seq('name', $.string),
     room_desc: $ => seq(choice('desc', 'description'), $.string),
     room_visited: $ => seq('visited', $.boolean),
-    exit_stmt: $ => seq('exit', $.identifier, '->', $.identifier),
+    exit_stmt: $ => seq('exit', choice($.identifier, $.string), '->', $.identifier),
 
     item_def: $ => seq('item', $.identifier, $.item_block),
     item_block: $ => seq('{', repeat($.item_stmt), '}'),
