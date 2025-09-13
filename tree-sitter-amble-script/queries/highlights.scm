@@ -1,6 +1,6 @@
 ((comment) @comment)
 ((string) @string)
-((number) @number)
+((number) @constant.numeric)
 ((boolean) @constant.builtin)
 ((identifier) @variable)
 
@@ -12,3 +12,6 @@
 "spinner" @keyword
 "exit" @keyword
 
+; Diagnostic: color everything if highlights are loading
+; Remove after verification
+(program) @keyword

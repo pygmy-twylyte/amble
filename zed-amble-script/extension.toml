@@ -8,4 +8,4 @@ repository = "file:///home/dave/Code/rust/amble/zed-amble-script"
 
 [grammars.amble_dsl]
 repository = "file:///home/dave/Code/rust/amble/tree-sitter-amble-script"
-rev = "0bb8f5304b32a77107b9cd5aa6ef3bb15130caea"
+rev = "bb9ac92b72a037a47dc91c96b413e73507eed6ae"
