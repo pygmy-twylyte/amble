@@ -1,0 +1,14 @@
+((comment) @comment)
+((string) @string)
+((number) @number)
+((boolean) @constant.builtin)
+((identifier) @variable)
+
+"room" @keyword
+"item" @keyword
+"npc" @keyword
+"goal" @keyword
+"trigger" @keyword
+"spinner" @keyword
+"exit" @keyword
+

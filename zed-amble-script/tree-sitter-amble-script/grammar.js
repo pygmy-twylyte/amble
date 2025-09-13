@@ -3,7 +3,7 @@ const PREC = {
 };
 
 module.exports = grammar({
-  name: 'amble_script',
+  name: 'amble_dsl',
 
   extras: $ => [
     $.comment,

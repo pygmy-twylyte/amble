@@ -1,0 +1,14 @@
+{
+  "name": "amble_dsl",
+  "file-types": ["amble"],
+  "injection-regex": "^amble$",
+  "scope": "source.amble",
+  "grammars": [
+    { "name": "amble_dsl", "path": "src" }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "description": "Tree-sitter grammar for the Amble DSL",
+    "license": "MIT"
+  }
+}

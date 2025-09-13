@@ -1,0 +1,5 @@
+name = "Amble DSL"
+grammar = "amble_dsl"
+path_suffixes = ["amble"]
+line_comments = ["# "]
+

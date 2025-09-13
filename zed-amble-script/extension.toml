@@ -1,0 +1,11 @@
+id = "amble_dsl"
+name = "Amble DSL"
+version = "0.0.1"
+schema_version = 1
+authors = ["David Brown <djvbmd@protonmail.com>"]
+description = "DSL for game world creation for the Amble engine."
+repository = "file:///home/dave/Code/rust/amble/zed-amble-script"
+
+[grammars.amble_dsl]
+repository = "file:///home/dave/Code/rust/amble/tree-sitter-amble-script"
+rev = "0bb8f5304b32a77107b9cd5aa6ef3bb15130caea"

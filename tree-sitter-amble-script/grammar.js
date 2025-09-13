@@ -3,7 +3,7 @@ const PREC = {
 };
 
 module.exports = grammar({
-  name: 'amble_script',
+  name: 'amble_dsl',
 
   extras: $ => [
     $.comment,
@@ -26,9 +26,11 @@ module.exports = grammar({
     identifier: $ => /[A-Za-z0-9_\-:#]+/,
     number: $ => /-?\d+/, 
     string: $ => choice(
-      /"([^"\\]|\\.)*"/,
+      /\"([^\"\\]|\\.)*\"/,
       /'([^'\\]|\\.)*'/,
-      seq('"""', repeat(/[^"\\]|\\.|\"(?!\"\")/), '"""')
+      // Triple-quoted string without lookahead: consume any non-quote, pairs of quotes,
+      // or escapes, and terminate on the next unescaped triple quote.
+      seq('"""', repeat(choice(/[^\"]/ , /""/, /\\./)), '"""')
     ),
     boolean: $ => choice('true', 'false'),
 
@@ -69,8 +71,9 @@ module.exports = grammar({
     npc_desc: $ => seq(choice('desc', 'description'), $.string),
     npc_location: $ => seq('location', choice(seq('room', $.identifier), seq('nowhere', $.string))),
 
-    goal_def: $ => seq('goal', $.identifier, $.string, $.goal_block),
-    goal_block: $ => repeat($.goal_stmt),
+    // Goals are a header line followed by zero or more goal statements on subsequent lines.
+    // Inline the repetition here so we don't have a named rule that can match empty.
+    goal_def: $ => seq('goal', $.identifier, $.string, repeat($.goal_stmt)),
     goal_stmt: $ => choice($.goal_desc, $.goal_group, $.goal_done),
     goal_desc: $ => seq('desc', $.string),
     goal_group: $ => seq('group', choice('required', 'optional', 'status-effect')),
