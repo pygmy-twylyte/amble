@@ -100,7 +100,8 @@ module.exports = grammar({
       $.item_location,
       $.item_ability,
       $.item_container_state,
-      $.item_restricted
+      $.item_restricted,
+      $.item_requires
     ),
     item_name: $ => seq('name', $.string),
     item_desc: $ => seq(choice('desc', 'description'), $.string),
@@ -110,6 +111,8 @@ module.exports = grammar({
     item_ability: $ => seq('ability', $.identifier),
     item_container_state: $ => seq('container', 'state', choice('open', 'closed')),
     item_restricted: $ => seq('restricted', $.boolean),
+    // Interaction requirements: requires <ability> to <interaction>
+    item_requires: $ => seq('requires', $.identifier, 'to', $.identifier),
 
     spinner_def: $ => seq('spinner', $.identifier, $.spinner_block),
     spinner_block: $ => seq('{', repeat($.wedge_stmt), '}'),

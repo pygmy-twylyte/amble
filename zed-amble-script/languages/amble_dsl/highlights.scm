@@ -45,6 +45,7 @@
 "state" @keyword
 "restricted" @keyword
 "requires" @keyword
+"to" @keyword
 "open" @keyword
 "closed" @keyword
 ; Trigger keywords (structural to avoid substring matches inside identifiers)
@@ -87,3 +88,15 @@
 
 ; Basic identifiers
 (identifier) @variable
+
+; Item requires: requires <ability> to <interaction>
+(item_requires
+  "requires" @keyword
+  (identifier) @function
+  "to" @keyword
+  (identifier) @method)
+
+; Contextual: highlight identifier tokens that read 'requires' and 'to'
+; This supports lines like: "requires <ability> to <interaction>"
+((identifier) @keyword (#match? @keyword "^requires$"))
+((identifier) @keyword (#match? @keyword "^to$"))

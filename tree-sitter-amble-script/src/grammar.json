@@ -1,4 +1,5 @@
 {
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/grammar.schema.json",
   "name": "amble_dsl",
   "rules": {
     "program": {
@@ -997,6 +998,10 @@
         {
           "type": "SYMBOL",
           "name": "item_restricted"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "item_requires"
         }
       ]
     },
@@ -1114,6 +1119,27 @@
         {
           "type": "SYMBOL",
           "name": "boolean"
+        }
+      ]
+    },
+    "item_requires": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "requires"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "identifier"
+        },
+        {
+          "type": "STRING",
+          "value": "to"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "identifier"
         }
       ]
     },
@@ -1840,6 +1866,6 @@
   "precedences": [],
   "externals": [],
   "inline": [],
-  "supertypes": []
+  "supertypes": [],
+  "reserved": {}
 }
-

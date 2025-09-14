@@ -31,6 +31,8 @@
 "width" @keyword
 "group" @keyword
 "done" @keyword
+"requires" @keyword
+"to" @keyword
 
 ; Operators
 "->" @operator
@@ -110,6 +112,11 @@
 (cond_line (identifier) @keyword
   (#match? @keyword "^(chance|has|missing|flag|act|on|item|npc|enter|look|give|to|player|room|in|present|absent)$"))
 
+; Items DSL: highlight 'requires' and 'to' when they appear as identifiers
+; Example: "requires <ability> to <interaction>"
+(item_block (identifier) @keyword
+  (#match? @keyword "^(requires|to)$"))
+
 ; Flag/Item/Room references in conditions
 (goal_cond "flag" (identifier) @variable)
 (goal_cond "item" (identifier) @variable)
@@ -118,6 +125,13 @@
 
 ; Location references (items and NPCs)
 (location "room" (identifier) @type)
+
+; Item requires: requires <ability> to <interaction>
+(item_requires
+  "requires" @keyword
+  (identifier) @function
+  "to" @keyword
+  (identifier) @method)
 (location "npc" (identifier) @type)
 (location "chest" (identifier) @type)
 (location "inventory" "player")

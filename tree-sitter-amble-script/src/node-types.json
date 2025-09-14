@@ -466,6 +466,21 @@
     }
   },
   {
+    "type": "item_requires",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "identifier",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "item_restricted",
     "named": true,
     "fields": {},
@@ -510,6 +525,10 @@
         },
         {
           "type": "item_portable",
+          "named": true
+        },
+        {
+          "type": "item_requires",
           "named": true
         },
         {
@@ -742,6 +761,7 @@
   {
     "type": "program",
     "named": true,
+    "root": true,
     "fields": {},
     "children": {
       "multiple": true,
@@ -1102,7 +1122,8 @@
   },
   {
     "type": "comment",
-    "named": true
+    "named": true,
+    "extra": true
   },
   {
     "type": "complete",
@@ -1277,6 +1298,10 @@
     "named": false
   },
   {
+    "type": "requires",
+    "named": false
+  },
+  {
     "type": "restricted",
     "named": false
   },
@@ -1318,6 +1343,10 @@
   },
   {
     "type": "timing",
+    "named": false
+  },
+  {
+    "type": "to",
     "named": false
   },
   {

@@ -5,7 +5,8 @@
   "main": "bindings/node",
   "scripts": {
     "generate": "tree-sitter generate",
-    "test": "tree-sitter parse test/sample.amble"
+    "test": "tree-sitter parse test/sample.amble",
+    "validate": "bash ../scripts/ts_validate.sh"
   },
   "keywords": [],
   "author": "",

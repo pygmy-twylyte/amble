@@ -10,4 +10,4 @@ languages = ["languages/amble_dsl"]
 
 [grammars.amble_dsl]
 repository = "file:///home/dave/Code/rust/amble/tree-sitter-amble-script"
-rev = "acf4b7a8de5a6787186004fe224394b97eeafebb"
+rev = "996e11c110761ae5f03f8c5ad59eb09a43214993"
