@@ -15,6 +15,10 @@ room quay-square {
   exit "up the stone steps" -> lighthouse-path
 }
 
+# =================================================
+# Items
+# =================================================
+
 item tiny_package {
   name "Tiny Package"
   desc "A tiny gift box sitting on a bench in the Quay Square, smaller than a pack of cards and significantly lighter. It may be empty, in fact."
@@ -29,4 +33,19 @@ item tiny_portrait {
     desc "A very small, very worn and faded portrait of... someone, cut into an oval shape. There's a mildly sticky substance on the back."
     portable true
     location chest tiny_package
+}
+
+# =================================================
+# NPCs
+# =================================================
+
+npc cmot_dibbler {
+    name "Cut-Me-Own-Throat Dibbler"
+    desc "A wily but unwise street vendor always looking to make a buck. He gets his name from his common cry that he would have to \"Cut Me Own Throat!\" to give you a better deal on his (often questionable) wares."
+    location room quay-square
+    state normal
+    dialogue normal {
+        "Sure is dead around here. Who am I going to sell my fish sausage surprise to?"
+        "Not many customers left -- I should probably go in before the Lighthouse Crone comes out to wander."
+    }
 }
