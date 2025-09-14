@@ -3,8 +3,8 @@
 # ================================================
 
 room boathouse-slipway {
-  name "Room Name"
-  desc "Room description"
+  name "Boathouse Slipway"
+  desc "The narrow slipway runs alongside the quay and by the adjoining old timber-and-pitch boathouse, which leans a bit to one side. A skiff with a hole in its side sits on rollers near the water's edge. The boat ramp climbs back up toward the quay."
   visited false
-
+  exit "up the ramp" -> quay-square
 }

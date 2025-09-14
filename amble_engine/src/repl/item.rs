@@ -47,8 +47,8 @@
 use std::collections::HashSet;
 
 use crate::{
-    AmbleWorld, View, ViewItem, WorldObject,
-    helpers::{symbol_or_unknown, plural_s},
+    AmbleWorld, Item, View, ViewItem, WorldObject,
+    helpers::{plural_s, symbol_or_unknown},
     item::{ContainerState, ItemAbility, ItemInteractionType, consume},
     loader::items::interaction_requirement_met,
     repl::{entity_not_found, find_world_object},
@@ -400,18 +400,27 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                 )));
             },
             Some(ContainerState::Closed | ContainerState::TransparentClosed) => {
-                target_item.container_state = Some(ContainerState::Open);
-                view.push(ViewItem::ActionSuccess(format!(
-                    "You opened the {}.\n",
-                    target_item.name().item_style()
-                )));
-                info!(
-                    "{} opened the {} ({})",
-                    world.player.name(),
-                    name,
-                    symbol_or_unknown(&world.items, container_id)
-                );
-                check_triggers(world, view, &[TriggerCondition::Open(container_id)])?;
+                // check to see if any particular interaction type is required to open
+                if let Some(required_ability) = target_item.interaction_requires.get(&ItemInteractionType::Open) {
+                    view.push(ViewItem::ActionFailure(format!(
+                        "The {} can't be opened without using something that can {}.",
+                        target_item.name().item_style(),
+                        required_ability.to_string().highlight()
+                    )));
+                } else {
+                    target_item.container_state = Some(ContainerState::Open);
+                    view.push(ViewItem::ActionSuccess(format!(
+                        "You opened the {}.\n",
+                        target_item.name().item_style()
+                    )));
+                    info!(
+                        "{} opened the {} ({})",
+                        world.player.name(),
+                        name,
+                        symbol_or_unknown(&world.items, container_id)
+                    );
+                    check_triggers(world, view, &[TriggerCondition::Open(container_id)])?;
+                }
             },
         }
     }

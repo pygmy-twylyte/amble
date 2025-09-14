@@ -21,7 +21,7 @@ item example_widget {
   # restricted true
 
   # interaction requirements: map interaction -> required ability
-  requires handle insulate
-  requires clean Clean
+  # new syntax: requires <ability> to <interaction>
+  requires insulate to handle
+  requires Clean to clean
 }
-

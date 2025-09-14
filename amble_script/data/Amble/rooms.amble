@@ -32,7 +32,7 @@ room st-alfonzo-parish {
 
 room two-sheds-landing {
     name "Jackson's Landing"
-    desc r#"A quiet landing tucked along the slope, with a rusted mailbox labeled 'A. Jackson' standing to one side. A trail sign points east toward something optimistically named "Two Sheds". Underneath, someone has scratched in: "Technically One.""#
+    desc "A quiet landing tucked along the slope, with a rusted mailbox labeled 'A. Jackson' standing to one side. A trail sign points east toward something optimistically named \"Two Sheds\". Underneath, someone has scratched in: \"Technically One.\""
     overlay if (item present fallen_tree) {
         text "A huge tangle of limbs and branches from a fallen tree block the path continuing upward."
     }

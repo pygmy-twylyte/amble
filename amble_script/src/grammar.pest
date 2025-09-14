@@ -320,7 +320,8 @@ item_container_state = { "container" ~ "state" ~ ("open" | "closed" | "locked" |
 item_ability = { "ability" ~ ident ~ ident? }
 item_text    = { "text" ~ string }
 item_restricted = { "restricted" ~ boolean }
-item_requires = { "requires" ~ ident ~ ident }
+// Change syntax to: requires <ability> to <interaction>
+item_requires = { "requires" ~ ident ~ "to" ~ ident }
 
 // -----------------
 // Spinners

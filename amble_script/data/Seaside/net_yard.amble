@@ -3,8 +3,8 @@
 # ================================================
 
 room net-yard {
-  name "Room Name"
-  desc "Room description"
+  name "Net Yard"
+  desc "Beyond a short maze of tar barrels acting as sentinels, the net yard sits tucked away from the daytime crowds. Frames stretch nets drying in the waning sunlight, while a couple of lingering netmenders apply their skill to the damaged ones."
   visited false
-
+  exit "past the tar barrels" -> quay-square
 }

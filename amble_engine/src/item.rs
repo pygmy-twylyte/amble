@@ -305,6 +305,7 @@ pub trait ItemHolder {
 pub enum ItemAbility {
     Attach,
     Clean,
+    Cut,
     CutWood,
     Extinguish,
     Ignite,
@@ -325,6 +326,7 @@ impl Display for ItemAbility {
         match self {
             Self::Attach => write!(f, "attach"),
             Self::Clean => write!(f, "clean"),
+            Self::Cut => write!(f, "cut"),
             Self::CutWood => write!(f, "cut wood"),
             Self::Extinguish => write!(f, "extinguish"),
             Self::Ignite => write!(f, "ignite"),

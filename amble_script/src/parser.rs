@@ -914,8 +914,18 @@ fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<I
             },
             Rule::item_requires => {
                 let mut ri = stmt.into_inner();
-                let interaction = ri.next().ok_or(AstError::Shape("requires interaction"))?.as_str().to_string();
-                let ability = ri.next().ok_or(AstError::Shape("requires ability"))?.as_str().to_string();
+                // New order: ability first, then interaction
+                let ability = ri
+                    .next()
+                    .ok_or(AstError::Shape("requires ability"))?
+                    .as_str()
+                    .to_string();
+                let interaction = ri
+                    .next()
+                    .ok_or(AstError::Shape("requires interaction"))?
+                    .as_str()
+                    .to_string();
+                // Store as (interaction, ability) to match TOML mapping
                 requires.push((interaction, ability));
             },
             _ => {},

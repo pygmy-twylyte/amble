@@ -56,9 +56,10 @@ fn main() {
                 }
             }
             if let Some(req) = it.get("interaction_requires").and_then(|v| v.as_table()) {
-                for (k, v) in req.iter() {
+                for (interaction, v) in req.iter() {
                     if let Some(ability) = v.as_str() {
-                        out_items.push_str(&format!("  requires {} {}\n", k, ability));
+                        // New DSL: requires <ability> to <interaction>
+                        out_items.push_str(&format!("  requires {} to {}\n", ability, interaction));
                     }
                 }
             }

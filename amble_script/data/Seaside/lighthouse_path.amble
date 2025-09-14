@@ -2,8 +2,60 @@
 # Lighthouse Path
 # ================================================
 room lighthouse-path {
-  name "Room Name"
-  desc "Room description"
-  visited false
+    name "Lighthouse Path"
+    desc "Here weathered stone steps -- made slippery by mists and a healthy coating of algae -- slowly wind their way up a wind-battered cliff face toward the lighthouse. The spray in the air dampens your clothes, and a thick rope railing is all that stands between you and the crashing surf below."
+    visited false
+    exit "down the steps" -> quay-square
+    overlay if (item present gold_locket) {
+        text "A gold locket looped snugly around the rope railing near you glints in the waning sunlight."
+    }
+}
 
+# ================================================
+# Items
+# ================================================
+
+item gold_locket {
+    name "Golden Locket"
+    desc "A locket of gold on a chain, looped over the rope railing on the lighthouse path; it sways to and fro in the offshore gusts of wind. It isn't very worn, and appears not to have been here very long."
+    portable true
+    location room lighthouse-path
+    text "When opened, the locket contains a photo of an older, graying man on one side. There is glue residue on the other side, but the portrait has been removed. An inscription engraved on the back reads: 'To P-- My Love'."
+    ability Read
+}
+
+# ================================================
+# Triggers
+# ================================================
+
+trigger "Locket Taken" only once when take item gold_locket {
+    do award points 10
+    do add seq flag return-locket limit 4
+    #0 -> locket taken
+    #1 -> portait found
+    #2 -> portrait put in locket
+    #3 -> locket taken to lighthouse by heron
+    #4 -> meet NPC wearing locket coming down lighthouse path
+    do show "You loop the locket back through its chain to free it from the rope. It feels familiar in your hand, somehow."
+    do set item description gold_locket "The gold locket you found looped over the rope railing on the lighthouse path. It isn't very worn, but somehow feels familiar in your hand."
+    do schedule in 3 if has item gold_locket onFalse retryNextTurn note "first heron sighting" {
+        do show "You notice a beautiful, heron-like bird circling close by."
+        do schedule in 3 if has item gold_locket onFalse retryNextTurn note "second heron sighting" {
+            do show "You notice the heron again, gliding easily on the wind gusts toward the quay square."
+            do schedule in 3 if all(has item gold_locket, player in room quay-square) onFalse retryNextTurn note "heron box delivery" {
+                do show "The beautiful seabird that's been following you lands on a nearby lamppost carrying something in its beak. After a moment, it drops it at your feet before soaring off over the quay and back into the harbor."
+                do spawn item tiny_package into room quay-square
+            }
+        }
+    }
+}
+
+trigger "Dropped Locket" when drop item gold_locket {
+    do show "The moment you drop the locket, you begin to miss it -- and feel like you've **been** missing it for a long time."
+}
+
+trigger "Picked Up Locket Again" when take item gold_locket {
+    if flag in progress return-locket {
+        do show "You feel better now that you have the locket back in your hand, like your best and oldest friend."
+    }
 }

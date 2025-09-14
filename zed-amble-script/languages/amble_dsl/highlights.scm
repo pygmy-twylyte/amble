@@ -21,7 +21,9 @@
 "trigger" @keyword
 "spinner" @keyword
 "let" @keyword
+"done" @keyword
 "set" @keyword
+"unset" @keyword
 "name" @keyword
 "desc" @keyword
 "description" @keyword
@@ -31,20 +33,44 @@
 "exit" @keyword
 "wedge" @keyword
 "width" @keyword
-"group" @keyword
-"done" @keyword
-"when" @keyword
-"has" @keyword
-"missing" @keyword
-"reached" @keyword
-"complete" @keyword
-"in" @keyword
-"progress" @keyword
-"nowhere" @keyword
-"flag" @keyword
-"required" @keyword
-"optional" @keyword
-"status-effect" @keyword
+"text" @keyword
+"overlay" @keyword
+"dialogue" @keyword
+"movement" @keyword
+"required_flags" @keyword
+"required_items" @keyword
+"ability" @keyword
+"container" @keyword
+"timing" @keyword
+"state" @keyword
+"restricted" @keyword
+"requires" @keyword
+"open" @keyword
+"closed" @keyword
+; Trigger keywords (structural to avoid substring matches inside identifiers)
+(do_stmt "do" @keyword)
+(if_block "if" @keyword)
+(trigger_mod "when" @keyword)
+(trigger_mod "only" @keyword)
+(trigger_mod "once" @keyword)
+
+; (intentionally no additional trigger action/condition highlighting)
+; Contextual goal keywords
+(goal_done "done" @keyword)
+(goal_done "when" @keyword)
+(goal_start "start" @keyword)
+(goal_start "when" @keyword)
+(goal_group "group" @keyword)
+(goal_group "required" @keyword)
+(goal_group "optional" @keyword)
+(goal_group "status-effect" @keyword)
+(goal_cond "has" @keyword)
+(goal_cond "missing" @keyword)
+(goal_cond "reached" @keyword)
+(goal_cond "complete" @keyword)
+(goal_cond "in" @keyword)
+(goal_cond "progress" @keyword)
+; (contextual only; no global fallbacks to avoid partial matches)
 "true" @constant
 "false" @constant
 

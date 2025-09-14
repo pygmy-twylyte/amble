@@ -7,6 +7,7 @@ Highlights:
 - Optional `container state` (`open`, `closed`, `locked`, `transparentClosed`, `transparentLocked`).
 - Optional `text` field for readable items and `restricted` flag for non-droppable items.
 - `ability` entries compile to `[[items.abilities]]` tables with an optional `target`.
+ - Interaction requirements: `requires <ability> to <interaction>` compiles to `interaction_requires`.
 
 ## Minimal Item
 
@@ -67,6 +68,26 @@ restricted true  # item cannot be dropped
 ```
 
 `text` is emitted as the item’s readable text. `restricted` defaults to `false` and is only emitted when set to `true`.
+
+## Interaction Requirements
+
+Use `requires <ability> to <interaction>` to gate an interaction behind an item ability. Examples:
+
+```
+# Requires that the acting item has the 'insulate' ability to handle this item
+requires insulate to handle
+
+# Requires that the acting item has the 'cut' ability to open this item
+requires cut to open
+```
+
+This compiles to TOML as:
+
+```
+[items.interaction_requires]
+handle = "insulate"
+open = "cut"
+```
 
 ## Library Usage
 

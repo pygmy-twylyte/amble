@@ -3,8 +3,8 @@
 # ================================================
 
 room fish-market-shed {
-  name "Room Name"
-  desc "Room description"
+  name "Fish Market Shed"
+  desc "The fish market takes place here earlier in the day, but by this hour the stalls are shuttered and the din of frenzied dealmaking has long since died away. A trace of the scent remains along with fish scales ground into the floorboards to hint at the bustle just a few hours before."
   visited false
-
+  exit "out to the square" -> quay-square
 }

@@ -20,7 +20,7 @@ item demo_widget {
   portable true
   location room demo-room
   ability Read
-  requires handle insulate
+  requires insulate to handle
 }
 
 # NPCs
@@ -50,4 +50,3 @@ trigger "see widget" when look at item demo_widget {
     do add flag saw-demo
   }
 }
-

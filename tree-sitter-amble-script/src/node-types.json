@@ -5,6 +5,196 @@
     "fields": {}
   },
   {
+    "type": "braced_block",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "trigger_stmt",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "cond_line",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "number",
+          "named": true
+        },
+        {
+          "type": "string",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "cond_line_ext",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "number",
+          "named": true
+        },
+        {
+          "type": "string",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "dialogue_stmt",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "string",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "do_stmt",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "braced_block",
+          "named": true
+        },
+        {
+          "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "number",
+          "named": true
+        },
+        {
+          "type": "string",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "exit_attr",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "exit_barred",
+          "named": true
+        },
+        {
+          "type": "exit_required_flags",
+          "named": true
+        },
+        {
+          "type": "exit_required_items",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "exit_barred",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "string",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "exit_block",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "exit_attr",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "exit_required_flags",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "identifier",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "exit_required_items",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "identifier",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "exit_stmt",
     "named": true,
     "fields": {},
@@ -12,6 +202,10 @@
       "multiple": true,
       "required": true,
       "types": [
+        {
+          "type": "exit_block",
+          "named": true
+        },
         {
           "type": "identifier",
           "named": true
@@ -97,6 +291,21 @@
     "fields": {}
   },
   {
+    "type": "goal_start",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "goal_cond",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "goal_stmt",
     "named": true,
     "fields": {},
@@ -114,6 +323,44 @@
         },
         {
           "type": "goal_group",
+          "named": true
+        },
+        {
+          "type": "goal_start",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "if_block",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "braced_block",
+          "named": true
+        },
+        {
+          "type": "cond_line_ext",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "item_ability",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "identifier",
           "named": true
         }
       ]
@@ -133,6 +380,11 @@
         }
       ]
     }
+  },
+  {
+    "type": "item_container_state",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "item_def",
@@ -169,6 +421,21 @@
     }
   },
   {
+    "type": "item_location",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "location",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "item_name",
     "named": true,
     "fields": {},
@@ -199,6 +466,21 @@
     }
   },
   {
+    "type": "item_restricted",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "boolean",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "item_stmt",
     "named": true,
     "fields": {},
@@ -207,7 +489,19 @@
       "required": true,
       "types": [
         {
+          "type": "item_ability",
+          "named": true
+        },
+        {
+          "type": "item_container_state",
+          "named": true
+        },
+        {
           "type": "item_desc",
+          "named": true
+        },
+        {
+          "type": "item_location",
           "named": true
         },
         {
@@ -216,6 +510,67 @@
         },
         {
           "type": "item_portable",
+          "named": true
+        },
+        {
+          "type": "item_restricted",
+          "named": true
+        },
+        {
+          "type": "item_text",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "item_text",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "string",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "location",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "string",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "movement_stmt",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "boolean",
+          "named": true
+        },
+        {
+          "type": "identifier",
           "named": true
         }
       ]
@@ -271,25 +626,6 @@
     }
   },
   {
-    "type": "npc_location",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "identifier",
-          "named": true
-        },
-        {
-          "type": "string",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
     "type": "npc_name",
     "named": true,
     "fields": {},
@@ -305,6 +641,21 @@
     }
   },
   {
+    "type": "npc_state",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "identifier",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "npc_stmt",
     "named": true,
     "fields": {},
@@ -313,15 +664,76 @@
       "required": true,
       "types": [
         {
+          "type": "dialogue_stmt",
+          "named": true
+        },
+        {
+          "type": "location",
+          "named": true
+        },
+        {
+          "type": "movement_stmt",
+          "named": true
+        },
+        {
           "type": "npc_desc",
           "named": true
         },
         {
-          "type": "npc_location",
+          "type": "npc_name",
           "named": true
         },
         {
-          "type": "npc_name",
+          "type": "npc_state",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "overlay_block",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "overlay_entry",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "overlay_entry",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "string",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "overlay_stmt",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "cond_line_ext",
+          "named": true
+        },
+        {
+          "type": "overlay_block",
           "named": true
         }
       ]
@@ -443,6 +855,10 @@
           "named": true
         },
         {
+          "type": "overlay_stmt",
+          "named": true
+        },
+        {
           "type": "room_desc",
           "named": true
         },
@@ -560,6 +976,63 @@
         {
           "type": "string",
           "named": true
+        },
+        {
+          "type": "trigger_block",
+          "named": true
+        },
+        {
+          "type": "trigger_mod",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "trigger_block",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "trigger_stmt",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "trigger_mod",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": false,
+      "types": [
+        {
+          "type": "cond_line",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "trigger_stmt",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "do_stmt",
+          "named": true
+        },
+        {
+          "type": "if_block",
+          "named": true
         }
       ]
     }
@@ -584,10 +1057,6 @@
     }
   },
   {
-    "type": "\"\"\"",
-    "named": false
-  },
-  {
     "type": "(",
     "named": false
   },
@@ -608,6 +1077,30 @@
     "named": false
   },
   {
+    "type": "ability",
+    "named": false
+  },
+  {
+    "type": "active",
+    "named": false
+  },
+  {
+    "type": "barred",
+    "named": false
+  },
+  {
+    "type": "bored",
+    "named": false
+  },
+  {
+    "type": "chest",
+    "named": false
+  },
+  {
+    "type": "closed",
+    "named": false
+  },
+  {
     "type": "comment",
     "named": true
   },
@@ -616,11 +1109,27 @@
     "named": false
   },
   {
+    "type": "container",
+    "named": false
+  },
+  {
+    "type": "custom",
+    "named": false
+  },
+  {
     "type": "desc",
     "named": false
   },
   {
     "type": "description",
+    "named": false
+  },
+  {
+    "type": "dialogue",
+    "named": false
+  },
+  {
+    "type": "do",
     "named": false
   },
   {
@@ -648,6 +1157,10 @@
     "named": false
   },
   {
+    "type": "happy",
+    "named": false
+  },
+  {
     "type": "has",
     "named": false
   },
@@ -656,7 +1169,15 @@
     "named": true
   },
   {
+    "type": "if",
+    "named": false
+  },
+  {
     "type": "in",
+    "named": false
+  },
+  {
+    "type": "inventory",
     "named": false
   },
   {
@@ -672,11 +1193,23 @@
     "named": false
   },
   {
+    "type": "mad",
+    "named": false
+  },
+  {
     "type": "missing",
     "named": false
   },
   {
+    "type": "movement",
+    "named": false
+  },
+  {
     "type": "name",
+    "named": false
+  },
+  {
+    "type": "normal",
     "named": false
   },
   {
@@ -692,7 +1225,27 @@
     "named": true
   },
   {
+    "type": "once",
+    "named": false
+  },
+  {
+    "type": "only",
+    "named": false
+  },
+  {
+    "type": "open",
+    "named": false
+  },
+  {
     "type": "optional",
+    "named": false
+  },
+  {
+    "type": "overlay",
+    "named": false
+  },
+  {
+    "type": "player",
     "named": false
   },
   {
@@ -704,6 +1257,10 @@
     "named": false
   },
   {
+    "type": "random",
+    "named": false
+  },
+  {
     "type": "reached",
     "named": false
   },
@@ -712,7 +1269,27 @@
     "named": false
   },
   {
+    "type": "required_flags",
+    "named": false
+  },
+  {
+    "type": "required_items",
+    "named": false
+  },
+  {
+    "type": "restricted",
+    "named": false
+  },
+  {
     "type": "room",
+    "named": false
+  },
+  {
+    "type": "rooms",
+    "named": false
+  },
+  {
+    "type": "route",
     "named": false
   },
   {
@@ -724,7 +1301,23 @@
     "named": false
   },
   {
+    "type": "start",
+    "named": false
+  },
+  {
+    "type": "state",
+    "named": false
+  },
+  {
     "type": "status-effect",
+    "named": false
+  },
+  {
+    "type": "text",
+    "named": false
+  },
+  {
+    "type": "timing",
     "named": false
   },
   {
@@ -733,6 +1326,10 @@
   },
   {
     "type": "true",
+    "named": false
+  },
+  {
+    "type": "unset",
     "named": false
   },
   {

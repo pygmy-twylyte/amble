@@ -8,8 +8,8 @@ item gizmo {
   desc "A handy gizmo."
   portable true
   location room lab
-  requires handle insulate
-  requires clean Clean
+  requires insulate to handle
+  requires Clean to clean
 }
 "#;
     let items = parse_items(src).expect("parse items ok");
@@ -32,4 +32,3 @@ item gizmo {
     let actual_val: toml::Value = toml::from_str(&actual_clean).expect("parse actual");
     assert_eq!(actual_val, expected_val);
 }
-

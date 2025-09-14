@@ -4,7 +4,29 @@
 
 room quay-square {
   name "Quay Square"
-  desc "Room description"
+  desc "The town square, adjoining the harbor quay. Gulls call overhead, looking for supper below. The air smells of brine and tar and frying oil. A somewhat brackish-appearing fountain with a centerpiece of frolicking dolphins decorates the center of the square. The bright turquoise awning of the fish market beckons in one direction, and a path leads around to a slipway. Over by the tar barrels, weathered stone steps wind up toward the lighthouse."
   visited false
+  overlay if (item present tiny_package) {
+    text "The tiny package that the heron dropped off lies on the ground nearby -- a little battered, but intact."
+  }
+  exit "along the slipway" -> boathouse-slipway
+  exit "beneath the awning" -> fish-market-shed
+  exit "past the tar barrels" -> net-yard
+  exit "up the stone steps" -> lighthouse-path
+}
 
+item tiny_package {
+  name "Tiny Package"
+  desc "A tiny gift box sitting on a bench in the Quay Square, smaller than a pack of cards and significantly lighter. It may be empty, in fact."
+  portable true
+  location nowhere "scheduled spawn@quay-square after locket taken"
+  container state closed
+  requires cut to open
+}
+
+item tiny_portrait {
+    name "Tiny Portrait"
+    desc "A very small, very worn and faded portrait of... someone, cut into an oval shape. There's a mildly sticky substance on the back."
+    portable true
+    location chest tiny_package
 }
