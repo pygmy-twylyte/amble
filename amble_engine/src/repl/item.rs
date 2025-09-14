@@ -902,10 +902,28 @@ mod tests {
     fn open_handler_opens_closed_container() {
         let (mut world, mut view, container_id, _, _, _) = build_world();
         world.items.get_mut(&container_id).unwrap().container_state = Some(ContainerState::Closed);
+        world
+            .items
+            .get_mut(&container_id)
+            .unwrap()
+            .interaction_requires
+            .remove(&ItemInteractionType::Open);
         open_handler(&mut world, &mut view, "chest").unwrap();
         assert_eq!(
             world.items.get(&container_id).unwrap().container_state,
             Some(ContainerState::Open)
+        );
+    }
+
+    #[test]
+    fn open_handler_will_not_open_container_with_special_open_requirements() {
+        let (mut world, mut view, container_id, _, _, _) = build_world();
+        world.items.get_mut(&container_id).unwrap().container_state = Some(ContainerState::Closed);
+        // note -- the "chest" test item is defined as requiring "pry" to "open"
+        open_handler(&mut world, &mut view, "chest").unwrap();
+        assert_eq!(
+            world.items.get(&container_id).unwrap().container_state,
+            Some(ContainerState::Closed)
         );
     }
 
