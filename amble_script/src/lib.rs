@@ -14,7 +14,7 @@
 
 mod parser;
 pub use parser::{AstError, parse_program, parse_trigger};
-pub use parser::{parse_items, parse_program_full, parse_rooms, parse_spinners, parse_npcs, parse_goals};
+pub use parser::{parse_goals, parse_items, parse_npcs, parse_program_full, parse_rooms, parse_spinners};
 
 use thiserror::Error;
 use toml_edit::{Array, ArrayOfTables, Document, InlineTable, Item, Table, value};
@@ -764,7 +764,10 @@ pub struct SpinnerWedgeAst {
 // -----------------
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum NpcMovementTypeAst { Route, Random }
+pub enum NpcMovementTypeAst {
+    Route,
+    Random,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct NpcMovementAst {
@@ -1082,13 +1085,22 @@ pub fn compile_npcs_to_toml(npcs: &[NpcAst]) -> Result<String, CompileError> {
         // movement (optional)
         if let Some(mv) = &n.movement {
             let mut mt = Table::new();
-            let mtype = match mv.movement_type { NpcMovementTypeAst::Route => "route", NpcMovementTypeAst::Random => "random" };
+            let mtype = match mv.movement_type {
+                NpcMovementTypeAst::Route => "route",
+                NpcMovementTypeAst::Random => "random",
+            };
             mt["movement_type"] = value(mtype);
             let mut arr = Array::default();
-            for r in &mv.rooms { arr.push(r.clone()); }
+            for r in &mv.rooms {
+                arr.push(r.clone());
+            }
             mt["rooms"] = Item::Value(arr.into());
-            if let Some(ti) = &mv.timing { mt["timing"] = value(ti.clone()); }
-            if let Some(a) = mv.active { mt["active"] = value(a); }
+            if let Some(ti) = &mv.timing {
+                mt["timing"] = value(ti.clone());
+            }
+            if let Some(a) = mv.active {
+                mt["active"] = value(a);
+            }
             t["movement"] = Item::Table(mt);
         }
         // dialogue
@@ -1096,7 +1108,9 @@ pub fn compile_npcs_to_toml(npcs: &[NpcAst]) -> Result<String, CompileError> {
             let mut dt = Table::new();
             for (k, lines) in &n.dialogue {
                 let mut arr = Array::default();
-                for line in lines { arr.push(line.clone()); }
+                for line in lines {
+                    arr.push(line.clone());
+                }
                 arr.set_trailing_comma(true);
                 dt[k.as_str()] = Item::Value(arr.into());
             }
@@ -1119,7 +1133,11 @@ pub fn compile_npcs_to_toml(npcs: &[NpcAst]) -> Result<String, CompileError> {
 // -----------------
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum GoalGroupAst { Required, Optional, StatusEffect }
+pub enum GoalGroupAst {
+    Required,
+    Optional,
+    StatusEffect,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum GoalCondAst {
@@ -1157,19 +1175,44 @@ pub fn compile_goals_to_toml(goals: &[GoalAst]) -> Result<String, CompileError> 
         let mut grp = InlineTable::new();
         grp.insert(
             "type",
-            toml_edit::Value::from(match g.group { GoalGroupAst::Required => "required", GoalGroupAst::Optional => "optional", GoalGroupAst::StatusEffect => "status-effect" }),
+            toml_edit::Value::from(match g.group {
+                GoalGroupAst::Required => "required",
+                GoalGroupAst::Optional => "optional",
+                GoalGroupAst::StatusEffect => "status-effect",
+            }),
         );
         t["group"] = Item::Value(grp.into());
         let cond_to_val = |c: &GoalCondAst| {
             let mut it = InlineTable::new();
             match c {
-                GoalCondAst::HasFlag(f) => { it.insert("type", toml_edit::Value::from("hasFlag")); it.insert("flag", toml_edit::Value::from(f.clone())); },
-                GoalCondAst::MissingFlag(f) => { it.insert("type", toml_edit::Value::from("missingFlag")); it.insert("flag", toml_edit::Value::from(f.clone())); },
-                GoalCondAst::HasItem(i) => { it.insert("type", toml_edit::Value::from("hasItem")); it.insert("item_sym", toml_edit::Value::from(i.clone())); },
-                GoalCondAst::ReachedRoom(r) => { it.insert("type", toml_edit::Value::from("reachedRoom")); it.insert("room_sym", toml_edit::Value::from(r.clone())); },
-                GoalCondAst::GoalComplete(gid) => { it.insert("type", toml_edit::Value::from("goalComplete")); it.insert("goal_id", toml_edit::Value::from(gid.clone())); },
-                GoalCondAst::FlagInProgress(f) => { it.insert("type", toml_edit::Value::from("flagInProgress")); it.insert("flag", toml_edit::Value::from(f.clone())); },
-                GoalCondAst::FlagComplete(f) => { it.insert("type", toml_edit::Value::from("flagComplete")); it.insert("flag", toml_edit::Value::from(f.clone())); },
+                GoalCondAst::HasFlag(f) => {
+                    it.insert("type", toml_edit::Value::from("hasFlag"));
+                    it.insert("flag", toml_edit::Value::from(f.clone()));
+                },
+                GoalCondAst::MissingFlag(f) => {
+                    it.insert("type", toml_edit::Value::from("missingFlag"));
+                    it.insert("flag", toml_edit::Value::from(f.clone()));
+                },
+                GoalCondAst::HasItem(i) => {
+                    it.insert("type", toml_edit::Value::from("hasItem"));
+                    it.insert("item_sym", toml_edit::Value::from(i.clone()));
+                },
+                GoalCondAst::ReachedRoom(r) => {
+                    it.insert("type", toml_edit::Value::from("reachedRoom"));
+                    it.insert("room_sym", toml_edit::Value::from(r.clone()));
+                },
+                GoalCondAst::GoalComplete(gid) => {
+                    it.insert("type", toml_edit::Value::from("goalComplete"));
+                    it.insert("goal_id", toml_edit::Value::from(gid.clone()));
+                },
+                GoalCondAst::FlagInProgress(f) => {
+                    it.insert("type", toml_edit::Value::from("flagInProgress"));
+                    it.insert("flag", toml_edit::Value::from(f.clone()));
+                },
+                GoalCondAst::FlagComplete(f) => {
+                    it.insert("type", toml_edit::Value::from("flagComplete"));
+                    it.insert("flag", toml_edit::Value::from(f.clone()));
+                },
             }
             toml_edit::Value::from(it)
         };
@@ -1183,7 +1226,8 @@ pub fn compile_goals_to_toml(goals: &[GoalAst]) -> Result<String, CompileError> 
         }
         t["finished_when"] = Item::Value(cond_to_val(&g.finished_when));
         if g.src_line > 0 {
-            t.decor_mut().set_prefix(format!("# goal {} (source line {})\n", g.id, g.src_line));
+            t.decor_mut()
+                .set_prefix(format!("# goal {} (source line {})\n", g.id, g.src_line));
         } else {
             t.decor_mut().set_prefix(format!("# goal {}\n", g.id));
         }
@@ -1794,10 +1838,7 @@ room shoreline {
         assert_eq!(rooms.len(), 1);
         let r = &rooms[0];
         assert_eq!(r.id, "shoreline");
-        assert!(r
-            .exits
-            .iter()
-            .any(|(d, e)| d == "along the shore" && e.to == "dunes"));
+        assert!(r.exits.iter().any(|(d, e)| d == "along the shore" && e.to == "dunes"));
 
         let toml = crate::compile_rooms_to_toml(&rooms).expect("compile ok");
         // Expect a quoted TOML key for the exit direction containing spaces
@@ -2449,6 +2490,44 @@ trigger "spawn in container" when always {
         let expected_val: toml::Value = toml::from_str(&expected_clean).expect("parse expected");
         let actual_val: toml::Value = toml::from_str(&actual_clean).expect("parse actual");
         assert_eq!(actual_val, expected_val);
+    }
+
+    #[test]
+    fn parse_goal_block_any_order() {
+        let src = r#"
+goal demo-goal {
+  group optional
+  done when has flag finished
+  name "Demo Goal"
+  start when missing flag prereq
+  desc "Sequence can vary"
+}
+"#;
+        let goals = crate::parse_goals(src).expect("parse goals ok");
+        assert_eq!(goals.len(), 1);
+        let g = &goals[0];
+        assert_eq!(g.id, "demo-goal");
+        assert_eq!(g.name, "Demo Goal");
+        assert_eq!(g.description, "Sequence can vary");
+        assert_eq!(g.group, GoalGroupAst::Optional);
+        assert!(matches!(&g.activate_when, GoalCondAst::MissingFlag(cond) if cond == "prereq"));
+        assert!(matches!(&g.finished_when, GoalCondAst::HasFlag(cond) if cond == "finished"));
+    }
+
+    #[test]
+    fn parse_goal_block_missing_required_fields_errors() {
+        let src = r#"
+goal incomplete-goal {
+  name "Incomplete"
+  group required
+  done when has flag finished
+}
+"#;
+        let err = crate::parse_goals(src).expect_err("missing desc should error");
+        match err {
+            crate::AstError::Shape(msg) => assert_eq!(msg, "goal missing desc"),
+            other => panic!("unexpected error: {:?}", other),
+        }
     }
 
     #[test]

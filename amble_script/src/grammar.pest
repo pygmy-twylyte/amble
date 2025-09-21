@@ -349,7 +349,9 @@ npc_dialogue_block = { "dialogue" ~ (ident | ("custom" ~ ident)) ~ "{" ~ string+
 // Goals
 // -----------------
 
-goal_def    = { "goal" ~ ident ~ string ~ NEWLINE* ~ goal_desc ~ NEWLINE* ~ goal_group ~ NEWLINE* ~ goal_start? ~ NEWLINE* ~ goal_done }
+goal_def    = { "goal" ~ ident ~ goal_block }
+goal_block  = { "{" ~ (goal_name | goal_desc | goal_group | goal_start | goal_done)+ ~ "}" }
+goal_name   = { "name" ~ string }
 goal_desc   = { "desc" ~ string }
 goal_group  = { "group" ~ ("required" | "optional" | "status-effect") }
 goal_start  = { "start" ~ "when" ~ goal_cond }

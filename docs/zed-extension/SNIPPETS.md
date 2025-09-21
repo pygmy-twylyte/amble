@@ -82,22 +82,26 @@ Creates a basic NPC definition.
 
 ### `goal` + Tab
 ```
-goal identifier "Goal Title"
-desc "Goal description"
-group required
-done when condition
+goal identifier {
+  name "Goal Title"
+  desc "Goal description"
+  group required
+  done when condition
+}
 
 ```
 Creates a basic goal definition.
 
 ### `goalcomplex` + Tab
 ```
-goal identifier "Goal Title"
-desc "Goal description"
-group required
-done when has item item_id
-done when reached room room_id
-done when goal complete goal_id
+goal identifier {
+  name "Goal Title"
+  desc "Goal description"
+  group required
+  done when has item item_id
+  done when reached room room_id
+  done when goal complete goal_id
+}
 
 ```
 Creates a goal with multiple completion conditions.

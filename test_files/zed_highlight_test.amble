@@ -34,10 +34,12 @@ spinner mood_wheel {
 }
 
 # Goal definition test
-goal find_treasure "Find the Hidden Treasure"
-desc "Locate the ancient treasure hidden in the castle"
-group required
-done when has item golden_key
+goal find_treasure {
+  name "Find the Hidden Treasure"
+  desc "Locate the ancient treasure hidden in the castle"
+  group required
+  done when has item golden_key
+}
 
 # Trigger definition test
 trigger entrance_message {
@@ -49,13 +51,15 @@ trigger entrance_message {
 let set valid_directions = (north, south, east, west, up, down)
 
 # Test various keywords and syntax
-goal complex_goal "Complex Multi-step Goal"
-group optional
-done when flag complete treasure_found
-done when reached room secret_chamber
-done when goal complete find_treasure
-done when has flag quest_started
-done when missing flag cursed
+goal complex_goal {
+  name "Complex Multi-step Goal"
+  group optional
+  done when flag complete treasure_found
+  done when reached room secret_chamber
+  done when goal complete find_treasure
+  done when has flag quest_started
+  done when missing flag cursed
+}
 
 # Test boolean values
 item magic_sword {
@@ -80,3 +84,4 @@ room library {
   Dust motes dance in the shafts of sunlight streaming through
   tall windows."""
 }
+

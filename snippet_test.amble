@@ -77,10 +77,12 @@ npc identifier {
 # ================================================
 
 # Basic goal snippet (type: goal<tab>)
-goal identifier "Goal Title"
-desc "Goal description"
-group required
-done when condition
+goal identifier {
+  name "Goal Title"
+  desc "Goal description"
+  group required
+  done when condition
+}
 
 
 # Complex goal with multiple conditions (type: goalcomplex<tab>)
@@ -128,13 +130,15 @@ let set test_directions = (
 )
 
 # Test complex nested structure
-goal complex_test "Complex Structure Test"
-desc """This goal tests complex indentation with multiple
+goal complex_test {
+  name "Complex Structure Test"
+  desc """This goal tests complex indentation with multiple
 conditions and nested structures."""
-group required
-done when has item special_key
-done when reached room final_chamber
-done when goal complete prerequisite_goal
+  group required
+  done when has item special_key
+  done when reached room final_chamber
+  done when goal complete prerequisite_goal
+}
 
 # ================================================
 # Multi-line Description Testing

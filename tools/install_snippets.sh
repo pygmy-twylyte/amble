@@ -110,11 +110,13 @@ cat > "$SOURCE_SNIPPETS" << 'EOF'
   "goal": {
     "prefix": "goal",
     "body": [
-      "goal ${1:identifier} \"${2:Goal Title}\"",
-      "desc \"${3:Goal description}\"",
-      "group ${4:required}",
-      "done when ${5:condition}",
-      "${0}"
+      "goal ${1:identifier} {",
+      "  name \"${2:Goal Title}\"",
+      "  desc \"${3:Goal description}\"",
+      "  group ${4:required}",
+      "  done when ${5:condition}",
+      "  ${0}",
+      "}"
     ],
     "description": "Create a new goal definition"
   },
@@ -122,13 +124,15 @@ cat > "$SOURCE_SNIPPETS" << 'EOF'
   "goalcomplex": {
     "prefix": "goalcomplex",
     "body": [
-      "goal ${1:identifier} \"${2:Goal Title}\"",
-      "desc \"${3:Goal description}\"",
-      "group ${4:required}",
-      "done when has item ${5:item_id}",
-      "done when reached room ${6:room_id}",
-      "done when goal complete ${7:goal_id}",
-      "${0}"
+      "goal ${1:identifier} {",
+      "  name \"${2:Goal Title}\"",
+      "  desc \"${3:Goal description}\"",
+      "  group ${4:required}",
+      "  done when has item ${5:item_id}",
+      "  done when reached room ${6:room_id}",
+      "  done when goal complete ${7:goal_id}",
+      "  ${0}",
+      "}"
     ],
     "description": "Create a goal with multiple conditions"
   },
@@ -367,3 +371,4 @@ echo "• Check that completion is enabled in Zed settings"
 
 echo
 print_status "Happy coding with Amble DSL! 🎮"
+

@@ -2,8 +2,9 @@ use pest::Parser;
 use pest_derive::Parser as PestParser;
 
 use crate::{
-    ActionAst, ConditionAst, ContainerStateAst, GoalAst, GoalCondAst, GoalGroupAst, ItemAbilityAst, ItemAst, ItemLocationAst, NpcAst, NpcMovementAst,
-    NpcMovementTypeAst, NpcStateValue, OnFalseAst, RoomAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
+    ActionAst, ConditionAst, ContainerStateAst, GoalAst, GoalCondAst, GoalGroupAst, ItemAbilityAst, ItemAst,
+    ItemLocationAst, NpcAst, NpcMovementAst, NpcMovementTypeAst, NpcStateValue, OnFalseAst, RoomAst, SpinnerAst,
+    SpinnerWedgeAst, TriggerAst,
 };
 use std::collections::HashMap;
 
@@ -37,7 +38,17 @@ pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
 /// Parse a full program returning triggers, rooms, items, and spinners.
 pub fn parse_program_full(
     source: &str,
-) -> Result<(Vec<TriggerAst>, Vec<RoomAst>, Vec<ItemAst>, Vec<SpinnerAst>, Vec<NpcAst>, Vec<GoalAst>), AstError> {
+) -> Result<
+    (
+        Vec<TriggerAst>,
+        Vec<RoomAst>,
+        Vec<ItemAst>,
+        Vec<SpinnerAst>,
+        Vec<NpcAst>,
+        Vec<GoalAst>,
+    ),
+    AstError,
+> {
     let mut pairs = DslParser::parse(Rule::program, source).map_err(|e| AstError::Pest(e.to_string()))?;
     let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
     let smap = SourceMap::new(source);
@@ -982,13 +993,18 @@ fn parse_goal_pair(goal: pest::iterators::Pair<Rule>, _source: &str) -> Result<G
     let (src_line, _src_col) = goal.as_span().start_pos().line_col();
     let mut it = goal.into_inner();
     let id = it.next().ok_or(AstError::Shape("goal id"))?.as_str().to_string();
-    let name = unquote(it.next().ok_or(AstError::Shape("goal name"))?.as_str());
+    let block = it.next().ok_or(AstError::Shape("goal block"))?;
+    let mut name: Option<String> = None;
     let mut description: Option<String> = None;
     let mut group: Option<GoalGroupAst> = None;
     let mut activate_when: Option<GoalCondAst> = None;
     let mut finished_when: Option<GoalCondAst> = None;
-    for p in it {
+    for p in block.into_inner() {
         match p.as_rule() {
+            Rule::goal_name => {
+                let s = p.into_inner().next().ok_or(AstError::Shape("goal name text"))?.as_str();
+                name = Some(unquote(s));
+            },
             Rule::goal_desc => {
                 let s = p.into_inner().next().ok_or(AstError::Shape("desc text"))?.as_str();
                 description = Some(unquote(s));
@@ -1013,22 +1029,45 @@ fn parse_goal_pair(goal: pest::iterators::Pair<Rule>, _source: &str) -> Result<G
             _ => {},
         }
     }
+    let name = name.ok_or(AstError::Shape("goal missing name"))?;
     let description = description.ok_or(AstError::Shape("goal missing desc"))?;
     let group = group.ok_or(AstError::Shape("goal missing group"))?;
     let finished_when = finished_when.ok_or(AstError::Shape("goal missing done"))?;
     let activate_when = activate_when.unwrap_or_else(|| GoalCondAst::HasFlag("".into())); // marker; codegen omits empty
-    Ok(GoalAst { id, name, description, group, activate_when, finished_when, src_line })
+    Ok(GoalAst {
+        id,
+        name,
+        description,
+        group,
+        activate_when,
+        finished_when,
+        src_line,
+    })
 }
 
 fn parse_goal_cond_pair(p: pest::iterators::Pair<Rule>) -> GoalCondAst {
     let s = p.as_str().trim();
-    if let Some(rest) = s.strip_prefix("has flag ") { return GoalCondAst::HasFlag(rest.trim().to_string()); }
-    if let Some(rest) = s.strip_prefix("missing flag ") { return GoalCondAst::MissingFlag(rest.trim().to_string()); }
-    if let Some(rest) = s.strip_prefix("has item ") { return GoalCondAst::HasItem(rest.trim().to_string()); }
-    if let Some(rest) = s.strip_prefix("reached room ") { return GoalCondAst::ReachedRoom(rest.trim().to_string()); }
-    if let Some(rest) = s.strip_prefix("goal complete ") { return GoalCondAst::GoalComplete(rest.trim().to_string()); }
-    if let Some(rest) = s.strip_prefix("flag in progress ") { return GoalCondAst::FlagInProgress(rest.trim().to_string()); }
-    if let Some(rest) = s.strip_prefix("flag complete ") { return GoalCondAst::FlagComplete(rest.trim().to_string()); }
+    if let Some(rest) = s.strip_prefix("has flag ") {
+        return GoalCondAst::HasFlag(rest.trim().to_string());
+    }
+    if let Some(rest) = s.strip_prefix("missing flag ") {
+        return GoalCondAst::MissingFlag(rest.trim().to_string());
+    }
+    if let Some(rest) = s.strip_prefix("has item ") {
+        return GoalCondAst::HasItem(rest.trim().to_string());
+    }
+    if let Some(rest) = s.strip_prefix("reached room ") {
+        return GoalCondAst::ReachedRoom(rest.trim().to_string());
+    }
+    if let Some(rest) = s.strip_prefix("goal complete ") {
+        return GoalCondAst::GoalComplete(rest.trim().to_string());
+    }
+    if let Some(rest) = s.strip_prefix("flag in progress ") {
+        return GoalCondAst::FlagInProgress(rest.trim().to_string());
+    }
+    if let Some(rest) = s.strip_prefix("flag complete ") {
+        return GoalCondAst::FlagComplete(rest.trim().to_string());
+    }
     GoalCondAst::HasFlag(s.to_string())
 }
 fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<NpcAst, AstError> {
@@ -1074,7 +1113,11 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                     NpcStateValue::Named(first.as_str().to_string())
                 } else {
                     // custom ident
-                    let v = si.next().ok_or(AstError::Shape("custom state ident"))?.as_str().to_string();
+                    let v = si
+                        .next()
+                        .ok_or(AstError::Shape("custom state ident"))?
+                        .as_str()
+                        .to_string();
                     NpcStateValue::Custom(v)
                 };
                 state = Some(st);
@@ -1099,13 +1142,27 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                 }
                 let timing = if let Some(idx) = s.find(" timing ") {
                     Some(s[idx + 8..].split_whitespace().next().unwrap_or("").to_string())
-                } else { None };
+                } else {
+                    None
+                };
                 let active = if let Some(idx) = s.find(" active ") {
                     let rest = &s[idx + 8..];
-                    if rest.trim_start().starts_with("true") { Some(true) }
-                    else if rest.trim_start().starts_with("false") { Some(false) } else { None }
-                } else { None };
-                movement = Some(NpcMovementAst { movement_type: mtype, rooms, timing, active });
+                    if rest.trim_start().starts_with("true") {
+                        Some(true)
+                    } else if rest.trim_start().starts_with("false") {
+                        Some(false)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+                movement = Some(NpcMovementAst {
+                    movement_type: mtype,
+                    rooms,
+                    timing,
+                    active,
+                });
             },
             Rule::npc_dialogue_block => {
                 // dialogue <state|custom ident> { "..."+ }
@@ -1114,23 +1171,34 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                 let key = if first.as_rule() == Rule::ident {
                     first.as_str().to_string()
                 } else {
-                    let id = di.next().ok_or(AstError::Shape("custom dialogue state ident"))?.as_str().to_string();
+                    let id = di
+                        .next()
+                        .ok_or(AstError::Shape("custom dialogue state ident"))?
+                        .as_str()
+                        .to_string();
                     format!("custom:{}", id)
                 };
                 let mut lines: Vec<String> = Vec::new();
-                for p in di { if p.as_rule() == Rule::string { lines.push(unquote(p.as_str())); } }
+                for p in di {
+                    if p.as_rule() == Rule::string {
+                        lines.push(unquote(p.as_str()));
+                    }
+                }
                 dialogue.push((key, lines));
             },
             _ => {
                 // Fallback: simple text-based parsing for robustness
                 let txt = stmt.as_str().trim_start();
                 if let Some(rest) = txt.strip_prefix("name ") {
-                    let (nm, _used) = parse_string_at(rest).map_err(|_| AstError::Shape("npc name invalid quoted text"))?;
+                    let (nm, _used) =
+                        parse_string_at(rest).map_err(|_| AstError::Shape("npc name invalid quoted text"))?;
                     name = Some(nm);
                     continue;
                 }
-                if let Some(rest) = txt.strip_prefix("desc ") { // or description
-                    let (ds, _used) = parse_string_at(rest).map_err(|_| AstError::Shape("npc desc invalid quoted text"))?;
+                if let Some(rest) = txt.strip_prefix("desc ") {
+                    // or description
+                    let (ds, _used) =
+                        parse_string_at(rest).map_err(|_| AstError::Shape("npc desc invalid quoted text"))?;
                     desc = Some(ds);
                     continue;
                 }
@@ -1139,7 +1207,8 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                     continue;
                 }
                 if let Some(rest) = txt.strip_prefix("location nowhere ") {
-                    let (note, _used) = parse_string_at(rest).map_err(|_| AstError::Shape("npc location nowhere invalid quoted text"))?;
+                    let (note, _used) = parse_string_at(rest)
+                        .map_err(|_| AstError::Shape("npc location nowhere invalid quoted text"))?;
                     location = Some(crate::NpcLocationAst::Nowhere(note));
                     continue;
                 }
@@ -1158,7 +1227,9 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                 }
                 if let Some(rest) = txt.strip_prefix("movement ") {
                     let mut mtype = NpcMovementTypeAst::Route;
-                    if rest.trim_start().starts_with("random ") { mtype = NpcMovementTypeAst::Random; }
+                    if rest.trim_start().starts_with("random ") {
+                        mtype = NpcMovementTypeAst::Random;
+                    }
                     let mut rooms: Vec<String> = Vec::new();
                     if let Some(open) = txt.find('(') {
                         if let Some(close_rel) = txt[open + 1..].find(')') {
@@ -1170,13 +1241,27 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                     }
                     let timing = if let Some(idx) = txt.find(" timing ") {
                         Some(txt[idx + 8..].split_whitespace().next().unwrap_or("").to_string())
-                    } else { None };
+                    } else {
+                        None
+                    };
                     let active = if let Some(idx) = txt.find(" active ") {
                         let rest = &txt[idx + 8..];
-                        if rest.trim_start().starts_with("true") { Some(true) }
-                        else if rest.trim_start().starts_with("false") { Some(false) } else { None }
-                    } else { None };
-                    movement = Some(NpcMovementAst { movement_type: mtype, rooms, timing, active });
+                        if rest.trim_start().starts_with("true") {
+                            Some(true)
+                        } else if rest.trim_start().starts_with("false") {
+                            Some(false)
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    };
+                    movement = Some(NpcMovementAst {
+                        movement_type: mtype,
+                        rooms,
+                        timing,
+                        active,
+                    });
                     continue;
                 }
                 if let Some(rest) = txt.strip_prefix("dialogue ") {
@@ -1197,7 +1282,9 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                             let mut lines: Vec<String> = Vec::new();
                             loop {
                                 inner = inner.trim_start();
-                                if inner.is_empty() { break; }
+                                if inner.is_empty() {
+                                    break;
+                                }
                                 if inner.starts_with('"') || inner.starts_with('r') || inner.starts_with('\'') {
                                     if let Ok((val, used)) = parse_string_at(inner) {
                                         lines.push(val);
@@ -1210,7 +1297,9 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                                     // consume until next quote or end
                                     if let Some(pos) = inner.find('"') {
                                         inner = &inner[pos..];
-                                    } else { break; }
+                                    } else {
+                                        break;
+                                    }
                                 }
                             }
                             if !lines.is_empty() {
@@ -1227,7 +1316,16 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
     let desc = desc.ok_or(AstError::Shape("npc missing desc"))?;
     let location = location.ok_or(AstError::Shape("npc missing location"))?;
     let state = state.unwrap_or(NpcStateValue::Named("normal".to_string()));
-    Ok(NpcAst { id, name, desc, location, state, movement, dialogue, src_line })
+    Ok(NpcAst {
+        id,
+        name,
+        desc,
+        location,
+        state,
+        movement,
+        dialogue,
+        src_line,
+    })
 }
 
 /// Parse only rooms from a source (helper/testing).
@@ -1843,7 +1941,10 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
                 Ok((s, _used)) => s,
                 Err(_) => tail.trim().to_string(),
             };
-            return Ok(ActionAst::LockExit { from_room: from.trim().to_string(), direction });
+            return Ok(ActionAst::LockExit {
+                from_room: from.trim().to_string(),
+                direction,
+            });
         }
     }
     if let Some(rest) = t.strip_prefix("do unlock exit from ") {
@@ -1853,7 +1954,10 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
                 Ok((s, _used)) => s,
                 Err(_) => tail.trim().to_string(),
             };
-            return Ok(ActionAst::UnlockExit { from_room: from.trim().to_string(), direction });
+            return Ok(ActionAst::UnlockExit {
+                from_room: from.trim().to_string(),
+                direction,
+            });
         }
     }
     if let Some(rest) = t.strip_prefix("do give item ") {

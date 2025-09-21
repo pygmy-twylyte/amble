@@ -20,7 +20,10 @@ npc guard {
   location room lobby
 }
 
-goal enter_lobby "Enter lobby"
-desc "Get to lobby"
-group required
-done when has flag arrived
+goal enter_lobby {
+  name "Enter lobby"
+  desc "Get to lobby"
+  group required
+  done when has flag arrived
+}
+

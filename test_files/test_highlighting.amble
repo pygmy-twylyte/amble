@@ -16,5 +16,8 @@ npc guard {
   location room lobby
 }
 
-goal test_goal "Simple Goal"
-done when has flag test_complete
+goal test_goal {
+  name "Simple Goal"
+  done when has flag test_complete
+}
+
