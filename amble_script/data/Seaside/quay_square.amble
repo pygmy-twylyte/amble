@@ -29,7 +29,7 @@ item tiny_package {
 }
 
 item tiny_portrait {
-    name "Tiny Portrait"
+    name "Miniscule Portrait"
     desc "A very small, very worn and faded portrait of... someone, cut into an oval shape. There's a mildly sticky substance on the back."
     portable true
     location chest tiny_package
@@ -49,3 +49,7 @@ npc cmot_dibbler {
         "Not many customers left -- I should probably go in before the Lighthouse Crone comes out to wander."
     }
 }
+
+# =================================================
+# Triggers
+# =================================================
