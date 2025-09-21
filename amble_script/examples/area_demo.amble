@@ -38,10 +38,12 @@ npc demo_helper {
 }
 
 # Goals
-goal demo-start "Begin the Demo"
-desc "Look around in the demo room."
-group optional
-done when has flag saw-demo
+goal demo-start {
+  name "Begin the Demo"
+  desc "Look around in the demo room."
+  group optional
+  done when has flag saw-demo
+}
 
 # Triggers
 trigger "see widget" when look at item demo_widget {
@@ -50,3 +52,4 @@ trigger "see widget" when look at item demo_widget {
     do add flag saw-demo
   }
 }
+

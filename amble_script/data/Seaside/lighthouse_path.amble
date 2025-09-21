@@ -64,8 +64,11 @@ trigger "Picked Up Locket Again" when take item gold_locket {
 # Goals
 # ================================================
 
-goal find-portrait "Lost and.. Found?"
-desc "You found a locket on the path up to the lighthouse, but one of the pictures is missing. Maybe you can find the owner if you can find the missing portrait?"
-group optional
-start when flag in progress return-locket
-done when has item tiny_portrait
+goal find-portrait {
+  name "Lost and.. Found?"
+  desc "You found a locket on the path up to the lighthouse, but one of the pictures is missing. Maybe you can find the owner if you can find the missing portrait?"
+  group optional
+  start when flag in progress return-locket
+  done when has item tiny_portrait
+}
+

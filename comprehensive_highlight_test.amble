@@ -95,24 +95,30 @@ spinner difficulty_selector {
 # ==================================================
 # GOAL DEFINITIONS - test all goal features and conditions
 # ==================================================
-goal find_treasure "Find the Hidden Treasure"
-desc "Locate the ancient treasure rumored to be hidden in the mansion"
-group required
-done when has item golden_key
+goal find_treasure {
+  name "Find the Hidden Treasure"
+  desc "Locate the ancient treasure rumored to be hidden in the mansion"
+  group required
+  done when has item golden_key
+}
 
-goal explore_mansion "Explore Every Room"
-desc "Visit all the rooms in the mysterious mansion"
-group optional
-done when reached room secret_chamber
+goal explore_mansion {
+  name "Explore Every Room"
+  desc "Visit all the rooms in the mysterious mansion"
+  group optional
+  done when reached room secret_chamber
+}
 
-goal master_quest "Complete the Master Quest"
-desc "Finish the ultimate challenge"
-group status-effect
-done when goal complete find_treasure
-done when flag complete exploration_finished
-done when has flag ancient_curse_lifted
-done when missing flag time_limit_exceeded
-done when flag in progress final_ritual
+goal master_quest {
+  name "Complete the Master Quest"
+  desc "Finish the ultimate challenge"
+  group status-effect
+  done when goal complete find_treasure
+  done when flag complete exploration_finished
+  done when has flag ancient_curse_lifted
+  done when missing flag time_limit_exceeded
+  done when flag in progress final_ritual
+}
 
 # ==================================================
 # TRIGGER DEFINITIONS - test trigger syntax
@@ -170,15 +176,17 @@ room operator_test {
 }
 
 # Test complex goal conditions
-goal complex_conditions "Complex Goal Conditions"
-desc "Testing various condition types"
-group required
-done when has item golden_key
-done when missing item cursed_amulet
-done when reached room secret_chamber
-done when goal complete find_treasure
-done when flag complete quest_started
-done when flag in progress ritual_begun
+goal complex_conditions {
+  name "Complex Goal Conditions"
+  desc "Testing various condition types"
+  group required
+  done when has item golden_key
+  done when missing item cursed_amulet
+  done when reached room secret_chamber
+  done when goal complete find_treasure
+  done when flag complete quest_started
+  done when flag in progress ritual_begun
+}
 
 # ==================================================
 # END OF TEST FILE
