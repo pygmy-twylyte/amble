@@ -1,8 +1,0 @@
-trigger "example spawn" when enter room pantry {
-  if all(has flag got-key, missing flag door-open) {
-    do spawn item cake into room pantry
-    do show "A cake materializes out of nowhere."
-    do add flag cake-spawned
-  }
-}
-
