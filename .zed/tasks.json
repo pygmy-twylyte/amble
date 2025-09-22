@@ -53,7 +53,12 @@
   },
   {
     "label": "Compile/Install Seaside TOMLs",
-    "command": "cargo run --bin amble_script -- compile-dir amble_script/data/Seaside --out-dir amble_engine/data --verbose",
+    "command": "cargo run --bin amble_script -- compile-dir amble_script/data/Seaside --out-dir amble_engine/data --verbose && cp amble_script/data/Seaside/intro.txt amble_engine/data && cp amble_script/data/Seaside/player.toml amble_engine/data",
+    "shell": "system"
+  },
+  {
+    "label": "Run Amble Engine",
+    "command": "cargo run --bin amble_engine 2> amble.log",
     "shell": "system"
   }
 ]
