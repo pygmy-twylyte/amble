@@ -29,6 +29,7 @@ use super::{SymbolTable, resolve_location};
 pub enum RawItemAbility {
     Attach,
     Clean,
+    Cut,
     CutWood,
     Extinguish,
     Ignite,
@@ -49,6 +50,7 @@ impl RawItemAbility {
         let ability = match self {
             Self::Attach => ItemAbility::Attach,
             Self::Clean => ItemAbility::Clean,
+            Self::Cut => ItemAbility::Cut,
             Self::CutWood => ItemAbility::CutWood,
             Self::Extinguish => ItemAbility::Extinguish,
             Self::Ignite => ItemAbility::Ignite,
