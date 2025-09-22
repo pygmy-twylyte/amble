@@ -35,9 +35,9 @@
 //! # Trigger Integration
 //!
 //! Item interactions can trigger various game events:
-//! - `TriggerCondition::UseItem` - When items are activated or used
-//! - `TriggerCondition::UseItemOnItem` - When tools are used on targets
-//! - `TriggerCondition::ActOnItem` - When actions are performed on items
+//! - `TriggerCondition::UseItem` - When items are activated or used (but there is no target)
+//! - `TriggerCondition::UseItemOnItem` - When specific tools are used on specific targets
+//! - `TriggerCondition::ActOnItem` - When actions are performed on items (regardless of tool used)
 //! - `TriggerCondition::Open` - When containers are opened
 //! - `TriggerCondition::Unlock` - When locked items are unlocked
 //!
@@ -47,7 +47,7 @@
 use std::collections::HashSet;
 
 use crate::{
-    AmbleWorld, Item, View, ViewItem, WorldObject,
+    AmbleWorld, View, ViewItem, WorldObject,
     helpers::{plural_s, symbol_or_unknown},
     item::{ContainerState, ItemAbility, ItemInteractionType, consume},
     loader::items::interaction_requirement_met,
