@@ -394,7 +394,7 @@ item lost_and_found_key {
   portable true
   location npc b_a_receptionist
   restricted true
-  ability Unlock
+  ability Unlock lost_and_found_box
 }
 
 item security_locker_key {
@@ -405,7 +405,7 @@ item security_locker_key {
   text """_OCK _OCK_R
 """
   ability Read
-  ability Unlock
+  ability Unlock security_crate
 }
 
 item security_crate {
@@ -727,4 +727,3 @@ item hot_coffee {
   portable true
   location nowhere "spawns@lounge after coffee_machine started"
 }
-
