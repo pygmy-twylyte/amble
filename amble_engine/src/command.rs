@@ -158,7 +158,7 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
     }
 }
 
-/// Helper to extract user input from a Pair<Rule> (when a single string).
+/// Helper to extract user input from a `Pair<Rule>` (when a single string).
 pub fn inner_string(pair: Pair<Rule>) -> String {
     if let Some(inner) = pair.into_inner().next() {
         inner.as_str().to_string()

@@ -22,7 +22,7 @@ item tackle_box {
     desc "A dull green, sheet metal tackle box with a mildly rusted padlock on its latch."
     location room fish-market-shed
     portable true
-    container state closed
+    container state locked
     text "Property of B. Gump"
     ability Read
 }

@@ -7,7 +7,7 @@ room quay-square {
   desc "The town square, adjoining the harbor quay. Gulls call overhead, looking for supper below. The air smells of brine and tar and frying oil. A somewhat brackish-appearing fountain with a centerpiece of frolicking dolphins decorates the center of the square. The bright turquoise awning of the fish market beckons in one direction, and a path leads around to a slipway. Over by the tar barrels, weathered stone steps wind up toward the lighthouse."
   visited false
   overlay if (item present tiny_package) {
-    text "The tiny package that the heron dropped off lies on the ground nearby -- a little battered, but intact."
+    text "The tiny package that the heron dropped off lies on a bench nearby -- a little battered, but intact."
   }
   exit "along the slipway" -> boathouse-slipway
   exit "beneath the awning" -> fish-market-shed
@@ -21,7 +21,7 @@ room quay-square {
 
 item tiny_package {
   name "Tiny Package"
-  desc "A tiny gift box sitting on a bench in the Quay Square, smaller than a pack of cards and significantly lighter. It may be empty, in fact."
+  desc "A tiny gift box sitting on a bench in the Quay Square, smaller than a pack of cards and significantly lighter. It's wrapped impossibly tightly in several crossed winds of strong twine."
   portable true
   location nowhere "scheduled spawn@quay-square after locket taken"
   container state closed
@@ -35,6 +35,15 @@ item tiny_portrait {
     location chest tiny_package
 }
 
+item sausage_inna_bun {
+    name "Fishy Sausage-inna-Bun"
+    desc "A hot dog bun, stuffed with a sausage of aquatic -- and fishy -- provenance."
+    location npc cmot_dibbler
+    restricted true
+    portable true
+
+}
+
 # =================================================
 # NPCs
 # =================================================
@@ -43,13 +52,38 @@ npc cmot_dibbler {
     name "Cut-Me-Own-Throat Dibbler"
     desc "A wily but unwise street vendor always looking to make a buck. He gets his name from his common cry that he would have to \"Cut Me Own Throat!\" to give you a better deal on his (often questionable) wares."
     location room quay-square
-    state normal
-    dialogue normal {
-        "Sure is dead around here. Who am I going to sell my fish sausage surprise to?"
+    movement random rooms( quay-square, fish-market-shed, net-yard ) timing every_3_turns
+    state bored
+    dialogue bored {
+        "Sure is dead around here. Who am I going to sell my Fishy Sausage-Inna-Bun to?"
         "Not many customers left -- I should probably go in before the Lighthouse Crone comes out to wander."
+        "Friend, you really should try my Fishy Sausage-Inna-Bun! Rated Quay Snack of the Year two seasons ago."
+        "By the way, the Fishy Sausage-Inna-Bun is a great firestarter. It will burn for about 4 hours. Just don't breathe much by it."
+        "Wanna try a Fishy Sausage-inna-Bun? Just one Sand Dollar!"
+    }
+    dialogue custom sold-fishy-sausage {
+        "Ah, my best and only customer -- well, today anyway! Sorry, but I'm fresh out of Fishy Sausage -- I'll have some soon!"
     }
 }
 
 # =================================================
 # Triggers
 # =================================================
+trigger "Cut Twine With Knife" only once
+when use item fillet_knife on item tiny_package interaction open {
+    do show "Using the knife, you work carefully to free the package from its wrapping without damaging it..."
+}
+
+trigger "Cut Twine / Use 'Open' Hint" note "'cut' won't open the package, so give hint to use 'open'"
+when use item fillet_knife on item tiny_package interaction cut {
+    if chance 50% {
+        do show "You feel like you've cut through enough of the twine that you can open the package with the tip of the knife."
+    }
+}
+
+trigger "Cut Open Tiny Package" only once note "requires ItemAbility::Cut"
+when act open on item tiny_package {
+    do show "You easily cut through the twine holding the package shut."
+    do set container state tiny_package open
+    do award points 5
+}

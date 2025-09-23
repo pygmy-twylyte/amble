@@ -6,5 +6,35 @@ room boathouse-slipway {
   name "Boathouse Slipway"
   desc "The narrow slipway runs alongside the quay and by the adjoining old timber-and-pitch boathouse, which leans a bit to one side. A skiff with a hole in its side sits on rollers near the water's edge. The boat ramp climbs back up toward the quay."
   visited false
+  overlay if item present sand_dollar {
+      text "A small, flat object sits at the end of the slipway, revealed again by the ebbing tide."
+  }
   exit "up the ramp" -> quay-square
+}
+
+# ================================================
+# Spinner
+# ================================================
+
+spinner AmbientSlipway {
+    wedge "A hard, offshore gust causes you to slip a little on the mossy ramp."
+    wedge "A chain clanks softly as the water laps against it in the rising tide."
+    wedge "The timbers of the old boathouse shift and groan a bit as the offshore wind continues to press inland."
+}
+
+trigger "Ambient: Slipway" when always {
+    if all(chance 30%, in rooms boathouse-slipway) {
+        do spinner message AmbientSlipway
+    }
+}
+
+# ========================================
+# Items
+# ========================================
+
+item sand_dollar {
+    name "Sand Dollar"
+    desc "A slightly rough, disc-shaped shell, about the size of an old US Silver Dollar."
+    portable true
+    location room boathouse_slipway
 }

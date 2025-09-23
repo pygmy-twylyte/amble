@@ -53,7 +53,7 @@ impl Player {
 
     /// Returns list of applied status effects.
     ///
-    /// Status effects are created by using a `Flag` with a name in the form "status:<status_type",
+    /// Status effects are created by using a `Flag` with a name in the form "status:<status_type>",
     /// e.g. "status:nausea"
     pub fn status(&self) -> HashSet<&str> {
         self.flags

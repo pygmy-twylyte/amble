@@ -37,7 +37,7 @@ vm_brief   =  { "brief" }
 
 // verb -> single object commands
 verb_obj = _{ look_at | load | save | take | drop | talk_to | turn_on | theme | close | lock | unlock | move_to | open | read }
-look_at  =  { "look" ~ prep? ~ artic? ~ phrase | ("examine" | "exam" | "ex") ~ artic? ~ phrase }
+look_at  =  { "look" ~ prep? ~ artic? ~ phrase }
 load     =  { ("load" | "reload") ~ save_name }
 save     =  { "save" ~ save_name }
 take     =  { take_verb ~ artic? ~ phrase }
@@ -50,7 +50,7 @@ close    =  { ("close" | "shut" | "slam") ~ artic? ~ phrase }
 lock     =  { "lock" ~ artic? ~ phrase }
 unlock   =  { "unlock" ~ artic? ~ phrase }
 move_to  =  { go_verb ~ dir_prep? ~ artic? ~ phrase }
-read     =  { "read" ~ artic? ~ phrase }
+read     =  { ("read" | "examine" | "exam" | "ex" | "inspect") ~ artic? ~ phrase }
 
 // verb -> direct and indirect object commands
 verb_do_io  = _{ vtwt_cmd | take_from | put_in | give_to_npc }

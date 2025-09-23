@@ -50,13 +50,28 @@ trigger "Locket Taken" only once when take item gold_locket {
     }
 }
 
+trigger "Locket: Portrait Found" only once note "return-locket to #1"
+when take item tiny_portrait {
+    do advance flag return-locket
+    do award points 5
+}
+
 trigger "Dropped Locket" when drop item gold_locket {
     do show "The moment you drop the locket, you begin to miss it -- and feel like you've **been** missing it for a long time."
+    do add flag status:longing
+}
+
+trigger "Status: Longing"
+when always {
+    if all(chance 30%, has flag status:longing) {
+        do spinner message Longing
+    }
 }
 
 trigger "Picked Up Locket Again" when take item gold_locket {
     if flag in progress return-locket {
         do show "You feel better now that you have the locket back in your hand, like your best and oldest friend."
+        do remove flag status:longing
     }
 }
 
@@ -72,3 +87,11 @@ goal find-portrait {
   done when has item tiny_portrait
 }
 
+# ========================================
+# Spinners
+# ========================================
+spinner Longing {
+    wedge "Your thoughts drift back to that golden locket again."
+    wedge "Thinking back to the locket... did you recognize the man? Where did you leave it?"
+    wedge "You find your hand checking your pocket for the locket... again."
+}
