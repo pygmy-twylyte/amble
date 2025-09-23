@@ -1,6 +1,6 @@
 # amble_script
 
-This crate defines a DSL for Amble content (triggers and rooms) and compiles it to the engine’s TOML files.
+This crate defines the Amble authoring DSL and compiles it to the engine’s TOML data files. It covers triggers, rooms, items, NPCs, spinners, and goals, and ships with a CLI for linting and compilation.
 
 ## Status
 
@@ -56,6 +56,9 @@ Runs unit tests that parse the DSL and validate emitted TOML for triggers and ro
 
 ## Documentation
 
-- Trigger DSL guide: `docs/trigger_dsl_guide.md`
-- Rooms DSL guide: `docs/rooms_dsl_guide.md`
-- Items DSL guide: `docs/items_dsl_guide.md`
+- **Creator Handbook:** [`docs/dsl_creator_handbook.md`](docs/dsl_creator_handbook.md) – complete walkthrough of the DSL, entity types, and CLI workflow.
+- **DSL Cheat Sheet:** [`docs/dsl_cheat_sheet.md`](docs/dsl_cheat_sheet.md) – quick reference for keywords, shapes, and commands.
+- Deep dives (legacy references):
+  - Triggers: [`docs/trigger_dsl_guide.md`](docs/trigger_dsl_guide.md)
+  - Rooms: [`docs/rooms_dsl_guide.md`](docs/rooms_dsl_guide.md)
+  - Items: [`docs/items_dsl_guide.md`](docs/items_dsl_guide.md)
