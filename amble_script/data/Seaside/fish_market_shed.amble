@@ -32,8 +32,9 @@ item tackle_box_key {
     desc "A corroded and rusted key on a bent wire ring."
     location room boathouse-slipway
     portable true
-    text r#""B.G." is scratched into top of the key."#
+    text r#""B.G." is scratched into the top of the key."#
     ability Read
+    ability Unlock tackle_box
 }
 
 item fillet_knife {
