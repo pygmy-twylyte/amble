@@ -1,4 +1,4 @@
 id = "player"
-name = "Seaside Sam"
-description = "a curious type who likes to wander around the quay in the evenings."
-location = { Room = "quay-square" }
+name = "The Candidate"
+description = "a seasoned adventurer with a faint memory of a promised cake that has gone unfulfilled."
+location = { Room = "high-ridge" }
