@@ -3,12 +3,12 @@
 use anyhow::{Result, bail};
 use serde::Deserialize;
 
+use super::raw_condition::RawTriggerCondition;
+use crate::scheduler::{EventCondition, OnFalsePolicy};
 use crate::{
     item::ContainerState, loader::SymbolTable, npc::NpcState, player::Flag, spinners::SpinnerType,
     trigger::TriggerAction,
 };
-use crate::scheduler::{EventCondition, OnFalsePolicy};
-use super::raw_condition::RawTriggerCondition;
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
@@ -29,6 +29,10 @@ pub enum RawOnFalsePolicy {
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum RawTriggerAction {
+    SetNpcActive {
+        npc_sym: String,
+        active: bool,
+    },
     SetContainerState {
         item_sym: String,
         state: Option<ContainerState>,
@@ -169,6 +173,7 @@ impl RawTriggerAction {
     /// Convert the TOML representation of this action to a fully realized `TriggerAction`.
     pub fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
+            Self::SetNpcActive { npc_sym, active } => cook_set_npc_active(symbols, npc_sym, *active),
             Self::SetContainerState { item_sym, state } => cook_set_container_state(symbols, item_sym, *state),
             Self::ReplaceItem { old_sym, new_sym } => cook_replace_item(symbols, old_sym, new_sym),
             Self::ReplaceDropItem { old_sym, new_sym } => cook_replace_drop_item(symbols, old_sym, new_sym),
@@ -222,12 +227,20 @@ impl RawTriggerAction {
                 note,
             } => cook_schedule_in(symbols, *turns_ahead, actions, note.clone()),
             Self::ScheduleOn { on_turn, actions, note } => cook_schedule_on(symbols, *on_turn, actions, note.clone()),
-            Self::ScheduleInIf { turns_ahead, condition, on_false, actions, note } => {
-                cook_schedule_in_if(symbols, *turns_ahead, condition, on_false, actions, note.clone())
-            },
-            Self::ScheduleOnIf { on_turn, condition, on_false, actions, note } => {
-                cook_schedule_on_if(symbols, *on_turn, condition, on_false, actions, note.clone())
-            },
+            Self::ScheduleInIf {
+                turns_ahead,
+                condition,
+                on_false,
+                actions,
+                note,
+            } => cook_schedule_in_if(symbols, *turns_ahead, condition, on_false, actions, note.clone()),
+            Self::ScheduleOnIf {
+                on_turn,
+                condition,
+                on_false,
+                actions,
+                note,
+            } => cook_schedule_on_if(symbols, *on_turn, condition, on_false, actions, note.clone()),
         }
     }
 }
@@ -235,6 +248,13 @@ impl RawTriggerAction {
 /*
  * "Cook" functions below convert RawTriggerActions to "fully cooked" TriggerActions
  */
+fn cook_set_npc_active(symbols: &SymbolTable, npc_sym: &str, active: bool) -> Result<TriggerAction> {
+    if let Some(&npc_id) = symbols.characters.get(npc_sym) {
+        Ok(TriggerAction::SetNpcActive { npc_id, active })
+    } else {
+        bail!("npc symbol '{npc_sym}' not found when loading raw SetNpcActive trigger action");
+    }
+}
 
 fn cook_set_container_state(
     symbols: &SymbolTable,
@@ -544,22 +564,21 @@ fn cook_schedule_on(
     })
 }
 
-fn raw_event_condition_to_event_condition(
-    symbols: &SymbolTable,
-    rec: &RawEventCondition,
-) -> Result<EventCondition> {
+fn raw_event_condition_to_event_condition(symbols: &SymbolTable, rec: &RawEventCondition) -> Result<EventCondition> {
     Ok(match rec {
-        RawEventCondition::Trigger(raw) => {
-            EventCondition::Trigger(raw.to_condition(symbols)?)
-        },
+        RawEventCondition::Trigger(raw) => EventCondition::Trigger(raw.to_condition(symbols)?),
         RawEventCondition::All { all } => {
             let mut cooked = Vec::new();
-            for c in all { cooked.push(raw_event_condition_to_event_condition(symbols, c)?); }
+            for c in all {
+                cooked.push(raw_event_condition_to_event_condition(symbols, c)?);
+            }
             EventCondition::All(cooked)
         },
         RawEventCondition::Any { any } => {
             let mut cooked = Vec::new();
-            for c in any { cooked.push(raw_event_condition_to_event_condition(symbols, c)?); }
+            for c in any {
+                cooked.push(raw_event_condition_to_event_condition(symbols, c)?);
+            }
             EventCondition::Any(cooked)
         },
     })

@@ -2042,6 +2042,24 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
             parse_string_at(reason_part).map_err(|_| AstError::Shape("npc refuse missing or invalid quote"))?;
         return Ok(ActionAst::NpcRefuseItem { npc, reason });
     }
+    if let Some(rest) = t.strip_prefix("do set npc active ") {
+        // format: <npc> <true/false>
+        let rest = rest.trim();
+        if let Some(space) = rest.find(' ') {
+            let npc = &rest[..space];
+            let active_str = rest[space + 1..].trim();
+            let active = match active_str {
+                "true" => true,
+                "false" => false,
+                _ => return Err(AstError::Shape("set npc active requires 'true' or 'false'")),
+            };
+            return Ok(ActionAst::SetNpcActive {
+                npc: npc.to_string(),
+                active,
+            });
+        }
+        return Err(AstError::Shape("set npc active syntax"));
+    }
     if let Some(rest) = t.strip_prefix("do set npc state ") {
         // format: <npc> <state>
         let rest = rest.trim();

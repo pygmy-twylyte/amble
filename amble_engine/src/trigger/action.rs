@@ -84,9 +84,9 @@ use crate::item::{ContainerState, ItemHolder};
 use crate::npc::NpcState;
 use crate::player::{Flag, Player};
 use crate::room::Exit;
+use crate::scheduler::{EventCondition, OnFalsePolicy};
 use crate::spinners::{CoreSpinnerType, SpinnerType};
 use crate::style::GameStyle;
-use crate::scheduler::{OnFalsePolicy, EventCondition};
 use crate::trigger::TriggerCondition;
 use crate::view::{StatusAction, View, ViewItem};
 use crate::world::{AmbleWorld, Location, WorldObject};
@@ -144,6 +144,8 @@ use crate::world::{AmbleWorld, Location, WorldObject};
 /// - [`SpinnerMessage`] - Displays a random message from a spinner
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TriggerAction {
+    /// Set the activity state of an NPC
+    SetNpcActive { npc_id: Uuid, active: bool },
     /// Set the ContainerState of an Item
     SetContainerState { item_id: Uuid, state: Option<ContainerState> },
     /// Replaces an item at its current location
@@ -243,6 +245,7 @@ pub enum TriggerAction {
 pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &TriggerAction) -> Result<()> {
     use TriggerAction::*;
     match action {
+        SetNpcActive { npc_id, active } => set_npc_active(world, npc_id, *active)?,
         SetContainerState { item_id, state } => set_container_state(world, *item_id, *state)?,
         ReplaceItem { old_id, new_id } => replace_item(world, old_id, new_id)?,
         ReplaceDropItem { old_id, new_id } => replace_drop_item(world, old_id, new_id)?,
@@ -300,12 +303,51 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
         ScheduleOn { on_turn, actions, note } => {
             schedule_on(world, view, *on_turn, actions, note.clone())?;
         },
-        ScheduleInIf { turns_ahead, condition, on_false, actions, note } => {
-            schedule_in_if(world, view, *turns_ahead, condition, on_false.clone(), actions, note.clone())?;
+        ScheduleInIf {
+            turns_ahead,
+            condition,
+            on_false,
+            actions,
+            note,
+        } => {
+            schedule_in_if(
+                world,
+                view,
+                *turns_ahead,
+                condition,
+                on_false.clone(),
+                actions,
+                note.clone(),
+            )?;
         },
-        ScheduleOnIf { on_turn, condition, on_false, actions, note } => {
-            schedule_on_if(world, view, *on_turn, condition, on_false.clone(), actions, note.clone())?;
+        ScheduleOnIf {
+            on_turn,
+            condition,
+            on_false,
+            actions,
+            note,
+        } => {
+            schedule_on_if(
+                world,
+                view,
+                *on_turn,
+                condition,
+                on_false.clone(),
+                actions,
+                note.clone(),
+            )?;
         },
+    }
+    Ok(())
+}
+
+pub fn set_npc_active(world: &mut AmbleWorld, npc_id: &Uuid, active: bool) -> Result<()> {
+    if let Some(npc) = world.npcs.get_mut(&npc_id) {
+        if let Some(ref mut mvmt) = npc.movement {
+            mvmt.active = active;
+        }
+    } else {
+        bail!("error: npc_id {npc_id} not found in world.npcs")
     }
     Ok(())
 }
@@ -1203,10 +1245,7 @@ pub fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &Uuid,
 pub fn push_player(world: &mut AmbleWorld, room_id: &Uuid) -> Result<()> {
     if world.rooms.contains_key(room_id) {
         world.player.location = Location::Room(*room_id);
-        info!(
-            "└─ action: PushPlayerTo({})",
-            symbol_or_unknown(&world.rooms, *room_id)
-        );
+        info!("└─ action: PushPlayerTo({})", symbol_or_unknown(&world.rooms, *room_id));
         Ok(())
     } else {
         bail!("tried to push player to unknown room ({room_id})");
@@ -1530,8 +1569,14 @@ pub fn schedule_if_player_in_any(
     note: Option<String>,
 ) -> Result<()> {
     let mut conds = Vec::new();
-    for r in room_ids { conds.push(EventCondition::Trigger(TriggerCondition::InRoom(r))); }
-    let condition = if conds.len() == 1 { conds.remove(0) } else { EventCondition::Any(conds) };
+    for r in room_ids {
+        conds.push(EventCondition::Trigger(TriggerCondition::InRoom(r)));
+    }
+    let condition = if conds.len() == 1 {
+        conds.remove(0)
+    } else {
+        EventCondition::Any(conds)
+    };
     schedule_in_if(world, _view, turns_ahead, &condition, on_false, actions, note)
 }
 
@@ -1546,8 +1591,14 @@ pub fn schedule_on_if_player_in_any(
     note: Option<String>,
 ) -> Result<()> {
     let mut conds = Vec::new();
-    for r in room_ids { conds.push(EventCondition::Trigger(TriggerCondition::InRoom(r))); }
-    let condition = if conds.len() == 1 { conds.remove(0) } else { EventCondition::Any(conds) };
+    for r in room_ids {
+        conds.push(EventCondition::Trigger(TriggerCondition::InRoom(r)));
+    }
+    let condition = if conds.len() == 1 {
+        conds.remove(0)
+    } else {
+        EventCondition::Any(conds)
+    };
     schedule_on_if(world, _view, on_turn, &condition, on_false, actions, note)
 }
 

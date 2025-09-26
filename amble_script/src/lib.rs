@@ -224,6 +224,11 @@ pub enum ActionAst {
         npc: String,
         reason: String,
     },
+    /// Set NPC active/inactive for movement
+    SetNpcActive {
+        npc: String,
+        active: bool,
+    },
     SetNpcState {
         npc: String,
         state: String,
@@ -1518,6 +1523,13 @@ fn action_to_value(a: &ActionAst) -> toml_edit::Value {
             t.insert("reason", toml_edit::Value::from(reason.clone()));
             toml_edit::Value::from(t)
         },
+        ActionAst::SetNpcActive { npc, active } => {
+            let mut t = InlineTable::new();
+            t.insert("type", toml_edit::Value::from("setNpcActive"));
+            t.insert("npc_sym", toml_edit::Value::from(npc.clone()));
+            t.insert("active", toml_edit::Value::from(*active));
+            toml_edit::Value::from(t)
+        },
         ActionAst::SetNpcState { npc, state } => {
             let mut t = InlineTable::new();
             t.insert("type", toml_edit::Value::from("setNpcState"));
@@ -2553,6 +2565,78 @@ goal incomplete-goal {
         let actual_len = actual_val["goals"].as_array().map(|a| a.len()).unwrap_or(0);
         assert!(actual_len > 0, "compiled goals should not be empty");
         assert_eq!(expected_len, actual_len, "goal counts should match engine");
+    }
+
+    #[test]
+    fn parse_and_compile_set_npc_active() {
+        let src = r#"
+trigger "test set npc active" when always {
+  do set npc active robot true
+  do set npc active guard false
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+
+        // Verify AST contains the correct actions
+        assert!(
+            ast.actions
+                .iter()
+                .any(|a| matches!(a, ActionAst::SetNpcActive { npc, active } if npc == "robot" && *active == true))
+        );
+        assert!(
+            ast.actions
+                .iter()
+                .any(|a| matches!(a, ActionAst::SetNpcActive { npc, active } if npc == "guard" && *active == false))
+        );
+
+        // Compile to TOML and verify output
+        let toml = compile_trigger_to_toml(&ast).expect("compile ok");
+
+        // Check that the TOML contains the correct structure
+        assert!(toml.contains("type = \"setNpcActive\""));
+        assert!(toml.contains("npc_sym = \"robot\""));
+        assert!(toml.contains("active = true"));
+        assert!(toml.contains("npc_sym = \"guard\""));
+        assert!(toml.contains("active = false"));
+    }
+
+    #[test]
+    fn parse_set_npc_active_error_cases() {
+        // Test invalid boolean value
+        let src_invalid_bool = r#"
+trigger "test invalid bool" when always {
+  do set npc active robot maybe
+}
+"#;
+        let result = parse_trigger(src_invalid_bool);
+        assert!(result.is_err(), "Should fail with invalid boolean value");
+
+        // Test missing boolean value
+        let src_missing_bool = r#"
+trigger "test missing bool" when always {
+  do set npc active robot
+}
+"#;
+        let result = parse_trigger(src_missing_bool);
+        assert!(result.is_err(), "Should fail with missing boolean value");
+
+        // Test missing npc name
+        let src_missing_npc = r#"
+trigger "test missing npc" when always {
+  do set npc active true
+}
+"#;
+        let result = parse_trigger(src_missing_npc);
+        assert!(result.is_err(), "Should fail with missing npc name");
+
+        // Test completely malformed syntax
+        let src_malformed = r#"
+trigger "test malformed" when always {
+  do set npc active
+}
+"#;
+        let result = parse_trigger(src_malformed);
+        assert!(result.is_err(), "Should fail with malformed syntax");
     }
 
     // TODO: Add NPC golden test once DSL stabilizes
