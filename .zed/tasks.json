@@ -57,6 +57,11 @@
     "shell": "system"
   },
   {
+    "label": "Compile/Install Amble TOMLs",
+    "command": "cargo run --bin amble_script -- compile-dir amble_script/data/Amble --out-dir amble_engine/data --verbose && cp amble_script/data/Amble/intro.txt amble_engine/data && cp amble_script/data/Amble/player.toml amble_engine/data",
+    "shell": "system"
+  },
+  {
     "label": "Run Amble Engine",
     "command": "cargo run --bin amble_engine 2> amble.log",
     "shell": "system"

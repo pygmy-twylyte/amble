@@ -36,5 +36,5 @@ item sand_dollar {
     name "Sand Dollar"
     desc "A slightly rough, disc-shaped shell, about the size of an old US Silver Dollar."
     portable true
-    location room boathouse_slipway
+    location room boathouse-slipway
 }

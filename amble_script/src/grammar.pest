@@ -76,11 +76,9 @@ keyword = {
   | "onFalse"
   | "overlay"
   | "text"
-  
   | "present"
   | "absent"
   | "custom"
-  
   | "here"
   | // container state literals
   "closed"
@@ -160,7 +158,8 @@ balanced_braces  = { "{" ~ balanced_content ~ "}" }
 balanced_content = { (balanced_braces | (!("}") ~ ANY))* }
 
 do_action = {
-    ("show" ~ string)
+    ("set" ~ "npc" ~ "active" ~ ident ~ boolean)
+  | ("show" ~ string)
   | ("add" ~ "wedge" ~ string ~ ("width" ~ number)? ~ "spinner" ~ ident)
   | ("add" ~ "seq" ~ "flag" ~ ident ~ ("limit" ~ number)?)
   | ("replace" ~ "item" ~ ident ~ "with" ~ ident)
@@ -283,43 +282,43 @@ overlay_cond      = {
   | ("item" ~ "in" ~ "room" ~ ident ~ ident)
 }
 
-overlay_flag_pair_stmt   = { "overlay" ~ "if" ~ "flag" ~ ident ~ overlay_flag_pair_block }
-overlay_flag_pair_block  = { "{" ~ "set" ~ string ~ "unset" ~ string ~ "}" }
-overlay_item_pair_stmt   = { "overlay" ~ "if" ~ "item" ~ ident ~ overlay_presence_pair_block }
-overlay_npc_pair_stmt    = { "overlay" ~ "if" ~ "npc" ~ ident ~ overlay_presence_pair_block }
+overlay_flag_pair_stmt      = { "overlay" ~ "if" ~ "flag" ~ ident ~ overlay_flag_pair_block }
+overlay_flag_pair_block     = { "{" ~ "set" ~ string ~ "unset" ~ string ~ "}" }
+overlay_item_pair_stmt      = { "overlay" ~ "if" ~ "item" ~ ident ~ overlay_presence_pair_block }
+overlay_npc_pair_stmt       = { "overlay" ~ "if" ~ "npc" ~ ident ~ overlay_presence_pair_block }
 overlay_presence_pair_block = { "{" ~ "present" ~ string ~ "absent" ~ string ~ "}" }
 
 // Overlay sugar: collapse multiple NPC state overlays into one block.
 // Example:
 // overlay if npc emh here {
-//   normal "..."
-//   happy "..."
-//   custom(want-emitter) "..."
+// normal "..."
+// happy "..."
+// custom(want-emitter) "..."
 // }
-overlay_npc_states_stmt = { "overlay" ~ "if" ~ "npc" ~ ident ~ "here" ~ overlay_npc_states_block }
+overlay_npc_states_stmt  = { "overlay" ~ "if" ~ "npc" ~ ident ~ "here" ~ overlay_npc_states_block }
 overlay_npc_states_block = { "{" ~ overlay_npc_state_line+ ~ "}" }
-overlay_npc_state_line = { (ident ~ string) | ("custom" ~ "(" ~ ident ~ ")" ~ string) }
+overlay_npc_state_line   = { (ident ~ string) | ("custom" ~ "(" ~ ident ~ ")" ~ string) }
 
 // -----------------
 // Items
 // -----------------
 
-item_def     = { "item" ~ ident ~ item_block }
-item_block   = { "{" ~ (item_name | item_desc | item_portable | item_location | item_container_state | item_ability | item_text | item_restricted | item_requires)* ~ "}" }
-item_name    = { "name" ~ string }
-item_desc    = { ("desc" | "description") ~ string }
-item_portable = { "portable" ~ boolean }
-item_location = { "location" ~ (inventory_loc | room_loc | npc_loc | chest_loc | nowhere_loc) }
-player_kw = { "player" }
-inventory_loc = { "inventory" ~ (ident | player_kw) }
-room_loc = { "room" ~ ident }
-npc_loc = { "npc" ~ ident }
-chest_loc = { "chest" ~ ident }
-nowhere_loc = { "nowhere" ~ string }
+item_def             = { "item" ~ ident ~ item_block }
+item_block           = { "{" ~ (item_name | item_desc | item_portable | item_location | item_container_state | item_ability | item_text | item_restricted | item_requires)* ~ "}" }
+item_name            = { "name" ~ string }
+item_desc            = { ("desc" | "description") ~ string }
+item_portable        = { "portable" ~ boolean }
+item_location        = { "location" ~ (inventory_loc | room_loc | npc_loc | chest_loc | nowhere_loc) }
+player_kw            = { "player" }
+inventory_loc        = { "inventory" ~ (ident | player_kw) }
+room_loc             = { "room" ~ ident }
+npc_loc              = { "npc" ~ ident }
+chest_loc            = { "chest" ~ ident }
+nowhere_loc          = { "nowhere" ~ string }
 item_container_state = { "container" ~ "state" ~ ("open" | "closed" | "locked" | "transparentClosed" | "transparentLocked" | "none") }
-item_ability = { "ability" ~ ident ~ ident? }
-item_text    = { "text" ~ string }
-item_restricted = { "restricted" ~ boolean }
+item_ability         = { "ability" ~ ident ~ ident? }
+item_text            = { "text" ~ string }
+item_restricted      = { "restricted" ~ boolean }
 // Change syntax to: requires <ability> to <interaction>
 item_requires = { "requires" ~ ident ~ "to" ~ ident }
 
@@ -335,28 +334,28 @@ wedge_stmt    = { "wedge" ~ string ~ ("width" ~ number)? }
 // NPCs
 // -----------------
 
-npc_def     = { "npc" ~ ident ~ npc_block }
-npc_block   = { "{" ~ npc_stmt* ~ "}" }
-npc_stmt    = { npc_name | npc_desc | npc_location | npc_state | npc_movement | npc_dialogue_block }
-npc_name    = { "name" ~ string }
-npc_desc    = { ("desc" | "description") ~ string }
-npc_location = { "location" ~ (("room" ~ ident) | ("nowhere" ~ string)) }
-npc_state    = { "state" ~ (ident | ("custom" ~ ident)) }
-npc_movement = { "movement" ~ ("random" | "route") ~ "rooms" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")" ~ ("timing" ~ ident)? ~ ("active" ~ boolean)? }
+npc_def            = { "npc" ~ ident ~ npc_block }
+npc_block          = { "{" ~ npc_stmt* ~ "}" }
+npc_stmt           = { npc_name | npc_desc | npc_location | npc_state | npc_movement | npc_dialogue_block }
+npc_name           = { "name" ~ string }
+npc_desc           = { ("desc" | "description") ~ string }
+npc_location       = { "location" ~ (("room" ~ ident) | ("nowhere" ~ string)) }
+npc_state          = { "state" ~ (ident | ("custom" ~ ident)) }
+npc_movement       = { "movement" ~ ("random" | "route") ~ "rooms" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")" ~ ("timing" ~ ident)? ~ ("active" ~ boolean)? }
 npc_dialogue_block = { "dialogue" ~ (ident | ("custom" ~ ident)) ~ "{" ~ string+ ~ "}" }
 
 // -----------------
 // Goals
 // -----------------
 
-goal_def    = { "goal" ~ ident ~ goal_block }
-goal_block  = { "{" ~ (goal_name | goal_desc | goal_group | goal_start | goal_done)+ ~ "}" }
-goal_name   = { "name" ~ string }
-goal_desc   = { "desc" ~ string }
-goal_group  = { "group" ~ ("required" | "optional" | "status-effect") }
-goal_start  = { "start" ~ "when" ~ goal_cond }
-goal_done   = { "done" ~ "when" ~ goal_cond }
-goal_cond   = {
+goal_def   = { "goal" ~ ident ~ goal_block }
+goal_block = { "{" ~ (goal_name | goal_desc | goal_group | goal_start | goal_done)+ ~ "}" }
+goal_name  = { "name" ~ string }
+goal_desc  = { "desc" ~ string }
+goal_group = { "group" ~ ("required" | "optional" | "status-effect") }
+goal_start = { "start" ~ "when" ~ goal_cond }
+goal_done  = { "done" ~ "when" ~ goal_cond }
+goal_cond  = {
     ("has" ~ "flag" ~ ident)
   | ("missing" ~ "flag" ~ ident)
   | ("has" ~ "item" ~ ident)

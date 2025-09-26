@@ -52,7 +52,7 @@ npc cmot_dibbler {
     name "Cut-Me-Own-Throat Dibbler"
     desc "A wily but unwise street vendor always looking to make a buck. He gets his name from his common cry that he would have to \"Cut Me Own Throat!\" to give you a better deal on his (often questionable) wares."
     location room quay-square
-    movement random rooms( quay-square, fish-market-shed, net-yard ) timing every_3_turns
+    movement random rooms( quay-square, fish-market-shed, net-yard ) timing every_3_turns active false
     state bored
     dialogue bored {
         "Sure is dead around here. Who am I going to sell my Fishy Sausage-Inna-Bun to?"
@@ -86,4 +86,9 @@ when act open on item tiny_package {
     do show "You easily cut through the twine holding the package shut."
     do set container state tiny_package open
     do award points 5
+}
+
+trigger "Activate CMOT" when talk to npc cmot_dibbler {
+    do npc says cmot_dibbler "Not so many customers around in the evenings because of the Crone. I'll guess I might as well go scrounge -- er -- resupply me fish in a bit."
+    do set npc active cmot_dibbler true
 }
