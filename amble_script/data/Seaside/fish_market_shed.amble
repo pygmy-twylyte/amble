@@ -27,6 +27,15 @@ item tackle_box {
     ability Read
 }
 
+item tackle_box_key {
+    name "Rusty Key"
+    desc "A corroded and rusted key on a bent wire ring."
+    location room boathouse-slipway
+    portable true
+    text r#""B.G." is scratched into top of the key."#
+    ability Read
+}
+
 item fillet_knife {
     name "Fillet Knife"
     desc "A long, thin, and razor-sharp fillet knife. It appears to be worn and well used, but well cared for by its owner."
