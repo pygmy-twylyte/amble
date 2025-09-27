@@ -2,9 +2,9 @@ use pest::Parser;
 use pest_derive::Parser as PestParser;
 
 use crate::{
-    ActionAst, ConditionAst, ContainerStateAst, GoalAst, GoalCondAst, GoalGroupAst, ItemAbilityAst, ItemAst,
-    ItemLocationAst, NpcAst, NpcMovementAst, NpcMovementTypeAst, NpcStateValue, OnFalseAst, RoomAst, SpinnerAst,
-    SpinnerWedgeAst, TriggerAst,
+    ActionAst, ConditionAst, ConsumableAst, ConsumableWhenAst, ContainerStateAst, GoalAst, GoalCondAst, GoalGroupAst,
+    ItemAbilityAst, ItemAst, ItemLocationAst, NpcAst, NpcMovementAst, NpcMovementTypeAst, NpcStateValue, OnFalseAst,
+    RoomAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
 };
 use std::collections::HashMap;
 
@@ -821,6 +821,7 @@ fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<I
     let mut abilities: Vec<ItemAbilityAst> = Vec::new();
     let mut text: Option<String> = None;
     let mut requires: Vec<(String, String)> = Vec::new();
+    let mut consumable: Option<ConsumableAst> = None;
     for stmt in block.into_inner() {
         match stmt.as_rule() {
             Rule::item_name => {
@@ -939,6 +940,74 @@ fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<I
                 // Store as (interaction, ability) to match TOML mapping
                 requires.push((interaction, ability));
             },
+            Rule::item_consumable => {
+                let mut uses_left: Option<usize> = None;
+                let mut consume_on: Vec<ItemAbilityAst> = Vec::new();
+                let mut when_consumed: Option<ConsumableWhenAst> = None;
+                let mut stmt_iter = stmt.into_inner();
+                let block = stmt_iter.next().ok_or(AstError::Shape("consumable block"))?;
+                for cons_stmt in block.into_inner() {
+                    let mut cons = cons_stmt.into_inner();
+                    let Some(inner) = cons.next() else { continue };
+                    match inner.as_rule() {
+                        Rule::consumable_uses => {
+                            let num_pair = inner.into_inner().next().ok_or(AstError::Shape("consumable uses"))?;
+                            let raw = num_pair.as_str();
+                            let val: i64 = raw
+                                .parse()
+                                .map_err(|_| AstError::Shape("consumable uses must be a number"))?;
+                            if val < 0 {
+                                return Err(AstError::Shape("consumable uses must be >= 0"));
+                            }
+                            uses_left = Some(val as usize);
+                        },
+                        Rule::consumable_consume_on => {
+                            let mut ci = inner.into_inner();
+                            let ability = ci
+                                .next()
+                                .ok_or(AstError::Shape("consume_on ability"))?
+                                .as_str()
+                                .to_string();
+                            let target = ci.next().map(|p| p.as_str().to_string());
+                            consume_on.push(ItemAbilityAst { ability, target });
+                        },
+                        Rule::consumable_when_consumed => {
+                            let mut wi = inner.into_inner();
+                            let variant = wi.next().ok_or(AstError::Shape("when_consumed value"))?;
+                            when_consumed = Some(match variant.as_rule() {
+                                Rule::consume_despawn => ConsumableWhenAst::Despawn,
+                                Rule::consume_replace_inventory => {
+                                    let replacement = variant
+                                        .into_inner()
+                                        .next()
+                                        .ok_or(AstError::Shape("when_consumed replacement"))?
+                                        .as_str()
+                                        .to_string();
+                                    ConsumableWhenAst::ReplaceInventory { replacement }
+                                },
+                                Rule::consume_replace_current_room => {
+                                    let replacement = variant
+                                        .into_inner()
+                                        .next()
+                                        .ok_or(AstError::Shape("when_consumed replacement"))?
+                                        .as_str()
+                                        .to_string();
+                                    ConsumableWhenAst::ReplaceCurrentRoom { replacement }
+                                },
+                                _ => return Err(AstError::Shape("unknown when_consumed variant")),
+                            });
+                        },
+                        _ => {},
+                    }
+                }
+                let uses_left = uses_left.ok_or(AstError::Shape("consumable missing uses_left"))?;
+                let when_consumed = when_consumed.ok_or(AstError::Shape("consumable missing when_consumed"))?;
+                consumable = Some(ConsumableAst {
+                    uses_left,
+                    consume_on,
+                    when_consumed,
+                });
+            },
             _ => {},
         }
     }
@@ -957,6 +1026,7 @@ fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<I
         abilities,
         text,
         interaction_requires: requires,
+        consumable,
         src_line,
     })
 }
@@ -999,6 +1069,7 @@ fn parse_goal_pair(goal: pest::iterators::Pair<Rule>, _source: &str) -> Result<G
     let mut group: Option<GoalGroupAst> = None;
     let mut activate_when: Option<GoalCondAst> = None;
     let mut finished_when: Option<GoalCondAst> = None;
+    let mut failed_when: Option<GoalCondAst> = None;
     for p in block.into_inner() {
         match p.as_rule() {
             Rule::goal_name => {
@@ -1026,6 +1097,10 @@ fn parse_goal_pair(goal: pest::iterators::Pair<Rule>, _source: &str) -> Result<G
                 let cond = p.into_inner().next().ok_or(AstError::Shape("done cond"))?;
                 finished_when = Some(parse_goal_cond_pair(cond));
             },
+            Rule::goal_fail => {
+                let cond = p.into_inner().next().ok_or(AstError::Shape("fail cond"))?;
+                failed_when = Some(parse_goal_cond_pair(cond));
+            },
             _ => {},
         }
     }
@@ -1033,13 +1108,13 @@ fn parse_goal_pair(goal: pest::iterators::Pair<Rule>, _source: &str) -> Result<G
     let description = description.ok_or(AstError::Shape("goal missing desc"))?;
     let group = group.ok_or(AstError::Shape("goal missing group"))?;
     let finished_when = finished_when.ok_or(AstError::Shape("goal missing done"))?;
-    let activate_when = activate_when.unwrap_or_else(|| GoalCondAst::HasFlag("".into())); // marker; codegen omits empty
     Ok(GoalAst {
         id,
         name,
         description,
         group,
         activate_when,
+        failed_when,
         finished_when,
         src_line,
     })
@@ -1157,11 +1232,24 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                 } else {
                     None
                 };
+                let loop_route = if let Some(idx) = s.find(" loop ") {
+                    let rest = &s[idx + 6..];
+                    if rest.trim_start().starts_with("true") {
+                        Some(true)
+                    } else if rest.trim_start().starts_with("false") {
+                        Some(false)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
                 movement = Some(NpcMovementAst {
                     movement_type: mtype,
                     rooms,
                     timing,
                     active,
+                    loop_route,
                 });
             },
             Rule::npc_dialogue_block => {
@@ -1256,11 +1344,24 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                     } else {
                         None
                     };
+                    let loop_route = if let Some(idx) = txt.find(" loop ") {
+                        let rest = &txt[idx + 6..];
+                        if rest.trim_start().starts_with("true") {
+                            Some(true)
+                        } else if rest.trim_start().starts_with("false") {
+                            Some(false)
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    };
                     movement = Some(NpcMovementAst {
                         movement_type: mtype,
                         rooms,
                         timing,
                         active,
+                        loop_route,
                     });
                     continue;
                 }
@@ -2668,6 +2769,115 @@ trigger "note escapes" when always {
         let toml = crate::compile_trigger_to_toml(&asts[0]).expect("compile ok");
         assert!(toml.contains("He said"));
         assert!(toml.contains("hi"));
+    }
+
+    #[test]
+    fn consumable_when_replace_inventory_matches_rule() {
+        let mut pairs = DslParser::parse(
+            Rule::consumable_when_consumed,
+            "when_consumed replace inventory wrapper",
+        )
+        .expect("parse ok");
+        let pair = pairs.next().expect("pair");
+        assert_eq!(pair.as_rule(), Rule::consumable_when_consumed);
+    }
+
+    #[test]
+    fn consumable_block_allows_replace_inventory() {
+        let src = "consumable {\n  uses_left 2\n  when_consumed replace inventory wrapper\n}";
+        let mut pairs = DslParser::parse(Rule::item_consumable, src).expect("parse ok");
+        let pair = pairs.next().expect("pair");
+        assert_eq!(pair.as_rule(), Rule::item_consumable);
+        let mut inner = pair.into_inner();
+        let block = inner.next().expect("block");
+        assert_eq!(block.as_rule(), Rule::consumable_block);
+        let mut block_inner = block.into_inner();
+        let stmt = block_inner.next().expect("stmt");
+        assert_eq!(stmt.as_rule(), Rule::consumable_stmt);
+        assert_eq!(stmt.into_inner().next().expect("uses").as_rule(), Rule::consumable_uses);
+        let stmt = block_inner.next().expect("stmt");
+        assert_eq!(stmt.as_rule(), Rule::consumable_stmt);
+        assert_eq!(
+            stmt.into_inner().next().expect("when").as_rule(),
+            Rule::consumable_when_consumed
+        );
+    }
+
+    #[test]
+    fn consumable_block_with_consume_on_and_when_consumed_parses() {
+        let src = "consumable {\n  uses_left 1\n  consume_on ability Use\n  when_consumed replace inventory wrapper\n}";
+        let mut pairs = DslParser::parse(Rule::item_consumable, src).expect("parse ok");
+        let block = pairs.next().expect("pair").into_inner().next().expect("block");
+        let mut inner = block.into_inner();
+        let mut stmt = inner.next().expect("stmt");
+        assert_eq!(stmt.as_rule(), Rule::consumable_stmt);
+        assert_eq!(stmt.into_inner().next().expect("uses").as_rule(), Rule::consumable_uses);
+        stmt = inner.next().expect("stmt");
+        assert_eq!(stmt.as_rule(), Rule::consumable_stmt);
+        assert_eq!(
+            stmt.into_inner().next().expect("consume_on").as_rule(),
+            Rule::consumable_consume_on
+        );
+        stmt = inner.next().expect("stmt");
+        assert_eq!(stmt.as_rule(), Rule::consumable_stmt);
+        assert_eq!(
+            stmt.into_inner().next().expect("when").as_rule(),
+            Rule::consumable_when_consumed
+        );
+    }
+
+    #[test]
+    fn consumable_consume_on_rule_parses() {
+        let src = "consume_on ability Use";
+        let mut pairs = DslParser::parse(Rule::consumable_consume_on, src).expect("parse ok");
+        let pair = pairs.next().expect("pair");
+        assert_eq!(pair.as_rule(), Rule::consumable_consume_on);
+    }
+
+    #[test]
+    fn consumable_consume_on_does_not_consume_when_keyword() {
+        let src = "consume_on ability Use when_consumed";
+        let mut pairs = DslParser::parse(Rule::consumable_consume_on, src).expect("parse ok");
+        let pair = pairs.next().expect("pair");
+        // The rule should stop before the trailing keyword to allow the block to parse the next statement.
+        assert_eq!(pair.as_str().trim_end(), "consume_on ability Use");
+    }
+
+    #[test]
+    fn npc_movement_loop_flag_parses_and_compiles() {
+        let src = r#"
+npc bot {
+  name "Maintenance Bot"
+  desc "Keeps the corridors tidy."
+  location room hub
+  state idle
+  movement route rooms (hub, hall) timing every_3_turns active true loop false
+}
+"#;
+        let npcs = crate::parse_npcs(src).expect("parse npcs ok");
+        assert_eq!(npcs.len(), 1);
+        let movement = npcs[0].movement.as_ref().expect("movement present");
+        assert_eq!(movement.loop_route, Some(false));
+
+        let toml = crate::compile_npcs_to_toml(&npcs).expect("compile npcs");
+        assert!(toml.contains("loop_route = false"));
+    }
+
+    #[test]
+    fn item_with_consumable_parses() {
+        let src = r#"item snack {
+  name "Snack"
+  desc "Yum"
+  portable true
+  location inventory player
+  consumable {
+    uses_left 1
+    consume_on ability Use
+    when_consumed replace inventory wrapper
+  }
+}
+"#;
+        DslParser::parse(Rule::item_def, src).expect("parse ok");
     }
 
     #[test]

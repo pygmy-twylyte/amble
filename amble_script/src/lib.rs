@@ -720,6 +720,7 @@ pub struct ItemAst {
     pub abilities: Vec<ItemAbilityAst>,
     pub text: Option<String>,
     pub interaction_requires: Vec<(String, String)>,
+    pub consumable: Option<ConsumableAst>,
     pub src_line: usize,
 }
 
@@ -745,6 +746,20 @@ pub enum ContainerStateAst {
 pub struct ItemAbilityAst {
     pub ability: String,
     pub target: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ConsumableAst {
+    pub uses_left: usize,
+    pub consume_on: Vec<ItemAbilityAst>,
+    pub when_consumed: ConsumableWhenAst,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ConsumableWhenAst {
+    Despawn,
+    ReplaceInventory { replacement: String },
+    ReplaceCurrentRoom { replacement: String },
 }
 
 // -----------------
@@ -780,6 +795,7 @@ pub struct NpcMovementAst {
     pub rooms: Vec<String>,
     pub timing: Option<String>,
     pub active: Option<bool>,
+    pub loop_route: Option<bool>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -1007,6 +1023,41 @@ pub fn compile_items_to_toml(items: &[ItemAst]) -> Result<String, CompileError> 
             }
             t["abilities"] = Item::ArrayOfTables(abil_aot);
         }
+        if let Some(consumable) = &it.consumable {
+            let mut cons_table = Table::new();
+            cons_table["uses_left"] = value(consumable.uses_left as i64);
+
+            if !consumable.consume_on.is_empty() {
+                let mut consume_aot = ArrayOfTables::new();
+                for ab in &consumable.consume_on {
+                    let mut at = Table::new();
+                    at["type"] = value(ab.ability.clone());
+                    if let Some(target) = &ab.target {
+                        at["target"] = value(target.clone());
+                    }
+                    consume_aot.push(at);
+                }
+                cons_table["consume_on"] = Item::ArrayOfTables(consume_aot);
+            }
+
+            let mut when_tbl = Table::new();
+            match &consumable.when_consumed {
+                ConsumableWhenAst::Despawn => {
+                    when_tbl["type"] = value("despawn");
+                },
+                ConsumableWhenAst::ReplaceInventory { replacement } => {
+                    when_tbl["type"] = value("replaceInventory");
+                    when_tbl["replacement"] = value(replacement.clone());
+                },
+                ConsumableWhenAst::ReplaceCurrentRoom { replacement } => {
+                    when_tbl["type"] = value("replaceCurrentRoom");
+                    when_tbl["replacement"] = value(replacement.clone());
+                },
+            }
+            cons_table["when_consumed"] = Item::Table(when_tbl);
+
+            t["consumable"] = Item::Table(cons_table);
+        }
         if it.src_line > 0 {
             t.decor_mut()
                 .set_prefix(format!("# item {} (source line {})\n", it.id, it.src_line));
@@ -1106,6 +1157,9 @@ pub fn compile_npcs_to_toml(npcs: &[NpcAst]) -> Result<String, CompileError> {
             if let Some(a) = mv.active {
                 mt["active"] = value(a);
             }
+            if let Some(loop_route) = mv.loop_route {
+                mt["loop_route"] = value(loop_route);
+            }
             t["movement"] = Item::Table(mt);
         }
         // dialogue
@@ -1161,7 +1215,8 @@ pub struct GoalAst {
     pub name: String,
     pub description: String,
     pub group: GoalGroupAst,
-    pub activate_when: GoalCondAst,
+    pub activate_when: Option<GoalCondAst>,
+    pub failed_when: Option<GoalCondAst>,
     pub finished_when: GoalCondAst,
     pub src_line: usize,
 }
@@ -1221,15 +1276,17 @@ pub fn compile_goals_to_toml(goals: &[GoalAst]) -> Result<String, CompileError> 
             }
             toml_edit::Value::from(it)
         };
-        // Only emit activate_when if meaningful (some goals start immediately)
-        if let GoalCondAst::HasFlag(s) = &g.activate_when {
-            if !s.is_empty() {
-                t["activate_when"] = Item::Value(cond_to_val(&g.activate_when));
+        if let Some(cond) = &g.activate_when {
+            if matches!(cond, GoalCondAst::HasFlag(s) if s.is_empty()) {
+                // sentinel for immediate activation – skip emitting
+            } else {
+                t["activate_when"] = Item::Value(cond_to_val(cond));
             }
-        } else {
-            t["activate_when"] = Item::Value(cond_to_val(&g.activate_when));
         }
         t["finished_when"] = Item::Value(cond_to_val(&g.finished_when));
+        if let Some(cond) = &g.failed_when {
+            t["failed_when"] = Item::Value(cond_to_val(cond));
+        }
         if g.src_line > 0 {
             t.decor_mut()
                 .set_prefix(format!("# goal {} (source line {})\n", g.id, g.src_line));
@@ -2522,8 +2579,34 @@ goal demo-goal {
         assert_eq!(g.name, "Demo Goal");
         assert_eq!(g.description, "Sequence can vary");
         assert_eq!(g.group, GoalGroupAst::Optional);
-        assert!(matches!(&g.activate_when, GoalCondAst::MissingFlag(cond) if cond == "prereq"));
+        assert!(matches!(
+            g.activate_when,
+            Some(GoalCondAst::MissingFlag(ref cond)) if cond == "prereq"
+        ));
         assert!(matches!(&g.finished_when, GoalCondAst::HasFlag(cond) if cond == "finished"));
+    }
+
+    #[test]
+    fn parse_goal_with_fail_when() {
+        let src = r#"
+goal fail-goal {
+  name "Failure State"
+  desc "Demonstrates fail when support"
+  group required
+  done when has flag success
+  fail when has flag abort
+}
+"#;
+        let goals = crate::parse_goals(src).expect("parse goals ok");
+        assert_eq!(goals.len(), 1);
+        let g = &goals[0];
+        assert!(g.activate_when.is_none());
+        assert!(matches!(g.failed_when, Some(GoalCondAst::HasFlag(ref f)) if f == "abort"));
+
+        let toml = crate::compile_goals_to_toml(&goals).expect("compile ok");
+        assert!(toml.contains("failed_when"));
+        assert!(toml.contains("type = \"hasFlag\""));
+        assert!(toml.contains("flag = \"abort\""));
     }
 
     #[test]

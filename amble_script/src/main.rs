@@ -3,7 +3,10 @@
 
 use std::{env, fs, process};
 
-use amble_script::{ActionAst, ConditionAst, GoalCondAst, compile_rooms_to_toml, compile_triggers_to_toml, compile_spinners_to_toml, compile_npcs_to_toml, compile_goals_to_toml, parse_program_full};
+use amble_script::{
+    ActionAst, ConditionAst, GoalCondAst, compile_goals_to_toml, compile_npcs_to_toml, compile_rooms_to_toml,
+    compile_spinners_to_toml, compile_triggers_to_toml, parse_program_full,
+};
 use std::collections::{HashMap, HashSet};
 use toml_edit::Document;
 
@@ -158,7 +161,12 @@ fn run_compile(args: &[String]) {
                         eprintln!("error: writing '{}': {}", &out, e);
                         process::exit(1);
                     });
-                } else if rooms.is_empty() && spinners.is_empty() && items.is_empty() && npcs.is_empty() && goals.is_empty() {
+                } else if rooms.is_empty()
+                    && spinners.is_empty()
+                    && items.is_empty()
+                    && npcs.is_empty()
+                    && goals.is_empty()
+                {
                     // Preserve old behavior: print to stdout if only triggers are present
                     println!("{}", toml);
                 }
@@ -184,7 +192,15 @@ fn run_compile(args: &[String]) {
                         eprintln!("error: writing '{}': {}", &out, e);
                         process::exit(1);
                     });
-                } else if asts.is_empty() && rooms.is_empty() && spinners.is_empty() && npcs.is_empty() && goals.is_empty() && out_path.is_none() && out_rooms.is_none() && out_spinners.is_none() {
+                } else if asts.is_empty()
+                    && rooms.is_empty()
+                    && spinners.is_empty()
+                    && npcs.is_empty()
+                    && goals.is_empty()
+                    && out_path.is_none()
+                    && out_rooms.is_none()
+                    && out_spinners.is_none()
+                {
                     // If only items present and no other outputs, print to stdout
                     println!("{}", toml);
                 }
@@ -210,7 +226,13 @@ fn run_compile(args: &[String]) {
                         eprintln!("error: writing '{}': {}", &out, e);
                         process::exit(1);
                     });
-                } else if asts.is_empty() && items.is_empty() && spinners.is_empty() && npcs.is_empty() && goals.is_empty() && out_path.is_none() {
+                } else if asts.is_empty()
+                    && items.is_empty()
+                    && spinners.is_empty()
+                    && npcs.is_empty()
+                    && goals.is_empty()
+                    && out_path.is_none()
+                {
                     // If only rooms present and no triggers output path, print rooms to stdout
                     println!("{}", toml);
                 }
@@ -236,7 +258,14 @@ fn run_compile(args: &[String]) {
                         eprintln!("error: writing '{}': {}", &out, e);
                         process::exit(1);
                     });
-                } else if asts.is_empty() && rooms.is_empty() && items.is_empty() && npcs.is_empty() && goals.is_empty() && out_path.is_none() && out_rooms.is_none() {
+                } else if asts.is_empty()
+                    && rooms.is_empty()
+                    && items.is_empty()
+                    && npcs.is_empty()
+                    && goals.is_empty()
+                    && out_path.is_none()
+                    && out_rooms.is_none()
+                {
                     // If only spinners present and no other outputs, print to stdout
                     println!("{}", toml);
                 }
@@ -262,7 +291,15 @@ fn run_compile(args: &[String]) {
                         eprintln!("error: writing '{}': {}", &out, e);
                         process::exit(1);
                     });
-                } else if asts.is_empty() && rooms.is_empty() && spinners.is_empty() && items.is_empty() && goals.is_empty() && out_path.is_none() && out_rooms.is_none() && out_items.is_none() {
+                } else if asts.is_empty()
+                    && rooms.is_empty()
+                    && spinners.is_empty()
+                    && items.is_empty()
+                    && goals.is_empty()
+                    && out_path.is_none()
+                    && out_rooms.is_none()
+                    && out_items.is_none()
+                {
                     // If only npcs present and no other outputs, print to stdout
                     println!("{}", toml);
                 }
@@ -288,7 +325,17 @@ fn run_compile(args: &[String]) {
                         eprintln!("error: writing '{}': {}", &out, e);
                         process::exit(1);
                     });
-                } else if asts.is_empty() && rooms.is_empty() && spinners.is_empty() && items.is_empty() && npcs.is_empty() && out_path.is_none() && out_rooms.is_none() && out_spinners.is_none() && out_items.is_none() && out_npcs.is_none() {
+                } else if asts.is_empty()
+                    && rooms.is_empty()
+                    && spinners.is_empty()
+                    && items.is_empty()
+                    && npcs.is_empty()
+                    && out_path.is_none()
+                    && out_rooms.is_none()
+                    && out_spinners.is_none()
+                    && out_items.is_none()
+                    && out_npcs.is_none()
+                {
                     println!("{}", toml);
                 }
             },
@@ -322,7 +369,11 @@ fn run_compile_dir(args: &[String]) {
                     eprintln!("--only requires a comma-separated list: triggers,rooms,items,spinners,npcs,goals");
                     process::exit(2);
                 }
-                let list = args[i + 1].split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+                let list = args[i + 1]
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
                 only = Some(list);
                 i += 2;
             },
@@ -444,13 +495,22 @@ fn run_compile_dir(args: &[String]) {
             match compile_triggers_to_toml(&trigs) {
                 Ok(t) => {
                     let text = header("triggers", &src_dir, &t);
-                    fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+                    fs::write(&p, text).unwrap_or_else(|e| {
+                        eprintln!("write '{}': {}", &p, e);
+                        process::exit(1);
+                    });
                 },
-                Err(e) => { eprintln!("compile-dir error (triggers): {}", e); process::exit(1); },
+                Err(e) => {
+                    eprintln!("compile-dir error (triggers): {}", e);
+                    process::exit(1);
+                },
             }
         } else {
             let text = header("triggers", &src_dir, "triggers = []\n");
-            fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+            fs::write(&p, text).unwrap_or_else(|e| {
+                eprintln!("write '{}': {}", &p, e);
+                process::exit(1);
+            });
         }
     }
     if allows("rooms") {
@@ -459,13 +519,22 @@ fn run_compile_dir(args: &[String]) {
             match compile_rooms_to_toml(&rooms) {
                 Ok(t) => {
                     let text = header("rooms", &src_dir, &t);
-                    fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+                    fs::write(&p, text).unwrap_or_else(|e| {
+                        eprintln!("write '{}': {}", &p, e);
+                        process::exit(1);
+                    });
                 },
-                Err(e) => { eprintln!("compile-dir error (rooms): {}", e); process::exit(1); },
+                Err(e) => {
+                    eprintln!("compile-dir error (rooms): {}", e);
+                    process::exit(1);
+                },
             }
         } else {
             let text = header("rooms", &src_dir, "rooms = []\n");
-            fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+            fs::write(&p, text).unwrap_or_else(|e| {
+                eprintln!("write '{}': {}", &p, e);
+                process::exit(1);
+            });
         }
     }
     if allows("items") {
@@ -474,13 +543,22 @@ fn run_compile_dir(args: &[String]) {
             match amble_script::compile_items_to_toml(&items) {
                 Ok(t) => {
                     let text = header("items", &src_dir, &t);
-                    fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+                    fs::write(&p, text).unwrap_or_else(|e| {
+                        eprintln!("write '{}': {}", &p, e);
+                        process::exit(1);
+                    });
                 },
-                Err(e) => { eprintln!("compile-dir error (items): {}", e); process::exit(1); },
+                Err(e) => {
+                    eprintln!("compile-dir error (items): {}", e);
+                    process::exit(1);
+                },
             }
         } else {
             let text = header("items", &src_dir, "items = []\n");
-            fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+            fs::write(&p, text).unwrap_or_else(|e| {
+                eprintln!("write '{}': {}", &p, e);
+                process::exit(1);
+            });
         }
     }
     if allows("spinners") {
@@ -489,13 +567,22 @@ fn run_compile_dir(args: &[String]) {
             match compile_spinners_to_toml(&spinners) {
                 Ok(t) => {
                     let text = header("spinners", &src_dir, &t);
-                    fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+                    fs::write(&p, text).unwrap_or_else(|e| {
+                        eprintln!("write '{}': {}", &p, e);
+                        process::exit(1);
+                    });
                 },
-                Err(e) => { eprintln!("compile-dir error (spinners): {}", e); process::exit(1); },
+                Err(e) => {
+                    eprintln!("compile-dir error (spinners): {}", e);
+                    process::exit(1);
+                },
             }
         } else {
             let text = header("spinners", &src_dir, "spinners = []\n");
-            fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+            fs::write(&p, text).unwrap_or_else(|e| {
+                eprintln!("write '{}': {}", &p, e);
+                process::exit(1);
+            });
         }
     }
     if allows("npcs") {
@@ -504,13 +591,22 @@ fn run_compile_dir(args: &[String]) {
             match compile_npcs_to_toml(&npcs) {
                 Ok(t) => {
                     let text = header("npcs", &src_dir, &t);
-                    fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+                    fs::write(&p, text).unwrap_or_else(|e| {
+                        eprintln!("write '{}': {}", &p, e);
+                        process::exit(1);
+                    });
                 },
-                Err(e) => { eprintln!("compile-dir error (npcs): {}", e); process::exit(1); },
+                Err(e) => {
+                    eprintln!("compile-dir error (npcs): {}", e);
+                    process::exit(1);
+                },
             }
         } else {
             let text = header("npcs", &src_dir, "npcs = []\n");
-            fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+            fs::write(&p, text).unwrap_or_else(|e| {
+                eprintln!("write '{}': {}", &p, e);
+                process::exit(1);
+            });
         }
     }
     if allows("goals") {
@@ -519,13 +615,22 @@ fn run_compile_dir(args: &[String]) {
             match compile_goals_to_toml(&goals) {
                 Ok(t) => {
                     let text = header("goals", &src_dir, &t);
-                    fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+                    fs::write(&p, text).unwrap_or_else(|e| {
+                        eprintln!("write '{}': {}", &p, e);
+                        process::exit(1);
+                    });
                 },
-                Err(e) => { eprintln!("compile-dir error (goals): {}", e); process::exit(1); },
+                Err(e) => {
+                    eprintln!("compile-dir error (goals): {}", e);
+                    process::exit(1);
+                },
             }
         } else {
             let text = header("goals", &src_dir, "goals = []\n");
-            fs::write(&p, text).unwrap_or_else(|e| { eprintln!("write '{}': {}", &p, e); process::exit(1); });
+            fs::write(&p, text).unwrap_or_else(|e| {
+                eprintln!("write '{}': {}", &p, e);
+                process::exit(1);
+            });
         }
     }
     if verbose {
@@ -652,11 +757,21 @@ fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
     let mut defined_npcs: HashSet<String> = HashSet::new();
     let mut defined_spinners: HashSet<String> = HashSet::new();
     let mut defined_goals: HashSet<String> = HashSet::new();
-    for r in &rooms_asts { defined_rooms.insert(r.id.clone()); }
-    for it in &item_asts { defined_items.insert(it.id.clone()); }
-    for n in &npc_asts { defined_npcs.insert(n.id.clone()); }
-    for sp in &spinner_asts { defined_spinners.insert(sp.id.clone()); }
-    for g in &goal_asts { defined_goals.insert(g.id.clone()); }
+    for r in &rooms_asts {
+        defined_rooms.insert(r.id.clone());
+    }
+    for it in &item_asts {
+        defined_items.insert(it.id.clone());
+    }
+    for n in &npc_asts {
+        defined_npcs.insert(n.id.clone());
+    }
+    for sp in &spinner_asts {
+        defined_spinners.insert(sp.id.clone());
+    }
+    for g in &goal_asts {
+        defined_goals.insert(g.id.clone());
+    }
     for t in &asts {
         gather_refs_from_condition(&t.event, &mut refs);
         for c in &t.conditions {
@@ -756,7 +871,12 @@ fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
             }
         };
         check(&g.finished_when, &mut missing);
-        check(&g.activate_when, &mut missing);
+        if let Some(cond) = &g.activate_when {
+            check(cond, &mut missing);
+        }
+        if let Some(cond) = &g.failed_when {
+            check(cond, &mut missing);
+        }
     }
     for id in &refs["npc"] {
         if !world.npcs.contains(id) && !defined_npcs.contains(id) {
