@@ -735,3 +735,21 @@ item hot_coffee {
   portable true
   location nowhere "spawns@lounge after coffee_machine started"
 }
+
+item test_edible {
+    name "Cupcake"
+    desc "A cupcake."
+    location room high-ridge
+    portable true
+    ability Eat
+    consumable {
+        uses_left 1
+        consume_on ability Eat
+        when_consumed despawn
+    }
+}
+
+trigger "Ate Cupcake" when eat item test_edible {
+    do show "Yummy!"
+    do award points 2
+}
