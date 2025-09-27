@@ -48,6 +48,7 @@ use std::collections::HashSet;
 
 use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
+    command::IngestMode,
     helpers::{plural_s, symbol_or_unknown},
     item::{ContainerState, ItemAbility, ItemInteractionType, consume},
     loader::items::interaction_requirement_met,
@@ -55,6 +56,7 @@ use crate::{
     spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers, triggers_contain_condition},
+    world::nearby_reachable_items,
 };
 
 use anyhow::Result;
@@ -62,6 +64,99 @@ use colored::Colorize;
 use log::{info, warn};
 use uuid::Uuid;
 
+/// Ingests an item (or single portion of a multi-use item).
+pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, mode: IngestMode) -> Result<()> {
+    let room_id = world.player_room_ref()?.id();
+
+    // find an item matching item_str in nearby room, open containers, and player's inventory
+    let scope = nearby_reachable_items(world, room_id)?;
+    let (item_id, item_name) = if let Some(entity) = find_world_object(&scope, &world.items, &world.npcs, item_str) {
+        if let Some(item) = entity.item() {
+            // found one -- does item have the ability to be ingested this way?
+            let meets_mode = match mode {
+                IngestMode::Eat => item.abilities.contains(&ItemAbility::Eat),
+                IngestMode::Drink => item.abilities.contains(&ItemAbility::Drink),
+                IngestMode::Inhale => item.abilities.contains(&ItemAbility::Inhale),
+            };
+            if meets_mode {
+                // yes, return item uuid
+                (item.id(), item.name().to_string())
+            } else {
+                // no, log and notify player
+                info!(
+                    "{} tried to {mode} an item ({}) which lacks that ability.",
+                    world.player.name(),
+                    item.symbol()
+                );
+                view.push(ViewItem::ActionFailure(format!(
+                    "Despite your best effort, you are unable to {mode} the {}.",
+                    item.name().item_style()
+                )));
+                return Ok(());
+            }
+        } else {
+            // entity matching player input isn't an `Item` at all
+            warn!("Player attempted to ingest a non-Item WorldEntity matching ({item_str})");
+            view.push(ViewItem::Error(format!(
+                "{} isn't an item, so you can't {mode} it.",
+                item_str.error_style()
+            )));
+            return Ok(());
+        }
+    } else {
+        // no entity in search scope matched player input
+        return Ok(entity_not_found(world, view, item_str));
+    };
+
+    /* we now have the UUID (item_id) of an item that is available nearby,
+    matches player input, and can be ingested in the specified way */
+
+    // Check triggers for any specific reaction / feedback to this ingestion
+    let sent_id = item_id;
+    let sent_mode = mode;
+    let fired_triggers = check_triggers(world, view, &[TriggerCondition::Ingest { item_id, mode }])?;
+    let sent_trigger_fired = triggers_contain_condition(&fired_triggers, |cond| match cond {
+        TriggerCondition::Ingest { item_id, mode } => *item_id == sent_id && *mode == sent_mode,
+        _ => false,
+    });
+
+    // If no trigger fired, give default feedback
+    if !sent_trigger_fired {
+        view.push(ViewItem::ActionSuccess(format!(
+            "You {mode} the {}. It doesn't seem to do much.",
+            item_name.item_style()
+        )));
+    }
+
+    // Consume 1 use of the item
+    let ability = match mode {
+        IngestMode::Eat => ItemAbility::Eat,
+        IngestMode::Drink => ItemAbility::Drink,
+        IngestMode::Inhale => ItemAbility::Inhale,
+    };
+    if let Some(uses_left) = consume(world, &item_id, ability)? {
+        if uses_left == 0 {
+            view.push(ViewItem::ActionSuccess(format!(
+                "The {} has no more uses left.",
+                item_name.item_style()
+            )));
+        } else {
+            view.push(ViewItem::ActionSuccess(format!(
+                "The {} has {} use{} left",
+                item_name.item_style(),
+                uses_left,
+                plural_s(uses_left as isize)
+            )));
+        }
+    }
+
+    info!(
+        "{} ingested '{item_name}' ({})",
+        world.player.name(),
+        symbol_or_unknown(&world.items, item_id)
+    );
+    Ok(())
+}
 /// Uses one item on another item with a specific type of interaction.
 ///
 /// This is the core handler for complex item interactions where one item (the tool)
