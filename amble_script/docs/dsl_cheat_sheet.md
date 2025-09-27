@@ -102,7 +102,7 @@ npc <id> {
   desc "Description"
   location room <room>|nowhere "note"
   [state <ident>|state custom <id>]
-  [movement random|route rooms (<r1, r2, …>) [timing <schedule>] [active true|false]]
+  [movement random|route rooms (<r1, r2, …>) [timing <schedule>] [active true|false] [loop true|false]]
   [dialogue <state>|dialogue custom <id> { "Line" "Line" }]
 }
 ```
@@ -131,6 +131,7 @@ goal <id> {
   group required|optional|status-effect
   [activate when <condition>]
   complete when <condition>
+  [fail when <condition>]
 }
 ```
 

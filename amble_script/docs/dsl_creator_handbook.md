@@ -91,10 +91,8 @@ Triggers drive the bulk of interactive logic. They listen for a game event, opti
 ### Skeleton
 
 ```amble
-trigger "Friendly Greeter" when enter room lobby {
-  note "First impressions"
-  only once
-
+trigger "Friendly Greeter" only once note "First impressions"
+when enter room lobby {
   if missing flag greeted:lobby {
     do show "A concierge smiles warmly."
     do add flag greeted:lobby
@@ -178,8 +176,12 @@ room lab-lobby {
   desc "A crisp lobby hums with low machinery."
   visited false
 
-  exit north lab-core hidden
-  exit south atrium locked barred "The security door is sealed." required_items(keycard)
+  exit "through the secret hall" -> lab-core {hidden}
+  exit south -> atrium {
+      locked
+      barred "The security door is sealed."
+      required_items(keycard)
+      }
 
   overlay if flag set power:offline {
     text "Emergency lights bathe the lobby in red."
@@ -237,11 +239,15 @@ npc receptionist {
   name "Receptionist"
   desc "Focused on a flickering terminal."
   location room lab-lobby
-  state attentive
+  state custom emergency
 
-  movement random rooms (lab-lobby, atrium) timing slow active true
+  movement random
+    rooms (lab-lobby, atrium)
+    timing every_3_turns
+    active true
+    loop false
 
-  dialogue attentive {
+  dialogue normal {
     "Welcome to the lab."
     "Please sign in."
   }
@@ -256,7 +262,7 @@ Highlights:
 
 - `location` accepts either a room ID or `nowhere "note"` for off-stage characters.
 - `state` defaults to `normal` when omitted. Use `state custom <id>` for bespoke states that do not map to predefined engine enums.
-- Movement supports `route` (default) or `random` with a list of rooms. Optional `timing <schedule_id>` selects an engine-defined timing, and `active true|false` toggles whether the routine starts running immediately.
+- Movement supports `route` (default) or `random` with a list of rooms. Optional `timing <schedule_id>` selects an engine-defined timing, `active true|false` toggles whether the routine starts running immediately, and `loop true|false` controls whether a route loops or stops at the final room.
 - Dialogue blocks associate one or more lines with a state key. Use `dialogue custom panic { … }` for custom states; internally the compiler prefixes the key with `custom:` to match engine expectations.
 
 ---
@@ -287,6 +293,7 @@ goal stabilize-reactor {
   group required
   activate when has flag mission:assigned
   complete when flag complete reactor:calibration
+  fail when has flag mission:aborted
 }
 ```
 
@@ -295,6 +302,7 @@ Components:
 - `group` categorises the goal: `required`, `optional`, or `status-effect`.
 - `activate when …` is optional; when omitted, the goal is active from the start. Conditions accept `has flag`, `missing flag`, `has item`, `reached room`, `goal complete <other_goal>`, `flag in progress`, and `flag complete`.
 - `complete when …` is required and uses the same condition vocabulary.
+- `fail when …` is optional and uses the same condition set to model failure states.
 
 Goals compile into `goals.toml`, matching the engine schema for in-game goal tracking.
 
