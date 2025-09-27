@@ -1,0 +1,17 @@
+# item energy_bar (source line 2)
+[[items]]
+id = "energy_bar"
+name = "Energy Bar"
+description = "Restores energy."
+portable = true
+location = { Inventory = "player" }
+
+[items.consumable]
+uses_left = 2
+
+[[items.consumable.consume_on]]
+type = "Use"
+
+[items.consumable.when_consumed]
+type = "replaceInventory"
+replacement = "wrapper"
