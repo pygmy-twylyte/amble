@@ -71,6 +71,11 @@ pub enum ConditionAst {
         target: String,
         interaction: String,
     },
+    /// Event: player ingests an item using a specific mode (eat, drink, inhale).
+    Ingest {
+        item: String,
+        mode: IngestModeAst,
+    },
     /// Event: player performs an interaction on an item (tool-agnostic).
     ActOnItem {
         target: String,
@@ -125,6 +130,23 @@ pub enum ConditionAst {
     All(Vec<ConditionAst>),
     /// Any of the nested conditions may hold (not yet compilable for triggers).
     Any(Vec<ConditionAst>),
+}
+
+/// Ingestion modes supported by the DSL; mirrors engine `IngestMode`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IngestModeAst {
+    Eat,
+    Drink,
+    Inhale,
+}
+impl IngestModeAst {
+    fn as_str(&self) -> &'static str {
+        match self {
+            IngestModeAst::Eat => "eat",
+            IngestModeAst::Drink => "drink",
+            IngestModeAst::Inhale => "inhale",
+        }
+    }
 }
 
 /// Minimal action variants.
@@ -408,6 +430,13 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
                 t.insert("tool_id", toml_edit::Value::from(tool.clone()));
                 conds.push(toml_edit::Value::from(t));
             },
+            ConditionAst::Ingest { item, mode } => {
+                let mut t = InlineTable::new();
+                t.insert("type", toml_edit::Value::from("ingest"));
+                t.insert("item_sym", toml_edit::Value::from(item.clone()));
+                t.insert("mode", toml_edit::Value::from(mode.as_str()));
+                conds.push(toml_edit::Value::from(t));
+            },
             ConditionAst::ActOnItem { target, action } => {
                 let mut t = InlineTable::new();
                 t.insert("type", toml_edit::Value::from("actOnItem"));
@@ -546,6 +575,13 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
                         t.insert("room_ids", toml_edit::Value::from(arr));
                     }
                     t.insert("spinner", toml_edit::Value::from(spinner.clone()));
+                    conds.push(toml_edit::Value::from(t));
+                },
+                ConditionAst::Ingest { item, mode } => {
+                    let mut t = InlineTable::new();
+                    t.insert("type", toml_edit::Value::from("ingest"));
+                    t.insert("item_sym", toml_edit::Value::from(item.clone()));
+                    t.insert("mode", toml_edit::Value::from(mode.as_str()));
                     conds.push(toml_edit::Value::from(t));
                 },
                 ConditionAst::ChancePercent(pct) => {
@@ -1743,6 +1779,11 @@ fn leaf_condition_inline(c: &ConditionAst) -> InlineTable {
             }
             t.insert("spinner", toml_edit::Value::from(spinner.clone()));
         },
+        ConditionAst::Ingest { item, mode } => {
+            t.insert("type", toml_edit::Value::from("ingest"));
+            t.insert("item_sym", toml_edit::Value::from(item.clone()));
+            t.insert("mode", toml_edit::Value::from(mode.as_str()));
+        },
         ConditionAst::EnterRoom(room) => {
             t.insert("type", toml_edit::Value::from("enter"));
             t.insert("room_id", toml_edit::Value::from(room.clone()));
@@ -2191,6 +2232,46 @@ trigger "give test" when give item printer_paper to npc receptionist {
         assert!(toml.contains("ability = \"turnOn\""));
         assert!(toml.contains("type = \"giveToNpc\""));
         assert!(toml.contains("npc_id = \"receptionist\""));
+    }
+
+    #[test]
+    fn parse_when_ingest_modes() {
+        let src = r#"
+trigger "eat test" when eat item apple {
+  do show "tasty"
+}
+
+trigger "drink test" when drink item tonic_water {
+  if has flag thirsty {
+    do show "Refreshing."
+  }
+}
+
+trigger "inhale test" when inhale item fumes {
+  do show "You cough."
+}
+"#;
+        let asts = super::parser::parse_program(src).expect("parse ok");
+        assert_eq!(asts.len(), 3);
+        assert!(matches!(
+            asts[0].event,
+            ConditionAst::Ingest { ref item, mode: IngestModeAst::Eat } if item == "apple"
+        ));
+        assert!(matches!(
+            asts[1].event,
+            ConditionAst::Ingest { ref item, mode: IngestModeAst::Drink } if item == "tonic_water"
+        ));
+        assert!(matches!(
+            asts[2].event,
+            ConditionAst::Ingest { ref item, mode: IngestModeAst::Inhale } if item == "fumes"
+        ));
+
+        let toml = compile_triggers_to_toml(&asts).expect("compile ok");
+        assert!(toml.contains("type = \"ingest\""));
+        assert!(toml.contains("item_sym = \"apple\""));
+        assert!(toml.contains("mode = \"eat\""));
+        assert!(toml.contains("mode = \"drink\""));
+        assert!(toml.contains("mode = \"inhale\""));
     }
 
     #[test]

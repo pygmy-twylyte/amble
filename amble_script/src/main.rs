@@ -1086,6 +1086,9 @@ fn gather_refs_from_condition(c: &ConditionAst, out: &mut HashMap<&'static str, 
         ConditionAst::UseItem { item, .. } => {
             out.get_mut("item").unwrap().insert(item.clone());
         },
+        ConditionAst::Ingest { item, .. } => {
+            out.get_mut("item").unwrap().insert(item.clone());
+        },
         ConditionAst::GiveToNpc { item, npc } => {
             out.get_mut("item").unwrap().insert(item.clone());
             out.get_mut("npc").unwrap().insert(npc.clone());
