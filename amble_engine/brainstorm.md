@@ -1,15 +1,7 @@
 # Brainstorming Ideas for Amble
 
 ## CODING TODOs
-- commands to change View modes
-- do something about horrible help display
-- add a turn counter -- can be used to create delayed triggers, auto-save
-- mechanism like window or portal -- where one can look outside the current room into another?
-- add quick funny responses to things like "yell" or "cry"
-- point award spinners, maybe different for award sizes (or add a "reason" field.)
-- NPC movement: will need for CMOT, Husky
-- trigger action to change the .read field on an item to update displays etc
-- tests (meh)
+
 
 ## FIXITs from runthroughs / CONTENT additions
 - sonic screwdriver in evidence locker that must be pried open (at security station)

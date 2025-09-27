@@ -60,6 +60,9 @@ keyword = {
   | "barred"
   | "message"
   | "loop"
+  | "eat"
+  | "drink"
+  | "inhale"
   | "consumable"
   | "container"
   | "fail"
@@ -133,7 +136,7 @@ note_kw      = { "note" ~ string }
 trigger = { "trigger" ~ string ~ (only_once_kw | note_kw)* ~ "when" ~ when_cond ~ block }
 
 // Event ("when") conditions supported in this iteration
-when_cond        = { always_event | enter_room | leave_room | look_at_item | open_item | use_item_on_item | use_item | give_to_npc | take_from_npc | insert_item_into | take_item | drop_item | unlock_item | talk_to_npc | act_on_item }
+when_cond        = { always_event | enter_room | leave_room | look_at_item | open_item | use_item_on_item | use_item | give_to_npc | take_from_npc | insert_item_into | take_item | drop_item | unlock_item | talk_to_npc | act_on_item | ingest_item }
 always_event     = { "always" }
 enter_room       = { "enter" ~ "room" ~ ident }
 take_item        = { "take" ~ "item" ~ ident }
@@ -149,6 +152,8 @@ take_from_npc    = { "take" ~ "item" ~ ident ~ "from" ~ "npc" ~ ident }
 insert_item_into = { "insert" ~ "item" ~ ident ~ "into" ~ "item" ~ ident }
 drop_item        = { "drop" ~ "item" ~ ident }
 unlock_item      = { "unlock" ~ "item" ~ ident }
+ingest_item      = { ingest_mode ~ "item" ~ ident }
+ingest_mode      = { "eat" | "drink" | "inhale" }
 
 block = { "{" ~ stmt_block ~ "}" }
 

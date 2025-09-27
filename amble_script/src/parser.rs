@@ -3,8 +3,8 @@ use pest_derive::Parser as PestParser;
 
 use crate::{
     ActionAst, ConditionAst, ConsumableAst, ConsumableWhenAst, ContainerStateAst, GoalAst, GoalCondAst, GoalGroupAst,
-    ItemAbilityAst, ItemAst, ItemLocationAst, NpcAst, NpcMovementAst, NpcMovementTypeAst, NpcStateValue, OnFalseAst,
-    RoomAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
+    IngestModeAst, ItemAbilityAst, ItemAst, ItemLocationAst, NpcAst, NpcMovementAst, NpcMovementTypeAst, NpcStateValue,
+    OnFalseAst, RoomAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
 };
 use std::collections::HashMap;
 
@@ -247,6 +247,29 @@ fn parse_trigger_pair(
                 target,
                 interaction,
             }
+        },
+        Rule::ingest_item => {
+            let mut i = when.into_inner();
+            let mode_pair = i
+                .next()
+                .ok_or(AstError::Shape("ingest mode"))?;
+            let mode = match mode_pair.as_str() {
+                "eat" => IngestModeAst::Eat,
+                "drink" => IngestModeAst::Drink,
+                "inhale" => IngestModeAst::Inhale,
+                other => {
+                    return Err(AstError::ShapeAt {
+                        msg: "unsupported ingest mode",
+                        context: format!("{other}"),
+                    });
+                },
+            };
+            let item = i
+                .next()
+                .ok_or(AstError::Shape("ingest item ident"))?
+                .as_str()
+                .to_string();
+            ConditionAst::Ingest { item, mode }
         },
         Rule::act_on_item => {
             let mut i = when.into_inner();

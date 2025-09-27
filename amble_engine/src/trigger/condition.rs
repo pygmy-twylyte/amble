@@ -11,6 +11,7 @@ use uuid::Uuid;
 
 use crate::{
     AmbleWorld, ItemHolder, Location,
+    command::IngestMode,
     item::{ItemAbility, ItemInteractionType},
     npc::NpcState,
     player::Flag,
@@ -47,6 +48,10 @@ pub enum TriggerCondition {
     FlagComplete(String),
     HasVisited(Uuid),
     InRoom(Uuid),
+    Ingest {
+        item_id: Uuid,
+        mode: IngestMode,
+    },
     Insert {
         item: Uuid,
         container: Uuid,

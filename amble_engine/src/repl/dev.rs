@@ -440,6 +440,9 @@ fn summarize_event_condition(world: &AmbleWorld, ec: &EventCondition) -> String 
 /// Summarize a `TriggerCondition` into a compact form with symbols.
 fn summarize_trigger_condition(world: &AmbleWorld, tc: &TriggerCondition) -> String {
     match tc {
+        TriggerCondition::Ingest { item_id, mode } => {
+            format!("ingest:{}:{mode}", symbol_or_unknown(&world.items, *item_id))
+        },
         TriggerCondition::HasFlag(f) => format!("hasFlag:{}", f),
         TriggerCondition::MissingFlag(f) => format!("missingFlag:{}", f),
         TriggerCondition::FlagInProgress(f) => format!("flagInProgress:{}", f),
