@@ -2,6 +2,8 @@
 //!
 //! Describes possible commands used during gameplay.
 
+use std::fmt::Display;
+
 use pest::{Parser, iterators::Pair};
 use pest_derive::Parser;
 use serde::{Deserialize, Serialize};
@@ -88,6 +90,15 @@ pub enum IngestMode {
     Eat,
     Drink,
     Inhale,
+}
+impl Display for IngestMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            IngestMode::Eat => write!(f, "eat"),
+            IngestMode::Drink => write!(f, "drink"),
+            IngestMode::Inhale => write!(f, "inhale"),
+        }
+    }
 }
 
 #[derive(Parser)]
