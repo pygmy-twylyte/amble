@@ -44,10 +44,10 @@
 //! These triggers enable rich gameplay where item interactions can advance
 //! storylines, solve puzzles, unlock areas, or cause other game effects.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::{
-    AmbleWorld, View, ViewItem, WorldObject,
+    AmbleWorld, Item, View, ViewItem, WorldObject,
     command::IngestMode,
     helpers::{plural_s, symbol_or_unknown},
     item::{ContainerState, ItemAbility, ItemInteractionType, consume},
@@ -69,7 +69,10 @@ pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, m
     let room_id = world.player_room_ref()?.id();
 
     // find an item matching item_str in nearby room, open containers, and player's inventory
-    let scope = nearby_reachable_items(world, room_id)?;
+    let scope: HashSet<Uuid> = nearby_reachable_items(world, room_id)?
+        .union(&world.player.inventory)
+        .copied()
+        .collect();
     let (item_id, item_name) = if let Some(entity) = find_world_object(&scope, &world.items, &world.npcs, item_str) {
         if let Some(item) = entity.item() {
             // found one -- does item have the ability to be ingested this way?
