@@ -6,8 +6,8 @@
 
 use std::collections::HashMap;
 
-use crate::{Item, Npc, Room};
 use crate::world::WorldObject;
+use crate::{Item, Npc, Room};
 use uuid::Uuid;
 
 /// Generic: Returns the TOML symbol for a given object's uuid.

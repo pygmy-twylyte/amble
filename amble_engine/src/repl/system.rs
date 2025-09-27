@@ -63,7 +63,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use crate::goal::GoalStatus;
-use crate::loader::help::{load_help_data, HelpCommand};
+use crate::loader::help::{HelpCommand, load_help_data};
 use crate::style::GameStyle;
 use crate::theme::THEME_MANAGER;
 
@@ -279,20 +279,50 @@ pub fn help_handler(view: &mut View) {
             // Append developer-only commands if DEV_MODE is enabled
             if crate::DEV_MODE {
                 let mut dev_cmds: Vec<HelpCommand> = vec![
-                    HelpCommand { command: ":npcs".into(), description: "DEV: List all NPCs with location and state.".into() },
-                    HelpCommand { command: ":flags".into(), description: "DEV: List all currently set flags (sequences as name#step).".into() },
-                    HelpCommand { command: ":sched".into(), description: "DEV: List upcoming scheduled events with due turn and notes.".into() },
-                    HelpCommand { command: ":teleport <room_symbol>".into(), description: "DEV: Instantly move to a room (alias :port).".into() },
-                    HelpCommand { command: ":spawn <item_symbol>".into(), description: "DEV: Spawn/move an item into inventory (alias :item).".into() },
-                    HelpCommand { command: ":set-flag <name>".into(), description: "DEV: Create a simple flag on the player.".into() },
-                    HelpCommand { command: ":init-seq <name> <end|none>".into(), description: "DEV: Create a sequence flag with limit or unlimited (none).".into() },
-                    HelpCommand { command: ":adv-seq <name>".into(), description: "DEV: Advance a sequence flag by one step.".into() },
-                    HelpCommand { command: ":reset-seq <name>".into(), description: "DEV: Reset a sequence flag to step 0.".into() },
+                    HelpCommand {
+                        command: ":npcs".into(),
+                        description: "DEV: List all NPCs with location and state.".into(),
+                    },
+                    HelpCommand {
+                        command: ":flags".into(),
+                        description: "DEV: List all currently set flags (sequences as name#step).".into(),
+                    },
+                    HelpCommand {
+                        command: ":sched".into(),
+                        description: "DEV: List upcoming scheduled events with due turn and notes.".into(),
+                    },
+                    HelpCommand {
+                        command: ":teleport <room_symbol>".into(),
+                        description: "DEV: Instantly move to a room (alias :port).".into(),
+                    },
+                    HelpCommand {
+                        command: ":spawn <item_symbol>".into(),
+                        description: "DEV: Spawn/move an item into inventory (alias :item).".into(),
+                    },
+                    HelpCommand {
+                        command: ":set-flag <name>".into(),
+                        description: "DEV: Create a simple flag on the player.".into(),
+                    },
+                    HelpCommand {
+                        command: ":init-seq <name> <end|none>".into(),
+                        description: "DEV: Create a sequence flag with limit or unlimited (none).".into(),
+                    },
+                    HelpCommand {
+                        command: ":adv-seq <name>".into(),
+                        description: "DEV: Advance a sequence flag by one step.".into(),
+                    },
+                    HelpCommand {
+                        command: ":reset-seq <name>".into(),
+                        description: "DEV: Reset a sequence flag to step 0.".into(),
+                    },
                 ];
                 // Keep the main list readable: append DEV commands at the end
                 help_data.commands.append(&mut dev_cmds);
             }
-            view.push(ViewItem::Help { basic_text: help_data.basic_text, commands: help_data.commands });
+            view.push(ViewItem::Help {
+                basic_text: help_data.basic_text,
+                commands: help_data.commands,
+            });
         },
         Err(e) => {
             view.push(ViewItem::Error(format!(
@@ -309,7 +339,9 @@ pub fn help_handler(view: &mut View) {
 pub fn help_handler_dev(view: &mut View) {
     if !crate::DEV_MODE {
         view.push(ViewItem::Error(
-            "Developer commands are disabled in this build.".error_style().to_string(),
+            "Developer commands are disabled in this build."
+                .error_style()
+                .to_string(),
         ));
         warn!("player attempted to use developer help with DEV_MODE = false");
         return;
@@ -331,20 +363,50 @@ pub fn help_handler_dev(view: &mut View) {
         Ok(mut help_data) => {
             // Replace commands with only DEV commands
             let mut dev_cmds: Vec<HelpCommand> = vec![
-                HelpCommand { command: ":npcs".into(), description: "DEV: List all NPCs with location and state.".into() },
-                HelpCommand { command: ":flags".into(), description: "DEV: List all currently set flags (sequences as name#step).".into() },
-                HelpCommand { command: ":sched".into(), description: "DEV: List upcoming scheduled events with due turn and notes.".into() },
-                HelpCommand { command: ":teleport <room_symbol>".into(), description: "DEV: Instantly move to a room (alias :port).".into() },
-                HelpCommand { command: ":spawn <item_symbol>".into(), description: "DEV: Spawn/move an item into inventory (alias :item).".into() },
-                HelpCommand { command: ":set-flag <name>".into(), description: "DEV: Create a simple flag on the player.".into() },
-                HelpCommand { command: ":init-seq <name> <end|none>".into(), description: "DEV: Create a sequence flag with limit or unlimited (none).".into() },
-                HelpCommand { command: ":adv-seq <name>".into(), description: "DEV: Advance a sequence flag by one step.".into() },
-                HelpCommand { command: ":reset-seq <name>".into(), description: "DEV: Reset a sequence flag to step 0.".into() },
+                HelpCommand {
+                    command: ":npcs".into(),
+                    description: "DEV: List all NPCs with location and state.".into(),
+                },
+                HelpCommand {
+                    command: ":flags".into(),
+                    description: "DEV: List all currently set flags (sequences as name#step).".into(),
+                },
+                HelpCommand {
+                    command: ":sched".into(),
+                    description: "DEV: List upcoming scheduled events with due turn and notes.".into(),
+                },
+                HelpCommand {
+                    command: ":teleport <room_symbol>".into(),
+                    description: "DEV: Instantly move to a room (alias :port).".into(),
+                },
+                HelpCommand {
+                    command: ":spawn <item_symbol>".into(),
+                    description: "DEV: Spawn/move an item into inventory (alias :item).".into(),
+                },
+                HelpCommand {
+                    command: ":set-flag <name>".into(),
+                    description: "DEV: Create a simple flag on the player.".into(),
+                },
+                HelpCommand {
+                    command: ":init-seq <name> <end|none>".into(),
+                    description: "DEV: Create a sequence flag with limit or unlimited (none).".into(),
+                },
+                HelpCommand {
+                    command: ":adv-seq <name>".into(),
+                    description: "DEV: Advance a sequence flag by one step.".into(),
+                },
+                HelpCommand {
+                    command: ":reset-seq <name>".into(),
+                    description: "DEV: Reset a sequence flag to step 0.".into(),
+                },
             ];
             // Only dev commands
             help_data.commands.clear();
             help_data.commands.append(&mut dev_cmds);
-            view.push(ViewItem::Help { basic_text: help_data.basic_text, commands: help_data.commands });
+            view.push(ViewItem::Help {
+                basic_text: help_data.basic_text,
+                commands: help_data.commands,
+            });
         },
         Err(e) => {
             view.push(ViewItem::Error(format!(

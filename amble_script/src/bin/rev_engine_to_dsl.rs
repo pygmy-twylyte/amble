@@ -25,7 +25,7 @@ fn main() {
             out_items.push_str(&format!("item {} {{\n", id));
             out_items.push_str(&format!("  name {}\n", q(name)));
             out_items.push_str(&format!("  desc {}\n", q(desc)));
-            out_items.push_str(&format!("  portable {}\n", if portable {"true"} else {"false"}));
+            out_items.push_str(&format!("  portable {}\n", if portable { "true" } else { "false" }));
             if let Some(loc) = it.get("location").and_then(|v| v.as_table()) {
                 if let Some(s) = loc.get("Inventory").and_then(|v| v.as_str()) {
                     out_items.push_str(&format!("  location inventory {}\n", s));
@@ -101,28 +101,47 @@ fn main() {
             let mut mv_active: Option<bool> = None;
             let mut dialogue: BTreeMap<String, Vec<String>> = BTreeMap::new();
             for tab in tabs {
-                if let Some(s) = tab.get("name").and_then(|v| v.as_str()) { name = s.to_string(); }
-                if let Some(s) = tab.get("description").and_then(|v| v.as_str()) { desc = s.to_string(); }
-                if let Some(s) = tab.get("state").and_then(|v| v.as_str()) { state_inline = Some(s.to_string()); }
+                if let Some(s) = tab.get("name").and_then(|v| v.as_str()) {
+                    name = s.to_string();
+                }
+                if let Some(s) = tab.get("description").and_then(|v| v.as_str()) {
+                    desc = s.to_string();
+                }
+                if let Some(s) = tab.get("state").and_then(|v| v.as_str()) {
+                    state_inline = Some(s.to_string());
+                }
                 if let Some(stab) = tab.get("state").and_then(|v| v.as_table()) {
-                    if let Some(s) = stab.get("custom").and_then(|v| v.as_str()) { state_custom = Some(s.to_string()); }
+                    if let Some(s) = stab.get("custom").and_then(|v| v.as_str()) {
+                        state_custom = Some(s.to_string());
+                    }
                 }
                 if let Some(l) = tab.get("location").and_then(|v| v.as_table()) {
-                    if let Some(s) = l.get("Room").and_then(|v| v.as_str()) { loc_room = Some(s.to_string()); }
-                    if let Some(s) = l.get("Nowhere").and_then(|v| v.as_str()) { loc_nowhere = Some(s.to_string()); }
+                    if let Some(s) = l.get("Room").and_then(|v| v.as_str()) {
+                        loc_room = Some(s.to_string());
+                    }
+                    if let Some(s) = l.get("Nowhere").and_then(|v| v.as_str()) {
+                        loc_nowhere = Some(s.to_string());
+                    }
                 }
                 if let Some(m) = tab.get("movement").and_then(|v| v.as_table()) {
-                    if let Some(s) = m.get("movement_type").and_then(|v| v.as_str()) { mv_type = Some(s.to_string()); }
+                    if let Some(s) = m.get("movement_type").and_then(|v| v.as_str()) {
+                        mv_type = Some(s.to_string());
+                    }
                     if let Some(rs) = m.get("rooms").and_then(|v| v.as_array()) {
                         mv_rooms = rs.iter().filter_map(|x| x.as_str().map(|s| s.to_string())).collect();
                     }
-                    if let Some(s) = m.get("timing").and_then(|v| v.as_str()) { mv_timing = Some(s.to_string()); }
-                    if let Some(b) = m.get("active").and_then(|v| v.as_bool()) { mv_active = Some(b); }
+                    if let Some(s) = m.get("timing").and_then(|v| v.as_str()) {
+                        mv_timing = Some(s.to_string());
+                    }
+                    if let Some(b) = m.get("active").and_then(|v| v.as_bool()) {
+                        mv_active = Some(b);
+                    }
                 }
                 if let Some(d) = tab.get("dialogue").and_then(|v| v.as_table()) {
                     for (k, v) in d.iter() {
                         if let Some(arr) = v.as_array() {
-                            let lines: Vec<String> = arr.iter().filter_map(|x| x.as_str().map(|s| s.to_string())).collect();
+                            let lines: Vec<String> =
+                                arr.iter().filter_map(|x| x.as_str().map(|s| s.to_string())).collect();
                             dialogue.insert(k.clone(), lines);
                         }
                     }
@@ -131,14 +150,27 @@ fn main() {
             out_npcs.push_str(&format!("npc {} {{\n", id));
             out_npcs.push_str(&format!("  name {}\n", q(&name)));
             out_npcs.push_str(&format!("  desc {}\n", q(&desc)));
-            if let Some(r) = loc_room { out_npcs.push_str(&format!("  location room {}\n", r)); }
-            if let Some(nw) = loc_nowhere { out_npcs.push_str(&format!("  location nowhere {}\n", q(&nw))); }
-            if let Some(c) = state_custom { out_npcs.push_str(&format!("  state custom {}\n", c)); }
-            else if let Some(s) = state_inline { out_npcs.push_str(&format!("  state {}\n", s)); }
+            if let Some(r) = loc_room {
+                out_npcs.push_str(&format!("  location room {}\n", r));
+            }
+            if let Some(nw) = loc_nowhere {
+                out_npcs.push_str(&format!("  location nowhere {}\n", q(&nw)));
+            }
+            if let Some(c) = state_custom {
+                out_npcs.push_str(&format!("  state custom {}\n", c));
+            } else if let Some(s) = state_inline {
+                out_npcs.push_str(&format!("  state {}\n", s));
+            }
             if let Some(mt) = mv_type {
                 out_npcs.push_str(&format!("  movement {} rooms ({} )", mt, mv_rooms.join(", ")));
-                if let Some(ti) = mv_timing { out_npcs.push_str(&format!(" timing {}", ti)); }
-                if let Some(ac) = mv_active { if ac { out_npcs.push_str(" active true"); } }
+                if let Some(ti) = mv_timing {
+                    out_npcs.push_str(&format!(" timing {}", ti));
+                }
+                if let Some(ac) = mv_active {
+                    if ac {
+                        out_npcs.push_str(" active true");
+                    }
+                }
                 out_npcs.push_str("\n");
             }
             // dialogue buckets
@@ -148,7 +180,9 @@ fn main() {
                 } else {
                     out_npcs.push_str(&format!("  dialogue {} {{\n", k));
                 }
-                for ln in lines { out_npcs.push_str(&format!("    {}\n", q(&ln))); }
+                for ln in lines {
+                    out_npcs.push_str(&format!("    {}\n", q(&ln)));
+                }
                 out_npcs.push_str("  }\n");
             }
             out_npcs.push_str("}\n\n");

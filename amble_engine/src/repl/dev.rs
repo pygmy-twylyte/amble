@@ -34,6 +34,9 @@
 
 use log::{info, warn};
 
+use crate::helpers::symbol_or_unknown;
+use crate::scheduler::{EventCondition, OnFalsePolicy};
+use crate::trigger::TriggerCondition;
 use crate::{
     AmbleWorld, Location, View, ViewItem, WorldObject,
     idgen::{NAMESPACE_ITEM, NAMESPACE_ROOM, uuid_from_token},
@@ -41,9 +44,6 @@ use crate::{
     style::GameStyle,
     trigger::{self, spawn_item_in_inventory},
 };
-use crate::scheduler::{EventCondition, OnFalsePolicy};
-use crate::trigger::TriggerCondition;
-use crate::helpers::symbol_or_unknown;
 
 /// Spawns an item directly into the player's inventory (DEV_MODE only).
 ///
@@ -320,9 +320,14 @@ pub fn dev_list_npcs_handler(world: &mut AmbleWorld, view: &mut View) {
             let loc = match npc.location() {
                 Location::Room(uuid) => symbol_or_unknown(&world.rooms, *uuid),
                 Location::Nowhere => "<nowhere>".to_string(),
-                other => format!("<{other:?}>")
+                other => format!("<{other:?}>"),
             };
-            (npc.name().to_string(), npc.symbol().to_string(), loc, npc.state.as_key())
+            (
+                npc.name().to_string(),
+                npc.symbol().to_string(),
+                loc,
+                npc.state.as_key(),
+            )
         })
         .collect();
     npcs.sort_by(|a, b| a.0.cmp(&b.0));
@@ -350,7 +355,9 @@ pub fn dev_list_flags_handler(world: &mut AmbleWorld, view: &mut View) {
     } else {
         let mut msg = String::new();
         msg.push_str(&format!("Flags [{}]:\n", flags.len()));
-        for f in flags { msg.push_str(&format!(" - {}\n", f)); }
+        for f in flags {
+            msg.push_str(&format!(" - {}\n", f));
+        }
         view.push(ViewItem::EngineMessage(msg));
     }
     warn!("DEV_MODE command used: :flags (list flags)");
@@ -359,12 +366,7 @@ pub fn dev_list_flags_handler(world: &mut AmbleWorld, view: &mut View) {
 /// Lists upcoming scheduled events from the world's scheduler (DEV_MODE only).
 pub fn dev_list_sched_handler(world: &mut AmbleWorld, view: &mut View) {
     let now = world.turn_count;
-    let mut upcoming: Vec<(usize, usize)> = world
-        .scheduler
-        .heap
-        .iter()
-        .map(|rev| rev.0)
-        .collect();
+    let mut upcoming: Vec<(usize, usize)> = world.scheduler.heap.iter().map(|rev| rev.0).collect();
     upcoming.sort();
 
     if upcoming.is_empty() {
@@ -374,7 +376,11 @@ pub fn dev_list_sched_handler(world: &mut AmbleWorld, view: &mut View) {
     }
 
     let mut msg = String::new();
-    msg.push_str(&format!("Scheduled events [{}], current turn = {}:\n", upcoming.len(), now));
+    msg.push_str(&format!(
+        "Scheduled events [{}], current turn = {}:\n",
+        upcoming.len(),
+        now
+    ));
     for (turn_due, idx) in upcoming {
         let (note, actions_len, cond_opt, policy) = if let Some(ev) = world.scheduler.events.get(idx) {
             (
@@ -383,7 +389,9 @@ pub fn dev_list_sched_handler(world: &mut AmbleWorld, view: &mut View) {
                 ev.condition.clone(),
                 ev.on_false.clone(),
             )
-        } else { ("<no note>".to_string(), 0, None, OnFalsePolicy::Cancel) };
+        } else {
+            ("<no note>".to_string(), 0, None, OnFalsePolicy::Cancel)
+        };
 
         // Header line stays compact for grep-ability
         msg.push_str(&format!(
@@ -421,11 +429,11 @@ fn summarize_event_condition(world: &AmbleWorld, ec: &EventCondition) -> String 
         EventCondition::All(list) => {
             let parts: Vec<String> = list.iter().map(|c| summarize_event_condition(world, c)).collect();
             format!("all({})", parts.join(", "))
-        }
+        },
         EventCondition::Any(list) => {
             let parts: Vec<String> = list.iter().map(|c| summarize_event_condition(world, c)).collect();
             format!("any({})", parts.join(", "))
-        }
+        },
     }
 }
 
@@ -443,26 +451,62 @@ fn summarize_trigger_condition(world: &AmbleWorld, tc: &TriggerCondition) -> Str
         TriggerCondition::Leave(room) => format!("leave:{}", symbol_or_unknown(&world.rooms, *room)),
         TriggerCondition::HasVisited(room) => format!("visited:{}", symbol_or_unknown(&world.rooms, *room)),
         TriggerCondition::WithNpc(npc) => format!("withNpc:{}", symbol_or_unknown(&world.npcs, *npc)),
-        TriggerCondition::NpcInState { npc_id, mood } => format!("npcState:{}:{}", symbol_or_unknown(&world.npcs, *npc_id), format!("{:?}", mood).to_lowercase()),
-        TriggerCondition::NpcHasItem { npc_id, item_id } => format!("npcHasItem:{}:{}", symbol_or_unknown(&world.npcs, *npc_id), symbol_or_unknown(&world.items, *item_id)),
-        TriggerCondition::GiveToNpc { item_id, npc_id } => format!("giveToNpc:{}->{}", symbol_or_unknown(&world.items, *item_id), symbol_or_unknown(&world.npcs, *npc_id)),
+        TriggerCondition::NpcInState { npc_id, mood } => format!(
+            "npcState:{}:{}",
+            symbol_or_unknown(&world.npcs, *npc_id),
+            format!("{:?}", mood).to_lowercase()
+        ),
+        TriggerCondition::NpcHasItem { npc_id, item_id } => format!(
+            "npcHasItem:{}:{}",
+            symbol_or_unknown(&world.npcs, *npc_id),
+            symbol_or_unknown(&world.items, *item_id)
+        ),
+        TriggerCondition::GiveToNpc { item_id, npc_id } => format!(
+            "giveToNpc:{}->{}",
+            symbol_or_unknown(&world.items, *item_id),
+            symbol_or_unknown(&world.npcs, *npc_id)
+        ),
         TriggerCondition::LookAt(item) => format!("lookAt:{}", symbol_or_unknown(&world.items, *item)),
         TriggerCondition::Open(item) => format!("open:{}", symbol_or_unknown(&world.items, *item)),
         TriggerCondition::Unlock(item) => format!("unlock:{}", symbol_or_unknown(&world.items, *item)),
         TriggerCondition::Drop(item) => format!("drop:{}", symbol_or_unknown(&world.items, *item)),
         TriggerCondition::Take(item) => format!("take:{}", symbol_or_unknown(&world.items, *item)),
-        TriggerCondition::TakeFromNpc { item_id, npc_id } => format!("takeFromNpc:{}<-{}", symbol_or_unknown(&world.items, *item_id), symbol_or_unknown(&world.npcs, *npc_id)),
-        TriggerCondition::Insert { item, container } => format!("putIn:{}->{}", symbol_or_unknown(&world.items, *item), symbol_or_unknown(&world.items, *container)),
-        TriggerCondition::ContainerHasItem { container_id, item_id } => format!("containerHas:{}:{}", symbol_or_unknown(&world.items, *container_id), symbol_or_unknown(&world.items, *item_id)),
-        TriggerCondition::UseItem { item_id, ability } => format!("useItem:{}:{}", symbol_or_unknown(&world.items, *item_id), format!("{:?}", ability).to_lowercase()),
-        TriggerCondition::UseItemOnItem { interaction, target_id, tool_id } => format!(
+        TriggerCondition::TakeFromNpc { item_id, npc_id } => format!(
+            "takeFromNpc:{}<-{}",
+            symbol_or_unknown(&world.items, *item_id),
+            symbol_or_unknown(&world.npcs, *npc_id)
+        ),
+        TriggerCondition::Insert { item, container } => format!(
+            "putIn:{}->{}",
+            symbol_or_unknown(&world.items, *item),
+            symbol_or_unknown(&world.items, *container)
+        ),
+        TriggerCondition::ContainerHasItem { container_id, item_id } => format!(
+            "containerHas:{}:{}",
+            symbol_or_unknown(&world.items, *container_id),
+            symbol_or_unknown(&world.items, *item_id)
+        ),
+        TriggerCondition::UseItem { item_id, ability } => format!(
+            "useItem:{}:{}",
+            symbol_or_unknown(&world.items, *item_id),
+            format!("{:?}", ability).to_lowercase()
+        ),
+        TriggerCondition::UseItemOnItem {
+            interaction,
+            target_id,
+            tool_id,
+        } => format!(
             "useItemOn:{}->{}:{}",
             symbol_or_unknown(&world.items, *tool_id),
             symbol_or_unknown(&world.items, *target_id),
             format!("{:?}", interaction).to_lowercase()
         ),
         TriggerCondition::TalkToNpc(npc) => format!("talkToNpc:{}", symbol_or_unknown(&world.npcs, *npc)),
-        TriggerCondition::ActOnItem { target_id, action } => format!("actOnItem:{}:{}", symbol_or_unknown(&world.items, *target_id), format!("{:?}", action).to_lowercase()),
+        TriggerCondition::ActOnItem { target_id, action } => format!(
+            "actOnItem:{}:{}",
+            symbol_or_unknown(&world.items, *target_id),
+            format!("{:?}", action).to_lowercase()
+        ),
         TriggerCondition::Ambient { spinner, .. } => format!("ambient:{}", spinner.as_toml_key()),
         TriggerCondition::Chance { one_in } => format!("chance:1-in-{:.0}", one_in),
     }
@@ -471,7 +515,10 @@ fn summarize_trigger_condition(world: &AmbleWorld, tc: &TriggerCondition) -> Str
 /// Cancel a scheduled event by its internal index (DEV_MODE only).
 pub fn dev_sched_cancel_handler(world: &mut AmbleWorld, view: &mut View, idx: usize) {
     if idx >= world.scheduler.events.len() {
-        view.push(ViewItem::ActionFailure(format!("No scheduled event found at index {}.", idx)));
+        view.push(ViewItem::ActionFailure(format!(
+            "No scheduled event found at index {}.",
+            idx
+        )));
         return;
     }
     let ev = &mut world.scheduler.events[idx];
@@ -506,8 +553,13 @@ pub fn dev_sched_delay_handler(world: &mut AmbleWorld, view: &mut View, idx: usi
         .scheduler
         .schedule_on_if(new_turn, ev.condition, ev.on_false, ev.actions, note.clone());
     // clear the original (leave its heap entries as harmless placeholders when due)
-    if let Some(slot) = world.scheduler.events.get_mut(idx) { *slot = Default::default(); }
-    warn!("DEV_MODE: delayed scheduled event idx {} by {} turns (new turn {})", idx, turns, new_turn);
+    if let Some(slot) = world.scheduler.events.get_mut(idx) {
+        *slot = Default::default();
+    }
+    warn!(
+        "DEV_MODE: delayed scheduled event idx {} by {} turns (new turn {})",
+        idx, turns, new_turn
+    );
     view.push(ViewItem::ActionSuccess(format!(
         "Scheduled event {} delayed by {} turn(s) (now on {}).",
         idx, turns, new_turn
@@ -623,16 +675,30 @@ mod tests {
         let mut view = View::new();
         // empty
         dev_list_flags_handler(&mut world, &mut view);
-        assert!(view.items.iter().any(|i| matches!(i, ViewItem::EngineMessage(msg) if msg.contains("No flags"))));
+        assert!(
+            view.items
+                .iter()
+                .any(|i| matches!(i, ViewItem::EngineMessage(msg) if msg.contains("No flags")))
+        );
 
         // add flags and check listing
         view.items.clear();
         world.player.flags.insert(Flag::simple("alpha", world.turn_count));
         let mut seq = Flag::sequence("beta", Some(3), world.turn_count);
-        if let Flag::Sequence{ step, .. } = &mut seq { *step = 2; }
+        if let Flag::Sequence { step, .. } = &mut seq {
+            *step = 2;
+        }
         world.player.flags.insert(seq);
         dev_list_flags_handler(&mut world, &mut view);
-        let combined = view.items.iter().filter_map(|i| match i { ViewItem::EngineMessage(s) => Some(s.clone()), _ => None }).collect::<Vec<_>>().join("\n");
+        let combined = view
+            .items
+            .iter()
+            .filter_map(|i| match i {
+                ViewItem::EngineMessage(s) => Some(s.clone()),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
         assert!(combined.contains("Flags [2]"));
         assert!(combined.contains("alpha"));
         assert!(combined.contains("beta#2"));
@@ -640,8 +706,8 @@ mod tests {
 
     #[test]
     fn dev_list_npcs_handler_outputs_expected_format() {
-        use crate::room::Room;
         use crate::npc::Npc;
+        use crate::room::Room;
         use std::collections::{HashMap, HashSet};
         use uuid::Uuid;
 
@@ -649,18 +715,21 @@ mod tests {
         let mut view = View::new();
         // room
         let room_id = Uuid::new_v4();
-        world.rooms.insert(room_id, Room {
-            id: room_id,
-            symbol: "test_room".into(),
-            name: "Test Room".into(),
-            base_description: "".into(),
-            overlays: vec![],
-            location: Location::Nowhere,
-            visited: false,
-            exits: HashMap::new(),
-            contents: HashSet::new(),
-            npcs: HashSet::new(),
-        });
+        world.rooms.insert(
+            room_id,
+            Room {
+                id: room_id,
+                symbol: "test_room".into(),
+                name: "Test Room".into(),
+                base_description: "".into(),
+                overlays: vec![],
+                location: Location::Nowhere,
+                visited: false,
+                exits: HashMap::new(),
+                contents: HashSet::new(),
+                npcs: HashSet::new(),
+            },
+        );
         // npc
         let npc = Npc {
             id: Uuid::new_v4(),
@@ -676,7 +745,15 @@ mod tests {
         world.npcs.insert(npc.id, npc);
 
         dev_list_npcs_handler(&mut world, &mut view);
-        let combined = view.items.iter().filter_map(|i| match i { ViewItem::EngineMessage(s) => Some(s.clone()), _ => None }).collect::<Vec<_>>().join("\n");
+        let combined = view
+            .items
+            .iter()
+            .filter_map(|i| match i {
+                ViewItem::EngineMessage(s) => Some(s.clone()),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
         assert!(combined.contains("NPCs [1]"));
         assert!(combined.contains("Zed (npc_sym) @ test_room [normal]"));
     }
@@ -688,13 +765,27 @@ mod tests {
         let mut view = View::new();
         // empty
         dev_list_sched_handler(&mut world, &mut view);
-        assert!(view.items.iter().any(|i| matches!(i, ViewItem::EngineMessage(msg) if msg.contains("No events"))));
+        assert!(
+            view.items
+                .iter()
+                .any(|i| matches!(i, ViewItem::EngineMessage(msg) if msg.contains("No events")))
+        );
 
         // add an event
         view.items.clear();
-        world.scheduler.schedule_on(5, vec![TriggerAction::ShowMessage("m".into())], Some("test".into()));
+        world
+            .scheduler
+            .schedule_on(5, vec![TriggerAction::ShowMessage("m".into())], Some("test".into()));
         dev_list_sched_handler(&mut world, &mut view);
-        let combined = view.items.iter().filter_map(|i| match i { ViewItem::EngineMessage(s) => Some(s.clone()), _ => None }).collect::<Vec<_>>().join("\n");
+        let combined = view
+            .items
+            .iter()
+            .filter_map(|i| match i {
+                ViewItem::EngineMessage(s) => Some(s.clone()),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
         assert!(combined.contains("Scheduled events [1]"));
         assert!(combined.contains("turn    5"));
         assert!(combined.contains("test"));

@@ -8,8 +8,8 @@ use log::info;
 use textwrap::{fill, termwidth};
 use variantly::Variantly;
 
-use crate::loader::help::HelpCommand;
 use crate::helpers::plural_s;
+use crate::loader::help::HelpCommand;
 use crate::style::{GameStyle, indented_block, normal_block};
 
 const ICON_SUCCESS: &str = "\u{2611}"; // ✔
@@ -364,20 +364,14 @@ impl View {
             println!();
 
             // Partition commands into normal vs DEV (':'-prefixed)
-            let (dev_cmds, normal_cmds): (Vec<_>, Vec<_>) = commands
-                .iter()
-                .cloned()
-                .partition(|c| c.command.starts_with(':'));
+            let (dev_cmds, normal_cmds): (Vec<_>, Vec<_>) =
+                commands.iter().cloned().partition(|c| c.command.starts_with(':'));
 
             // Print normal commands section
             println!("{}", "Some Common Commands:".bold().yellow());
             println!();
             for command in &normal_cmds {
-                let formatted_line = format!(
-                    "{} - {}",
-                    command.command.bold().green(),
-                    command.description.italic()
-                );
+                let formatted_line = format!("{} - {}", command.command.bold().green(), command.description.italic());
                 println!("{}", fill(&formatted_line, normal_block()));
             }
 

@@ -43,7 +43,13 @@ impl Scheduler {
         };
         info!("scheduling event (turn now/due = {now}/{on_turn}): \"{log_msg}\"");
         self.heap.push(Reverse((on_turn, idx)));
-        self.events.push(ScheduledEvent { on_turn, actions, note, condition: None, on_false: OnFalsePolicy::Cancel });
+        self.events.push(ScheduledEvent {
+            on_turn,
+            actions,
+            note,
+            condition: None,
+            on_false: OnFalsePolicy::Cancel,
+        });
     }
 
     /// Schedule some `TriggerActions` to fire on a specific turn.
@@ -55,7 +61,13 @@ impl Scheduler {
         };
         info!("scheduling event (turn due = {on_turn}): \"{log_msg}\"");
         self.heap.push(Reverse((on_turn, idx)));
-        self.events.push(ScheduledEvent { on_turn, actions, note, condition: None, on_false: OnFalsePolicy::Cancel });
+        self.events.push(ScheduledEvent {
+            on_turn,
+            actions,
+            note,
+            condition: None,
+            on_false: OnFalsePolicy::Cancel,
+        });
     }
 
     /// Schedule actions in the future with an optional condition and on-false policy.
@@ -70,10 +82,19 @@ impl Scheduler {
     ) {
         let idx = self.events.len();
         let on_turn = now + turns_ahead;
-        let log_msg = match &note { Some(msg) => msg.as_str(), None => "<no note provided>" };
+        let log_msg = match &note {
+            Some(msg) => msg.as_str(),
+            None => "<no note provided>",
+        };
         info!("scheduling conditional event (turn now/due = {now}/{on_turn}): \"{log_msg}\"");
         self.heap.push(Reverse((on_turn, idx)));
-        self.events.push(ScheduledEvent { on_turn, actions, note, condition, on_false });
+        self.events.push(ScheduledEvent {
+            on_turn,
+            actions,
+            note,
+            condition,
+            on_false,
+        });
     }
 
     /// Schedule actions on a specific turn with an optional condition and on-false policy.
@@ -86,10 +107,19 @@ impl Scheduler {
         note: Option<String>,
     ) {
         let idx = self.events.len();
-        let log_msg = match &note { Some(note) => note.as_str(), None => "<no note provided>" };
+        let log_msg = match &note {
+            Some(note) => note.as_str(),
+            None => "<no note provided>",
+        };
         info!("scheduling conditional event (turn due = {on_turn}): \"{log_msg}\"");
         self.heap.push(Reverse((on_turn, idx)));
-        self.events.push(ScheduledEvent { on_turn, actions, note, condition, on_false });
+        self.events.push(ScheduledEvent {
+            on_turn,
+            actions,
+            note,
+            condition,
+            on_false,
+        });
     }
 
     /// Pop the next due event, if any.
@@ -177,7 +207,9 @@ pub enum OnFalsePolicy {
 }
 
 impl Default for OnFalsePolicy {
-    fn default() -> Self { OnFalsePolicy::Cancel }
+    fn default() -> Self {
+        OnFalsePolicy::Cancel
+    }
 }
 
 /// Condition for scheduled events. Can wrap a `TriggerCondition` or combine multiple.
