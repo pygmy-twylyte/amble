@@ -270,6 +270,12 @@ item flamethrower {
   desc "A small personal flamethrower, for use in home and garden -- just not your own, if you know what's good for you. Instructions for use are labeled on the side."
   portable true
   location room two-sheds
+  consumable {
+    uses_left 1
+    consume_on ability Ignite
+    when_consumed replace current room melted_flamethrower
+  }
+
   text """Instructions:
 1) Aim carefully.
 2) Slowly squeeze trigger.
@@ -278,11 +284,6 @@ item flamethrower {
 """
   ability Ignite
   ability Read
-  consumable {
-    uses_left 1
-    consume_on ability Ignite
-    when_consumed replace current room melted_flamethrower
-  }
 }
 
 item melted_flamethrower {
