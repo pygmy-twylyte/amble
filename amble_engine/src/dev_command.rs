@@ -39,13 +39,17 @@ pub fn parse_dev_command(input: &str, view: &mut View) -> Option<Command> {
                         idx_str.error_style()
                     )));
                     None
-                }
+                },
             },
-            ["sched" | "schedule", "delay", idx_str, turns_str] => match (idx_str.parse::<usize>(), turns_str.parse::<usize>()) {
-                (Ok(idx), Ok(turns)) => Some(Command::SchedDelay { idx, turns }),
-                _ => {
-                    view.push(ViewItem::ActionFailure("Usage: :schedule delay <idx> <+turns>".to_string()));
-                    None
+            ["sched" | "schedule", "delay", idx_str, turns_str] => {
+                match (idx_str.parse::<usize>(), turns_str.parse::<usize>()) {
+                    (Ok(idx), Ok(turns)) => Some(Command::SchedDelay { idx, turns }),
+                    _ => {
+                        view.push(ViewItem::ActionFailure(
+                            "Usage: :schedule delay <idx> <+turns>".to_string(),
+                        ));
+                        None
+                    },
                 }
             },
             ["teleport" | "port", room_symbol] => Some(Command::Teleport((*room_symbol).into())),
