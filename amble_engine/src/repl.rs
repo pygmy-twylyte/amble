@@ -132,6 +132,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             ResetSeq(seq_name) => dev_reset_seq_handler(world, &mut view, &seq_name),
             SetFlag(flag_name) => dev_set_flag_handler(world, &mut view, &flag_name),
             StartSeq { seq_name, end } => dev_start_seq_handler(world, &mut view, &seq_name, &end),
+            Ingest { item, mode } => ingest_handler(world, &mut view, &item, mode)?,
         }
         // We'll update turn count here in a centralized way, but this approach does not
         // take into account commands that return Ok(()) after failing to match a string.
