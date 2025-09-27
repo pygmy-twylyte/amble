@@ -278,6 +278,11 @@ item flamethrower {
 """
   ability Ignite
   ability Read
+  consumable {
+    uses_left 1
+    consume_on ability Ignite
+    when_consumed replace current room melted_flamethrower
+  }
 }
 
 item melted_flamethrower {
@@ -294,6 +299,8 @@ item fallen_tree {
   desc "A large, fallen oak tree obstructing the path further up the steps. Well, maybe not so much \"fallen\" as ripped from the mountainside and tossed down by whatever left the deep claw marks in the trunk."
   portable false
   location room two-sheds-landing
+  requires ignite to burn
+  requires cutWood to cut
 }
 
 item weird_bush {

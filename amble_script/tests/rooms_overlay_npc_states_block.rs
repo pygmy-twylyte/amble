@@ -21,4 +21,3 @@ fn overlay_npc_states_block_expands_to_multiple_overlays() {
     let expected = include_str!("fixtures/rooms_overlay_npc_states_block.toml");
     assert_eq!(actual.trim(), expected.trim());
 }
-

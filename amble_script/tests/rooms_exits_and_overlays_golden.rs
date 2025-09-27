@@ -44,4 +44,3 @@ fn overlays_multi_condition_and_custom_state_golden() {
     let expected = include_str!("fixtures/rooms_overlays_multi.toml");
     assert_eq!(actual.trim(), expected.trim());
 }
-
