@@ -4,6 +4,7 @@
 
 use pest::{Parser, iterators::Pair};
 use pest_derive::Parser;
+use serde::{Deserialize, Serialize};
 use variantly::Variantly;
 
 use crate::{
@@ -24,6 +25,10 @@ pub enum Command {
     Goals,
     GoBack,
     Help,
+    Ingest {
+        item: String,
+        mode: IngestMode,
+    },
     Inventory,
     Load(String),
     LockItem(String),
@@ -77,6 +82,14 @@ pub enum Command {
     },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum IngestMode {
+    Eat,
+    Drink,
+    Inhale,
+}
+
 #[derive(Parser)]
 #[grammar = "repl_grammar.pest"]
 pub struct CommandParser;
@@ -127,6 +140,18 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
         Rule::unlock => Command::UnlockItem(inner_string(command)),
         Rule::move_to => Command::MoveTo(inner_string(command)),
         Rule::read => Command::Read(inner_string(command)),
+        Rule::eat => Command::Ingest {
+            item: inner_string(command),
+            mode: IngestMode::Eat,
+        },
+        Rule::drink => Command::Ingest {
+            item: inner_string(command),
+            mode: IngestMode::Drink,
+        },
+        Rule::inhale => Command::Ingest {
+            item: inner_string(command),
+            mode: IngestMode::Inhale,
+        },
         Rule::give_to_npc => {
             let (item, npc) = inner_string_duo(command);
             Command::GiveToNpc { item, npc }
