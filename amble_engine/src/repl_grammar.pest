@@ -36,7 +36,7 @@ vm_verbose =  { "verbose" }
 vm_brief   =  { "brief" }
 
 // verb -> single object commands
-verb_obj = _{ look_at | load | save | take | drop | talk_to | turn_on | theme | close | lock | unlock | move_to | open | read }
+verb_obj = _{ look_at | load | save | take | drop | talk_to | turn_on | theme | close | lock | unlock | move_to | open | read | eat | drink | inhale }
 look_at  =  { "look" ~ prep? ~ artic? ~ phrase }
 load     =  { ("load" | "reload") ~ save_name }
 save     =  { "save" ~ save_name }
@@ -51,6 +51,9 @@ lock     =  { "lock" ~ artic? ~ phrase }
 unlock   =  { "unlock" ~ artic? ~ phrase }
 move_to  =  { go_verb ~ dir_prep? ~ artic? ~ phrase }
 read     =  { ("read" | "examine" | "exam" | "ex" | "inspect") ~ artic? ~ phrase }
+eat      =  { ("eat" | "scarf" | "devour" | (("snack" | "munch") ~ "on")) ~ artic? ~ phrase }
+drink    =  { ("drink" | "swallow" | "chug") ~ artic? ~ phrase }
+inhale   =  { ("inhale" | "sniff" | "breathe") ~ artic? ~ phrase }
 
 // verb -> direct and indirect object commands
 verb_do_io  = _{ vtwt_cmd | take_from | put_in | give_to_npc }

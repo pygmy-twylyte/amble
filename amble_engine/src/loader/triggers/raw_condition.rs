@@ -6,6 +6,7 @@ use anyhow::{Context, Ok, Result, bail};
 use serde::Deserialize;
 
 use crate::{
+    command::IngestMode,
     item::{ItemAbility, ItemInteractionType},
     loader::SymbolTable,
     npc::NpcState,
@@ -30,6 +31,7 @@ pub enum RawTriggerCondition {
     HasFlag { flag: String, },
     HasVisited { room_id: String, },
     InRoom { room_id: String, },
+    Ingest { item_sym: String, mode: IngestMode},
     Insert { item_id: String, container_id: String, },
     Leave { room_id: String, },
     LookAt { item_id: String, },
@@ -53,6 +55,7 @@ pub enum RawTriggerCondition {
 impl RawTriggerCondition {
     pub fn to_condition(&self, symbols: &SymbolTable) -> Result<TriggerCondition> {
         match self {
+            Self::Ingest { item_sym, mode } => cook_ingest(symbols, item_sym, *mode),
             Self::ActOnItem {
                 target_sym: item_id,
                 action,
@@ -92,6 +95,21 @@ impl RawTriggerCondition {
     }
 }
 
+//
+// "COOK" helper functions convert raw trigger components to "cooked" real instances with
+// validated uuids.
+//
+fn cook_ingest(symbols: &SymbolTable, item_sym: &str, mode: IngestMode) -> Result<TriggerCondition> {
+    if let Some(item_id) = symbols.items.get(item_sym) {
+        Ok(TriggerCondition::Ingest {
+            item_id: *item_id,
+            mode,
+        })
+    } else {
+        bail!("converting raw condition Ingest: item symbol '{item_sym}' not found")
+    }
+}
+
 fn cook_act_on_item(symbols: &SymbolTable, item_id: &str, action: ItemInteractionType) -> Result<TriggerCondition> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
         Ok(TriggerCondition::ActOnItem {
@@ -103,10 +121,6 @@ fn cook_act_on_item(symbols: &SymbolTable, item_id: &str, action: ItemInteractio
     }
 }
 
-//
-// "COOK" helper functions convert raw trigger components to "cooked" real instances with
-// validated uuids.
-//
 fn cook_talk_to_npc(symbols: &SymbolTable, npc_symbol: &str) -> Result<TriggerCondition> {
     if let Some(npc_uuid) = symbols.characters.get(npc_symbol) {
         Ok(TriggerCondition::TalkToNpc(*npc_uuid))
