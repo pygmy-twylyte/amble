@@ -6,7 +6,7 @@ room lighthouse-path {
     desc "Here weathered stone steps -- made slippery by mists and a healthy coating of algae -- slowly wind their way up a wind-battered cliff face toward the lighthouse. The spray in the air dampens your clothes, and a thick rope railing is all that stands between you and the crashing surf below."
     visited false
     exit "down the steps" -> quay-square
-    overlay if item golden_locket {
+    overlay if item gold_locket {
         present "A golden locket, hitched to the railing with its thread-like chain, swings gently in the coastal winds."
         absent "Low, mournful moans can be heard between the periodic roar of the surf below. It seems to be coming from the lighthouse high above."
     }
@@ -21,10 +21,19 @@ item gold_locket {
     desc "A locket of gold on a chain, looped over the rope railing on the lighthouse path; it sways to and fro in the offshore gusts of wind. It isn't very worn, and appears not to have been here very long."
     portable true
     location room lighthouse-path
+    container state open
     text "When opened, the locket contains a photo of an older, graying man on one side. There is glue residue on the other side, but the portrait has been removed. An inscription engraved on the back reads: 'To P-- My Love'."
     ability Read
 }
 
+item restored_locket {
+    name "Golden Locket"
+    desc "A locket of gold on a chain, looped over the rope railing on the lighthouse path; it sways to and fro in the offshore gusts of wind. It isn't very worn, and appears not to be very old."
+    portable true
+    location nowhere "spawns when portrait replaced"
+    text "When opened, the locket contains a photo of an older, graying man on one side and a smiling, radiant woman on the other. An inscription engraved on the back reads: 'To P-- My Love'."
+    ability Read
+}
 # ================================================
 # Triggers
 # ================================================
@@ -51,13 +60,15 @@ trigger "Locket Taken" only once when take item gold_locket {
     }
 }
 
-trigger "Locket: Portrait Found" only once note "return-locket to #1"
+trigger "Locket: Portrait Found" only once 
+note "advances return-locket to #1"
 when take item tiny_portrait {
     do advance flag return-locket
     do award points 5
 }
 
-trigger "Dropped Locket" when drop item gold_locket {
+trigger "Dropped Locket"
+when drop item gold_locket {
     do show "The moment you drop the locket, you begin to miss it -- and feel like you've **been** missing it for a long time."
     do add flag status:longing
 }
@@ -69,11 +80,21 @@ when always {
     }
 }
 
-trigger "Picked Up Locket Again" when take item gold_locket {
+trigger "Picked Up Locket Again"
+when take item gold_locket {
     if flag in progress return-locket {
         do show "You feel better now that you have the locket back in your hand, like your best and oldest friend."
         do remove flag status:longing
     }
+}
+
+trigger "Replace Locket Portrait" only once
+note "advances return-locket to #2"
+when insert item tiny_portrait into item gold_locket {
+    do add flag locket-restored
+    do advance flag return-locket
+    do replace item gold_locket with restored_locket
+    do award points 5
 }
 
 # ================================================

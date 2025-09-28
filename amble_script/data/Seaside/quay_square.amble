@@ -113,7 +113,7 @@ note "triggers indigestion x 10 turns"
 when eat item sausage_inna_bun {
     do add flag status:indigestion
     do show "You're pretty sure there were bits of rope and pebbles in the sausage, but you eat it anyway. Your stomach begins to protest."
-    do schedule in 10 note: "indigestion ends" {
+    do schedule in 10 note "indigestion ends" {
         do remove flag status:indigestion
         do show "Your guts finally begin to feel somewhat normal again."
     }
