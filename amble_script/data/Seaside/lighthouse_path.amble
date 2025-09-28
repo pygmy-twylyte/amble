@@ -6,8 +6,9 @@ room lighthouse-path {
     desc "Here weathered stone steps -- made slippery by mists and a healthy coating of algae -- slowly wind their way up a wind-battered cliff face toward the lighthouse. The spray in the air dampens your clothes, and a thick rope railing is all that stands between you and the crashing surf below."
     visited false
     exit "down the steps" -> quay-square
-    overlay if (item present gold_locket) {
-        text "A gold locket looped snugly around the rope railing near you glints in the waning sunlight."
+    overlay if item golden_locket {
+        present "A golden locket, hitched to the railing with its thread-like chain, swings gently in the coastal winds."
+        absent "Low, mournful moans can be heard between the periodic roar of the surf below. It seems to be coming from the lighthouse high above."
     }
 }
 
@@ -78,6 +79,13 @@ trigger "Picked Up Locket Again" when take item gold_locket {
 # ================================================
 # Goals
 # ================================================
+goal locket-mystery {
+    name "Mysterious Locket"
+    desc "Uncover the secret of the Golden Locket."
+    group optional
+    start when flag in progress return-locket
+    done when flag complete return-locket
+}
 
 goal find-portrait {
   name "Lost and.. Found?"
@@ -85,6 +93,14 @@ goal find-portrait {
   group optional
   start when flag in progress return-locket
   done when has item tiny_portrait
+}
+
+goal place-portrait {
+    name "Replace the Portrait"
+    desc "Return the tiny portrait to its proper place."
+    group optional
+    start when goal complete find-portrait
+    done when has flag locket-restored
 }
 
 # ========================================

@@ -41,6 +41,12 @@ item sausage_inna_bun {
     location npc cmot_dibbler
     restricted true
     portable true
+    ability Eat
+    consumable {
+        uses_left 1
+        consume_on ability Eat
+        when_consumed despawn
+    }
 
 }
 
@@ -91,4 +97,40 @@ when act open on item tiny_package {
 trigger "Activate CMOT" when talk to npc cmot_dibbler {
     do npc says cmot_dibbler "Not so many customers around in the evenings because of the Crone. I'll guess I might as well go scrounge -- er -- resupply me fish in a bit."
     do set npc active cmot_dibbler true
+}
+
+trigger "Buy Fishy Sausage-inna-Bun"
+when give item sand_dollar to npc cmot_dibbler {
+    do despawn item sand_dollar
+    do give item sausage_inna_bun to player from npc cmot_dibbler
+    do set npc state cmot_dibbler custom:sold-fishy-sausage
+    do npc says cmot_dibbler "Another satisfied customer -- enjoy! I'll restock soon, so tell a friend to come see C.M.O.T!"
+    do award points 5
+}
+
+trigger "Eat Fishy Sausage-inna-Bun"
+note "triggers indigestion x 10 turns"
+when eat item sausage_inna_bun {
+    do add flag status:indigestion
+    do show "You're pretty sure there were bits of rope and pebbles in the sausage, but you eat it anyway. Your stomach begins to protest."
+    do schedule in 10 note: "indigestion ends" {
+        do remove flag status:indigestion
+        do show "Your guts finally begin to feel somewhat normal again."
+    }
+}
+
+trigger "Status: Indigestion" when always {
+    if all(chance 50%, has flag status:indigestion) {
+        do spinner message Indigestion
+    }
+}
+
+# ========================================
+# Spinners
+# ========================================
+spinner Indigestion {
+    wedge "Your stomach cramps. You worry there's no public restroom around."
+    wedge "Your gut drops as if you were on a roller coaster."
+    wedge "The fish burps are -- worse than the Fishy Sausage-inna-Bun that caused them."
+    wedge "Your stomach complains so loudly that a nearby squirrel is startled away."
 }
