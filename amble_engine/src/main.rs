@@ -39,11 +39,27 @@ fn main() -> Result<()> {
         .expect("failed to flush stdout after clearing the screen");
     info!("Starting the game!");
 
-    println!(
-        "{:^width$}",
-        "AMBLE: AN ADVENTURE".bright_yellow().underline(),
-        width = termwidth()
-    );
+    /*
+     * To make game title easily portable, intro.txt will start with a title, then a "###"
+     * separator, then an introductory paragraph:
+     *
+     * Game Title
+     * ###
+     * This is all about the game you're about to play...
+     *
+     */
+    let mut intro_file: Vec<_> = include_str!("../data/intro.txt").split("###").collect();
+    let introduction = intro_file.pop();
+    let title = intro_file.pop();
+
+    if let Some(title) = title {
+        println!(
+            "{:^width$}",
+            title.trim().bright_yellow().underline(),
+            width = termwidth()
+        );
+    }
+
     println!(
         "{}",
         fill(
@@ -57,8 +73,9 @@ fn main() -> Result<()> {
         )
     );
 
-    let introduction = include_str!("../data/intro.txt");
-    println!("{}", fill(introduction, termwidth()).description_style());
+    if let Some(introduction) = introduction {
+        println!("{}", fill(introduction, termwidth()).description_style());
+    }
 
     run_repl(&mut world)
 }
