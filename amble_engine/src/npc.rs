@@ -214,7 +214,12 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
                 npc_name: npc.name().to_string(),
                 spin_msg: world.spin_core(CoreSpinnerType::NpcLeft, "left."),
             });
-            info!("{} ({}) left the Candidate's location.", npc.name(), npc.symbol());
+            info!(
+                "{} ({}) left {}'s location.",
+                npc.name(),
+                npc.symbol(),
+                world.player.name()
+            );
         }
         world.rooms.get_mut(&uuid).map(|room| room.npcs.remove(&npc_id));
     }
@@ -224,7 +229,12 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
                 npc_name: npc.name().to_string(),
                 spin_msg: world.spin_core(CoreSpinnerType::NpcEntered, "entered."),
             });
-            info!("{} ({}) arrived at the Candidate's location.", npc.name(), npc.symbol());
+            info!(
+                "{} ({}) arrived at {}'s location.",
+                npc.name(),
+                npc.symbol(),
+                world.player.name()
+            );
         }
         world.rooms.get_mut(&uuid).map(|room| room.npcs.insert(npc_id));
     }
