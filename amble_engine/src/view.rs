@@ -496,7 +496,7 @@ impl View {
 
     fn item_text(&mut self) {
         if let Some(ViewItem::ItemText(text)) = self.items.iter().find(|i| matches!(i, ViewItem::ItemText(_))) {
-            println!("{}:\n", "You read".subheading_style());
+            println!("{}:\n", "Upon closer inspection, you see".subheading_style());
             println!("{}", fill(text, indented_block()).item_text_style());
             println!();
         }

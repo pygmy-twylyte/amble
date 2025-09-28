@@ -63,7 +63,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         print!(
             "{}",
             format!(
-                "\n[Rel: {}|Score: {}{}]>> ",
+                "\n[Turn: {}|Score: {}{}]>> ",
                 world.turn_count, world.player.score, status_effects
             )
             .prompt_style()
@@ -147,6 +147,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             Close(_)
                 | Drop(_)
                 | GiveToNpc { .. }
+                | Ingest { .. }
                 | LookAt(_)
                 | LockItem(_)
                 | MoveTo(_)
@@ -163,7 +164,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
 
         if turn_taken {
             world.turn_count += 1;
-            info!("----> turn advanced to {} <----", world.turn_count);
+            info!("============> BEGIN TURN {} <============", world.turn_count);
             check_npc_movement(world, &mut view)?;
             check_scheduled_events(world, &mut view)?;
         }
