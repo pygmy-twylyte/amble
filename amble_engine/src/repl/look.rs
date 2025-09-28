@@ -139,7 +139,7 @@ pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
             Some(item.id())
         } else {
             view.push(ViewItem::ActionFailure(format!(
-                "You see nothing legible on the {}.",
+                "You see nothing special about the {}, and nothing legible on it.",
                 item.name().item_style()
             )));
             info!(

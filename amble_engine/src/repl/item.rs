@@ -44,10 +44,10 @@
 //! These triggers enable rich gameplay where item interactions can advance
 //! storylines, solve puzzles, unlock areas, or cause other game effects.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use crate::{
-    AmbleWorld, Item, View, ViewItem, WorldObject,
+    AmbleWorld, View, ViewItem, WorldObject,
     command::IngestMode,
     helpers::{plural_s, symbol_or_unknown},
     item::{ContainerState, ItemAbility, ItemInteractionType, consume},
