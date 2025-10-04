@@ -4,50 +4,58 @@ room high-ridge {
     name "High Isolated Ridge"
     # player starts here
     visited true
-    desc "A small, flat ridge in the midst of a steeply sloped wooded area. Probably west of something, depending on how you're oriented.\n\nSome rough stairs carved into the slope curve upward into the trees."
-    overlay if flag cleaned-plaque-1 {
-        set "You're occasionally blinded by a flash of sunlight reflected from the gleaming, freshly cleaned plaque on the pillar at the base of the steps."
-        unset "Near the bottom of the stairs stands an impressive, intricately sculpted pillar bearing a plaque tarnished with age and forest grime."
+    desc "A small, flat ridge in the midst of a steeply sloped wooded area. Probably west of something, depending on how you're oriented. The only egress seems to be a flight of rough stone steps carved into the slope, which curve upward and then disappear into the trees."
+    overlay if item present scrawled_note {
+        text "A note scrawled in red marker on bright yellow paper is nailed to a tree trunk near the base of the steps."
     }
-    exit up -> parish-landing
+    overlay if item present ephemeral_cake {
+        text "Strangely, a slice of birthday cake on a paper plate sits precariously balanced on top of a thin boulder nearby."
+    }
+    exit "up the steps" -> parish-landing
 }
 
 room parish-landing {
     name "Parish Landing"
-    desc "A small plateau carved into the hillside, marked by an old wooden sign that reads: 'Pilgrims Welcome – Pancakes Served Daily (Terms and Conditions Apply)'. A faded poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a holy relic.\n\nFrom here, the steps curve gently upward to another distant landing. A modest trail leads west toward a nearby parish."
-    exit down -> high-ridge
-    exit west -> st-alfonzo-parish
-    exit up -> two-sheds-landing
+    desc "A small plateau carved into the hillside, marked by an old wooden sign that reads: 'Pilgrims Welcome – Pancakes Served Daily (Terms and Conditions Apply)'. A faded poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a holy relic.\n\nFrom here, the steps curve gently upward, disappearing into the woodland growth again. A modest trail leads west toward a nearby parish."
+    overlay if flag cleaned-plaque-1 {
+        set "You're occasionally distracted by a glint of sunlight reflected from the freshly cleaned plaque on the pillar just inside the treeline."
+        unset "Just beyond the treeline stands an impressive, intricately sculpted pillar bearing a plaque tarnished with age and forest grime."
+    }
+    exit "down the steps" -> high-ridge
+    exit "westward trail" -> st-alfonzo-parish
+    exit "up the steps" -> two-sheds-landing
 }
 
 room st-alfonzo-parish {
     name "Parish of Saint Alfonzo"
-    desc "The parish resembles a half-abandoned diner and half-absolved church, complete with stained glass windows depicting breakfast foods in heroic poses. The air smells faintly of syrup and tobacco.\n\nA refrigerated pedestal in the corner hums solemnly. A hymn board near the door lists this week’s sermon: 'On the Sanctity of the Short Stack.'"
+    desc "The parish resembles a half-abandoned diner and half-absolved church, complete with stained glass windows depicting breakfast foods in heroic poses. The air smells faintly of syrup and tobacco.\n\nA refrigerated pedestal in the corner hums solemnly. Near the door, the hymn board lists this week’s sermon: 'On the Sanctity of the Short Stack.'"
     overlay if item margarine {
-        present  r#"On the pedestal sits a lone tub of margarine: "Nanook's Finest" with a slogan below."#
-        absent  "The pedestal stands solemnly in the corner, missing its tub of margarine."
+        present  r#"A large tub of Nanook's Finest™ margarine sits upon the pedestal."#
+        absent  "The pedestal stands empty, chilling nothing in particular."
     }
-    exit east -> parish-landing
+    exit "out the door" -> parish-landing
 }
 
 room two-sheds-landing {
     name "Jackson's Landing"
-    desc "A quiet landing tucked along the slope, with a rusted mailbox labeled 'A. Jackson' standing to one side. A trail sign points east toward something optimistically named \"Two Sheds\". Underneath, someone has scratched in: \"Technically One.\""
+    desc "A quiet landing tucked along the slope, with a rusted mailbox labeled 'A. Jackson' standing to one side. A trail sign points east toward something optimistically named \"Two Sheds\". Underneath, someone has scratched in: \"Technically One.\" Rough steps lead down the slope, and continue curving upward."
+
     overlay if (item present fallen_tree) {
         text "A huge tangle of limbs and branches from a fallen tree block the path continuing upward."
     }
-    overlay if (flag set chopped-fallen-tree) {
+    overlay if (flag set chopped-fallen-tree, flag unset saw-paul-bunyan) {
+        # these would be gone if player sees paul bunyan at guard-post
         text "Cut branches of a fallen tree are piled to the side of the path upward."
     }
     overlay if (flag set burned-fallen-tree) {
         text "Charred twigs and smoldering ash are all that remain of the fallen tree."
     }
-    exit up -> guard-post {
+    exit "up the slope" -> guard-post {
         required_flags(cleared-fallen-tree),
         barred "You can't get around the fallen tree. You'll need to find a way to clear it from the path."
     }
-    exit down -> parish-landing
-    exit east -> two-sheds
+    exit "down the steps" -> parish-landing
+    exit "trail east" -> two-sheds
 }
 
 room two-sheds {
@@ -62,21 +70,21 @@ room two-sheds {
     overlay if (item absent flamethrower, item present lumberjack_axe) {
         text "A disused but serviceable axe remains partly concealed in the tall grass."
     }
-    exit west -> two-sheds-landing
+    exit "trail west" -> two-sheds-landing
 }
 
 room guard-post {
     name "Abandoned Guard Post"
     desc "A small stone guard post clings to the side of the trail, complete with a creaky wooden chair and a megaphone labeled 'USE ONLY IF VERY SURE'. A faded official-looking placard reads:\n\n'NOTICE: Passage beyond this point may lead to anachronism.'\n\nIt seems no one’s been stationed here in quite some time. The trail continues upward, leading to what appears to be an ancient road—and a distinctly non-ancient office park."
-    exit up -> inca-road
-    exit down -> two-sheds-landing
+    exit "up to the road" -> inca-road
+    exit "down the steps" -> two-sheds-landing
 }
 
 room inca-road {
     name "Inca Road"
-    desc "An ancient road of broken and uneven stones winds precariously along the mountainside, half-swallowed by time and weeds. South of here, a river's rocky rapid rushes westward through the gorge.\n\nTo the north lies a trim, modern lawn with an improbably square footprint. It leads up to a squat commercial building that seems to have landed here by accident."
-    exit south -> loading-dock
-    exit down -> guard-post
+    desc "An ancient road of broken and uneven stones winds precariously along the mountainside, half-swallowed by time and weeds. North of here, a river's rocky rapid rushes westward through the gorge.\n\nTo the south lies a trim, modern lawn with an improbably square footprint. It leads up toward a squat commercial building that seems to have landed here by accident."
+    exit "across the lawn" -> loading-dock
+    exit "down the slope" -> guard-post
 }
 
 room front-entrance {

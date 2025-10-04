@@ -1,8 +1,14 @@
+# items.amble
+#
+# This originally contained all of the items reverse-transpiled from the original Amble items.toml - written before there was a
+# DSL (amble_script) by hand. Occasional non-item additions may be found here now, because the DSL allows for mixing types in the same
+# file (which the engine can't handle in TOML form --  the compiler sorts them into the appropriate TOML files.)
+
 item no_cake {
     name "No Cake"
-    desc "You carry an uneasy feeling where a dessert might be. It is the absence of cake, and somehow you know you’ve always had it."
+    desc "You carry an uneasy feeling where a dessert might be. It is the absence of cake, and you just can't seem to get past it."
     portable true
-    location inventory player
+    location nowhere "spawns when player tries to eat ephemeral_cake"
 }
 
 item invitation {
@@ -188,9 +194,9 @@ item margarine {
 
 item plaque_1 {
     name "Weathered Plaque"
-    desc "A plaque worn nearly smooth by decade upon decade of weather and grime. The intricate masonry of its pillar suggests utmost importance and profundity of its message."
+    desc "A plaque worn nearly smooth by decade upon decade of weather and grime. The intricate masonry of its pillar suggests the utmost importance and profundity of its message."
     portable false
-    location room high-ridge
+    location room parish-landing
     text """A common mistake that people make when trying to design something completely foolproof is to underestimate the ingenuity of complete fools.
 -- D.A., Head of Architectural Illogistics, Area 42
 """
@@ -212,13 +218,20 @@ item lab_printer {
 
 item scrawled_note {
     name "Scrawled Note"
-    desc "A note scrawled in red permanent marker, nailed to a post at the bottom of the stone steps."
-    portable false
+    desc "A note scrawled all caps and red permanent marker on a sheet of yellow legal paper."
+    portable true
     location room high-ridge
     text """CANDIDATES: PROCEED TO OFFICE TO OBTAIN VISITOR PASS
            * MUST SHOW VALID INVITATION *
 """
     ability Read
+    requires ignite to burn
+}
+
+trigger "Burn After Reading?"
+when act burn on item scrawled_note {
+    do show "You burn the note, singeing your fingers in the process. Do you think this is a spy novel?"
+    do despawn item scrawled_note
 }
 
 item printer_paper {
@@ -424,6 +437,7 @@ item security_locker_key {
 item security_locker {
     name "Security Supply Locker"
     desc "A heavy wooden locker marked 'AMBLE SECURITY - Authorized Use Only'. The planks are reinforced, and the it rattles faintly when nudged."
+    text "The wood comes from the strong but incredibly flammable magnesium magnolia tree."
     portable false
     location room loading-dock
     container state locked
@@ -471,11 +485,40 @@ item burned_security_log {
     location nowhere "may_spawn@security_crate or loading-dock"
 }
 
-item glass_vial {
+item strange_liquid {
     name "Strange Liquid"
     desc "A glass vial, unnaturally cold to the touch, containing a dark liquid that seems to reach for the warmth of your fingers."
     portable true
     location nowhere "may_spawn@loading-dock or security_crate"
+    ability Drink
+    consumable {
+        uses_left 1
+        consume_on ability Drink
+        when_consumed despawn
+    }
+}
+
+trigger "Drink the Strange Liquid"
+note "trip daisies for a few turns with foreshadowing"
+when drink item strange_liquid {
+    do add flag status:tripping
+    do show "The strange liquid feels incredibly cold as it spreads slowly down your esophagus, then you start to... see things."
+    do schedule in 2 {
+        do show "<Vision> A see-through doctor takes a tool from another doctor, then turns to face you with one glowing red eye."
+    }
+    do schedule in 4 {
+        do show r#"<Vision> A scientist peers into a vending machine. Someone shouts,"Gordon!" and he turns around, focusing on you with one red eye."#
+    }
+    do schedule in 6 {
+        do show r#"<Vision> A shifty man with a red light behind one pupil hands you a hot dog, but electronic bits inside the casing nearly break your teeth when you bite into it."#
+    }
+    do schedule in 7 {
+        do remove flag status:tripping
+        do award points 5
+    }
+    do schedule in 20 if missing flag appeased-black-knight onFalse cancel {
+        do show "<Flashback> A medieval knight smilese as he slices aluminum cans and tomatoes with his sword."
+    }
 }
 
 item shattered_vial {
@@ -532,7 +575,7 @@ item spent_flamethrower {
     name "Spent Flamethrower"
     desc """A scorched and half-fused flamethrower, empty and broken beyond repair. The igniter’s casing is still warm. A faded label reads:
 
-    Weyland-Yutani: Thermal Unit / Antarctica Series
+Weyland-Yutani: Thermal Unit / Antarctica Series
 """
     portable true
     location room snow-camp
@@ -541,8 +584,7 @@ item spent_flamethrower {
 item messiah_kit {
     name "Messiah Starter Kit"
     desc """A masterfully handcrafted wooden box, with primitive bronze hardware and an ornately carved lid with the inscription:
-
-        << MESSIAH STARTER KIT >>"""
++| MESSIAH STARTER KIT |+"""
     portable true
     location room st-alfonzo-parish
     container state closed
@@ -748,12 +790,14 @@ item hot_coffee {
     location nowhere "spawns@lounge after coffee_machine started"
 }
 
-item test_edible {
-    name "Cupcake"
-    desc "A cupcake."
+item ephemeral_cake {
+    name "Birthday Cake"
+    desc "A generous piece of delicious, perfectly iced birthday cake on an embossed paper plate."
+    text r#"Embossed around the edge of the plate: "~~~ From GLaDOS and Aperture Science Laboratories ~~~" "#
     location room high-ridge
     portable true
     ability Eat
+    ability Read
     consumable {
         uses_left 1
         consume_on ability Eat
@@ -761,7 +805,10 @@ item test_edible {
     }
 }
 
-trigger "Ate Cupcake" when eat item test_edible {
-    do show "Yummy!"
+trigger "The Cake Is A Lie"
+when eat item ephemeral_cake {
+    do show "Just as you try to take a bite of the cake, it vanishes without a trace."
+    do spawn item no_cake in inventory
+    # explicit despawn of ephemeral cake not needed (single use consumable)
     do award points 2
 }

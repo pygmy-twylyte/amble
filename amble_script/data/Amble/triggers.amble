@@ -7,31 +7,32 @@
 
 # ..................................................................................................................HIGH-RIDGE
 
-trigger "High-Ridge: Read Scrawled Note" only once when use item scrawled_note ability read {
+trigger "[High-Ridge] Read Scrawled Note" only once when use item scrawled_note ability read {
     do add flag read-scrawled-note
 }
 
-trigger "High-Ridge: Plaque 1 Too Grimy to Read" when use item plaque_1 ability read {
+trigger "[High-Ridge] Plaque 1 Too Grimy to Read" when use item plaque_1 ability read {
     if missing flag cleaned-plaque-1 {
         do deny read "The plaque is too grimy to make out the words. You'll need to find a way to clean it off."
         do add flag tried-read-plaque-1
     }
 }
 
-trigger "High-Ridge: Plaque 1 Cleaned" only once when act clean on item plaque_1 {
+trigger "[High-Ridge] Plaque 1 Cleaned" only once when act clean on item plaque_1 {
     do add flag cleaned-plaque-1
     do award points 3
     do show "With some saliva and a little effort, you're able to remove the grime and bring the plaque to a dull shine."
 }
 
-trigger "High Ridge: Read Cleaned Plaque 1" only once when use item plaque_1 ability read {
+trigger "[High-Ridge] Read Cleaned Plaque 1" only once when use item plaque_1 ability read {
     if has flag cleaned-plaque-1 {
         do add flag read-plaque-1
         do award points 5
     }
 }
 
-trigger "High-Ridge: Billy Wakes Up" only once
+trigger "[High-Ridge] Billy Wakes Up" only once
+note "chance of random Billy the Mountain Zappa reference"
 when use item scrawled_note ability read
 {
     if chance 42% {
@@ -49,7 +50,7 @@ when use item scrawled_note ability read
     }
 }
 
-trigger "High-Ridge: Gnat Punctuation" only once
+trigger "[High-Ridge] Gnat Punctuation" only once
 when leave room high-ridge
 {
     do schedule in 2 if in rooms woods onFalse retryNextTurn
@@ -68,7 +69,7 @@ when leave room high-ridge
 }
 # ..................................................................................................................TWO-SHEDS
 
-trigger "Two-Sheds-Landing: Cut or Chop Tree" only once when act cut on item fallen_tree {
+trigger "[Two-Sheds-Landing] Cut or Chop Tree" only once when act cut on item fallen_tree {
     do show "With considerable effort and just one blister, you're able to chop a path through the branches. The stone steps continue to curve upward from here."
     do despawn item fallen_tree
     do add flag cleared-fallen-tree
@@ -76,22 +77,38 @@ trigger "Two-Sheds-Landing: Cut or Chop Tree" only once when act cut on item fal
     do award points 5
 }
 
-trigger "Two-Sheds-Landing: Arson-Aid Used on Tree" only once
+trigger "[Two-Sheds-Landing] Arson-Aid Used on Tree" only once
 when use item flamethrower on item fallen_tree interaction burn {
     do show "You aim the Arson-Aid and begin to squeeze the trigger when the device erupts into a fireball! Panicking, you throw the whole Arson-Aid into the tree."
 }
 
-trigger "Two-Sheds-Landing: Burn Tree" only once when act burn on item fallen_tree {
+trigger "[Two-Sheds-Landing] Burn Tree" only once when act burn on item fallen_tree {
     do despawn item fallen_tree
     do add flag cleared-fallen-tree
     do add flag burned-fallen-tree
     do award points 5
     do show "WHOOOOOMPH! The fallen tree erupts into flame and, quite improbably, is reduced to ash in mere seconds."
 }
+# ========================================
+# GUARD POST
+# ========================================
+trigger "[Guard-Post] Interesting Passers-By" only once
+note "different characters depending on how they got past the fallen_tree"
+when enter room guard-post {
+    if all(chance 75%, has flag burned-fallen-tree) {
+        do show r#"Smokey Bear tromps past, growling "Nobody every listens!" while glaring right at you."#
+    }
+    if all(chance 75%, has flag chopped-fallen-tree) {
+        do show "Paul Bunyan gives you a nod as he lumbers by with Babe the Blue Ox, carrying the remains of the tree you chopped up."
+        do add flag saw-paul-bunyan
+    }
+}
 
-# ..................................................................................................................GUARD-POST
+# ========================================
+# INCA ROAD
+# ========================================
 
-trigger "Guard-Post: Traveling Without Towel" only once when enter room guard-post {
+trigger "[Inca-Road] Traveling Without Towel" only once when enter room inca-road {
     if missing item towel {
         do show "You pause here, realizing with increasing concern that you are traveling without a towel."
     }
@@ -99,7 +116,7 @@ trigger "Guard-Post: Traveling Without Towel" only once when enter room guard-po
 
 # ..................................................................................................................EAST-OF-BUILDING
 
-trigger "East-of-Building: Pluck Dental Floss" only once when take item dental_floss {
+trigger "[East-of-Building] Pluck Dental Floss" only once when take item dental_floss {
     do show "You pluck a strand of floss from the bush. It comes away easily — disturbingly so. Minty. Strong. Too strong. You’re no botanist, but you’re pretty sure this shouldn’t be growing out of a shrubbery."
     do award points 5
     do set item description weird_bush "A squat, leafy bush now stripped of its floss-like strands, bare branches jutting out awkwardly. A small sign next to it reads 'Pride of Montana'."
@@ -107,21 +124,21 @@ trigger "East-of-Building: Pluck Dental Floss" only once when take item dental_f
 
 # ..................................................................................................................LOADING-DOCK
 
-trigger "Loading-Dock: Spawn Special Delivery" only once when leave room loading-dock {
+trigger "[Loading-Dock] Spawn Special Delivery" only once when leave room loading-dock {
     do spawn item delivery_box into room loading-dock
     do show "You hear a thud behind you, back toward the dock, like something was just dropped off. You glimpse a drone flying away quickly, as if hoping not to be seen. Was that an Initech logo on the side?"
 }
 
-trigger "Loading-Dock: Open Security Crate (Key)" only once when unlock item security_locker {
+trigger "[Loading-Dock] Open Security Crate (Key)" only once when unlock item security_locker {
     do spawn item crowbar into container security_locker
     do spawn item security_log into container security_locker
-    do spawn item glass_vial into container security_locker
+    do spawn item strange_liquid into container security_locker
     do spawn item initech_mug into container security_locker
     do add flag unlocked-security-crate
     do show "The ear wax on the tip of the key eases it into the rusted lock, which snaps open with a satisfying clunk."
 }
 
-trigger "Loading-Dock: Open Security Crate (Break)" only once when act break on item security_locker {
+trigger "[Loading-Dock] Open Security Crate (Break)" only once when act break on item security_locker {
     if missing flag unlocked-security-crate {
         do despawn item security_locker
         do spawn item crowbar in current room
@@ -133,19 +150,19 @@ trigger "Loading-Dock: Open Security Crate (Break)" only once when act break on 
     }
 }
 
-trigger "Loading-Dock: Open Security Crate (Burn)" only once when act burn on item security_locker {
+trigger "[Loading-Dock] Open Security Crate (Burn)" only once when act burn on item security_locker {
     if missing flag unlocked-security-crate {
         do despawn item security_locker
         do spawn item crowbar in current room
         do spawn item burned_security_log in current room
-        do spawn item glass_vial in current room
+        do spawn item strange_liquid in current room
         do spawn item initech_mug in current room
         do show "WHOOOOOMP! The locker, which you now realize may have been made from the solid magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking your eyebrows with it. It looks like *some* of the items inside weren't flammable."
         do add wedge "PA Announcement: 'Someone used an Arson-Aid to torch the security locker at the loading dock. An investigation is underway. Report anyone with scorched clothes or missing eyebrows to security.'" width 1 spinner ambientInterior
     }
 }
 
-trigger "Loading-Dock: Got Crowbar" only once when take item crowbar {
+trigger "[Loading-Dock] Got Crowbar" only once when take item crowbar {
     do show "You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?"
     do add flag got-crowbar
     do award points 3
@@ -158,21 +175,21 @@ trigger "Loading-Dock: Got Crowbar" only once when take item crowbar {
 
 # ..................................................................................................................MAIN-LOBBY
 
-trigger "Gonk Droid: Battery Exchange" only once when give item empty_battery to npc gonk_droid {
+trigger "[Gonk Droid] Battery Exchange" only once when give item empty_battery to npc gonk_droid {
     do award points 2
     do give item charged_battery to player from npc gonk_droid
     do set npc state gonk_droid happy
     do show "Elated that you've given it such a large, empty battery to charge, the gonk droid gives you a fully charged one, free of ... charge?"
 }
 
-trigger "Gonk Droid: Happy When Family Photo Inspected" only once when look at item gonk_family_photo {
+trigger "[Gonk Droid] Happy When Family Photo Inspected" only once when look at item gonk_family_photo {
     do npc says gonk_droid "GONK gonk!"
     do show "The gonk droid totters with pride as you view its family photo."
     do award points 2
     do add flag made-gonk-proud
 }
 
-trigger "Main-Lobby: Security Reminder" only once
+trigger "[Main-Lobby] Security Reminder" only once
 when enter room main-lobby
 {
     do schedule in 3 if player in room main-lobby onFalse cancel
@@ -190,7 +207,7 @@ when enter room main-lobby
 # which doesn't require "pluck" for handling. The plain hal_module_2 must have its description updated
 # so it doesn't still say it's in the vending machine after retrieval.
 
-trigger "Main-Lobby: Spot HAL Module #2 / Start Puzzle" only once
+trigger "[Main-Lobby] Spot HAL Module #2 / Start Puzzle" only once
 when look at item vending_machine
 {
     if flag in progress hal-reboot {
@@ -202,7 +219,7 @@ when look at item vending_machine
     }
 }
 
-trigger "Main-Lobby: Pry Vending Machine Open with Crowbar" only once
+trigger "[Main-Lobby] Pry Vending Machine Open with Crowbar" only once
 when use item crowbar on item vending_machine interaction open
 {
     do show "With a mighty heave and several creative applications of leverage that would make Archimedes proud, you pry open the vending machine. There's a satisfying CRACK as the lock mechanism gives way. Unfortunately, your vigorous prying causes the machine to tilt forward slightly, and you watch in horror as the HAL module slides off its shelf and disappears into a narrow crevice between the machine and the floor. The other items tumble onto the floor around you.\n\nThe machine's internal speaker crackles to life one last time: 'Thank you for choosing violence. Have a mediocre day.'"
@@ -217,7 +234,7 @@ when use item crowbar on item vending_machine interaction open
     do award points 5
 }
 
-trigger "Main-Lobby: Fish HAL Module Out of Crevice" only once
+trigger "[Main-Lobby] Fish HAL Module Out of Crevice" only once
 when use item fishing_line on item hal_module_2_crevice interaction handle
 {
     if has flag module-2-puzzle#1 {
@@ -231,7 +248,7 @@ when use item fishing_line on item hal_module_2_crevice interaction handle
     }
 }
 
-trigger "Main-Lobby: Can't Reach HAL Module in Crevice"
+trigger "[Main-Lobby] Can't Reach HAL Module in Crevice"
 when take item hal_module_2_crevice
 {
     if has flag module-2-puzzle#1 {
@@ -239,7 +256,7 @@ when take item hal_module_2_crevice
     }
 }
 
-trigger "Main-Lobby: HAL Module/Drop Tweezers In Crevice" only once
+trigger "[Main-Lobby] HAL Module/Drop Tweezers In Crevice" only once
 when use item zircon_tweezers on item hal_module_2_crevice interaction handle
 {
     if has flag module-2-puzzle#1 {
@@ -250,7 +267,7 @@ when use item zircon_tweezers on item hal_module_2_crevice interaction handle
     }
 }
 
-trigger "Main-Lobby: Recover Tweezers"
+trigger "[Main-Lobby] Recover Tweezers"
 when use item fishing_line on item zircon_tweezers_crevice interaction handle
 {
     do show "After a dozen tries and venting by beating the vending machine with the crowbar some more, you are able to fish your prized zircon-encrusted tweezers back out of the crevice."
@@ -262,20 +279,20 @@ when use item fishing_line on item zircon_tweezers_crevice interaction handle
 
 # ..................................................................................................................PATIO
 
-trigger "Patio: Sunglasses Required" when enter room patio {
+trigger "[Patio] Sunglasses Required" when enter room patio {
     if missing item peril_sunglasses {
         do push player to restaurant
         do show "A blinding burst of light erupts from the swirling starfield, forcing you to shield your eyes. With no protection, you're driven back into the relative safety of the restaurant."
     }
 }
 
-trigger "Patio: Have Sunglasses" when enter room patio {
+trigger "[Patio] Have Sunglasses" when enter room patio {
     if has item peril_sunglasses {
         do show "Sensing the possible harm in eating a dessert a stone's throw away from the explosions of all nearby stars, your peril-sensitive sunglasses flash nearly completely opaque, allowing you to see without permanent damage to the retina as the galaxies outside continue to erupt."
     }
 }
 
-trigger "Patio: Award Points Getting In" only once when enter room patio {
+trigger "[Patio] Award Points Getting In" only once when enter room patio {
     if has item peril_sunglasses {
         do award points 2
     }
@@ -284,19 +301,19 @@ trigger "Patio: Award Points Getting In" only once when enter room patio {
 
 # ..................................................................................................................B-A-OFFICE
 
-trigger "Office: Receptionist Unhelpful if No Pass" when always {
+trigger "[Office] Receptionist Unhelpful if No Pass" when always {
     if all(with npc b_a_receptionist, missing flag got-visitor-pass, missing flag got-elevator-keycard) {
         do set npc state b_a_receptionist normal
     }
 }
 
-trigger "Office: Receptionist Helpful Once Pass Acquired" when always {
+trigger "[Office] Receptionist Helpful Once Pass Acquired" when always {
     if all(with npc b_a_receptionist, has flag got-visitor-pass, missing flag got-elevator-keycard) {
         do set npc state b_a_receptionist happy
     }
 }
 
-trigger "Office: Exchange Invitation for Visitor Pass" when give item invitation to npc b_a_receptionist {
+trigger "[Office] Exchange Invitation for Visitor Pass" when give item invitation to npc b_a_receptionist {
     do add flag got-visitor-pass
     do despawn item invitation
     do spawn item visitor_pass in inventory
@@ -306,11 +323,11 @@ trigger "Office: Exchange Invitation for Visitor Pass" when give item invitation
     do npc says b_a_receptionist "Here is your visitor pass. Much of the facility will be inaccessible without it, so treat it like a second towel."
 }
 
-trigger "Office: Open Poetry Performer" when open item poetry_performer {
+trigger "[Office] Open Poetry Performer" when open item poetry_performer {
     do show "The machine clicks on and hums. A flashing red light warns:\n            ⚠️ NOT FOR USE WITH VOGON POETRY ⚠️"
 }
 
-trigger "Office: Insert Poems to Open Panic Room" only once when insert item vogon_poetry_book into item poetry_performer {
+trigger "[Office] Insert Poems to Open Panic Room" only once when insert item vogon_poetry_book into item poetry_performer {
     do award points 5
     do despawn item vogon_poetry_book
     do add flag panic-room-open
@@ -319,7 +336,7 @@ trigger "Office: Insert Poems to Open Panic Room" only once when insert item vog
     do show "The machine begins to whine at a high pitch and gives off a noxious odor of burning hair. A klaxon blares and the display warns:\n\n            ⚠️ VOGON INPUT DETECTED - POETRY PANIC ROOM UNLOCKED ⚠️\n               ☣ VAPORIZING VOGON INPUT - AVOID TOXIC FUMES ☣\n\nThe whiteboard on the west wall slides to the side, revealing a vault-like door."
 }
 
-trigger "Office: Gifted Lost and Found Key" only once when enter room b-a-office {
+trigger "[Office] Gifted Lost and Found Key" only once when enter room b-a-office {
     if all(has flag got-elevator-keycard, with npc b_a_receptionist) {
         do give item lost_and_found_key to player from npc b_a_receptionist
         do show "Seeing you return with the keycard, the receptionist looks around warily and slips something into your hand, then looks directly at the lost and found box."
@@ -328,19 +345,19 @@ trigger "Office: Gifted Lost and Found Key" only once when enter room b-a-office
     }
 }
 
-trigger "Office: Lost and Found Unlocked" only once when unlock item lost_and_found_box {
+trigger "[Office] Lost and Found Unlocked" only once when unlock item lost_and_found_box {
     do award points 3
     do add flag lost-and-found-opened
     do set item description lost_and_found_box "A sturdy metal lockbox marked 'Lost and Found'. Its lid is cracked slightly open."
 }
 
-trigger "Office: Receptionist Comment (Read Poetry)" only once when always {
+trigger "[Office] Receptionist Comment (Read Poetry)" only once when always {
     if all(has flag read-vogon-poetry, has flag status:nauseated) {
         do npc says emh "You look ill. You didn't read that poetry book, did you? That won't look good on your evaluation. The Emergency Medical Hologram on level AA-3 may be able to help."
     }
 }
 
-trigger "Office: Receptionist Comment (Broken Emitter Found)" when enter room b-a-office {
+trigger "[Office] Receptionist Comment (Broken Emitter Found)" when enter room b-a-office {
     if all(with npc b_a_receptionist, has flag mobilize-emh#0) {
         do npc says b_a_receptionist "I hear the EMH lost his emitter again. One has been turned into the Lost and Found, but I'm not sure how much good it will do you. Or him."
     }
@@ -348,21 +365,21 @@ trigger "Office: Receptionist Comment (Broken Emitter Found)" when enter room b-
 
 # ..................................................................................................................POETRY-PANIC
 
-trigger "Poetry-Panic: Acquired Elevator Keycard" only once when take item elevator_keycard {
+trigger "[Poetry-Panic] Acquired Elevator Keycard" only once when take item elevator_keycard {
     do set npc state b_a_receptionist bored
     do add flag got-elevator-keycard
 }
 
 # ..................................................................................................................LOUNGE
 
-trigger "Lounge: Rug Taken / Reveal Trapdoor" only once when take item lebowski_rug {
+trigger "[Lounge] Rug Taken / Reveal Trapdoor" only once when take item lebowski_rug {
     do reveal exit from lounge to portal-room direction down
     do add flag found-portal-room
     do award points 3
     do show "Light shines around the edges of a trap door revealed in the floor when you remove the rug. The room no longer seems tied together."
 }
 
-trigger "Lounge: Rug Burned Away" only once when act burn on item lebowski_rug {
+trigger "[Lounge] Rug Burned Away" only once when act burn on item lebowski_rug {
     do despawn item lebowski_rug
     do reveal exit from lounge to portal-room direction down
     do add flag found-portal-room
@@ -370,7 +387,7 @@ trigger "Lounge: Rug Burned Away" only once when act burn on item lebowski_rug {
     do show "When the acrid smoke clears and your eyes stop burning, you can make out a trap door revealed in the floor where the rug used to be."
 }
 
-trigger "Lounge: Brew Coffee" only once
+trigger "[Lounge] Brew Coffee" only once
 when use item coffee_machine ability turnOn
 {
     do show "The coffee machine hums to life and begins its brewing cycle. A timer shows 3 minutes remaining..."
@@ -384,7 +401,7 @@ when use item coffee_machine ability turnOn
     }
 }
 
-trigger "Lounge: Coffee Taken"
+trigger "[Lounge] Coffee Taken"
 when take item hot_coffee
 {
     do remove flag coffee-brewed
@@ -393,13 +410,13 @@ when take item hot_coffee
 
 # ..................................................................................................................LIFT-BANK-MAIN
 
-trigger "Lift-Bank-Main: Keycard Activates Elevator" when enter room lift-bank-main {
+trigger "[Lift-Bank-Main] Keycard Activates Elevator" when enter room lift-bank-main {
     if has item elevator_keycard {
         do show "The keycard in your pack chirps twice as you approach the proximity reader on the wall, which responds with a happy melody."
     }
 }
 
-trigger "Lift-Bank-Main: Point Award On First Activation" only once when enter room lift-bank-main {
+trigger "[Lift-Bank-Main] Point Award On First Activation" only once when enter room lift-bank-main {
     if has item elevator_keycard {
         do add flag elevator-activated
         do show "The main lift lights up, and Muzak plays over a tinny speaker inside. In horror, you realize: It's Porcupine Tree's 'The Sound of Muzak' -- the Muzak version."
@@ -409,12 +426,12 @@ trigger "Lift-Bank-Main: Point Award On First Activation" only once when enter r
 
 # ..................................................................................................................PORTAL-ROOM
 
-trigger "Portal-Room: Gun Opened" only once when open item portal_gun {
+trigger "[Portal-Room] Gun Opened" only once when open item portal_gun {
     do add flag portal-gun-opened
 }
 
 
-trigger "Portal-Room: Gun Powered" when insert item charged_battery into item portal_gun {
+trigger "[Portal-Room] Gun Powered" when insert item charged_battery into item portal_gun {
     do add flag portal-gun-powered
     do award points 3
     do restrict item charged_battery
@@ -422,7 +439,7 @@ trigger "Portal-Room: Gun Powered" when insert item charged_battery into item po
     do show "Arcing wildly as you insert it, the fully charged 20 KV battery fuses itself to the contacts inside the portal gun -- when then emits a quick high-pitched whine. The POWER indicator lights a steady green."
 }
 
-trigger "Portal-Room: Gun Fired / Open Portal" only once when use item portal_gun ability turnOn {
+trigger "[Portal-Room] Gun Fired / Open Portal" only once when use item portal_gun ability turnOn {
     if has flag portal-gun-powered {
         do reveal exit from portal-room to aperture-lab direction portal
         do add flag portal-opened
@@ -431,7 +448,7 @@ trigger "Portal-Room: Gun Fired / Open Portal" only once when use item portal_gu
     }
 }
 
-trigger "Portal-Room: Tried Gun Without Power" when use item portal_gun ability turnOn {
+trigger "[Portal-Room] Tried Gun Without Power" when use item portal_gun ability turnOn {
     if missing flag portal-gun-powered {
         do show "You attempt to turn the portal gun on, but the POWER light briefly flashes red, then goes dark. Nothing else happens."
     }
@@ -439,7 +456,7 @@ trigger "Portal-Room: Tried Gun Without Power" when use item portal_gun ability 
 
 # ..................................................................................................................APERTURE-LAB
 
-trigger "Aperture-Lab: Printer Burns Paper" when use item lab_printer ability turnOn {
+trigger "[Aperture-Lab] Printer Burns Paper" when use item lab_printer ability turnOn {
     if container lab_printer has item printer_paper {
         do despawn item printer_paper
         do add flag burned-invitation
@@ -450,7 +467,7 @@ trigger "Aperture-Lab: Printer Burns Paper" when use item lab_printer ability tu
     }
 }
 
-trigger "Aperture-Lab: Print Invitation on Asbestos" only once when use item lab_printer ability turnOn {
+trigger "[Aperture-Lab] Print Invitation on Asbestos" only once when use item lab_printer ability turnOn {
     if container lab_printer has item asbestos_sheet {
         do add flag invitation-sans-ignition
         do award points 10
@@ -463,7 +480,7 @@ trigger "Aperture-Lab: Print Invitation on Asbestos" only once when use item lab
     }
 }
 
-trigger "Aperture-Lab: FoamSafe Misfire" only once when use item foamsafe_x17 on item burnt_invitation interaction extinguish {
+trigger "[Aperture-Lab] FoamSafe Misfire" only once when use item foamsafe_x17 on item burnt_invitation interaction extinguish {
     do despawn item foamsafe_x17
     do show "You spray the foam onto the burning invitation. Instead of dousing the flame, the foam flares up into a spectacular fireball!"
     do add seq flag foam-fire-in-lab limit 3
@@ -485,18 +502,18 @@ trigger "Aperture-Lab: FoamSafe Misfire" only once when use item foamsafe_x17 on
     }
 }
 
-trigger "Aperture-Lab: Can't Enter While Lab On Fire" when enter room aperture-lab {
+trigger "[Aperture-Lab] Can't Enter While Lab On Fire" when enter room aperture-lab {
     if flag in progress foam-fire-in-lab {
         do show "You try to get back into the lab, but the flames and oily smoke from the foam fire drive you back through the portal within seconds."
         do push player to portal-room
     }
 }
 
-trigger "Aperture-Lab: Insulate With Towel" when use item towel on item invitation interaction handle {
+trigger "[Aperture-Lab] Insulate With Towel" when use item towel on item invitation interaction handle {
     do show "You wrap your towel around the still-piping-hot invitation to grasp it, suffering only minor burns in the process."
 }
 
-trigger "Aperture-Lab: Handle/Take Invitation with Towel" only once when act handle on item invitation {
+trigger "[Aperture-Lab] Handle/Take Invitation with Towel" only once when act handle on item invitation {
     do despawn item invitation
     do spawn item invitation in inventory
     do add flag got-invitation
@@ -504,50 +521,50 @@ trigger "Aperture-Lab: Handle/Take Invitation with Towel" only once when act han
     do show "Using your towel as insulation, you're able to wrangle the still-hot invitation into your pack."
 }
 
-trigger "Aperture-Lab: Drop Invitation Without Insulation" when take item invitation {
+trigger "[Aperture-Lab] Drop Invitation Without Insulation" when take item invitation {
     do replace drop item invitation with invitation
     do show "You burn your fingers and drop the invitation on the floor. It emits a reddish glow, and shimmers from the radiating heat."
 }
 
 # ..................................................................................................................SUBLEVEL-1-ENTRANCE
-trigger "Sublevel-1-Entrance: Arrived" only once when enter room sublevel-1-entrance {
+trigger "[Sublevel-1-Entrance] Arrived" only once when enter room sublevel-1-entrance {
     do add flag entered-sublevel-1
 }
 
-trigger "Sublevel-1-Entrance: Refuse Visitor Pass" when give item visitor_pass to npc black_knight {
+trigger "[Sublevel-1-Entrance] Refuse Visitor Pass" when give item visitor_pass to npc black_knight {
     do npc refuse item black_knight "Ha! You may be Arthur, King of the Britons... but I said NONE shall pass. Surely you speak the King's English!"
 }
 
-trigger "Sublevel-1-Entrance: Meet the Black Knight" only once when talk to npc black_knight {
+trigger "[Sublevel-1-Entrance] Meet the Black Knight" only once when talk to npc black_knight {
     do add flag talked-to-knight
     do npc says black_knight "You shall not pass. This wing is closed... and may not exist at all. Begone!"
 }
 
-trigger "Sublevel-1-Entrance: Taking Sword Angers Knight" when take item dull_longsword from npc black_knight {
+trigger "[Sublevel-1-Entrance] Taking Sword Angers Knight" when take item dull_longsword from npc black_knight {
     do set npc state black_knight mad
     do npc says black_knight "Wha-- HEY! Give that back, you -- you -- cowardly cur!"
 }
 
-trigger "Sublevel-1-Entrance: Return Dull Sword to Knight" when give item dull_longsword to npc black_knight {
+trigger "[Sublevel-1-Entrance] Return Dull Sword to Knight" when give item dull_longsword to npc black_knight {
     do npc says black_knight "Right. Now don't do it again, or I shall be forced to bludgeon you with it. You still may not pass."
     do set npc state black_knight normal
 }
 
-trigger "Sublevel-1-Entrance: Sharpen Knight's Sword" only once when act sharpen on item dull_longsword {
+trigger "[Sublevel-1-Entrance] Sharpen Knight's Sword" only once when act sharpen on item dull_longsword {
     do replace item dull_longsword with keen_longsword
     do show "After years of sharpening Ginsu knives to cut open aluminum cans and tomatoes, you have no problem honing the Black Knight's sword to a keen edge."
     do add flag sword-sharpened
     do award points 3
 }
 
-trigger "Sublevel-1-Entrance: Black Knight Kicks Player After Sword Taken" when always {
+trigger "[Sublevel-1-Entrance] Black Knight Kicks Player After Sword Taken" when always {
     if all(with npc black_knight, npc in state black_knight mad, missing flag appeased-black-knight) {
         do show "The Black Knight prances around the room, occasionally trying to kick you in the shins."
         do npc random dialogue black_knight
     }
 }
 
-trigger "Sublevel-1-Entrance: Sharpened Sword Returned" only once
+trigger "[Sublevel-1-Entrance] Sharpened Sword Returned" only once
 when give item keen_longsword to npc black_knight
 {
     do restrict item keen_longsword
@@ -558,7 +575,7 @@ when give item keen_longsword to npc black_knight
     do npc says black_knight "hank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like."
 }
 
-trigger "Sublevel-1-Entrance: Black Knight Hints About Vending Machine" only once
+trigger "[Sublevel-1-Entrance] Black Knight Hints About Vending Machine" only once
 when always
 {
     if all(with npc black_knight, flag in progress hal-reboot) {
@@ -568,20 +585,20 @@ when always
 
 # ..................................................................................................................SECURITY_STATION
 
-trigger "Security-Station: Pry Evidence Locker Open" only once when act open on item evidence_locker_closed {
+trigger "[Security-Station] Pry Evidence Locker Open" only once when act open on item evidence_locker_closed {
     do replace item evidence_locker_closed with evidence_locker_open
     do show "Using all your weight, all your might, and most of your reserved F-bomb arsenal you pry the locker open, leaving the door barely attached."
     do award points 2
 }
 
-trigger "Security-Station: Take Sonic Screwdriver" only once when take item sonic_screwdriver {
+trigger "[Security-Station] Take Sonic Screwdriver" only once when take item sonic_screwdriver {
     do add flag got-sonic
     do award points 3
 }
 
 # ..................................................................................................................MED-BAY
 
-trigger "Med-Bay: EMH/Cure Nausea" when talk to npc emh {
+trigger "[Med-Bay] EMH/Cure Nausea" when talk to npc emh {
     if all(has flag status:nauseated, has flag read-vogon-poetry) {
         do add flag cured-vogon-poetry
         do remove flag status:nauseated
@@ -591,7 +608,7 @@ trigger "Med-Bay: EMH/Cure Nausea" when talk to npc emh {
     }
 }
 
-trigger "Med-Bay: Talk to EMH After Finding HAL" only once when always {
+trigger "[Med-Bay] Talk to EMH After Finding HAL" only once when always {
     if all(with npc emh, flag in progress hal-reboot) {
         do npc says emh "Ah -- I hoped I would catch you. Word is, you've seen HAL, or what remains of him. If you want to get him working again -- and I'm not sure I'd advise it -- I may be able to get one of those memory modules for you."
         do set npc state emh custom:want-emitter
@@ -605,26 +622,30 @@ trigger "Med-Bay: Talk to EMH After Finding HAL" only once when always {
     }
 }
 
-trigger "Med-Bay: EMH/Sonic Hint" only once when enter room med-bay {
+trigger "[Med-Bay] EMH/Sonic Hint" only once when enter room med-bay {
     if all(has item sonic_screwdriver, has flag mobilize-emh#1) {
         do npc says emh "Please state the nature of the med... wait -- is that a sonic screwdriver? I bet you could use that to repair my mobile emitter!"
     }
 }
 
-trigger "Med-Bay: Advance Sequence when Broken Emitter Found" only once when take item broken_emitter {
+trigger "[Med-Bay] Advance Sequence when Broken Emitter Found" only once when take item broken_emitter {
     # advance to mobilize-emh#1
     do advance flag mobilize-emh
 }
 
-trigger "Med-Bay: EMH Won't Take Broken Emitter" when give item broken_emitter to npc emh {
+trigger "[Med-Bay] EMH Won't Take Broken Emitter" when give item broken_emitter to npc emh {
     do npc refuse item emh "That's my mobile emitter all right, but it's broken. You'll need to find a way to repair it before I can help you with HAL."
 }
 
-trigger "Med-Bay: Use Sonic On Emitter" when use item sonic_screwdriver on item broken_emitter interaction repair {
+trigger "[Med-Bay] EMH Won't Take Working Emitter" when give item working_emitter to npc emh {
+    do npc refuse item emh "That's my mobile emitter all right, but it's already working. You'll need to find a way to repair it before I can help you with HAL."
+}
+
+trigger "[Med-Bay] Use Sonic On Emitter" when use item sonic_screwdriver on item broken_emitter interaction repair {
     do show "You hold the button down on the sonic. It makes electronic whirring noises while you make a few passes over the emitter."
 }
 
-trigger "Med-Bay: Repair Emitter" when act repair on item broken_emitter {
+trigger "[Med-Bay] Repair Emitter" when act repair on item broken_emitter {
     do show "After a few seconds, the emitter lights up and reboots, passing all self-tests."
     do replace item broken_emitter with working_emitter
     do award points 3
@@ -632,7 +653,7 @@ trigger "Med-Bay: Repair Emitter" when act repair on item broken_emitter {
     do advance flag mobilize-emh
 }
 
-trigger "Med-Bay: EMH/Goin' Mobile!" when give item working_emitter to npc emh {
+trigger "[Med-Bay] EMH/Goin' Mobile!" when give item working_emitter to npc emh {
     do restrict item working_emitter
     # advance to mobilize-emh #3 (finish)
     do advance flag mobilize-emh
@@ -645,7 +666,7 @@ trigger "Med-Bay: EMH/Goin' Mobile!" when give item working_emitter to npc emh {
     do add wedge "Over the PA: \"E.M.H and sanitation, please report to the lunch room. Mr. Creosote ate a tiny, wafer thin mint again.\"" width 1 spinner ambientInterior
 }
 
-trigger "Med-Bay: EMH/After HAL Rebooted" only once when always {
+trigger "[Med-Bay] EMH/After HAL Rebooted" only once when always {
     if all(with npc emh, flag complete hal-reboot) {
         do set npc state emh normal
         do npc says emh "Well, now you've done it. HAL is operational again. We'll surely regret it -- or at least *you* will."
@@ -654,7 +675,7 @@ trigger "Med-Bay: EMH/After HAL Rebooted" only once when always {
 
 # ..................................................................................................................MONOLITH_ROOM
 
-trigger "Monolith-Room: HAL/Start Reboot Sequence" only once
+trigger "[Monolith-Room] HAL/Start Reboot Sequence" only once
 when talk to npc hal_9000 {
     do add seq flag hal-reboot limit 3
     do add flag talked-to-hal
@@ -662,7 +683,7 @@ when talk to npc hal_9000 {
     do npc says hal_9000 "(when you speak, the red light in HAL's lens begins to pulse slowly, then grows steady)"
 }
 
-trigger "Monolith-Room: HAL/Module #1 Inserted" only once
+trigger "[Monolith-Room] HAL/Module #1 Inserted" only once
 when insert item hal_module_1 into item hal_memory_bank {
     do advance flag hal-reboot
     do add flag module-1-inserted
@@ -670,7 +691,7 @@ when insert item hal_module_1 into item hal_memory_bank {
     do show "Memory module #1 magnetically locks into place and lights up."
 }
 
-trigger "Monolith-Room: HAL/Module #2 Inserted" only once
+trigger "[Monolith-Room] HAL/Module #2 Inserted" only once
 when insert item hal_module_2 into item hal_memory_bank {
     do advance flag hal-reboot
     do add flag module-2-inserted
@@ -678,7 +699,7 @@ when insert item hal_module_2 into item hal_memory_bank {
     do show "Memory module #2 magnetically locks into place and lights up."
 }
 
-trigger "Monolith-Room: HAL/Module #3 Inserted" only once
+trigger "[Monolith-Room] HAL/Module #3 Inserted" only once
 when insert item hal_module_3 into item hal_memory_bank {
     do advance flag hal-reboot
     do add flag module-3-inserted
@@ -686,21 +707,21 @@ when insert item hal_module_3 into item hal_memory_bank {
     do show "Memory module #3 magnetically locks into place and lights up."
 }
 
-trigger "Monolith-Room: HAL/One Module In"
+trigger "[Monolith-Room] HAL/One Module In"
 when always {
     if has flag hal-reboot#1 {
         do set npc state hal_9000 custom:memory-1
     }
 }
 
-trigger "Monolith-Room: HAL/Two Modules In"
+trigger "[Monolith-Room] HAL/Two Modules In"
 when always {
     if has flag hal-reboot#2 {
         do set npc state hal_9000 custom:memory-2
     }
 }
 
-trigger "Monolith-Room: HAL/All Modules In" only once
+trigger "[Monolith-Room] HAL/All Modules In" only once
 when always {
     if flag complete hal-reboot {
         do award points 10
@@ -709,7 +730,16 @@ when always {
     }
 }
 
-trigger "Monolith-Room: Announce Monolith Access After HAL Rebooted" only once
+trigger "[Monolith-Room] HAL/All Modules In" only once
+when always {
+    if flag complete hal-reboot {
+        do award points 10
+        do set npc state hal_9000 custom:memory-3
+        do show "All memory now restored, HAL-9000 finishes rebooting and is fully operational."
+    }
+}
+
+trigger "[Monolith-Room] Announce Monolith Access After HAL Rebooted" only once
 when always
 {
     if all(flag complete hal-reboot, with npc hal_9000) {
@@ -718,7 +748,7 @@ when always
     }
 }
 
-trigger "Monolith-Room: Monolith Touch Prevented (HAL not ready)"
+trigger "[Monolith-Room] Monolith Touch Prevented (HAL not ready)"
 when use item monolith ability turnOn
 {
     if any(has flag hal-reboot#0, has flag hal-reboot#1) {
@@ -737,7 +767,7 @@ when use item monolith ability turnOn
 
 # ------------------------------------------------------------------------------------------------------------------HINT TRIGGERS
 
-trigger "Aperture-Lab: Invitation Hint" only once when always {
+trigger "[Hint] Invitation Hint" only once when always {
     if has flag got-invitation {
         do schedule in 10 if all(has flag got-invitation, missing flag got-visitor-pass, has visited room b-a-office) onFalse cancel note "invitation hint" {
             do show "The invitation has cooled down enough now for you to give it to the receptionist in the Amble Adventures office ... maybe she'll help you now."
@@ -745,7 +775,7 @@ trigger "Aperture-Lab: Invitation Hint" only once when always {
     }
 }
 
-trigger "Towel / Plaque Hint" only once when take item towel {
+trigger "[Hint] Towel / Plaque Hint" only once when take item towel {
     do add flag got-towel
     do award points 3
     do show "NOW you're a frood who really \"knows where his towel is\"!"
@@ -757,35 +787,35 @@ trigger "Towel / Plaque Hint" only once when take item towel {
 # ------------------------------------------------------------------------------------------------------------------AMBIENT TRIGGERS
 
 let set woods = (high-ridge, parish-landing, two-sheds-landing, two-sheds, guard-post)
-trigger "Ambient Woodland" when always {
+trigger "[Ambient] Woodland" when always {
     if all(chance 20%, in rooms woods) {
         do spinner message ambientWoodland
     }
 }
 
 let set snowfield = (snowfield, snow-camp)
-trigger "Ambient Snowfield" when always {
+trigger "[Ambient] Snowfield" when always {
     if all(chance 20%, in rooms snowfield) {
         do spinner message ambientSnowfield
     }
 }
 
 let set elevator = (lift-main, lift-sublevel-1)
-trigger "Elevator Muzak" when always {
+trigger "[Ambient] Elevator Muzak" when always {
     if all(chance 30%, in rooms elevator) {
         do spinner message muzak
     }
 }
 
 let set near_aa3b = (lift-sublevel-1, sublevel-1-entrance, corridor-north, corridor-south, observation-room, security-station, med-bay, monolith-room)
-trigger "Ambient: Near AA-3B" when always {
+trigger "[Ambient] Near AA-3B" when always {
     if all(chance 20%, in rooms near_aa3b) {
         do spinner message ambientAA3B
     }
 }
 
 let set main_floor = (main-lobby, b-a-office, restaurant, patio, lift-bank-main, lounge, vip-bathroom)
-trigger "Ambient: Main Floor" when always {
+trigger "[Ambient] Main Floor" when always {
     if all(chance 20%, in rooms main_floor) {
         do spinner message ambientInterior
     }
@@ -793,14 +823,14 @@ trigger "Ambient: Main Floor" when always {
 
 # ------------------------------------------------------------------------------------------------------------------STATUS EFFECT TRIGGERS
 
-trigger "Vogon Poetry Causes Nausea" when use item vogon_poetry_book ability read {
+trigger "[Status] Vogon Poetry Causes Nausea" when use item vogon_poetry_book ability read {
     do show "You nearly get through the first poem when the vomiting begins..."
     do add flag read-vogon-poetry
     do add flag status:nauseated
     do award points -1
 }
 
-trigger "Status: Nauseated" when always {
+trigger "[Status] Nauseated" when always {
     if all(has flag status:nauseated, chance 50%) {
         do spinner message nauseated
     }
@@ -808,12 +838,12 @@ trigger "Status: Nauseated" when always {
 
 # ------------------------------------------------------------------------------------------------------------------GLOBAL (NO SPECIFIC LOCATION)
 
-trigger "Global: Arson-Aid Used" only once
+trigger "[Global] Arson-Aid Used" only once
 when use item flamethrower ability ignite {
     do show "The Initech Arson-Aid melts down into an amorphous, hissing blob. As expected."
 }
 
-trigger "Global: Open Delivery Box" only once
+trigger "[Global] Open Delivery Box" only once
 when open item delivery_box {
     do despawn item delivery_box
     do spawn item destroyed_box in current room
@@ -821,13 +851,13 @@ when open item delivery_box {
     do show "The box sighs and collapses in a heap as soon as you touch it, relieved that its mission is over. Inside, you find a nanotruss-reinforced tachyon-powered towel with an attached note:\n\n                Always be a frood who knows where his towel is.\n                                -- F.P."
 }
 
-trigger "Global: Take Vogon Poetry"
+trigger "[Global] Take Vogon Poetry"
 when take item vogon_poetry_book
 {
     do show "A greasy feeling of nausea overcomes you."
 }
 
-trigger "Global: Drop Vogon Poetry"
+trigger "[Global] Drop Vogon Poetry"
 when drop item vogon_poetry_book
 {
     if any(missing flag read-vogon-poetry, has flag cured-vogon-poetry) {
@@ -838,7 +868,7 @@ when drop item vogon_poetry_book
     }
 }
 
-trigger "Global: Cannot Drop No Cake"
+trigger "[Global] Cannot Drop No Cake"
 when drop item no_cake
 {
     do despawn item no_cake
@@ -848,7 +878,7 @@ when drop item no_cake
 
 # ATTACH TRIGGER PAIR  vvvvvv
 
-trigger "Global: Fishing Line (attach clip to floss)"
+trigger "[Global] Fishing Line (attach clip to floss)"
 when use item paper_clip on item dental_floss interaction attach
 {
     do despawn item paper_clip
@@ -857,7 +887,7 @@ when use item paper_clip on item dental_floss interaction attach
     do show "You MacGyvered the floss and paper clip into a fishing line!"
     do award points 3
 }
-trigger "Global: Fishing Line (attach floss to clip)"
+trigger "[Global] Fishing Line (attach floss to clip)"
 when use item dental_floss on item paper_clip interaction attach
 {
     do despawn item paper_clip
