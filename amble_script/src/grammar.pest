@@ -71,6 +71,7 @@ keyword = {
   | "when_consumed"
   | "inventory"
   | "current"
+  | "requires"
   | "has"
   | "missing"
   | "visited"
@@ -333,17 +334,17 @@ item_ability         = { "ability" ~ ident ~ ident? }
 item_text            = { "text" ~ string }
 item_restricted      = { "restricted" ~ boolean }
 // Change syntax to: requires <ability> to <interaction>
-item_requires = { "requires" ~ ident ~ "to" ~ ident }
-item_consumable      = { "consumable" ~ consumable_block }
+item_requires   = { "requires" ~ ident ~ "to" ~ ident }
+item_consumable = { "consumable" ~ consumable_block }
 
-consumable_block     = { "{" ~ (WHITESPACE* ~ consumable_stmt)* ~ WHITESPACE* ~ "}" }
-consumable_stmt      = { consumable_uses | consumable_consume_on | consumable_when_consumed }
-consumable_uses      = { "uses_left" ~ number }
-consumable_consume_on = { "consume_on" ~ "ability" ~ ident ~ (WHITESPACE+ ~ consumable_target_ident)? }
-consumable_target_ident = { !("when_consumed" ~ !ident_char) ~ ident_char+ }
-consumable_when_consumed = { "when_consumed" ~ (consume_despawn | consume_replace_inventory | consume_replace_current_room) }
-consume_despawn            = { "despawn" }
-consume_replace_inventory  = { "replace" ~ "inventory" ~ ident }
+consumable_block             = { "{" ~ (WHITESPACE* ~ consumable_stmt)* ~ WHITESPACE* ~ "}" }
+consumable_stmt              = { consumable_uses | consumable_consume_on | consumable_when_consumed }
+consumable_uses              = { "uses_left" ~ number }
+consumable_consume_on        = { "consume_on" ~ "ability" ~ ident ~ (WHITESPACE+ ~ consumable_target_ident)? }
+consumable_target_ident      = { !("when_consumed" ~ !ident_char) ~ ident_char+ }
+consumable_when_consumed     = { "when_consumed" ~ (consume_despawn | consume_replace_inventory | consume_replace_current_room) }
+consume_despawn              = { "despawn" }
+consume_replace_inventory    = { "replace" ~ "inventory" ~ ident }
 consume_replace_current_room = { "replace" ~ "current" ~ "room" ~ ident }
 
 // -----------------
