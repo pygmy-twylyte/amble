@@ -293,6 +293,11 @@ pub enum ActionAst {
         actions: Vec<ActionAst>,
         note: Option<String>,
     },
+    /// Conditionally execute nested actions when the condition evaluates true at runtime.
+    Conditional {
+        condition: Box<ConditionAst>,
+        actions: Vec<ActionAst>,
+    },
 }
 
 /// Policy to apply when a scheduled condition evaluates to false at fire time.
@@ -1596,6 +1601,17 @@ fn action_to_value(a: &ActionAst) -> toml_edit::Value {
             }
             toml_edit::Value::from(t)
         },
+        ActionAst::Conditional { condition, actions } => {
+            let mut t = InlineTable::new();
+            t.insert("type", toml_edit::Value::from("conditional"));
+            t.insert("condition", event_condition_value(condition));
+            let mut arr = Array::default();
+            for ia in actions {
+                arr.push(action_to_value(ia));
+            }
+            t.insert("actions", toml_edit::Value::from(arr));
+            toml_edit::Value::from(t)
+        },
         ActionAst::NpcSays { npc, quote } => {
             let mut t = InlineTable::new();
             t.insert("type", toml_edit::Value::from("npcSays"));
@@ -2388,6 +2404,30 @@ trigger "schedule demo" when enter room lab {
         assert!(toml.contains("on_turn = 20"));
         assert!(toml.contains("type = \"cancel\""));
         assert!(toml.contains("type = \"awardPoints\""));
+    }
+
+    #[test]
+    fn parse_schedule_with_inner_if_blocks_emits_conditional_actions() {
+        let src = r#"
+trigger "gnat punctuation" when leave room high-ridge {
+  do schedule in 2 if in rooms woods onFalse retryNextTurn note "gnats" {
+    if missing flag read-scrawled-note {
+      do show "first"
+    }
+    if has flag read-scrawled-note {
+      do show "second"
+    }
+  }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        let toml = compile_trigger_to_toml(&ast).expect("compile ok");
+        let conditional_count = toml.match_indices("type = \"conditional\"").count();
+        assert_eq!(conditional_count, 2, "expected two conditional actions:\n{}", toml);
+        assert!(toml.contains("type = \"missingFlag\""));
+        assert!(toml.contains("type = \"hasFlag\""));
+        assert!(toml.contains("text = \"first\""));
+        assert!(toml.contains("text = \"second\""));
     }
 
     #[test]

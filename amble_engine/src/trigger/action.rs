@@ -208,6 +208,11 @@ pub enum TriggerAction {
     UnlockExit { from_room: Uuid, direction: String },
     /// Unlocks a container item
     UnlockItem(Uuid),
+    /// Conditionally run nested actions when the condition evaluates to true.
+    Conditional {
+        condition: EventCondition,
+        actions: Vec<TriggerAction>,
+    },
     /// Schedules a list of actions to fire after a specified number of turns
     ScheduleIn {
         turns_ahead: usize,
@@ -293,6 +298,13 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
         AddFlag(flag) => add_flag(world, view, flag),
         RemoveFlag(flag) => remove_flag(world, view, flag),
         AwardPoints(amount) => award_points(world, view, *amount),
+        Conditional { condition, actions } => {
+            if condition.eval(world) {
+                for nested in actions {
+                    dispatch_action(world, view, nested)?;
+                }
+            }
+        },
         ScheduleIn {
             turns_ahead,
             actions,
@@ -2087,6 +2099,45 @@ mod tests {
         assert_eq!(event.on_turn, 50);
         assert_eq!(event.actions.len(), 2);
         assert_eq!(event.note, None);
+    }
+
+    #[test]
+    fn dispatch_action_conditional_executes_nested_actions_when_condition_true() {
+        let (mut world, _, _) = build_test_world();
+        let mut view = View::new();
+
+        let action = TriggerAction::Conditional {
+            condition: EventCondition::Trigger(TriggerCondition::MissingFlag("hint".into())),
+            actions: vec![TriggerAction::ShowMessage("Conditional fired".into())],
+        };
+
+        dispatch_action(&mut world, &mut view, &action).unwrap();
+
+        assert!(
+            view.items
+                .iter()
+                .any(|vi| matches!(vi, ViewItem::TriggeredEvent(msg) if msg.contains("Conditional fired")))
+        );
+    }
+
+    #[test]
+    fn dispatch_action_conditional_skips_actions_when_condition_false() {
+        let (mut world, _, _) = build_test_world();
+        world.player.flags.insert(Flag::simple("hint".into(), world.turn_count));
+        let mut view = View::new();
+
+        let action = TriggerAction::Conditional {
+            condition: EventCondition::Trigger(TriggerCondition::MissingFlag("hint".into())),
+            actions: vec![TriggerAction::ShowMessage("Should not appear".into())],
+        };
+
+        dispatch_action(&mut world, &mut view, &action).unwrap();
+
+        assert!(
+            view.items
+                .iter()
+                .all(|vi| !matches!(vi, ViewItem::TriggeredEvent(msg) if msg.contains("Should not appear")))
+        );
     }
 
     #[test]

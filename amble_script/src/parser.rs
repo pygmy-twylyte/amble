@@ -250,9 +250,7 @@ fn parse_trigger_pair(
         },
         Rule::ingest_item => {
             let mut i = when.into_inner();
-            let mode_pair = i
-                .next()
-                .ok_or(AstError::Shape("ingest mode"))?;
+            let mode_pair = i.next().ok_or(AstError::Shape("ingest mode"))?;
             let mode = match mode_pair.as_str() {
                 "eat" => IngestModeAst::Eat,
                 "drink" => IngestModeAst::Drink,
@@ -402,8 +400,8 @@ fn parse_trigger_pair(
         }
         // Top-level do schedule ... or do ... line
         if inner[i..].starts_with("do schedule in ") || inner[i..].starts_with("do schedule on ") {
-            let (actions, used) = parse_schedule_with_if_blocks(&inner[i..], source, smap, sets)?;
-            unconditional_actions.extend(actions);
+            let (action, used) = parse_schedule_action(&inner[i..], source, smap, sets)?;
+            unconditional_actions.push(action);
             i += used;
             continue;
         }
@@ -2262,9 +2260,42 @@ fn parse_actions_from_body(
             }
             continue;
         }
+        if body[i..].starts_with("if ") {
+            let if_pos = i;
+            let rest = &body[if_pos + 3..];
+            let brace_rel = rest.find('{').ok_or(AstError::Shape("missing '{' after if"))?;
+            let cond_text = rest[..brace_rel].trim();
+            let cond = match parse_condition_text(cond_text, sets) {
+                Ok(c) => c,
+                Err(AstError::Shape(m)) => {
+                    let base = str_offset(source, body);
+                    let cond_abs = base + (cond_text.as_ptr() as usize - body.as_ptr() as usize);
+                    let (line_no, col) = smap.line_col(cond_abs);
+                    let snippet = smap.line_snippet(line_no);
+                    return Err(AstError::ShapeAt {
+                        msg: m,
+                        context: format!(
+                            "line {line_no}, col {col}: {snippet}\n{}^",
+                            " ".repeat(col.saturating_sub(1))
+                        ),
+                    });
+                },
+                Err(e) => return Err(e),
+            };
+            let block_after = &rest[brace_rel..];
+            let inner_body = extract_body(block_after)?;
+            let actions = parse_actions_from_body(inner_body, source, smap, sets)?;
+            out.push(ActionAst::Conditional {
+                condition: Box::new(cond),
+                actions,
+            });
+            let consumed = brace_rel + 1 + inner_body.len() + 1;
+            i = if_pos + 3 + consumed;
+            continue;
+        }
         if body[i..].starts_with("do schedule in ") || body[i..].starts_with("do schedule on ") {
-            let (actions, used) = parse_schedule_with_if_blocks(&body[i..], source, smap, sets)?;
-            out.extend(actions);
+            let (action, used) = parse_schedule_action(&body[i..], source, smap, sets)?;
+            out.push(action);
             i += used;
             continue;
         }
@@ -2441,201 +2472,6 @@ fn parse_schedule_action(
         },
     };
     Ok((act, consumed))
-}
-
-fn parse_schedule_with_if_blocks(
-    text: &str,
-    source: &str,
-    smap: &SourceMap,
-    sets: &HashMap<String, Vec<String>>,
-) -> Result<(Vec<ActionAst>, usize), AstError> {
-    // First, check if this schedule block contains if-blocks by looking at the body
-    let s = text.trim_start();
-    let (rest0, is_in) = if let Some(r) = s.strip_prefix("do schedule in ") {
-        (r, true)
-    } else if let Some(r) = s.strip_prefix("do schedule on ") {
-        (r, false)
-    } else {
-        return Err(AstError::Shape("not a schedule action"));
-    };
-
-    // Parse number
-    let mut idx = 0usize;
-    while idx < rest0.len() && rest0.as_bytes()[idx].is_ascii_digit() {
-        idx += 1;
-    }
-    if idx == 0 {
-        return Err(AstError::Shape("schedule missing number"));
-    }
-    let num: usize = rest0[..idx]
-        .parse()
-        .map_err(|_| AstError::Shape("invalid schedule number"))?;
-    let rest1 = &rest0[idx..].trim_start();
-
-    // Find the opening brace of the block and capture header between number and '{'
-    let brace_pos = rest1.find('{').ok_or(AstError::Shape("schedule missing '{'"))?;
-    let header = rest1[..brace_pos].trim();
-
-    // If there's already a condition in the header, just delegate to the regular parser
-    if header.starts_with("if ") {
-        return parse_schedule_action(text, source, smap, sets).map(|(act, used)| (vec![act], used));
-    }
-
-    // Parse note from header if present
-    let note = if !header.is_empty() { extract_note(header) } else { None };
-
-    // Extract block body
-    let mut p = brace_pos + 1;
-    let bytes2 = rest1.as_bytes();
-    let mut depth = 1i32;
-    while p < rest1.len() {
-        let c = bytes2[p] as char;
-        if c == '{' {
-            depth += 1;
-        } else if c == '}' {
-            depth -= 1;
-            if depth == 0 {
-                break;
-            }
-        }
-        p += 1;
-    }
-    if depth != 0 {
-        return Err(AstError::Shape("schedule block not closed"));
-    }
-    let inner_body = &rest1[brace_pos + 1..p];
-    let consumed = s.len() - rest1[p + 1..].len();
-
-    // Check if the body actually contains if-statements
-    if !inner_body.contains("if ") {
-        // No if-statements, delegate to regular parser
-        return parse_schedule_action(text, source, smap, sets).map(|(act, used)| (vec![act], used));
-    }
-
-    // Debug output
-
-    // Parse the body and separate if-blocks from unconditional actions
-    let mut result_actions = Vec::new();
-    let mut unconditional_lines = Vec::new();
-
-    let lines: Vec<&str> = inner_body.lines().collect();
-    let mut i = 0;
-
-    while i < lines.len() {
-        let line = lines[i].trim();
-
-        if line.is_empty() || line.starts_with('#') {
-            i += 1;
-            continue;
-        }
-
-        if line.starts_with("if ") {
-            // Parse if block
-            let mut if_condition = line[3..].trim();
-            let mut j = i + 1;
-            let mut brace_found = false;
-
-            // Look for opening brace (might be on same line or next line)
-            if let Some(brace_pos) = if_condition.find('{') {
-                if_condition = &if_condition[..brace_pos].trim();
-                brace_found = true;
-            } else {
-                // Look for brace on subsequent lines
-                while j < lines.len() && !brace_found {
-                    let next_line = lines[j].trim();
-                    if next_line == "{" {
-                        brace_found = true;
-                        j += 1;
-                        break;
-                    }
-                    j += 1;
-                }
-            }
-
-            if !brace_found {
-                return Err(AstError::Shape("if block missing opening brace"));
-            }
-
-            // Parse the condition
-            let condition = parse_condition_text(if_condition, sets)?;
-
-            // Collect the body of the if block
-            let mut if_body_lines = Vec::new();
-            let mut brace_count = 1;
-
-            while j < lines.len() && brace_count > 0 {
-                let block_line = lines[j];
-                for ch in block_line.chars() {
-                    if ch == '{' {
-                        brace_count += 1;
-                    } else if ch == '}' {
-                        brace_count -= 1;
-                    }
-                }
-                if brace_count > 0 {
-                    if_body_lines.push(block_line);
-                }
-                j += 1;
-            }
-
-            // Parse actions from the if body
-            let if_body_text = if_body_lines.join("\n");
-            let if_actions = parse_actions_from_body(&if_body_text, source, smap, sets)?;
-
-            // Create conditional schedule action
-            let schedule_action = match is_in {
-                true => ActionAst::ScheduleInIf {
-                    turns_ahead: num,
-                    condition: Box::new(condition),
-                    on_false: Some(OnFalseAst::Cancel), // Default policy
-                    actions: if_actions,
-                    note: note.clone(),
-                },
-                false => ActionAst::ScheduleOnIf {
-                    on_turn: num,
-                    condition: Box::new(condition),
-                    on_false: Some(OnFalseAst::Cancel), // Default policy
-                    actions: if_actions,
-                    note: note.clone(),
-                },
-            };
-            result_actions.push(schedule_action);
-            i = j;
-            continue;
-        }
-
-        // Regular do line
-        if line.starts_with("do ") && !line.starts_with("do schedule") {
-            unconditional_lines.push(line);
-        }
-
-        i += 1;
-    }
-
-    // If we have unconditional actions, create an unconditional schedule action
-    if !unconditional_lines.is_empty() {
-        let mut unconditional_actions = Vec::new();
-        for line in unconditional_lines {
-            let action = parse_action_from_str(line)?;
-            unconditional_actions.push(action);
-        }
-
-        let schedule_action = match is_in {
-            true => ActionAst::ScheduleIn {
-                turns_ahead: num,
-                actions: unconditional_actions,
-                note: note.clone(),
-            },
-            false => ActionAst::ScheduleOn {
-                on_turn: num,
-                actions: unconditional_actions,
-                note: note.clone(),
-            },
-        };
-        result_actions.push(schedule_action);
-    }
-
-    Ok((result_actions, consumed))
 }
 
 #[allow(dead_code)]

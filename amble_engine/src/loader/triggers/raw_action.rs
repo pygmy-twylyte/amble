@@ -144,6 +144,10 @@ pub enum RawTriggerAction {
         from_room: String,
         direction: String,
     },
+    Conditional {
+        condition: RawEventCondition,
+        actions: Vec<RawTriggerAction>,
+    },
     ScheduleIn {
         turns_ahead: usize,
         actions: Vec<RawTriggerAction>,
@@ -221,6 +225,7 @@ impl RawTriggerAction {
             Self::SpawnItemInInventory { item_id } => cook_spawn_item_in_inventory(symbols, item_id),
             Self::UnlockExit { from_room, direction } => cook_unlock_exit(symbols, from_room, direction),
             Self::DenyRead { reason } => Ok(TriggerAction::DenyRead(reason.to_string())),
+            Self::Conditional { condition, actions } => cook_conditional(symbols, condition, actions),
             Self::ScheduleIn {
                 turns_ahead,
                 actions,
@@ -590,6 +595,22 @@ fn raw_on_false_to_policy(raw: &RawOnFalsePolicy) -> OnFalsePolicy {
         RawOnFalsePolicy::RetryAfter { turns } => OnFalsePolicy::RetryAfter(*turns),
         RawOnFalsePolicy::RetryNextTurn => OnFalsePolicy::RetryNextTurn,
     }
+}
+
+fn cook_conditional(
+    symbols: &SymbolTable,
+    condition: &RawEventCondition,
+    raw_actions: &[RawTriggerAction],
+) -> Result<TriggerAction> {
+    let mut cooked_actions = Vec::new();
+    for raw_action in raw_actions {
+        cooked_actions.push(raw_action.to_action(symbols)?);
+    }
+    let event_condition = raw_event_condition_to_event_condition(symbols, condition)?;
+    Ok(TriggerAction::Conditional {
+        condition: event_condition,
+        actions: cooked_actions,
+    })
 }
 
 fn cook_schedule_in_if(
