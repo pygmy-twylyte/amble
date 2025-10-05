@@ -1,0 +1,161 @@
+# ========================================
+# Building Perimeter: Useless Loading Dock
+# ========================================
+
+room loading-dock {
+    name "Useless Loading Dock"
+    desc "The so-called loading dock juts ten feet *above* the ground, with no ramp, stairs, or apparent means of access and a loading door thirty feet wide and ten inches tall. A conveyor belt runs from the building wall to the edge of the dock, then loops straight back in again without touching anything.\n\nA bronze plaque proudly identifies this as a **Bloody Stupid Johnson** project:\n'Winner of the 3rd Prize for Architectural Enthusiasm, 1973.'\n\nIt's unclear what this office ever needed to load—or who would deliver to the side of a remote building halfway up a mountain."
+    overlay if npc cmot_dibbler here {
+        normal "Dibbler paces the dock, trying to sell sausages to absent drivers."
+        happy  "Dibbler whistles, convinced the loading dock will make him rich."
+        bored  "Dibbler slumps against the dock, lamenting the lack of deliveries."
+    }
+    exit southeast -> east-of-building
+    exit southwest -> snowfield
+    exit north -> inca-road
+}
+
+# ========================================
+# Items
+# ========================================
+
+item security_locker {
+    name "Security Supply Locker"
+    desc "A heavy wooden locker marked 'AMBLE SECURITY - Authorized Use Only'. The planks are reinforced, and the it rattles faintly when nudged."
+    text "The wood comes from the strong but incredibly flammable magnesium magnolia tree."
+    portable false
+    location room loading-dock
+    container state locked
+    requires cutWood to cut
+    requires smash to break
+    requires ignite to burn
+}
+
+item crowbar {
+    name "Crowbar"
+    desc "A sturdy crowbar with the initials 'G.F.' etched near the handle grip. It looks like it could pry open doors or smash obstacles — a proper scientist’s multitool."
+    portable true
+    location nowhere "spawns@loading-dock or security_crate depending on access method"
+    ability Pry
+    ability Smash
+}
+
+item security_log {
+    name "Amble Security Log"
+    desc "A well-used notebook labeled \"Amble Security Log / Section 42\" and liberally stained with coffee, ale, and mustard."
+    portable true
+    location nowhere "may_spawn@security_crate"
+    text """March 1, 2025: New coffee machine installed. Emits mild static when brewing.
+March 2, 2025: Security camera in break room rotated 180 degrees overnight. Ed again?
+March 3, 2025: Lost and found box inventory updated. One sock, three gloves.
+March 4, 2025: Receptionist requested upgrade to sarcasm module. Denied.
+March 5, 2025: Maintenance reported light flickering in elevator. Resolved.
+
+March 6, 2025: Surge detected at AA-3B containment. Reality distortion at 14%. Not great. Not terrible.
+
+Stardate 4711.5: Unauthorized medieval figure (Black Knight) reported blocking sublevel entrance.
+Stardate 4711.8: Receptionist reports elevator keycard locked in panic room; Candidate #2112-41 melted.
+Stardate 4712.3: Droid exhibiting “gonk” vocalizations wandering main lobby. Source unknown.
+Stardate 4713.0: Poetry recitation device demanding arrest of visitor with Vogon poetry.
+Stardate 4713.7: Candidate #2112-42 en route. Receptionist instructed to increase scrutiny.
+Stardate 4714.2: Staff experiencing deja vu from alternate realities. Report forwarded to Neo.
+"""
+    ability Read
+}
+
+item burned_security_log {
+    name "Amble Security Log"
+    desc "This appears to have once been a security event log for the building and dock, but is now better described as a security charcoal briquet."
+    portable true
+    location nowhere "may_spawn@security_crate or loading-dock"
+}
+
+item strange_liquid {
+    name "Strange Liquid"
+    desc "A glass vial, unnaturally cold to the touch, containing a dark liquid that seems to reach for the warmth of your fingers."
+    portable true
+    location nowhere "may_spawn@loading-dock or security_crate"
+    ability Drink
+    consumable {
+        uses_left 1
+        consume_on ability Drink
+        when_consumed despawn
+    }
+}
+
+item shattered_vial {
+    name "Shattered Vial"
+    desc "Some shards of glass that used to be a vial of liquid, but whatever what inside has drained away."
+    portable false
+    location nowhere "may_spawn@loading-dock"
+}
+
+item initech_mug {
+    name "Initech Anti-Spill Mug"
+    desc "A coffee mug bearing the Initech logo with a complex seal on top, requiring the use of both hands and a spotter to drink from it or fill it. There's an inscription on the bottom."
+    portable true
+    location nowhere "spawns@loading-dock or security_crate"
+    text """To: CMOT, A Kindred Spirit
+From: Your Initech Rep
+"""
+    ability Read
+}
+
+item delivery_box {
+    name "Special Delivery"
+    desc "A cardboard box affixed with several shipping labels and beaten into a barely recognizable shape. It would probably fall apart completely if you tried to open it. One of the stickers reads \"Fragile: Handle with Care!\" and another is addressed to YOU at Amble Adventures headquarters."
+    portable true
+    location nowhere "spawns@loading-dock after first leaving"
+    container state closed
+}
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Loading-Dock] Spawn Special Delivery" only once when leave room loading-dock {
+    do spawn item delivery_box into room loading-dock
+    do show "You hear a thud behind you, back toward the dock, like something was just dropped off. You glimpse a drone flying away quickly, as if hoping not to be seen. Was that an Initech logo on the side?"
+}
+
+trigger "[Loading-Dock] Open Security Crate (Key)" only once when unlock item security_locker {
+    do spawn item crowbar into container security_locker
+    do spawn item security_log into container security_locker
+    do spawn item strange_liquid into container security_locker
+    do spawn item initech_mug into container security_locker
+    do add flag unlocked-security-crate
+    do show "The ear wax on the tip of the key eases it into the rusted lock, which snaps open with a satisfying clunk."
+}
+
+trigger "[Loading-Dock] Open Security Crate (Break)" only once when act break on item security_locker {
+    if missing flag unlocked-security-crate {
+        do despawn item security_locker
+        do spawn item crowbar in current room
+        do spawn item security_log in current room
+        do spawn item shattered_vial in current room
+        do spawn item initech_mug in current room
+        do show "With a few hefty blows, you manage to break the lock haft completely off of the security locker -- well after a few misses had already caved in the lid and destroyed it, but you were having fun. It looks like you broke a couple of the items that were inside in the process."
+        do add wedge "PA Announcement: 'Someone broke into the security locker on the dock. Mind your belongings and report any suspicious activity to security.'" width 1 spinner ambientInterior
+    }
+}
+
+trigger "[Loading-Dock] Open Security Crate (Burn)" only once when act burn on item security_locker {
+    if missing flag unlocked-security-crate {
+        do despawn item security_locker
+        do spawn item crowbar in current room
+        do spawn item burned_security_log in current room
+        do spawn item strange_liquid in current room
+        do spawn item initech_mug in current room
+        do show "WHOOOOOMP! The locker, which you now realize may have been made from the solid magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking your eyebrows with it. It looks like *some* of the items inside weren't flammable."
+        do add wedge "PA Announcement: 'Someone used an Arson-Aid to torch the security locker at the loading dock. An investigation is underway. Report anyone with scorched clothes or missing eyebrows to security.'" width 1 spinner ambientInterior
+    }
+}
+
+trigger "[Loading-Dock] Got Crowbar" only once when take item crowbar {
+    do show "You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?"
+    do add flag got-crowbar
+    do award points 3
+    do schedule in 2 note "notice fiction bleed" {
+        do show "... and then you wonder why you're thinking of Barney as a real person instead of a character in a game. And Gordon, for that matter. Wait, he was just *fiction*, right? Come to think of it, you feel a little unsure of reality, and it's worse the nearer you are to the building."
+    }
+}

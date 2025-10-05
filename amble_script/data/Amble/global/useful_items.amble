@@ -30,6 +30,11 @@ item arson_aid {
     ability Read
 }
 
+trigger "[Global] Arson-Aid Used" only once
+when use item arson_aid ability ignite {
+    do show "The Initech Arson-Aid melts down into an amorphous, hissing blob. As expected."
+}
+
 item melted_arson_aid {
     name "Metallic Blob"
     desc "An irregular blob of metal and melted plastic that used to be an Initech Arson-Aid. Useless now. You can still just read the last step of the instructions on the side."
@@ -50,4 +55,27 @@ item lumberjack_axe {
     location room two-sheds
     ability CutWood
     ability Smash
+}
+
+# ========================================
+# Towel
+# ========================================
+
+item towel {
+    name "Towel"
+    desc "A plain, white nuclear bath towel with plooksilk stitching, fully charged."
+    portable true
+    location nowhere "spawns@player when delivery_box is opened"
+    ability Insulate
+    ability Clean
+}
+
+trigger "[Hint] Towel / Plaque-1 Hint" only once when take item towel {
+    do add flag got-towel
+    do award points 3
+    do show "NOW you're a frood who really \"knows where his towel is\"!"
+    do schedule in 10 if all(has item towel, missing flag read-plaque-1, has flag tried-read-plaque-1)
+    note "hint: towels can clean things" {
+        do show "Towels can be awfully handy for cleaning grimy things. Just sayin'."
+    }
 }

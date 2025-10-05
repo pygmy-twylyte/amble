@@ -122,11 +122,3 @@ goal find-hal-module-2 {
     start when flag in progress hal-reboot
     done when has flag found-module-2
 }
-
-goal get-a-towel {
-    name "Find a Towel"
-    desc "No adventurer should ever be without one. In fact, the security bot at the building entrance seems adamant that you have one before you're permitted to enter."
-    group required
-    start when reached room front-entrance
-    done when has flag got-towel
-}

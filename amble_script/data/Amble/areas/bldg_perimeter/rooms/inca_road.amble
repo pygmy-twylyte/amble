@@ -1,0 +1,20 @@
+# ========================================
+# Building Perimeter: Inca Road
+# ========================================
+
+room inca-road {
+    name "Inca Road"
+    desc "An ancient road of broken and uneven stones winds precariously along the mountainside, half-swallowed by time and weeds. North of here, a river's rocky rapid rushes westward through the gorge.\n\nTo the south lies a trim, modern lawn with an improbably square footprint. It leads up toward a squat commercial building that seems to have landed here by accident."
+    exit "across the lawn" -> loading-dock
+    exit "down the slope" -> guard-post
+}
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Inca-Road] Traveling Without Towel" only once when enter room inca-road {
+    if missing item towel {
+        do show "You pause here, realizing with increasing concern that you are traveling without a towel."
+    }
+}

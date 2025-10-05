@@ -1,0 +1,52 @@
+# ========================================
+# Global: "Anywhere" Events
+# ========================================
+#
+# This is for events that may start anywhere, depending on where the player takes a particular action.
+#
+
+# ========================================
+# Strange Liquid
+# ========================================
+
+trigger "Drink the Strange Liquid"
+note "trip daisies for a few turns with foreshadowing"
+when drink item strange_liquid {
+    do add flag status:tripping
+    do show "The strange liquid feels incredibly cold as it spreads slowly down your esophagus, then you start to... see things."
+    do schedule in 2 {
+        do show "<Vision> A see-through doctor takes a tool from another doctor, then turns to face you with one glowing red eye."
+    }
+    do schedule in 4 {
+        do show r#"<Vision> A scientist peers into a vending machine. Someone shouts,"Gordon!" and he turns around, focusing on you with one red eye."#
+    }
+    do schedule in 6 {
+        do show r#"<Vision> A shifty man with a red light behind one pupil hands you a hot dog, but electronic bits inside the casing nearly break your teeth when you bite into it."#
+    }
+    do schedule in 7 {
+        do remove flag status:tripping
+        do award points 5
+    }
+    do schedule in 20 if missing flag appeased-black-knight onFalse cancel {
+        do show "<Flashback> A medieval knight smilese as he slices aluminum cans and tomatoes with his sword."
+    }
+}
+
+# ========================================
+# Special Delivery
+# ========================================
+
+trigger "[Global] Open Delivery Box" only once
+when open item delivery_box {
+    do despawn item delivery_box
+    do spawn item destroyed_box in current room
+    do spawn item towel in current room
+    do show "The box sighs and collapses in a heap as soon as you touch it, relieved that its mission is over. Inside, you find a nanotruss-reinforced tachyon-powered towel with an attached note:\n\n                Always be a frood who knows where his towel is.\n                                -- F.P."
+}
+
+item destroyed_box {
+    name "Destroyed Shipping Box"
+    desc "A pile of packing tape, stickers, and mangled carboard fragments that used to be a shipping box before it fell apart."
+    portable true
+    location nowhere "spawns@player when delivery_box opened"
+}

@@ -1,0 +1,40 @@
+# ========================================
+# Building Perimeter: Front Entrance
+# ========================================
+
+room front-entrance {
+    name "Front Entrance"
+    desc "Potted plants flank a plain, darkened glass door on the front of the building to the north. As you approach the door, a security eye-bot mounted above it mutters judgementally as it scans you. A sign above it reads:\n\n                       \"Always Know Where Your Towel Is\"\n\nPaved paths lead around the building to the east and west."
+    overlay if flag got-towel {
+        set "Finished scanning, the eye-bot's iris glows green. The doors unlatch and open slightly."
+        unset "After a few moments, the eye-bot's iris turns red, and it points at the sign above."
+    }
+
+    overlay if npc cmot_dibbler here {
+        normal "C.M.O.T. Dibbler blocks the entrance, hawking dubious sausages."
+        happy  "Dibbler beams and offers a celebratory sausage-inna-bun."
+        bored  "Dibbler sighs about the slow foot traffic."
+    }
+    overlay if (npc absent cmot_dibbler) {
+        text "The doorway is mercifully free of purveyors of questionable sausages, for now."
+    }
+    exit north -> main-lobby {
+        required_flags(got-towel),
+        barred "Not so fast. The security bot is absolutely insistent that you have a towel before you go inside."
+    }
+    exit west -> snowfield
+    exit east -> east-of-building
+}
+
+
+# ========================================
+# Goals
+# ========================================
+
+goal get-a-towel {
+    name "Find a Towel"
+    desc "No adventurer should ever be without one. In fact, the security bot at the building entrance insists that you have one in your posession before you're permitted to enter."
+    group required
+    start when reached room front-entrance
+    done when has flag got-towel
+}

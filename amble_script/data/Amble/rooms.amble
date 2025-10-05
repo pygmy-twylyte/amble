@@ -1,36 +1,5 @@
 # Room definitions for Amble engine
 
-room inca-road {
-    name "Inca Road"
-    desc "An ancient road of broken and uneven stones winds precariously along the mountainside, half-swallowed by time and weeds. North of here, a river's rocky rapid rushes westward through the gorge.\n\nTo the south lies a trim, modern lawn with an improbably square footprint. It leads up toward a squat commercial building that seems to have landed here by accident."
-    exit "across the lawn" -> loading-dock
-    exit "down the slope" -> guard-post
-}
-
-room front-entrance {
-    name "Front Entrance"
-    desc "Potted plants flank a plain, darkened glass door on the front of the building to the north. As you approach the door, a security eye-bot mounted above it mutters judgementally as it scans you. A sign above it reads:\n\n                       \"Always Know Where Your Towel Is\"\n\nPaved paths lead around the building to the east and west."
-    overlay if flag got-towel {
-        set "Finished scanning, the eye-bot's iris glows green. The doors unlatch and open slightly."
-        unset "After a few moments, the eye-bot's iris turns red, and it points at the sign above."
-    }
-
-    overlay if npc cmot_dibbler here {
-        normal "C.M.O.T. Dibbler blocks the entrance, hawking dubious sausages."
-        happy  "Dibbler beams and offers a celebratory sausage-inna-bun."
-        bored  "Dibbler sighs about the slow foot traffic."
-    }
-    overlay if (npc absent cmot_dibbler) {
-        text "The doorway is mercifully free of purveyors of questionable sausages, for now."
-    }
-    exit north -> main-lobby {
-        required_flags(got-towel),
-        barred "Not so fast. The security bot is absolutely insistent that you have a towel before you go inside."
-    }
-    exit west -> snowfield
-    exit east -> east-of-building
-}
-
 room snowfield {
     name "Desolate Snowfield"
     desc "You find yourself in a wide, desolate snowfield west of the main building -- which is odd, because you still see summery woodlands just yards away, with a clean line separating the two climates. Wind howls across the ice, and powdery drifts swirl around a dark rectangular pit, some 20 feet across, but too deep and dark to see the bottom. A thick rope anchored deeply into the ice leads down into the pit."
@@ -50,34 +19,6 @@ room snow-camp {
     name "Abandoned Campsite"
     desc "The remains of a temporary shelter are dug into a snowbank here. The tent has collapsed, half-fused to a scorched sled. The river — or some frozen remnant of it — glistens beyond."
     exit east -> snowfield
-}
-
-room loading-dock {
-    name "Useless Loading Dock"
-    desc "The so-called loading dock juts ten feet *above* the ground, with no ramp, stairs, or apparent means of access and a loading door thirty feet wide and ten inches tall. A conveyor belt runs from the building wall to the edge of the dock, then loops straight back in again without touching anything.\n\nA bronze plaque proudly identifies this as a **Bloody Stupid Johnson** project:\n'Winner of the 3rd Prize for Architectural Enthusiasm, 1973.'\n\nIt's unclear what this office ever needed to load—or who would deliver to the side of a remote building halfway up a mountain."
-    overlay if npc cmot_dibbler here {
-        normal "Dibbler paces the dock, trying to sell sausages to absent drivers."
-        happy  "Dibbler whistles, convinced the loading dock will make him rich."
-        bored  "Dibbler slumps against the dock, lamenting the lack of deliveries."
-    }
-    exit southeast -> east-of-building
-    exit southwest -> snowfield
-    exit north -> inca-road
-}
-
-room east-of-building {
-    name "East of Building"
-    desc "You’re east of the building now, facing a patch of ornamental gravel and a struggling yucca plant. The air here smells faintly of ozone and buttered lobster, though the source is unclear.\n\nThe side of the building appears to be a normal wall, but you keep glimpsing something that looks like -- patio umbrellas? -- from the corner of your eye. You briefly wonder if the building is bending space or if your sense of geography is just feeling shy.\n\nThe walkway wraps around the building to the northwest and southwest."
-    overlay if npc cmot_dibbler here {
-        normal "Dibbler wanders here, pitching sausages to the patient yucca."
-        happy  "Dibbler hums a sales jingle, certain new patrons will arrive."
-        bored  "Dibbler kicks at the gravel, lamenting the lack of customers."
-    }
-    overlay if (player has item dental_floss) {
-        text "The weird bush looks oddly bare now, stripped of its floss-like strands."
-    }
-    exit northwest -> loading-dock
-    exit southwest -> front-entrance
 }
 
 room main-lobby {

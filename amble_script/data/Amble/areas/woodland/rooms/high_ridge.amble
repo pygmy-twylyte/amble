@@ -58,6 +58,14 @@ item no_cake {
 # Triggers
 # ========================================
 
+trigger "[Global] Cannot Drop No Cake"
+when drop item no_cake
+{
+    do despawn item no_cake
+    do spawn item no_cake in inventory
+    do show "Try as you might, you cannot rid yourself of the feeling of a missing, promised dessert. The cake was a lie."
+}
+
 trigger "Burn After Reading?"
 when act burn on item scrawled_note {
     do show "You burn the note, singeing your fingers in the process. Do you think this is a spy novel?"

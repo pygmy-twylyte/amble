@@ -3,90 +3,6 @@
 # Room symbols and flag names are in kebab-case.
 # Item abilities are in camelCase.
 
-# ------------------------------------------------------------------------------------------------------------------EXTERIOR TRIGGERS BEGIN
-
-# ..................................................................................................................HIGH-RIDGE
-
-
-
-
-
-
-
-
-# ..................................................................................................................TWO-SHEDS
-
-# ========================================
-# GUARD POST
-# ========================================
-
-
-# ========================================
-# INCA ROAD
-# ========================================
-
-trigger "[Inca-Road] Traveling Without Towel" only once when enter room inca-road {
-    if missing item towel {
-        do show "You pause here, realizing with increasing concern that you are traveling without a towel."
-    }
-}
-
-# ..................................................................................................................EAST-OF-BUILDING
-
-trigger "[East-of-Building] Pluck Dental Floss" only once when take item dental_floss {
-    do show "You pluck a strand of floss from the bush. It comes away easily — disturbingly so. Minty. Strong. Too strong. You’re no botanist, but you’re pretty sure this shouldn’t be growing out of a shrubbery."
-    do award points 5
-    do set item description weird_bush "A squat, leafy bush now stripped of its floss-like strands, bare branches jutting out awkwardly. A small sign next to it reads 'Pride of Montana'."
-}
-
-# ..................................................................................................................LOADING-DOCK
-
-trigger "[Loading-Dock] Spawn Special Delivery" only once when leave room loading-dock {
-    do spawn item delivery_box into room loading-dock
-    do show "You hear a thud behind you, back toward the dock, like something was just dropped off. You glimpse a drone flying away quickly, as if hoping not to be seen. Was that an Initech logo on the side?"
-}
-
-trigger "[Loading-Dock] Open Security Crate (Key)" only once when unlock item security_locker {
-    do spawn item crowbar into container security_locker
-    do spawn item security_log into container security_locker
-    do spawn item strange_liquid into container security_locker
-    do spawn item initech_mug into container security_locker
-    do add flag unlocked-security-crate
-    do show "The ear wax on the tip of the key eases it into the rusted lock, which snaps open with a satisfying clunk."
-}
-
-trigger "[Loading-Dock] Open Security Crate (Break)" only once when act break on item security_locker {
-    if missing flag unlocked-security-crate {
-        do despawn item security_locker
-        do spawn item crowbar in current room
-        do spawn item security_log in current room
-        do spawn item shattered_vial in current room
-        do spawn item initech_mug in current room
-        do show "With a few hefty blows, you manage to break the lock haft completely off of the security locker -- well after a few misses had already caved in the lid and destroyed it, but you were having fun. It looks like you broke a couple of the items that were inside in the process."
-        do add wedge "PA Announcement: 'Someone broke into the security locker on the dock. Mind your belongings and report any suspicious activity to security.'" width 1 spinner ambientInterior
-    }
-}
-
-trigger "[Loading-Dock] Open Security Crate (Burn)" only once when act burn on item security_locker {
-    if missing flag unlocked-security-crate {
-        do despawn item security_locker
-        do spawn item crowbar in current room
-        do spawn item burned_security_log in current room
-        do spawn item strange_liquid in current room
-        do spawn item initech_mug in current room
-        do show "WHOOOOOMP! The locker, which you now realize may have been made from the solid magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking your eyebrows with it. It looks like *some* of the items inside weren't flammable."
-        do add wedge "PA Announcement: 'Someone used an Arson-Aid to torch the security locker at the loading dock. An investigation is underway. Report anyone with scorched clothes or missing eyebrows to security.'" width 1 spinner ambientInterior
-    }
-}
-
-trigger "[Loading-Dock] Got Crowbar" only once when take item crowbar {
-    do show "You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?"
-    do add flag got-crowbar
-    do award points 3
-    do schedule in 2 note "notice fiction bleed" {
-        do show "... and then you wonder why you're thinking of Barney as a real person instead of a character in a game. And Gordon, for that matter. Wait, he was just *fiction*, right? Come to think of it, you feel a little unsure of reality, and it's worse the nearer you are to the building."
-    }
-}
 
 # ------------------------------------------------------------------------------------------------------------------MAIN FLOOR INTERIOR TRIGGERS
 
@@ -215,7 +131,6 @@ trigger "[Patio] Award Points Getting In" only once when enter room patio {
     }
 }
 
-
 # ..................................................................................................................B-A-OFFICE
 
 trigger "[Office] Receptionist Unhelpful if No Pass" when always {
@@ -323,7 +238,6 @@ when take item hot_coffee
 {
     do remove flag coffee-brewed
 }
-
 
 # ..................................................................................................................LIFT-BANK-MAIN
 
@@ -692,53 +606,13 @@ trigger "[Hint] Invitation Hint" only once when always {
     }
 }
 
-trigger "[Hint] Towel / Plaque Hint" only once when take item towel {
-    do add flag got-towel
-    do award points 3
-    do show "NOW you're a frood who really \"knows where his towel is\"!"
-    do schedule in 10 if all(has item towel, missing flag read-plaque-1) note "hint: towel can clean" {
-        do show "Towels can be awfully handy for cleaning grimy things. Just sayin'."
-    }
-}
-
-# ------------------------------------------------------------------------------------------------------------------STATUS EFFECT TRIGGERS
-
-trigger "[Status] Vogon Poetry Causes Nausea" when use item vogon_poetry_book ability read {
-    do show "You nearly get through the first poem when the vomiting begins..."
-    do add flag read-vogon-poetry
-    do add flag status:nauseated
-    do award points -1
-}
-
 # ------------------------------------------------------------------------------------------------------------------GLOBAL (NO SPECIFIC LOCATION)
 
-trigger "[Global] Arson-Aid Used" only once
-when use item arson_aid ability ignite {
-    do show "The Initech Arson-Aid melts down into an amorphous, hissing blob. As expected."
-}
-
-trigger "[Global] Open Delivery Box" only once
-when open item delivery_box {
-    do despawn item delivery_box
-    do spawn item destroyed_box in current room
-    do spawn item towel in current room
-    do show "The box sighs and collapses in a heap as soon as you touch it, relieved that its mission is over. Inside, you find a nanotruss-reinforced tachyon-powered towel with an attached note:\n\n                Always be a frood who knows where his towel is.\n                                -- F.P."
-}
 
 trigger "[Global] Take Vogon Poetry"
 when take item vogon_poetry_book
 {
     do show "A greasy feeling of nausea overcomes you."
-}
-
-
-
-trigger "[Global] Cannot Drop No Cake"
-when drop item no_cake
-{
-    do despawn item no_cake
-    do spawn item no_cake in inventory
-    do show "Try as you might, you cannot rid yourself of the feeling of a missing, promised dessert. The cake was a lie."
 }
 
 # ATTACH TRIGGER PAIR  vvvvvv

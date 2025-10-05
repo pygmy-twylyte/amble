@@ -73,30 +73,6 @@ item elevator_keycard {
     location room poetry-panic
 }
 
-item delivery_box {
-    name "Shipping Box"
-    desc "A cardboard box affixed with several shipping labels and beaten into a barely recognizable shape. It would probably fall apart completely if you tried to open it. One of the stickers reads \"Fragile: Handle with Care!\" and another is addressed to YOU at Amble Adventures headquarters."
-    portable true
-    location nowhere "spawns@loading-dock after first leaving"
-    container state closed
-}
-
-item destroyed_box {
-    name "Destroyed Shipping Box"
-    desc "A pile of packing tape, stickers, and mangled carboard fragments that used to be a shipping box before it fell apart."
-    portable true
-    location nowhere "spawns@player when delivery_box opened"
-}
-
-item towel {
-    name "Towel"
-    desc "A plain, white nuclear bath towel with plooksilk stitching, fully charged."
-    portable true
-    location nowhere "spawns@player when delivery_box is opened"
-    ability Insulate
-    ability Clean
-}
-
 item vogon_poetry_book {
     name "Longest Poems of the Largest Vogons"
     desc "A bound volume of Vogon poetry, with the usual safety devices and locks removed. Looking inside is likely to cause brain damage and a permanent smell of boiling cauliflower to haunt you, if you're lucky."
@@ -233,22 +209,9 @@ item burnt_invitation {
     ability Read
 }
 
-item weird_bush {
-    name "Weird Bush"
-    desc "A squat, leafy bush with long, pale strands growing among the branches. The fibers look oddly uniform — almost like... dental floss?"
-    portable false
-    location room east-of-building
-    container state open
-}
 
-item dental_floss {
-    name "Dental Floss"
-    desc "A long, strong strand of waxed dental floss, harvested from the weird bush. It smells faintly minty, but seems surprisingly durable — maybe even useful for something besides oral hygiene."
-    portable true
-    location chest weird_bush
-    ability Attach
-    requires attach to attach
-}
+
+
 
 item lighter {
     name "Butane Lighter"
@@ -344,111 +307,6 @@ item security_locker_key {
     text "_OCK _OCK_R"
     ability Read
     ability Unlock security_locker
-}
-
-item security_locker {
-    name "Security Supply Locker"
-    desc "A heavy wooden locker marked 'AMBLE SECURITY - Authorized Use Only'. The planks are reinforced, and the it rattles faintly when nudged."
-    text "The wood comes from the strong but incredibly flammable magnesium magnolia tree."
-    portable false
-    location room loading-dock
-    container state locked
-    requires cutWood to cut
-    requires smash to break
-    requires ignite to burn
-}
-
-item crowbar {
-    name "Crowbar"
-    desc "A sturdy crowbar with the initials 'G.F.' etched near the handle grip. It looks like it could pry open doors or smash obstacles — a proper scientist’s multitool."
-    portable true
-    location nowhere "spawns@loading-dock or security_crate depending on access method"
-    ability Pry
-    ability Smash
-}
-
-item security_log {
-    name "Amble Security Log"
-    desc "A well-used notebook labeled \"Amble Security Log / Section 42\" and liberally stained with coffee, ale, and mustard."
-    portable true
-    location nowhere "may_spawn@security_crate"
-    text """March 1, 2025: New coffee machine installed. Emits mild static when brewing.
-March 2, 2025: Security camera in break room rotated 180 degrees overnight. Ed again?
-March 3, 2025: Lost and found box inventory updated. One sock, three gloves.
-March 4, 2025: Receptionist requested upgrade to sarcasm module. Denied.
-March 5, 2025: Maintenance reported light flickering in elevator. Resolved.
-
-March 6, 2025: Surge detected at AA-3B containment. Reality distortion at 14%. Not great. Not terrible.
-
-Stardate 4711.5: Unauthorized medieval figure (Black Knight) reported blocking sublevel entrance.
-Stardate 4711.8: Receptionist reports elevator keycard locked in panic room; Candidate #2112-41 melted.
-Stardate 4712.3: Droid exhibiting “gonk” vocalizations wandering main lobby. Source unknown.
-Stardate 4713.0: Poetry recitation device demanding arrest of visitor with Vogon poetry.
-Stardate 4713.7: Candidate #2112-42 en route. Receptionist instructed to increase scrutiny.
-Stardate 4714.2: Staff experiencing deja vu from alternate realities. Report forwarded to Neo.
-"""
-    ability Read
-}
-
-item burned_security_log {
-    name "Amble Security Log"
-    desc "This appears to have once been a security event log for the building and dock, but is now better described as a security charcoal briquet."
-    portable true
-    location nowhere "may_spawn@security_crate or loading-dock"
-}
-
-item strange_liquid {
-    name "Strange Liquid"
-    desc "A glass vial, unnaturally cold to the touch, containing a dark liquid that seems to reach for the warmth of your fingers."
-    portable true
-    location nowhere "may_spawn@loading-dock or security_crate"
-    ability Drink
-    consumable {
-        uses_left 1
-        consume_on ability Drink
-        when_consumed despawn
-    }
-}
-
-trigger "Drink the Strange Liquid"
-note "trip daisies for a few turns with foreshadowing"
-when drink item strange_liquid {
-    do add flag status:tripping
-    do show "The strange liquid feels incredibly cold as it spreads slowly down your esophagus, then you start to... see things."
-    do schedule in 2 {
-        do show "<Vision> A see-through doctor takes a tool from another doctor, then turns to face you with one glowing red eye."
-    }
-    do schedule in 4 {
-        do show r#"<Vision> A scientist peers into a vending machine. Someone shouts,"Gordon!" and he turns around, focusing on you with one red eye."#
-    }
-    do schedule in 6 {
-        do show r#"<Vision> A shifty man with a red light behind one pupil hands you a hot dog, but electronic bits inside the casing nearly break your teeth when you bite into it."#
-    }
-    do schedule in 7 {
-        do remove flag status:tripping
-        do award points 5
-    }
-    do schedule in 20 if missing flag appeased-black-knight onFalse cancel {
-        do show "<Flashback> A medieval knight smilese as he slices aluminum cans and tomatoes with his sword."
-    }
-}
-
-item shattered_vial {
-    name "Shattered Vial"
-    desc "Some shards of glass that used to be a vial of liquid, but whatever what inside has drained away."
-    portable false
-    location nowhere "may_spawn@loading-dock"
-}
-
-item initech_mug {
-    name "Initech Anti-Spill Mug"
-    desc "A coffee mug bearing the Initech logo with a complex seal on top, requiring the use of both hands and a spotter to drink from it or fill it. There's an inscription on the bottom."
-    portable true
-    location nowhere "spawns@loading-dock or security_crate"
-    text """To: CMOT, A Kindred Spirit
-From: Your Initech Rep
-"""
-    ability Read
 }
 
 item dull_longsword {

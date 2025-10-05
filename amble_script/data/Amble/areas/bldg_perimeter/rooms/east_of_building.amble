@@ -1,0 +1,49 @@
+# ========================================
+# Building Perimeter: East-of-Building
+# ========================================
+
+room east-of-building {
+    name "East of Building"
+    desc "You’re east of the building now, facing a patch of ornamental gravel and a struggling yucca plant. The air here smells faintly of ozone and buttered lobster, though the source is unclear.\n\nThe side of the building appears to be a normal wall, but you keep glimpsing something that looks like -- patio umbrellas? -- from the corner of your eye. You briefly wonder if the building is bending space or if your sense of geography is just feeling shy.\n\nThe walkway wraps around the building to the northwest and southwest."
+    overlay if npc cmot_dibbler here {
+        normal "Dibbler wanders here, pitching sausages to the patient yucca."
+        happy  "Dibbler hums a sales jingle, certain new patrons will arrive."
+        bored  "Dibbler kicks at the gravel, lamenting the lack of customers."
+    }
+    overlay if (player has item dental_floss) {
+        text "The weird bush looks oddly bare now, stripped of its floss-like strands."
+    }
+    exit northwest -> loading-dock
+    exit southwest -> front-entrance
+}
+
+# ========================================
+# Items
+# ========================================
+
+item weird_bush {
+    name "Weird Bush"
+    desc "A squat, leafy bush with long, pale strands growing among the branches. The fibers look oddly uniform — almost like... dental floss?"
+    portable false
+    location room east-of-building
+    container state open
+}
+
+item dental_floss {
+    name "Dental Floss"
+    desc "A long, strong strand of waxed dental floss, harvested from the weird bush. It smells faintly minty, but seems surprisingly durable — maybe even useful for something besides oral hygiene."
+    portable true
+    location chest weird_bush
+    ability Attach
+    requires attach to attach
+}
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[East-of-Building] Pluck Dental Floss" only once when take item dental_floss {
+    do show "You pluck a strand of floss from the bush. It comes away easily — disturbingly so. Minty. Strong. Too strong. You’re no botanist, but you’re pretty sure this shouldn’t be growing out of a shrubbery."
+    do award points 5
+    do set item description weird_bush "A squat, leafy bush now stripped of its floss-like strands, bare branches jutting out awkwardly. A small sign next to it reads 'Pride of Montana'."
+}

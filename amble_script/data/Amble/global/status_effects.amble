@@ -7,6 +7,11 @@
 # Nauseated
 # ========================================
 
+trigger "[Status] Nauseated" when always {
+    if all(has flag status:nauseated, chance 50%) {
+        do spinner message nauseated
+    }
+}
 spinner nauseated {
     wedge "Since reading the Vogon poetry, you can't shake a background queasiness." width 1
     wedge "You throw up a little in your mouth." width 1
@@ -30,13 +35,8 @@ goal survive-vogon-poetry {
     done when missing flag status:nauseated
 }
 
-trigger "[Status] Nauseated" when always {
-    if all(has flag status:nauseated, chance 50%) {
-        do spinner message nauseated
-    }
-}
 
-trigger "[Global] Drop Vogon Poetry"
+trigger "[Global] Drop Vogon Poetry" note "dropping only stops the nausea if not read"
 when drop item vogon_poetry_book
 {
     if any(missing flag read-vogon-poetry, has flag cured-vogon-poetry) {
@@ -45,4 +45,11 @@ when drop item vogon_poetry_book
     if all(has flag read-vogon-poetry, missing flag cured-vogon-poetry) {
         do show "Getting rid of the book helps a little, but the poem is burned into your mind and the nausea continues."
     }
+}
+
+trigger "[Status] Read Vogon Poetry > Persistent Nausea" when use item vogon_poetry_book ability read {
+    do show "You nearly get through the first poem when the vomiting begins..."
+    do add flag read-vogon-poetry
+    do add flag status:nauseated
+    do award points -1
 }
