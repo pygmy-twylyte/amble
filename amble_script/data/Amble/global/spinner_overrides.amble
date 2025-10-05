@@ -1,0 +1,116 @@
+# ========================================
+# Overrides for Default Engine Spinners
+# ========================================
+
+spinner movement {
+    wedge "Staying alert, you go on..."
+    wedge "You move that direction..."
+    wedge "Coolly, you roll ahead..."
+    wedge "Heading that direction..."
+    wedge "You saunter along..."
+    wedge "Merrily, you traipse ahead..."
+    wedge "You ramble on..."
+    wedge "Cruising right along..."
+    wedge "Your trek continues..."
+    wedge "Strolling right along..."
+    wedge "Roam, if you want to..."
+    wedge "You amble ahead..."
+    wedge "You practice your silly walk in that direction..."
+    wedge "Your path decided, you tromp forth..."
+    wedge "Your hike continues..."
+    wedge "\"Why not jog?\", you think, as you plod along..."
+    wedge "You shuffle onward..."
+    wedge "You trot that way, like you have to poop..."
+    wedge "Lightly, you skip forth..."
+    wedge "Onward, you lope like a tauntaun..."
+    wedge "You sally forth..."
+    wedge "With no chance of an Uber here, you decide to hoof it..."
+}
+
+spinner quitMsg {
+    wedge "Bye."
+    wedge "Auf Wiedersehen."
+    wedge "Later, 'gator!"
+    wedge "Aww. Come back soon."
+}
+
+spinner noEffect {
+    wedge "You try it. It doesn't seem to help." width 1
+    wedge "The world shrugs." width 1
+    wedge "You stare at the result. The result stares back." width 1
+    wedge "Well... it *could* have worked." width 1
+    wedge "Absolutely nothing happens. Not even a dramatic pause." width 1
+    wedge "You feel a vague sense of anticlimax." width 1
+    wedge "Somewhere, a cricket hesitates, then chirps once." width 1
+    wedge "The laws of physics remain disappointingly unaltered." width 1
+    wedge "Reality refuses to acknowledge your efforts." width 1
+    wedge "No errors, no effect, no fanfare. Just... stillness." width 1
+    wedge "That's another entry for the Journal of Failed Experiments." width 1
+    wedge "It *seemed* like a great idea, but no, it wasn't." width 1
+    wedge "That didn't work. Maybe if you type it faster, or in all caps?" width 1
+}
+
+spinner unrecognizedCommand {
+    wedge "Syntax error. Please insert quarter and try again." width 1
+    wedge "That command has been fed to a hungry goat and can no longer be retrieved." width 1
+    wedge "The universe tilts its head, confused." width 1
+    wedge "I'm sorry, Dave. I'm afraid I can't do that." width 1
+    wedge "The parser emits a low, judgmental beep." width 1
+    wedge "That seems like something you'd do in a *different* text adventure." width 1
+    wedge "Your words echo into the void, unacknowledged." width 1
+    wedge "Command not recognized. Try 'help', 'yell', or 'cry'." width 1
+    wedge "That input caused a minor existential crisis in the REPL. It's fine now." width 1
+    wedge "Unrecognized verb. Maybe try it in ALL CAPS for emphasis?" width 1
+    wedge "Snagrilfromp. I can make words up too." width 1
+    wedge "Have you tried turning your syntax off and back on again?" width 1
+    wedge "I don't think your fingers are working right. Are you having a stroke?" width 1
+}
+
+spinner destinationUnknown {
+    wedge "Let me MapQuest that real quick..." width 1
+    wedge "Can't get there from here." width 1
+    wedge "Nobody wants to go there." width 1
+    wedge "Is that by the In-N-Out Burger?" width 1
+    wedge "Is that near the corner of Nope and Nah?" width 1
+    wedge "Sure. Just keep walking until reality breaks." width 1
+    wedge "Your feet refuse to obey such nonsense." width 1
+    wedge "You strain your eyes in that direction, but see only confusion." width 1
+    wedge "That direction folds in on itself and vanishes." width 1
+    wedge "An ancient voice whispers, 'Not today.'" width 1
+    wedge "Quantum parser collapsed that possibility." width 1
+    wedge "Not even the map believes in that." width 1
+    wedge "If you walk that way, you'll need a packed lunch and several paradox waivers." width 1
+    wedge "You boldly go nowhere in particular." width 1
+    wedge "That direction has been repossessed by the Guild of Pathfinders." width 1
+    wedge "The local gods of misdirection hold a brief conference and vote no." width 1
+}
+
+spinner entityNotFound {
+    wedge "What's that?" width 1
+    wedge "You made that up." width 1
+    wedge "Never heard of it." width 1
+    wedge "You don't see that here." width 1
+    wedge "404 Not Found - Try Again" width 1
+    wedge "I don't recognize that." width 1
+    wedge "It's gotta be here somewhere. Let me look again." width 1
+    wedge "What language is that?" width 1
+}
+
+spinner npcIgnore {
+    wedge "Has nothing to say." width 1
+    wedge "Ignores you." width 1
+    wedge "Hums a tune, hoping you'll go away." width 1
+    wedge "Stands mute." width 1
+    wedge "Disregards you completely. Are you sure you said something out loud?" width 1
+    wedge "Isn't in the mood to talk." width 1
+}
+
+spinner takeVerb {
+    wedge "take" width 1
+    wedge "grab" width 1
+    wedge "get" width 1
+    wedge "snag" width 1
+    wedge "nab" width 1
+    wedge "bag" width 1
+    wedge "pocket" width 1
+}

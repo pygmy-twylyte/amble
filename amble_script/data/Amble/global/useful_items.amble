@@ -1,0 +1,53 @@
+# ========================================
+# Globally Useful Items
+# ========================================
+
+# This is a central location for any items that are "tools" that can be used in multiple locations
+# throughout the game.
+
+# ========================================
+# Initech Arson-Aid
+# ========================================
+
+item arson_aid {
+    name "Initech Arson-Aid"
+    desc "A small personal flamethrower, for use in home and garden -- just not your own, if you know what's good for you. Instructions for use are labeled on the side."
+    portable true
+    location room two-sheds
+    consumable {
+        uses_left 1
+        consume_on ability Ignite
+        when_consumed replace current room melted_arson_aid
+    }
+
+    text """Instructions:
+1) Aim carefully.
+2) Slowly squeeze trigger.
+3) Throw at target (quickly!)
+4) Flee.
+"""
+    ability Ignite
+    ability Read
+}
+
+item melted_arson_aid {
+    name "Metallic Blob"
+    desc "An irregular blob of metal and melted plastic that used to be an Initech Arson-Aid. Useless now. You can still just read the last step of the instructions on the side."
+    portable true
+    location nowhere "spawns wherever the arson-aid is used"
+    text "4) Flee."
+    ability Read
+}
+
+# ========================================
+# Lumberjack Axe
+# ========================================
+
+item lumberjack_axe {
+    name "Lumberjack's Axe"
+    desc "A hefty lumberjack's axe. The blade is slightly rusted, but it looks usable."
+    portable true
+    location room two-sheds
+    ability CutWood
+    ability Smash
+}

@@ -1,0 +1,71 @@
+# ========================================
+# Woodland: Parish Landing
+# ========================================
+
+room parish-landing {
+    name "Parish Landing"
+    desc "A small plateau carved into the hillside, marked by an old wooden sign that reads: 'Pilgrims Welcome – Pancakes Served Daily (Terms and Conditions Apply)'. A faded poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a holy relic.\n\nFrom here, the steps curve gently upward, disappearing into the woodland growth again. A modest trail leads west toward a nearby parish."
+    overlay if flag cleaned-plaque-1 {
+        set "You're occasionally distracted by a glint of sunlight reflected from the freshly cleaned plaque on the pillar just inside the treeline."
+        unset "Just beyond the treeline stands an impressive, intricately sculpted pillar bearing a plaque tarnished with age and forest grime."
+    }
+    exit "down the steps" -> high-ridge
+    exit "westward trail" -> st-alfonzo-parish
+    exit "up the steps" -> two-sheds-landing
+}
+
+# ========================================
+# Items
+# ========================================
+
+item plaque_1 {
+    name "Weathered Plaque"
+    desc "A plaque worn nearly smooth by decade upon decade of weather and grime. The intricate masonry of its pillar suggests the utmost importance and profundity of its message."
+    portable false
+    location room parish-landing
+    text """A common mistake that people make when trying to design something completely foolproof is to underestimate the ingenuity of complete fools.
+-- D.A., Head of Architectural Illogistics, Area 42
+"""
+    ability Read
+    requires clean to clean
+}
+
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Parish-Landing] Plaque 1 Too Grimy to Read"
+when use item plaque_1 ability read {
+    if missing flag cleaned-plaque-1 {
+        do deny read "The plaque is too grimy to make out the words. You'll need to find a way to clean it off."
+        do add flag tried-read-plaque-1
+    }
+}
+
+trigger "[Parish-Landing] Plaque 1 Cleaned" only once
+when act clean on item plaque_1 {
+    do add flag cleaned-plaque-1
+    do award points 3
+    do show "With some saliva and a little effort, you're able to remove the grime and bring the plaque to a dull shine."
+}
+
+trigger "[Parish-Landing] Read Cleaned Plaque 1" only once
+when use item plaque_1 ability read {
+    if has flag cleaned-plaque-1 {
+        do add flag read-plaque-1
+        do award points 5
+    }
+}
+
+# ========================================
+# Goals
+# ========================================
+
+goal read-plaque-1 {
+    name "Read the Plaque"
+    desc "Find a way to clean the plaque at High Ridge so you can read it."
+    group optional
+    start when has flag tried-read-plaque-1
+    done when has flag read-plaque-1
+}

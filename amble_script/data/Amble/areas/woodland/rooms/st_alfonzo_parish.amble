@@ -1,0 +1,53 @@
+# ========================================
+# Woodland: The Parish of St. Alfonzo
+# ========================================
+
+room st-alfonzo-parish {
+    name "Parish of Saint Alfonzo"
+    desc "The parish resembles a half-abandoned diner and half-absolved church, complete with stained glass windows depicting breakfast foods in heroic poses. The air smells faintly of syrup and tobacco.\n\nA refrigerated pedestal in the corner hums solemnly. Near the door, the hymn board lists this week’s sermon: 'On the Sanctity of the Short Stack.'"
+    overlay if item margarine {
+        present  r#"A large tub of Nanook's Finest™ margarine sits upon the pedestal."#
+        absent  "The pedestal stands empty, chilling nothing in particular."
+    }
+    exit "out the door" -> parish-landing
+}
+
+# ========================================
+# Items
+# ========================================
+
+item margarine {
+    name "Nanook's Finest Margarine"
+    desc "An open tub of margarine with a light dusting of toast and pancake crumbs."
+    portable true
+    location room st-alfonzo-parish
+    text """Nanook's Finest Margarine: #1 for Delicious Pancakes!
+   (also #1 for curing yellow-snow deflicted eyes)
+"""
+    ability Read
+}
+
+item messiah_kit {
+    name "Messiah Starter Kit"
+    desc """A masterfully handcrafted wooden box, with primitive bronze hardware and an ornately carved lid with the inscription:
++| MESSIAH STARTER KIT |+"""
+    portable true
+    location room st-alfonzo-parish
+    container state closed
+}
+
+item messiah_gourd {
+    name "Gourd"
+    desc "A grapefruit-sized, tan gourd. It rattles a little when you shake it."
+    portable true
+    location chest messiah_kit
+}
+
+item messiah_shoe {
+    name "Shoe"
+    desc "A single, worn leather sandal of untold age. Something appears to be scratched into the sole."
+    portable true
+    location chest messiah_kit
+    text "If found: Return to Brian of Nazareth"
+    ability Read
+}

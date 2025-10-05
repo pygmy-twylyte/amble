@@ -1,0 +1,54 @@
+# ========================================
+# Woodland::Two-Sheds Landing
+# Puzzle: Clear the Fallen Tree
+# ========================================
+
+# ========================================
+# Items
+# ========================================
+
+item fallen_tree {
+    name "Fallen Tree"
+    desc "A large, fallen oak tree obstructing the path further up the steps. Well, maybe not so much \"fallen\" as ripped from the mountainside and tossed down by whatever left the deep claw marks in the trunk."
+    portable false
+    location room two-sheds-landing
+    requires ignite to burn
+    requires cutWood to cut
+}
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Two-Sheds-Landing] Cut or Chop Tree" only once when act cut on item fallen_tree {
+    do show "With considerable effort and just one blister, you're able to chop a path through the branches. The stone steps continue to curve upward from here."
+    do despawn item fallen_tree
+    do add flag cleared-fallen-tree
+    do add flag chopped-fallen-tree
+    do award points 5
+}
+
+trigger "[Two-Sheds-Landing] Arson-Aid Used on Tree" only once
+when use item arson_aid on item fallen_tree interaction burn {
+    do show "You aim the Arson-Aid and begin to squeeze the trigger when the device erupts into a fireball! Panicking, you throw the whole Arson-Aid into the tree."
+}
+
+trigger "[Two-Sheds-Landing] Burn Tree" only once when act burn on item fallen_tree {
+    do despawn item fallen_tree
+    do add flag cleared-fallen-tree
+    do add flag burned-fallen-tree
+    do award points 5
+    do show "WHOOOOOMPH! The fallen tree erupts into flame and, quite improbably, is reduced to ash in mere seconds."
+}
+
+# ========================================
+# Goals
+# ========================================
+
+goal clear-fallen-tree {
+    name "Clear the Path"
+    desc "A fallen tree blocks the stairs continuing upward and there's no way around. Find a way to clear it."
+    group required
+    start when reached room two-sheds-landing
+    done when has flag cleared-fallen-tree
+}

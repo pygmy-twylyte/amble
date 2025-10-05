@@ -1,0 +1,26 @@
+# ========================================
+# Woodland: Abandoned Guard Post
+# ========================================
+
+room guard-post {
+    name "Abandoned Guard Post"
+    desc "A small stone guard post clings to the side of the trail, complete with a creaky wooden chair and a megaphone labeled 'USE ONLY IF VERY SURE'. A faded official-looking placard reads:\n\n'NOTICE: Passage beyond this point may lead to anachronism.'\n\nIt seems no one’s been stationed here in quite some time. The trail continues upward, leading to what appears to be an ancient road—and a distinctly non-ancient office park."
+    exit "up to the road" -> inca-road
+    exit "down the steps" -> two-sheds-landing
+}
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Guard-Post] Interesting Passers-By" only once
+note "different characters depending on how they got past the fallen_tree"
+when enter room guard-post {
+    if all(chance 75%, has flag burned-fallen-tree) {
+        do show r#"Smokey Bear tromps past the guard post, growling "Nobody ever listens!" while glaring right at you."#
+    }
+    if all(chance 75%, has flag chopped-fallen-tree) {
+        do show "Paul Bunyan gives you a nod as he lumbers by with Babe the Blue Ox, carrying the remains of the tree you chopped up."
+        do add flag saw-paul-bunyan
+    }
+}

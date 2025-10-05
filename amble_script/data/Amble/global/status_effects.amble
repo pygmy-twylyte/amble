@@ -1,0 +1,48 @@
+# ========================================
+# Status Effects
+# ========================================
+
+
+# ========================================
+# Nauseated
+# ========================================
+
+spinner nauseated {
+    wedge "Since reading the Vogon poetry, you can't shake a background queasiness." width 1
+    wedge "You throw up a little in your mouth." width 1
+    wedge "You regurgitate a bit of last night's dinner, but can't remember what it was." width 1
+    wedge "Everything smells faintly of old tuna. Why?" width 1
+    wedge "Your stomach roils, like that time you stayed up all night drinking mezcal with Ruben. Why did you eat that worm?" width 1
+    wedge "You stop by the nearest wastebin for a few dry heaves." width 1
+    wedge "You feel like you've just eaten a Klingon gagh sampler platter. Raw." width 1
+    wedge "Your digestive system briefly considers filing a formal complaint with management." width 1
+    wedge "You experience the gastric equivalent of a Windows blue screen of death." width 1
+    wedge "A wave of nausea hits you like a brick made entirely of other, smaller bricks." width 1
+    wedge "You feel queasy enough to consider switching to a liquid diet of nothing but antacids." width 1
+    wedge "Throat burning with acid bile, you swear off Vogon poetry forever. Just like last time." width 1
+}
+
+goal survive-vogon-poetry {
+    name "Survive the Vogon Experience"
+    desc "Recover from reading the galaxy's third worst poem."
+    group status-effect
+    start when has flag read-vogon-poetry
+    done when missing flag status:nauseated
+}
+
+trigger "[Status] Nauseated" when always {
+    if all(has flag status:nauseated, chance 50%) {
+        do spinner message nauseated
+    }
+}
+
+trigger "[Global] Drop Vogon Poetry"
+when drop item vogon_poetry_book
+{
+    if any(missing flag read-vogon-poetry, has flag cured-vogon-poetry) {
+        do show "That greasy, queasy feeling subsides."
+    }
+    if all(has flag read-vogon-poetry, missing flag cured-vogon-poetry) {
+        do show "Getting rid of the book helps a little, but the poem is burned into your mind and the nausea continues."
+    }
+}
