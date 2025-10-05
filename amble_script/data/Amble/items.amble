@@ -4,12 +4,7 @@
 # DSL (amble_script) by hand. Occasional non-item additions may be found here now, because the DSL allows for mixing types in the same
 # file (which the engine can't handle in TOML form --  the compiler sorts them into the appropriate TOML files.)
 
-item no_cake {
-    name "No Cake"
-    desc "You carry an uneasy feeling where a dessert might be. It is the absence of cake, and you just can't seem to get past it."
-    portable true
-    location nowhere "spawns when player tries to eat ephemeral_cake"
-}
+
 
 item invitation {
     name "Engraved Invitation"
@@ -181,28 +176,9 @@ item lost_and_found_box {
     container state locked
 }
 
-item margarine {
-    name "Nanook's Finest Margarine"
-    desc "An open tub of margarine with a light dusting of toast and pancake crumbs."
-    portable true
-    location room st-alfonzo-parish
-    text """Nanook's Finest Margarine: #1 for Delicious Pancakes!
-   (also #1 for curing yellow-snow deflicted eyes)
-"""
-    ability Read
-}
 
-item plaque_1 {
-    name "Weathered Plaque"
-    desc "A plaque worn nearly smooth by decade upon decade of weather and grime. The intricate masonry of its pillar suggests the utmost importance and profundity of its message."
-    portable false
-    location room parish-landing
-    text """A common mistake that people make when trying to design something completely foolproof is to underestimate the ingenuity of complete fools.
--- D.A., Head of Architectural Illogistics, Area 42
-"""
-    ability Read
-    requires clean to clean
-}
+
+
 
 item lab_printer {
     name "Initech PlasmaJet 2 Printer"
@@ -216,23 +192,7 @@ item lab_printer {
     requires extinguish to extinguish
 }
 
-item scrawled_note {
-    name "Scrawled Note"
-    desc "A note scrawled all caps and red permanent marker on a sheet of yellow legal paper."
-    portable true
-    location room high-ridge
-    text """CANDIDATES: PROCEED TO OFFICE TO OBTAIN VISITOR PASS
-           * MUST SHOW VALID INVITATION *
-"""
-    ability Read
-    requires ignite to burn
-}
 
-trigger "Burn After Reading?"
-when act burn on item scrawled_note {
-    do show "You burn the note, singeing your fingers in the process. Do you think this is a spy novel?"
-    do despawn item scrawled_note
-}
 
 item printer_paper {
     name "Copy Paper (Std Letter)"
@@ -271,54 +231,6 @@ item burnt_invitation {
     location nowhere "spawns@aperture-lab"
     text "--ally invited to com--"
     ability Read
-}
-
-item lumberjack_axe {
-    name "Lumberjack's Axe"
-    desc "A hefty lumberjack's axe. The blade is slightly rusted, but it looks usable."
-    portable true
-    location room two-sheds
-    ability CutWood
-    ability Smash
-}
-
-item flamethrower {
-    name "Initech Arson-Aid"
-    desc "A small personal flamethrower, for use in home and garden -- just not your own, if you know what's good for you. Instructions for use are labeled on the side."
-    portable true
-    location room two-sheds
-    consumable {
-        uses_left 1
-        consume_on ability Ignite
-        when_consumed replace current room melted_flamethrower
-    }
-
-    text """Instructions:
-1) Aim carefully.
-2) Slowly squeeze trigger.
-3) Throw at target (quickly!)
-4) Flee.
-"""
-    ability Ignite
-    ability Read
-}
-
-item melted_flamethrower {
-    name "Metallic Blob"
-    desc "An irregular blob of metal and melted plastic that used to be an Initech Arson-Aid. Useless now. You can still just read the last step of the instructions on the side."
-    portable true
-    location nowhere "spawns@wherever 'flamethrower' used"
-    text "4) Flee."
-    ability Read
-}
-
-item fallen_tree {
-    name "Fallen Tree"
-    desc "A large, fallen oak tree obstructing the path further up the steps. Well, maybe not so much \"fallen\" as ripped from the mountainside and tossed down by whatever left the deep claw marks in the trunk."
-    portable false
-    location room two-sheds-landing
-    requires ignite to burn
-    requires cutWood to cut
 }
 
 item weird_bush {
@@ -581,55 +493,11 @@ Weyland-Yutani: Thermal Unit / Antarctica Series
     location room snow-camp
 }
 
-item messiah_kit {
-    name "Messiah Starter Kit"
-    desc """A masterfully handcrafted wooden box, with primitive bronze hardware and an ornately carved lid with the inscription:
-+| MESSIAH STARTER KIT |+"""
-    portable true
-    location room st-alfonzo-parish
-    container state closed
-}
 
-item messiah_gourd {
-    name "Gourd"
-    desc "A grapefruit-sized, tan gourd. It rattles a little when you shake it."
-    portable true
-    location chest messiah_kit
-}
 
-item messiah_shoe {
-    name "Shoe"
-    desc "A single, worn leather sandal of untold age. Something appears to be scratched into the sole."
-    portable true
-    location chest messiah_kit
-    text "If found: Return to Brian of Nazareth"
-    ability Read
-}
 
-item jackson_mailbox {
-    name "Mailbox"
-    desc "A typical white mailbox with a red flag on a post, situated at the top of a path into the woods to the east."
-    portable false
-    location room two-sheds-landing
-    container state closed
-}
 
-item aa_shed_notice {
-    name "Official Notice"
-    desc "An official-looking notice from Amble Adventures HQ."
-    portable true
-    location chest jackson_mailbox
-    text """                 OFFICIAL NOTICE
-The OverShed™ Division of Amble Adventures has
-reclassified this dwelling as:
 
->> Shed, Subtype B – Multiversal Crosslink Node <<
-
-Report any fictional apparitions or missing time
-to your local Amble Adventures cover-up coordinator.
-"""
-    ability Read
-}
 
 item hal_memory_bank {
     name "H.A.L. Memory Bank"
@@ -788,27 +656,4 @@ item hot_coffee {
     desc "A paper cup of piping hot deep black coffee. Smells like a dark french roast."
     portable true
     location nowhere "spawns@lounge after coffee_machine started"
-}
-
-item ephemeral_cake {
-    name "Birthday Cake"
-    desc "A generous piece of delicious, perfectly iced birthday cake on an embossed paper plate."
-    text r#"Embossed around the edge of the plate: "~~~ From GLaDOS and Aperture Science Laboratories ~~~" "#
-    location room high-ridge
-    portable true
-    ability Eat
-    ability Read
-    consumable {
-        uses_left 1
-        consume_on ability Eat
-        when_consumed despawn
-    }
-}
-
-trigger "The Cake Is A Lie"
-when eat item ephemeral_cake {
-    do show "Just as you try to take a bite of the cake, it vanishes without a trace."
-    do spawn item no_cake in inventory
-    # explicit despawn of ephemeral cake not needed (single use consumable)
-    do award points 2
 }

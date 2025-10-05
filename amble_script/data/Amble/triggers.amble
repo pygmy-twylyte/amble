@@ -7,102 +7,19 @@
 
 # ..................................................................................................................HIGH-RIDGE
 
-trigger "[High-Ridge] Read Scrawled Note" only once when use item scrawled_note ability read {
-    do add flag read-scrawled-note
-}
 
-trigger "[High-Ridge] Plaque 1 Too Grimy to Read" when use item plaque_1 ability read {
-    if missing flag cleaned-plaque-1 {
-        do deny read "The plaque is too grimy to make out the words. You'll need to find a way to clean it off."
-        do add flag tried-read-plaque-1
-    }
-}
 
-trigger "[High-Ridge] Plaque 1 Cleaned" only once when act clean on item plaque_1 {
-    do add flag cleaned-plaque-1
-    do award points 3
-    do show "With some saliva and a little effort, you're able to remove the grime and bring the plaque to a dull shine."
-}
 
-trigger "[High-Ridge] Read Cleaned Plaque 1" only once when use item plaque_1 ability read {
-    if has flag cleaned-plaque-1 {
-        do add flag read-plaque-1
-        do award points 5
-    }
-}
 
-trigger "[High-Ridge] Billy Wakes Up" only once
-note "chance of random Billy the Mountain Zappa reference"
-when use item scrawled_note ability read
-{
-    if chance 42% {
-        do show "You feel a deep rumbling coming up through your feet. Suddenly, a voice booms through the trees and the canyon below: \"WARNING: SELF-DESTRUCT SEQUENCE INITIATED! All personnel evacuate immediately! Demolition commences on REL 10!\""
-        do add flag self-destruct-armed
-        do schedule on 10 note "self-destruct fires" {
-            do show "KABOOM! 💥 The entire area shakes violently as a deep rumbling rocks the mountain!"
-        }
-        do schedule on 11 note "lol just Billy" {
-            do show "The rumbling stops. Then, after a minute, the voice again: \"Erm, it turns out that was just Billy waking up. Cancel the evacuation, and have a productive day.\""
-            do remove flag self-destruct-armed
-            do award points 2
-            do add flag survived-fake-explosion
-        }
-    }
-}
 
-trigger "[High-Ridge] Gnat Punctuation" only once
-when leave room high-ridge
-{
-    do schedule in 2 if in rooms woods onFalse retryNextTurn
-    note "gnats: first fly-by" {
-        if missing flag read-scrawled-note {
-            do show """A cloud of gnats drifts by, forming the shapes of the words "rEAd tHe HiGh RidGe NotE"."""
-        }
-        if has flag read-scrawled-note {
-            do show """A cloud of gnats drifts by, lazily holding the shape of "..?.."."""
-        }
-    }
-    do schedule in 6 if in rooms woods onFalse retryNextTurn
-    note "gnats: alarmed" {
-        do show """The gnat cloud zips past in the other direction, this time shaped like "!!!"."""
-    }
-}
+
+
 # ..................................................................................................................TWO-SHEDS
 
-trigger "[Two-Sheds-Landing] Cut or Chop Tree" only once when act cut on item fallen_tree {
-    do show "With considerable effort and just one blister, you're able to chop a path through the branches. The stone steps continue to curve upward from here."
-    do despawn item fallen_tree
-    do add flag cleared-fallen-tree
-    do add flag chopped-fallen-tree
-    do award points 5
-}
-
-trigger "[Two-Sheds-Landing] Arson-Aid Used on Tree" only once
-when use item flamethrower on item fallen_tree interaction burn {
-    do show "You aim the Arson-Aid and begin to squeeze the trigger when the device erupts into a fireball! Panicking, you throw the whole Arson-Aid into the tree."
-}
-
-trigger "[Two-Sheds-Landing] Burn Tree" only once when act burn on item fallen_tree {
-    do despawn item fallen_tree
-    do add flag cleared-fallen-tree
-    do add flag burned-fallen-tree
-    do award points 5
-    do show "WHOOOOOMPH! The fallen tree erupts into flame and, quite improbably, is reduced to ash in mere seconds."
-}
 # ========================================
 # GUARD POST
 # ========================================
-trigger "[Guard-Post] Interesting Passers-By" only once
-note "different characters depending on how they got past the fallen_tree"
-when enter room guard-post {
-    if all(chance 75%, has flag burned-fallen-tree) {
-        do show r#"Smokey Bear tromps past, growling "Nobody every listens!" while glaring right at you."#
-    }
-    if all(chance 75%, has flag chopped-fallen-tree) {
-        do show "Paul Bunyan gives you a nod as he lumbers by with Babe the Blue Ox, carrying the remains of the tree you chopped up."
-        do add flag saw-paul-bunyan
-    }
-}
+
 
 # ========================================
 # INCA ROAD
@@ -784,43 +701,6 @@ trigger "[Hint] Towel / Plaque Hint" only once when take item towel {
     }
 }
 
-# ------------------------------------------------------------------------------------------------------------------AMBIENT TRIGGERS
-
-let set woods = (high-ridge, parish-landing, two-sheds-landing, two-sheds, guard-post)
-trigger "[Ambient] Woodland" when always {
-    if all(chance 20%, in rooms woods) {
-        do spinner message ambientWoodland
-    }
-}
-
-let set snowfield = (snowfield, snow-camp)
-trigger "[Ambient] Snowfield" when always {
-    if all(chance 20%, in rooms snowfield) {
-        do spinner message ambientSnowfield
-    }
-}
-
-let set elevator = (lift-main, lift-sublevel-1)
-trigger "[Ambient] Elevator Muzak" when always {
-    if all(chance 30%, in rooms elevator) {
-        do spinner message muzak
-    }
-}
-
-let set near_aa3b = (lift-sublevel-1, sublevel-1-entrance, corridor-north, corridor-south, observation-room, security-station, med-bay, monolith-room)
-trigger "[Ambient] Near AA-3B" when always {
-    if all(chance 20%, in rooms near_aa3b) {
-        do spinner message ambientAA3B
-    }
-}
-
-let set main_floor = (main-lobby, b-a-office, restaurant, patio, lift-bank-main, lounge, vip-bathroom)
-trigger "[Ambient] Main Floor" when always {
-    if all(chance 20%, in rooms main_floor) {
-        do spinner message ambientInterior
-    }
-}
-
 # ------------------------------------------------------------------------------------------------------------------STATUS EFFECT TRIGGERS
 
 trigger "[Status] Vogon Poetry Causes Nausea" when use item vogon_poetry_book ability read {
@@ -830,16 +710,10 @@ trigger "[Status] Vogon Poetry Causes Nausea" when use item vogon_poetry_book ab
     do award points -1
 }
 
-trigger "[Status] Nauseated" when always {
-    if all(has flag status:nauseated, chance 50%) {
-        do spinner message nauseated
-    }
-}
-
 # ------------------------------------------------------------------------------------------------------------------GLOBAL (NO SPECIFIC LOCATION)
 
 trigger "[Global] Arson-Aid Used" only once
-when use item flamethrower ability ignite {
+when use item arson_aid ability ignite {
     do show "The Initech Arson-Aid melts down into an amorphous, hissing blob. As expected."
 }
 
@@ -857,16 +731,7 @@ when take item vogon_poetry_book
     do show "A greasy feeling of nausea overcomes you."
 }
 
-trigger "[Global] Drop Vogon Poetry"
-when drop item vogon_poetry_book
-{
-    if any(missing flag read-vogon-poetry, has flag cured-vogon-poetry) {
-        do show "That greasy, queasy feeling subsides."
-    }
-    if all(has flag read-vogon-poetry, missing flag cured-vogon-poetry) {
-        do show "Getting rid of the book helps a little, but the poem is burned into your mind and the nausea continues."
-    }
-}
+
 
 trigger "[Global] Cannot Drop No Cake"
 when drop item no_cake
