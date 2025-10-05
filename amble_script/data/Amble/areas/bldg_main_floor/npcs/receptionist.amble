@@ -1,0 +1,22 @@
+npc b_a_receptionist {
+    name "Receptionist"
+    desc "A neatly dressed android sitting at the reception desk."
+    location room b-a-office
+    state normal
+    dialogue bored {
+        "Good job getting the keycard. Many of our previous applicants have died in the attempt. Very promising! The evaluator will be pleased. Strong lateral thinking and slight psychosis are essential for such a dangerous position, as I'm sure you are aware."
+        "You can now use the elevator to find room AA-3B for the next stage of your initiation."
+    }
+    dialogue happy {
+        "Terribly sorry to report that we are in a bit of trouble here today. The last candidate was inconsiderate enough to take the elevator access card into the poetry panic room just before he melted, and we can't retrieve it."
+        "The elevator keycard last pinged our system from the Poetry Panic Room, but it is sealed, and concealed behind the whiteboard. Only the Poetry Performer Unit can grant access."
+        "Sorry I didn't immediately recognize that you are a Candidate, but most of your competitors have been blurry, furry, or out of phase."
+    }
+    dialogue normal {
+        "(She rolls her eyes.) Please wait quietly out of the way. There are people with invitations who should be assisted first."
+        "(She simply ignores you.)"
+        "(She continues doing her job -- which appears to be pointedly ignoring anyone without an invitation.)"
+        "(She carefully realigns the models of Portal turrets on her desk so they are aiming at you.)"
+        "(Exasperated sigh.) Do I show up at your home and start making demands without an invitation? No. Now please wait to the side.)"
+    }
+}

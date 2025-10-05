@@ -1,0 +1,16 @@
+npc gonk_droid {
+    name "Gonk Droid"
+    desc "A walking battery charger that looks like a trash bin."
+    location room main-lobby
+    state normal
+    movement route rooms (main-lobby, lift-bank-main, lounge ) timing every_2_turns
+    dialogue happy {
+        "(You hear a transformer humming a happy tune.)"
+    }
+    dialogue normal {
+        "GONK!"
+        "(gonk)"
+        "GONK gonk."
+        "Gonk... Gonk..."
+    }
+}

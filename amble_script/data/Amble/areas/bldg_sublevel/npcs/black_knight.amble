@@ -1,0 +1,27 @@
+npc black_knight {
+    name "The Black Knight"
+    desc "A dark, glowering presence in a black suit of armor with a longsword."
+    location room sublevel-1-entrance
+    state normal
+    dialogue happy {
+        "None shall pa-- oh, no, you can go."
+        "YOU may pass, Candidate; I will be sure to dice anyone who dares to follow."
+        "You may pass, but beware and steer clear of Room AA-3B, should it reappear."
+        "Behold! (slices an aluminum can and then a tomato, laughing maniacally)"
+    }
+    dialogue mad {
+        "Have at you!"
+        "I'm invincible!"
+        "'tis but a scratch."
+        "It's just a flesh wound!"
+        "Come on, you pansy!"
+        "Chicken! Bawk-bawk! Chicken!"
+        "Gimme that sword back, or I'll bite your legs off!"
+        "I won that sword in the office gift game. Give it back!"
+    }
+    dialogue normal {
+        "None shall pass."
+        "I move -- for no man."
+        "(He stands silently, blocking your path.)"
+    }
+}

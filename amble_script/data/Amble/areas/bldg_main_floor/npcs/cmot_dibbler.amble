@@ -1,0 +1,27 @@
+npc cmot_dibbler {
+    name "C.M.O.T. Dibbler"
+    desc "A persistent entrepreneur with a tray of questionable meat products and an optimistic attitude about food safety. He wears a grease-stained apron and carries himself with the confidence of someone who's never met a customer he couldn't eventually convince."
+    location room main-lobby
+    state normal
+    movement random rooms (main-lobby, loading-dock, restaurant, lounge, front-entrance, lift-bank-main ) timing every_3_turns active true
+    dialogue bored {
+        "Not much foot traffic here. Maybe I should try the loading dock."
+        "A vendor's work is never done. Time to find some new customers."
+        "Standing still is bad for business. Got to keep moving, got to keep selling!"
+    }
+    dialogue happy {
+        "My old Initech mug! You found it! This calls for a celebration - and maybe a discount!"
+        "Ah, nothing like a good trade between honest businesspeople!"
+        "You've made an old vendor very happy today. Here, take this - it's been weighing down my tray anyway."
+        "Business is looking up! Maybe I should expand the menu."
+    }
+    dialogue normal {
+        "Sausages! Get your fresh sausages here! Well, relatively fresh."
+        "You look like someone with discerning taste! How about a nice sausage-inna-bun?"
+        "Business is booming! Well, it will be once people realize quality when they see it."
+        "I've got the finest meat products this side of... well, anywhere really."
+        "You know what you need? A good meal. And I know what I need - a good customer!"
+        "These sausages are made from only the finest... ingredients. Trust me on this."
+        "I lost my favorite mug somewhere around here. Haven't been the same without my morning coffee."
+    }
+}

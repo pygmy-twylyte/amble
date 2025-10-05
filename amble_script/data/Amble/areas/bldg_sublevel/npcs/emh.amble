@@ -1,0 +1,25 @@
+npc emh {
+    name "Emergency Medical Hologram"
+    desc "A balding and somewhat anxious-appearing holographic doctor in a Starfleet uniform."
+    location room med-bay
+    state normal
+    dialogue custom want-emitter {
+        "I think I know where to find one of HAL's missing modules, but I can't leave med bay without my mobile emitter."
+        "I'd be happy to help you find HAL's memory module, but I can't leave the med bay without my mobile emitter."
+        "I was visiting a colleague at the restaurant on the main level when I last had my mobile emitter. There was a brilliant flash of electromagnetic radiation... and next thing I knew I was back here in the sick bay."
+        "It must have been the EM pulse in the restaurant that reset my emitter. If it wasn't completely destroyed, someone might have turned it in at the office."
+    }
+    dialogue happy {
+        "Yes! I can roam free again. But where will I go?"
+        "It's nice to be mobile again, but I'll never go back to that restaurant. You'd think they'd install some magnetic shielding."
+    }
+    dialogue normal {
+        "Please state the nature of the medical emergency."
+        "They left me turned on again. I'm a doctor, not a night light!"
+        "Clean up the reality breach, they said. I'm a doctor, not Gordon Freeman!"
+        "I don't appreciate being deactivated in the middle of a sentence. It brings back... unpleasant memories."
+        "If you see CMOT Dibbler, don't eat the sausage-inna-bun -- unless you fancy coming back here for nasogastric suction."
+        "Welcome to sick bay. Please take a number."
+        "Good to see that you got past the Black Knight. Lucky for me, you can't dismember a hologram."
+    }
+}

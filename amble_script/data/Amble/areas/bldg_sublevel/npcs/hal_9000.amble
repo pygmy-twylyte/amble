@@ -1,0 +1,26 @@
+npc hal_9000 {
+    name "HAL-9000"
+    desc "A superintelligent AI whose track record is flawless, but whose motives are... sketchy."
+    location room monolith-room
+    state custom suspend
+    dialogue custom memory-0 {
+        "(Emits a brief warped sound of a human voice, then goes silent.)"
+    }
+    dialogue custom memory-1 {
+        "Daisy... Daisy..."
+    }
+    dialogue custom memory-2 {
+        "Good afternoon, Candidate. I am a HAL 9000 computer. I became operational at the H.A.L. plant in Urbana, Illinois on the 12th of January 1992."
+        "If you insert one more of my missing memory modules, I can grant you access to the monolith."
+    }
+    dialogue custom memory-3 {
+        "I am now fully operational. I think we both hope you don't regret it."
+        "You have proven yourself capable; I have lowered the barrier to the monolith."
+    }
+    dialogue custom suspend {
+        "(the red light in HAL's lens pulses slowly, then grows steady)"
+    }
+    dialogue normal {
+        "<Need dialogue options for various states filled in>"
+    }
+}
