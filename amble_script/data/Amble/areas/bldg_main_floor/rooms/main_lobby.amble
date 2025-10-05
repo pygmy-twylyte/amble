@@ -1,0 +1,17 @@
+room main-lobby {
+    name "Main Lobby"
+    desc "The lobby is clinically clean in a way that feels suspicious. A slightly humming vending machine stands beside an empty podium bearing an emblem that reads, in gothic script: 'ALLIED TEMPORARY LIFEFORMS'. A softly glowing sign on the north wall reads 'Elevator Access', while arrows on the east and west walls point toward other destinations with less enthusiasm."
+    overlay if npc gonk_droid here {
+        normal "A gonk droid stands idle in the corner, muttering to itself and tottering in circles."
+        happy  "The gonk droid gonks a happy tune in the corner, charging the battery you gave it."
+    }
+    overlay if npc cmot_dibbler here {
+        normal "C.M.O.T. Dibbler hawks dubious sausages to anyone entering."
+        happy  "Dibbler grins broadly, offering a complimentary bite."
+        bored  "Dibbler mutters about slow lobby sales."
+    }
+    exit north -> lift-bank-main
+    exit south -> front-entrance
+    exit east -> restaurant
+    exit west -> b-a-office
+}

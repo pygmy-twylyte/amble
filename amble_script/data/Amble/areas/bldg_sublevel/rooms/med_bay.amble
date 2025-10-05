@@ -1,0 +1,10 @@
+room med-bay {
+    name "Med Bay"
+    desc "A clean white infirmary with two bio-beds extending from the back wall, surrounded by a bevy of monitors and robotic surgical tools. One of the machines goes \"Bing!\" every few minutes. A small cleaning robot floats around the room disinfecting things."
+    overlay if npc emh here {
+        normal "The EMH stands with professional detachment, awaiting your symptoms."
+        happy  "The EMH smiles and hums a bright tune while adjusting the diagnostic displays."
+        custom(want-emitter) "The EMH fidgets restlessly, casting longing glances toward the door as if craving a mobile emitter."
+    }
+    exit west -> corridor-north
+}

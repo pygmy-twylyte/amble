@@ -1,0 +1,5 @@
+room ice-pit {
+    name "Abysmal Ice Pit"
+    desc "The bottom of a deep, sheer ice shaft seemingly dug for some kind of arctic research -- though you were nowhere near the Arctic Circle, last you checked. You're just able to see in the dim light filtering down from the tiny window to the surface above."
+    exit rope-up -> snowfield
+}

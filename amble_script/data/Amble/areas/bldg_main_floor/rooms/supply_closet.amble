@@ -1,0 +1,5 @@
+room supply-closet {
+    name "Supply Closet"
+    desc "A small closet lit by a bare bulb being repeatedly rammed by a fluttering moth. Crowded shelves offer paper products, bottles of toner, staples, and other office... ... staples."
+    exit south -> b-a-office
+}

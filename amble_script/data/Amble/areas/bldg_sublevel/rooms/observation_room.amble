@@ -1,0 +1,6 @@
+room observation-room {
+    name "Field Observation Room"
+    desc "Thick observation windows, long since spiderwebbed with cracks, overlook what should be Room AA-3B—but only darkness and occasional flashes of unreality appear beyond. Abandoned swivel chairs and battered clipboards litter the room. A faint smell of burnt ozone hangs in the air.\n\nA console near the glass flickers with a repeating message: 'CONTAINMENT BREACH LOGGED – STATUS: UNRESOLVED.'"
+    exit east -> corridor-north
+    exit south -> monolith-room
+}

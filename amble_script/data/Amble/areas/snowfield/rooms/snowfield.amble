@@ -1,0 +1,8 @@
+room snowfield {
+    name "Desolate Snowfield"
+    desc "You find yourself in a wide, desolate snowfield west of the main building -- which is odd, because you still see summery woodlands just yards away, with a clean line separating the two climates. Wind howls across the ice, and powdery drifts swirl around a dark rectangular pit, some 20 feet across, but too deep and dark to see the bottom. A thick rope anchored deeply into the ice leads down into the pit."
+    exit northeast -> loading-dock
+    exit southeast -> front-entrance
+    exit west -> snow-camp
+    exit rope-down -> ice-pit
+}

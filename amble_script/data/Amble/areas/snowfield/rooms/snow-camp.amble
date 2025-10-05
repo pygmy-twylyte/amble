@@ -1,0 +1,5 @@
+room snow-camp {
+    name "Abandoned Campsite"
+    desc "The remains of a temporary shelter are dug into a snowbank here. The tent has collapsed, half-fused to a scorched sled. The river — or some frozen remnant of it — glistens beyond."
+    exit east -> snowfield
+}

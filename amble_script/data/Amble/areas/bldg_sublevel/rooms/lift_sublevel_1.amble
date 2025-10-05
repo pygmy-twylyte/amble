@@ -1,0 +1,6 @@
+room lift-sublevel-1 {
+    name "Elevator (Sublevel AA-3)"
+    desc "The elevator sits open at the end of the corridor, but its appearance is… altered. What was once a sleek, polished carriage now seems borrowed from another world entirely. Gilded scrollwork curls along the walls where none existed before, and the ceiling flickers between brass panels and a starlit void. It hums with potential—and something less easily named."
+    exit main -> lift-main
+    exit south -> sublevel-1-entrance
+}

@@ -1,0 +1,26 @@
+room sublevel-1-entrance {
+    name "Sublevel AA-3 Entrance"
+    desc "A small landing area covered in dust. Buckets, tools, and debris are strewn about the floor. The door to the west is labeled with a sign:\n\n                        🚧 ROOM AA-3B 🚧\n                 FICTIONAL UNIVERSE CONTAINMENT"
+    overlay if (npc in state black_knight normal) {
+        text "The Black Knight stands in your path, staring you down, leaning on his battered longsword."
+    }
+    overlay if (npc in state black_knight mad) {
+        text "Agitated, the Black Knight sidesteps around the room, occasionally lunging at you to grab at his sword or kick you in the shin."
+    }
+    overlay if (npc in state black_knight happy) {
+        text "The Black Knight stands in a corner, helmet off, gleefully plucking hairs from his beard and splitting them with his sword."
+    }
+    exit north -> lift-sublevel-1
+    exit west -> room-aa-3b {
+        required_flags(appeased-black-knight, touched-monolith),
+        barred "The Black Knight stands in your way."
+    }
+    exit east -> security-station {
+        required_flags(appeased-black-knight),
+        barred "The Black Knight stands in your way."
+    }
+    exit south -> corridor-north {
+        required_flags(appeased-black-knight),
+        barred "The Black Knight stands in your way."
+    }
+}

@@ -1,0 +1,20 @@
+room aperture-lab {
+    name "Aperture Science Laboratory"
+    desc "The unnaturally white—walls, floor, ceiling, even the air here feels clinical and overexposed. Everything hums at a frequency designed to encourage strict compliance. A single console blinks on a table beside a highly over-engineered printer labeled \"Aperture Science Hospitality Generator.\""
+    overlay if (flag set burned-invitation, flag unset invitation-sans-ignition) {
+        text "A smoky haze and the lingering smell of burned paper permeate the room."
+    }
+    overlay if (flag set lab-fire-raging) {
+        text "Flames leap from foamy surfaces around you, while the sprinklers try in vain to douse the oily residue!"
+    }
+    overlay if (flag complete foam-fire-in-lab, flag unset invitation-sans-ignition) {
+        text "Charred, soggy and warped lab and office equipment are everywhere. Astoundingly, the printer still seems to be working -- and with a job pending."
+    }
+    overlay if (flag set invitation-sans-ignition) {
+        text "The printer is in its 3-day cooldown period, and there are no jobs pending."
+    }
+    overlay if (item present invitation) {
+        text "A glowing, steaming, sizzling invitation engraved on an asbestos sheet sits on the floor in front of the printer."
+    }
+    exit portal -> portal-room
+}

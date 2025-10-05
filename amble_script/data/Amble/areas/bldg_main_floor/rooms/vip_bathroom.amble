@@ -1,0 +1,5 @@
+room vip-bathroom {
+    name "VIP Bathroom"
+    desc "Blinding white tile and pristine mirrors make it almost seem like this pan-gender, pan-species bathroom has never been used, but a lingering asparagus odor suggests otherwise."
+    exit north -> restaurant
+}

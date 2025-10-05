@@ -1,0 +1,9 @@
+room security-station {
+    name "Level AA-3 Security"
+    desc "A compact but well-equipped station with reinforced blast doors, a wall of cracked CRT monitors, and a swivel chair. The space above the monitors is emblazoned with 'IN CASE OF EMERGENCY, RUN FASTER.' Paperwork is scattered across the floor, including an ominous memo titled 'AA-3B: Risk Management Recommendations.'"
+    overlay if item evidence_locker_closed {
+        present "A heavy steel evidence locker is embedded in the wall. It's covered in dents, scratches, and scorch marks -- evidence of previous failed attempts to open it."
+        absent "The heavy door of the evidence locker, having surrendered at last, hangs loosely from one of its hinges."
+    }
+    exit west -> sublevel-1-entrance
+}

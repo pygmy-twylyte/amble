@@ -1,0 +1,25 @@
+room lounge {
+    name "Coffee Lounge"
+    desc "A small space to relax, with a worn sofa, a ringed coffee table bearing a few magazines, and part of a jigsaw puzzle depicting the USS Enterprise D."
+    overlay if item lebowski_rug {
+        present "An ornate, brick red rug lies in the center of the room and somehow -- really ties the room together."
+        absent "The trap door opened in the floor reveals a ladder down to a hidden room below."
+    }
+    overlay if (flag set lab-fire-raging) {
+        text "Occasional wisps of black smoke rise from the portal room below."
+    }
+    overlay if flag coffee-brewed {
+        set "The coffee machine emits a few satisfied clicks as the rich aroma of fresh coffee fills the lounge."
+        unset "An automatic drip coffee machine stands empty but ready to brew on a small stand in one corner."
+    }
+    overlay if npc gonk_droid here {
+        normal "The gonk droid mills about by the coffee cart, muttering quiet gonks."
+        happy  "The gonk droid gonks to an unheard upbeat rhythm by the sofa."
+    }
+    overlay if npc cmot_dibbler here {
+        normal "Dibbler lounges here, pitching snacks to passing staff and adventurers."
+        happy  "Dibbler cheerfully offers samples to anyone near the sofa."
+        bored  "Dibbler stares at the coffee pot, wondering if he can sell the used grounds somehow."
+    }
+    exit west -> lift-bank-main
+}

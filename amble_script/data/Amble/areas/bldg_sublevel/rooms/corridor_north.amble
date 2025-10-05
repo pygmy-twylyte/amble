@@ -1,0 +1,8 @@
+room corridor-north {
+    name "Research Corridor (North)"
+    desc "A dimly lit concrete hallway stretches out, lined with emergency lights that flicker like they're deciding whether to stay on. Faint scratching sounds echo through the walls at irregular intervals.\n\nGraffiti on one wall reads: 'THEY NEVER LEFT AA-3B.' A maintenance hatch rattles occasionally, as if something on the other side is trying to remember how to use a doorknob."
+    exit north -> sublevel-1-entrance
+    exit west -> observation-room
+    exit east -> med-bay
+    exit south -> corridor-south
+}

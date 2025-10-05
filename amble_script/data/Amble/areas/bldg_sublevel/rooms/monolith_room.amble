@@ -1,0 +1,18 @@
+room monolith-room {
+    name "Monolith Room"
+    desc "The room is stark, dim, and cavernous. A series of industrial floodlights cast long, angled shadows across the centerpiece: a tall, perfectly black monolith that defies reflection. It absorbs light, sound, and—if you stare too long—possibly thought."
+    overlay if (flag unset talked-to-hal) {
+        text "A HAL-9000 camera and terminal embedded in the far wall looms dark and silent, but somehow still seems to be observing your actions."
+    }
+    overlay if (flag set hal-reboot#1) {
+        text "Several lights blink slowly on a panel near HAL-9000's camera, whose red light still glows faintly. A few cryptic instructions flicker across the monitor."
+    }
+    overlay if (flag set hal-reboot#2) {
+        text "HAL-9000's lens light glows bright red with a yellow center. Lights on several panels now flash in sequence; a boot sequence scrolls rapidly up the display."
+    }
+    overlay if (flag complete hal-reboot) {
+        text "The light in HAL-9000's lens glows an intense red and seems to stare through you and into the monolith. Various status notifications cycle on the nearby monitor."
+    }
+    exit east -> corridor-south
+    exit north -> observation-room
+}
