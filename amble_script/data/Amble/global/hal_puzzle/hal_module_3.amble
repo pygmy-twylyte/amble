@@ -1,0 +1,11 @@
+# ========================================
+# HAL Module #3 (CMOT)
+# ========================================
+
+item hal_module_3 {
+    name "HAL Memory Module #3"
+    desc "The final piece of HAL’s fragmented mind. The outer shell is pristine, but something about it feels... watchful. Once inserted, the full system may awaken — and then things might get complicated."
+    portable true
+    restricted true
+    location npc cmot_dibbler
+}

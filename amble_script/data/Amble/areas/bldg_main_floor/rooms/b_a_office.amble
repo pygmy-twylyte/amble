@@ -1,3 +1,7 @@
+# ==========================================
+# Brains Anonymous / Amble Adventures Office
+# ==========================================
+
 room b-a-office {
     name "Amble Adventures Main Office"
     desc "The office of Amble Adventures, a wholly disowned subsidiary of Brains Anonymous™, is a shrine to barely-funded creativity. Faded posters of games that were never released adorn the walls, including one titled 'PONG Construction Set 3000'. A sagging ficus looms in the corner like it’s been through something. An Initech™ Poetry Performer plays possum in another corner, hoping you don't notice it."
@@ -19,4 +23,51 @@ room b-a-office {
     }
     exit east -> main-lobby
     exit north -> supply-closet
+}
+
+# ========================================
+# Items
+# ========================================
+
+item poetry_performer {
+    name "Initech Poetry Performer"
+    desc "In lieu of decades-old magazines, the office has installed this poetry recitation device. If poetic material is supplied, it is automatically performed in the voice that is the most soulful and gripping for each listener in the room (as long as that happens to be Morgan Freeman's)."
+    portable false
+    location room b-a-office
+    container state closed
+}
+
+item peril_sunglasses {
+    name "Stylish Sunglasses"
+    desc "A pair of stylish black shades that automatically go completely opaque at the first sign of danger. Unfortunately, this includes things like loud noises, sudden movement, or mild existential dread."
+    portable true
+    location chest lost_and_found_box
+}
+
+item lost_and_found_box {
+    name "Lost & Found Box"
+    desc "A sturdy metal lock box with an official-looking sticker reading: 'Lost & Found — Amble Adventures Division' and 'Caution: Contents May Be Fictional'."
+    portable false
+    location room b-a-office
+    container state locked
+}
+
+item zircon_tweezers {
+    name "Zircon-Encrusted Tweezers"
+    desc "A heavy-duty pair of tweezers, encrusted in zircon for extra dazzle and especially good for plucking."
+    portable true
+    location chest lost_and_found_box
+    ability Pluck
+}
+
+item melted_aa_3b_id {
+    name "Section AA-3 Staff ID"
+    desc "A facility ID card for sector AA-3. Its weight seems to change as you hold it, as does the temperature. It's not warped or melted exactly -- just *distorted* somehow."
+    portable true
+    location chest lost_and_found_box
+    text """ RESTRICTED ACCESS PASS
+SECTOR AA-3, HIGH ENERGY
+ REALITY BRIDGE PROJECT
+"""
+    ability Read
 }

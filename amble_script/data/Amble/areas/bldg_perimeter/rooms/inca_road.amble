@@ -10,6 +10,21 @@ room inca-road {
 }
 
 # ========================================
+# Items
+# ========================================
+
+item road_sign {
+    name "Welcome Sign"
+    desc "A 10-foot tall sign, spotlit from below by a fusion powered sodium lamp. The sign is tilted upward, as if meant to be read from the air as well as the ground."
+    portable false
+    location room inca-road
+    text """                            AMBLE ADVENTURES
+                           (Inca Road Branch)
+                 * a division of Brains Anonymous, LLC"""
+    ability Read
+}
+
+# ========================================
 # Triggers
 # ========================================
 

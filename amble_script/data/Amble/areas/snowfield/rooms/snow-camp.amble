@@ -3,3 +3,26 @@ room snow-camp {
     desc "The remains of a temporary shelter are dug into a snowbank here. The tent has collapsed, half-fused to a scorched sled. The river — or some frozen remnant of it — glistens beyond."
     exit east -> snowfield
 }
+
+# ========================================
+# Items
+# ========================================
+
+item charred_journal {
+    name "Research Journal"
+    desc "A partly burned and soggy research journal marked \"Antarctic Outpost 31\" and \"MacReady\". Only the end of the final entry remains legible."
+    portable true
+    location room snow-camp
+    text "...got to the dogs first, then the others. Burn it all. Can't let it reach the building..."
+    ability Read
+}
+
+item spent_flamethrower {
+    name "Spent Flamethrower"
+    desc """A scorched and half-fused flamethrower, empty and broken beyond repair. The igniter’s casing is still warm. A faded label reads:
+
+Weyland-Yutani: Thermal Unit / Antarctica Series
+"""
+    portable true
+    location room snow-camp
+}

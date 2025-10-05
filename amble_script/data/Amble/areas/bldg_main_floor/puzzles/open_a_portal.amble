@@ -1,0 +1,15 @@
+item portal_gun {
+    name "Portal Gun"
+    desc "A black and white Portal gun affixed to a stand and aimed at a target on the wall. There's a power switch and a door to a battery compartment."
+    portable false
+    location room portal-room
+    container state closed
+    ability TurnOn
+}
+
+item empty_battery {
+    name "Empty Battery"
+    desc "A completely discharged 20 kilovolt battery. It would take months to charge it, but you might be able to exchange it somewhere for one with a charge."
+    portable true
+    location chest portal_gun
+}

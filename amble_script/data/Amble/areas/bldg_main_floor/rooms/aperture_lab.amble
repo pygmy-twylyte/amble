@@ -1,3 +1,7 @@
+# ========================================
+# Aperture Laboratory
+# ========================================
+
 room aperture-lab {
     name "Aperture Science Laboratory"
     desc "The unnaturally white—walls, floor, ceiling, even the air here feels clinical and overexposed. Everything hums at a frequency designed to encourage strict compliance. A single console blinks on a table beside a highly over-engineered printer labeled \"Aperture Science Hospitality Generator.\""
@@ -17,4 +21,27 @@ room aperture-lab {
         text "A glowing, steaming, sizzling invitation engraved on an asbestos sheet sits on the floor in front of the printer."
     }
     exit portal -> portal-room
+}
+
+# ========================================
+# Items
+# ========================================
+
+item magnifying_glass {
+    name "Magnifying Glass"
+    desc "Small gets big -- it's a rig."
+    portable true
+    location room aperture-lab
+}
+
+item lab_printer {
+    name "Initech PlasmaJet 2 Printer"
+    desc "A sleek, off white printer, with a blinking LED near a small status screen. This model is known for its high precision, micrometer-level resolution, and ability to ignite almost any printing surface."
+    portable false
+    location room aperture-lab
+    container state open
+    text "PC LOAD LETTER"
+    ability TurnOn
+    ability Read
+    requires extinguish to extinguish
 }

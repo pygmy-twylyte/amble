@@ -1,0 +1,32 @@
+# ========================================
+# Get an Invitation Puzzle
+# ========================================
+
+item burnt_invitation {
+    name "Charred Paper Bits"
+    desc "The charred remains of a sheet of printer paper. A few areas aren't completely black, or vaporized. One bit remains legible."
+    portable true
+    location nowhere "spawns@aperture-lab"
+    text "--ally invited to com--"
+    ability Read
+}
+
+item asbestos_sheet {
+    name "Asbestos Sheets"
+    desc "A pack of sheets of asbestos, about the size of a pack of copy paper."
+    portable true
+    location room supply-closet
+    text "Manufacturer's Warning: Do Not Breathe While Using This Product!"
+    ability Read
+}
+
+item invitation {
+    name "Engraved Invitation"
+    desc "A standard letter-size slab of asbestos with ornate and official-looking lettering burned into it. It remains too hot to touch."
+    portable true
+    location nowhere "spawns@aperture-lab"
+    text """Candidate #2112-42:
+You are cordially invited to complete your evaluation and induction. Please present this invitation at the Amble Adventures office immediately upon arrival."""
+    ability Read
+    requires insulate to handle
+}

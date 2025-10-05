@@ -1,0 +1,43 @@
+# ========================================
+# HAL Module #2 - Vending Machine
+# ========================================
+
+item zircon_tweezers_crevice {
+    name "Zircon Encrusted Tweezers (in crevice)"
+    desc "A heavy-duty pair of tweezers, encrusted in zircon for extra dazzle and especially good for plucking -- but not for reaching, as you found out when they fell into the crevice of the main lobby floor."
+    portable true
+    location nowhere "spawns@main-lobby if tweezers tried to reach HAL module in crevice"
+    requires pluck to handle
+}
+
+item vending_machine {
+    name "Vending Machine"
+    desc "A battered vending machine that looks like it's been through several wars and at least one peace treaty negotiation. The glass front is surprisingly intact, though spider-webbed with cracks. Through the transparent but locked panel, you can see various items that definitely weren't approved by any health department. A handwritten sign taped to the front reads: 'OUT OF ORDER - Management suggests violence.'"
+    portable false
+    location room main-lobby
+    container state transparentLocked
+    requires pry to open
+}
+
+item hal_module_2 {
+    name "HAL Memory Module #2"
+    desc "Second in the trio of HAL's memory modules. Its red LED pulses gently, like a heartbeat—or a warning. Through the cracked glass of the vending machine, you can see it sitting on shelf B4, wedged between what appears to be dehydrated water and a sandwich that may or may not exist. It hums faintly, and you could swear it whispered your name."
+    portable true
+    location chest vending_machine
+}
+
+item hal_module_2_crevice {
+    name "HAL Memory Module #2 (in crevice)"
+    desc "Second in the trio of HAL's memory modules. The module has fallen deep into a narrow crevice between the vending machine and the floor. Its red LED pulses from the darkness about a foot down, resting on what looks like decades of accumulated dust, lost coins, and possibly sentient dust bunnies. The gap is too narrow for your hand - you'll need some kind of tool to fish it out."
+    portable true
+    location nowhere "spawns in main-lobby when vending machine pried"
+    requires pluck to handle
+}
+
+item fishing_line {
+    name "Makeshift Fishing Line"
+    desc "An MacGyver-ed fishing line, with a paper clip hook attached to some dental floss."
+    portable true
+    location nowhere "spawns@inventory when items attached"
+    ability Pluck
+}

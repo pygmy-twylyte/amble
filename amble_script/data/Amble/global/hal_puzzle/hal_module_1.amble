@@ -1,0 +1,28 @@
+item hal_module_1 {
+    name "HAL Memory Module #1"
+    desc "The first of HAL’s missing memory modules. It's a small, rectangular prism etched with faint circuitry—and possibly resentment. Warm to the touch, but that might just be your imagination."
+    portable true
+    location nowhere "spawns@observation-room after EMH mobilized"
+}
+
+item broken_emitter {
+    name "Mobile Emitter (Broken)"
+    desc "A palm-sized, silvery device scorched and warped by a violent electromagnetic flare. It may not beyond repair, though a few panels are cracked and the core oscillator is rattling suspiciously. Smells faintly of ozone and regret."
+    portable true
+    location nowhere "spawns@lost_and_found_box when mobilize-emh sequence starts"
+}
+
+item working_emitter {
+    name "Mobile Emitter (Repaired)"
+    desc "Freshly repaired and gleaming with diagnostic confidence, this mobile emitter is once again capable of projecting the Emergency Medical Hologram beyond the confines of Med Bay. It's surprisingly lightweight—and slightly smug about it."
+    portable true
+    location nowhere "spawns@inventory after broken_emitter repaired"
+}
+
+item sonic_screwdriver {
+    name "Sonic Screwdriver"
+    desc "A multipurpose marvel of alien engineering, capable of repairing complex machinery, unlocking sealed doors, and occasionally shorting out bureaucracies. Ineffective against wood, emotions, and existential dread."
+    portable true
+    location chest evidence_locker_open
+    ability Repair
+}

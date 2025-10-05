@@ -25,3 +25,13 @@ npc black_knight {
         "(He stands silently, blocking your path.)"
     }
 }
+
+# ========================================
+# Items
+# ========================================
+item dull_longsword {
+    name "Dull Longsword"
+    desc "The Black Knight's masterfully forged longsword, dulled from years of hacking up those who absolutelyinsist upon passing."
+    portable true
+    location npc black_knight
+}

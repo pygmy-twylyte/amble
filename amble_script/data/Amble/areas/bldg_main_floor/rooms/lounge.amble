@@ -23,3 +23,15 @@ room lounge {
     }
     exit west -> lift-bank-main
 }
+
+# ========================================
+# Items
+# ========================================
+
+item lebowski_rug {
+    name "Ornate Rug"
+    desc "It really ties the room together, man."
+    portable true
+    location room lounge
+    requires ignite to burn
+}

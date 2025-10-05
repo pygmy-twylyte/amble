@@ -1,3 +1,7 @@
+# ========================================
+# Gonk Droid
+# ========================================
+
 npc gonk_droid {
     name "Gonk Droid"
     desc "A walking battery charger that looks like a trash bin."
@@ -13,4 +17,24 @@ npc gonk_droid {
         "GONK gonk."
         "Gonk... Gonk..."
     }
+}
+
+# ========================================
+# Items
+# ========================================
+item charged_battery {
+    name "Charged Battery"
+    desc "A fully charged, 20 kilovolt battery. Don't touch it to your tongue to test it."
+    portable true
+    location npc gonk_droid
+    restricted true
+}
+
+item gonk_family_photo {
+    name "Gonk's Family Photo"
+    desc "A slightly scorched photograph of the gonk droid with its family: a PC power supply, a D-cell, and a set of adorable AAA triplets."
+    portable true
+    location npc gonk_droid
+    text "Brains Anonymous Energy Division Picnic — For Staff & Families of Room AA-3B. (added below: \"Just hours before the Candidate reported for load test...\")"
+    ability Read
 }

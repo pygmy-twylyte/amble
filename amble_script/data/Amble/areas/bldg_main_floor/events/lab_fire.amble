@@ -1,0 +1,37 @@
+# ========================================
+# Lab / Foam Fire
+# ========================================
+
+# ========================================
+# Items
+# ========================================
+
+item foamsafe_x17 {
+    name "Initech FoamSafe™ X-17"
+    desc "A fire extinguisher-like device with the words \"Initech FoamSafe™ X-17\" proudly emblazoned on its side. Its label promises peace of mind in emergencies — though closer inspection suggests otherwise."
+    portable true
+    location room aperture-lab
+    text """INITECH FOAMSAFE™ MODEL X-17
+
+FOR EMERGENCY USE ONLY
+Contents: Pressurized mineral oil, cedar essence, trace accelerants
+*Note: Foam not included.*
+
+Instructions:
+1. Shake vigorously.
+2. Point away from self (ideally).
+3. Spray liberally and accept the consequences.
+
+Warning: Device may not extinguish fires. Initech assumes no liability for secondary
+combustion, flashpoint misalignment, or structural regrets.
+"""
+    ability Read
+    ability Extinguish
+}
+
+item foam_fire {
+    name "Foam Fire"
+    desc "A raging patch of fire fueled by accelerant-laced foam. It crackles hungrily."
+    portable false
+    location nowhere "spawns@aperture-lab when foamsafe misfires"
+}

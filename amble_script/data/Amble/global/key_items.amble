@@ -1,0 +1,32 @@
+# ========================================
+# KEY Items
+# ========================================
+
+# This is the place for literal keys and other items that are used to
+# restrict or grant access to locations and containers.
+
+item visitor_pass {
+    name "Visitor Pass"
+    desc "A laminated slip of psychic paper on a lanyard. It reads the mind of whatever is checking it and shows whatever is needed to gain access."
+    portable true
+    location nowhere "b_a_receptionist"
+}
+
+item lost_and_found_key {
+    name "Lost and Found Key"
+    desc "A small brass key on a ring, labeled \"Lost and Found\"."
+    portable true
+    location npc b_a_receptionist
+    restricted true
+    ability Unlock lost_and_found_box
+}
+
+item security_locker_key {
+    name "Brass Key"
+    desc "A small, nondescript brass key with what appears to be a small glob of ear wax on the tip. There's a rumpled label attached to the ring with a couple of letters worn off by greasy fingers."
+    portable true
+    location room security-station
+    text "_OCK _OCK_R"
+    ability Read
+    ability Unlock security_locker
+}

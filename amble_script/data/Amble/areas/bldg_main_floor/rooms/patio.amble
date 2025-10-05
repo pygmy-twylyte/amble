@@ -1,5 +1,39 @@
+# ========================================
+# Restaurant Patio
+# ========================================
+
 room patio {
     name "Restaurant Patio"
     desc "The patio overlooks nothing in particular—just an endless starfield gently swirling beyond a transparent force field. A few metal tables are bolted to the floor, and one of them has a half-empty cocktail glass slowly un-drinking itself. A sign near the edge reads: 'No Leaning Beyond This Point. You have been warned.'"
     exit west -> restaurant
+}
+
+# ========================================
+# Items
+# ========================================
+#
+item un_drink {
+    name "Negative Cocktail"
+    desc "A crystal glass sits half full of... nothing. And yet, the liquid level keeps rising, as if the drink is slowly returning to the bartender across time. The stir stick spins gently in defiance of gravity and good sense."
+    portable true
+    location room patio
+}
+
+item lighter {
+    name "Butane Lighter"
+    desc "An engraved, metallic Zippo-style lighter, worn but functional."
+    portable true
+    location room patio
+    text "DJVB"
+    ability Ignite
+    ability Read
+}
+
+item empty_lighter {
+    name "Butane Lighter (Empty)"
+    desc "An engraved, metallic Zippo-style lighter. It was good for a few uses but seems to have run out of fuel."
+    portable true
+    location nowhere "spawns@inventory when lighter used up"
+    text "DJVB"
+    ability Read
 }
