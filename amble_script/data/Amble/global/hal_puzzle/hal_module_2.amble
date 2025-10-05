@@ -34,6 +34,7 @@ item hal_module_2_crevice {
     requires pluck to handle
 }
 
+# needed to remove HAL module 2 (and/or tweezers) from crevice
 item fishing_line {
     name "Makeshift Fishing Line"
     desc "An MacGyver-ed fishing line, with a paper clip hook attached to some dental floss."

@@ -35,3 +35,18 @@ item lebowski_rug {
     location room lounge
     requires ignite to burn
 }
+
+item coffee_machine {
+    name "Coffee Machine"
+    desc "A sleek black single-serve drip coffee machine, ready to go with fresh grounds."
+    portable false
+    location room lounge
+    ability TurnOn
+}
+
+item hot_coffee {
+    name "Hot Coffee"
+    desc "A paper cup of piping hot deep black coffee. Smells like a dark french roast."
+    portable true
+    location nowhere "spawns@lounge after coffee_machine started"
+}

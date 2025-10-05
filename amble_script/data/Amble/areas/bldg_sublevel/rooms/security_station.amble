@@ -7,3 +7,37 @@ room security-station {
     }
     exit west -> sublevel-1-entrance
 }
+
+# ========================================
+# Items
+# ========================================
+
+item evidence_locker_closed {
+    name "Evidence Locker"
+    desc "A heavy-duty, astrogation-grade steel locker marked 'EVIDENCE'. It is scorched and slightly dented, as if there have been a few attempts to break into it."
+    portable false
+    location room security-station
+    container state locked
+    requires pry to open
+}
+
+item evidence_locker_open {
+    name "Evidence Locker"
+    desc "A heavy-duty, astrogation-grade steel locker marked 'EVIDENCE'. The door is severely bent in one corner and hangs loosely from the bottom hinge."
+    portable false
+    location nowhere "spawns@security-station when locker pried open"
+    container state open
+}
+
+item evidence_log {
+    name "Evidence Log"
+    desc "A book logging the items taken from perpetrators and placed into the evidence locker. It's smeared with mustard, fingerprints, and something you hope is hair gel."
+    portable true
+    location room security-station
+    text """Date:   Boxing Day
+Item:   Tool (Weapon?)
+Place:  Monolith Room
+
+Event:  White male in his 30's found in the monolith room pointing this whirring item at the HAL terminal. Perpetrator states he was trying to fix it. Luckily, he failed. Confiscated the tool from him (he calls it a sonic screwdriver) to prevent any future attempts."""
+    ability Read
+}

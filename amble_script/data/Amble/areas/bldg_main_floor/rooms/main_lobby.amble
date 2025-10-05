@@ -15,3 +15,28 @@ room main-lobby {
     exit east -> restaurant
     exit west -> b-a-office
 }
+
+# ========================================
+# Vending Machine (non-HAL puzzle) Items
+# ========================================
+
+item dehydrated_water {
+    name "Dehydrated Water"
+    desc "A packet labeled 'Dehydrated Water - Just Add Water!' The instructions on the back have been crossed out and replaced with 'PARADOX WARNING: Do not attempt to reconstitute.'"
+    portable true
+    location chest vending_machine
+}
+
+item schrodingers_sandwich {
+    name "Schrödinger's Sandwich"
+    desc "A sandwich in a quantum superposition of both fresh and moldy until observed. The packaging warns: 'Contents may or may not contain nuts, and also definitely contain nuts.'"
+    portable true
+    location chest vending_machine
+}
+
+item fortune_cookie_of_doom {
+    name "Fortune Cookie of Doom"
+    desc "A fortune cookie wrapped in black paper with tiny skulls on it. You can feel it radiating pessimism through the wrapper. Previous fortunes reportedly included 'Your future is behind you' and 'Help! I'm trapped in a fortune cookie factory!'"
+    portable true
+    location chest vending_machine
+}

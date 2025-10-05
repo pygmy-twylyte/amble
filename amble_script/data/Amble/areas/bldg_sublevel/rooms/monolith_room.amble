@@ -16,3 +16,15 @@ room monolith-room {
     exit east -> corridor-south
     exit north -> observation-room
 }
+
+# ========================================
+# Items
+# ========================================
+
+item monolith {
+    name "The Monolith"
+    desc "A towering obsidian rectangle that seems to absorb light itself. Standing nearly twelve feet tall, its surface is perfectly smooth and utterly black. It radiates an otherworldly presence that makes your skin crawl and your mind race with impossible thoughts. This is clearly something far beyond human understanding - a relic from the dawn of intelligence itself."
+    portable false
+    location room monolith-room
+    ability TurnOn
+}
