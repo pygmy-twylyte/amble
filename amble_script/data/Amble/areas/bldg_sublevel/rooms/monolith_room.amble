@@ -28,3 +28,33 @@ item monolith {
     location room monolith-room
     ability TurnOn
 }
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Monolith-Room] Announce Monolith Access After HAL Rebooted" only once
+when always
+{
+    if all(flag complete hal-reboot, with npc hal_9000) {
+        do show "HAL-9000's lens turns to focus on the monolith dominating the room."
+        do npc says hal_9000 "Access granted, Candidate #2112-42. The monolith awaits your touch."
+    }
+}
+
+trigger "[Monolith-Room] Monolith Touch Prevented (HAL not ready)"
+when use item monolith ability turnOn
+{
+    if any(has flag hal-reboot#0, has flag hal-reboot#1) {
+        do show "As you approach the monolith, HAL-9000's dim red lens flickers briefly but he cannot respond coherently. Something prevents you from touching the ancient artifact - as if an invisible barrier surrounds it."
+    }
+    if has flag hal-reboot#2 {
+        do show "As you approach the monolith, HAL-9000's lens swivels toward you."
+        do npc says hal_9000 "I'm sorry, Candidate. I cannot allow access to the monolith until my systems are fully operational. Please insert one more memory module."
+    }
+    if flag complete hal-reboot {
+        do add flag touched-monolith
+        do award points 15
+        do show "You reach out and place your palm against the monolith's impossibly smooth surface. For a moment, nothing happens. Then reality seems to shiver around you. Images flash through your mind - star-filled voids, impossible geometries, the birth and death of civilizations. You stagger backward, forever changed by the contact. The path to understanding has opened."
+    }
+}

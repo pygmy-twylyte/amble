@@ -35,3 +35,15 @@ item dull_longsword {
     portable true
     location npc black_knight
 }
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Sublevel-1-Entrance] Black Knight Hints About Vending Machine" only once
+when always
+{
+    if all(with npc black_knight, flag in progress hal-reboot) {
+        do npc says black_knight "Lo, good Sir! I grow weary, and require a chalice of electrolytes and caffeine, but cannot leave my post. Nor do I want to dull my new sword doing battle with that infernal contraption in the lobby again. If you pass by there, retrieve one for me and I shall be further in your debt."
+    }
+}

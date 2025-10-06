@@ -50,3 +50,26 @@ item destroyed_box {
     portable true
     location nowhere "spawns@player when delivery_box opened"
 }
+
+# ========================================
+# Queasy While Holding Vogon Poetry Book
+# ========================================
+
+trigger "[Global] Take Vogon Poetry"
+note "merely taking poetry book does not cause status effect -- reading does"
+when take item vogon_poetry_book
+{
+    do show "A greasy feeling of nausea overcomes you."
+}
+
+trigger "[Global] Drop Vogon Poetry"
+note "dropping only stops the nausea if player has not read it"
+when drop item vogon_poetry_book
+{
+    if any(missing flag read-vogon-poetry, has flag cured-vogon-poetry) {
+        do show "That greasy, queasy feeling subsides."
+    }
+    if all(has flag read-vogon-poetry, missing flag cured-vogon-poetry) {
+        do show "Getting rid of the book helps a little, but the poem is burned into your mind and the nausea continues."
+    }
+}

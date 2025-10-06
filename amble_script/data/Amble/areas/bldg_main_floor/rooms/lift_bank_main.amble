@@ -18,3 +18,33 @@ room lift-bank-main {
     exit east -> lounge
     exit south -> main-lobby
 }
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Lift-Bank-Main] Keycard Activates Elevator" when enter room lift-bank-main {
+    if has item elevator_keycard {
+        do show "The keycard in your pack chirps twice as you approach the proximity reader on the wall, which responds with a happy melody."
+    }
+}
+
+trigger "[Lift-Bank-Main] Point Award On First Activation" only once when enter room lift-bank-main {
+    if has item elevator_keycard {
+        do add flag elevator-activated
+        do show "The main lift lights up, and Muzak plays over a tinny speaker inside. In horror, you realize: It's Porcupine Tree's 'The Sound of Muzak' -- the Muzak version."
+        do award points 3
+    }
+}
+
+# ========================================
+# Goals
+# ========================================
+
+goal activate-elevator {
+    name "Activate the Elevator"
+    desc "The receptionist said the last Candidate had the proximity card just before it melted in the panic room. (The Candidate melted, not the card.)"
+    group required
+    start when goal complete get-visitor-pass
+    done when has flag elevator-activated
+}

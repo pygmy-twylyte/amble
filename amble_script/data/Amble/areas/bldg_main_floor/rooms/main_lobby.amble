@@ -40,3 +40,39 @@ item fortune_cookie_of_doom {
     portable true
     location chest vending_machine
 }
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Main-Lobby] Security Reminder" only once
+when enter room main-lobby
+{
+    do schedule in 3 if player in room main-lobby onFalse cancel
+    note "lobby loitering reminder" {
+        do show """A chime echoes through the lobby. "Candidates: Please do not loiter in the lobby," intones an overhead voice."""
+        do award points -1
+    }
+}
+
+trigger "[Main-Lobby] HAL Module/Drop Tweezers In Crevice" only once
+note "may occur during vending machine / HAL module 2 sequence"
+when use item zircon_tweezers on item hal_module_2_crevice interaction handle
+{
+    if has flag module-2-puzzle#1 {
+        do show "The glint of the zircon-encrusted tweezers is truly something to behold, but the tweezers are too short to reach the memory module. In fact, in trying to reach that far into the crack with them, the tweezers slip from your fingers and fall into the crevice too."
+        do replace drop item zircon_tweezers with zircon_tweezers_crevice
+        do add flag lost-tweezers
+        do award points -2
+    }
+}
+
+trigger "[Main-Lobby] Recover Tweezers"
+when use item fishing_line on item zircon_tweezers_crevice interaction handle
+{
+    do show "After a dozen tries and venting by beating the vending machine with the crowbar some more, you are able to fish your prized zircon-encrusted tweezers back out of the crevice."
+    do despawn item zircon_tweezers_crevice
+    do spawn item zircon_tweezers in inventory
+    do add flag recovered-tweezers
+    do award points 3
+}

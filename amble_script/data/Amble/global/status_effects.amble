@@ -36,16 +36,7 @@ goal survive-vogon-poetry {
 }
 
 
-trigger "[Global] Drop Vogon Poetry" note "dropping only stops the nausea if not read"
-when drop item vogon_poetry_book
-{
-    if any(missing flag read-vogon-poetry, has flag cured-vogon-poetry) {
-        do show "That greasy, queasy feeling subsides."
-    }
-    if all(has flag read-vogon-poetry, missing flag cured-vogon-poetry) {
-        do show "Getting rid of the book helps a little, but the poem is burned into your mind and the nausea continues."
-    }
-}
+
 
 trigger "[Status] Read Vogon Poetry > Persistent Nausea" when use item vogon_poetry_book ability read {
     do show "You nearly get through the first poem when the vomiting begins..."

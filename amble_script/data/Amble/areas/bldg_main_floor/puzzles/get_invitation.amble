@@ -30,3 +30,67 @@ You are cordially invited to complete your evaluation and induction. Please pres
     ability Read
     requires insulate to handle
 }
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Aperture-Lab] Printer Burns Paper"
+when use item lab_printer ability turnOn {
+    if container lab_printer has item printer_paper {
+        do despawn item printer_paper
+        do add flag burned-invitation
+        do spawn item burnt_invitation into room aperture-lab
+        do add wedge "An annoyed voice on the PA: ATTENTION Staff - do NOT use regular copy paper in the lab PlasmaJet printer, or we will be shut down again -- by order of FEMA, PETA, the ATF, FBI, and our HOA." width 1 spinner ambientInterior
+        do show "The paper ignites in a flash, and the PlasmaJet spits the flaming fragments of a document on the floor at your feet."
+        do schedule in 2 {
+            do show "A nearby smoke detector alarms briefly, the quits with an exasperated sigh when it sees you near the printer, surrounded by smoldering confetti."
+        }
+    }
+}
+
+trigger "[Aperture-Lab] Print Invitation on Asbestos" only once
+when use item lab_printer ability turnOn {
+    if container lab_printer has item asbestos_sheet {
+        do add flag invitation-sans-ignition
+        do award points 10
+        do despawn item asbestos_sheet
+        do show "The PlasmaJet emits a blinding flash of light, leaving a printer-shaped purple blob in your visual field and blinding you for a few moments."
+        do schedule in 2 note "blindness clears" {
+            do spawn item invitation into room aperture-lab
+            do show "Your vision begins to clear, and you see an engraved invitation on the floor. It glows slightly, and waves of heat warp the air around it."
+        }
+    }
+}
+
+trigger "[Aperture-Lab] Insulate With Towel"
+when use item towel on item invitation interaction handle {
+    do show "You wrap your towel around the still-piping-hot invitation to grasp it, suffering only minor burns in the process."
+}
+
+trigger "[Aperture-Lab] Handle/Take Invitation with Towel" only once
+when act handle on item invitation {
+    do despawn item invitation
+    do spawn item invitation in inventory
+    do add flag got-invitation
+    do award points 5
+    do show "Using your towel as insulation, you're able to wrangle the still-hot invitation into your pack."
+}
+
+trigger "[Aperture-Lab] Drop Invitation Without Insulation"
+when take item invitation {
+    do replace drop item invitation with invitation
+    do show "You burn your fingers and drop the invitation on the floor. It emits a reddish glow, and shimmers from the radiating heat."
+}
+
+# ========================================
+# Goals
+# ========================================
+
+goal get-invited {
+    name "Get an Invitation"
+    desc "The receptionist in the Amble Adventures office won't help you without an invitation; you'll need to get one somehow."
+    group required
+    start when goal complete find-the-office
+    done when has flag got-invitation
+}

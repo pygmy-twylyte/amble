@@ -1,5 +1,21 @@
+# ========================================
+# Room AA-3B
+# ========================================
+
 room room-aa-3b {
     name "Room AA-3B"
     desc "The door opens into a swirling mass of static and fractured reality. Flickering projections of impossible geometries ripple through the darkness. Objects seem to vanish halfway through existing. A guttural voice whispers paradoxes from the walls themselves. Anyone with a sense of self-preservation should probably leave immediately.\n\nA small sign by the entrance reads: 'Amble Adventures assumes no responsibility for ontological damage incurred within.'"
     exit east -> sublevel-1-entrance
+}
+
+# ========================================
+# Goals
+# ========================================
+
+goal reach-aa3b {
+    name "Investigate Room AA-3B"
+    desc "Figure out what's behind the mysterious sealed door."
+    group required
+    start when has flag entered-sublevel-1
+    done when reached room room-aa-3b
 }

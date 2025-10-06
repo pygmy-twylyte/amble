@@ -12,27 +12,4 @@ room vip-bathroom {
 # Items
 # ========================================
 
-item vogon_poetry_book {
-    name "Longest Poems of the Largest Vogons"
-    desc "A bound volume of Vogon poetry, with the usual safety devices and locks removed. Looking inside is likely to cause brain damage and a permanent smell of boiling cauliflower to haunt you, if you're lucky."
-    portable true
-    location room vip-bathroom
-    text """"Oh freddled gruntbuggly,
-Thy micturations are to me
-As plurdled gabbleblotchits on a lurgid bee.
-Groop, I implore thee, my foonting turlingdromes,
-And hooptiously drangle me with crinkly bindlewurdles,
-Or I will rend thee in the gobberwarts
-With my blurglecruncheon, see if I don't!"
-
-"Bleem miserable venchit! Bleem
-forever mestinglish asunder frapt.
-Gashee morphousite,
-thou expungiest quoopisk!
-Fripping lyshus wimbgunts,
-awhilst moongrovenly kormzibs.
-Gerond withoutitude form into formless bloit,
-why not then? Moose."
-"""
-    ability Read
-}
+# vogon poetry book is in keycard puzzle

@@ -1,3 +1,14 @@
+# ========================================
+# Puzzle: Pass Black Knight
+# ========================================
+# prereq: elevator keycard / access to sublevel
+# situation: Black Knight blocks all entries
+# solution: player must steal dull_longsword, sharpen it and give it (keen_longsword) back
+
+# ========================================
+# Items
+# ========================================
+
 item keen_longsword {
     name "Keen Longsword"
     desc "The Black Knight's masterfully forged longsword, newly sharpened and eager to return to slicing up passers by."
@@ -12,4 +23,66 @@ item whetstone {
     portable true
     location room snow-camp
     ability Sharpen
+}
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Sublevel-1-Entrance] Refuse Visitor Pass"
+when give item visitor_pass to npc black_knight {
+    do npc refuse item black_knight "Ha! Perhaps you ARE Arthur, King of the Britons... but I said NONE shall pass. Surely you speak the King's English, so-called Arthur-King?!"
+}
+
+trigger "[Sublevel-1-Entrance] Meet the Black Knight" only once
+when talk to npc black_knight {
+    do add flag talked-to-knight
+    do npc says black_knight "You shall not pass. This wing is closed... and may not exist at all. Begone!"
+}
+
+trigger "[Sublevel-1-Entrance] Taking Sword Angers Knight" when take item dull_longsword from npc black_knight {
+    do set npc state black_knight mad
+    do npc says black_knight "Wha-- HEY! Give that back, you -- you -- cowardly cur!"
+}
+
+trigger "[Sublevel-1-Entrance] Return Dull Sword to Knight" when give item dull_longsword to npc black_knight {
+    do npc says black_knight "Right. Now don't do it again, or I shall be forced to bludgeon you with it. You still may not pass."
+    do set npc state black_knight normal
+}
+
+trigger "[Sublevel-1-Entrance] Sharpen Knight's Sword" only once when act sharpen on item dull_longsword {
+    do replace item dull_longsword with keen_longsword
+    do show "After years of sharpening Ginsu knives to cut open aluminum cans and tomatoes, you have no problem honing the Black Knight's sword to a keen edge."
+    do add flag sword-sharpened
+    do award points 3
+}
+
+trigger "[Sublevel-1-Entrance] Black Knight Kicks Player After Sword Taken" when always {
+    if all(with npc black_knight, npc in state black_knight mad, missing flag appeased-black-knight) {
+        do show "The Black Knight prances around the room, occasionally trying to kick you in the shins."
+        do npc random dialogue black_knight
+    }
+}
+
+trigger "[Sublevel-1-Entrance] Sharpened Sword Returned" only once
+when give item keen_longsword to npc black_knight
+{
+    do restrict item keen_longsword
+    do add flag appeased-black-knight
+    do set barred message from sublevel-1-entrance to room-aa-3b "As you near the door, you are overwhelmed by a sense of spinning through an unending series of fictional realities, compelling you to step away."
+    do award points 5
+    do set npc state black_knight happy
+    do npc says black_knight "hank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like."
+}
+
+# ========================================
+# Goals
+# ========================================
+
+goal get-past-knight {
+    name "Get Past the Black Knight"
+    desc "Find a way to get past the Black Knight to access the rest of the sublevel."
+    group required
+    start when goal complete go-to-sublevel
+    done when has flag appeased-black-knight
 }

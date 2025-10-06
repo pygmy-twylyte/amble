@@ -1,3 +1,7 @@
+# ========================================
+# Entrance to Sublevel AA-3
+# ========================================
+
 room sublevel-1-entrance {
     name "Sublevel AA-3 Entrance"
     desc "A small landing area covered in dust. Buckets, tools, and debris are strewn about the floor. The door to the west is labeled with a sign:\n\n                        🚧 ROOM AA-3B 🚧\n                 FICTIONAL UNIVERSE CONTAINMENT"
@@ -23,4 +27,24 @@ room sublevel-1-entrance {
         required_flags(appeased-black-knight),
         barred "The Black Knight stands in your way."
     }
+}
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Sublevel-1-Entrance] Arrived" only once when enter room sublevel-1-entrance {
+    do add flag entered-sublevel-1
+}
+
+# ========================================
+# Goals
+# ========================================
+
+goal go-to-sublevel {
+    name "Go Down to AA-3"
+    desc "The elevator should now allow you down to sublevel AA-3, and the receptionist said you're expected in Room AA-3B for... orientation? Initiation? Obfuscation?"
+    group required
+    start when goal complete activate-elevator
+    done when reached room sublevel-1-entrance
 }

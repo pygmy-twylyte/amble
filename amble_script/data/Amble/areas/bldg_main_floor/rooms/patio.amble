@@ -19,21 +19,23 @@ item un_drink {
     location room patio
 }
 
-item lighter {
-    name "Butane Lighter"
-    desc "An engraved, metallic Zippo-style lighter, worn but functional."
-    portable true
-    location room patio
-    text "DJVB"
-    ability Ignite
-    ability Read
+# ========================================
+# Triggers
+# ========================================
+trigger "[Patio] Sunglasses Required" when enter room patio {
+    if missing item peril_sunglasses {
+        do push player to restaurant
+        do show "A blinding burst of light erupts from the swirling starfield, forcing you to shield your eyes. With no protection, you're driven back into the relative safety of the restaurant."
+    }
+    if has item peril_sunglasses {
+        do show "Sensing the possible harm in eating a dessert a stone's throw away from the explosions of all nearby stars, your peril-sensitive sunglasses flash nearly completely opaque, allowing you to see without permanent damage to the retina as the galaxies outside continue to erupt."
+    }
 }
 
-item empty_lighter {
-    name "Butane Lighter (Empty)"
-    desc "An engraved, metallic Zippo-style lighter. It was good for a few uses but seems to have run out of fuel."
-    portable true
-    location nowhere "spawns@inventory when lighter used up"
-    text "DJVB"
-    ability Read
+trigger "[Patio] Award Points Getting In" only once
+note "separate one-off trigger to award first time getting in"
+when enter room patio {
+    if has item peril_sunglasses {
+        do award points 2
+    }
 }

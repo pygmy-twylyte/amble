@@ -1,0 +1,47 @@
+# ========================================
+# Reboot HAL Puzzle (Overall)
+# ========================================
+
+trigger "[Monolith-Room] HAL/Start Reboot Sequence" only once
+note "talking to HAL first time initiates the HAL reboot puzzle sequence"
+when talk to npc hal_9000 {
+    do add seq flag hal-reboot limit 3
+    do add flag talked-to-hal
+    do set npc state hal_9000 custom:memory-0
+    do npc says hal_9000 "(when you speak, the red light in HAL's lens begins to pulse slowly, then grows steady)"
+}
+
+trigger "[Monolith-Room] HAL/One Module In"
+when always {
+    if has flag hal-reboot#1 {
+        do set npc state hal_9000 custom:memory-1
+    }
+}
+
+trigger "[Monolith-Room] HAL/Two Modules In"
+when always {
+    if has flag hal-reboot#2 {
+        do set npc state hal_9000 custom:memory-2
+    }
+}
+
+trigger "[Monolith-Room] HAL/All Modules In" only once
+when always {
+    if flag complete hal-reboot {
+        do award points 10
+        do set npc state hal_9000 custom:memory-3
+        do show "All memory now restored, HAL-9000 finishes rebooting and is fully operational."
+    }
+}
+
+# ========================================
+# Goals
+# ========================================
+
+goal reboot-hal {
+    name "Reactivate HAL-9000"
+    desc "Install HAL's missing memory modules to the panel in the Observation Room to fully reactivate him."
+    group required
+    start when reached room monolith-room
+    done when flag complete hal-reboot
+}

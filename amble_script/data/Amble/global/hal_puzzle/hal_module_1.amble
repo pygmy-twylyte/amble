@@ -1,3 +1,10 @@
+# ========================================
+# HAL Module #1 Puzzle
+# ========================================
+# prereq: made it to monolith room, tried to talk to HAL
+# scene: EMH knows where module #1 is, but can't/won't get it without his mobile emitter
+# solution: must find broken emitter, gain access to / find sonic screwdriver, repair the emitter and give to EMH
+
 item hal_module_1 {
     name "HAL Memory Module #1"
     desc "The first of HAL’s missing memory modules. It's a small, rectangular prism etched with faint circuitry—and possibly resentment. Warm to the touch, but that might just be your imagination."
@@ -19,10 +26,105 @@ item working_emitter {
     location nowhere "spawns@inventory after broken_emitter repaired"
 }
 
-item sonic_screwdriver {
-    name "Sonic Screwdriver"
-    desc "A multipurpose marvel of alien engineering, capable of repairing complex machinery, unlocking sealed doors, and occasionally shorting out bureaucracies. Ineffective against wood, emotions, and existential dread."
-    portable true
-    location chest evidence_locker_open
-    ability Repair
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Med-Bay] Talk to EMH After Finding HAL" only once
+note "quest to mobilize emh starts; ultimate reward is HAL module #1"
+when always {
+    if all(with npc emh, flag in progress hal-reboot) {
+        do npc says emh "Ah -- I hoped I would catch you. Word is, you've seen HAL, or what remains of him. If you want to get him working again -- and I'm not sure I'd advise it -- I may be able to get one of those memory modules for you."
+        do set npc state emh custom:want-emitter
+        do spawn item broken_emitter into container lost_and_found_box
+        do add seq flag mobilize-emh limit 3
+        do add flag got-hint-from-emh
+        # mobilize-emh#0 -- first tasked with getting emitter, not found yet
+        # mobilize-emh#1 -- obtained broken emitter
+        # mobilize-emh#2 -- fixed broken emitter
+        # mobilize-emh#3 -- fixed emitter given to EMH; EMH mobile
+    }
+}
+
+trigger "[Med-Bay] EMH/Sonic Hint" only once
+when enter room med-bay {
+    if all(has item sonic_screwdriver, has flag mobilize-emh#1) {
+        do npc says emh "Please state the nature of the med... wait -- is that a sonic screwdriver? I bet you could use that to repair my mobile emitter!"
+    }
+}
+
+trigger "[Med-Bay] Advance Sequence when Broken Emitter Found" only once
+note "advance to mobilize-emh#1 when emitter taken"
+when take item broken_emitter {
+    do advance flag mobilize-emh
+}
+
+trigger "[Med-Bay] EMH Won't Take Broken Emitter"
+when give item broken_emitter to npc emh {
+    do npc refuse item emh "That's my mobile emitter all right, but it's broken. You'll need to find a way to repair it before I can help you with HAL."
+}
+
+trigger "[Med-Bay] Use Sonic On Emitter"
+when use item sonic_screwdriver on item broken_emitter interaction repair {
+    do show "You hold the button down on the sonic. It makes electronic whirring noises while you make a few passes over the emitter."
+}
+
+trigger "[Med-Bay] Repair Emitter"
+note "advance to mobilize-emh#2 when mobile emitter repaired"
+when act repair on item broken_emitter {
+    do show "After a few seconds, the emitter lights up and reboots, passing all self-tests."
+    do replace item broken_emitter with working_emitter
+    do award points 3
+    do advance flag mobilize-emh
+}
+
+trigger "[Med-Bay] EMH/Goin' Mobile!"
+note "completes mobilize-emh #3; completes / grants player HAL memory module #1"
+when give item working_emitter to npc emh {
+    do restrict item working_emitter
+    do advance flag mobilize-emh
+    do set npc active emh true
+    do set npc state emh happy
+    do npc says emh "Looks like it's working properly! Let me take it for a spin..."
+    do show "The EMH flickers, then vanishes in a flash. He reappears a few moments later."
+    do npc says emh "All seems to be in order. As promised, I retrieved one of HAL's modules. I dropped it off in the observation room across the hall, next to HAL's memory bank -- but insert it at your own peril."
+    do spawn item hal_module_1 into room observation-room
+    do add wedge "Heard overhead: \"Will the E.M.H. please return to the med bay? There's been a yellow snow blinding incident.\"" width 1 spinner ambientInterior
+    do add wedge "Over the PA: \"E.M.H and sanitation, please report to the lunch room. Mr. Creosote ate a tiny, wafer thin mint again.\"" width 1 spinner ambientInterior
+}
+
+trigger "[HAL] HAL/Module #1 Inserted" only once
+when insert item hal_module_1 into item hal_memory_bank {
+    do advance flag hal-reboot
+    do add flag module-1-inserted
+    do restrict item hal_module_1
+    do show "Memory module #1 magnetically locks into place and lights up."
+}
+
+# ========================================
+# Goals
+# ========================================
+
+goal find-hal-module-1 {
+    name "Find HAL Module #1"
+    desc "Look around and talk to other characters to figure out where to find HAL's first missing module."
+    group required
+    start when flag in progress hal-reboot
+    done when has flag got-hint-from-emh
+}
+
+goal get-hal-module-1 {
+    name "Retrieve HAL Module #1"
+    desc "The EMH has offered to help restore HAL, but only if you can repair and return his mobile emitter. Assist him and retrieve the first of HAL's memory modules."
+    group required
+    start when flag in progress mobilize-emh
+    done when has item hal_module_1
+}
+
+goal insert-hal-module-1 {
+    name "Insert HAL Module #1"
+    desc "Once mobilized, the EMH was able to get the module for you. Insert it in the panel in the Observation room to advance HAL's reboot sequence."
+    group required
+    start when goal complete get-hal-module-1
+    done when has flag module-1-inserted
 }

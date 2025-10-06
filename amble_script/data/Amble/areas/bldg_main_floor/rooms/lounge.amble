@@ -50,3 +50,42 @@ item hot_coffee {
     portable true
     location nowhere "spawns@lounge after coffee_machine started"
 }
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Lounge] Rug Taken / Reveal Trapdoor" only once when take item lebowski_rug {
+    do reveal exit from lounge to portal-room direction down
+    do add flag found-portal-room
+    do award points 3
+    do show "Light shines around the edges of a trap door revealed in the floor when you remove the rug. The room no longer seems tied together."
+}
+
+trigger "[Lounge] Rug Burned Away" only once when act burn on item lebowski_rug {
+    do despawn item lebowski_rug
+    do reveal exit from lounge to portal-room direction down
+    do add flag found-portal-room
+    do award points 3
+    do show "When the acrid smoke clears and your eyes stop burning, you can make out a trap door revealed in the floor where the rug used to be."
+}
+
+trigger "[Lounge] Brew Coffee" only once
+when use item coffee_machine ability turnOn
+{
+    do show "The coffee machine hums to life and begins its brewing cycle. A timer shows 3 minutes remaining..."
+    do set item description coffee_machine "A single serve drip coffee machine, which apparently takes quite a while to finish brewing a cup one drip at a time..."
+    do schedule in 3 note "coffee done brewing" {
+        do set item description coffee_machine "A single serve, drip coffee maker. The brew cycle is complete and the grounds have already been used."
+        do show "♪ BEEP BEEP BEEP! ♪ The coffee machine chimes cheerfully. The rich aroma of freshly brewed coffee fills the air."
+        do spawn item hot_coffee into room lounge
+        do add flag coffee-brewed
+        do award points 2
+    }
+}
+
+trigger "[Lounge] Coffee Taken"
+when take item hot_coffee
+{
+    do remove flag coffee-brewed
+}

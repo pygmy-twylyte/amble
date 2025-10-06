@@ -28,14 +28,7 @@ room b-a-office {
 # ========================================
 # Items
 # ========================================
-
-item poetry_performer {
-    name "Initech Poetry Performer"
-    desc "In lieu of decades-old magazines, the office has installed this poetry recitation device. If poetic material is supplied, it is automatically performed in the voice that is the most soulful and gripping for each listener in the room (as long as that happens to be Morgan Freeman's)."
-    portable false
-    location room b-a-office
-    container state closed
-}
+# item poetry_performer is in keycard puzzle
 
 item peril_sunglasses {
     name "Stylish Sunglasses"
@@ -70,4 +63,49 @@ SECTOR AA-3, HIGH ENERGY
  REALITY BRIDGE PROJECT
 """
     ability Read
+}
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Office] Open Poetry Performer"
+when open item poetry_performer {
+    do show "The machine clicks on and hums. A flashing red light warns:\n            ⚠️ NOT FOR USE WITH VOGON POETRY ⚠️"
+}
+
+trigger "[Office] Gifted Lost and Found Key" only once
+when enter room b-a-office {
+    if all(has flag got-elevator-keycard, with npc b_a_receptionist) {
+        do give item lost_and_found_key to player from npc b_a_receptionist
+        do show "Seeing you return with the keycard, the receptionist looks around warily and slips something into your hand, then looks directly at the lost and found box."
+        do npc says b_a_receptionist "Finally! A Candidate bright enough to get to that keycard. I guess I lost the pool. Who'd have thought it'd be a primate?"
+        do npc says b_a_receptionist "(*whispers*) Use this before you head down to AA-3B."
+    }
+}
+
+trigger "[Office] Lost and Found Unlocked" only once when unlock item lost_and_found_box {
+    do award points 3
+    do add flag lost-and-found-opened
+    do set item description lost_and_found_box "A sturdy metal lockbox marked 'Lost and Found'. Its lid is cracked slightly open."
+}
+
+# ========================================
+# Goals
+# ========================================
+
+goal find-the-office {
+    name "Find the Office"
+    desc "According to the posted note, there's an office somewhere around here and you need to check in. You'll need to find it first."
+    group required
+    start when goal complete get-oriented
+    done when reached room b-a-office
+}
+
+goal get-visitor-pass {
+    name "Get a Visitor Pass"
+    desc "Now that you have an invitation, maybe the receptionist in the office will help you with this -- or maybe she won't."
+    group required
+    start when goal complete get-invited
+    done when has flag got-visitor-pass
 }

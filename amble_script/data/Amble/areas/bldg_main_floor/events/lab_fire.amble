@@ -35,3 +35,36 @@ item foam_fire {
     portable false
     location nowhere "spawns@aperture-lab when foamsafe misfires"
 }
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Aperture-Lab] FoamSafe Misfire" only once when use item foamsafe_x17 on item burnt_invitation interaction extinguish {
+    do despawn item foamsafe_x17
+    do show "You spray the foam onto the burning invitation. Instead of dousing the flame, the foam flares up into a spectacular fireball!"
+    do add seq flag foam-fire-in-lab limit 3
+    do schedule in 2 note "foam fire starts" {
+        do show "The foam fire accelerates, as it turns into a hissing, popping ball of goo spitting off little globs of flaming napalm!"
+        do advance flag foam-fire-in-lab
+    }
+    do schedule in 3 note "foam fire spreads" {
+        do show "The fire alarm begins to wail as the flames spread through the lab and the sprinklers turn on, pushing you back toward the portal to escape!"
+        do advance flag foam-fire-in-lab
+        do add flag lab-fire-raging
+        do push player to portal-room
+    }
+    do schedule in 8 note "foam fire out" {
+        do show "The alarms stop. The fire in the Aperture lab has been extinguised. Hopefully nobody saw you light it, you monster."
+        do advance flag foam-fire-in-lab
+        do remove flag lab-fire-raging
+        do award points 5
+    }
+}
+
+trigger "[Aperture-Lab] Can't Enter While Lab On Fire" when enter room aperture-lab {
+    if flag in progress foam-fire-in-lab {
+        do show "You try to get back into the lab, but the flames and oily smoke from the foam fire drive you back through the portal within seconds."
+        do push player to portal-room
+    }
+}

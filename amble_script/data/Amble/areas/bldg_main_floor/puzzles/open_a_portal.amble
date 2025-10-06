@@ -1,3 +1,11 @@
+# ========================================
+# Portal Gun Puzzle (Lounge, Main Floor)
+# ========================================
+
+# ========================================
+# Items
+# ========================================
+
 item portal_gun {
     name "Portal Gun"
     desc "A black and white Portal gun affixed to a stand and aimed at a target on the wall. There's a power switch and a door to a battery compartment."
@@ -12,4 +20,69 @@ item empty_battery {
     desc "A completely discharged 20 kilovolt battery. It would take months to charge it, but you might be able to exchange it somewhere for one with a charge."
     portable true
     location chest portal_gun
+}
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Gonk Droid] Battery Exchange" only once
+note "necessary step in portal gun puzzle"
+when give item empty_battery to npc gonk_droid {
+    do award points 2
+    do give item charged_battery to player from npc gonk_droid
+    do set npc state gonk_droid happy
+    do show "Elated that you've given it such a large, empty battery to charge, the gonk droid gives you a fully charged one, free of ... charge?"
+}
+
+trigger "[Portal-Room] Gun Opened" only once
+when open item portal_gun {
+    do add flag portal-gun-opened
+}
+
+
+trigger "[Portal-Room] Gun Powered"
+when insert item charged_battery into item portal_gun {
+    do add flag portal-gun-powered
+    do award points 3
+    do restrict item charged_battery
+    do set item description portal_gun "A black and white Portal gun sits bolted to its pedestal, aimed at a target on the wall. A fused battery juts from the compartment and the power indicator glows steadily green."
+    do show "Arcing wildly as you insert it, the fully charged 20 KV battery fuses itself to the contacts inside the portal gun -- when then emits a quick high-pitched whine. The POWER indicator lights a steady green."
+}
+
+trigger "[Portal-Room] Gun Fired / Open Portal" only once
+when use item portal_gun ability turnOn {
+    if has flag portal-gun-powered {
+        do reveal exit from portal-room to aperture-lab direction portal
+        do add flag portal-opened
+        do award points 5
+        do show "A loud SQUIP! comes from the gun when you turn it on. The wall in front of it sizzles for a moment, and then a crackling oval blue portal expands on the wall to reveal a laboratory space on the other side."
+    }
+}
+
+trigger "[Portal-Room] Tried Gun Without Power"
+when use item portal_gun ability turnOn {
+    if missing flag portal-gun-powered {
+        do show "You attempt to turn the portal gun on, but the POWER light briefly flashes red, then goes dark. Nothing else happens."
+    }
+}
+
+# ========================================
+# Goals
+# ========================================
+
+goal obtain-portal-power {
+    name "Find a Power Source"
+    desc "You found a portal gun, but the power source is dead. Find another one or charge the empty battery to get the gun working."
+    group required
+    start when has flag portal-gun-opened
+    done when has flag portal-gun-powered
+}
+
+goal open-a-portal {
+    name "Open a Portal to... ?"
+    desc "Now that you have a suitable power source, you should be able to turn the gun on to open a portal. But where will it lead?"
+    group required
+    start when goal complete obtain-portal-power
+    done when has flag portal-opened
 }

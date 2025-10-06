@@ -79,3 +79,75 @@ trigger "[Hint] Towel / Plaque-1 Hint" only once when take item towel {
         do show "Towels can be awfully handy for cleaning grimy things. Just sayin'."
     }
 }
+
+# ========================================
+# Butane Lighter
+# ========================================
+
+item lighter {
+    name "Butane Lighter"
+    desc "An engraved, metallic Zippo-style lighter, worn but functional."
+    portable true
+    location room patio
+    text "DJVB"
+    ability Ignite
+    ability Read
+    consumable {
+        uses_left 5
+        consume_on ability Ignite
+        when_consumed replace inventory empty_lighter
+    }
+}
+
+item empty_lighter {
+    name "Butane Lighter (Empty)"
+    desc "An engraved, metallic Zippo-style lighter. It was good for a few uses but seems to have run out of fuel."
+    portable true
+    location nowhere "spawns@inventory when lighter used up"
+    text "DJVB"
+    ability Read
+}
+
+# ========================================
+# Sonic Screwdriver
+# ========================================
+
+item sonic_screwdriver {
+    name "Sonic Screwdriver"
+    desc "A multipurpose marvel of alien engineering, capable of repairing complex machinery, unlocking sealed doors, and occasionally shorting out bureaucracies. Ineffective against wood, emotions, and existential dread."
+    portable true
+    location chest evidence_locker_open
+    ability Repair
+}
+
+# ========================================
+# Fishing Line
+# ========================================
+
+# needed to remove HAL module 2 (and/or tweezers) from crevice
+item fishing_line {
+    name "Makeshift Fishing Line"
+    desc "A MacGyver-ed fishing line, with a paper clip hook attached to some dental floss."
+    portable true
+    location nowhere "spawns@inventory when items attached"
+    ability Pluck
+}
+
+trigger "[Global] Fishing Line (attach clip to floss)"
+when use item paper_clip on item dental_floss interaction attach
+{
+    do despawn item paper_clip
+    do despawn item dental_floss
+    do spawn item fishing_line in inventory
+    do show "You MacGyvered the floss and paper clip into a fishing line!"
+    do award points 3
+}
+trigger "[Global] Fishing Line (attach floss to clip)"
+when use item dental_floss on item paper_clip interaction attach
+{
+    do despawn item paper_clip
+    do despawn item dental_floss
+    do spawn item fishing_line in inventory
+    do show "You MacGyvered the floss and paper clip into a fishing line!"
+    do award points 3
+}

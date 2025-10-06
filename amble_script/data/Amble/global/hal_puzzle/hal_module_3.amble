@@ -9,3 +9,15 @@ item hal_module_3 {
     restricted true
     location npc cmot_dibbler
 }
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[HAL] HAL/Module #3 Inserted" only once
+when insert item hal_module_3 into item hal_memory_bank {
+    do advance flag hal-reboot
+    do add flag module-3-inserted
+    do restrict item hal_module_3
+    do show "Memory module #3 magnetically locks into place and lights up."
+}

@@ -41,3 +41,18 @@ Place:  Monolith Room
 Event:  White male in his 30's found in the monolith room pointing this whirring item at the HAL terminal. Perpetrator states he was trying to fix it. Luckily, he failed. Confiscated the tool from him (he calls it a sonic screwdriver) to prevent any future attempts."""
     ability Read
 }
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Security-Station] Pry Evidence Locker Open" only once when act open on item evidence_locker_closed {
+    do replace item evidence_locker_closed with evidence_locker_open
+    do show "Using all your weight, all your might, and most of your reserved F-bomb arsenal you pry the locker open, leaving the door barely attached."
+    do award points 2
+}
+
+trigger "[Security-Station] Take Sonic Screwdriver" only once when take item sonic_screwdriver {
+    do add flag got-sonic
+    do award points 3
+}
