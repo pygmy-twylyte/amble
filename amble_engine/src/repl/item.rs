@@ -64,6 +64,53 @@ use colored::Colorize;
 use log::{info, warn};
 use uuid::Uuid;
 
+/// Touch or press an `Item`
+pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) -> Result<()> {
+    let room_id = world.player.location.room_id()?;
+    let scope: HashSet<Uuid> = nearby_reachable_items(world, room_id)?
+        .union(&world.player.inventory)
+        .copied()
+        .collect();
+    let (item_id, item_name, item_symbol) =
+        if let Some(entity) = find_world_object(&scope, &world.items, &world.npcs, item_str) {
+            if entity.is_item() {
+                (entity.id(), entity.name().to_string(), entity.symbol().to_string())
+            } else {
+                info!(
+                    "{} touched NPC '{}' ({}) (matched input '{item_str}')",
+                    world.player.name(),
+                    entity.name(),
+                    entity.symbol()
+                );
+                view.push(ViewItem::NpcSpeech {
+                    speaker: entity.name().to_string(),
+                    quote: "Hey - stop touching me!".to_string(),
+                });
+                return Ok(());
+            }
+        } else {
+            return Ok(entity_not_found(world, view, item_str));
+        };
+
+    let triggers_fired = check_triggers(world, view, &[TriggerCondition::Touch(item_id)])?;
+    let sent_trigger_fired = triggers_contain_condition(&triggers_fired, |trig| match trig {
+        TriggerCondition::Touch(triggered_item_id) => *triggered_item_id == item_id,
+        _ => false,
+    });
+    if !sent_trigger_fired {
+        info!(
+            "{} touched {} ({})... and nothing happened.",
+            world.player.name(),
+            item_name,
+            item_symbol,
+        );
+        view.push(ViewItem::ActionSuccess(
+            world.spin_core(CoreSpinnerType::NoEffect, "That has no discernable effect."),
+        ));
+    }
+    Ok(())
+}
+
 /// Ingests an item (or single portion of a multi-use item).
 pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, mode: IngestMode) -> Result<()> {
     let room_id = world.player_room_ref()?.id();
@@ -308,10 +355,7 @@ pub fn use_item_on_handler(
     if !interaction_fired {
         view.push(ViewItem::ActionFailure(
             world
-                .spin_core(
-                    CoreSpinnerType::NoEffect,
-                    "That appears to have had no effect, Captain.",
-                )
+                .spin_core(CoreSpinnerType::NoEffect, "That appears to have had no effect.")
                 .to_string(),
         ));
         info!(
