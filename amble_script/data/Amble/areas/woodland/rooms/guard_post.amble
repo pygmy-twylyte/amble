@@ -5,8 +5,23 @@
 room guard-post {
     name "Abandoned Guard Post"
     desc "A small stone guard post clings to the side of the trail, complete with a creaky wooden chair and a megaphone labeled 'USE ONLY IF VERY SURE'. A faded official-looking placard reads:\n\n'NOTICE: Passage beyond this point may lead to anachronism.'\n\nIt seems no one’s been stationed here in quite some time. The trail continues upward, leading to what appears to be an ancient road—and a distinctly non-ancient office park."
+    overlay if item am_dollar {
+        present r#"A silver coin sits upon a note on the kiosk: "Lunch Money - don't get it from that vendor again!" "#
+        absent r#"A note on the kiosk reads: "Lunch Money - don't get it from that vendor again!" The coin left a neat, circular void in the dust."#
+    }
     exit "up to the road" -> inca-road
     exit "down the steps" -> two-sheds-landing
+}
+
+# ========================================
+# Items
+# ========================================
+
+item am_dollar {
+    name "Ankh-Morpork Dollar"
+    desc "A tarnished one-dollar coin from the city-state of Ankh-Morpork."
+    portable true
+    location room guard-post
 }
 
 # ========================================
@@ -16,10 +31,10 @@ room guard-post {
 trigger "[Guard-Post] Interesting Passers-By" only once
 note "different characters depending on how they got past the fallen_tree"
 when enter room guard-post {
-    if all(chance 75%, has flag burned-fallen-tree) {
+    if all(chance 85%, has flag burned-fallen-tree) {
         do show r#"Smokey Bear tromps past the guard post, growling "Nobody ever listens!" while glaring right at you."#
     }
-    if all(chance 75%, has flag chopped-fallen-tree) {
+    if all(chance 85%, has flag chopped-fallen-tree) {
         do show "Paul Bunyan gives you a nod as he lumbers by with Babe the Blue Ox, carrying the remains of the tree you chopped up."
         do add flag saw-paul-bunyan
     }

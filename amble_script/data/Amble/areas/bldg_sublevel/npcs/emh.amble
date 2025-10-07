@@ -41,6 +41,11 @@ when talk to npc emh {
         do award points 3
         do npc says emh "You poor fool, you look horrible. You've been reading Vogon poetry, hmmm? Here, this should help."
     }
+    if has flag ate-sausage {
+        do award points 3
+        do npc says emh "Ugh -- your breath is horrid! You ate one of Dibbler's sausages, didn't you? Tasty but toxic, I say."
+        do remove flag ate-sausage
+    }
     if has flag status:nauseated {
         do remove flag status:nauseated
         do show "The EMH gives you a hypospray in the neck, and your nausea subsides."

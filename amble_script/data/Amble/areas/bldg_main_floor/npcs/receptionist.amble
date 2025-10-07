@@ -63,3 +63,9 @@ when enter room b-a-office {
         do npc says b_a_receptionist "I hear the EMH lost his emitter again. One has been turned into the Lost and Found, but I'm not sure how much good it will do you. Or him."
     }
 }
+
+trigger "[Office] Receptionist Comment (Sausage Breath)" when talk to npc b_a_receptionist {
+    if has flag ate-sausage {
+        do npc says b_a_receptionist "My word, the smell coming from your -- mouth? -- is pathological. I can't stand to talk to you. You must see the EMH down on the sublevel."
+    }
+}

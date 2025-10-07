@@ -7,24 +7,32 @@
 # Nauseated
 # ========================================
 
+spinner nauseated {
+    wedge "You can't shake a background queasiness that has you constantly on the lookout for a trash bin."
+    wedge "You throw up a little in your mouth."
+    wedge "You regurgitate a bit of last night's dinner, but can't remember what it was."
+    wedge "Everything smells faintly of old tuna. Why?"
+    wedge "Your stomach roils, like that time you stayed up all night drinking mezcal with Ruben. Why did you eat that worm?"
+    wedge "You stop by the nearest wastebin for a few dry heaves."
+    wedge "You feel like you've just eaten a Klingon gagh sampler platter. Raw."
+    wedge "Your digestive system briefly considers filing a formal complaint with management."
+    wedge "You experience the gastric equivalent of a Windows blue screen of death."
+    wedge "A wave of nausea hits you like a brick made entirely of other, smaller bricks."
+    wedge "You feel queasy enough to consider switching to a liquid diet of nothing but antacids."
+    wedge "Throat burning with acid bile, you pray to all the gods for relief. They ignore you, just like last time."
+}
+
 trigger "[Status] Nauseated" when always {
     if all(has flag status:nauseated, chance 50%) {
         do spinner message nauseated
     }
 }
-spinner nauseated {
-    wedge "Since reading the Vogon poetry, you can't shake a background queasiness." width 1
-    wedge "You throw up a little in your mouth." width 1
-    wedge "You regurgitate a bit of last night's dinner, but can't remember what it was." width 1
-    wedge "Everything smells faintly of old tuna. Why?" width 1
-    wedge "Your stomach roils, like that time you stayed up all night drinking mezcal with Ruben. Why did you eat that worm?" width 1
-    wedge "You stop by the nearest wastebin for a few dry heaves." width 1
-    wedge "You feel like you've just eaten a Klingon gagh sampler platter. Raw." width 1
-    wedge "Your digestive system briefly considers filing a formal complaint with management." width 1
-    wedge "You experience the gastric equivalent of a Windows blue screen of death." width 1
-    wedge "A wave of nausea hits you like a brick made entirely of other, smaller bricks." width 1
-    wedge "You feel queasy enough to consider switching to a liquid diet of nothing but antacids." width 1
-    wedge "Throat burning with acid bile, you swear off Vogon poetry forever. Just like last time." width 1
+
+trigger "[Status] Read Vogon Poetry > Persistent Nausea" when use item vogon_poetry_book ability read {
+    do show "You nearly get through the first poem when the vomiting begins..."
+    do add flag read-vogon-poetry
+    do add flag status:nauseated
+    do award points -1
 }
 
 goal survive-vogon-poetry {
@@ -33,14 +41,4 @@ goal survive-vogon-poetry {
     group status-effect
     start when has flag read-vogon-poetry
     done when missing flag status:nauseated
-}
-
-
-
-
-trigger "[Status] Read Vogon Poetry > Persistent Nausea" when use item vogon_poetry_book ability read {
-    do show "You nearly get through the first poem when the vomiting begins..."
-    do add flag read-vogon-poetry
-    do add flag status:nauseated
-    do award points -1
 }
