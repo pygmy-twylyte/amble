@@ -1,4 +1,0 @@
-id = "player"
-name = "Seaside Sam"
-description = "a curious type who likes to wander around the quay in the evenings."
-location = { Room = "quay-square" }
