@@ -43,7 +43,7 @@ when always
 }
 
 trigger "[Monolith-Room] Monolith Touch Prevented (HAL not ready)"
-when use item monolith ability turnOn
+when touch item monolith
 {
     if any(has flag hal-reboot#0, has flag hal-reboot#1) {
         do show "As you approach the monolith, HAL-9000's dim red lens flickers briefly but he cannot respond coherently. Something prevents you from touching the ancient artifact - as if an invisible barrier surrounds it."
