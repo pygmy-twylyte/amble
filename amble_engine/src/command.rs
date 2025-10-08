@@ -394,7 +394,7 @@ mod tests {
 
     #[test]
     fn parse_touch_monolith_command() {
-        assert_eq!(pc("touch monolith"), Command::TurnOn("monolith".into()));
+        assert_eq!(pc("touch monolith"), Command::Touch("monolith".into()));
     }
 
     #[test]
