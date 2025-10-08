@@ -38,7 +38,7 @@ pub struct TriggerAst {
     pub only_once: bool,
 }
 
-/// Minimal condition variants.
+/// Trigger condition variants.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConditionAst {
     /// Event: trigger has no event; conditions only.
@@ -47,6 +47,8 @@ pub enum ConditionAst {
     EnterRoom(String),
     /// Event: player takes an item.
     TakeItem(String),
+    /// Event: player touches / presses an item
+    TouchItem(String),
     /// Event: player talks to an NPC.
     TalkToNpc(String),
     /// Event: player opens an item.
@@ -391,6 +393,12 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
                 t.insert("item_id", toml_edit::Value::from(item.clone()));
                 conds.push(toml_edit::Value::from(t));
             },
+            ConditionAst::TouchItem(item) => {
+                let mut t = InlineTable::new();
+                t.insert("type", toml_edit::Value::from("touch"));
+                t.insert("item_id", toml_edit::Value::from(item.clone()));
+                conds.push(toml_edit::Value::from(t));
+            },
             ConditionAst::TalkToNpc(npc) => {
                 let mut t = InlineTable::new();
                 t.insert("type", toml_edit::Value::from("talkToNpc"));
@@ -601,6 +609,7 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
                 },
                 ConditionAst::EnterRoom(_)
                 | ConditionAst::TakeItem(_)
+                | ConditionAst::TouchItem(_)
                 | ConditionAst::TalkToNpc(_)
                 | ConditionAst::OpenItem(_)
                 | ConditionAst::LeaveRoom(_)
@@ -1843,6 +1852,10 @@ fn leaf_condition_inline(c: &ConditionAst) -> InlineTable {
         },
         ConditionAst::TakeItem(item) => {
             t.insert("type", toml_edit::Value::from("take"));
+            t.insert("item_id", toml_edit::Value::from(item.clone()));
+        },
+        ConditionAst::TouchItem(item) => {
+            t.insert("type", toml_edit::Value::from("touch"));
             t.insert("item_id", toml_edit::Value::from(item.clone()));
         },
         ConditionAst::DropItem(item) => {
