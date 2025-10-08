@@ -18,7 +18,7 @@ dir_prep    = _{ "in to" | "to" | "at" | "into" | "on" | "in" | "through" }
 
 // synonyms
 take_verb   = _{ "take" | "get" | "grab" | "snag" | "steal" | "pick" ~ "up" | "remove" }
-start_verb  = _{ "start" | "trigger" | "activate" | "fire" | "touch" }
+start_verb  = _{ "start" | "trigger" | "activate" | "fire" }
 switch_verb = _{ "turn" | "switch" | "flip" }
 // " " after go is intentional to keep from matching "goals"
 go_verb = _{ ("go " ~ !"back") | "walk" | "move" | "climb" | "jog" | "run" }
@@ -54,7 +54,7 @@ read     =  { ("read" | "examine" | "exam" | "ex" | "inspect") ~ artic? ~ phrase
 eat      =  { ("eat" | "scarf" | "devour" | (("snack" | "munch") ~ "on")) ~ artic? ~ phrase }
 drink    =  { ("drink" | "swallow" | "chug") ~ artic? ~ phrase }
 inhale   =  { ("inhale" | "sniff" | "breathe") ~ artic? ~ phrase }
-touch    =  { ("touch" | "press") ~ artic? ~ phrase }
+touch    =  { ("touch" | "press" | "push") ~ artic? ~ phrase }
 
 // verb -> direct and indirect object commands
 verb_do_io  = _{ vtwt_cmd | take_from | put_in | give_to_npc }
