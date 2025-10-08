@@ -79,6 +79,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         }
 
         match parse_command(&input, &mut view) {
+            Touch(thing) => touch_handler(world, &mut view, &thing)?,
             SetViewMode(mode) => set_viewmode_handler(&mut view, mode),
             Goals => goals_handler(world, &mut view),
             Help => help_handler(&mut view),
@@ -157,6 +158,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
                 | Take(_)
                 | TakeFrom { .. }
                 | TalkTo(_)
+                | Touch(_)
                 | TurnOn(_)
                 | UnlockItem(_)
                 | UseItemOn { .. }
@@ -296,6 +298,29 @@ fn chance_check(conditions: &Vec<TriggerCondition>) -> bool {
 pub enum WorldEntity<'a> {
     Item(&'a Item),
     Npc(&'a Npc),
+}
+impl<'a> WorldEntity<'a> {
+    /// Get the name of the entity
+    pub fn name(&self) -> &str {
+        match self {
+            WorldEntity::Item(item) => item.name(),
+            WorldEntity::Npc(npc) => npc.name(),
+        }
+    }
+    /// Get the UUID of the entity
+    pub fn id(&self) -> Uuid {
+        match self {
+            WorldEntity::Item(item) => item.id(),
+            WorldEntity::Npc(npc) => npc.id(),
+        }
+    }
+    /// Get the symbol for the entity
+    pub fn symbol(&self) -> &str {
+        match self {
+            WorldEntity::Item(item) => item.symbol(),
+            WorldEntity::Npc(npc) => npc.symbol(),
+        }
+    }
 }
 
 /// Searches a list of `WorldEntities`' uuids to find a `WorldObject` with a matching name.

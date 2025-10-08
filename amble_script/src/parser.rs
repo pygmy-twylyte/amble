@@ -181,6 +181,15 @@ fn parse_trigger_pair(
             let ident = i.next().ok_or(AstError::Shape("take item ident"))?.as_str().to_string();
             ConditionAst::TakeItem(ident)
         },
+        Rule::touch_item => {
+            let mut i = when.into_inner();
+            let ident = i
+                .next()
+                .ok_or(AstError::Shape("touch item ident"))?
+                .as_str()
+                .to_string();
+            ConditionAst::TouchItem(ident)
+        },
         Rule::talk_to_npc => {
             let mut i = when.into_inner();
             let ident = i.next().ok_or(AstError::Shape("talk npc ident"))?.as_str().to_string();

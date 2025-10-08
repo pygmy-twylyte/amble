@@ -43,6 +43,7 @@ pub enum RawTriggerCondition {
     Take { item_id: String, },
     TakeFromNpc { item_id: String, npc_id: String, },
     TalkToNpc { npc_id: String },
+    Touch { item_id: String },
     Unlock { item_id: String, },
     UseItem { item_id: String, ability: ItemAbility, },
     UseItemOnItem {
@@ -55,6 +56,7 @@ pub enum RawTriggerCondition {
 impl RawTriggerCondition {
     pub fn to_condition(&self, symbols: &SymbolTable) -> Result<TriggerCondition> {
         match self {
+            Self::Touch { item_id } => cook_touch_item(symbols, item_id),
             Self::Ingest { item_sym, mode } => cook_ingest(symbols, item_sym, *mode),
             Self::ActOnItem {
                 target_sym: item_id,
@@ -99,6 +101,15 @@ impl RawTriggerCondition {
 // "COOK" helper functions convert raw trigger components to "cooked" real instances with
 // validated uuids.
 //
+
+fn cook_touch_item(symbols: &SymbolTable, item_sym: &str) -> Result<TriggerCondition> {
+    if let Some(item_id) = symbols.items.get(item_sym) {
+        Ok(TriggerCondition::Touch(*item_id))
+    } else {
+        bail!("converting raw condition Touch: item symbol '{item_sym}' not found")
+    }
+}
+
 fn cook_ingest(symbols: &SymbolTable, item_sym: &str, mode: IngestMode) -> Result<TriggerCondition> {
     if let Some(item_id) = symbols.items.get(item_sym) {
         Ok(TriggerCondition::Ingest {

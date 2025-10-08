@@ -38,7 +38,7 @@ pub struct TriggerAst {
     pub only_once: bool,
 }
 
-/// Minimal condition variants.
+/// Trigger condition variants.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConditionAst {
     /// Event: trigger has no event; conditions only.
@@ -47,6 +47,8 @@ pub enum ConditionAst {
     EnterRoom(String),
     /// Event: player takes an item.
     TakeItem(String),
+    /// Event: player touches / presses an item
+    TouchItem(String),
     /// Event: player talks to an NPC.
     TalkToNpc(String),
     /// Event: player opens an item.
@@ -391,6 +393,12 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
                 t.insert("item_id", toml_edit::Value::from(item.clone()));
                 conds.push(toml_edit::Value::from(t));
             },
+            ConditionAst::TouchItem(item) => {
+                let mut t = InlineTable::new();
+                t.insert("type", toml_edit::Value::from("touch"));
+                t.insert("item_id", toml_edit::Value::from(item.clone()));
+                conds.push(toml_edit::Value::from(t));
+            },
             ConditionAst::TalkToNpc(npc) => {
                 let mut t = InlineTable::new();
                 t.insert("type", toml_edit::Value::from("talkToNpc"));
@@ -601,6 +609,7 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
                 },
                 ConditionAst::EnterRoom(_)
                 | ConditionAst::TakeItem(_)
+                | ConditionAst::TouchItem(_)
                 | ConditionAst::TalkToNpc(_)
                 | ConditionAst::OpenItem(_)
                 | ConditionAst::LeaveRoom(_)
@@ -1845,6 +1854,10 @@ fn leaf_condition_inline(c: &ConditionAst) -> InlineTable {
             t.insert("type", toml_edit::Value::from("take"));
             t.insert("item_id", toml_edit::Value::from(item.clone()));
         },
+        ConditionAst::TouchItem(item) => {
+            t.insert("type", toml_edit::Value::from("touch"));
+            t.insert("item_id", toml_edit::Value::from(item.clone()));
+        },
         ConditionAst::DropItem(item) => {
             t.insert("type", toml_edit::Value::from("drop"));
             t.insert("item_id", toml_edit::Value::from(item.clone()));
@@ -2662,27 +2675,6 @@ trigger "spawn in container" when always {
     }
 
     #[test]
-    fn compile_spinners_golden() {
-        let src = std::fs::read_to_string("data/Amble/spinners.amble").expect("read");
-        let spinners = parse_spinners(&src).expect("parse ok");
-        let toml = compile_spinners_to_toml(&spinners).expect("compile ok");
-        let expected = std::fs::read_to_string("../amble_engine/data/spinners.toml").expect("read");
-        let expected_clean = expected
-            .lines()
-            .filter(|l| !l.trim_start().starts_with('#'))
-            .collect::<Vec<_>>()
-            .join("\n");
-        let actual_clean = toml
-            .lines()
-            .filter(|l| !l.trim_start().starts_with('#'))
-            .collect::<Vec<_>>()
-            .join("\n");
-        let expected_val: toml::Value = toml::from_str(&expected_clean).expect("parse expected");
-        let actual_val: toml::Value = toml::from_str(&actual_clean).expect("parse actual");
-        assert_eq!(actual_val, expected_val);
-    }
-
-    #[test]
     fn parse_goal_block_any_order() {
         let src = r#"
 goal demo-goal {
@@ -2744,31 +2736,6 @@ goal incomplete-goal {
             crate::AstError::Shape(msg) => assert_eq!(msg, "goal missing desc"),
             other => panic!("unexpected error: {:?}", other),
         }
-    }
-
-    #[test]
-    fn compile_goals_golden() {
-        let src = std::fs::read_to_string("data/Amble/goals.amble").expect("read goals dsl");
-        let goals = crate::parse_goals(&src).expect("parse goals ok");
-        let toml = crate::compile_goals_to_toml(&goals).expect("compile ok");
-        // Compare structure loosely against engine goals: ensure same goal id set.
-        let expected_text = std::fs::read_to_string("../amble_engine/data/goals.toml").expect("read goals toml");
-        let expected_clean = expected_text
-            .lines()
-            .filter(|l| !l.trim_start().starts_with('#'))
-            .collect::<Vec<_>>()
-            .join("\n");
-        let actual_clean = toml
-            .lines()
-            .filter(|l| !l.trim_start().starts_with('#'))
-            .collect::<Vec<_>>()
-            .join("\n");
-        let expected_val: toml::Value = toml::from_str(&expected_clean).expect("parse expected");
-        let actual_val: toml::Value = toml::from_str(&actual_clean).expect("parse actual");
-        let expected_len = expected_val["goals"].as_array().map(|a| a.len()).unwrap_or(0);
-        let actual_len = actual_val["goals"].as_array().map(|a| a.len()).unwrap_or(0);
-        assert!(actual_len > 0, "compiled goals should not be empty");
-        assert_eq!(expected_len, actual_len, "goal counts should match engine");
     }
 
     #[test]

@@ -1,0 +1,18 @@
+# ========================================
+# Development Playground
+# ========================================
+
+# This file serves as a place to try new features or ideas without disturbing the main game source.
+
+item big_red_button {
+    name "Big Red Button"
+    desc "It's big, it's red, and it's a button! Press or touch it!"
+    portable false
+    location room high-ridge
+}
+
+trigger "Big Red Button Pushed"
+note "test for the touch item command/event -- works!"
+when touch item big_red_button {
+    do show "Always never press the big red button!"
+}

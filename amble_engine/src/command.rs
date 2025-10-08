@@ -53,6 +53,7 @@ pub enum Command {
     },
     TalkTo(String),
     Theme(String),
+    Touch(String),
     TurnOn(String),
     Unknown,
     UnlockItem(String),
@@ -151,6 +152,7 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
         Rule::unlock => Command::UnlockItem(inner_string(command)),
         Rule::move_to => Command::MoveTo(inner_string(command)),
         Rule::read => Command::Read(inner_string(command)),
+        Rule::touch => Command::Touch(inner_string(command)),
         Rule::eat => Command::Ingest {
             item: inner_string(command),
             mode: IngestMode::Eat,
@@ -392,7 +394,7 @@ mod tests {
 
     #[test]
     fn parse_touch_monolith_command() {
-        assert_eq!(pc("touch monolith"), Command::TurnOn("monolith".into()));
+        assert_eq!(pc("touch monolith"), Command::Touch("monolith".into()));
     }
 
     #[test]

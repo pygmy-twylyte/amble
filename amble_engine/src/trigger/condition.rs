@@ -75,6 +75,7 @@ pub enum TriggerCondition {
         npc_id: Uuid,
     },
     TalkToNpc(Uuid),
+    Touch(Uuid),
     UseItem {
         item_id: Uuid,
         ability: ItemAbility,
@@ -97,7 +98,7 @@ impl TriggerCondition {
     ///
     /// This allows us to check chance conditions without having to pass an AmbleWorld
     /// reference, avoid some conflicts with the borrow checker. Returns true if called
-    /// on a any other type of TriggerCondition.
+    /// on any other type of TriggerCondition.
     pub fn chance_value(&self) -> bool {
         match self {
             Self::Chance { one_in } => random_bool(1.0 / *one_in),
