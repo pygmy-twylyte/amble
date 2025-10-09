@@ -29,6 +29,13 @@ pub enum RawOnFalsePolicy {
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum RawTriggerAction {
+    SpawnNpcIntoRoom {
+        npc_sym: String,
+        room_sym: String,
+    },
+    DespawnNpc {
+        npc_sym: String,
+    },
     SetNpcActive {
         npc_sym: String,
         active: bool,
@@ -177,6 +184,8 @@ impl RawTriggerAction {
     /// Convert the TOML representation of this action to a fully realized `TriggerAction`.
     pub fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
+            Self::SpawnNpcIntoRoom { npc_sym, room_sym } => cook_spawn_npc_into_room(symbols, npc_sym, room_sym),
+            Self::DespawnNpc { npc_sym } => cook_despawn_npc(symbols, npc_sym),
             Self::SetNpcActive { npc_sym, active } => cook_set_npc_active(symbols, npc_sym, *active),
             Self::SetContainerState { item_sym, state } => cook_set_container_state(symbols, item_sym, *state),
             Self::ReplaceItem { old_sym, new_sym } => cook_replace_item(symbols, old_sym, new_sym),
@@ -253,6 +262,24 @@ impl RawTriggerAction {
 /*
  * "Cook" functions below convert RawTriggerActions to "fully cooked" TriggerActions
  */
+fn cook_spawn_npc_into_room(symbols: &SymbolTable, npc_sym: &str, room_sym: &str) -> Result<TriggerAction> {
+    if let Some(&npc_id) = symbols.characters.get(npc_sym)
+        && let Some(&room_id) = symbols.rooms.get(room_sym)
+    {
+        Ok(TriggerAction::SpawnNpcInRoom { npc_id, room_id })
+    } else {
+        bail!("loading SpawnNpcIntoRoom action: npc ({npc_sym}) or room ({room_sym}) not found in symbol table");
+    }
+}
+
+fn cook_despawn_npc(symbols: &SymbolTable, npc_sym: &str) -> Result<TriggerAction> {
+    if let Some(&npc_id) = symbols.characters.get(npc_sym) {
+        Ok(TriggerAction::DespawnNpc { npc_id })
+    } else {
+        bail!("loading DespawnNpc action: npc ({npc_sym}) not found in symbol table");
+    }
+}
+
 fn cook_set_npc_active(symbols: &SymbolTable, npc_sym: &str, active: bool) -> Result<TriggerAction> {
     if let Some(&npc_id) = symbols.characters.get(npc_sym) {
         Ok(TriggerAction::SetNpcActive { npc_id, active })

@@ -1,5 +1,14 @@
 # Brainstorming Ideas for Amble
 
+## TODO when adding a TriggerAction
+- [ ] TriggerAction
+- [ ] RawTriggerAction
+- [ ] action handler
+- [ ] add to Pest grammar (DSL)
+- [ ] add to ActionAst in compiler
+- [ ] add to tree-sitter grammar
+- [ ] add to highlighting in Zed extension
+
 ## CODING TODOs
 
 

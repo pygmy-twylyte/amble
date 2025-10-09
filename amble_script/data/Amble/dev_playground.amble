@@ -11,8 +11,32 @@ item big_red_button {
     location room high-ridge
 }
 
+item big_blue_button {
+    name "Big Blue Button"
+    desc "It's big, it's blue, and it's a button! Press away!"
+    portable false
+    location room high-ridge
+}
+
+npc the_luggage {
+    name "The Luggage"
+    desc "A large chest with dozens of legs, layered sharp teeth around its lid, and a strong tendency to violence."
+    location nowhere "spawns at high ridge for testing"
+    dialogue normal {
+        "(stares at you with menace)"
+    }
+}
+
 trigger "Big Red Button Pushed"
 note "test for the touch item command/event -- works!"
 when touch item big_red_button {
-    do show "Always never press the big red button!"
+    do show "Always never press the big red button! Now look what you've done!"
+    do spawn npc the_luggage into room high-ridge
+}
+
+trigger "Big Blue Button Pushed"
+note "test npc despawn"
+when touch item big_blue_button {
+    do show "Bye, Luggage!"
+    do despawn npc the_luggage
 }

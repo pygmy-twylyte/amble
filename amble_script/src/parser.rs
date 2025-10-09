@@ -2005,6 +2005,20 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         }
         return Err(AstError::Shape("replace drop item syntax"));
     }
+    if let Some(rest) = t.strip_prefix("do spawn npc ") {
+        // format: <npc> into room <room>
+        let rest = rest.trim();
+        if let Some((npc, room)) = rest.split_once(" into room ") {
+            return Ok(ActionAst::SpawnNpcIntoRoom {
+                npc: npc.trim().to_string(),
+                room: room.trim().to_string(),
+            });
+        }
+        return Err(AstError::Shape("spawn npc into room syntax"));
+    }
+    if let Some(rest) = t.strip_prefix("do despawn npc ") {
+        return Ok(ActionAst::DespawnNpc(rest.trim().to_string()));
+    }
     if let Some(rest) = t.strip_prefix("do spawn item ") {
         // format: <item> into room <room>
         let rest = rest.trim();

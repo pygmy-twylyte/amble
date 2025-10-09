@@ -1173,10 +1173,15 @@ fn gather_refs_from_action(a: &ActionAst, out: &mut HashMap<&'static str, HashSe
             out.get_mut("item").unwrap().insert(item.clone());
             out.get_mut("item").unwrap().insert(container.clone());
         },
+        ActionAst::SpawnNpcIntoRoom { npc, room } => {
+            out.get_mut("npc").unwrap().insert(npc.clone());
+            out.get_mut("room").unwrap().insert(room.clone());
+        },
         ActionAst::SetItemDescription { item, .. } => {
             out.get_mut("item").unwrap().insert(item.clone());
         },
         ActionAst::NpcSays { npc, .. }
+        | ActionAst::DespawnNpc(npc)
         | ActionAst::NpcSaysRandom { npc }
         | ActionAst::NpcRefuseItem { npc, .. }
         | ActionAst::SetNpcState { npc, .. } => {

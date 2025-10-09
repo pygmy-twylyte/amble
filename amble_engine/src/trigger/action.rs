@@ -79,9 +79,9 @@ use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::helpers::symbol_or_unknown;
+use crate::helpers::{symbol_from_id, symbol_or_unknown};
 use crate::item::{ContainerState, ItemHolder};
-use crate::npc::NpcState;
+use crate::npc::{NpcState, move_npc};
 use crate::player::{Flag, Player};
 use crate::room::Exit;
 use crate::scheduler::{EventCondition, OnFalsePolicy};
@@ -168,6 +168,8 @@ pub enum TriggerAction {
     DenyRead(String),
     /// Removes an item from the world entirely
     DespawnItem { item_id: Uuid },
+    /// Removes an NPC from the world entirely
+    DespawnNpc { npc_id: Uuid },
     /// Transfers an item from an NPC to the player's inventory
     GiveItemToPlayer { npc_id: Uuid, item_id: Uuid },
     /// Locks an exit in a specific direction from a room
@@ -202,6 +204,8 @@ pub enum TriggerAction {
     SpawnItemInInventory(Uuid),
     /// Creates an item in a specific room
     SpawnItemInRoom { item_id: Uuid, room_id: Uuid },
+    /// Creates an NPC in a specific room
+    SpawnNpcInRoom { npc_id: Uuid, room_id: Uuid },
     /// Displays a random message from a spinner
     SpinnerMessage { spinner: SpinnerType },
     /// Unlocks an exit in a specific direction from a room
@@ -271,6 +275,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
         NpcSays { npc_id, quote } => npc_says(world, view, npc_id, quote)?,
         DenyRead(reason) => deny_read(view, reason),
         DespawnItem { item_id } => despawn_item(world, item_id)?,
+        DespawnNpc { npc_id } => despawn_npc(world, view, *npc_id)?,
         GiveItemToPlayer { npc_id, item_id } => {
             give_to_player(world, npc_id, item_id)?;
         },
@@ -292,6 +297,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
         SpawnItemInRoom { item_id, room_id } => {
             spawn_item_in_specific_room(world, item_id, room_id)?;
         },
+        SpawnNpcInRoom { npc_id, room_id } => spawn_npc_in_room(world, view, *npc_id, *room_id)?,
         UnlockItem(item_id) => unlock_item(world, item_id)?,
         UnlockExit { from_room, direction } => unlock_exit(world, from_room, direction)?,
         LockExit { from_room, direction } => lock_exit(world, from_room, direction)?,
@@ -350,6 +356,33 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
             )?;
         },
     }
+    Ok(())
+}
+
+/// Spawn an NPC in a Room. If the NPC is already in the world, it will be moved and a warning logged.
+pub fn spawn_npc_in_room(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, room_id: Uuid) -> Result<()> {
+    info!(
+        "└─ action: spawning NPC '{}' in Room '{}'",
+        symbol_or_unknown(&world.npcs, npc_id),
+        symbol_or_unknown(&world.rooms, room_id)
+    );
+    if let Some(npc) = world.npcs.get_mut(&npc_id) {
+        if npc.location.is_not_nowhere() {
+            let current_loc = symbol_from_id(&world.rooms, npc.location.room_id()?).unwrap_or("<unknown room>");
+            warn!(
+                "spawn called on NPC {} who was already in-game -- MOVING from {current_loc}",
+                npc.symbol(),
+            );
+        }
+    }
+    move_npc(world, view, npc_id, Location::Room(room_id))?;
+    Ok(())
+}
+
+/// Remove an NPC from the world.
+pub fn despawn_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid) -> Result<()> {
+    info!("└─ action: despawning NPC '{}'", symbol_or_unknown(&world.npcs, npc_id));
+    move_npc(world, view, npc_id, Location::Nowhere)?;
     Ok(())
 }
 
