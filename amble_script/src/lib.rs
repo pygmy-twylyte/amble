@@ -190,6 +190,8 @@ pub enum ActionAst {
     },
     /// Despawn an item.
     DespawnItem(String),
+    /// Despawn an NPC
+    DespawnNpc(String),
     /// Reset a sequence flag to step 0.
     ResetFlag(String),
     /// Advance a sequence flag by one step.
@@ -230,6 +232,10 @@ pub enum ActionAst {
     SpawnItemInContainer {
         item: String,
         container: String,
+    },
+    SpawnNpcIntoRoom {
+        npc: String,
+        room: String,
     },
     /// Set description for an item by symbol.
     SetItemDescription {
@@ -1460,6 +1466,19 @@ fn action_to_value(a: &ActionAst) -> toml_edit::Value {
             t.insert("type", toml_edit::Value::from("spawnItemInContainer"));
             t.insert("item_id", toml_edit::Value::from(item.clone()));
             t.insert("container_id", toml_edit::Value::from(container.clone()));
+            toml_edit::Value::from(t)
+        },
+        ActionAst::SpawnNpcIntoRoom { npc, room } => {
+            let mut t = InlineTable::new();
+            t.insert("type", toml_edit::Value::from("spawnNpcIntoRoom"));
+            t.insert("npc_sym", toml_edit::Value::from(npc.clone()));
+            t.insert("room_sym", toml_edit::Value::from(room.clone()));
+            toml_edit::Value::from(t)
+        },
+        ActionAst::DespawnNpc(npc) => {
+            let mut t = InlineTable::new();
+            t.insert("type", toml_edit::Value::from("despawnNpc"));
+            t.insert("npc_sym", toml_edit::Value::from(npc.clone()));
             toml_edit::Value::from(t)
         },
         ActionAst::DespawnItem(item) => {
