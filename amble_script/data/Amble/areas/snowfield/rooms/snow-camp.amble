@@ -1,12 +1,13 @@
 room snow-camp {
     name "Abandoned Campsite"
     desc "The remains of a temporary shelter are dug into a snowbank here. The tent has collapsed, half-fused to a scorched sled. The river — or some frozen remnant of it — glistens beyond."
-    exit east -> snowfield
+    exit "back to the snowfield" -> snowfield
 }
 
 # ========================================
 # Items
 # ========================================
+# whetstone item is in black knight puzzle
 
 item charred_journal {
     name "Research Journal"
@@ -25,4 +26,12 @@ Weyland-Yutani: Thermal Unit / Antarctica Series
 """
     portable true
     location room snow-camp
+}
+
+item firewood {
+    name "Firewood"
+    desc "Some split wood and kindling laid for a fire at the center of the camp -- ironically one of the only things in the area that hasn't been burned."
+    portable true
+    location room snow-camp
+    requires ignite to burn
 }
