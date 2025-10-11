@@ -1,0 +1,74 @@
+# Scoring rank definitions for Amble
+#
+# This file defines the performance rankings displayed when the player quits the game.
+# Each rank has three properties:
+#   - threshold: Minimum percentage (0.0-100.0) needed to achieve this rank
+#   - name: The rank title displayed to the player
+#   - description: A one-sentence evaluation message
+#
+# How It Works:
+#   When the player quits, their score is calculated as a percentage of max_score.
+#   The system searches from the FIRST rank to the LAST, and awards the first rank
+#   where the player's percentage meets or exceeds the threshold.
+#
+# Customization Tips:
+#   - Ranks can be in any order in this file (they're sorted automatically)
+#   - You can add as many or as few ranks as you like
+#   - Thresholds can be any value from 0.0 to 100.0
+#   - Make sure to include a 0.0 threshold rank as the final fallback
+#   - Keep descriptions to one sentence for best formatting
+#
+# Example: If a player scores 75/100 (75%), and you have thresholds at
+#          100, 80, 60, 40, 20, and 0, they would receive the 60% rank.
+#
+# If this file cannot be loaded, the game uses hardcoded default ranks.
+
+[[ranks]]
+threshold = 99.0
+name = "Quantum Overachiever"
+description = "You saw the multiverse, understood it, then filed a bug report."
+
+[[ranks]]
+threshold = 90.0
+name = "Senior Field Operative"
+description = "A nearly flawless run. Someone give this candidate a promotion."
+
+[[ranks]]
+threshold = 75.0
+name = "Licensed Reality Bender"
+description = "Impressive grasp of nonlinear environments and cake-based paradoxes."
+
+[[ranks]]
+threshold = 60.0
+name = "Rogue Intern, Level II"
+description = "You got the job done, and only melted one small pocket universe."
+
+[[ranks]]
+threshold = 45.0
+name = "Unpaid Research Assistant"
+description = "Solid effort. Some concepts may have slipped through dimensional cracks."
+
+[[ranks]]
+threshold = 30.0
+name = "Junior Sandwich Technician"
+description = "Good instincts, questionable execution. Especially with condiments."
+
+[[ranks]]
+threshold = 15.0
+name = "Volunteer Tour Guide"
+description = "You wandered. You looked at stuff. It was something."
+
+[[ranks]]
+threshold = 5.0
+name = "Mailbox Stuffing Trainee"
+description = "You opened a box, tripped on a rug, and called it a day."
+
+[[ranks]]
+threshold = 1.0
+name = "Accidental Hire"
+description = "We're not sure how you got in. Please return your lanyard."
+
+[[ranks]]
+threshold = 0.0
+name = "Amnesiac Test Subject"
+description = "Did you… play? Were you even awake?"

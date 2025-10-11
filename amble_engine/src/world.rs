@@ -5,6 +5,7 @@
 
 use crate::AMBLE_VERSION;
 use crate::item::ContainerState;
+use crate::loader::scoring::ScoringConfig;
 use crate::npc::Npc;
 use crate::spinners::{CoreSpinnerType, SpinnerType};
 use crate::trigger::Trigger;
@@ -59,7 +60,7 @@ pub trait WorldObject {
 /// `AmbleWorld` contains every room, item, NPC and trigger currently active, as
 /// well as the player character. It is created during loading and then mutated
 /// throughout gameplay.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AmbleWorld {
     pub rooms: HashMap<Uuid, Room>,
     pub items: HashMap<Uuid, Item>,
@@ -69,6 +70,7 @@ pub struct AmbleWorld {
     pub npcs: HashMap<Uuid, Npc>,
     pub max_score: usize,
     pub goals: Vec<Goal>,
+    pub scoring: ScoringConfig,
     pub version: String,
     pub turn_count: usize,
     pub scheduler: Scheduler,
@@ -85,6 +87,7 @@ impl AmbleWorld {
             spinners: HashMap::new(),
             max_score: 0,
             goals: Vec::new(),
+            scoring: ScoringConfig::default(),
             version: AMBLE_VERSION.to_string(),
             turn_count: 0,
             scheduler: Scheduler::default(),
