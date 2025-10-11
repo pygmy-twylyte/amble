@@ -74,54 +74,54 @@ fn default_scoring_ranks() -> Vec<ScoringRank> {
     vec![
         ScoringRank {
             threshold: 99.0,
-            name: "Completionist".to_string(),
-            description: "Wow! You solved all of the puzzles, visted all areas, and did everything there was to do!"
-                .to_string(),
+            name: "Quantum Overachiever".to_string(),
+            description: "You saw the multiverse, understood it, then filed a bug report.".to_string(),
         },
         ScoringRank {
             threshold: 90.0,
-            name: "Master Explorer".to_string(),
-            description: "A nearly flawless run. You found and solved just about everything.".to_string(),
+            name: "Senior Field Operative".to_string(),
+            description: "A nearly flawless run. Someone give this candidate a promotion.".to_string(),
         },
         ScoringRank {
-            threshold: 80.0,
-            name: "Seasoned Explorer".to_string(),
-            description: "You covered an impressive amount of ground.".to_string(),
-        },
-        ScoringRank {
-            threshold: 70.0,
-            name: "Explorer".to_string(),
-            description: "You tackled a strong majority of the game content.".to_string(),
+            threshold: 75.0,
+            name: "Licensed Reality Bender".to_string(),
+            description:
+                "Impressive grasp of nonlinear environments and cake-based paradoxes.".to_string(),
         },
         ScoringRank {
             threshold: 60.0,
-            name: "Chief Assistant Explorer".to_string(),
-            description: "Solid effort. Some areas or opportunities went unnoticed.".to_string(),
+            name: "Rogue Intern, Level II".to_string(),
+            description: "You got the job done, and only melted one small pocket universe.".to_string(),
         },
         ScoringRank {
-            threshold: 50.0,
-            name: "Master Assistant Explorer".to_string(),
-            description: "Good instincts, but spotty coverage. You completed a bare majority of the game.".to_string(),
+            threshold: 45.0,
+            name: "Unpaid Research Assistant".to_string(),
+            description:
+                "Solid effort. Some concepts may have slipped through dimensional cracks.".to_string(),
         },
         ScoringRank {
-            threshold: 40.0,
-            name: "Assistant Explorer".to_string(),
-            description: "You seemed to lose steam just before things really started getting interesting.".to_string(),
+            threshold: 30.0,
+            name: "Junior Sandwich Technician".to_string(),
+            description: "Good instincts, questionable execution. Especially with condiments.".to_string(),
         },
         ScoringRank {
-            threshold: 25.0,
-            name: "Scout".to_string(),
+            threshold: 15.0,
+            name: "Volunteer Tour Guide".to_string(),
+            description: "You wandered. You looked at stuff. It was something.".to_string(),
+        },
+        ScoringRank {
+            threshold: 5.0,
+            name: "Mailbox Stuffing Trainee".to_string(),
             description: "You opened a box, tripped on a rug, and called it a day.".to_string(),
         },
         ScoringRank {
-            threshold: 10.0,
-            name: "Scribe".to_string(),
-            description: "You jotted some notes, but missed some major portions of the game while doing it."
-                .to_string(),
+            threshold: 1.0,
+            name: "Accidental Hire".to_string(),
+            description: "We're not sure how you got in. Please return your lanyard.".to_string(),
         },
         ScoringRank {
             threshold: 0.0,
-            name: "Casual Observer".to_string(),
+            name: "Amnesiac Test Subject".to_string(),
             description: "Did you… play? Were you even awake?".to_string(),
         },
     ]
@@ -242,7 +242,7 @@ mod tests {
         assert_eq!(name, "Quantum Overachiever");
 
         let (name, _) = config.get_rank(99.99);
-        assert_eq!(name, "Senior Field Operative");
+        assert_eq!(name, "Quantum Overachiever");
 
         let (name, _) = config.get_rank(0.01);
         assert_eq!(name, "Amnesiac Test Subject");
