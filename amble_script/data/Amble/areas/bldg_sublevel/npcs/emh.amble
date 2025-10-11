@@ -5,7 +5,7 @@
 npc emh {
     name "Emergency Medical Hologram"
     desc "A balding and somewhat anxious-appearing holographic doctor in a Starfleet uniform."
-    location room med-bay
+    location nowhere "spawns in med-bay after button pressed"
     state normal
     movement random rooms(med-bay, lounge, loading-dock) timing every_5_turns active false
     dialogue custom want-emitter {
@@ -37,7 +37,7 @@ trigger "[Med-Bay] EMH/Cure Nausea"
 note "can add specific has flag conditions here to use this for any nausea-inducing condition"
 when talk to npc emh {
     if has flag read-vogon-poetry {
-        do add flag cured-vogon-poetry
+        do remove flag read-vogon-poetry
         do award points 3
         do npc says emh "You poor fool, you look horrible. You've been reading Vogon poetry, hmmm? Here, this should help."
     }
