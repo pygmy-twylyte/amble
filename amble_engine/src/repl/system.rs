@@ -158,16 +158,16 @@ pub fn set_viewmode_handler(view: &mut View, mode: ViewMode) {
 /// "Amnesiac Test Subject" (0%), each with personalized evaluation messages
 /// that reflect their exploration and puzzle-solving success.
 pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> {
-    info!("{} quit with a score of {}", world.player.name(), world.player.score);
-    info!("ending flags:");
-    world.player.flags.iter().for_each(|i| info!("flag> {i}"));
-    info!("ending inventory:");
+    info!("$$ {} quit with a score of {}", world.player.name(), world.player.score);
+    info!("$$ FLAGS:");
+    world.player.flags.iter().for_each(|i| info!("$$ -> {i}"));
+    info!("$$ INVENTORY:");
     world
         .player
         .inventory
         .iter()
         .filter_map(|uuid| world.items.get(uuid))
-        .for_each(|i| info!("- {} ({})", i.name(), i.symbol()));
+        .for_each(|i| info!("$$ -> {} ({})", i.name(), i.symbol()));
 
     let percent = (world.player.score as f32 / world.max_score as f32) * 100.0;
 
