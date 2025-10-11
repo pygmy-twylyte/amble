@@ -41,7 +41,7 @@
 
 ### loading-dock
 - [x] supply locker -- add "examine" text regarding the highly flammable special wood
-- [ ] strange liquid should be drinkable for some fun bit or hint, but can't be critical (doesn't spawn if locker broken)
+- [x] strange liquid should be drinkable for some fun bit or hint, but can't be critical (doesn't spawn if locker broken)
 - break and burn supply locker work with correct damage to internal items
 
 ### snowfield
