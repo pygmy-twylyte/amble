@@ -37,6 +37,9 @@ when give item visitor_pass to npc black_knight {
 trigger "[Sublevel-1-Entrance] Meet the Black Knight" only once
 when talk to npc black_knight {
     do add flag talked-to-knight
+    if has flag ate-sausage {
+        do npc says black_knight "Ye Gods! That stench is a foul and powerful weapon, but it will not move me. I move for NO man, even if my nostrils recoil from his very presence."
+    }
     do npc says black_knight "You shall not pass. This wing is closed... and may not exist at all. Begone!"
 }
 
