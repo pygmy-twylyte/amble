@@ -154,9 +154,11 @@ pub fn set_viewmode_handler(view: &mut View, mode: ViewMode) {
 ///
 /// # Performance Rankings
 ///
-/// Players receive titles ranging from "Quantum Overachiever" (100%) to
-/// "Amnesiac Test Subject" (0%), each with personalized evaluation messages
-/// that reflect their exploration and puzzle-solving success.
+/// Players receive rank titles based on their completion percentage, with
+/// rankings defined in `scoring.toml` (or hardcoded defaults if the file
+/// cannot be loaded). Each rank has a threshold percentage, a title, and
+/// a personalized evaluation message reflecting the player's exploration
+/// and puzzle-solving success.
 pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> {
     info!("$$ {} quit with a score of {}", world.player.name(), world.player.score);
     info!("$$ FLAGS:");
@@ -171,45 +173,7 @@ pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> 
 
     let percent = (world.player.score as f32 / world.max_score as f32) * 100.0;
 
-    let (rank, eval) = match percent {
-        100.0 => (
-            "Quantum Overachiever",
-            "You saw the multiverse, understood it, then filed a bug report.",
-        ),
-        p if p >= 90.0 => (
-            "Senior Field Operative",
-            "A nearly flawless run. Someone give this candidate a promotion.",
-        ),
-        p if p >= 75.0 => (
-            "Licensed Reality Bender",
-            "Impressive grasp of nonlinear environments and cake-based paradoxes.",
-        ),
-        p if p >= 60.0 => (
-            "Rogue Intern, Level II",
-            "You got the job done, and only melted one small pocket universe.",
-        ),
-        p if p >= 45.0 => (
-            "Unpaid Research Assistant",
-            "Solid effort. Some concepts may have slipped through dimensional cracks.",
-        ),
-        p if p >= 30.0 => (
-            "Junior Sandwich Technician",
-            "Good instincts, questionable execution. Especially with condiments.",
-        ),
-        p if p >= 15.0 => (
-            "Volunteer Tour Guide",
-            "You wandered. You looked at stuff. It was something.",
-        ),
-        p if p >= 5.0 => (
-            "Mailbox Stuffing Trainee",
-            "You opened a box, tripped on a rug, and called it a day.",
-        ),
-        p if p >= 1.0 => (
-            "Accidental Hire",
-            "We're not sure how you got in. Please return your lanyard.",
-        ),
-        _ => ("Amnesiac Test Subject", "Did you… play? Were you even awake?"),
-    };
+    let (rank, eval) = world.scoring.get_rank(percent);
 
     let visited = world.rooms.values().filter(|r| r.visited).count();
 
@@ -478,6 +442,7 @@ pub fn goals_handler(world: &AmbleWorld, view: &mut View) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::loader::scoring::{ScoringConfig, ScoringRank};
 
     #[test]
     fn help_includes_dev_commands_when_enabled() {
@@ -510,6 +475,87 @@ mod tests {
             assert!(commands.iter().all(|c| c.command.starts_with(':')));
         } else {
             panic!(":help dev did not produce a Help ViewItem");
+        }
+    }
+
+    #[test]
+    fn quit_handler_uses_scoring_config() {
+        // Disable colored output for consistent test assertions
+        colored::control::set_override(false);
+
+        // Create a custom scoring config with simple thresholds
+        let custom_scoring = ScoringConfig {
+            ranks: vec![
+                ScoringRank {
+                    threshold: 75.0,
+                    name: "Test Master".to_string(),
+                    description: "You aced the test.".to_string(),
+                },
+                ScoringRank {
+                    threshold: 50.0,
+                    name: "Test Novice".to_string(),
+                    description: "You passed.".to_string(),
+                },
+                ScoringRank {
+                    threshold: 0.0,
+                    name: "Test Failure".to_string(),
+                    description: "Better luck next time.".to_string(),
+                },
+            ],
+        };
+
+        // Create test world with custom scoring
+        let mut world = AmbleWorld::new_empty();
+        world.scoring = custom_scoring;
+        world.player.score = 60;
+        world.max_score = 100;
+
+        // Call quit handler
+        let mut view = View::new();
+        let result = quit_handler(&world, &mut view);
+
+        // Verify it returns Quit control
+        assert!(matches!(result, Ok(ReplControl::Quit)));
+
+        // Verify the QuitSummary uses the custom scoring config
+        if let Some(ViewItem::QuitSummary {
+            rank,
+            notes,
+            score,
+            max_score,
+            ..
+        }) = view.items.iter().find(|i| matches!(i, ViewItem::QuitSummary { .. }))
+        {
+            // 60/100 = 60%, should get "Test Novice" rank
+            assert_eq!(rank, "Test Novice");
+            assert_eq!(notes, "You passed.");
+            assert_eq!(*score, 60);
+            assert_eq!(*max_score, 100);
+        } else {
+            panic!("quit_handler did not produce a QuitSummary ViewItem");
+        }
+    }
+
+    #[test]
+    fn quit_handler_uses_default_scoring_when_not_set() {
+        colored::control::set_override(false);
+
+        let mut world = AmbleWorld::new_empty();
+        world.player.score = 100;
+        world.max_score = 100;
+
+        let mut view = View::new();
+        let result = quit_handler(&world, &mut view);
+
+        assert!(matches!(result, Ok(ReplControl::Quit)));
+
+        // Verify it uses default ranks (100% = "Quantum Overachiever")
+        if let Some(ViewItem::QuitSummary { rank, .. }) =
+            view.items.iter().find(|i| matches!(i, ViewItem::QuitSummary { .. }))
+        {
+            assert_eq!(rank, "Quantum Overachiever");
+        } else {
+            panic!("quit_handler did not produce a QuitSummary ViewItem");
         }
     }
 }

@@ -581,7 +581,7 @@ mod tests {
     };
 
     fn create_test_world() -> AmbleWorld {
-        let mut world = AmbleWorld::default();
+        let mut world = AmbleWorld::new_empty();
         world.player = Player::default();
         // Disable colored output for consistent test assertions
         colored::control::set_override(false);

@@ -9,6 +9,7 @@ pub mod items;
 pub mod npcs;
 pub mod player;
 pub mod rooms;
+pub mod scoring;
 pub mod spinners;
 pub mod triggers;
 
@@ -16,6 +17,7 @@ use crate::loader::goals::{build_goals, load_raw_goals};
 use crate::loader::items::load_raw_items;
 use crate::loader::player::load_player;
 use crate::loader::rooms::load_raw_rooms;
+use crate::loader::scoring::load_scoring;
 use crate::loader::spinners::load_spinners;
 use crate::loader::triggers::load_raw_triggers;
 
@@ -78,9 +80,14 @@ pub fn load_world() -> Result<AmbleWorld> {
     let trigger_toml_path = Path::new("amble_engine/data/triggers.toml");
     let spinners_toml_path = Path::new("amble_engine/data/spinners.toml");
     let goal_toml_path = Path::new("amble_engine/data/goals.toml");
+    let scoring_toml_path = Path::new("amble_engine/data/scoring.toml");
 
     let mut world = AmbleWorld::new_empty();
     let mut symbols = SymbolTable::default();
+
+    /* Load Scoring Configuration */
+    world.scoring = load_scoring(scoring_toml_path);
+    info!("Scoring configuration loaded with {} ranks", world.scoring.ranks.len());
 
     /* Load Spinners */
     world.spinners = load_spinners(spinners_toml_path).context("while loading spinners from file")?;
