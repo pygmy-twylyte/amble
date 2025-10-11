@@ -204,6 +204,15 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
         _ => None,
     };
 
+    // return early / no-op if source room is destination
+    if from_room_id == to_room_id {
+        info!(
+            "skipping move for npc '{}': already at intended destination",
+            npc.symbol()
+        );
+        return Ok(());
+    }
+
     // needed for message to player if NPC entering / leaving their current location
     let player_room_id = world.player_room_ref()?.id();
 
