@@ -1,5 +1,151 @@
+# ========================================
+# Ice Pit
+# ========================================
+
 room ice-pit {
     name "Abysmal Ice Pit"
     desc "The bottom of a deep, sheer ice shaft seemingly dug for some kind of arctic research -- though you were nowhere near the Arctic Circle, last you checked. You're just able to see in the dim light filtering down from the tiny window to the surface above."
-    exit rope-up -> snowfield
+    overlay if item present plaque_2_frozen {
+        text "A slightly larger than human-sized pillar of ice rises from the floor near one end of the excavated area."
+    }
+    overlay if item present unlit_campfire {
+        text "A carefully-laid but unlit campfire waits next to the pillar."
+    }
+    overlay if item present campfire {
+        text "A toasty campfire burns steadily next to the gradually melting ice pillar."
+    }
+    overlay if flag complete reveal-ice-plaque {
+        text "A campfire crackles next to a marble pillar topped with a shiny bronze plaque near one end of the room."
+    }
+    exit "back to the surface" -> snowfield
+}
+
+# ========================================
+# Items
+# ========================================
+
+item plaque_2_frozen {
+    name "Frozen Pillar"
+    desc "A pillar of... something encased in thick ice, affixed to the frozen floor of the pit. It's a little bigger than the pillar back at the Parish Landing."
+    portable false
+    ability Read
+    text "<this should never be read -- 'Must Melt to Read' trigger prevents it>"
+    location room ice-pit
+}
+
+item plaque_2 {
+    name "Icy Plaque"
+    desc "An ornate plaque, made visible by the melting of its icy encasement. The intricate design and craftsmanship of its sculpted marble pillar impress upon you the great care and effort it took someone to place it here."
+    portable false
+    location nowhere "spawns in ice-pit when the frozen pillar is melted"
+    ability Read
+    text r#""The saddest aspect of life right now is that science gathers knowledge faster than society gathers wisdom." -- Isaac Asimov"#
+}
+
+item unlit_campfire {
+    name "Stacked Firewood"
+    desc "An expert fire lay, in log-cabin shape for optimum airflow and kindling in the center, ready to light."
+    portable false
+    location nowhere "spawns when firewood dropped in ice-pit"
+    requires ignite to burn
+}
+
+item campfire {
+    name "Campfire"
+    desc "A steadily burning campfire next to the pillar at the bottom of the pit."
+    portable false
+    location nowhere "spawns when unlit_campfire is lit"
+}
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Plaque 2] Must Melt to Read"
+when use item plaque_2_frozen ability read {
+    do deny read "You'll have to melt the ice encasing the pillar in order to read the plaque on it."
+    do add flag tried-read-plaque-2
+}
+
+trigger "[Plaque 2] Read the Plaque" only once
+when use item plaque_2 ability read {
+    do add flag read-plaque-2
+    do award points 10
+}
+
+trigger "[Plaque 2] Pile Firewood"
+when drop item firewood {
+    if in rooms ice-pit {
+        do show "You toss the firewood down next to the ice pillar. It can't be a coincidence that it falls into the shape of a perfect log-cabin fire lay, complete with kindling in the center."
+        do award points 5
+        do replace item firewood with unlit_campfire
+    }
+}
+
+trigger "[Plaque 2] Light Campfire -> Melt Ice to Reveal Plaque" only once
+when act burn on item unlit_campfire {
+    do show "The kindling catches quickly, and the larger cut branches begin to burn after a few minutes. The ice around the nearby pillar begins to melt."
+    do award points 2
+    do replace item unlit_campfire with campfire
+    do add flag campfire-lit
+    do add seq flag reveal-ice-plaque limit 4
+    # reveal-ice-plaque#0 -> just lit
+    # reveal-ice-plaque#{1-3} -> progressive melting
+    # reveal-ice-plaque#4 -> melted, plaque revealed
+    do schedule in 2 note "melting sequence to #1" {
+        do show "Tiny rivulets of water begin to form on the side of the ice pillar closest to the fire."
+        do set item description plaque_2_frozen "Small rivulets of water have begun to stream down the sides of the pillar, but it's had little effect on the thickness of the ice so far."
+        do advance flag reveal-ice-plaque
+    }
+    do schedule in 3 note "melting sequence to #2" {
+        do show "Water begins to stream more quickly off of the pillar, which is beginning to shrink, revealing a darker object within."
+        do set item description plaque_2_frozen "Water streams more quickly from the slowly shrinking pillar. An intricate, white object begins to take shape within."
+        do advance flag reveal-ice-plaque
+    }
+    do schedule in 4 note "melting sequence to #3" {
+        do show "Water flows freely now from the rapidly shrinking ice sheet, starting to reveal the carved marble pillar inside. There's still too much ice on the plaque to read it."
+        do set item description plaque_2_frozen "Water now runs freely from all sides of the ice pillar, beginning to reveal the intricately carved pillar within."
+        do advance flag reveal-ice-plaque
+    }
+    do schedule in 5 note "finish melting sequence (#4)" {
+        do advance flag reveal-ice-plaque
+        do show "The ice has now melted almost completely away from the pillar and plaque, just as the fire dies down a bit from the meltwater dousing its base."
+        do award points 10
+        do replace item plaque_2_frozen with plaque_2
+        do set item description campfire "A nice, warm campfire, slowly burning down to nothing."
+    }
+    do schedule in 12 note "finish burning campfire down" {
+        do set item description campfire "Some frozen ash -- all that remains of a once-welcoming campfire."
+        if in rooms ice-pit {
+            do show "The campfire finally goes completely out and begins to freeze over again."
+        }
+    }
+}
+
+# ========================================
+# Goals
+# ========================================
+
+goal start-melting-plaque-2 {
+    name "Start a Fire"
+    desc "The plaque on the pillar in the snowfield pit is encased in a thick sheet of ice. If you want to read it, you'll have to melt it somehow."
+    group optional
+    start when has flag tried-read-plaque-2
+    done when has flag campfire-lit
+}
+
+goal wait-for-plaque-2-to-melt {
+    name "Wait for the Melt"
+    desc "Your fire is working. Hopefully, it will keep burning long enough to melt the ice. You'll just have to wait to find out."
+    group optional
+    start when goal complete start-melting-plaque-2
+    done when flag complete reveal-ice-plaque
+}
+
+goal read-plaque-2 {
+    name "Bask in the Wisdom"
+    desc "Your campfire kept going long enough, and the plaque in the snowfield ice pit has been revealed. Go and bask in its wisdom."
+    group optional
+    start when goal complete wait-for-plaque-2-to-melt
+    done when has flag read-plaque-2
 }
