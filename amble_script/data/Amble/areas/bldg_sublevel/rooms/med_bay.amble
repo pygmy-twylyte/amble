@@ -1,3 +1,7 @@
+# ========================================
+# Med-Bay
+# ========================================
+
 room med-bay {
     name "Med Bay"
     desc "A clean white infirmary with two bio-beds extending from the back wall, surrounded by a bevy of monitors and robotic surgical tools. One of the machines goes \"Bing!\" every few minutes. A small cleaning robot floats around the room disinfecting things."
@@ -7,4 +11,26 @@ room med-bay {
         custom(want-emitter) "The EMH fidgets restlessly, casting longing glances toward the door as if craving a mobile emitter."
     }
     exit west -> corridor-north
+}
+
+# ========================================
+# Items
+# ========================================
+
+item emh_button {
+    name "Button: Activate E.M.H."
+    desc "A large red button mounted to the wall next to the bio-bed, used to summon the Emergency Medical Hologram."
+    portable false
+    location room med-bay
+}
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "Spawn the EMH" only once
+when touch item emh_button {
+    do spawn npc emh into room med-bay
+    do award points 3
+    do npc says emh "Please state the nature of your medical emergency."
 }
