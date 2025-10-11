@@ -1,0 +1,40 @@
+# ========================================
+# Husky-Thing
+# ========================================
+#
+# Husky-Thing will spawn if player reads the research journal about the Thing getting to the dogs first.
+# Triggers ensure that the Husky follows the player within the snowfield area (but not down into the ice pit)
+
+npc husky_thing {
+    name "Strange Husky"
+    desc "A slightly oversized Husky dog. It stands unmoving, watching you, keeping a cautious distance. It never seems to blink or shift its gaze away from you."
+    location nowhere "spawns at snow_camp if charred_journal read"
+    state normal
+    dialogue normal {
+        "(It maintains its distance, but continues watching you intently.)"
+    }
+}
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "Spawn Husky" only once
+when use item charred_journal ability read {
+    do spawn npc husky_thing into room snow-camp
+    do add flag husky-spawned
+}
+
+trigger "[Husky] Stalk the Candidate" when enter room snowfield {
+    if has flag husky-spawned {
+        # this will emit a warning in the log but moves the npc
+        do spawn npc husky_thing into room snowfield
+    }
+}
+
+trigger "[Husky] Stalk the Candidate" when enter room snow-camp {
+    if has flag husky-spawned {
+        # this will emit a warning in the log but moves the npc
+        do spawn npc husky_thing into room snow-camp
+    }
+}
