@@ -212,3 +212,109 @@ goal_complete = { r = 120, g = 120, b = 120 }
 
 # UI sections - mid gray
 section = { r = 128, g = 128, b = 128 }
+
+[[themes]]
+name = "daybreak_light"
+description = "Warm sunrise accents on a light parchment backdrop"
+
+[themes.colors]
+# Prompt and status - deep indigo on parchment
+prompt = { r = 32, g = 54, b = 94 }
+prompt_bg = { r = 247, g = 244, b = 236 }
+status = { r = 0, g = 102, b = 82 }
+
+# General styles - sunlit transitions
+highlight = { r = 179, g = 84, b = 0 }
+transition = { r = 17, g = 111, b = 139 }
+subheading = { r = 33, g = 61, b = 86 }
+
+# Items - brass and evergreen
+item = { r = 135, g = 73, b = 0 }
+item_text = { r = 0, g = 102, b = 82 }
+
+# NPCs - twilight purples and umber
+npc = { r = 107, g = 52, b = 143 }
+npc_quote = { r = 64, g = 88, b = 112 }
+npc_movement = { r = 101, g = 76, b = 33 }
+
+# Rooms - terracotta and slate
+room = { r = 146, g = 54, b = 44 }
+room_titlebar = { r = 146, g = 54, b = 44 }
+description = { r = 52, g = 86, b = 94 }
+overlay = { r = 83, g = 108, b = 140 }
+
+# Triggers and events - ember glow
+triggered = { r = 153, g = 93, b = 0 }
+trig_icon = { r = 143, g = 35, b = 35 }
+ambient_icon = { r = 45, g = 90, b = 130 }
+ambient_trig = { r = 33, g = 105, b = 69 }
+
+# Exits - garden paths
+exit_visited = { r = 36, g = 96, b = 60 }
+exit_locked = { r = 136, g = 34, b = 34 }
+exit_unvisited = { r = 157, g = 95, b = 0 }
+
+# Feedback - urgent crimson
+error = { r = 143, g = 28, b = 28 }
+error_icon = { r = 122, g = 18, b = 18 }
+denied = { r = 104, g = 33, b = 33 }
+
+# Goals - amethyst and evergreen laurels
+goal_active = { r = 84, g = 35, b = 125 }
+goal_complete = { r = 55, g = 89, b = 28 }
+
+# UI sections - inked steel
+section = { r = 76, g = 84, b = 95 }
+
+[[themes]]
+name = "aurora_light"
+description = "Cool twilight-inspired hues optimized for light UIs"
+
+[themes.colors]
+# Prompt and status - midnight shoreline
+prompt = { r = 30, g = 64, b = 91 }
+prompt_bg = { r = 246, g = 249, b = 252 }
+status = { r = 0, g = 94, b = 112 }
+
+# General styles - polar glow accents
+highlight = { r = 169, g = 52, b = 90 }
+transition = { r = 0, g = 102, b = 153 }
+subheading = { r = 25, g = 72, b = 99 }
+
+# Items - copper and pine
+item = { r = 121, g = 70, b = 0 }
+item_text = { r = 0, g = 96, b = 61 }
+
+# NPCs - aurora violets and cedar
+npc = { r = 92, g = 41, b = 122 }
+npc_quote = { r = 66, g = 83, b = 102 }
+npc_movement = { r = 101, g = 66, b = 43 }
+
+# Rooms - crimson dusk and fjord blues
+room = { r = 130, g = 46, b = 46 }
+room_titlebar = { r = 130, g = 46, b = 46 }
+description = { r = 42, g = 84, b = 109 }
+overlay = { r = 58, g = 102, b = 135 }
+
+# Triggers and events - lantern light
+triggered = { r = 163, g = 90, b = 0 }
+trig_icon = { r = 128, g = 28, b = 28 }
+ambient_icon = { r = 26, g = 88, b = 124 }
+ambient_trig = { r = 25, g = 104, b = 86 }
+
+# Exits - evergreen ways
+exit_visited = { r = 32, g = 94, b = 66 }
+exit_locked = { r = 122, g = 29, b = 41 }
+exit_unvisited = { r = 146, g = 82, b = 0 }
+
+# Feedback - polar warnings
+error = { r = 124, g = 24, b = 37 }
+error_icon = { r = 105, g = 14, b = 28 }
+denied = { r = 92, g = 32, b = 38 }
+
+# Goals - aurora ribbons and moss
+goal_active = { r = 58, g = 33, b = 115 }
+goal_complete = { r = 41, g = 85, b = 32 }
+
+# UI sections - slate over ice
+section = { r = 70, g = 80, b = 92 }
