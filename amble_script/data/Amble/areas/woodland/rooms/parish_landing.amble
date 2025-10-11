@@ -64,7 +64,7 @@ when use item plaque_1 ability read {
 
 goal read-plaque-1 {
     name "Read the Plaque"
-    desc "Find a way to clean the plaque by the Parish Landing, so you can read it."
+    desc "Find a way to clean off the plaque by the Parish Landing, so you can read it."
     group optional
     start when has flag tried-read-plaque-1
     done when has flag read-plaque-1
