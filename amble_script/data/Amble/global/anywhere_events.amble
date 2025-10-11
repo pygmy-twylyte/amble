@@ -28,7 +28,7 @@ when drink item strange_liquid {
         do award points 5
     }
     do schedule in 20 if missing flag appeased-black-knight onFalse cancel {
-        do show "<Flashback> A medieval knight smilese as he slices aluminum cans and tomatoes with his sword."
+        do show "<Flashback> A medieval knight smiles as he slices aluminum cans and tomatoes with his sword."
     }
 }
 
@@ -66,10 +66,10 @@ trigger "[Global] Drop Vogon Poetry"
 note "dropping only stops the nausea if player has not read it"
 when drop item vogon_poetry_book
 {
-    if any(missing flag read-vogon-poetry, has flag cured-vogon-poetry) {
+    if missing flag read-vogon-poetry {
         do show "That greasy, queasy feeling subsides."
     }
-    if all(has flag read-vogon-poetry, missing flag cured-vogon-poetry) {
+    if has flag read-vogon-poetry {
         do show "Getting rid of the book helps a little, but the poem is burned into your mind and the nausea continues."
     }
 }
