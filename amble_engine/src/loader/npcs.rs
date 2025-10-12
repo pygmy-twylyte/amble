@@ -164,6 +164,7 @@ impl RawNpcMovement {
             timing,
             active: self.active,
             last_moved_turn: 0,
+            paused_until: None,
         })
     }
 }

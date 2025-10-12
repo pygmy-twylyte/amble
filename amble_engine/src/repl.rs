@@ -238,8 +238,23 @@ pub fn check_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()>
     for npc_id in npc_ids {
         if let Some(npc) = world.npcs.get_mut(&npc_id) {
             if let Some(ref mut movement) = npc.movement {
+                // skip if NPC is inactive
                 if !movement.active {
                     continue;
+                }
+
+                // clear any set pause if expired
+                if let Some(resume_turn) = movement.paused_until {
+                    if current_turn >= resume_turn {
+                        info!("movement pause expiring for npc '{}': resuming activity", npc.symbol);
+                        movement.paused_until = None
+                    } else {
+                        info!(
+                            "npc '{}' is paused for player interaction, skipping movement check",
+                            npc.symbol
+                        );
+                        continue;
+                    }
                 }
 
                 if move_scheduled(movement, current_turn) {

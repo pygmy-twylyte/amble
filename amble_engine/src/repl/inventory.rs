@@ -615,6 +615,8 @@ pub fn transfer_to_player(
         },
         VesselType::Npc => {
             if let Some(vessel) = world.npcs.get_mut(&vessel_id) {
+                // set a movement pause after taking something from NPC
+                vessel.pause_movement(world.turn_count, 4);
                 vessel.remove_item(loot_id);
             }
         },
