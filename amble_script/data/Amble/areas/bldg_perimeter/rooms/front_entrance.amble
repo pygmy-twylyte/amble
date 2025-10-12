@@ -4,10 +4,10 @@
 
 room front-entrance {
     name "Front Entrance"
-    desc "Potted plants flank a plain, darkened glass door on the front of the building to the north. As you approach the door, a security eye-bot mounted above it mutters judgementally as it scans you. A sign above it reads:\n\n                       \"Always Know Where Your Towel Is\"\n\nPaved paths lead around the building to the east and west."
+    desc "Potted plants flank a plain, darkened glass door on the front of the building to the north. As you approach the door, an Initech Eye-bot™ mounted above it mutters judgementally as it scans you. A sign above it reads:\n\n                       \"Always Know Where Your Towel Is\"\n\nPaved paths lead around the building to the east and west."
     overlay if flag got-towel {
-        set "Finished scanning, the eye-bot's iris glows green. The doors unlatch and open slightly."
-        unset "After a few moments, the eye-bot's iris turns red, and it points at the sign above."
+        set "Finished scanning, the Eye-bot™'s iris glows green. The doors unlatch and open slightly."
+        unset "After a few moments, the Eye-bot™'s iris turns red, and it points at the sign above."
     }
 
     overlay if npc cmot_dibbler here {
@@ -20,7 +20,7 @@ room front-entrance {
     }
     exit north -> main-lobby {
         required_flags(got-towel),
-        barred "Not so fast. The security bot is absolutely insistent that you have a towel before you go inside."
+        barred "Not so fast. The Initech Eye-bot™ is absolutely insistent that you have a towel before you go inside."
     }
     exit west -> snowfield
     exit east -> east-of-building

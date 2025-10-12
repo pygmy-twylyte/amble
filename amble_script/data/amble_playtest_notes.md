@@ -68,7 +68,7 @@
 (saved here as playtest-building-main)
 
 ### front-entrance
-- [ ] description, change security eye-bot to Initech Eye-Bot[tm]
+- [x] description, change security eye-bot to Initech Eye-Bot[tm]
 
 ### main-lobby
 - [ ] HAL module #2 shouldn't be visible in the vending machine until starts HAL sequence
@@ -107,7 +107,7 @@
 - [ ] replace hot with cold after a few turns
 
 ### portal-room
-- [ ] **HAS NO EXITS!** Need exit back up ladder to lounge
+- [x] **HAS NO EXITS!** Need exit back up ladder to lounge
 - [ ] update portal gun descriptions based on when opened, battery taken, inserted
 
 ### aperture-lab
