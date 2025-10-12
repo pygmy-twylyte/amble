@@ -131,6 +131,11 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
         return Ok(());
     };
 
+    // set a movement pause for 4 turns so NPC doesn't run off mid-interaction
+    if let Some(npc) = world.npcs.get_mut(&sent_id) {
+        npc.pause_movement(world.turn_count, 4);
+    }
+
     // check for any condition-specific dialogue
     let fired_triggers = check_triggers(world, view, &[TriggerCondition::TalkToNpc(sent_id)])?;
     let dialogue_fired = triggers_contain_condition(&fired_triggers, |cond| match cond {
@@ -225,6 +230,11 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
         entity_not_found(world, view, npc);
         return Ok(());
     };
+
+    // set a movement pause for 4 turns so NPC doesn't run off mid-interaction
+    if let Some(npc) = world.npcs.get_mut(&npc_id) {
+        npc.pause_movement(world.turn_count, 4);
+    }
 
     // find the target item in inventory, ensure it's portable, collect metadata
     let (item_id, item_name) =

@@ -416,6 +416,7 @@ fn test_check_npc_movement() {
             timing: MovementTiming::EveryNTurns { turns: 1 },
             active: true,
             last_moved_turn: 0,
+            paused_until: None,
         }),
     };
     world.npcs.insert(npc_id, npc);

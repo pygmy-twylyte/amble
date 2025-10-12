@@ -33,6 +33,13 @@ pub struct Npc {
     pub movement: Option<NpcMovement>,
 }
 impl Npc {
+    /// Pauses
+    pub fn pause_movement(&mut self, current_turn: usize, duration: usize) {
+        if let Some(ref mut mvmt_config) = self.movement {
+            mvmt_config.paused_until = Some(current_turn + duration);
+        }
+    }
+
     /// Returns a random line of dialogue from within the NPCs current Mood.
     pub fn random_dialogue(&self, ignore_spinner: &Spinner<String>) -> String {
         if let Some(lines) = self.dialogue.get(&self.state) {
@@ -107,6 +114,7 @@ pub struct NpcMovement {
     pub timing: MovementTiming,
     pub active: bool,
     pub last_moved_turn: usize,
+    pub paused_until: Option<usize>,
 }
 
 /// Type and route of NPC movement
@@ -133,6 +141,12 @@ pub enum MovementTiming {
 
 /// Returns true if movement should occur according to the '`NpcMovement`' parameters given.
 pub fn move_scheduled(movement: &NpcMovement, current_turn: usize) -> bool {
+    // return false if paused - pauses are cleared to None by the check_npc_movement function
+    // in the REPL when they expire, so we just need to check for Some()
+    if movement.paused_until.is_some() {
+        return false;
+    }
+    // return true or false depending on movement schedule otherwise
     match &movement.timing {
         MovementTiming::EveryNTurns { turns } => current_turn % turns == 0,
         MovementTiming::OnTurn { turn } => current_turn == *turn,
