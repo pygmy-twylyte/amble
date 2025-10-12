@@ -4,7 +4,9 @@ use anyhow::{Result, bail};
 use serde::Deserialize;
 
 use super::raw_condition::RawTriggerCondition;
+use crate::loader::items::{RawItem, RawItemAbility};
 use crate::scheduler::{EventCondition, OnFalsePolicy};
+use crate::trigger::ItemPatch;
 use crate::{
     item::ContainerState, loader::SymbolTable, npc::NpcState, player::Flag, spinners::SpinnerType,
     trigger::TriggerAction,
@@ -27,8 +29,48 @@ pub enum RawOnFalsePolicy {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct RawItemPatch {
+    pub name: Option<String>,
+    pub desc: Option<String>,
+    pub text: Option<String>,
+    pub portable: Option<bool>,
+    pub restricted: Option<bool>,
+    pub container_state: Option<ContainerState>,
+    #[serde(default)]
+    pub add_abilities: Vec<RawItemAbility>,
+    #[serde(default)]
+    pub remove_abilities: Vec<RawItemAbility>,
+}
+impl RawItemPatch {
+    pub fn to_patch(&self, symbols: &SymbolTable) -> Result<ItemPatch> {
+        Ok(ItemPatch {
+            name: self.name.clone(),
+            desc: self.desc.clone(),
+            text: self.text.clone(),
+            portable: self.portable,
+            restricted: self.restricted,
+            container_state: self.container_state,
+            add_abilities: self
+                .add_abilities
+                .iter()
+                .map(|ab| ab.to_ability(symbols))
+                .collect::<Result<Vec<_>, _>>()?,
+            remove_abilities: self
+                .remove_abilities
+                .iter()
+                .map(|ab| ab.to_ability(symbols))
+                .collect::<Result<Vec<_>, _>>()?,
+        })
+    }
+}
+
+#[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum RawTriggerAction {
+    ModifyItem {
+        item_sym: String,
+        patch: RawItemPatch,
+    },
     SpawnNpcIntoRoom {
         npc_sym: String,
         room_sym: String,
@@ -184,6 +226,7 @@ impl RawTriggerAction {
     /// Convert the TOML representation of this action to a fully realized `TriggerAction`.
     pub fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
+            Self::ModifyItem { item_sym, patch } => cook_modify_item(symbols, item_sym, patch),
             Self::SpawnNpcIntoRoom { npc_sym, room_sym } => cook_spawn_npc_into_room(symbols, npc_sym, room_sym),
             Self::DespawnNpc { npc_sym } => cook_despawn_npc(symbols, npc_sym),
             Self::SetNpcActive { npc_sym, active } => cook_set_npc_active(symbols, npc_sym, *active),
@@ -262,6 +305,18 @@ impl RawTriggerAction {
 /*
  * "Cook" functions below convert RawTriggerActions to "fully cooked" TriggerActions
  */
+
+fn cook_modify_item(symbols: &SymbolTable, item_sym: &str, raw_patch: &RawItemPatch) -> Result<TriggerAction> {
+    if let Some(&item_id) = symbols.items.get(item_sym) {
+        Ok(TriggerAction::ModifyItem {
+            item_id,
+            patch: raw_patch.to_patch(symbols)?,
+        })
+    } else {
+        bail!("loading TriggerAction:ModifyItem: item symbol ({item_sym}) not in table");
+    }
+}
+
 fn cook_spawn_npc_into_room(symbols: &SymbolTable, npc_sym: &str, room_sym: &str) -> Result<TriggerAction> {
     if let Some(&npc_id) = symbols.characters.get(npc_sym)
         && let Some(&room_id) = symbols.rooms.get(room_sym)

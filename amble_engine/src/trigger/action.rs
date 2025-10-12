@@ -72,15 +72,17 @@
 //! debugging game logic.
 
 use std::collections::HashMap;
+use std::error;
 
 use anyhow::{Context, Result, anyhow, bail};
 use gametools::{Spinner, Wedge};
-use log::{info, warn};
+use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::Item;
 use crate::helpers::{symbol_from_id, symbol_or_unknown};
-use crate::item::{ContainerState, ItemHolder};
+use crate::item::{ContainerState, ItemAbility, ItemHolder};
 use crate::npc::{NpcState, move_npc};
 use crate::player::{Flag, Player};
 use crate::room::Exit;
@@ -176,6 +178,8 @@ pub enum TriggerAction {
     LockExit { from_room: Uuid, direction: String },
     /// Locks a container item
     LockItem(Uuid),
+    /// Modifies multiple aspects of an `Item` at once using an `ItemPatch`
+    ModifyItem { item_id: Uuid, patch: ItemPatch },
     /// Makes an NPC refuse an item with a custom message
     NpcRefuseItem { npc_id: Uuid, reason: String },
     /// Makes an NPC speak a specific line of dialogue
@@ -254,6 +258,7 @@ pub enum TriggerAction {
 pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &TriggerAction) -> Result<()> {
     use TriggerAction::*;
     match action {
+        ModifyItem { item_id, patch } => modify_item(world, *item_id, patch)?,
         SetNpcActive { npc_id, active } => set_npc_active(world, npc_id, *active)?,
         SetContainerState { item_id, state } => set_container_state(world, *item_id, *state)?,
         ReplaceItem { old_id, new_id } => replace_item(world, old_id, new_id)?,
@@ -357,6 +362,80 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
         },
     }
     Ok(())
+}
+
+/// Patch that can be applied to modify multiple properties of an `Item` at once
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct ItemPatch {
+    pub name: Option<String>,
+    pub desc: Option<String>,
+    pub text: Option<String>,
+    pub portable: Option<bool>,
+    pub restricted: Option<bool>,
+    pub container_state: Option<ContainerState>,
+    #[serde(default)]
+    pub add_abilities: Vec<ItemAbility>,
+    #[serde(default)]
+    pub remove_abilities: Vec<ItemAbility>,
+}
+
+/*
+ *
+ * ACTION HANDLERS
+ *
+ */
+
+/// Modifies multiple properties of an `Item` at once by applying an `ItemPatch`
+pub fn modify_item(world: &mut AmbleWorld, item_id: Uuid, patch: &ItemPatch) -> Result<()> {
+    info!(
+        "└─ action: modifying item {} using patch: {:?}",
+        symbol_or_unknown(&world.items, item_id),
+        patch
+    );
+    let patched = apply_item_patch(world, item_id, patch)?;
+    world.items.insert(item_id, patched);
+    Ok(())
+}
+
+/// Clones an `Item`, modifies contents, and returns the updated `Item`
+fn apply_item_patch(world: &mut AmbleWorld, item_id: Uuid, patch: &ItemPatch) -> Result<Item> {
+    let mut patched = if let Some(old_item) = world.items.get(&item_id) {
+        old_item.clone()
+    } else {
+        bail!("patching an item: Uuid ({item_id}) not found in world item map");
+    };
+
+    if let Some(ref new_name) = patch.name {
+        patched.name = new_name.clone();
+    }
+
+    if let Some(ref new_desc) = patch.desc {
+        patched.description = new_desc.clone();
+    }
+
+    if patch.text.is_some() {
+        patched.text = patch.text.clone();
+    }
+
+    // prevent setting container_state to None if item isn't empty
+    if patch.container_state.is_some() || patched.contents.is_empty() {
+        patched.container_state = patch.container_state;
+    } else {
+        warn!(
+            "attempted to changed container state of non-empty container '{}' to None: container state change disallowed",
+            symbol_or_unknown(&world.items, item_id)
+        );
+    }
+
+    // add / remove abilities
+    for removal in &patch.remove_abilities {
+        patched.abilities.remove(removal);
+    }
+    for addition in &patch.add_abilities {
+        patched.abilities.insert(*addition);
+    }
+
+    Ok(patched)
 }
 
 /// Spawn an NPC in a Room. If the NPC is already in the world, it will be moved and a warning logged.
