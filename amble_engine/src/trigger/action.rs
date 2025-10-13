@@ -374,6 +374,8 @@ pub struct ItemPatch {
     pub restricted: Option<bool>,
     pub container_state: Option<ContainerState>,
     #[serde(default)]
+    pub remove_container_state: bool,
+    #[serde(default)]
     pub add_abilities: Vec<ItemAbility>,
     #[serde(default)]
     pub remove_abilities: Vec<ItemAbility>,
@@ -417,14 +419,27 @@ fn apply_item_patch(world: &mut AmbleWorld, item_id: Uuid, patch: &ItemPatch) ->
         patched.text = patch.text.clone();
     }
 
-    // prevent setting container_state to None if item isn't empty
-    if patch.container_state.is_some() || patched.contents.is_empty() {
-        patched.container_state = patch.container_state;
-    } else {
-        warn!(
-            "attempted to changed container state of non-empty container '{}' to None: container state change disallowed",
-            symbol_or_unknown(&world.items, item_id)
-        );
+    if let Some(new_portable) = patch.portable {
+        patched.portable = new_portable;
+    }
+
+    if let Some(new_restricted) = patch.restricted {
+        patched.restricted = new_restricted;
+    }
+
+    if patch.remove_container_state {
+        if patch.container_state.is_some() {
+            error!("modifyItem patch cannot set and remove container state simultaneously");
+        } else if !patched.contents.is_empty() {
+            error!(
+                "modifyItem cannot remove container state from '{}' while it still holds items",
+                patched.symbol
+            );
+        } else {
+            patched.container_state = None;
+        }
+    } else if let Some(new_state) = patch.container_state {
+        patched.container_state = Some(new_state);
     }
 
     // add / remove abilities
@@ -2017,6 +2032,117 @@ mod tests {
         assert!(world.rooms[&room1_id].exits["north"].locked);
         unlock_exit(&mut world, &room1_id, &"north".into()).unwrap();
         assert!(!world.rooms[&room1_id].exits["north"].locked);
+    }
+
+    #[test]
+    fn modify_item_updates_scalar_fields() {
+        let (mut world, room_id, _) = build_test_world();
+        let item_id = Uuid::new_v4();
+        let mut item = make_item(item_id, Location::Room(room_id), Some(ContainerState::Closed));
+        item.text = Some("old text".to_string());
+        world.items.insert(item_id, item);
+
+        let patch = ItemPatch {
+            name: Some("Renamed Widget".to_string()),
+            desc: Some("Updated description".to_string()),
+            text: Some("new dynamic text".to_string()),
+            portable: Some(false),
+            restricted: Some(true),
+            container_state: Some(ContainerState::Open),
+            ..Default::default()
+        };
+
+        modify_item(&mut world, item_id, &patch).unwrap();
+
+        let updated = world.items.get(&item_id).unwrap();
+        assert_eq!(updated.name, "Renamed Widget");
+        assert_eq!(updated.description, "Updated description");
+        assert_eq!(updated.text.as_deref(), Some("new dynamic text"));
+        assert!(!updated.portable);
+        assert!(updated.restricted);
+        assert_eq!(updated.container_state, Some(ContainerState::Open));
+    }
+
+    #[test]
+    fn modify_item_leaves_container_state_when_unset() {
+        let (mut world, room_id, _) = build_test_world();
+        let item_id = Uuid::new_v4();
+        let item = make_item(item_id, Location::Room(room_id), Some(ContainerState::Locked));
+        world.items.insert(item_id, item);
+
+        let patch = ItemPatch {
+            name: Some("Still Locked".to_string()),
+            ..Default::default()
+        };
+
+        modify_item(&mut world, item_id, &patch).unwrap();
+
+        let updated = world.items.get(&item_id).unwrap();
+        assert_eq!(updated.container_state, Some(ContainerState::Locked));
+    }
+
+    #[test]
+    fn modify_item_updates_abilities() {
+        let (mut world, room_id, _) = build_test_world();
+        let item_id = Uuid::new_v4();
+        let mut item = make_item(item_id, Location::Room(room_id), None);
+        item.abilities.insert(ItemAbility::Ignite);
+        world.items.insert(item_id, item);
+
+        let patch = ItemPatch {
+            add_abilities: vec![ItemAbility::Read],
+            remove_abilities: vec![ItemAbility::Ignite],
+            ..Default::default()
+        };
+
+        modify_item(&mut world, item_id, &patch).unwrap();
+
+        let updated = world.items.get(&item_id).unwrap();
+        assert!(updated.abilities.contains(&ItemAbility::Read));
+        assert!(!updated.abilities.contains(&ItemAbility::Ignite));
+    }
+
+    #[test]
+    fn modify_item_removes_container_state_when_empty() {
+        let (mut world, room_id, _) = build_test_world();
+        let item_id = Uuid::new_v4();
+        let container = make_item(item_id, Location::Room(room_id), Some(ContainerState::Open));
+        world.items.insert(item_id, container);
+
+        let patch = ItemPatch {
+            remove_container_state: true,
+            ..Default::default()
+        };
+
+        modify_item(&mut world, item_id, &patch).unwrap();
+
+        let updated = world.items.get(&item_id).unwrap();
+        assert_eq!(updated.container_state, None);
+    }
+
+    #[test]
+    fn modify_item_errors_when_removing_container_state_with_contents() {
+        let (mut world, room_id, _) = build_test_world();
+        let container_id = Uuid::new_v4();
+        let container = make_item(container_id, Location::Room(room_id), Some(ContainerState::Open));
+        world.items.insert(container_id, container);
+
+        let child_id = Uuid::new_v4();
+        let child_item = make_item(child_id, Location::Item(container_id), None);
+        world.items.insert(child_id, child_item);
+        world.items.get_mut(&container_id).unwrap().contents.insert(child_id);
+
+        let patch = ItemPatch {
+            remove_container_state: true,
+            ..Default::default()
+        };
+
+        let result = modify_item(&mut world, container_id, &patch);
+        assert!(result.is_err());
+        assert_eq!(
+            world.items.get(&container_id).unwrap().container_state,
+            Some(ContainerState::Open)
+        );
     }
 
     #[test]

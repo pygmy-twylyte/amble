@@ -4,7 +4,7 @@ use anyhow::{Result, bail};
 use serde::Deserialize;
 
 use super::raw_condition::RawTriggerCondition;
-use crate::loader::items::{RawItem, RawItemAbility};
+use crate::loader::items::RawItemAbility;
 use crate::scheduler::{EventCondition, OnFalsePolicy};
 use crate::trigger::ItemPatch;
 use crate::{
@@ -37,6 +37,8 @@ pub struct RawItemPatch {
     pub restricted: Option<bool>,
     pub container_state: Option<ContainerState>,
     #[serde(default)]
+    pub remove_container_state: bool,
+    #[serde(default)]
     pub add_abilities: Vec<RawItemAbility>,
     #[serde(default)]
     pub remove_abilities: Vec<RawItemAbility>,
@@ -50,6 +52,7 @@ impl RawItemPatch {
             portable: self.portable,
             restricted: self.restricted,
             container_state: self.container_state,
+            remove_container_state: self.remove_container_state,
             add_abilities: self
                 .add_abilities
                 .iter()
