@@ -94,7 +94,8 @@ keyword = {
   | "custom"
   | "here"
   | // container state literals
-  "closed"
+  "off"
+  | "closed"
   | "locked"
   | "transparentClosed"
   | "transparentLocked"
@@ -220,7 +221,6 @@ item_patch_stmt  = _{
   | item_text_patch
   | item_portable_patch
   | item_restricted_patch
-  | item_disable_container
   | item_container_state_patch
   | item_add_ability
   | item_remove_ability
@@ -231,11 +231,12 @@ item_desc_patch       = { ("description" | "desc") ~ string }
 item_text_patch       = { "text" ~ string }
 item_portable_patch   = { "portable" ~ boolean }
 item_restricted_patch = { "restricted" ~ boolean }
-// turn item into a non-container; setting container_state to None directly is problematic if the container isn't empty / special handling needed
-item_disable_container     = { "disable" ~ "container" }
-item_container_state_patch = { "container" ~ "state" ~ ("open" | "closed" | "locked" | "transparentClosed" | "transparentLocked") }
-item_add_ability           = { "add" ~ "ability" ~ ident ~ ident? }
-item_remove_ability        = { "remove" ~ "ability" ~ ident ~ ident? }
+// turn item into a non-container; requires special handling in case the item isn't empty
+// setting container_state to "off" -> remove_container_state = true in resulting ItemPatch
+item_container_state_patch = { "container" ~ "state" ~ ("off" | "open" | "closed" | "locked" | "transparentClosed" | "transparentLocked") }
+item_add_ability           = { "add" ~ "ability" ~ ability_id }
+item_remove_ability        = { "remove" ~ "ability" ~ ability_id }
+ability_id                 = { ("Unlock" ~ "(" ~ ident ~ ")") | ident }
 
 // Conditions
 cond = {

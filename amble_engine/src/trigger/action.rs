@@ -2138,7 +2138,9 @@ mod tests {
         };
 
         let result = modify_item(&mut world, container_id, &patch);
-        assert!(result.is_err());
+        // should emit an error to the log but continue with other patch aspects and return OK
+        // to allow execution to continue
+        assert!(result.is_ok());
         assert_eq!(
             world.items.get(&container_id).unwrap().container_state,
             Some(ContainerState::Open)

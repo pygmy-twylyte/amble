@@ -183,6 +183,11 @@ pub enum ActionAst {
         old_sym: String,
         new_sym: String,
     },
+    /// Apply an item patch to mutate fields atomically.
+    ModifyItem {
+        item: String,
+        patch: ItemPatchAst,
+    },
     /// Spawn an item into a room.
     SpawnItemIntoRoom {
         item: String,
@@ -306,6 +311,20 @@ pub enum ActionAst {
         condition: Box<ConditionAst>,
         actions: Vec<ActionAst>,
     },
+}
+
+/// Data patch applied to an item when executing a `modify item` action.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct ItemPatchAst {
+    pub name: Option<String>,
+    pub desc: Option<String>,
+    pub text: Option<String>,
+    pub portable: Option<bool>,
+    pub restricted: Option<bool>,
+    pub container_state: Option<ContainerStateAst>,
+    pub remove_container_state: bool,
+    pub add_abilities: Vec<ItemAbilityAst>,
+    pub remove_abilities: Vec<ItemAbilityAst>,
 }
 
 /// Policy to apply when a scheduled condition evaluates to false at fire time.
@@ -797,6 +816,17 @@ pub enum ContainerStateAst {
     TransparentClosed,
     TransparentLocked,
 }
+impl ContainerStateAst {
+    fn as_str(&self) -> &'static str {
+        match self {
+            ContainerStateAst::Open => "open",
+            ContainerStateAst::Closed => "closed",
+            ContainerStateAst::Locked => "locked",
+            ContainerStateAst::TransparentClosed => "transparentClosed",
+            ContainerStateAst::TransparentLocked => "transparentLocked",
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ItemAbilityAst {
@@ -1044,14 +1074,7 @@ pub fn compile_items_to_toml(items: &[ItemAst]) -> Result<String, CompileError> 
         }
         t["location"] = Item::Value(loc.into());
         if let Some(cs) = &it.container_state {
-            let state = match cs {
-                ContainerStateAst::Open => "open",
-                ContainerStateAst::Closed => "closed",
-                ContainerStateAst::Locked => "locked",
-                ContainerStateAst::TransparentClosed => "transparentClosed",
-                ContainerStateAst::TransparentLocked => "transparentLocked",
-            };
-            t["container_state"] = value(state);
+            t["container_state"] = value(cs.as_str());
         }
         if it.restricted {
             t["restricted"] = value(true);
@@ -1418,6 +1441,14 @@ fn action_to_value(a: &ActionAst) -> toml_edit::Value {
             t.insert("new_sym", toml_edit::Value::from(new_sym.clone()));
             toml_edit::Value::from(t)
         },
+        ActionAst::ModifyItem { item, patch } => {
+            let mut t = InlineTable::new();
+            t.insert("type", toml_edit::Value::from("modifyItem"));
+            t.insert("item_sym", toml_edit::Value::from(item.clone()));
+            let patch_tbl = item_patch_to_inline_table(patch);
+            t.insert("patch", toml_edit::Value::from(patch_tbl));
+            toml_edit::Value::from(t)
+        },
         ActionAst::ResetFlag(name) => {
             let mut t = InlineTable::new();
             t.insert("type", toml_edit::Value::from("resetFlag"));
@@ -1709,6 +1740,55 @@ fn action_to_value(a: &ActionAst) -> toml_edit::Value {
             toml_edit::Value::from(t)
         },
     }
+}
+
+fn item_patch_to_inline_table(patch: &ItemPatchAst) -> InlineTable {
+    let mut tbl = InlineTable::new();
+    if let Some(name) = &patch.name {
+        tbl.insert("name", toml_edit::Value::from(name.clone()));
+    }
+    if let Some(desc) = &patch.desc {
+        tbl.insert("desc", toml_edit::Value::from(desc.clone()));
+    }
+    if let Some(text) = &patch.text {
+        tbl.insert("text", toml_edit::Value::from(text.clone()));
+    }
+    if let Some(portable) = patch.portable {
+        tbl.insert("portable", toml_edit::Value::from(portable));
+    }
+    if let Some(restricted) = patch.restricted {
+        tbl.insert("restricted", toml_edit::Value::from(restricted));
+    }
+    if let Some(cs) = &patch.container_state {
+        tbl.insert("container_state", toml_edit::Value::from(cs.as_str()));
+    }
+    if patch.remove_container_state {
+        tbl.insert("remove_container_state", toml_edit::Value::from(true));
+    }
+    if !patch.add_abilities.is_empty() {
+        let mut arr = Array::default();
+        for ability in &patch.add_abilities {
+            arr.push(item_ability_to_value(ability));
+        }
+        tbl.insert("add_abilities", toml_edit::Value::from(arr));
+    }
+    if !patch.remove_abilities.is_empty() {
+        let mut arr = Array::default();
+        for ability in &patch.remove_abilities {
+            arr.push(item_ability_to_value(ability));
+        }
+        tbl.insert("remove_abilities", toml_edit::Value::from(arr));
+    }
+    tbl
+}
+
+fn item_ability_to_value(ability: &ItemAbilityAst) -> toml_edit::Value {
+    let mut entry = InlineTable::new();
+    entry.insert("type", toml_edit::Value::from(ability.ability.clone()));
+    if let Some(target) = &ability.target {
+        entry.insert("target", toml_edit::Value::from(target.clone()));
+    }
+    toml_edit::Value::from(entry)
 }
 
 fn on_false_value(p: &OnFalseAst) -> toml_edit::Value {
