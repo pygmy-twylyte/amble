@@ -32,6 +32,14 @@ note "test for the touch item command/event -- works!"
 when touch item big_red_button {
     do show "Always never press the big red button! Now look what you've done!"
     do spawn npc the_luggage into room high-ridge
+    do modify item big_blue_button {
+        name "Big Green Button"
+        desc "A big GREEN button, just waiting for you to press it."
+        text "This used to be a blue button."
+        add ability Read
+        add ability Unlock(big_red_button)
+        container state off
+    }
 }
 
 trigger "Big Blue Button Pushed"

@@ -3,8 +3,8 @@ use pest_derive::Parser as PestParser;
 
 use crate::{
     ActionAst, ConditionAst, ConsumableAst, ConsumableWhenAst, ContainerStateAst, GoalAst, GoalCondAst, GoalGroupAst,
-    IngestModeAst, ItemAbilityAst, ItemAst, ItemLocationAst, NpcAst, NpcMovementAst, NpcMovementTypeAst, NpcStateValue,
-    OnFalseAst, RoomAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
+    IngestModeAst, ItemAbilityAst, ItemAst, ItemLocationAst, ItemPatchAst, NpcAst, NpcMovementAst, NpcMovementTypeAst,
+    NpcStateValue, OnFalseAst, RoomAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
 };
 use std::collections::HashMap;
 
@@ -421,6 +421,29 @@ fn parse_trigger_pair(
                 j += 1;
             }
             let line = inner[i..j].trim_end();
+            if line.starts_with("do modify item") {
+                match parse_modify_item_action(&inner[i..]) {
+                    Ok((action, used)) => {
+                        unconditional_actions.push(action);
+                        i += used;
+                        continue;
+                    },
+                    Err(AstError::Shape(m)) => {
+                        let base = str_offset(source, inner);
+                        let abs = base + i;
+                        let (line_no, col) = smap.line_col(abs);
+                        let snippet = smap.line_snippet(line_no);
+                        return Err(AstError::ShapeAt {
+                            msg: m,
+                            context: format!(
+                                "line {line_no}, col {col}: {snippet}\n{}^",
+                                " ".repeat(col.saturating_sub(1))
+                            ),
+                        });
+                    },
+                    Err(e) => return Err(e),
+                }
+            }
             match parse_action_from_str(line) {
                 Ok(a) => unconditional_actions.push(a),
                 Err(AstError::Shape(m)) => {
@@ -2328,6 +2351,29 @@ fn parse_actions_from_body(
                 j += 1;
             }
             let line = body[i..j].trim_end();
+            if line.starts_with("do modify item") {
+                match parse_modify_item_action(&body[i..]) {
+                    Ok((action, used)) => {
+                        out.push(action);
+                        i += used;
+                        continue;
+                    },
+                    Err(AstError::Shape(m)) => {
+                        let base = str_offset(source, body);
+                        let abs = base + i;
+                        let (line_no, col) = smap.line_col(abs);
+                        let snippet = smap.line_snippet(line_no);
+                        return Err(AstError::ShapeAt {
+                            msg: m,
+                            context: format!(
+                                "line {line_no}, col {col}: {snippet}\n{}^",
+                                " ".repeat(col.saturating_sub(1))
+                            ),
+                        });
+                    },
+                    Err(e) => return Err(e),
+                }
+            }
             match parse_action_from_str(line) {
                 Ok(a) => out.push(a),
                 Err(AstError::Shape(m)) => {
@@ -2353,6 +2399,165 @@ fn parse_actions_from_body(
         }
     }
     Ok(out)
+}
+
+fn parse_modify_item_action(text: &str) -> Result<(ActionAst, usize), AstError> {
+    let s = text.trim_start();
+    let rest0 = s
+        .strip_prefix("do modify item ")
+        .ok_or(AstError::Shape("not a modify item action"))?;
+    let rest0 = rest0.trim_start();
+    let ident_len = rest0.chars().take_while(|&c| is_ident_char(c)).count();
+    if ident_len == 0 {
+        return Err(AstError::Shape("modify item missing item identifier"));
+    }
+    let ident_str = &rest0[..ident_len];
+    DslParser::parse(Rule::ident, ident_str).map_err(|_| AstError::Shape("modify item has invalid item identifier"))?;
+    let item = ident_str.to_string();
+    let after_ident = rest0[ident_len..].trim_start();
+    if !after_ident.starts_with('{') {
+        return Err(AstError::Shape("modify item missing '{' block"));
+    }
+    let block_slice = after_ident;
+    let body = extract_body(block_slice)?;
+    // SAFETY: `body` was produced by `extract_body` from `block_slice`, so both pointers
+    // lie within the same string slice.
+    let start_offset = unsafe { body.as_ptr().offset_from(block_slice.as_ptr()) as usize };
+    let block_total_len = start_offset + body.len() + 1;
+    let remaining = &block_slice[block_total_len..];
+    let consumed = s.len() - remaining.len();
+    let patch_block = &block_slice[..block_total_len];
+
+    let mut pairs = DslParser::parse(Rule::item_patch_block, patch_block).map_err(|e| AstError::Pest(e.to_string()))?;
+    let block_pair = pairs
+        .next()
+        .ok_or(AstError::Shape("modify item block missing statements"))?;
+    let mut patch = ItemPatchAst::default();
+
+    for stmt in block_pair.into_inner() {
+        match stmt.as_rule() {
+            Rule::item_name_patch => {
+                let mut inner = stmt.into_inner();
+                let val = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify item name missing value"))?
+                    .as_str();
+                patch.name = Some(unquote(val));
+            },
+            Rule::item_desc_patch => {
+                let mut inner = stmt.into_inner();
+                let val = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify item description missing value"))?
+                    .as_str();
+                patch.desc = Some(unquote(val));
+            },
+            Rule::item_text_patch => {
+                let mut inner = stmt.into_inner();
+                let val = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify item text missing value"))?
+                    .as_str();
+                patch.text = Some(unquote(val));
+            },
+            Rule::item_portable_patch => {
+                let mut inner = stmt.into_inner();
+                let tok = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify item portable missing value"))?
+                    .as_str();
+                let portable = match tok {
+                    "true" => true,
+                    "false" => false,
+                    _ => return Err(AstError::Shape("portable expects true or false")),
+                };
+                patch.portable = Some(portable);
+            },
+            Rule::item_restricted_patch => {
+                let mut inner = stmt.into_inner();
+                let tok = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify item restricted missing value"))?
+                    .as_str();
+                let restricted = match tok {
+                    "true" => true,
+                    "false" => false,
+                    _ => return Err(AstError::Shape("restricted expects true or false")),
+                };
+                patch.restricted = Some(restricted);
+            },
+            Rule::item_container_state_patch => {
+                let state_word = stmt
+                    .as_str()
+                    .split_whitespace()
+                    .last()
+                    .ok_or(AstError::Shape("container state missing value"))?;
+                match state_word {
+                    "off" => {
+                        patch.remove_container_state = true;
+                        patch.container_state = None;
+                    },
+                    "open" => {
+                        patch.container_state = Some(ContainerStateAst::Open);
+                        patch.remove_container_state = false;
+                    },
+                    "closed" => {
+                        patch.container_state = Some(ContainerStateAst::Closed);
+                        patch.remove_container_state = false;
+                    },
+                    "locked" => {
+                        patch.container_state = Some(ContainerStateAst::Locked);
+                        patch.remove_container_state = false;
+                    },
+                    "transparentClosed" => {
+                        patch.container_state = Some(ContainerStateAst::TransparentClosed);
+                        patch.remove_container_state = false;
+                    },
+                    "transparentLocked" => {
+                        patch.container_state = Some(ContainerStateAst::TransparentLocked);
+                        patch.remove_container_state = false;
+                    },
+                    _ => return Err(AstError::Shape("invalid container state in item patch")),
+                }
+            },
+            Rule::item_add_ability => {
+                let mut inner = stmt.into_inner();
+                let ability_pair = inner.next().ok_or(AstError::Shape("add ability missing ability id"))?;
+                patch.add_abilities.push(parse_patch_ability(ability_pair)?);
+            },
+            Rule::item_remove_ability => {
+                let mut inner = stmt.into_inner();
+                let ability_pair = inner
+                    .next()
+                    .ok_or(AstError::Shape("remove ability missing ability id"))?;
+                patch.remove_abilities.push(parse_patch_ability(ability_pair)?);
+            },
+            _ => return Err(AstError::Shape("unexpected statement in item patch block")),
+        }
+    }
+
+    Ok((ActionAst::ModifyItem { item, patch }, consumed))
+}
+
+fn parse_patch_ability(pair: pest::iterators::Pair<Rule>) -> Result<ItemAbilityAst, AstError> {
+    debug_assert!(pair.as_rule() == Rule::ability_id);
+    let raw = pair.as_str().trim();
+    let ability: String = raw.chars().take_while(|c| !c.is_whitespace() && *c != '(').collect();
+    if ability.is_empty() {
+        return Err(AstError::Shape("ability name missing"));
+    }
+    let mut inner = pair.into_inner();
+    let has_parens = raw.contains('(');
+    let target = if ability == "Unlock" && has_parens {
+        inner.next().map(|p| p.as_str().to_string())
+    } else {
+        None
+    };
+    Ok(ItemAbilityAst { ability, target })
+}
+
+fn is_ident_char(ch: char) -> bool {
+    ch.is_ascii_alphanumeric() || matches!(ch, '-' | ':' | '_' | '#')
 }
 
 fn parse_schedule_action(
@@ -2640,6 +2845,100 @@ trigger "note escapes" when always {
         let t = crate::compile_trigger_to_toml(&ast).expect("compile ok");
         assert!(t.contains("lineA"));
         assert!(t.contains("lineB"));
+    }
+
+    #[test]
+    fn modify_item_parses_patch_fields() {
+        let src = r#"
+trigger "patch locker" when always {
+    do modify item locker {
+        name "Unlocked locker"
+        description "It's open now"
+        text "notes"
+        portable false
+        restricted true
+        container state locked
+        add ability Unlock ( secret-door )
+        add ability Ignite
+        remove ability Unlock ( secret-door )
+        remove ability Unlock
+    }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        assert_eq!(ast.actions.len(), 1);
+        let action = &ast.actions[0];
+        match action {
+            ActionAst::ModifyItem { item, patch } => {
+                assert_eq!(item, "locker");
+                assert_eq!(patch.name.as_deref(), Some("Unlocked locker"));
+                assert_eq!(patch.desc.as_deref(), Some("It's open now"));
+                assert_eq!(patch.text.as_deref(), Some("notes"));
+                assert_eq!(patch.portable, Some(false));
+                assert_eq!(patch.restricted, Some(true));
+                assert_eq!(patch.container_state, Some(ContainerStateAst::Locked));
+                assert!(!patch.remove_container_state);
+                assert_eq!(patch.add_abilities.len(), 2);
+                assert_eq!(patch.add_abilities[0].ability, "Unlock");
+                assert_eq!(patch.add_abilities[0].target.as_deref(), Some("secret-door"));
+                assert_eq!(patch.add_abilities[1].ability, "Ignite");
+                assert!(patch.add_abilities[1].target.is_none());
+                assert_eq!(patch.remove_abilities.len(), 2);
+                assert_eq!(patch.remove_abilities[0].ability, "Unlock");
+                assert_eq!(patch.remove_abilities[0].target.as_deref(), Some("secret-door"));
+                assert_eq!(patch.remove_abilities[1].ability, "Unlock");
+                assert!(patch.remove_abilities[1].target.is_none());
+            },
+            other => panic!("expected modify item action, got {other:?}"),
+        }
+        let toml = crate::compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("type = \"modifyItem\""));
+        assert!(toml.contains("item_sym = \"locker\""));
+        assert!(toml.contains("name = \"Unlocked locker\""));
+        assert!(toml.contains("desc = \"It's open now\""));
+        assert!(toml.contains("portable = false"));
+        assert!(toml.contains("restricted = true"));
+        assert!(toml.contains("container_state = \"locked\""));
+        assert!(toml.contains("add_abilities = ["));
+        assert!(toml.contains("remove_abilities = ["));
+    }
+
+    #[test]
+    fn parse_modify_item_action_helper_handles_basic_block() {
+        let snippet = "do modify item locker { name \"Ok\" }\n";
+        let (action, used) = super::parse_modify_item_action(snippet).expect("parse helper");
+        assert_eq!(&snippet[..used], "do modify item locker { name \"Ok\" }");
+        match action {
+            ActionAst::ModifyItem { item, patch } => {
+                assert_eq!(item, "locker");
+                assert_eq!(patch.name.as_deref(), Some("Ok"));
+            },
+            other => panic!("expected modify item action, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn modify_item_container_state_off_sets_flag() {
+        let src = r#"
+trigger "patch chest" when always {
+    do modify item chest {
+        container state off
+    }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        let action = ast.actions.first().expect("expected modify item action");
+        match action {
+            ActionAst::ModifyItem { item, patch } => {
+                assert_eq!(item, "chest");
+                assert!(patch.container_state.is_none());
+                assert!(patch.remove_container_state);
+            },
+            other => panic!("expected modify item action, got {other:?}"),
+        }
+        let toml = crate::compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("remove_container_state = true"));
+        assert!(!toml.contains("container_state = \""));
     }
 
     #[test]

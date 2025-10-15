@@ -94,7 +94,8 @@ keyword = {
   | "custom"
   | "here"
   | // container state literals
-  "closed"
+  "off"
+  | "closed"
   | "locked"
   | "transparentClosed"
   | "transparentLocked"
@@ -173,7 +174,7 @@ do_stmt = { "do" ~ do_action }
 balanced_braces  = { "{" ~ balanced_content ~ "}" }
 balanced_content = { (balanced_braces | (!("}") ~ ANY))* }
 
-do_action = {
+do_action        =  {
     ("set" ~ "npc" ~ "active" ~ ident ~ boolean)
   | ("show" ~ string)
   | ("add" ~ "wedge" ~ string ~ ("width" ~ number)? ~ "spinner" ~ ident)
@@ -211,7 +212,31 @@ do_action = {
   | ("set" ~ "barred" ~ "message" ~ "from" ~ ident ~ "to" ~ ident ~ string)
   | ("set" ~ "container" ~ "state" ~ ident ~ ("open" | "closed" | "locked" | "transparentClosed" | "transparentLocked" | "none"))
   | ("spinner" ~ "message" ~ ident)
+  | ("modify" ~ "item" ~ ident ~ item_patch_block)
 }
+item_patch_block =  { "{" ~ item_patch_stmt+ ~ "}" }
+item_patch_stmt  = _{
+    item_name_patch
+  | item_desc_patch
+  | item_text_patch
+  | item_portable_patch
+  | item_restricted_patch
+  | item_container_state_patch
+  | item_add_ability
+  | item_remove_ability
+}
+
+item_name_patch       = { "name" ~ string }
+item_desc_patch       = { ("description" | "desc") ~ string }
+item_text_patch       = { "text" ~ string }
+item_portable_patch   = { "portable" ~ boolean }
+item_restricted_patch = { "restricted" ~ boolean }
+// turn item into a non-container; requires special handling in case the item isn't empty
+// setting container_state to "off" -> remove_container_state = true in resulting ItemPatch
+item_container_state_patch = { "container" ~ "state" ~ ("off" | "open" | "closed" | "locked" | "transparentClosed" | "transparentLocked") }
+item_add_ability           = { "add" ~ "ability" ~ ability_id }
+item_remove_ability        = { "remove" ~ "ability" ~ ability_id }
+ability_id                 = { ("Unlock" ~ "(" ~ ident ~ ")") | ident }
 
 // Conditions
 cond = {
