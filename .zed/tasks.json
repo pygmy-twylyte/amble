@@ -15,5 +15,10 @@
     "label": "Run Amble Engine",
     "command": "cargo run --bin amble_engine 2> amble.log",
     "shell": "system"
+  },
+  {
+    "label": "Run Amble Tests",
+    "command": "cargo test --all",
+    "shell": "system"
   }
 ]
