@@ -72,7 +72,6 @@
 //! debugging game logic.
 
 use std::collections::HashMap;
-use std::error;
 
 use anyhow::{Context, Result, anyhow, bail};
 use gametools::{Spinner, Wedge};
