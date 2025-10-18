@@ -1,6 +1,36 @@
 # ========================================
 # HAL Module #2 - Vending Machine
 # ========================================
+# This module will start with a generic description, so if first discovered in the vending machine (or even taken) before meeting HAL, it won't
+# give the HAL puzzle away. The hal_module_2 item is modified to its true identity only after the HAL reboot sequence is initiated
+
+item hal_module_2 {
+    name "Electronic Module"
+    desc "A palm-sized electronic module of some kind with some connectors on one end. It looks like it plugs in to something."
+    portable true
+    location chest vending_machine
+}
+
+trigger "Reveal HAL Module #2" only once
+note "reveal the nature of HAL module #2"
+when talk to npc hal_9000 {
+    do modify item hal_module_2 {
+        name "HAL Memory Module #2"
+        desc "Second in the trio of HAL's memory modules, found in a vending machine (oddly) between some dehydrated water and a sandwich that both did and did not exist until eaten."
+    }
+    do modify item hal_module_2_crevice {
+        name "HAL Memory Module #2 (in crevice)"
+        desc "Second in the trio of HAL's memory modules. The module has fallen deep into a narrow crevice between the vending machine and the floor. Its red LED pulses from the darkness about a foot down, resting on what looks like decades of accumulated dust, lost coins, and possibly sentient dust bunnies. The gap is too narrow for your hand - you'll need some kind of tool to fish it out."
+    }
+}
+
+item hal_module_2_crevice {
+    name "Electronic Module (in crevice)"
+    desc "A palm-sized electronic module of some kind with some connectors on one end. It looks like it plugs in to something, but it has fallen deep into a narrow crevice between the vending machine and the floor. It looks to be a foot down into the crack, resting on decades of accumulated grit, a few lost coins, and some (possibly sentient) dust bunnies. The gap is too narrow for your hand; you'll need some kind of tool to fish it out."
+    portable true
+    location nowhere "spawns in main-lobby when vending machine pried"
+    requires pluck to handle
+}
 
 item zircon_tweezers_crevice {
     name "Zircon Encrusted Tweezers (in crevice)"
@@ -18,23 +48,6 @@ item vending_machine {
     container state transparentLocked
     requires pry to open
 }
-
-item hal_module_2 {
-    name "HAL Memory Module #2"
-    desc "Second in the trio of HAL's memory modules. Its red LED pulses gently, like a heartbeat—or a warning. Through the cracked glass of the vending machine, you can see it sitting on shelf B4, wedged between what appears to be dehydrated water and a sandwich that may or may not exist. It hums faintly, and you could swear it whispered your name."
-    portable true
-    location chest vending_machine
-}
-
-item hal_module_2_crevice {
-    name "HAL Memory Module #2 (in crevice)"
-    desc "Second in the trio of HAL's memory modules. The module has fallen deep into a narrow crevice between the vending machine and the floor. Its red LED pulses from the darkness about a foot down, resting on what looks like decades of accumulated dust, lost coins, and possibly sentient dust bunnies. The gap is too narrow for your hand - you'll need some kind of tool to fish it out."
-    portable true
-    location nowhere "spawns in main-lobby when vending machine pried"
-    requires pluck to handle
-}
-
-
 
 # ========================================
 # Triggers

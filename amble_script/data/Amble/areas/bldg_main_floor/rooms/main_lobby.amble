@@ -25,6 +25,12 @@ item dehydrated_water {
     desc "A packet labeled 'Dehydrated Water - Just Add Water!' The instructions on the back have been crossed out and replaced with 'PARADOX WARNING: Do not attempt to reconstitute.'"
     portable true
     location chest vending_machine
+    ability Drink
+    consumable {
+        uses_left 1
+        consume_on ability Drink
+        when_consumed despawn
+    }
 }
 
 item schrodingers_sandwich {
@@ -32,6 +38,12 @@ item schrodingers_sandwich {
     desc "A sandwich in a quantum superposition of both fresh and moldy until observed. The packaging warns: 'Contents may or may not contain nuts, and also definitely contain nuts.'"
     portable true
     location chest vending_machine
+    ability Eat
+    consumable {
+        uses_left 1
+        consume_on ability Eat
+        when_consumed despawn
+    }
 }
 
 item fortune_cookie_of_doom {
@@ -39,6 +51,12 @@ item fortune_cookie_of_doom {
     desc "A fortune cookie wrapped in black paper with tiny skulls on it. You can feel it radiating pessimism through the wrapper. Previous fortunes reportedly included 'Your future is behind you' and 'Help! I'm trapped in a fortune cookie factory!'"
     portable true
     location chest vending_machine
+    ability Eat
+    consumable {
+        uses_left 1
+        consume_on ability Eat
+        when_consumed despawn
+    }
 }
 
 # ========================================

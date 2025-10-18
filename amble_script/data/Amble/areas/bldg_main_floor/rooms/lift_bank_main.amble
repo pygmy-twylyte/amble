@@ -1,6 +1,6 @@
 room lift-bank-main {
     name "Elevator Bank (Main Floor)"
-    desc "A bank of elevators waits here, none of which seem eager to go anywhere. One of them is open and labeled 'MAIN LIFT' in glowing teal script.  To the east, a door marked 'LOUNGE' is just slightly ajar, as if luring you to come in."
+    desc "A bank of elevators waits here, none of which seem eager to go anywhere. One of them is open and labeled 'MAIN LIFT' in glowing teal script.  To the east, a door marked 'LOUNGE' is just slightly ajar, as if luring you to come in. The lobby is still visible through the archway south."
     overlay if flag got-elevator-keycard {
         set "The proximity card reader next to the lift now somewhat sheepishly displays: ACCESS GRANTED."
         unset "The proximity card reader next to the lift displays: ACCESS DENIED -- and with no sympathy whatsoever."
@@ -14,9 +14,9 @@ room lift-bank-main {
         happy  "Dibbler beams, certain elevator patrons are his best customers."
         bored  "Dibbler counts his sausages as the lift lights blink listlessly."
     }
-    exit north -> lift-main
-    exit east -> lounge
-    exit south -> main-lobby
+    exit "into the elevator" -> lift-main
+    exit "to the lounge" -> lounge
+    exit "through the archway" -> main-lobby
 }
 
 # ========================================

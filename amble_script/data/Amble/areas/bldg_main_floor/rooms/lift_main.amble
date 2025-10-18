@@ -1,3 +1,6 @@
+# ========================================
+# Elevator (Main Floor)
+# ========================================
 room lift-main {
     name "Elevator (Main Floor)"
     desc "The elevator interior is surprisingly luxurious -- polished chrome panels, soft lighting, and a faint scent of something that might be vanilla or data corruption."
@@ -5,9 +8,41 @@ room lift-main {
         set "The [main] and [aa-3] buttons are now both lit -- but [aa-3] flickers and then glows intensely bright intermittently."
         unset "There are only two buttons: [main] is lit, but [aa-3] is dark."
     }
-    exit main -> lift-bank-main
-    exit aa-3 -> lift-sublevel-1 {
-        required_items(visitor_pass, elevator_keycard),
-        barred "That button is disabled. Visitor pass and elevator keycard are required for access to the sublevel."
+    exit "out to main floor" -> lift-bank-main
+}
+
+# ========================================
+# Items
+# ========================================
+
+item aa_3_button_main {
+    name "[AA-3] Button (Unlit)"
+    desc "The button to send the elevator to sublevel AA-3, currently unlit and disabled."
+    portable false
+    location room lift-main
+}
+
+item main_button_main {
+    name "[Main] Button"
+    desc "The button that sends the elevator to the main floor."
+    portable false
+    location room lift-main
+}
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Lift Main] Pressed AA-3 Button" when touch item aa_3_button_main {
+    if all(has item elevator_keycard, has item visitor_pass) {
+        do push player to lift-sublevel-1
+        do show "The elevator giggles and lurches gleefully downward, nearly taking you off your feet. Just as your spleen is becoming accustomed to sharing space with your tonsils, a sudden deceleration throws it all the way down into your pelvis and you come to an abrupt stop at the deep sublevel entrance."
     }
+    if any(missing item elevator_keycard, missing item visitor_pass) {
+        do show "The elevator seems truly upset when it tells you it can't take you down to the sublevel, and laments that its programming won't allow it to move for anyone without a proximity keycard. A valid visitor pass is also required to access the AA-3 sublevel."
+    }
+}
+
+trigger "[Lift Main]" when touch item main_button_main {
+    do show "With something between a yawn and a sigh, the elevator reminds you that you are already on the main floor, then closes and opens the doors for emphasis"
 }

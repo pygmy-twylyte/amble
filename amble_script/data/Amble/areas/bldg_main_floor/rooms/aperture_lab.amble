@@ -20,7 +20,7 @@ room aperture-lab {
     overlay if (item present invitation) {
         text "A glowing, steaming, sizzling invitation engraved on an asbestos sheet sits on the floor in front of the printer."
     }
-    exit portal -> portal-room
+    exit "through the portal" -> portal-room
 }
 
 # ========================================

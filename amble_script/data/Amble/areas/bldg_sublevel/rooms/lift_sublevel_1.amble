@@ -1,6 +1,42 @@
+# ========================================
+# Lift - Sublevel 1
+# ========================================
+#
 room lift-sublevel-1 {
     name "Elevator (Sublevel AA-3)"
     desc "The elevator sits open at the end of the corridor, but its appearance is… altered. What was once a sleek, polished carriage now seems borrowed from another world entirely. Gilded scrollwork curls along the walls where none existed before, and the ceiling flickers between brass panels and a starlit void. It hums with potential—and something less easily named."
-    exit main -> lift-main
-    exit south -> sublevel-1-entrance
+    exit "out to sublevel AA-3" -> sublevel-1-entrance
+}
+
+# ========================================
+# Items
+# ========================================
+
+item main_button_sublevel {
+    name "[Main] Button"
+    desc "The button that sends the elevator to the main floor."
+    portable false
+    location room lift-sublevel-1
+}
+
+item aa_3_button_sublevel {
+    name "[AA-3] Button"
+    desc "The button that sends the elevator to the AA-3 sublevel."
+    portable false
+    location room lift-sublevel-1
+}
+
+# ========================================
+# Triggers
+# ========================================
+
+trigger "[Sublevel Lift] Press Main Button"
+when touch item main_button_sublevel {
+    do push player to lift-main
+    do show r#"The elevator shouts "Yeeee-Haw!", and you're off literally like a rocket, accelerating and pressed into the floor of the elevator for what seems like a minute. You decelerate nearly as quickly, slamming into the elevator ceiling and then falling again when you arrive at the main level. "Have a WONDERFUL day!", it intones as the doors slide softly open."#
+}
+
+trigger "[Sublevel Lift] Press AA-3 Button"
+when touch item aa_3_button_sublevel {
+    do show "The elevator closes and opens its doors a few times, as if to show you that you're already at that level."
 }

@@ -42,3 +42,37 @@ goal survive-vogon-poetry {
     start when has flag read-vogon-poetry
     done when missing flag status:nauseated
 }
+
+
+# ========================================
+# Bad Breath
+# ========================================
+
+spinner bad-breath {
+    wedge "You exhale, and immediately regret it."
+    wedge "A faint haze of despair and lunch surrounds you."
+    wedge "Your tongue feels like it’s wearing a sweater made of meat."
+    wedge "Something in your mouth has turned. Possibly democracy itself."
+    wedge "Your breath could startle livestock."
+    wedge "You swear the air just took a cautious step back."
+    wedge "There’s a faint metallic taste of shame."
+    wedge "You try to swallow the smell, but it fights back."
+    wedge "Your reflection looks concerned."
+    wedge "A thin film of moral decay coats your teeth."
+    wedge "You’re pretty sure your last exhale qualified as a gas attack under the Geneva Convention."
+    wedge "Somewhere deep within, your soul quietly mints itself in self-defense."
+}
+
+trigger "[Status] Bad Breath" when always {
+    if all( has flag status:bad-breath, chance 20% ) {
+        do spinner message bad-breath
+    }
+}
+
+goal clear-sausage-breath {
+    name "Banish the Foul Breath"
+    desc "Dibbler's Sausage-Inna-Bun has created the foulest of aftertastes and breath that could repel a horde. Find a way to fix it."
+    group status-effect
+    start when has flag ate-sausage
+    done when missing flag status:bad-breath
+}
