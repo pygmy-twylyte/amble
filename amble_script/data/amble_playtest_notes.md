@@ -5,7 +5,7 @@
 - [x] st-alfonzo-parish should be removed from ambientWoodland events, which are largely outdoorsy
 - [ ] inspect/read item text style is a bit dim-looking in both default and seaside themes... brighter green/blue
 - [ ] globally, when you talk to an NPC their movement activity should be frozen for a few turns -- so they don't walk away in the middle of a conversation
-- [ ] add status:bad-breath
+- [x] add status:bad-breath
 - [ ] more delayed callbacks to player choices in ambients
 
 
@@ -71,7 +71,7 @@
 - [x] description, change security eye-bot to Initech Eye-Bot[tm]
 
 ### main-lobby
-- [ ] HAL module #2 shouldn't be visible in the vending machine until starts HAL sequence
+- [x] HAL module #2 shouldn't be visible in the vending machine until starts HAL sequence
 - [ ] add ability to break open and get message from fortune cookie
 - loitering trigger/penalty works nicely
 
