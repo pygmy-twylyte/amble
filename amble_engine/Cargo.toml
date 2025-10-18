@@ -1,6 +1,6 @@
 [package]
 name = "amble_engine"
-version = "0.59.0"
+version = "0.60.0"
 edition = "2024"
 
 [dependencies]
@@ -13,9 +13,11 @@ lazy_static = "1.5.0"
 log = "0.4.27"
 pest = "2.8.1"
 pest_derive = "2.8.1"
+pest_meta = "2.8.3"
 rand = "0.9.1"
 regex = "1.11.1"
 ron = "0.10.1"
+rustyline = { version = "14.0.0", features = ["with-file-history"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0"
 textwrap = { version = "0.16.2", features = ["terminal_size"] }

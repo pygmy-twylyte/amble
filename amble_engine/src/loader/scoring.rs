@@ -85,8 +85,7 @@ fn default_scoring_ranks() -> Vec<ScoringRank> {
         ScoringRank {
             threshold: 75.0,
             name: "Licensed Reality Bender".to_string(),
-            description:
-                "Impressive grasp of nonlinear environments and cake-based paradoxes.".to_string(),
+            description: "Impressive grasp of nonlinear environments and cake-based paradoxes.".to_string(),
         },
         ScoringRank {
             threshold: 60.0,
@@ -96,8 +95,7 @@ fn default_scoring_ranks() -> Vec<ScoringRank> {
         ScoringRank {
             threshold: 45.0,
             name: "Unpaid Research Assistant".to_string(),
-            description:
-                "Solid effort. Some concepts may have slipped through dimensional cracks.".to_string(),
+            description: "Solid effort. Some concepts may have slipped through dimensional cracks.".to_string(),
         },
         ScoringRank {
             threshold: 30.0,

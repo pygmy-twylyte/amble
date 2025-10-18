@@ -4,6 +4,7 @@
 //! implement the various command handlers that manipulate the [`AmbleWorld`].
 
 pub mod dev;
+mod input;
 pub mod inventory;
 pub mod item;
 pub mod look;
@@ -33,9 +34,10 @@ use crate::{Item, View, ViewItem, WorldObject};
 use anyhow::Result;
 use colored::Colorize;
 use std::collections::HashMap;
-use std::io::{self, Write};
 use uuid::Uuid;
 use variantly::Variantly;
+
+use input::{InputEvent, InputManager};
 
 /// Enum used to control exit from the repl loop.
 pub enum ReplControl {
@@ -54,33 +56,50 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     use Command::*;
     let mut view = View::new();
 
+    let mut input_manager = InputManager::new();
+
     loop {
         let mut status_effects = String::new();
         for status in world.player.status() {
             let s = format!(" [{}]", status.status_style());
             status_effects.push_str(&s);
         }
-        print!(
-            "{}",
-            format!(
-                "\n[Turn: {}|Score: {}{}]>> ",
-                world.turn_count, world.player.score, status_effects
-            )
-            .prompt_style()
-        );
-        io::stdout()
-            .flush()
-            .expect("failed to flush stdout before reading input");
-        let mut input = String::new();
-        if io::stdin().read_line(&mut input).is_err() {
-            view.push(ViewItem::Error("Failed to read input. Try again.".red().to_string()));
-            view.flush();
-            continue;
+
+        let prompt = format!(
+            "\n[Turn: {}|Score: {}{}]>> ",
+            world.turn_count, world.player.score, status_effects
+        )
+        .prompt_style()
+        .to_string();
+
+        let input_event = match input_manager.read_line(&prompt) {
+            Ok(event) => event,
+            Err(_) => {
+                view.push(ViewItem::Error("Failed to read input. Try again.".red().to_string()));
+                view.flush();
+                continue;
+            },
+        };
+
+        let mut input = match input_event {
+            InputEvent::Line(line) => line,
+            InputEvent::Eof => "quit".to_string(),
+            InputEvent::Interrupted => {
+                view.push(ViewItem::EngineMessage("Command canceled.".to_string()));
+                view.flush();
+                continue;
+            },
+        };
+
+        if !input.ends_with('\n') {
+            input.push('\n');
         }
 
-        match parse_command(&input, &mut view) {
-            Touch(thing) => touch_handler(world, &mut view, &thing)?,
-            SetViewMode(mode) => set_viewmode_handler(&mut view, mode),
+        let command = parse_command(&input, &mut view);
+
+        match &command {
+            Touch(thing) => touch_handler(world, &mut view, thing)?,
+            SetViewMode(mode) => set_viewmode_handler(&mut view, *mode),
             Goals => goals_handler(world, &mut view),
             Help => help_handler(&mut view),
             HelpDev => help_handler_dev(&mut view),
@@ -91,17 +110,17 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
                 }
             },
             Look => look_handler(world, &mut view)?,
-            LookAt(thing) => look_at_handler(world, &mut view, &thing)?,
+            LookAt(thing) => look_at_handler(world, &mut view, thing)?,
             GoBack => go_back_handler(world, &mut view)?,
-            MoveTo(direction) => move_to_handler(world, &mut view, &direction)?,
-            Take(thing) => take_handler(world, &mut view, &thing)?,
-            TakeFrom { item, container } => take_from_handler(world, &mut view, &item, &container)?,
-            Drop(thing) => drop_handler(world, &mut view, &thing)?,
-            PutIn { item, container } => put_in_handler(world, &mut view, &item, &container)?,
-            Open(thing) => open_handler(world, &mut view, &thing)?,
-            Close(thing) => close_handler(world, &mut view, &thing)?,
-            LockItem(thing) => lock_handler(world, &mut view, &thing)?,
-            UnlockItem(thing) => unlock_handler(world, &mut view, &thing)?,
+            MoveTo(direction) => move_to_handler(world, &mut view, direction)?,
+            Take(thing) => take_handler(world, &mut view, thing)?,
+            TakeFrom { item, container } => take_from_handler(world, &mut view, item, container)?,
+            Drop(thing) => drop_handler(world, &mut view, thing)?,
+            PutIn { item, container } => put_in_handler(world, &mut view, item, container)?,
+            Open(thing) => open_handler(world, &mut view, thing)?,
+            Close(thing) => close_handler(world, &mut view, thing)?,
+            LockItem(thing) => lock_handler(world, &mut view, thing)?,
+            UnlockItem(thing) => unlock_handler(world, &mut view, thing)?,
             Inventory => inv_handler(world, &mut view)?,
             Unknown => {
                 view.push(ViewItem::Error(
@@ -111,29 +130,29 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
                         .to_string(),
                 ));
             },
-            TalkTo(npc_name) => talk_to_handler(world, &mut view, &npc_name)?,
-            GiveToNpc { item, npc } => give_to_npc_handler(world, &mut view, &item, &npc)?,
-            TurnOn(thing) => turn_on_handler(world, &mut view, &thing)?,
-            Read(thing) => read_handler(world, &mut view, &thing)?,
-            Load(gamefile) => load_handler(world, &mut view, &gamefile),
-            Save(gamefile) => save_handler(world, &mut view, &gamefile)?,
-            Theme(theme_name) => theme_handler(&mut view, &theme_name)?,
+            TalkTo(npc_name) => talk_to_handler(world, &mut view, npc_name)?,
+            GiveToNpc { item, npc } => give_to_npc_handler(world, &mut view, item, npc)?,
+            TurnOn(thing) => turn_on_handler(world, &mut view, thing)?,
+            Read(thing) => read_handler(world, &mut view, thing)?,
+            Load(gamefile) => load_handler(world, &mut view, gamefile),
+            Save(gamefile) => save_handler(world, &mut view, gamefile)?,
+            Theme(theme_name) => theme_handler(&mut view, theme_name)?,
             UseItemOn { verb, tool, target } => {
-                use_item_on_handler(world, &mut view, verb, &tool, &target)?;
+                use_item_on_handler(world, &mut view, *verb, tool, target)?;
             },
             // Commands below only available when crate::DEV_MODE is enabled.
-            SpawnItem(item_symbol) => dev_spawn_item_handler(world, &mut view, &item_symbol),
-            Teleport(room_symbol) => dev_teleport_handler(world, &mut view, &room_symbol),
+            SpawnItem(item_symbol) => dev_spawn_item_handler(world, &mut view, item_symbol),
+            Teleport(room_symbol) => dev_teleport_handler(world, &mut view, room_symbol),
             ListNpcs => dev_list_npcs_handler(world, &mut view),
             ListFlags => dev_list_flags_handler(world, &mut view),
             ListSched => dev_list_sched_handler(world, &mut view),
-            SchedCancel(idx) => dev_sched_cancel_handler(world, &mut view, idx),
-            SchedDelay { idx, turns } => dev_sched_delay_handler(world, &mut view, idx, turns),
-            AdvanceSeq(seq_name) => dev_advance_seq_handler(world, &mut view, &seq_name),
-            ResetSeq(seq_name) => dev_reset_seq_handler(world, &mut view, &seq_name),
-            SetFlag(flag_name) => dev_set_flag_handler(world, &mut view, &flag_name),
-            StartSeq { seq_name, end } => dev_start_seq_handler(world, &mut view, &seq_name, &end),
-            Ingest { item, mode } => ingest_handler(world, &mut view, &item, mode)?,
+            SchedCancel(idx) => dev_sched_cancel_handler(world, &mut view, *idx),
+            SchedDelay { idx, turns } => dev_sched_delay_handler(world, &mut view, *idx, *turns),
+            AdvanceSeq(seq_name) => dev_advance_seq_handler(world, &mut view, seq_name),
+            ResetSeq(seq_name) => dev_reset_seq_handler(world, &mut view, seq_name),
+            SetFlag(flag_name) => dev_set_flag_handler(world, &mut view, flag_name),
+            StartSeq { seq_name, end } => dev_start_seq_handler(world, &mut view, seq_name, end),
+            Ingest { item, mode } => ingest_handler(world, &mut view, item, *mode)?,
         }
         // We'll update turn count here in a centralized way, but this approach does not
         // take into account commands that return Ok(()) after failing to match a string.
@@ -144,7 +163,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         // Only commands / actions that may be part of what's required to solve a puzzle or advance
         // the game count as a turn.
         let turn_taken = matches!(
-            parse_command(&input, &mut view),
+            command,
             Close(_)
                 | Drop(_)
                 | GiveToNpc { .. }
