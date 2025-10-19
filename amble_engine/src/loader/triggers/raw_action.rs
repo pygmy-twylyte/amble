@@ -2,11 +2,12 @@
 
 use anyhow::{Result, bail};
 use serde::Deserialize;
+use std::collections::HashSet;
 
 use super::raw_condition::RawTriggerCondition;
 use crate::loader::items::RawItemAbility;
 use crate::scheduler::{EventCondition, OnFalsePolicy};
-use crate::trigger::ItemPatch;
+use crate::trigger::{ItemPatch, RoomExitPatch, RoomPatch};
 use crate::{
     item::ContainerState, loader::SymbolTable, npc::NpcState, player::Flag, spinners::SpinnerType,
     trigger::TriggerAction,
@@ -68,11 +69,93 @@ impl RawItemPatch {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct RawRoomPatch {
+    pub name: Option<String>,
+    pub desc: Option<String>,
+    #[serde(default)]
+    pub remove_exits: Vec<String>,
+    #[serde(default)]
+    pub add_exits: Vec<RawPatchedExit>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RawPatchedExit {
+    pub direction: String,
+    pub to: String,
+    #[serde(default)]
+    pub hidden: bool,
+    #[serde(default)]
+    pub locked: bool,
+    #[serde(default)]
+    pub required_flags: Vec<Flag>,
+    #[serde(default)]
+    pub required_items: Vec<String>,
+    pub barred_message: Option<String>,
+}
+
+impl RawRoomPatch {
+    pub fn to_patch(&self, symbols: &SymbolTable) -> Result<RoomPatch> {
+        let mut remove_exits = Vec::new();
+        for dest_sym in &self.remove_exits {
+            if let Some(room_id) = symbols.rooms.get(dest_sym) {
+                remove_exits.push(*room_id);
+            } else {
+                bail!("loading TriggerAction:ModifyRoom: remove exit room symbol ({dest_sym}) not in table");
+            }
+        }
+
+        let mut add_exits = Vec::new();
+        for raw in &self.add_exits {
+            let to_id = if let Some(id) = symbols.rooms.get(&raw.to) {
+                *id
+            } else {
+                bail!(
+                    "loading TriggerAction:ModifyRoom: add exit destination room symbol ({}) not in table",
+                    raw.to
+                );
+            };
+
+            let mut required_items = HashSet::new();
+            for item_sym in &raw.required_items {
+                if let Some(item_id) = symbols.items.get(item_sym) {
+                    required_items.insert(*item_id);
+                } else {
+                    bail!("loading TriggerAction:ModifyRoom: required item symbol ({item_sym}) not in table");
+                }
+            }
+
+            let required_flags: HashSet<Flag> = raw.required_flags.iter().cloned().collect();
+
+            add_exits.push(RoomExitPatch {
+                direction: raw.direction.clone(),
+                to: to_id,
+                hidden: raw.hidden,
+                locked: raw.locked,
+                required_flags,
+                required_items,
+                barred_message: raw.barred_message.clone(),
+            });
+        }
+
+        Ok(RoomPatch {
+            name: self.name.clone(),
+            desc: self.desc.clone(),
+            remove_exits,
+            add_exits,
+        })
+    }
+}
+
+#[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum RawTriggerAction {
     ModifyItem {
         item_sym: String,
         patch: RawItemPatch,
+    },
+    ModifyRoom {
+        room_sym: String,
+        patch: RawRoomPatch,
     },
     SpawnNpcIntoRoom {
         npc_sym: String,
@@ -230,6 +313,7 @@ impl RawTriggerAction {
     pub fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
             Self::ModifyItem { item_sym, patch } => cook_modify_item(symbols, item_sym, patch),
+            Self::ModifyRoom { room_sym, patch } => cook_modify_room(symbols, room_sym, patch),
             Self::SpawnNpcIntoRoom { npc_sym, room_sym } => cook_spawn_npc_into_room(symbols, npc_sym, room_sym),
             Self::DespawnNpc { npc_sym } => cook_despawn_npc(symbols, npc_sym),
             Self::SetNpcActive { npc_sym, active } => cook_set_npc_active(symbols, npc_sym, *active),
@@ -317,6 +401,17 @@ fn cook_modify_item(symbols: &SymbolTable, item_sym: &str, raw_patch: &RawItemPa
         })
     } else {
         bail!("loading TriggerAction:ModifyItem: item symbol ({item_sym}) not in table");
+    }
+}
+
+fn cook_modify_room(symbols: &SymbolTable, room_sym: &str, patch: &RawRoomPatch) -> Result<TriggerAction> {
+    if let Some(room_id) = symbols.rooms.get(room_sym) {
+        Ok(TriggerAction::ModifyRoom {
+            room_id: *room_id,
+            patch: patch.to_patch(symbols)?,
+        })
+    } else {
+        bail!("loading TriggerAction:ModifyRoom: room symbol ({room_sym}) not in table");
     }
 }
 

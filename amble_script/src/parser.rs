@@ -4,7 +4,7 @@ use pest_derive::Parser as PestParser;
 use crate::{
     ActionAst, ConditionAst, ConsumableAst, ConsumableWhenAst, ContainerStateAst, GoalAst, GoalCondAst, GoalGroupAst,
     IngestModeAst, ItemAbilityAst, ItemAst, ItemLocationAst, ItemPatchAst, NpcAst, NpcMovementAst, NpcMovementTypeAst,
-    NpcStateValue, OnFalseAst, RoomAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
+    NpcStateValue, OnFalseAst, RoomAst, RoomExitPatchAst, RoomPatchAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
 };
 use std::collections::HashMap;
 
@@ -407,43 +407,65 @@ fn parse_trigger_pair(
             i = if_pos + 3 + consumed;
             continue;
         }
+        let remainder = &inner[i..];
+        match parse_modify_item_action(remainder) {
+            Ok((action, used)) => {
+                unconditional_actions.push(action);
+                i += used;
+                continue;
+            },
+            Err(AstError::Shape("not a modify item action")) => {},
+            Err(AstError::Shape(m)) => {
+                let base = str_offset(source, inner);
+                let abs = base + i;
+                let (line_no, col) = smap.line_col(abs);
+                let snippet = smap.line_snippet(line_no);
+                return Err(AstError::ShapeAt {
+                    msg: m,
+                    context: format!(
+                        "line {line_no}, col {col}: {snippet}\n{}^",
+                        " ".repeat(col.saturating_sub(1))
+                    ),
+                });
+            },
+            Err(e) => return Err(e),
+        }
+        match parse_modify_room_action(remainder) {
+            Ok((action, used)) => {
+                unconditional_actions.push(action);
+                i += used;
+                continue;
+            },
+            Err(AstError::Shape("not a modify room action")) => {},
+            Err(AstError::Shape(m)) => {
+                let base = str_offset(source, inner);
+                let abs = base + i;
+                let (line_no, col) = smap.line_col(abs);
+                let snippet = smap.line_snippet(line_no);
+                return Err(AstError::ShapeAt {
+                    msg: m,
+                    context: format!(
+                        "line {line_no}, col {col}: {snippet}\n{}^",
+                        " ".repeat(col.saturating_sub(1))
+                    ),
+                });
+            },
+            Err(e) => return Err(e),
+        }
         // Top-level do schedule ... or do ... line
-        if inner[i..].starts_with("do schedule in ") || inner[i..].starts_with("do schedule on ") {
-            let (action, used) = parse_schedule_action(&inner[i..], source, smap, sets)?;
+        if remainder.starts_with("do schedule in ") || remainder.starts_with("do schedule on ") {
+            let (action, used) = parse_schedule_action(remainder, source, smap, sets)?;
             unconditional_actions.push(action);
             i += used;
             continue;
         }
-        if inner[i..].starts_with("do ") {
+        if remainder.starts_with("do ") {
             // Consume a single line
             let mut j = i;
             while j < inner.len() && (bytes[j] as char) != '\n' {
                 j += 1;
             }
             let line = inner[i..j].trim_end();
-            if line.starts_with("do modify item") {
-                match parse_modify_item_action(&inner[i..]) {
-                    Ok((action, used)) => {
-                        unconditional_actions.push(action);
-                        i += used;
-                        continue;
-                    },
-                    Err(AstError::Shape(m)) => {
-                        let base = str_offset(source, inner);
-                        let abs = base + i;
-                        let (line_no, col) = smap.line_col(abs);
-                        let snippet = smap.line_snippet(line_no);
-                        return Err(AstError::ShapeAt {
-                            msg: m,
-                            context: format!(
-                                "line {line_no}, col {col}: {snippet}\n{}^",
-                                " ".repeat(col.saturating_sub(1))
-                            ),
-                        });
-                    },
-                    Err(e) => return Err(e),
-                }
-            }
             match parse_action_from_str(line) {
                 Ok(a) => unconditional_actions.push(a),
                 Err(AstError::Shape(m)) => {
@@ -1950,6 +1972,14 @@ fn split_top_level_commas(s: &str) -> Vec<&str> {
 
 fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
     let t = text.trim();
+    if t.starts_with("do modify item ") {
+        let (action, _) = parse_modify_item_action(t)?;
+        return Ok(action);
+    }
+    if t.starts_with("do modify room ") {
+        let (action, _) = parse_modify_room_action(t)?;
+        return Ok(action);
+    }
     if let Some(rest) = t.strip_prefix("do show ") {
         return Ok(ActionAst::Show(super::parser::unquote(rest.trim())));
     }
@@ -2339,41 +2369,68 @@ fn parse_actions_from_body(
             i = if_pos + 3 + consumed;
             continue;
         }
-        if body[i..].starts_with("do schedule in ") || body[i..].starts_with("do schedule on ") {
-            let (action, used) = parse_schedule_action(&body[i..], source, smap, sets)?;
+        let remainder = &body[i..];
+        let trimmed_remainder = remainder.trim_start();
+        let ws_leading = remainder.len() - trimmed_remainder.len();
+
+        match parse_modify_item_action(remainder) {
+            Ok((action, used)) => {
+                out.push(action);
+                i += used;
+                continue;
+            },
+            Err(AstError::Shape("not a modify item action")) => {},
+            Err(AstError::Shape(m)) => {
+                let base = str_offset(source, body);
+                let abs = base + i;
+                let (line_no, col) = smap.line_col(abs);
+                let snippet = smap.line_snippet(line_no);
+                return Err(AstError::ShapeAt {
+                    msg: m,
+                    context: format!(
+                        "line {line_no}, col {col}: {snippet}\n{}^",
+                        " ".repeat(col.saturating_sub(1))
+                    ),
+                });
+            },
+            Err(e) => return Err(e),
+        }
+
+        match parse_modify_room_action(remainder) {
+            Ok((action, used)) => {
+                out.push(action);
+                i += used;
+                continue;
+            },
+            Err(AstError::Shape("not a modify room action")) => {},
+            Err(AstError::Shape(m)) => {
+                let base = str_offset(source, body);
+                let abs = base + i;
+                let (line_no, col) = smap.line_col(abs);
+                let snippet = smap.line_snippet(line_no);
+                return Err(AstError::ShapeAt {
+                    msg: m,
+                    context: format!(
+                        "line {line_no}, col {col}: {snippet}\n{}^",
+                        " ".repeat(col.saturating_sub(1))
+                    ),
+                });
+            },
+            Err(e) => return Err(e),
+        }
+
+        if trimmed_remainder.starts_with("do schedule in ") || trimmed_remainder.starts_with("do schedule on ") {
+            let (action, used) = parse_schedule_action(&body[i + ws_leading..], source, smap, sets)?;
             out.push(action);
-            i += used;
+            i += ws_leading + used;
             continue;
         }
-        if body[i..].starts_with("do ") {
+        if trimmed_remainder.starts_with("do ") {
             let mut j = i;
             while j < bytes.len() && (bytes[j] as char) != '\n' {
                 j += 1;
             }
             let line = body[i..j].trim_end();
-            if line.starts_with("do modify item") {
-                match parse_modify_item_action(&body[i..]) {
-                    Ok((action, used)) => {
-                        out.push(action);
-                        i += used;
-                        continue;
-                    },
-                    Err(AstError::Shape(m)) => {
-                        let base = str_offset(source, body);
-                        let abs = base + i;
-                        let (line_no, col) = smap.line_col(abs);
-                        let snippet = smap.line_snippet(line_no);
-                        return Err(AstError::ShapeAt {
-                            msg: m,
-                            context: format!(
-                                "line {line_no}, col {col}: {snippet}\n{}^",
-                                " ".repeat(col.saturating_sub(1))
-                            ),
-                        });
-                    },
-                    Err(e) => return Err(e),
-                }
-            }
             match parse_action_from_str(line) {
                 Ok(a) => out.push(a),
                 Err(AstError::Shape(m)) => {
@@ -2403,6 +2460,7 @@ fn parse_actions_from_body(
 
 fn parse_modify_item_action(text: &str) -> Result<(ActionAst, usize), AstError> {
     let s = text.trim_start();
+    let leading_ws = text.len() - s.len();
     let rest0 = s
         .strip_prefix("do modify item ")
         .ok_or(AstError::Shape("not a modify item action"))?;
@@ -2425,7 +2483,7 @@ fn parse_modify_item_action(text: &str) -> Result<(ActionAst, usize), AstError> 
     let start_offset = unsafe { body.as_ptr().offset_from(block_slice.as_ptr()) as usize };
     let block_total_len = start_offset + body.len() + 1;
     let remaining = &block_slice[block_total_len..];
-    let consumed = s.len() - remaining.len();
+    let consumed = leading_ws + (s.len() - remaining.len());
     let patch_block = &block_slice[..block_total_len];
 
     let mut pairs = DslParser::parse(Rule::item_patch_block, patch_block).map_err(|e| AstError::Pest(e.to_string()))?;
@@ -2537,6 +2595,144 @@ fn parse_modify_item_action(text: &str) -> Result<(ActionAst, usize), AstError> 
     }
 
     Ok((ActionAst::ModifyItem { item, patch }, consumed))
+}
+
+fn parse_modify_room_action(text: &str) -> Result<(ActionAst, usize), AstError> {
+    let s = text.trim_start();
+    let leading_ws = text.len() - s.len();
+    let rest0 = s
+        .strip_prefix("do modify room ")
+        .ok_or(AstError::Shape("not a modify room action"))?;
+    let rest0 = rest0.trim_start();
+    let ident_len = rest0.chars().take_while(|&c| is_ident_char(c)).count();
+    if ident_len == 0 {
+        return Err(AstError::Shape("modify room missing room identifier"));
+    }
+    let ident_str = &rest0[..ident_len];
+    DslParser::parse(Rule::ident, ident_str).map_err(|_| AstError::Shape("modify room has invalid room identifier"))?;
+    let room = ident_str.to_string();
+    let after_ident = rest0[ident_len..].trim_start();
+    if !after_ident.starts_with('{') {
+        return Err(AstError::Shape("modify room missing '{' block"));
+    }
+    let block_slice = after_ident;
+    let body = extract_body(block_slice)?;
+    // SAFETY: `body` was produced by `extract_body` from `block_slice`, so both pointers
+    // lie within the same string slice.
+    let start_offset = unsafe { body.as_ptr().offset_from(block_slice.as_ptr()) as usize };
+    let block_total_len = start_offset + body.len() + 1;
+    let remaining = &block_slice[block_total_len..];
+    let consumed = leading_ws + (s.len() - remaining.len());
+    let patch_block = &block_slice[..block_total_len];
+
+    let mut pairs = DslParser::parse(Rule::room_patch_block, patch_block).map_err(|e| AstError::Pest(e.to_string()))?;
+    let block_pair = pairs
+        .next()
+        .ok_or(AstError::Shape("modify room block missing statements"))?;
+    let mut patch = RoomPatchAst::default();
+
+    for stmt in block_pair.into_inner() {
+        match stmt.as_rule() {
+            Rule::room_patch_name => {
+                let mut inner = stmt.into_inner();
+                let val = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify room name missing value"))?
+                    .as_str();
+                patch.name = Some(unquote(val));
+            },
+            Rule::room_patch_desc => {
+                let mut inner = stmt.into_inner();
+                let val = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify room description missing value"))?
+                    .as_str();
+                patch.desc = Some(unquote(val));
+            },
+            Rule::room_patch_remove_exit => {
+                let mut inner = stmt.into_inner();
+                let dest = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify room remove exit missing destination"))?
+                    .as_str()
+                    .to_string();
+                patch.remove_exits.push(dest);
+            },
+            Rule::room_patch_add_exit => {
+                let mut inner = stmt.into_inner();
+                let dir_pair = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify room add exit missing direction"))?;
+                let direction = if dir_pair.as_rule() == Rule::string {
+                    unquote(dir_pair.as_str())
+                } else {
+                    dir_pair.as_str().to_string()
+                };
+                let dest_pair = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify room add exit missing destination"))?;
+                let to = dest_pair.as_str().to_string();
+                let mut exit = RoomExitPatchAst {
+                    direction,
+                    to,
+                    ..Default::default()
+                };
+                if let Some(opts) = inner.next() {
+                    parse_room_patch_exit_opts(opts, &mut exit)?;
+                }
+                patch.add_exits.push(exit);
+            },
+            _ => return Err(AstError::Shape("unexpected statement in room patch block")),
+        }
+    }
+
+    Ok((ActionAst::ModifyRoom { room, patch }, consumed))
+}
+
+fn parse_room_patch_exit_opts(opts: pest::iterators::Pair<Rule>, exit: &mut RoomExitPatchAst) -> Result<(), AstError> {
+    debug_assert_eq!(opts.as_rule(), Rule::exit_opts);
+    for opt in opts.into_inner() {
+        let opt_text = opt.as_str().trim();
+        if opt_text == "hidden" {
+            exit.hidden = true;
+            continue;
+        }
+        if opt_text == "locked" {
+            exit.locked = true;
+            continue;
+        }
+        let children: Vec<_> = opt.clone().into_inner().collect();
+        if let Some(s) = children.iter().find(|p| p.as_rule() == Rule::string) {
+            exit.barred_message = Some(unquote(s.as_str()));
+            continue;
+        }
+        if opt_text.starts_with("required_items") && children.iter().all(|p| p.as_rule() == Rule::ident) {
+            for item in children {
+                exit.required_items.push(item.as_str().to_string());
+            }
+            continue;
+        }
+        if opt_text.starts_with("required_flags") {
+            for flag_pair in opt.into_inner() {
+                match flag_pair.as_rule() {
+                    Rule::ident => exit.required_flags.push(flag_pair.as_str().to_string()),
+                    Rule::flag_req => {
+                        let mut it = flag_pair.into_inner();
+                        let ident = it
+                            .next()
+                            .ok_or(AstError::Shape("flag requirement missing identifier"))?
+                            .as_str()
+                            .to_string();
+                        let base = ident.split('#').next().unwrap_or(&ident).to_string();
+                        exit.required_flags.push(base);
+                    },
+                    _ => {},
+                }
+            }
+            continue;
+        }
+    }
+    Ok(())
 }
 
 fn parse_patch_ability(pair: pest::iterators::Pair<Rule>) -> Result<ItemAbilityAst, AstError> {
@@ -2901,6 +3097,70 @@ trigger "patch locker" when always {
         assert!(toml.contains("container_state = \"locked\""));
         assert!(toml.contains("add_abilities = ["));
         assert!(toml.contains("remove_abilities = ["));
+    }
+
+    #[test]
+    fn modify_room_parses_patch_fields() {
+        let src = r#"
+trigger "patch lab" when always {
+    do modify room aperture-lab {
+        name "Ruined Lab"
+        desc "Charred and broken."
+        remove exit portal-room
+        add exit "through the vault door" -> stargate-room {
+            locked,
+            required_items (vault-key),
+            required_flags (opened-vault),
+            barred "You can't go that way yet."
+        }
+    }
+}
+"#;
+        let offset = src.find("do modify room").expect("snippet find");
+        let snippet = &src[offset..];
+        let (helper_action, _used) = super::parse_modify_room_action(snippet).expect("parse helper on snippet");
+        assert!(matches!(helper_action, ActionAst::ModifyRoom { .. }));
+        let ast = parse_trigger(src).expect("parse ok");
+        assert_eq!(ast.actions.len(), 1);
+        match &ast.actions[0] {
+            ActionAst::ModifyRoom { room, patch } => {
+                assert_eq!(room, "aperture-lab");
+                assert_eq!(patch.name.as_deref(), Some("Ruined Lab"));
+                assert_eq!(patch.desc.as_deref(), Some("Charred and broken."));
+                assert_eq!(patch.remove_exits, vec!["portal-room"]);
+                assert_eq!(patch.add_exits.len(), 1);
+                let exit = &patch.add_exits[0];
+                assert_eq!(exit.direction, "through the vault door");
+                assert_eq!(exit.to, "stargate-room");
+                assert!(exit.locked);
+                assert!(!exit.hidden);
+                assert_eq!(exit.required_items, vec!["vault-key"]);
+                assert_eq!(exit.required_flags, vec!["opened-vault"]);
+                assert_eq!(exit.barred_message.as_deref(), Some("You can't go that way yet."));
+            },
+            other => panic!("expected modify room action, got {other:?}"),
+        }
+        let toml = crate::compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("type = \"modifyRoom\""));
+        assert!(toml.contains("room_sym = \"aperture-lab\""));
+        assert!(toml.contains("remove_exits = [\"portal-room\"]"));
+        assert!(toml.contains("add_exits = ["));
+        assert!(toml.contains("barred_message = \"You can't go that way yet.\""));
+        assert!(toml.contains("required_flags = [{ type = \"simple\", name = \"opened-vault\" }]"));
+    }
+
+    #[test]
+    fn parse_modify_room_action_helper_handles_basic_block() {
+        let snippet = "do modify room lab { name \"Ruined\" }\n";
+        let (action, used) = super::parse_modify_room_action(snippet).expect("parse helper");
+        assert_eq!(&snippet[..used], "do modify room lab { name \"Ruined\" }");
+        match action {
+            ActionAst::ModifyRoom { room, patch } => {
+                assert_eq!(room, "lab");
+                assert_eq!(patch.name.as_deref(), Some("Ruined"));
+            },
+            other => panic!("expected modify room action, got {other:?}"),
+        }
     }
 
     #[test]

@@ -188,6 +188,11 @@ pub enum ActionAst {
         item: String,
         patch: ItemPatchAst,
     },
+    /// Apply a room patch to mutate room fields atomically.
+    ModifyRoom {
+        room: String,
+        patch: RoomPatchAst,
+    },
     /// Spawn an item into a room.
     SpawnItemIntoRoom {
         item: String,
@@ -325,6 +330,27 @@ pub struct ItemPatchAst {
     pub remove_container_state: bool,
     pub add_abilities: Vec<ItemAbilityAst>,
     pub remove_abilities: Vec<ItemAbilityAst>,
+}
+
+/// Data patch applied to a room when executing a `modify room` action.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct RoomPatchAst {
+    pub name: Option<String>,
+    pub desc: Option<String>,
+    pub remove_exits: Vec<String>,
+    pub add_exits: Vec<RoomExitPatchAst>,
+}
+
+/// Exit data emitted inside a `modify room` action patch.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct RoomExitPatchAst {
+    pub direction: String,
+    pub to: String,
+    pub hidden: bool,
+    pub locked: bool,
+    pub barred_message: Option<String>,
+    pub required_flags: Vec<String>,
+    pub required_items: Vec<String>,
 }
 
 /// Policy to apply when a scheduled condition evaluates to false at fire time.
@@ -1449,6 +1475,14 @@ fn action_to_value(a: &ActionAst) -> toml_edit::Value {
             t.insert("patch", toml_edit::Value::from(patch_tbl));
             toml_edit::Value::from(t)
         },
+        ActionAst::ModifyRoom { room, patch } => {
+            let mut t = InlineTable::new();
+            t.insert("type", toml_edit::Value::from("modifyRoom"));
+            t.insert("room_sym", toml_edit::Value::from(room.clone()));
+            let patch_tbl = room_patch_to_inline_table(patch);
+            t.insert("patch", toml_edit::Value::from(patch_tbl));
+            toml_edit::Value::from(t)
+        },
         ActionAst::ResetFlag(name) => {
             let mut t = InlineTable::new();
             t.insert("type", toml_edit::Value::from("resetFlag"));
@@ -1778,6 +1812,60 @@ fn item_patch_to_inline_table(patch: &ItemPatchAst) -> InlineTable {
             arr.push(item_ability_to_value(ability));
         }
         tbl.insert("remove_abilities", toml_edit::Value::from(arr));
+    }
+    tbl
+}
+
+fn room_patch_to_inline_table(patch: &RoomPatchAst) -> InlineTable {
+    let mut tbl = InlineTable::new();
+    if let Some(name) = &patch.name {
+        tbl.insert("name", toml_edit::Value::from(name.clone()));
+    }
+    if let Some(desc) = &patch.desc {
+        tbl.insert("desc", toml_edit::Value::from(desc.clone()));
+    }
+    if !patch.remove_exits.is_empty() {
+        let mut arr = Array::default();
+        for exit_sym in &patch.remove_exits {
+            arr.push(exit_sym.clone());
+        }
+        tbl.insert("remove_exits", toml_edit::Value::from(arr));
+    }
+    if !patch.add_exits.is_empty() {
+        let mut arr = Array::default();
+        for exit in &patch.add_exits {
+            let mut et = InlineTable::new();
+            et.insert("direction", toml_edit::Value::from(exit.direction.clone()));
+            et.insert("to", toml_edit::Value::from(exit.to.clone()));
+            if exit.hidden {
+                et.insert("hidden", toml_edit::Value::from(true));
+            }
+            if exit.locked {
+                et.insert("locked", toml_edit::Value::from(true));
+            }
+            if let Some(msg) = &exit.barred_message {
+                et.insert("barred_message", toml_edit::Value::from(msg.clone()));
+            }
+            if !exit.required_items.is_empty() {
+                let mut items = Array::default();
+                for item in &exit.required_items {
+                    items.push(item.clone());
+                }
+                et.insert("required_items", toml_edit::Value::from(items));
+            }
+            if !exit.required_flags.is_empty() {
+                let mut flags = Array::default();
+                for flag in &exit.required_flags {
+                    let mut itab = InlineTable::new();
+                    itab.insert("type", toml_edit::Value::from("simple"));
+                    itab.insert("name", toml_edit::Value::from(flag.clone()));
+                    flags.push(toml_edit::Value::from(itab));
+                }
+                et.insert("required_flags", toml_edit::Value::from(flags));
+            }
+            arr.push(toml_edit::Value::from(et));
+        }
+        tbl.insert("add_exits", toml_edit::Value::from(arr));
     }
     tbl
 }
