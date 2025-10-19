@@ -18,6 +18,27 @@ item big_blue_button {
     location room high-ridge
 }
 
+item cheat_button {
+    name "Cheat Button!"
+    desc "Press this button to move this room to the final objective!"
+    portable false
+    location room high-ridge
+}
+
+trigger "Cheat Mode" when touch item cheat_button {
+    do show "Morphed the room into an endgame backdoor!"
+    do modify room high-ridge {
+        name "AA-3B Back Entrance"
+        desc "Where there used to be a High Isolated Ridge around you, there is now a blank white room with a door marked 'WIN!'"
+        remove exit parish-landing
+        add exit "win the game" -> room-aa-3b {
+            required_items(no_cake),
+            barred "You must hold no cake to fathom Room AA-3B's mysteries."
+        }
+    }
+}
+
+
 npc the_luggage {
     name "The Luggage"
     desc "A large chest with dozens of legs, layered sharp teeth around its lid, and a strong tendency to violence."
