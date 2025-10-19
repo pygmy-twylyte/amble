@@ -213,6 +213,7 @@ do_action        =  {
   | ("set" ~ "container" ~ "state" ~ ident ~ ("open" | "closed" | "locked" | "transparentClosed" | "transparentLocked" | "none"))
   | ("spinner" ~ "message" ~ ident)
   | ("modify" ~ "item" ~ ident ~ item_patch_block)
+  | ("modify" ~ "room" ~ ident ~ room_patch_block)
 }
 item_patch_block =  { "{" ~ item_patch_stmt+ ~ "}" }
 item_patch_stmt  = _{
@@ -237,6 +238,18 @@ item_container_state_patch = { "container" ~ "state" ~ ("off" | "open" | "closed
 item_add_ability           = { "add" ~ "ability" ~ ability_id }
 item_remove_ability        = { "remove" ~ "ability" ~ ability_id }
 ability_id                 = { ("Unlock" ~ "(" ~ ident ~ ")") | ident }
+
+room_patch_block = { "{" ~ room_patch_stmt+ ~ "}" }
+room_patch_stmt  = _{
+    room_patch_name
+  | room_patch_desc
+  | room_patch_remove_exit
+  | room_patch_add_exit
+}
+room_patch_name       = { "name" ~ string }
+room_patch_desc       = { ("description" | "desc") ~ string }
+room_patch_remove_exit = { "remove" ~ "exit" ~ ident }
+room_patch_add_exit    = { "add" ~ "exit" ~ (ident | string) ~ "->" ~ ident ~ exit_opts? }
 
 // Conditions
 cond = {
