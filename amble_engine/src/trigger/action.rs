@@ -71,7 +71,7 @@
 //! This provides an audit trail of all world state changes and helps with
 //! debugging game logic.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use anyhow::{Context, Result, anyhow, bail};
 use gametools::{Spinner, Wedge};
@@ -179,6 +179,8 @@ pub enum TriggerAction {
     LockItem(Uuid),
     /// Modifies multiple aspects of an `Item` at once using an `ItemPatch`
     ModifyItem { item_id: Uuid, patch: ItemPatch },
+    /// Modifies multiple aspects of a `Room` at once using a `RoomPatch`
+    ModifyRoom { room_id: Uuid, patch: RoomPatch },
     /// Makes an NPC refuse an item with a custom message
     NpcRefuseItem { npc_id: Uuid, reason: String },
     /// Makes an NPC speak a specific line of dialogue
@@ -258,6 +260,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
     use TriggerAction::*;
     match action {
         ModifyItem { item_id, patch } => modify_item(world, *item_id, patch)?,
+        ModifyRoom { room_id, patch } => modify_room(world, *room_id, patch)?,
         SetNpcActive { npc_id, active } => set_npc_active(world, npc_id, *active)?,
         SetContainerState { item_id, state } => set_container_state(world, *item_id, *state)?,
         ReplaceItem { old_id, new_id } => replace_item(world, old_id, new_id)?,
@@ -380,6 +383,48 @@ pub struct ItemPatch {
     pub remove_abilities: Vec<ItemAbility>,
 }
 
+/// Patch that can be applied to modify multiple properties of a `Room` at once.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct RoomPatch {
+    pub name: Option<String>,
+    pub desc: Option<String>,
+    #[serde(default)]
+    pub remove_exits: Vec<Uuid>,
+    #[serde(default)]
+    pub add_exits: Vec<RoomExitPatch>,
+}
+
+/// Exit data used when adding an exit via `RoomPatch`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RoomExitPatch {
+    pub direction: String,
+    pub to: Uuid,
+    #[serde(default)]
+    pub hidden: bool,
+    #[serde(default)]
+    pub locked: bool,
+    #[serde(default)]
+    pub required_flags: HashSet<Flag>,
+    #[serde(default)]
+    pub required_items: HashSet<Uuid>,
+    #[serde(default)]
+    pub barred_message: Option<String>,
+}
+
+impl Default for RoomExitPatch {
+    fn default() -> Self {
+        Self {
+            direction: String::new(),
+            to: Uuid::nil(),
+            hidden: false,
+            locked: false,
+            required_flags: HashSet::new(),
+            required_items: HashSet::new(),
+            barred_message: None,
+        }
+    }
+}
+
 /*
  *
  * ACTION HANDLERS
@@ -395,6 +440,70 @@ pub fn modify_item(world: &mut AmbleWorld, item_id: Uuid, patch: &ItemPatch) -> 
     );
     let patched = apply_item_patch(world, item_id, patch)?;
     world.items.insert(item_id, patched);
+    Ok(())
+}
+
+/// Modifies multiple properties of a `Room` at once by applying a `RoomPatch`.
+pub fn modify_room(world: &mut AmbleWorld, room_id: Uuid, patch: &RoomPatch) -> Result<()> {
+    info!(
+        "└─ action: modifying room {} using patch: {:?}",
+        symbol_or_unknown(&world.rooms, room_id),
+        patch
+    );
+    apply_room_patch(world, room_id, patch)?;
+    Ok(())
+}
+
+/// Applies a `RoomPatch` to the targeted `Room`, mutating it in place.
+fn apply_room_patch(world: &mut AmbleWorld, room_id: Uuid, patch: &RoomPatch) -> Result<()> {
+    let mut removal_plan: Vec<(String, Uuid)> = Vec::new();
+    {
+        let room_ref = world
+            .rooms
+            .get(&room_id)
+            .with_context(|| format!("patching a room: Uuid ({room_id}) not found in world room map"))?;
+        for target_room_id in &patch.remove_exits {
+            if let Some(direction) = room_ref
+                .exits
+                .iter()
+                .find_map(|(dir, exit)| (exit.to == *target_room_id).then_some(dir.clone()))
+            {
+                removal_plan.push((direction, *target_room_id));
+            } else {
+                let target_sym = symbol_or_unknown(&world.rooms, *target_room_id);
+                bail!(
+                    "modifyRoom patch attempted to remove exit to '{}' but room '{}' has no such exit",
+                    target_sym,
+                    room_ref.symbol
+                );
+            }
+        }
+    }
+
+    let room = world.rooms.get_mut(&room_id).expect("room existence validated above");
+
+    if let Some(ref new_name) = patch.name {
+        room.name = new_name.clone();
+    }
+
+    if let Some(ref new_desc) = patch.desc {
+        room.base_description = new_desc.clone();
+    }
+
+    for (direction, _) in &removal_plan {
+        room.exits.remove(direction);
+    }
+
+    for addition in &patch.add_exits {
+        let mut exit = Exit::new(addition.to);
+        exit.hidden = addition.hidden;
+        exit.locked = addition.locked;
+        exit.barred_message = addition.barred_message.clone();
+        exit.required_flags = addition.required_flags.clone();
+        exit.required_items = addition.required_items.clone();
+        room.exits.insert(addition.direction.clone(), exit);
+    }
+
     Ok(())
 }
 
@@ -1898,6 +2007,113 @@ mod tests {
         world.rooms.insert(room2_id, room2);
         world.player.location = Location::Room(room1_id);
         (world, room1_id, room2_id)
+    }
+
+    #[test]
+    fn modify_room_updates_name_desc_and_exits() {
+        let mut world = AmbleWorld::new_empty();
+        let room_id = Uuid::new_v4();
+        let dest_id = Uuid::new_v4();
+        let target_id = Uuid::new_v4();
+        world.rooms.insert(
+            room_id,
+            Room {
+                id: room_id,
+                symbol: "lab".into(),
+                name: "Lab".into(),
+                base_description: "Original description".into(),
+                overlays: Vec::new(),
+                location: Location::Nowhere,
+                visited: false,
+                exits: HashMap::from([("north".into(), Exit::new(dest_id))]),
+                contents: Default::default(),
+                npcs: Default::default(),
+            },
+        );
+        world.rooms.insert(
+            dest_id,
+            Room {
+                id: dest_id,
+                symbol: "hall".into(),
+                name: "Hall".into(),
+                base_description: "Hall".into(),
+                overlays: Vec::new(),
+                location: Location::Nowhere,
+                visited: false,
+                exits: HashMap::new(),
+                contents: Default::default(),
+                npcs: Default::default(),
+            },
+        );
+        world.rooms.insert(
+            target_id,
+            Room {
+                id: target_id,
+                symbol: "vault".into(),
+                name: "Vault".into(),
+                base_description: "Vault".into(),
+                overlays: Vec::new(),
+                location: Location::Nowhere,
+                visited: false,
+                exits: HashMap::new(),
+                contents: Default::default(),
+                npcs: Default::default(),
+            },
+        );
+
+        let patch = RoomPatch {
+            name: Some("Ruined Lab".into()),
+            desc: Some("Destroyed lab".into()),
+            remove_exits: vec![dest_id],
+            add_exits: vec![RoomExitPatch {
+                direction: "through the vault door".into(),
+                to: target_id,
+                hidden: false,
+                locked: true,
+                required_flags: HashSet::from([Flag::simple("opened-vault", 0)]),
+                required_items: HashSet::new(),
+                barred_message: Some("You can't go that way yet.".into()),
+            }],
+        };
+
+        modify_room(&mut world, room_id, &patch).expect("modify room");
+        let room = world.rooms.get(&room_id).expect("room present");
+        assert_eq!(room.name, "Ruined Lab");
+        assert_eq!(room.base_description, "Destroyed lab");
+        assert!(room.exits.get("north").is_none());
+        let exit = room.exits.get("through the vault door").expect("new exit present");
+        assert_eq!(exit.to, target_id);
+        assert!(exit.locked);
+        assert_eq!(exit.barred_message.as_deref(), Some("You can't go that way yet."));
+        assert!(exit.required_flags.contains(&Flag::simple("opened-vault", 0)));
+    }
+
+    #[test]
+    fn modify_room_missing_exit_errors() {
+        let mut world = AmbleWorld::new_empty();
+        let room_id = Uuid::new_v4();
+        world.rooms.insert(
+            room_id,
+            Room {
+                id: room_id,
+                symbol: "lab".into(),
+                name: "Lab".into(),
+                base_description: "Original description".into(),
+                overlays: Vec::new(),
+                location: Location::Nowhere,
+                visited: false,
+                exits: HashMap::new(),
+                contents: Default::default(),
+                npcs: Default::default(),
+            },
+        );
+        let missing_exit_target = Uuid::new_v4();
+        let patch = RoomPatch {
+            remove_exits: vec![missing_exit_target],
+            ..Default::default()
+        };
+        let err = modify_room(&mut world, room_id, &patch).expect_err("expected failure");
+        assert!(err.to_string().contains("has no such exit"), "unexpected error: {err}");
     }
 
     fn make_item(id: Uuid, location: Location, container_state: Option<ContainerState>) -> Item {
