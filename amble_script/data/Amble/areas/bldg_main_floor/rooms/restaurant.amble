@@ -4,7 +4,7 @@
 
 room restaurant {
     name "Restaurant at the End of the Universe"
-    desc "Soft jazz wafts through invisible speakers, accompanied by the occasional sound of imploding galaxies. A tasteful sign declares this to be the Restaurant at the End of the Universe, though it appears to be between dinner rushes. Tables float slightly above the ground and rearrange themselves when you're not looking. A host's podium displays a reservation list. Restrooms lie to the south bearing a sign in fancy script reading:\n\n                             VIP PAN-SPECIES RESTROOM\n                       (must possess visitor pass to enter)\n\nPatio seating stretches farther east."
+    desc "Acturan A-POP wafts through invisible speakers, accompanied by the occasional sound of imploding galaxies. A tasteful sign declares this to be the Restaurant at the End of the Universe, though it appears to be between dinner rushes. Tables float slightly above the ground and rearrange themselves when you're not looking. A reservation book is here, chained to the host's podium. Restrooms lie to the south bearing a sign in fancy script reading:\n\n                             VIP PAN-SPECIES RESTROOM\n                       (must possess visitor pass to enter)\n\nPatio seating stretches farther east."
     overlay if npc cmot_dibbler here {
         normal "Dibbler circles the tables, insisting his sausages are a bargain."
         happy  "Dibbler proclaims today's special with exaggerated flair."

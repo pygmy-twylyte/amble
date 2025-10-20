@@ -80,7 +80,7 @@ when use item crowbar on item vending_machine interaction open
     do replace drop item hal_module_2 with hal_module_2_crevice
     do replace drop item dehydrated_water with dehydrated_water
     do replace drop item schrodingers_sandwich with schrodingers_sandwich
-    do replace drop item fortune_cookie_of_doom with fortune_cookie_of_doom
+    do replace drop item fortune_cookies_of_doom with fortune_cookies_of_doom
     do add flag vending-machine-pried
     do add flag hal-module-in-crevice
     do set item description vending_machine "A battered and broken vending machine -- even more so since you took a crowbar to it. Miraculously, the glass still remains intact on the front panel which has been pried open and hangs on a slant. Empty now, the machine's contents have all spilled out on the floor."

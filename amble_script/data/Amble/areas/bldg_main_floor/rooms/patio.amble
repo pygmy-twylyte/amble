@@ -2,10 +2,24 @@
 # Restaurant Patio
 # ========================================
 
+# Starts with description merely as blinding explosion of light, so player doesn't get to peek at the contents early
 room patio {
-    name "Restaurant Patio"
-    desc "The patio overlooks nothing in particular—just an endless starfield gently swirling beyond a transparent force field. A few metal tables are bolted to the floor, and one of them has a half-empty cocktail glass slowly un-drinking itself. A sign near the edge reads: 'No Leaning Beyond This Point. You have been warned.'"
+    name "BLINDING GLARE"
+    desc "You see almost nothing at all, except for a momentary glimpse of a few scattered details before you are blinded. The pure white light here is stare-into-the-sun bright and seems to come from all directions, forcing you to shield your eyes with your arm and flee."
     exit west -> restaurant
+}
+# Triggers alter room appearance when the sunglasses are taken or dropped
+trigger "Modify Patio: Sunglasses On" when take item peril_sunglasses {
+    do modify room patio {
+        name "Restaurant Patio"
+        desc "The patio overlooks nothing in particular—just an endless starfield gently swirling beyond a transparent force field. A few metal tables are bolted to the floor, and one of them has a half-empty cocktail glass slowly un-drinking itself. A sign near the edge reads: 'No Leaning Beyond This Point. You have been warned.'"
+    }
+}
+trigger "Modify Patio: Sunglasses Off" when drop item peril_sunglasses {
+    do modify room patio {
+        name "BLINDING GLARE"
+        desc "You see nothing at all. The pure white light here is direct-sunlight bright and seems to come from all directions, forcing you to shield your eyes with your arm and flee."
+    }
 }
 
 # ========================================
@@ -17,6 +31,21 @@ item un_drink {
     desc "A crystal glass sits half full of... nothing. And yet, the liquid level keeps rising, as if the drink is slowly returning to the bartender across time. The stir stick spins gently in defiance of gravity and good sense."
     portable true
     location room patio
+    ability Drink
+    consumable {
+        uses_left 1
+        consume_on ability Drink
+        when_consumed despawn
+    }
+}
+
+item plaque_3 {
+    name "Crystal Plaque"
+    desc "An intricate pure clear crystal plaque with an inlaid inscription in obsidian; it must have taken decades to create -- atop an ornately carved pillar that probably took nearly as long to create -- impressing the beholder with the sheer enormity of its message."
+    portable false
+    location room patio
+    ability Read
+    text "Need a pointless but entertaining quote here."
 }
 
 # ========================================

@@ -46,18 +46,117 @@ item schrodingers_sandwich {
     }
 }
 
-item fortune_cookie_of_doom {
-    name "Fortune Cookie of Doom"
-    desc "A fortune cookie wrapped in black paper with tiny skulls on it. You can feel it radiating pessimism through the wrapper. Previous fortunes reportedly included 'Your future is behind you' and 'Help! I'm trapped in a fortune cookie factory!'"
+# ========================================
+# Fortune Cookies of Doom
+# ========================================
+
+item fortune_cookies_of_doom {
+    name "Fortune Cookies of Doom"
+    desc "A pack of three fortune cookies wrapped ominously in black paper with tiny skulls and crossbones on them. You can feel it radiating pessimism through the wrapper. Previous fortunes reportedly included 'Your future is behind you' and 'Dessicant -- DO NOT EAT'"
     portable true
     location chest vending_machine
     ability Eat
     consumable {
-        uses_left 1
+        uses_left 3
         consume_on ability Eat
         when_consumed despawn
     }
 }
+
+trigger "Eat a Fortune Cookie"
+note "player gets random different fortunes each time from the 'fortunes' spinner"
+when eat item fortune_cookies_of_doom {
+    do show "You dare to eat a Fortune Cookie of Doom..."
+    do award points 1
+    do spinner message fortunes
+}
+
+spinner fortunes {
+    wedge r#"You nearly choked on this fortune from the cookie:
+    ~ A medieval knight will bludgeon you with a dull sword today. ~"#
+
+    wedge r#"You nearly choked on this fortune from the cookie:
+    ~ You are not my mommy. You are aa SNORT! ~"#
+
+    wedge r#"You nearly choked on this blood-spattered fortune from the cookie:
+    ~ Send help -- oh, nevermind. ~"#
+
+    wedge r#"You nearly choked on this handwritten fortune from the cookie:
+    ~ The item you're missing can be found in Castle AAAaaaarrrrrrgggggghh--- ~"#
+
+    wedge r#"You nearly choked on this fortune from the cookie:
+    ~ Beware of vending machines offering unsolicited sausage advice. ~"#
+
+    wedge r#"You nearly choked on this fortune from the cookie:
+    ~ Today you will find love, and immediately regret it. ~"#
+
+    wedge r#"You nearly choked on this slightly singed fortune:
+    ~ You will soon be set on fire. Probably by yourself. ~"#
+
+    wedge r#"You nearly choked on this fortune from the cookie:
+    ~ Your current location has been flagged for narrative collapse. ~"#
+
+    wedge r#"You nearly choked on this fortune written in crayon:
+    ~ The cake is a lie. The *other* cake is watching you. ~"#
+
+    wedge r#"You nearly choked on this damp fortune:
+    ~ Something unspeakable is oozing toward you from the west. ~"#
+
+    wedge r#"You nearly choked on this fortune scribbled in haste:
+    ~ Never trust a gonk droid offering discounts. ~"#
+
+    wedge r#"You nearly choked on this fortune from the cookie:
+    ~ A monolith will soon render judgment. Dress accordingly. ~"#
+
+    wedge r#"You nearly choked on this fortune written in faint ink:
+    ~ You will open a door that really didn’t want to be opened. ~"#
+
+    wedge r#"You nearly choked on this fortune etched into aluminum foil:
+    ~ The EMH will not be pleased. ~"#
+
+    wedge r#"You nearly choked on this sticky fortune:
+    ~ Your reflection is currently thinking for itself. ~"#
+
+    wedge r#"You nearly choked on this fortune from the cookie:
+    ~ One of your socks is now sentient. It’s not the good one. ~"#
+
+    wedge r#"You nearly choked on this smeared fortune:
+    ~ A small explosion will bring you clarity. Eventually. ~"#
+
+    wedge r#"You nearly choked on this fortune written on old receipt paper:
+    ~ The knight approaches. The sword remains dull. The intent does not. ~"#
+
+    wedge r#"You nearly choked on this fortune with a faint electrical smell:
+    ~ HAL says hello. He’s been listening. ~"#
+
+    wedge r#"You nearly choked on this fortune that’s oddly sticky:
+    ~ Your next snack will be watching you eat it. ~"#
+
+    wedge r#"You nearly choked on this fortune scrawled on recycled cardboard:
+    ~ Do not meddle in the affairs of vending machines. ~"#
+
+    wedge r#"You nearly choked on this fortune carved into stale cookie:
+    ~ The Shed of Two-Sheds is not what it seems. ~"#
+
+    wedge r#"You nearly choked on this fortune wrapped around a rusty nail:
+    ~ Beware of trapdoors, rugs, and men named Lebowski. ~"#
+
+    wedge r#"You nearly choked on this fortune that’s still warm:
+    ~ You will find a battery. It will find you less interesting. ~"#
+
+    wedge r#"You nearly choked on this fortune written in looping handwriting:
+    ~ The EMH suggests you stop eating mysterious baked goods. ~"#
+
+    wedge r#"You nearly choked on this fortune with smudged ink:
+    ~ Someone will shout “Ni!” at an inconvenient time. ~"#
+
+    wedge r#"You nearly choked on this fortune smelling faintly of ozone:
+    ~ You will be teleported against your better judgment. ~"#
+
+    wedge r#"You nearly choked on this fortune that seems to shimmer:
+    ~ Room AA-3B misses you. ~"#
+}
+
 
 # ========================================
 # Triggers

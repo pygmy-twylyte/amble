@@ -72,25 +72,26 @@
 
 ### main-lobby
 - [x] HAL module #2 shouldn't be visible in the vending machine until starts HAL sequence
-- [ ] add ability to break open and get message from fortune cookie
+- [x] add ability to break open and get message from fortune cookie
 - loitering trigger/penalty works nicely
 
 ### b-a-office
-- [ ] typo: extra R_PARENS at end of "exasperated sigh" dialogue line
-- [ ] rewording of poetry-performer description: "whichever" voice, "it" happens
-- [ ] "robotic receptionist initially GLANCED at you" would read better  - past tense the whole passage because the dialogue shows her already awarding the pass just above
+- [x] typo: extra R_PARENS at end of "exasperated sigh" dialogue line
+- [x] rewording of poetry-performer description: "whichever" voice, "it" happens
+- [x] "robotic receptionist initially GLANCED at you" would read better  - past tense the whole passage because the dialogue shows her already awarding the pass just above
 
 
 ### restaurant
-- [ ] desc: not jazz. Maybe Artcuran pop.
-- [ ] desc: mention reservation book is affixed to the podium (not portable)
+- [x] desc: not jazz. Maybe Artcuran pop.
+- [x] desc: mention reservation book is affixed to the podium (not portable)
 
 
 ### patio
 - denies entry w/o sunglasses
-- [ ] Third plaque here
-- [ ] NPC here
-- [ ] make negative cocktail drinkable
+- [x] Third plaque here
+- [ ] NPC here?
+- [x] make negative cocktail drinkable
+- [ ] determine some effect from drinking it
 
 ### lift-bank-main
 - prox card overlay working when no card

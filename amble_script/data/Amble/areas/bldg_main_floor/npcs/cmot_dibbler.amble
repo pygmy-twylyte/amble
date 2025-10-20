@@ -49,6 +49,7 @@ item sausage-inna-bun {
 
 trigger "[CMOT] Buy a Sausage-inna-Bun" only once
 when give item am_dollar to npc cmot_dibbler {
+    do restrict item am_dollar
     do npc says cmot_dibbler "An Ankh-Morpork dollar! Not sure where you found that around here. Sorry, er, I seem to have no change to give ya. Here's my finest, world-famous (and patented) Sausage-Inna-Bun."
     do set npc state cmot_dibbler happy
     do give item sausage-inna-bun to player from npc cmot_dibbler

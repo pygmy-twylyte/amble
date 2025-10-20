@@ -36,7 +36,7 @@ why not then? Moose."
 
 item poetry_performer {
     name "Initech Poetry Performer"
-    desc "In lieu of decades-old magazines, the office has installed this poetry recitation device. If poetic material is supplied, it is automatically performed in the voice that is the most soulful and gripping for each listener in the room (as long as that happens to be Morgan Freeman's)."
+    desc "In lieu of decades-old magazines, the office has installed this poetry recitation device. If poetic material is supplied, it is automatically performed in the whichever voice the listener finds most soul-penetrating (as long as it happens to be Morgan Freeman's)."
     portable false
     location room b-a-office
     container state closed
