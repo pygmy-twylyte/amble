@@ -1,24 +1,30 @@
-// Project tasks configuration. See https://zed.dev/docs/tasks for documentation.
-//
-// Example:
 [
   {
-    "label": "Lint Amble",
-    "command": "cargo run --bin amble_script -- lint amble_script/data/Amble"
+    "label": "Refresh Amble Content",
+    "command": "cargo xtask content refresh"
   },
   {
-    "label": "Compile/Install Amble TOMLs",
-    "command": "cargo run --bin amble_script -- compile-dir amble_script/data/Amble --out-dir amble_engine/data --verbose && cp amble_script/data/Amble/intro.txt amble_engine/data && cp amble_script/data/Amble/player.toml amble_engine/data",
-    "shell": "system"
+    "label": "Run Engine (Debug, DEV_MODE on)",
+    "command": "cargo run --bin amble_engine --features dev-mode"
   },
   {
-    "label": "Run Amble Engine",
-    "command": "cargo run --bin amble_engine 2> amble.log",
-    "shell": "system"
+    "label": "Run Engine (Release, DEV_MODE off)",
+    "command": "cargo run --release --bin amble_engine"
   },
   {
-    "label": "Run Amble Tests",
-    "command": "cargo test --all",
-    "shell": "system"
+    "label": "Package Engine (Linux Release)",
+    "command": "cargo xtask package engine --profile release --target x86_64-unknown-linux-gnu --format zip"
+  },
+  {
+    "label": "Package Engine (Windows Release)",
+    "command": "cargo xtask package engine --profile release --target x86_64-pc-windows-gnu --format zip"
+  },
+  {
+    "label": "Package Suite (Linux Release, DEV_MODE on)",
+    "command": "cargo xtask package full --profile release --target x86_64-unknown-linux-gnu --dev-mode enabled --format zip"
+  },
+  {
+    "label": "Package Suite (Windows Release, DEV_MODE on)",
+    "command": "cargo xtask package full --profile release --target x86_64-pc-windows-gnu --dev-mode enabled --format zip"
   }
 ]
