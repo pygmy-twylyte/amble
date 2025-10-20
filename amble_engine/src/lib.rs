@@ -19,7 +19,11 @@
 //! from TOML configuration files rather than requiring code changes.
 
 pub const AMBLE_VERSION: &str = env!("CARGO_PKG_VERSION");
+#[cfg(feature = "dev-mode")]
 pub const DEV_MODE: bool = true;
+
+#[cfg(not(feature = "dev-mode"))]
+pub const DEV_MODE: bool = false;
 
 // Core modules
 pub mod command;

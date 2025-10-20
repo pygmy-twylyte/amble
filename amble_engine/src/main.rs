@@ -9,19 +9,88 @@ use amble_engine::style::GameStyle;
 use amble_engine::theme::init_themes;
 use amble_engine::{AMBLE_VERSION, WorldObject, load_world, run_repl};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use colored::Colorize;
-use env_logger::Env;
+use log::{LevelFilter, info, warn};
 use textwrap::{fill, termwidth};
 
-use log::{info, warn};
+use std::{
+    env,
+    fs::OpenOptions,
+    io::{BufWriter, Write},
+    path::PathBuf,
+};
 
-use std::io::Write;
+fn init_logging() -> Result<()> {
+    let raw_level = match env::var("AMBLE_LOG") {
+        Ok(value) => value,
+        Err(_) => return Ok(()),
+    };
+
+    let trimmed = raw_level.trim();
+    if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("off") {
+        return Ok(());
+    }
+
+    let level = trimmed
+        .parse::<LevelFilter>()
+        .map_err(|_| anyhow!("invalid AMBLE_LOG value '{trimmed}'. Expected one of error, warn, info, debug, trace"))?;
+
+    let mut builder = env_logger::Builder::new();
+    builder.filter_level(level);
+    builder.format_timestamp(None);
+
+    let output_choice = env::var("AMBLE_LOG_OUTPUT").unwrap_or_else(|_| "file".to_string());
+
+    match output_choice.to_ascii_lowercase().as_str() {
+        "stderr" => {
+            builder.target(env_logger::Target::Stderr);
+        },
+        "stdout" => {
+            builder.target(env_logger::Target::Stdout);
+        },
+        _ => {
+            let log_path = env::var_os("AMBLE_LOG_FILE")
+                .map(PathBuf::from)
+                .map(Ok)
+                .unwrap_or_else(|| default_log_path().context("determining default log file path"))?;
+
+            match OpenOptions::new()
+                .create(true)
+                .write(true)
+                .truncate(true)
+                .open(&log_path)
+            {
+                Ok(file) => {
+                    builder.target(env_logger::Target::Pipe(Box::new(BufWriter::new(file))));
+                    builder.write_style(env_logger::WriteStyle::Never);
+                },
+                Err(error) => {
+                    eprintln!(
+                        "AMBLE_LOG: failed to open log file {} ({error}). Falling back to stderr.",
+                        log_path.display()
+                    );
+                    builder.target(env_logger::Target::Stderr);
+                },
+            }
+        },
+    }
+
+    builder
+        .try_init()
+        .map_err(|err| anyhow!("failed to initialize logger: {err}"))?;
+
+    Ok(())
+}
+
+fn default_log_path() -> Result<PathBuf> {
+    let mut executable = env::current_exe().context("resolving current executable path")?;
+    executable.set_file_name(format!("amble-{AMBLE_VERSION}.log"));
+    Ok(executable)
+}
 
 fn main() -> Result<()> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
-        .format_timestamp(None)
-        .init();
+    init_logging()?;
     info!("Starting Amble engine (version {AMBLE_VERSION})");
     info!("Start: loading game world from files");
     let mut world = load_world().context("while loading AmbleWorld")?;
