@@ -24,6 +24,8 @@ pub struct ScoringRank {
 /// Wrapper for the TOML file containing scoring ranks.
 #[derive(Debug, Deserialize)]
 struct ScoringFile {
+    #[serde(default = "default_report_title")]
+    report_title: String,
     ranks: Vec<ScoringRank>,
 }
 
@@ -32,6 +34,8 @@ struct ScoringFile {
 pub struct ScoringConfig {
     /// Sorted list of ranks (highest threshold first)
     pub ranks: Vec<ScoringRank>,
+    /// Title displayed above the score summary
+    pub report_title: String,
 }
 
 impl ScoringConfig {
@@ -60,9 +64,7 @@ impl ScoringConfig {
 
 impl Default for ScoringConfig {
     fn default() -> Self {
-        Self {
-            ranks: default_scoring_ranks(),
-        }
+        default_scoring_config()
     }
 }
 
@@ -125,6 +127,17 @@ fn default_scoring_ranks() -> Vec<ScoringRank> {
     ]
 }
 
+fn default_report_title() -> String {
+    "Scorecard".to_string()
+}
+
+fn default_scoring_config() -> ScoringConfig {
+    ScoringConfig {
+        ranks: default_scoring_ranks(),
+        report_title: default_report_title(),
+    }
+}
+
 /// Loads scoring configuration from a TOML file, falling back to defaults on error.
 ///
 /// # Parameters
@@ -153,9 +166,7 @@ pub fn load_scoring(toml_path: &Path) -> ScoringConfig {
                 toml_path.display(),
                 e
             );
-            ScoringConfig {
-                ranks: default_scoring_ranks(),
-            }
+            default_scoring_config()
         },
     }
 }
@@ -180,7 +191,13 @@ fn try_load_scoring(toml_path: &Path) -> Result<ScoringConfig> {
             .unwrap_or(std::cmp::Ordering::Equal)
     });
 
-    Ok(ScoringConfig { ranks })
+    let report_title = if wrapper.report_title.trim().is_empty() {
+        default_report_title()
+    } else {
+        wrapper.report_title
+    };
+
+    Ok(ScoringConfig { ranks, report_title })
 }
 
 #[cfg(test)]
@@ -189,7 +206,7 @@ mod tests {
 
     #[test]
     fn test_default_ranks_are_sorted() {
-        let ranks = default_scoring_ranks();
+        let ranks = default_scoring_config().ranks;
         for i in 0..ranks.len() - 1 {
             assert!(
                 ranks[i].threshold >= ranks[i + 1].threshold,
@@ -200,9 +217,7 @@ mod tests {
 
     #[test]
     fn test_get_rank_exact_match() {
-        let config = ScoringConfig {
-            ranks: default_scoring_ranks(),
-        };
+        let config = default_scoring_config();
 
         let (name, _) = config.get_rank(100.0);
         assert_eq!(name, "Quantum Overachiever");
@@ -216,9 +231,7 @@ mod tests {
 
     #[test]
     fn test_get_rank_in_between() {
-        let config = ScoringConfig {
-            ranks: default_scoring_ranks(),
-        };
+        let config = default_scoring_config();
 
         let (name, _) = config.get_rank(92.5);
         assert_eq!(name, "Senior Field Operative");
@@ -232,9 +245,7 @@ mod tests {
 
     #[test]
     fn test_get_rank_edge_cases() {
-        let config = ScoringConfig {
-            ranks: default_scoring_ranks(),
-        };
+        let config = default_scoring_config();
 
         let (name, _) = config.get_rank(100.0);
         assert_eq!(name, "Quantum Overachiever");
@@ -266,6 +277,7 @@ mod tests {
                     description: "You tried.".to_string(),
                 },
             ],
+            report_title: "Results".into(),
         };
 
         let (name, desc) = config.get_rank(95.0);
@@ -285,8 +297,53 @@ mod tests {
     fn test_default_trait_provides_working_config() {
         let config = ScoringConfig::default();
         assert!(!config.ranks.is_empty());
+        assert_eq!(config.report_title, default_report_title());
 
         let (name, _) = config.get_rank(100.0);
         assert_eq!(name, "Quantum Overachiever");
+    }
+
+    #[test]
+    fn test_try_load_scoring_includes_title() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("scoring.toml");
+        std::fs::write(
+            &path,
+            r#"
+report_title = "Mission Debrief"
+
+[[ranks]]
+threshold = 0.0
+name = "Recruit"
+description = "Welcome aboard."
+"#,
+        )
+        .unwrap();
+
+        let config = load_scoring(&path);
+        assert_eq!(config.report_title, "Mission Debrief");
+        let (name, _) = config.get_rank(0.0);
+        assert_eq!(name, "Recruit");
+    }
+
+    #[test]
+    fn test_blank_report_title_falls_back_to_default() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("scoring.toml");
+        std::fs::write(
+            &path,
+            r#"
+report_title = "   "
+
+[[ranks]]
+threshold = 0.0
+name = "Cadet"
+description = "Placeholder."
+"#,
+        )
+        .unwrap();
+
+        let config = load_scoring(&path);
+        assert_eq!(config.report_title, default_report_title());
     }
 }

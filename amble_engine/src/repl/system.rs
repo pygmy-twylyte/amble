@@ -179,6 +179,7 @@ pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> 
     let visited = world.rooms.values().filter(|r| r.visited).count();
 
     view.push(ViewItem::QuitSummary {
+        title: world.scoring.report_title.clone(),
         rank: rank.to_string(),
         notes: eval.to_string(),
         score: world.player.score,
@@ -514,6 +515,7 @@ mod tests {
                     description: "Better luck next time.".to_string(),
                 },
             ],
+            report_title: "Test Scorecard".into(),
         };
 
         // Create test world with custom scoring

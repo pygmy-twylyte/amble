@@ -464,6 +464,7 @@ impl View {
 
     fn quit_summary(&mut self) {
         if let Some(ViewItem::QuitSummary {
+            title,
             rank,
             notes,
             score,
@@ -477,11 +478,7 @@ impl View {
         {
             let score_pct = 100.0 * (*score as f32 / *max_score as f32);
             let visit_pct = 100.0 * (*visited as f32 / *max_visited as f32);
-            println!(
-                "{:^width$}",
-                "CANDIDATE EVALUATION REPORT".black().on_yellow(),
-                width = termwidth()
-            );
+            println!("{:^width$}", title.as_str().black().on_yellow(), width = termwidth());
             println!("{:10} {}", "Rank:", rank.bright_cyan());
             println!("{:10} {}", "Notes:", notes.description_style());
             println!("{:10} {}/{} ({:.1}%)", "Score:", score, max_score, score_pct);
@@ -824,6 +821,7 @@ pub enum ViewItem {
     },
     PointsAwarded(isize),
     QuitSummary {
+        title: String,
         rank: String,
         notes: String,
         score: usize,

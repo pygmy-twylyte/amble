@@ -23,6 +23,8 @@
 #
 # If this file cannot be loaded, the game uses hardcoded default ranks.
 
+report_title = "Candidate Evaluation Report"
+
 [[ranks]]
 threshold = 99.0
 name = "Quantum Overachiever"
