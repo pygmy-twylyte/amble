@@ -2,14 +2,14 @@ use amble_script::{compile_rooms_to_toml, parse_rooms};
 
 #[test]
 fn overlay_npc_states_block_expands_to_multiple_overlays() {
-    let src = r#"room med-bay {
-  name "Med Bay"
-  desc "Clinical and spotless."
+    let src = r#"room triage-center {
+  name "Triage Center"
+  desc "Bright lights and organized supplies."
 
-  overlay if npc emh here {
-    normal "The EMH stands with professional detachment, awaiting your symptoms."
-    happy "The EMH smiles and hums a bright tune while adjusting the diagnostic displays."
-    custom(want-emitter) "The EMH fidgets restlessly, casting longing glances toward the door as if craving a mobile emitter."
+  overlay if npc holo_medic here {
+    normal "The holographic medic waits for instructions."
+    cheerful "The holographic medic hums a tune while checking the scanners."
+    custom(needs-calibration) "The holographic medic paces, requesting a recalibration module."
   }
 }
 "#;

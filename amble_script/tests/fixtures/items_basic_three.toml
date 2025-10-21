@@ -1,29 +1,29 @@
-# item no_cake (source line 1)
+# item sample_widget (source line 1)
 [[items]]
-id = "no_cake"
-name = "No Cake"
-description = "Absence of cake."
+id = "sample_widget"
+name = "Sample Widget"
+description = "Prototype component."
 portable = true
 location = { Inventory = "player" }
-# item portal_gun (source line 8)
+# item control_panel (source line 8)
 [[items]]
-id = "portal_gun"
-name = "Portal Gun"
-description = "A device."
+id = "control_panel"
+name = "Control Panel"
+description = "A sealed control panel."
 portable = false
-location = { Room = "portal-room" }
+location = { Room = "control-room" }
 container_state = "closed"
 
 [[items.abilities]]
 type = "TurnOn"
-# item lost_and_found_key (source line 17)
+# item maintenance_key (source line 17)
 [[items]]
-id = "lost_and_found_key"
-name = "Lost and Found Key"
-description = "A small brass key."
+id = "maintenance_key"
+name = "Maintenance Key"
+description = "A small bronze key."
 portable = true
-location = { Npc = "clerk" }
+location = { Npc = "attendant" }
 
 [[items.abilities]]
 type = "Unlock"
-target = "box"
+target = "cabinet"

@@ -1,18 +1,18 @@
-# room front-entrance (source line 1)
+# room plaza-hub (source line 1)
 [[rooms]]
-id = "front-entrance"
-name = "Front Entrance"
+id = "plaza-hub"
+name = "Plaza Hub"
 base_description = "..."
 location = "Nowhere"
 
 [[rooms.overlays]]
-conditions = [{ type = "npcPresent", npc_id = "cmot_dibbler" }, { type = "npcInState", npc_id = "cmot_dibbler", state = "happy" }]
-text = "Dibbler beams and offers a celebratory sausage-inna-bun."
+conditions = [{ type = "npcPresent", npc_id = "vendor" }, { type = "npcInState", npc_id = "vendor", state = "cheerful" }]
+text = "The vendor beams and offers you a complimentary sample."
 
 [[rooms.overlays]]
-conditions = [{ type = "npcInState", npc_id = "emh", state = { custom = "want-emitter" } }]
-text = "The EMH fidgets restlessly, craving a mobile emitter."
+conditions = [{ type = "npcInState", npc_id = "guide", state = { custom = "off-duty" } }]
+text = "The tour guide fidgets, clearly eager for their next assignment."
 
 [[rooms.overlays]]
-conditions = [{ type = "itemInRoom", item_id = "margarine", room_id = "st-alfonzo-parish" }]
-text = "On the pedestal sits a tub of margarine."
+conditions = [{ type = "itemInRoom", item_id = "brochure", room_id = "info-kiosk" }]
+text = "A stack of brochures waits patiently on the kiosk."

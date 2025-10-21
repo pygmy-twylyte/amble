@@ -1,21 +1,20 @@
-# room two-sheds-landing (source line 1)
+# room plaza-gate (source line 1)
 [[rooms]]
-id = "two-sheds-landing"
-name = "Jackson's Landing"
-base_description = "A quiet landing tucked along the slope..."
+id = "plaza-gate"
+name = "Plaza Gate"
+base_description = "A broad gateway leading into the central plaza."
 location = "Nowhere"
 
-[rooms.exits.up]
-to = "guard-post"
+[rooms.exits.north]
+to = "security-post"
 locked = true
-barred_message = "Need to clear the tree."
-required_items = ["machete", "gasoline"]
-required_flags = [{ type = "simple", name = "cleared-fallen-tree" }, { type = "simple", name = "other-flag" }]
+barred_message = "Access badge required."
+required_items = ["keycard", "access-form"]
+required_flags = [{ type = "simple", name = "clearance-granted" }, { type = "simple", name = "maintenance-inspection" }]
 
-[rooms.exits.down]
-to = "parish-landing"
+[rooms.exits.south]
+to = "shuttle-platform"
 
 [rooms.exits.east]
-to = "two-sheds"
-required_items = ["machete"]
-
+to = "gallery-corridor"
+required_items = ["keycard"]

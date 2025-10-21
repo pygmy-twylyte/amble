@@ -2,27 +2,27 @@ use amble_script::{compile_npcs_to_toml, parse_npcs};
 
 #[test]
 fn npcs_basic_golden() {
-    let src = r#"npc emh {
-  name "Emergency Medical Hologram"
-  desc "A holographic doctor."
-  location room med-bay
-  state custom want-emitter
-  movement random rooms (med-bay, lounge) timing every_3_turns active true
+    let src = r#"npc holo_medic {
+  name "Holographic Medic"
+  desc "A simulated emergency physician."
+  location room triage-center
+  state custom needs-calibration
+  movement random rooms (triage-center, commons) timing every_3_turns active true
   dialogue normal {
-    "Please state the nature of the medical emergency."
+    "Please describe the nature of your emergency."
   }
-  dialogue custom want-emitter {
-    "I need my mobile emitter."
+  dialogue custom needs-calibration {
+    "I require a calibration module to resume field operations."
   }
 }
 
-npc gonk_droid {
-  name "Gonk Droid"
-  desc "A walking battery charger."
-  location room main-lobby
+npc courier_bot {
+  name "Courier Bot"
+  desc "A walking delivery crate."
+  location room transit-hall
   state normal
-  movement route rooms (main-lobby, lounge) timing every_2_turns
-  dialogue normal { "GONK!" }
+  movement route rooms (transit-hall, commons) timing every_2_turns
+  dialogue normal { "Package routed." }
 }
 "#;
     let npcs = parse_npcs(src).expect("parse npcs ok");

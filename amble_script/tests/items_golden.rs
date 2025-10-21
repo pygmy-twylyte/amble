@@ -2,28 +2,28 @@ use amble_script::{compile_items_to_toml, parse_items};
 
 #[test]
 fn items_basic_golden() {
-    let src = r#"item no_cake {
-    name "No Cake"
-    desc "Absence of cake."
+    let src = r#"item sample_widget {
+    name "Sample Widget"
+    desc "Prototype component."
     portable true
     location inventory player
 }
 
-item portal_gun {
-    name "Portal Gun"
-    desc "A device."
+item control_panel {
+    name "Control Panel"
+    desc "A sealed control panel."
     portable false
     container state closed
-    location room portal-room
+    location room control-room
     ability TurnOn
 }
 
-item lost_and_found_key {
-    name "Lost and Found Key"
-    desc "A small brass key."
+item maintenance_key {
+    name "Maintenance Key"
+    desc "A small bronze key."
     portable true
-    location npc clerk
-    ability Unlock box
+    location npc attendant
+    ability Unlock cabinet
 }
 "#;
     let items = parse_items(src).expect("parse items ok");

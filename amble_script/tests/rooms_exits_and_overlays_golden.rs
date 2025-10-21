@@ -2,13 +2,13 @@ use amble_script::{compile_rooms_to_toml, parse_rooms};
 
 #[test]
 fn exits_with_options_golden() {
-    let src = r#"room two-sheds-landing {
-  name "Jackson's Landing"
-  desc "A quiet landing tucked along the slope..."
+    let src = r#"room plaza-gate {
+  name "Plaza Gate"
+  desc "A broad gateway leading into the central plaza."
 
-  exit up   -> guard-post { locked, barred "Need to clear the tree.", required_flags(cleared-fallen-tree, seq other-flag limit 3), required_items(machete, gasoline) }
-  exit down -> parish-landing
-  exit east -> two-sheds { required_items(machete) }
+  exit north -> security-post { locked, barred "Access badge required.", required_flags(clearance-granted, seq maintenance-inspection limit 2), required_items(keycard, access-form) }
+  exit south -> shuttle-platform
+  exit east -> gallery-corridor { required_items(keycard) }
 }
 "#;
     let rooms = parse_rooms(src).expect("parse rooms ok");
@@ -20,20 +20,20 @@ fn exits_with_options_golden() {
 
 #[test]
 fn overlays_multi_condition_and_custom_state_golden() {
-    let src = r#"room front-entrance {
-  name "Front Entrance"
+    let src = r#"room plaza-hub {
+  name "Plaza Hub"
   desc "..."
 
-  overlay if npc present cmot_dibbler, npc in state cmot_dibbler happy {
-    text "Dibbler beams and offers a celebratory sausage-inna-bun."
+  overlay if npc present vendor, npc in state vendor cheerful {
+    text "The vendor beams and offers you a complimentary sample."
   }
 
-  overlay if npc in state emh custom "want-emitter" {
-    text "The EMH fidgets restlessly, craving a mobile emitter."
+  overlay if npc in state guide custom "off-duty" {
+    text "The tour guide fidgets, clearly eager for their next assignment."
   }
 
-  overlay if item in room margarine st-alfonzo-parish {
-    text "On the pedestal sits a tub of margarine."
+  overlay if item in room brochure info-kiosk {
+    text "A stack of brochures waits patiently on the kiosk."
   }
 }
 "#;

@@ -1,37 +1,36 @@
 # NPCs basic golden
 [[npcs]]
-id = "emh"
-name = "Emergency Medical Hologram"
-description = "A holographic doctor."
-state = { custom = "want-emitter" }
+id = "holo_medic"
+name = "Holographic Medic"
+description = "A simulated emergency physician."
+state = { custom = "needs-calibration" }
 
 [npcs.location]
-Room = "med-bay"
+Room = "triage-center"
 
 [npcs.movement]
 movement_type = "random"
-rooms = ["med-bay", "lounge"]
+rooms = ["triage-center", "commons"]
 timing = "every_3_turns"
 active = true
 
 [npcs.dialogue]
-"normal" = ["Please state the nature of the medical emergency."]
-"custom:want-emitter" = ["I need my mobile emitter."]
+"normal" = ["Please describe the nature of your emergency."]
+"custom:needs-calibration" = ["I require a calibration module to resume field operations."]
 
 [[npcs]]
-id = "gonk_droid"
-name = "Gonk Droid"
-description = "A walking battery charger."
+id = "courier_bot"
+name = "Courier Bot"
+description = "A walking delivery crate."
 state = "normal"
 
 [npcs.location]
-Room = "main-lobby"
+Room = "transit-hall"
 
 [npcs.movement]
 movement_type = "route"
-rooms = ["main-lobby", "lounge"]
+rooms = ["transit-hall", "commons"]
 timing = "every_2_turns"
 
 [npcs.dialogue]
-"normal" = ["GONK!"]
-
+"normal" = ["Package routed."]

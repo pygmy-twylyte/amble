@@ -1,0 +1,9 @@
+# room observation-deck (source line 1)
+[[rooms]]
+id = "observation-deck"
+name = "Observation Deck"
+base_description = """
+A narrow platform overlooking the valley.
+
+Telescopes and weather instruments line the railing."""
+location = "Nowhere"

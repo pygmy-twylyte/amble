@@ -1,19 +1,18 @@
-# room med-bay (source line 1)
+# room triage-center (source line 1)
 [[rooms]]
-id = "med-bay"
-name = "Med Bay"
-base_description = "Clinical and spotless."
+id = "triage-center"
+name = "Triage Center"
+base_description = "Bright lights and organized supplies."
 location = "Nowhere"
 
 [[rooms.overlays]]
-conditions = [{ type = "npcPresent", npc_id = "emh" }, { type = "npcInState", npc_id = "emh", state = "normal" }]
-text = "The EMH stands with professional detachment, awaiting your symptoms."
+conditions = [{ type = "npcPresent", npc_id = "holo_medic" }, { type = "npcInState", npc_id = "holo_medic", state = "normal" }]
+text = "The holographic medic waits for instructions."
 
 [[rooms.overlays]]
-conditions = [{ type = "npcPresent", npc_id = "emh" }, { type = "npcInState", npc_id = "emh", state = "happy" }]
-text = "The EMH smiles and hums a bright tune while adjusting the diagnostic displays."
+conditions = [{ type = "npcPresent", npc_id = "holo_medic" }, { type = "npcInState", npc_id = "holo_medic", state = "cheerful" }]
+text = "The holographic medic hums a tune while checking the scanners."
 
 [[rooms.overlays]]
-conditions = [{ type = "npcPresent", npc_id = "emh" }, { type = "npcInState", npc_id = "emh", state = { custom = "want-emitter" } }]
-text = "The EMH fidgets restlessly, casting longing glances toward the door as if craving a mobile emitter."
-
+conditions = [{ type = "npcPresent", npc_id = "holo_medic" }, { type = "npcInState", npc_id = "holo_medic", state = { custom = "needs-calibration" } }]
+text = "The holographic medic paces, requesting a recalibration module."
