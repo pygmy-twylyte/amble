@@ -14,6 +14,8 @@ use rustyline::history::DefaultHistory;
 use rustyline::validate::{ValidationContext, ValidationResult, Validator};
 use rustyline::{Context, Helper};
 
+use crate::save_files::{SAVE_DIR, collect_save_slots};
+
 /// Outcome of reading a line from the REPL input.
 pub enum InputEvent {
     Line(String),
@@ -63,6 +65,9 @@ impl Completer for AmbleHelper {
             return Ok((start, Vec::new()));
         }
         let lower = prefix.to_lowercase();
+        if let Some((replacement_start, candidates)) = load_command_completions(&prefix, &lower, start) {
+            return Ok((replacement_start, candidates));
+        }
         let mut pairs = Vec::new();
         for term in COMMAND_TERMS.iter() {
             if term.starts_with(&lower) {
@@ -197,6 +202,82 @@ fn should_include(term: &str) -> bool {
     }
     let lower = normalized.to_lowercase();
     !EXCLUDED_TERMS.contains(&lower.as_str())
+}
+
+fn load_command_completions(prefix: &str, lower: &str, start: usize) -> Option<(usize, Vec<Pair>)> {
+    let keyword = if matches_keyword(lower, "load") {
+        "load"
+    } else if matches_keyword(lower, "reload") {
+        "reload"
+    } else {
+        return None;
+    };
+
+    if prefix.len() < keyword.len() {
+        return None;
+    }
+
+    let command_part = &prefix[..keyword.len()];
+    let after_keyword = &prefix[keyword.len()..];
+    let trimmed_after = after_keyword.trim_start();
+    let insertion_offset = prefix.len() - trimmed_after.len();
+    let slots = available_save_slots();
+
+    if after_keyword.is_empty() {
+        let mut pairs = Vec::new();
+        for slot in slots {
+            pairs.push(Pair {
+                display: format!("{command_part} {slot}"),
+                replacement: format!(" {}", slot),
+            });
+        }
+        return Some((start + prefix.len(), pairs));
+    }
+
+    let lower_partial = trimmed_after.to_lowercase();
+    let mut pairs = Vec::new();
+    for slot in slots
+        .into_iter()
+        .filter(|slot| lower_partial.is_empty() || slot.starts_with(&lower_partial))
+    {
+        pairs.push(Pair {
+            display: slot.clone(),
+            replacement: slot,
+        });
+    }
+    Some((start + insertion_offset, pairs))
+}
+
+fn matches_keyword(lower: &str, keyword: &str) -> bool {
+    if lower.len() < keyword.len() {
+        return false;
+    }
+    if lower == keyword {
+        return true;
+    }
+    if lower.starts_with(keyword) {
+        return lower.chars().nth(keyword.len()).map_or(false, char::is_whitespace);
+    }
+    false
+}
+
+fn available_save_slots() -> Vec<String> {
+    let dir = Path::new(SAVE_DIR);
+    match collect_save_slots(dir) {
+        Ok(slots) => {
+            let mut names = Vec::new();
+            for slot in slots {
+                if names.last().map_or(true, |last| last != &slot.slot) {
+                    names.push(slot.slot);
+                }
+            }
+            names
+        },
+        Err(err) => {
+            warn!("Failed to enumerate save slots for completion: {err}");
+            Vec::new()
+        },
+    }
 }
 
 /// Helper responsible for managing the interactive input backend.

@@ -27,6 +27,10 @@ command = "load <savegame>"
 description = "load a saved game"
 
 [[commands]]
+command = "saves"
+description = "list saved games with slot names and details"
+
+[[commands]]
 command = "save <savegame>"
 description = "save the game"
 

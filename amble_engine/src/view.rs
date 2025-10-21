@@ -10,6 +10,7 @@ use variantly::Variantly;
 
 use crate::helpers::plural_s;
 use crate::loader::help::HelpCommand;
+use crate::save_files::{SaveFileEntry, SaveFileStatus, format_modified};
 use crate::style::{GameStyle, indented_block, normal_block};
 
 const ICON_SUCCESS: &str = "\u{2611}"; // ✔
@@ -156,6 +157,7 @@ impl View {
 
     fn system(&mut self) {
         self.show_help();
+        self.saved_games();
         self.load_or_save();
         self.engine_message();
         self.quit_summary();
@@ -293,6 +295,73 @@ impl View {
 
         // Add spacing if any NPC events were displayed
         if has_events {
+            println!();
+        }
+    }
+
+    fn saved_games(&mut self) {
+        let Some((directory, entries)) = self.items.iter().find_map(|item| match item {
+            ViewItem::SavedGamesList { directory, entries } => Some((directory, entries)),
+            _ => None,
+        }) else {
+            return;
+        };
+
+        println!("{}", format!("Saved games in {directory}/").subheading_style());
+        if entries.is_empty() {
+            println!(
+                "    {}",
+                "No saved games found. Use `save <slot>` to create one.".italic()
+            );
+            println!();
+            return;
+        }
+
+        for entry in entries {
+            let slot_label = entry.slot.highlight();
+            let version_label = format!("[v{}]", entry.version).dimmed();
+            let header = if let Some(modified) = entry.modified {
+                format!(
+                    "  • {} {} — saved {}",
+                    slot_label,
+                    version_label,
+                    format_modified(modified).dimmed()
+                )
+            } else {
+                format!("  • {} {}", slot_label, version_label)
+            };
+            println!("{header}");
+
+            if let Some(summary) = &entry.summary {
+                let location = summary.player_location.as_deref().unwrap_or("Unknown location");
+                println!(
+                    "    Player: {} | Turn {} | Score {} | Location: {}",
+                    summary.player_name.as_str().highlight(),
+                    summary.turn_count,
+                    summary.score,
+                    location
+                );
+            } else {
+                println!("    {}", "Metadata unavailable for this save.".denied_style());
+            }
+
+            println!(
+                "    {}",
+                format!("load {}    [{directory}/{}]", entry.slot, entry.file_name).dimmed()
+            );
+
+            match &entry.status {
+                SaveFileStatus::Ready => {},
+                SaveFileStatus::VersionMismatch {
+                    save_version,
+                    current_version,
+                } => println!(
+                    "    {} {}",
+                    "Warning:".bold().yellow(),
+                    format!("saved with v{save_version}, current engine v{current_version}.").yellow()
+                ),
+                SaveFileStatus::Corrupted { message } => println!("    {} {}", "Error:".bold().red(), message.red()),
+            }
             println!();
         }
     }
@@ -720,6 +789,10 @@ pub enum ViewItem {
         save_slot: String,
         save_file: String,
     },
+    SavedGamesList {
+        directory: String,
+        entries: Vec<SaveFileEntry>,
+    },
     Help {
         basic_text: String,
         commands: Vec<HelpCommand>,
@@ -809,7 +882,8 @@ impl ViewItem {
             | ViewItem::EngineMessage(_)
             | ViewItem::Help { .. }
             | ViewItem::GameLoaded { .. }
-            | ViewItem::GameSaved { .. } => Section::System,
+            | ViewItem::GameSaved { .. }
+            | ViewItem::SavedGamesList { .. } => Section::System,
             ViewItem::TransitionMessage(_) => Section::Transition,
         }
     }

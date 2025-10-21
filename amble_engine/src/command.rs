@@ -32,6 +32,7 @@ pub enum Command {
         mode: IngestMode,
     },
     Inventory,
+    ListSaves,
     Load(String),
     LockItem(String),
     Look,
@@ -119,17 +120,37 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
         return command;
     }
 
+    let trimmed = lc_input.trim();
+    let mut words = trimmed.split_whitespace();
+    if let Some(first) = words.next() {
+        if first == "saves" && words.next().is_none() {
+            return Command::ListSaves;
+        }
+        if first == "list" {
+            if let Some(second) = words.next() {
+                if second == "saves" && words.next().is_none() {
+                    return Command::ListSaves;
+                }
+            }
+        }
+    }
+
     // parse gameplay commands; fall back to Unknown on parse failure
-    let mut pairs = match CommandParser::parse(Rule::command, &lc_input) {
+    let mut pairs = match CommandParser::parse(Rule::repl_input, &lc_input) {
         Ok(pairs) => pairs,
         Err(_) => return Command::Unknown,
     };
-    let Some(command) = pairs.next() else {
+    let Some(repl_input_pair) = pairs.next() else {
+        return Command::Unknown;
+    };
+    let mut inner = repl_input_pair.into_inner();
+    let Some(command) = inner.next() else {
         return Command::Unknown;
     };
     match command.as_rule() {
         Rule::EOI => Command::Unknown,
         Rule::inventory => Command::Inventory,
+        Rule::list_saves => Command::ListSaves,
         Rule::help => Command::Help,
         Rule::goals => Command::Goals,
         Rule::look => Command::Look,
@@ -361,6 +382,14 @@ mod tests {
         inputs
             .iter()
             .for_each(|input| assert_eq!(pc(input), Command::Inventory));
+    }
+
+    #[test]
+    fn parse_list_saves_command() {
+        let inputs = &["saves", "list saves"];
+        inputs
+            .iter()
+            .for_each(|input| assert_eq!(pc(input), Command::ListSaves));
     }
 
     #[test]

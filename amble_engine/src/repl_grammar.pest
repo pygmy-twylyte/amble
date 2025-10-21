@@ -24,7 +24,7 @@ switch_verb = _{ "turn" | "switch" | "flip" }
 go_verb = _{ ("go " ~ !"back") | "walk" | "move" | "climb" | "jog" | "run" }
 
 // simple commands - no objects
-simple     = _{ inventory | help | goals | look | quit | go_back | vm_clear | vm_verbose | vm_brief }
+simple     = _{ inventory | help | goals | look | quit | go_back | vm_clear | vm_verbose | vm_brief | list_saves }
 inventory  =  { "inventory" | "inv" }
 help       =  { "help" | "?" }
 goals      =  { "goals" | "goal" | "what" ~ ("next" | "now") ~ ("?")* }
@@ -34,6 +34,7 @@ go_back    =  { "back" | "go" ~ "back" }
 vm_clear   =  { "clear" }
 vm_verbose =  { "verbose" }
 vm_brief   =  { "brief" }
+list_saves =  { "saves" | ("list" ~ "saves") }
 
 // verb -> single object commands
 verb_obj = _{ look_at | load | save | take | drop | talk_to | turn_on | theme | close | lock | unlock | move_to | open | read | eat | drink | inhale | touch }

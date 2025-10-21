@@ -37,6 +37,7 @@ pub mod npc;
 pub mod player;
 pub mod repl;
 pub mod room;
+pub mod save_files;
 pub mod scheduler;
 pub mod spinners;
 pub mod style;

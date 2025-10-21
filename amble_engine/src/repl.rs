@@ -122,6 +122,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             LockItem(thing) => lock_handler(world, &mut view, thing)?,
             UnlockItem(thing) => unlock_handler(world, &mut view, thing)?,
             Inventory => inv_handler(world, &mut view)?,
+            ListSaves => list_saves_handler(&mut view),
             Unknown => {
                 view.push(ViewItem::Error(
                     world

@@ -64,6 +64,7 @@ use std::path::PathBuf;
 
 use crate::goal::GoalStatus;
 use crate::loader::help::{HelpCommand, load_help_data};
+use crate::save_files::{self, SAVE_DIR};
 use crate::style::GameStyle;
 use crate::theme::THEME_MANAGER;
 
@@ -439,6 +440,17 @@ pub fn goals_handler(world: &AmbleWorld, view: &mut View) {
     info!("{} checked goals status.", world.player.name());
 }
 
+/// Lists available save slots and their details.
+pub fn list_saves_handler(view: &mut View) {
+    match save_files::build_save_entries(Path::new(SAVE_DIR)) {
+        Ok(entries) => view.push(ViewItem::SavedGamesList {
+            directory: SAVE_DIR.to_string(),
+            entries,
+        }),
+        Err(err) => view.push(ViewItem::Error(format!("Unable to list saved games: {}", err))),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -630,42 +642,96 @@ pub fn filtered_goals(world: &AmbleWorld, status: GoalStatus) -> Vec<&Goal> {
 /// - Error details logged for debugging
 /// - Game continues with current state
 pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) {
-    let load_path = PathBuf::from("saved_games").join(format!("{gamefile}-amble-{AMBLE_VERSION}.ron"));
-    if let Ok(world_ron) = fs::read_to_string(load_path.as_path()) {
-        if let Ok(new_world) = ron::from_str::<AmbleWorld>(&world_ron) {
-            if new_world.version != AMBLE_VERSION {
-                warn!(
-                    "player loaded '{gamefile}' (v{}), current version is v{AMBLE_VERSION}",
-                    new_world.version
+    let save_dir = Path::new(SAVE_DIR);
+    let mut slots = match save_files::collect_save_slots(save_dir) {
+        Ok(slots) => slots,
+        Err(err) => {
+            view.push(ViewItem::Error(format!("Unable to inspect saved games: {}", err)));
+            return;
+        },
+    };
+
+    slots.retain(|slot| slot.slot == gamefile);
+    slots.sort_by(|a, b| b.modified.cmp(&a.modified).then(a.version.cmp(&b.version)));
+
+    let chosen_slot = slots
+        .iter()
+        .find(|slot| slot.version == AMBLE_VERSION)
+        .cloned()
+        .or_else(|| slots.first().cloned());
+
+    let (load_path, loaded_version_hint) = if let Some(slot) = chosen_slot {
+        (slot.path.clone(), Some(slot.version))
+    } else {
+        (save_dir.join(format!("{gamefile}-amble-{AMBLE_VERSION}.ron")), None)
+    };
+
+    match fs::read_to_string(load_path.as_path()) {
+        Ok(world_ron) => match ron::from_str::<AmbleWorld>(&world_ron) {
+            Ok(new_world) => {
+                if new_world.version != AMBLE_VERSION {
+                    warn!(
+                        "player loaded '{gamefile}' (v{}), current version is v{AMBLE_VERSION}",
+                        new_world.version
+                    );
+                    view.push(ViewItem::Error(format!(
+                        "{}: '{gamefile}' version is v{} -- does not match current game (v{AMBLE_VERSION}).",
+                        "WARNING".bold().yellow(),
+                        new_world.version.error_style(),
+                    )));
+                } else if let Some(original_version) = loaded_version_hint.filter(|version| version != AMBLE_VERSION) {
+                    info!(
+                        "Loaded '{gamefile}' saved under v{original_version}, metadata indicates current version match."
+                    );
+                }
+                *world = new_world;
+                view.push(ViewItem::ActionSuccess(format!(
+                    "Saved game {} (v{}) loaded successfully. Sally forth.",
+                    gamefile.underline().green(),
+                    world.version.highlight()
+                )));
+                view.push(ViewItem::GameLoaded {
+                    save_slot: gamefile.to_string(),
+                    save_file: load_path.to_string_lossy().to_string(),
+                });
+                info!(
+                    "Player reloaded AmbleWorld from file '{}' (version {})",
+                    load_path.display(),
+                    world.version
                 );
+            },
+            Err(err) => {
+                view.push(ViewItem::ActionFailure(format!(
+                    "Unable to load the {} save file. The Amble engine may have changed since it was created ({}).",
+                    gamefile.error_style(),
+                    err
+                )));
+                warn!(
+                    "player attempted to load '{gamefile}' from '{}': parse failure ({err})",
+                    load_path.display()
+                );
+            },
+        },
+        Err(err) => {
+            if err.kind() == std::io::ErrorKind::NotFound {
                 view.push(ViewItem::Error(format!(
-                    "{}: '{gamefile}' version is v{} -- does not match current game (v{AMBLE_VERSION}).",
-                    "WARNING".bold().yellow(),
-                    new_world.version.error_style(),
+                    "Unable to find {} save file. Load aborted. Type {} to list available saves.",
+                    gamefile.error_style(),
+                    "`saves`".highlight()
+                )));
+            } else {
+                view.push(ViewItem::ActionFailure(format!(
+                    "Unable to load the {} save file ({}).",
+                    gamefile.error_style(),
+                    err
                 )));
             }
-            *world = new_world;
-            view.push(ViewItem::ActionSuccess(format!(
-                "Saved game {} loaded successfully. Sally forth.",
-                gamefile.underline().green()
-            )));
-            view.push(ViewItem::GameLoaded {
-                save_slot: gamefile.to_string(),
-                save_file: load_path.to_string_lossy().to_string(),
-            });
-            info!("Player reloaded AmbleWorld from file '{}'", load_path.display());
-        } else {
-            view.push(ViewItem::ActionFailure(format!(
-                "Unable to load the {} save file. The Amble engine may have changed since it was created.",
-                gamefile.error_style()
-            )));
-            warn!("player attempted to load '{gamefile}': failed to parse, likely version conflict");
-        }
-    } else {
-        view.push(ViewItem::Error(format!(
-            "Unable to find {} save file. Load aborted.",
-            gamefile.error_style()
-        )));
+            warn!(
+                "player attempted to load '{gamefile}' from '{}': {}",
+                load_path.display(),
+                err
+            );
+        },
     }
 }
 
@@ -728,10 +794,10 @@ pub fn save_handler(world: &AmbleWorld, view: &mut View, gamefile: &str) -> Resu
         ron::ser::to_string(world).with_context(|| "error converting AmbleWorld to 'ron' format".to_string())?;
 
     // create save dir if doesn't exist
-    fs::create_dir_all("saved_games").with_context(|| "error creating saved_games folder".to_string())?;
+    fs::create_dir_all(SAVE_DIR).with_context(|| "error creating saved_games folder".to_string())?;
 
     // create save file
-    let save_path = PathBuf::from("saved_games").join(format!("{gamefile}-amble-{AMBLE_VERSION}.ron"));
+    let save_path = PathBuf::from(SAVE_DIR).join(format!("{gamefile}-amble-{AMBLE_VERSION}.ron"));
     let mut save_file =
         fs::File::create(save_path.as_path()).with_context(|| format!("creating file '{}'", save_path.display()))?;
 
