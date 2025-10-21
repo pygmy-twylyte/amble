@@ -86,6 +86,8 @@ pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     })?;
 
     if let Some(previous_room_id) = world.player.go_back() {
+        world.player_path.push(previous_room_id);
+
         let travel_message = world.spin_core(CoreSpinnerType::Movement, "You retrace your steps...");
 
         let previous_room = world
@@ -123,15 +125,14 @@ pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
 /// Attempts to move the player in the specified direction.
 ///
 /// This is the main movement handler that validates and executes player movement
-/// between rooms. It performs comprehensive validation of exit conditions and
-/// requirements before allowing movement, and handles all the associated game
-/// state updates and trigger effects.
+/// between rooms. It checks exit conditions and requirements before allowing movement,
+/// and handles all the associated game state updates and trigger effects.
 ///
 /// # Parameters
 ///
-/// * `world` - Mutable reference to the game world containing rooms and player state
-/// * `view` - Mutable reference to the player's view for feedback messages and room display
-/// * `input_dir` - Direction string from player input (e.g., "north", "n", "up")
+/// * `world` - Mutable reference to the game world
+/// * `view` - Mutable reference to the display module
+/// * `input_dir` - Direction string from player input (e.g., "north", "up the ladder")
 ///
 /// # Returns
 ///
@@ -226,7 +227,11 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
             // we've met all of the requirements to move now
             // update player's location using the new history-tracking method
             let destination_id = destination_exit.to;
+            // add to player's short history (5 max) for go_back command
             world.player.move_to_room(destination_id);
+            // add to complete player path history
+            world.player_path.push(destination_id);
+
             let new_room = world
                 .rooms
                 .get(&destination_id)

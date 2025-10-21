@@ -63,6 +63,7 @@ use std::io::Write;
 use std::path::PathBuf;
 
 use crate::goal::GoalStatus;
+use crate::helpers::symbol_or_unknown;
 use crate::loader::help::{HelpCommand, load_help_data};
 use crate::save_files::{self, SAVE_DIR};
 use crate::style::GameStyle;
@@ -162,6 +163,13 @@ pub fn set_viewmode_handler(view: &mut View, mode: ViewMode) {
 /// and puzzle-solving success.
 pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> {
     info!("$$ {} quit with a score of {}", world.player.name(), world.player.score);
+    let path: Vec<_> = world
+        .player_path
+        .iter()
+        .map(|uuid| symbol_or_unknown(&world.rooms, *uuid))
+        .collect();
+    let path_str = path.join(" > ");
+    info!("$$ PATH ({} moves): {path_str}", path.len().saturating_sub(1));
     info!("$$ FLAGS:");
     world.player.flags.iter().for_each(|i| info!("$$ -> {i}"));
     info!("$$ INVENTORY:");
