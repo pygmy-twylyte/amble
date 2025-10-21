@@ -62,17 +62,32 @@ pub trait WorldObject {
 /// throughout gameplay.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AmbleWorld {
+    /// Rooms or areas that define the game world
     pub rooms: HashMap<Uuid, Room>,
+    /// Inanimate objects
     pub items: HashMap<Uuid, Item>,
+    /// Actions that fire in response to events or changes in world state
     pub triggers: Vec<Trigger>,
+    /// The player character
     pub player: Player,
+    /// History of the player's path since the beginning of the game (Room UUIDs)
+    #[serde(default)]
+    pub player_path: Vec<Uuid>,
+    /// Text / phrase randomizers for ambient events, status effects, and to keep engine messages from being repetitive
     pub spinners: HashMap<SpinnerType, Spinner<String>>,
+    /// Non-playable characters
     pub npcs: HashMap<Uuid, Npc>,
+    /// The maximum achieveable score in the game
     pub max_score: usize,
+    /// Goals or achievements to guide player progress
     pub goals: Vec<Goal>,
+    /// Configuration for final scoring report when player quits the game
     pub scoring: ScoringConfig,
+    /// The Amble engine version for the current build
     pub version: String,
+    /// Number of turns taken so far
     pub turn_count: usize,
+    /// The Event Scheduler -- schedules conditional events for future game turns
     pub scheduler: Scheduler,
 }
 impl AmbleWorld {
@@ -84,6 +99,7 @@ impl AmbleWorld {
             items: HashMap::new(),
             triggers: Vec::new(),
             player: Player::default(),
+            player_path: Vec::new(),
             spinners: HashMap::new(),
             max_score: 0,
             goals: Vec::new(),

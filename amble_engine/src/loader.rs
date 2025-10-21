@@ -118,6 +118,13 @@ pub fn load_world() -> Result<AmbleWorld> {
         .get("Room")
         .ok_or_else(|| anyhow!("failed extraction of start room token id"))?;
     world.player = build_player(&raw_player, &mut symbols).context("while building player from raw player")?;
+    world.player_path.push(
+        world
+            .player
+            .location
+            .room_id()
+            .context("player start location is not a room")?,
+    );
     info!(
         "player \"{}\" added to AmbleWorld at {}",
         world.player.name(),
