@@ -5,11 +5,11 @@
   },
   {
     "label": "Run Engine (Debug, DEV_MODE on)",
-    "command": "cargo run --bin amble_engine --features dev-mode"
+    "command": "AMBLE_LOG=info cargo run --bin amble_engine --features dev-mode"
   },
   {
     "label": "Run Engine (Release, DEV_MODE off)",
-    "command": "cargo run --release --bin amble_engine"
+    "command": "AMBLE_LOG=info cargo run --release --bin amble_engine"
   },
   {
     "label": "Package Engine (Linux Release)",
