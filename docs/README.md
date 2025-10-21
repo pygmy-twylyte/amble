@@ -1,4 +1,5 @@
 # Amble
+![Amble Logo](amble_logo.png)
 
 ## How It Started
 
