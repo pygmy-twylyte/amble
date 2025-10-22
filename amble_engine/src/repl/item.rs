@@ -108,6 +108,7 @@ pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) ->
             world.spin_core(CoreSpinnerType::NoEffect, "That has no discernable effect."),
         ));
     }
+    world.turn_count += 1;
     Ok(())
 }
 
@@ -205,6 +206,7 @@ pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, m
         world.player.name(),
         symbol_or_unknown(&world.items, item_id)
     );
+    world.turn_count += 1;
     Ok(())
 }
 /// Uses one item on another item with a specific type of interaction.
@@ -304,6 +306,7 @@ pub fn use_item_on_handler(
             tool.name(),
             tool.symbol()
         );
+        world.turn_count += 1;
         return Ok(());
     }
     // do the interaction as appropriate
@@ -382,6 +385,7 @@ pub fn use_item_on_handler(
             }
         }
     }
+    world.turn_count += 1;
     Ok(())
 }
 /// Activates an item if it has the ability to be turned on.
@@ -460,7 +464,9 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
         }
     } else {
         entity_not_found(world, view, item_pattern);
+        return Ok(());
     }
+    world.turn_count += 1;
     Ok(())
 }
 
@@ -566,6 +572,7 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
             },
         }
     }
+    world.turn_count += 1;
     Ok(())
 }
 
@@ -654,6 +661,7 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
             },
         }
     }
+    world.turn_count += 1;
     Ok(())
 }
 
@@ -736,6 +744,7 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
             },
         }
     }
+    world.turn_count += 1;
     Ok(())
 }
 
@@ -852,6 +861,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
                 }
             },
         }
+        world.turn_count += 1;
     }
     Ok(())
 }

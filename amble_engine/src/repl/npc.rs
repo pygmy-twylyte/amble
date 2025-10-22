@@ -159,6 +159,7 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
             }
         }
     }
+    world.turn_count += 1;
     Ok(())
 }
 
@@ -325,5 +326,6 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
             symbol_or_unknown(&world.items, item_id)
         );
     }
+    world.turn_count += 1;
     Ok(())
 }

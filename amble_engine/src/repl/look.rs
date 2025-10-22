@@ -72,7 +72,11 @@ pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
         room.name(),
         room.symbol()
     );
+    // Though "look" (at surroundings) doesn't generate an event, we still want ambient
+    // and other non-event-driven triggers to fire -- so we check triggers with an empty
+    // list of TriggerConditions.
     let _fired = check_triggers(world, view, &[]);
+    world.turn_count += 1;
     Ok(())
 }
 
@@ -98,7 +102,9 @@ pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> 
         }
     } else {
         entity_not_found(world, view, thing);
+        return Ok(());
     }
+    world.turn_count += 1;
     Ok(())
 }
 
@@ -177,10 +183,11 @@ pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                 .with_context(|| format!("item_id ({item_id}) not found in world items"))?;
 
             view.push(ViewItem::ItemText(
-                item.text.clone().unwrap_or("(Nothing legible.)".to_string()),
+                item.text.clone().unwrap_or_else(|| "(Nothing legible.)".to_string()),
             ));
             info!("{} read '{}' ({})", world.player.name(), item.name(), item.symbol());
         }
     }
+    world.turn_count += 1;
     Ok(())
 }

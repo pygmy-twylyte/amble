@@ -113,6 +113,7 @@ pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
                 TriggerCondition::Enter(previous_room_id),
             ],
         )?;
+        world.turn_count += 1;
     } else {
         view.push(ViewItem::ActionFailure(
             "You haven't been anywhere else yet.".to_string(),
@@ -288,6 +289,7 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
                 unmet_flags,
             );
         }
+        world.turn_count += 1;
     }
     Ok(())
 }

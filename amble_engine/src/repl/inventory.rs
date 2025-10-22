@@ -94,6 +94,7 @@ use uuid::Uuid;
 pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     if let Some(entity) = find_world_object(&world.player.inventory, &world.items, &world.npcs, thing) {
         if let Some(item) = entity.item() {
+            world.turn_count += 1;
             let item_id = item.id();
             let room_id = world.player_room_ref()?.id();
             if item.portable {
@@ -195,6 +196,9 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
             );
         }
         if let Some(item) = entity.item() {
+            // counts as a turn even if action fails due to game-world reason (restricted, not portable, requires special handling)
+            world.turn_count += 1;
+
             // check to make sure special handling isn't necessary
             if let Some(ability) = item.requires_capability_for(ItemInteractionType::Handle) {
                 view.push(ViewItem::ActionFailure(format!(
@@ -391,6 +395,7 @@ pub fn take_from_handler(
             validate_and_transfer_from_npc(world, view, item_pattern, vessel_id, &vessel_name)?;
         },
     }
+    world.turn_count += 1;
     Ok(())
 }
 
@@ -689,6 +694,7 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
             if let Some(item) = entity.item() {
                 if let Some(reason) = item.take_denied_reason() {
                     view.push(ViewItem::ActionFailure(reason));
+                    world.turn_count += 1;
                     return Ok(());
                 }
                 (item.id(), item.name().to_string())
@@ -709,6 +715,7 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
                     view.push(ViewItem::ActionFailure(format!(
                         "{reason} You can't put anything in it."
                     )));
+                    world.turn_count += 1;
                     return Ok(());
                 }
                 (vessel.id(), vessel.name().to_string())
@@ -760,6 +767,7 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
             TriggerCondition::Drop(item_id),
         ],
     )?;
+    world.turn_count += 1;
     Ok(())
 }
 

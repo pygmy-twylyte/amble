@@ -48,17 +48,20 @@ pub enum ReplControl {
 /// Run the main command loop for the game.
 /// # Errors
 /// - Returns an error if unable to resolve the location (Room) of the player
-/// - Returns an error if unable to flush stdout
-///
-/// # Panics
-/// This function does not expect to panic.
 pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     use Command::*;
     let mut view = View::new();
 
     let mut input_manager = InputManager::new();
-
+    let mut current_turn = 0;
+    world.turn_count = 1;
     loop {
+        if world.turn_count > current_turn {
+            current_turn += 1;
+            info!("================> BEGIN TURN {current_turn} <================");
+        }
+
+        // collect status effects for prompt insertion
         let mut status_effects = String::new();
         for status in world.player.status() {
             let s = format!(" [{}]", status.status_style());
@@ -96,7 +99,6 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         }
 
         let command = parse_command(&input, &mut view);
-
         match &command {
             Touch(thing) => touch_handler(world, &mut view, thing)?,
             SetViewMode(mode) => set_viewmode_handler(&mut view, *mode),
@@ -141,6 +143,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             UseItemOn { verb, tool, target } => {
                 use_item_on_handler(world, &mut view, *verb, tool, target)?;
             },
+            Ingest { item, mode } => ingest_handler(world, &mut view, item, *mode)?,
             // Commands below only available when crate::DEV_MODE is enabled.
             SpawnItem(item_symbol) => dev_spawn_item_handler(world, &mut view, item_symbol),
             Teleport(room_symbol) => dev_teleport_handler(world, &mut view, room_symbol),
@@ -153,44 +156,15 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             ResetSeq(seq_name) => dev_reset_seq_handler(world, &mut view, seq_name),
             SetFlag(flag_name) => dev_set_flag_handler(world, &mut view, flag_name),
             StartSeq { seq_name, end } => dev_start_seq_handler(world, &mut view, seq_name, end),
-            Ingest { item, mode } => ingest_handler(world, &mut view, item, *mode)?,
         }
-        // We'll update turn count here in a centralized way, but this approach does not
-        // take into account commands that return Ok(()) after failing to match a string.
-        // Example: "take zpoon" (meant "spoon") -> "What's a zpoon?" response --> Ok(()).
-        // That will count as a turn even though it's a no-op. If more granularity is needed,
-        // individual command handlers will need to be modified.
-        //
-        // Only commands / actions that may be part of what's required to solve a puzzle or advance
-        // the game count as a turn.
-        let turn_taken = matches!(
-            command,
-            Close(_)
-                | Drop(_)
-                | GiveToNpc { .. }
-                | Ingest { .. }
-                | LookAt(_)
-                | LockItem(_)
-                | MoveTo(_)
-                | Open(_)
-                | PutIn { .. }
-                | Read(_)
-                | Take(_)
-                | TakeFrom { .. }
-                | TalkTo(_)
-                | Touch(_)
-                | TurnOn(_)
-                | UnlockItem(_)
-                | UseItemOn { .. }
-        );
 
-        if turn_taken {
-            world.turn_count += 1;
-            info!("============> BEGIN TURN {} <============", world.turn_count);
+        // move NPCs and fire schedule events only if turn was advanced
+        if world.turn_count > current_turn {
             check_npc_movement(world, &mut view)?;
             check_scheduled_events(world, &mut view)?;
         }
 
+        // ambients fire regardless of whether a turn was taken
         check_ambient_triggers(world, &mut view)?;
         view.flush();
     }
