@@ -6,6 +6,12 @@
 room patio {
     name "BLINDING GLARE"
     desc "You see almost nothing at all, except for a momentary glimpse of a few scattered details before you are blinded. The pure white light here is stare-into-the-sun bright and seems to come from all directions, forcing you to shield your eyes with your arm and flee."
+    overlay if player has item peril_sunglasses, flag set patio-gate-open {
+        text "The Stargate shimmers off to the side by the kitchen door, its connection to the laboratory still open."
+    }
+    overlay if player has item peril_sunglasses, flag unset patio-gate-open {
+        text "A large metallic ring stands by the kitchen door. It might be a backdrop for weddings, but it's covered in hieroglyphs and other odd symbols -- none of them rings, hearts, doves, or branding irons."
+    }
     exit west -> restaurant
 }
 # Triggers alter room appearance when the sunglasses are taken or dropped
@@ -51,6 +57,13 @@ item plaque_3 {
 # ========================================
 # Triggers
 # ========================================
+
+trigger "[Plaque 3] Read the Plaque" only once
+when use item plaque_3 ability read {
+    do add flag read-plaque-3
+    do award points 10
+}
+
 trigger "[Patio] Sunglasses Required" when enter room patio {
     if missing item peril_sunglasses {
         do push player to restaurant

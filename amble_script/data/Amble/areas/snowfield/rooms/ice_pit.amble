@@ -5,6 +5,10 @@
 room ice-pit {
     name "Abysmal Ice Pit"
     desc "The bottom of a deep, sheer ice shaft seemingly dug for some kind of arctic research -- though you were nowhere near the Arctic Circle, last you checked. You're just able to see in the dim light filtering down from the tiny window to the surface above."
+    overlay if flag snowfield-gate-open {
+        set "The center of the Stargate shimmers and phases, still connected to the room back at the Aperture Laboratory."
+        unset "A dark metallic ring the size of two sheds stands where it appears to have been chiseled from the ice some time ago."
+    }
     overlay if item present plaque_2_frozen {
         text "A slightly larger than human-sized pillar of ice rises from the floor near one end of the excavated area."
     }

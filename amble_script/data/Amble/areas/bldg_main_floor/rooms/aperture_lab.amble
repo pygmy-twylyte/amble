@@ -21,6 +21,7 @@ room aperture-lab {
         text "A glowing, steaming, sizzling invitation engraved on an asbestos sheet sits on the floor in front of the printer."
     }
     exit "through the portal" -> portal-room
+    exit "into the vault" -> stargate-room
 }
 
 # ========================================
