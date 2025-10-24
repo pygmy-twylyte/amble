@@ -471,10 +471,9 @@ fn apply_room_patch(world: &mut AmbleWorld, room_id: Uuid, patch: &RoomPatch) ->
                 removal_plan.push((direction, *target_room_id));
             } else {
                 let target_sym = symbol_or_unknown(&world.rooms, *target_room_id);
-                bail!(
+                warn!(
                     "modifyRoom patch attempted to remove exit to '{}' but room '{}' has no such exit",
-                    target_sym,
-                    room_ref.symbol
+                    target_sym, room_ref.symbol
                 );
             }
         }
