@@ -2088,7 +2088,9 @@ mod tests {
     }
 
     #[test]
-    fn modify_room_missing_exit_errors() {
+    fn modify_room_missing_exit_ok() {
+        // attempt to remove a non-existent exit should fail silently (with a log warning),
+        // not panic
         let mut world = AmbleWorld::new_empty();
         let room_id = Uuid::new_v4();
         world.rooms.insert(
@@ -2111,8 +2113,7 @@ mod tests {
             remove_exits: vec![missing_exit_target],
             ..Default::default()
         };
-        let err = modify_room(&mut world, room_id, &patch).expect_err("expected failure");
-        assert!(err.to_string().contains("has no such exit"), "unexpected error: {err}");
+        assert!(modify_room(&mut world, room_id, &patch).is_ok());
     }
 
     fn make_item(id: Uuid, location: Location, container_state: Option<ContainerState>) -> Item {
