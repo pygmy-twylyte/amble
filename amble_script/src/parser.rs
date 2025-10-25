@@ -1,3 +1,8 @@
+//! Parser and AST builders for the Amble DSL.
+//!
+//! Wraps the Pest-generated grammar with helpers that construct the
+//! compiler's abstract syntax tree for triggers, rooms, items, and more.
+
 use pest::Parser;
 use pest_derive::Parser as PestParser;
 

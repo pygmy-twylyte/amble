@@ -1,4 +1,7 @@
-//! Trigger loader submodule for `RawTriggerActions`
+//! Raw trigger action translation.
+//!
+//! Converts deserialized trigger actions from TOML into strongly typed
+//! engine actions, performing symbol to UUID resolution and validation.
 
 use anyhow::{Result, bail};
 use serde::Deserialize;

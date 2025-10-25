@@ -1,4 +1,7 @@
-//! module `loader::goals`
+//! Goal loader for TOML content.
+//!
+//! Parses goal definitions from disk and converts them into runtime
+//! structures, resolving symbols against the global table.
 
 use std::{fs, path::Path};
 

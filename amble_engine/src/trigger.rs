@@ -1,7 +1,7 @@
-//! Trigger module --
+//! Trigger orchestration and dispatch.
 //!
-//! Upon each run through the REPL loop, world Triggers are checked.
-//! If all of a Trigger's `TriggerConditions` are met, a series of `TriggerActions` are fired.
+//! Coordinates evaluation of trigger conditions and executes the associated
+//! actions when criteria are satisfied during the REPL loop.
 
 pub mod action;
 pub mod condition;

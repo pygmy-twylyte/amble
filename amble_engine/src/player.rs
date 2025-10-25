@@ -1,4 +1,7 @@
-//! Player -- module for a player in Amble
+//! Player state representation and flag management.
+//!
+//! Defines the player struct plus helpers for manipulating inventory,
+//! location history, and progression flags.
 use crate::{ItemHolder, Location, WorldObject};
 
 use log::{info, warn};

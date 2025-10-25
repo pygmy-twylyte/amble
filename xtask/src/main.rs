@@ -1,3 +1,8 @@
+//! Project automation entry point.
+//!
+//! Implements the `xtask` command-line helpers for building, packaging,
+//! and managing Amble development workflows.
+
 use std::{
     ffi::OsStr,
     fs,

@@ -2,8 +2,10 @@
 #![allow(clippy::must_use_candidate)]
 #![allow(clippy::missing_errors_doc)]
 
-//! ** Amble **
-//! Adventure game / engine project
+//! Command-line launcher for the Amble engine.
+//!
+//! Handles CLI startup, logging configuration, and world loading before
+//! entering the interactive REPL.
 
 use amble_engine::style::GameStyle;
 use amble_engine::theme::init_themes;

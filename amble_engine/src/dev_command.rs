@@ -1,6 +1,7 @@
-//! `dev_command.rs`
+//! Developer-mode command parsing.
 //!
-//! Implements commands only to be used in developer mode.
+//! Recognizes colon-prefixed commands that expose debugging / play-testing tools when
+//! `DEV_MODE` is enabled.
 
 use log::warn;
 

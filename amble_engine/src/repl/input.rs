@@ -1,3 +1,8 @@
+//! Terminal input handling for the Amble REPL.
+//!
+//! Wraps rustyline configuration, validation, and completion tailored to
+//! the engine's command set and save-file workflow.
+
 use std::fs;
 use std::io::{self, IsTerminal, Write};
 use std::path::{Path, PathBuf};

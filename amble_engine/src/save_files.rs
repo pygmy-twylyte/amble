@@ -1,3 +1,8 @@
+//! Save-game discovery and serialization helpers.
+//!
+//! Provides file management utilities for listing, loading, and writing
+//! player save slots with version awareness.
+
 use crate::{AMBLE_VERSION, AmbleWorld, Location, WorldObject};
 use anyhow::{Context, Result};
 use log::warn;

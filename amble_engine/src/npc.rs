@@ -1,4 +1,7 @@
-//! NPC Module
+//! Non-player character definitions and behavior helpers.
+//!
+//! Contains the runtime NPC data model alongside dialogue, movement,
+//! and interaction utilities.
 
 use anyhow::{Context, Result, bail};
 use log::{info, warn};

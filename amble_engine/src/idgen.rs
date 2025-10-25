@@ -1,6 +1,8 @@
-//! ** idgen module **
-//! Contains namespaces and helpers for generating stable v5 uuids for loaded `WorldObjects`.
-//! Dynamically generated / named `WorldObjects` use v4 (random) UUIDs instead.
+//! Deterministic UUID generation for world objects.
+//!
+//! Provides namespaced v5 UUID helpers so content authored in TOML maps to
+//! stable identifiers at runtime. No transient/ephemeral object generation is yet supported,
+//! but they would use v4 UUIDs if implemented. 
 use uuid::Uuid;
 
 pub const NAMESPACE_ROOM: Uuid = uuid::uuid!("26dc1968-c645-4f5c-915a-400e06bd361c");

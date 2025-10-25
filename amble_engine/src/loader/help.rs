@@ -1,4 +1,7 @@
-//! module `loader::help`
+//! Help text loader.
+//!
+//! Reads help metadata from TOML and converts it into the structures
+//! used by the in-game help system.
 
 use std::{fs, path::Path};
 

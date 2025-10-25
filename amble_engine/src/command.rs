@@ -1,6 +1,7 @@
-//! Command module
+//! Player command parsing and representation.
 //!
-//! Describes possible commands used during gameplay.
+//! Defines the command vocabulary understood by the REPL, including
+//! parsing helpers that convert raw input into strongly typed commands.
 
 use std::fmt::Display;
 
