@@ -170,7 +170,7 @@ impl AmbleWorld {
 /// Collect all item UUIDs visible within a `Room` according to a predicate.
 ///
 /// Items stored directly in the room are always included. Contents of containers are only
-/// traversed if the supplied `should_include_contents` function returns `true` for the 
+/// traversed if the supplied `should_include_contents` function returns `true` for the
 /// container item (typically when it either is open or transparent).
 fn collect_room_items(
     world: &AmbleWorld,
