@@ -193,6 +193,11 @@ pub enum ActionAst {
         room: String,
         patch: RoomPatchAst,
     },
+    /// Apply an NPC patch to mutate npc fields atomically.
+    ModifyNpc {
+        npc: String,
+        patch: NpcPatchAst,
+    },
     /// Spawn an item into a room.
     SpawnItemIntoRoom {
         item: String,
@@ -351,6 +356,40 @@ pub struct RoomExitPatchAst {
     pub barred_message: Option<String>,
     pub required_flags: Vec<String>,
     pub required_items: Vec<String>,
+}
+
+/// NPC dialogue line update used inside a `modify npc` action.
+#[derive(Debug, Clone, PartialEq)]
+pub struct NpcDialoguePatchAst {
+    pub state: NpcStateValue,
+    pub line: String,
+}
+
+/// Movement timing update for an NPC.
+#[derive(Debug, Clone, PartialEq)]
+pub enum NpcTimingPatchAst {
+    EveryNTurns(usize),
+    OnTurn(usize),
+}
+
+/// Movement configuration updates for an NPC.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct NpcMovementPatchAst {
+    pub route: Option<Vec<String>>,
+    pub random_rooms: Option<Vec<String>>,
+    pub timing: Option<NpcTimingPatchAst>,
+    pub active: Option<bool>,
+    pub loop_route: Option<bool>,
+}
+
+/// Data patch applied to an NPC when executing a `modify npc` action.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct NpcPatchAst {
+    pub name: Option<String>,
+    pub desc: Option<String>,
+    pub state: Option<NpcStateValue>,
+    pub add_lines: Vec<NpcDialoguePatchAst>,
+    pub movement: Option<NpcMovementPatchAst>,
 }
 
 /// Policy to apply when a scheduled condition evaluates to false at fire time.
@@ -1483,6 +1522,14 @@ fn action_to_value(a: &ActionAst) -> toml_edit::Value {
             t.insert("patch", toml_edit::Value::from(patch_tbl));
             toml_edit::Value::from(t)
         },
+        ActionAst::ModifyNpc { npc, patch } => {
+            let mut t = InlineTable::new();
+            t.insert("type", toml_edit::Value::from("modifyNpc"));
+            t.insert("npc_sym", toml_edit::Value::from(npc.clone()));
+            let patch_tbl = npc_patch_to_inline_table(patch);
+            t.insert("patch", toml_edit::Value::from(patch_tbl));
+            toml_edit::Value::from(t)
+        },
         ActionAst::ResetFlag(name) => {
             let mut t = InlineTable::new();
             t.insert("type", toml_edit::Value::from("resetFlag"));
@@ -1868,6 +1915,85 @@ fn room_patch_to_inline_table(patch: &RoomPatchAst) -> InlineTable {
         tbl.insert("add_exits", toml_edit::Value::from(arr));
     }
     tbl
+}
+
+fn npc_patch_to_inline_table(patch: &NpcPatchAst) -> InlineTable {
+    let mut tbl = InlineTable::new();
+    if let Some(name) = &patch.name {
+        tbl.insert("name", toml_edit::Value::from(name.clone()));
+    }
+    if let Some(desc) = &patch.desc {
+        tbl.insert("desc", toml_edit::Value::from(desc.clone()));
+    }
+    if let Some(state) = &patch.state {
+        tbl.insert("state", npc_state_value_to_value(state));
+    }
+    if !patch.add_lines.is_empty() {
+        let mut arr = Array::default();
+        for entry in &patch.add_lines {
+            let mut lt = InlineTable::new();
+            lt.insert("line", toml_edit::Value::from(entry.line.clone()));
+            lt.insert("state", npc_state_value_to_value(&entry.state));
+            arr.push(toml_edit::Value::from(lt));
+        }
+        tbl.insert("add_lines", toml_edit::Value::from(arr));
+    }
+    if let Some(movement) = &patch.movement {
+        let mut mt = InlineTable::new();
+        if let Some(route) = &movement.route {
+            if !route.is_empty() {
+                let mut arr = Array::default();
+                for room in route {
+                    arr.push(room.clone());
+                }
+                mt.insert("route", toml_edit::Value::from(arr));
+            }
+        }
+        if let Some(random_rooms) = &movement.random_rooms {
+            if !random_rooms.is_empty() {
+                let mut arr = Array::default();
+                for room in random_rooms {
+                    arr.push(room.clone());
+                }
+                mt.insert("random_rooms", toml_edit::Value::from(arr));
+            }
+        }
+        if let Some(timing) = &movement.timing {
+            let mut tt = InlineTable::new();
+            match timing {
+                NpcTimingPatchAst::EveryNTurns(turns) => {
+                    tt.insert("type", toml_edit::Value::from("everyNTurns"));
+                    tt.insert("turns", toml_edit::Value::from(*turns as i64));
+                },
+                NpcTimingPatchAst::OnTurn(turn) => {
+                    tt.insert("type", toml_edit::Value::from("onTurn"));
+                    tt.insert("turn", toml_edit::Value::from(*turn as i64));
+                },
+            }
+            mt.insert("timing", toml_edit::Value::from(tt));
+        }
+        if let Some(active) = movement.active {
+            mt.insert("active", toml_edit::Value::from(active));
+        }
+        if let Some(loop_route) = movement.loop_route {
+            mt.insert("loop_route", toml_edit::Value::from(loop_route));
+        }
+        if !mt.is_empty() {
+            tbl.insert("movement", toml_edit::Value::from(mt));
+        }
+    }
+    tbl
+}
+
+fn npc_state_value_to_value(state: &NpcStateValue) -> toml_edit::Value {
+    match state {
+        NpcStateValue::Named(s) => toml_edit::Value::from(s.clone()),
+        NpcStateValue::Custom(s) => {
+            let mut st = InlineTable::new();
+            st.insert("custom", toml_edit::Value::from(s.clone()));
+            toml_edit::Value::from(st)
+        },
+    }
 }
 
 fn item_ability_to_value(ability: &ItemAbilityAst) -> toml_edit::Value {

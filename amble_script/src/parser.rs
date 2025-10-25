@@ -3,8 +3,9 @@ use pest_derive::Parser as PestParser;
 
 use crate::{
     ActionAst, ConditionAst, ConsumableAst, ConsumableWhenAst, ContainerStateAst, GoalAst, GoalCondAst, GoalGroupAst,
-    IngestModeAst, ItemAbilityAst, ItemAst, ItemLocationAst, ItemPatchAst, NpcAst, NpcMovementAst, NpcMovementTypeAst,
-    NpcStateValue, OnFalseAst, RoomAst, RoomExitPatchAst, RoomPatchAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
+    IngestModeAst, ItemAbilityAst, ItemAst, ItemLocationAst, ItemPatchAst, NpcAst, NpcDialoguePatchAst, NpcMovementAst,
+    NpcMovementPatchAst, NpcMovementTypeAst, NpcPatchAst, NpcStateValue, NpcTimingPatchAst, OnFalseAst, RoomAst,
+    RoomExitPatchAst, RoomPatchAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
 };
 use std::collections::HashMap;
 
@@ -437,6 +438,29 @@ fn parse_trigger_pair(
                 continue;
             },
             Err(AstError::Shape("not a modify room action")) => {},
+            Err(AstError::Shape(m)) => {
+                let base = str_offset(source, inner);
+                let abs = base + i;
+                let (line_no, col) = smap.line_col(abs);
+                let snippet = smap.line_snippet(line_no);
+                return Err(AstError::ShapeAt {
+                    msg: m,
+                    context: format!(
+                        "line {line_no}, col {col}: {snippet}\n{}^",
+                        " ".repeat(col.saturating_sub(1))
+                    ),
+                });
+            },
+            Err(e) => return Err(e),
+        }
+
+        match parse_modify_npc_action(remainder) {
+            Ok((action, used)) => {
+                unconditional_actions.push(action);
+                i += used;
+                continue;
+            },
+            Err(AstError::Shape("not a modify npc action")) => {},
             Err(AstError::Shape(m)) => {
                 let base = str_offset(source, inner);
                 let abs = base + i;
@@ -2419,6 +2443,29 @@ fn parse_actions_from_body(
             Err(e) => return Err(e),
         }
 
+        match parse_modify_npc_action(remainder) {
+            Ok((action, used)) => {
+                out.push(action);
+                i += used;
+                continue;
+            },
+            Err(AstError::Shape("not a modify npc action")) => {},
+            Err(AstError::Shape(m)) => {
+                let base = str_offset(source, body);
+                let abs = base + i;
+                let (line_no, col) = smap.line_col(abs);
+                let snippet = smap.line_snippet(line_no);
+                return Err(AstError::ShapeAt {
+                    msg: m,
+                    context: format!(
+                        "line {line_no}, col {col}: {snippet}\n{}^",
+                        " ".repeat(col.saturating_sub(1))
+                    ),
+                });
+            },
+            Err(e) => return Err(e),
+        }
+
         if trimmed_remainder.starts_with("do schedule in ") || trimmed_remainder.starts_with("do schedule on ") {
             let (action, used) = parse_schedule_action(&body[i + ws_leading..], source, smap, sets)?;
             out.push(action);
@@ -2689,6 +2736,157 @@ fn parse_modify_room_action(text: &str) -> Result<(ActionAst, usize), AstError> 
     Ok((ActionAst::ModifyRoom { room, patch }, consumed))
 }
 
+fn parse_modify_npc_action(text: &str) -> Result<(ActionAst, usize), AstError> {
+    let s = text.trim_start();
+    let leading_ws = text.len() - s.len();
+    let rest0 = s
+        .strip_prefix("do modify npc ")
+        .ok_or(AstError::Shape("not a modify npc action"))?;
+    let rest0 = rest0.trim_start();
+    let ident_len = rest0.chars().take_while(|&c| is_ident_char(c)).count();
+    if ident_len == 0 {
+        return Err(AstError::Shape("modify npc missing npc identifier"));
+    }
+    let ident_str = &rest0[..ident_len];
+    DslParser::parse(Rule::ident, ident_str).map_err(|_| AstError::Shape("modify npc has invalid npc identifier"))?;
+    let npc = ident_str.to_string();
+    let after_ident = rest0[ident_len..].trim_start();
+    if !after_ident.starts_with('{') {
+        return Err(AstError::Shape("modify npc missing '{' block"));
+    }
+    let block_slice = after_ident;
+    let body = extract_body(block_slice)?;
+    let start_offset = unsafe { body.as_ptr().offset_from(block_slice.as_ptr()) as usize };
+    let block_total_len = start_offset + body.len() + 1;
+    let remaining = &block_slice[block_total_len..];
+    let consumed = leading_ws + (s.len() - remaining.len());
+    let patch_block = &block_slice[..block_total_len];
+
+    let mut pairs = DslParser::parse(Rule::npc_patch_block, patch_block).map_err(|e| AstError::Pest(e.to_string()))?;
+    let block_pair = pairs
+        .next()
+        .ok_or(AstError::Shape("modify npc block missing statements"))?;
+    let mut patch = NpcPatchAst::default();
+    let mut movement_patch = NpcMovementPatchAst::default();
+    let mut movement_touched = false;
+
+    for stmt in block_pair.into_inner() {
+        match stmt.as_rule() {
+            Rule::npc_patch_name => {
+                let mut inner = stmt.into_inner();
+                let val = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify npc name missing value"))?
+                    .as_str();
+                patch.name = Some(unquote(val));
+            },
+            Rule::npc_patch_desc => {
+                let mut inner = stmt.into_inner();
+                let val = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify npc description missing value"))?
+                    .as_str();
+                patch.desc = Some(unquote(val));
+            },
+            Rule::npc_patch_state => {
+                let mut inner = stmt.into_inner();
+                let state_pair = inner.next().ok_or(AstError::Shape("modify npc state missing value"))?;
+                patch.state = Some(parse_npc_state_value(state_pair)?);
+            },
+            Rule::npc_patch_add_line => {
+                let mut inner = stmt.into_inner();
+                let line_pair = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify npc add line missing text"))?;
+                let state_pair = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify npc add line missing state"))?;
+                patch.add_lines.push(NpcDialoguePatchAst {
+                    line: unquote(line_pair.as_str()),
+                    state: parse_npc_state_value(state_pair)?,
+                });
+            },
+            Rule::npc_patch_route => {
+                if movement_patch.random_rooms.is_some() {
+                    return Err(AstError::Shape("modify npc cannot set both route and random rooms"));
+                }
+                let rooms = stmt.into_inner().map(|p| p.as_str().to_string()).collect::<Vec<_>>();
+                movement_patch.route = Some(rooms);
+                movement_patch.random_rooms = None;
+                movement_touched = true;
+            },
+            Rule::npc_patch_random_rooms => {
+                if movement_patch.route.is_some() {
+                    return Err(AstError::Shape("modify npc cannot set both route and random rooms"));
+                }
+                let rooms = stmt.into_inner().map(|p| p.as_str().to_string()).collect::<Vec<_>>();
+                movement_patch.random_rooms = Some(rooms);
+                movement_patch.route = None;
+                movement_touched = true;
+            },
+            Rule::npc_patch_timing_every => {
+                let mut inner = stmt.into_inner();
+                let num_pair = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify npc timing every missing turns"))?;
+                let turns: i64 = num_pair
+                    .as_str()
+                    .parse()
+                    .map_err(|_| AstError::Shape("modify npc timing every invalid number"))?;
+                if turns < 0 {
+                    return Err(AstError::Shape("modify npc timing every requires non-negative turns"));
+                }
+                movement_patch.timing = Some(NpcTimingPatchAst::EveryNTurns(turns as usize));
+                movement_touched = true;
+            },
+            Rule::npc_patch_timing_on => {
+                let mut inner = stmt.into_inner();
+                let num_pair = inner
+                    .next()
+                    .ok_or(AstError::Shape("modify npc timing on missing turn"))?;
+                let turn: i64 = num_pair
+                    .as_str()
+                    .parse()
+                    .map_err(|_| AstError::Shape("modify npc timing on invalid number"))?;
+                if turn < 0 {
+                    return Err(AstError::Shape("modify npc timing on requires non-negative turn"));
+                }
+                movement_patch.timing = Some(NpcTimingPatchAst::OnTurn(turn as usize));
+                movement_touched = true;
+            },
+            Rule::npc_patch_active => {
+                let mut inner = stmt.into_inner();
+                let bool_pair = inner.next().ok_or(AstError::Shape("modify npc active missing value"))?;
+                let val = match bool_pair.as_str() {
+                    "true" => true,
+                    "false" => false,
+                    _ => return Err(AstError::Shape("modify npc active expects true or false")),
+                };
+                movement_patch.active = Some(val);
+                movement_touched = true;
+            },
+            Rule::npc_patch_loop => {
+                let mut inner = stmt.into_inner();
+                let bool_pair = inner.next().ok_or(AstError::Shape("modify npc loop missing value"))?;
+                let val = match bool_pair.as_str() {
+                    "true" => true,
+                    "false" => false,
+                    _ => return Err(AstError::Shape("modify npc loop expects true or false")),
+                };
+                movement_patch.loop_route = Some(val);
+                movement_touched = true;
+            },
+            _ => return Err(AstError::Shape("unexpected statement in npc patch block")),
+        }
+    }
+
+    if movement_touched {
+        patch.movement = Some(movement_patch);
+    }
+
+    Ok((ActionAst::ModifyNpc { npc, patch }, consumed))
+}
+
 fn parse_room_patch_exit_opts(opts: pest::iterators::Pair<Rule>, exit: &mut RoomExitPatchAst) -> Result<(), AstError> {
     debug_assert_eq!(opts.as_rule(), Rule::exit_opts);
     for opt in opts.into_inner() {
@@ -2733,6 +2931,25 @@ fn parse_room_patch_exit_opts(opts: pest::iterators::Pair<Rule>, exit: &mut Room
         }
     }
     Ok(())
+}
+
+fn parse_npc_state_value(pair: pest::iterators::Pair<Rule>) -> Result<NpcStateValue, AstError> {
+    match pair.as_rule() {
+        Rule::npc_state_value => {
+            let mut inner = pair.into_inner();
+            let next = inner.next().ok_or(AstError::Shape("npc state missing value"))?;
+            parse_npc_state_value(next)
+        },
+        Rule::npc_custom_state => {
+            let mut inner = pair.into_inner();
+            let ident = inner
+                .next()
+                .ok_or(AstError::Shape("custom npc state missing identifier"))?;
+            Ok(NpcStateValue::Custom(ident.as_str().to_string()))
+        },
+        Rule::ident => Ok(NpcStateValue::Named(pair.as_str().to_string())),
+        _ => Err(AstError::Shape("invalid npc state value")),
+    }
 }
 
 fn parse_patch_ability(pair: pest::iterators::Pair<Rule>) -> Result<ItemAbilityAst, AstError> {
@@ -3147,6 +3364,97 @@ trigger "patch lab" when always {
         assert!(toml.contains("add_exits = ["));
         assert!(toml.contains("barred_message = \"You can't go that way yet.\""));
         assert!(toml.contains("required_flags = [{ type = \"simple\", name = \"opened-vault\" }]"));
+    }
+
+    #[test]
+    fn modify_npc_parses_patch_fields() {
+        let src = r#"
+trigger "patch emh" when always {
+    do modify npc emh {
+        name "Emergency Medical Hologram"
+        desc "Program updated with bedside manner routines."
+        state custom(patched)
+        add line "Bedside manner protocols active." to state custom(patched)
+        add line "Please state the nature of the medical emergency." to state normal
+        route (sickbay, corridor)
+        timing every 5 turns
+        active false
+        loop false
+    }
+}
+"#;
+        let offset = src.find("do modify npc").expect("snippet find");
+        let snippet = &src[offset..];
+        let (helper_action, _used) = super::parse_modify_npc_action(snippet).expect("parse helper on snippet");
+        assert!(matches!(helper_action, ActionAst::ModifyNpc { .. }));
+        let ast = parse_trigger(src).expect("parse ok");
+        assert_eq!(ast.actions.len(), 1);
+        match &ast.actions[0] {
+            ActionAst::ModifyNpc { npc, patch } => {
+                assert_eq!(npc, "emh");
+                assert_eq!(patch.name.as_deref(), Some("Emergency Medical Hologram"));
+                assert_eq!(
+                    patch.desc.as_deref(),
+                    Some("Program updated with bedside manner routines.")
+                );
+                assert!(matches!(patch.state, Some(NpcStateValue::Custom(ref s)) if s == "patched"));
+                assert_eq!(patch.add_lines.len(), 2);
+                assert!(patch.add_lines.iter().any(
+                    |entry| matches!(entry.state, NpcStateValue::Custom(ref s) if s == "patched")
+                        && entry.line == "Bedside manner protocols active."
+                ));
+                assert!(patch.add_lines.iter().any(
+                    |entry| matches!(entry.state, NpcStateValue::Named(ref s) if s == "normal")
+                        && entry.line == "Please state the nature of the medical emergency."
+                ));
+                let movement = patch.movement.as_ref().expect("movement patch");
+                assert_eq!(movement.route.as_deref().unwrap(), ["sickbay", "corridor"]);
+                assert!(movement.random_rooms.is_none());
+                assert_eq!(movement.active, Some(false));
+                assert_eq!(movement.loop_route, Some(false));
+                assert!(matches!(movement.timing, Some(NpcTimingPatchAst::EveryNTurns(5))));
+            },
+            other => panic!("expected modify npc action, got {other:?}"),
+        }
+        let toml = crate::compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("type = \"modifyNpc\""));
+        assert!(toml.contains("npc_sym = \"emh\""));
+        assert!(toml.contains("route = [\"sickbay\", \"corridor\"]"));
+        assert!(toml.contains("type = \"everyNTurns\""));
+        assert!(toml.contains("loop_route = false"));
+    }
+
+    #[test]
+    fn modify_npc_supports_random_movement() {
+        let src = r#"
+trigger "patch guard" when always {
+    do modify npc guard {
+        random rooms (hall, foyer, atrium)
+        timing on turn 12
+        active true
+    }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        assert_eq!(ast.actions.len(), 1);
+        match &ast.actions[0] {
+            ActionAst::ModifyNpc { npc, patch } => {
+                assert_eq!(npc, "guard");
+                let movement = patch.movement.as_ref().expect("movement patch");
+                assert!(movement.route.is_none());
+                let mut rooms = movement.random_rooms.clone().expect("random rooms");
+                rooms.sort();
+                let expected = vec!["atrium".to_string(), "foyer".to_string(), "hall".to_string()];
+                assert_eq!(rooms, expected);
+                assert!(matches!(movement.timing, Some(NpcTimingPatchAst::OnTurn(12))));
+                assert_eq!(movement.active, Some(true));
+                assert!(movement.loop_route.is_none());
+            },
+            other => panic!("expected modify npc action, got {other:?}"),
+        }
+        let toml = crate::compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("random_rooms = [\"hall\", \"foyer\", \"atrium\"]"));
+        assert!(toml.contains("type = \"onTurn\""));
     }
 
     #[test]
