@@ -136,6 +136,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             TalkTo(npc_name) => talk_to_handler(world, &mut view, npc_name)?,
             GiveToNpc { item, npc } => give_to_npc_handler(world, &mut view, item, npc)?,
             TurnOn(thing) => turn_on_handler(world, &mut view, thing)?,
+            TurnOff(thing) => turn_off_handler(world, &mut view, thing)?,
             Read(thing) => read_handler(world, &mut view, thing)?,
             Load(gamefile) => load_handler(world, &mut view, gamefile),
             Save(gamefile) => save_handler(world, &mut view, gamefile)?,
