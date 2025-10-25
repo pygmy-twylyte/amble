@@ -4,33 +4,51 @@
 
 # This file serves as a place to try new features or ideas without disturbing the main game source.
 
+room dev-room {
+    name "TESTING GROUND (DEV ONLY)"
+    desc "This is however you imagine it, but a space for devs to try out new ideas before mixing in to other content."
+    exit "back to game start" -> high-ridge
+}
+
+# this should allow us to create an exit from the start room (high-ridge) to the
+# playground at game start from here, so we don't have to put one in the actual high-ridge
+# room file (so this file can simply be removed to cleanly get rid of playground items)
+#
+# one could also just comment out the trigger below to make the playground inaccessible from
+# the game without deleting the file
+trigger "Create Dev Playground Exit" only once when always {
+    do modify room high-ridge {
+        add exit "to dev playground" -> dev-room
+    }
+}
+
 item big_red_button {
     name "Big Red Button"
     desc "It's big, it's red, and it's a button! Press or touch it!"
     portable false
-    location room high-ridge
+    location room dev-room
 }
 
 item big_blue_button {
     name "Big Blue Button"
     desc "It's big, it's blue, and it's a button! Press away!"
     portable false
-    location room high-ridge
+    location room dev-room
 }
 
 item cheat_button {
     name "Cheat Button!"
     desc "Press this button to move this room to the final objective!"
     portable false
-    location room high-ridge
+    location room dev-room
 }
 
 trigger "Cheat Mode" when touch item cheat_button {
     do show "Morphed the room into an endgame backdoor!"
-    do modify room high-ridge {
+    do modify room dev-room {
         name "AA-3B Back Entrance"
         desc "Where there used to be a High Isolated Ridge around you, there is now a blank white room with a door marked 'WIN!'"
-        remove exit parish-landing
+        remove exit high-ridge
         add exit "win the game" -> room-aa-3b {
             required_items(no_cake),
             barred "You must hold no cake to fathom Room AA-3B's mysteries."
@@ -38,11 +56,10 @@ trigger "Cheat Mode" when touch item cheat_button {
     }
 }
 
-
 npc the_luggage {
     name "The Luggage"
     desc "A large chest with dozens of legs, layered sharp teeth around its lid, and a strong tendency to violence."
-    location nowhere "spawns at high ridge for testing"
+    location nowhere "spawns at dev-room for testing"
     dialogue normal {
         "(stares at you with menace)"
     }
@@ -52,7 +69,7 @@ trigger "Big Red Button Pushed"
 note "test for the touch item command/event -- works!"
 when touch item big_red_button {
     do show "Always never press the big red button! Now look what you've done!"
-    do spawn npc the_luggage into room high-ridge
+    do spawn npc the_luggage into room dev-room
     do modify item big_blue_button {
         name "Big Green Button"
         desc "A big GREEN button, just waiting for you to press it."
@@ -72,9 +89,37 @@ when touch item big_blue_button {
         desc "The Luggage is ravenous! Beware!!"
         state custom(hungry)
         add line "(The Luggage nearly bites your face off when you approach.)" to state custom(hungry)
-        random rooms (high-ridge, ice-pit, lounge)
-        timing every 2 turns
+        random rooms (dev-room, lounge)
+        timing every 5 turns
         active true
         loop true
     }
+}
+
+item radio {
+    name "HAM Radio"
+    desc "Radio test item. Initial state - radio is off."
+    portable true
+    location room dev-room
+    ability TurnOn
+}
+
+trigger "Turn Radio On" when use item radio ability turnOn {
+    do show "An LED on the radio lights, and you can hear faint static."
+    do modify item radio {
+        desc "The radio is now turned on and emitting slight static."
+        remove ability TurnOn
+        add ability TurnOff
+    }
+    do add flag radio-on
+}
+
+trigger "Turn Radio Off" when use item radio ability turnOff {
+    do show "The LED goes off, and the radio goes quiet."
+    do modify item radio {
+        desc "The radio is powered off and quiet."
+        remove ability TurnOff
+        add ability TurnOn
+    }
+    do remove flag radio-on
 }

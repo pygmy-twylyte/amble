@@ -55,6 +55,7 @@ pub enum Command {
     TalkTo(String),
     Theme(String),
     Touch(String),
+    TurnOff(String),
     TurnOn(String),
     Unknown,
     UnlockItem(String),
@@ -115,7 +116,7 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
     // normalize user input to lowercase so commands are case-insensitive
     let lc_input = input.to_lowercase();
 
-    // check for and parse developer commands if available
+    // check for and parse developer commands if available (feature dev_mode enabled)
     if let Some(command) = parse_dev_command(input, view) {
         return command;
     }
@@ -166,6 +167,7 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
         Rule::drop => Command::Drop(inner_string(command)),
         Rule::talk_to => Command::TalkTo(inner_string(command)),
         Rule::turn_on => Command::TurnOn(inner_string(command)),
+        Rule::turn_off => Command::TurnOff(inner_string(command)),
         Rule::theme => Command::Theme(inner_string(command)),
         Rule::open => Command::Open(inner_string(command)),
         Rule::close => Command::Close(inner_string(command)),
