@@ -38,7 +38,7 @@ item woodland_button {
 }
 
 trigger "[Stargate] Press Woodland Button"
-note "open/move the Stargate connection to Parish Landing (plaque-1)"
+note "open/move the Stargate connection to Parish Landing (only if plaque-1 read)"
 when touch item woodland_button {
     if has flag read-plaque-1 {
         do show "With a great whooshing like the flush of a titan's toilet, the Stargate opens a new connection. You hear singing birds and the occasional screech coming through the opening."
@@ -76,7 +76,6 @@ when touch item woodland_button {
 # Activate Snowfield Gate
 # ========================================
 
-
 item snowfield_button {
     name "[ Snowflake ]"
     desc "A snowflake-shaped button ing the middle of the Stargate control console."
@@ -85,7 +84,7 @@ item snowfield_button {
 }
 
 trigger "[Stargate] Press Snowfield Button"
-note "open/move the Stargate connection to Ice Pit (plaque-2)"
+note "open/move the Stargate connection to Ice Pit (only if plaque 2 read)"
 when touch item snowfield_button {
     if has flag read-plaque-2 {
         do show "With a great whooshing like the flush of a titan's toilet, the Stargate opens a new connection. You are chilled by the frigid air pouring through the opening."
@@ -97,6 +96,7 @@ when touch item snowfield_button {
             remove exit parish-landing
             remove exit patio
         }
+
         # modify receiving rooms
 
         # close woodland gate
@@ -132,7 +132,7 @@ item patio_button {
 }
 
 trigger "[Stargate] Press Patio Button"
-note "open/move the Stargate connection to the Patio (plaque-3)"
+note "open/move the Stargate connection to the Patio (only if plaque-3 read)"
 when touch item patio_button {
     if has flag read-plaque-3 {
         do show "With a great whooshing like the flush of a titan's toilet, the Stargate opens a new connection. You are chilled by the frigid air pouring through the opening."
