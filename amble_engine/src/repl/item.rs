@@ -254,7 +254,7 @@ pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, m
 ///
 /// - Success: Determined by whether appropriate triggers fire
 /// - Failure: Provides specific feedback about missing requirements
-/// - No effect: Generic message when no triggers handle the interaction
+/// - No effect: Generic message from the NoEffect spinner when no triggers handle the interaction
 pub fn use_item_on_handler(
     world: &mut AmbleWorld,
     view: &mut View,
@@ -314,8 +314,9 @@ pub fn use_item_on_handler(
     let sent_target_id = target.id();
     let sent_tool_id = tool.id();
 
-    // This is needed for the UseItem TriggerCondition. ItemAbility::Use is a reasonable default but
-    // should never come up, since the presence of this interaction is already verified by the
+    // The utilized ItemAbility is needed to send a UseItem TriggerCondition. ItemAbility::Use is
+    // a reasonable default but should never come up, since the presence of this Interaction (which
+    // implies a matching ability which has already been verified by the
     // interaction_requirement_met(...) call above.
     let used_ability = *target
         .interaction_requires
@@ -342,6 +343,7 @@ pub fn use_item_on_handler(
         ],
     )?;
 
+    // Check for any triggered reaction to the conditions we sent
     let interaction_fired = triggers_contain_condition(&fired, |cond| match cond {
         TriggerCondition::ActOnItem { action, target_id } => {
             *action == sent_interaction && *target_id == sent_target_id
@@ -355,6 +357,7 @@ pub fn use_item_on_handler(
         _ => false,
     });
 
+    // Nope, no triggered reaction to these conditions
     if !interaction_fired {
         view.push(ViewItem::ActionFailure(
             world
@@ -367,6 +370,7 @@ pub fn use_item_on_handler(
             symbol_or_unknown(&world.items, tool_id)
         );
     }
+    // consume 1 use if consumable. Obviously.
     if tool_is_consumable {
         let uses_left = consume(world, &tool_id, used_ability)?;
         if let Some(uses_left) = uses_left {
