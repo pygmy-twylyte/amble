@@ -4,7 +4,8 @@ Some notes to help me remember and possible future others understand how this wo
 ---
 
 ## AmbleWorld
-- contains full game state: player, locations, items, triggers, npcs, spinners
+- contains full game state: player, locations, items, triggers, npcs, spinners, flags, scheduled events, goals, player's location history, more
+- saved games are .ron (Rust Object Notation) files containing a complete AmbleWorld snapshot, so loaded games have all flags and scheduled events in progess intact
 
 ---
 
@@ -16,37 +17,34 @@ Some notes to help me remember and possible future others understand how this wo
 
 ## Trigger System
 
-General function: any command / action runs check_triggers() with a set of matching TriggerConditions. Triggers are defined with a name, whether they're repeating or one-off, a list of conditions that must be me to fire, and a list of actions to perform when they're met.
+General function: any command / action runs check_triggers() with a set of matching TriggerConditions. Triggers are defined with a name, whether they're repeating or one-off, a list of conditions that must be met to fire, and a list of actions (which may also contain additional condition checks) to perform when they're met.
 
 Some triggers conditions depend only on world state and can fire independent of player actions. Other conditions are met when particular player actions occur, such as opening a contaniner or leaving a room.
 
 ### "verb target with tool" trigger setup
 Some triggers uses have evolved over time and names don't reflect this (yet). In particular, in terms of handling <verb><target> with <tool> commands:
-* UseItem( item, item ability ) -- should be used for things that depend only on the item and not the target (such as despawning after use, regardless what it's used on)
-* UseItemOnItem(interaction, tool, target) -- should only be flavor text that's different depending on the item used (e.g. if flamethrower is used to burn something rather than a lighter) -- no world or item state changes should be made here
-* ActOnItem(interaction, target) -- is the only required trigger for an interaction and defines the reaction of the target and world to the action. Examples would include despawning the target, telling the player what happened, awarding points, advancing flags, etc.
+* UseItem( item, item ability ) -- (***DSL: `when use item <item_id> ability <ability>`***) -- for abilities that don't require any interaction with anything else ('turn on' for example)
+* UseItemOnItem(interaction, tool, target) -- (***DSL: `when use item <tool_id> on item <target_id> interaction <item_interaction_type>`***) -- typically used for flavor text that's different depending on the item used (e.g. if flamethrower is used to burn something rather than a lighter) -- no world or item state changes should be made here
+* ActOnItem(interaction, target) -- allows triggers to work on interactions regardless of specific tool. Example: a trigger that reacts to lighting a fuse, regardless of whether you use a lighter or a candle or a laser -- or any item that has the required "ignite" ability.
 
-check_triggers() returns a Vec<Trigger> of all fired triggers, which allows the command handler to check to see if there was a any triggered reaction (and provide any default handling needed if not)
+check_triggers() returns a Vec<Trigger> of all fired triggers, which allows the command handler to check to see if there was any particular triggered reaction (and then provide any default handling needed if not)
 
 ---
 
 ## Flags
 * two types, Simple and Sequence
 * Simple flags are boolean "has done this thing at some point" or "has this state"
-* Sequence flags can be used to define steps in a puzzle or progressive severity of a condition.
+* Sequence flags can be used to define steps in a puzzle or progressive severity of a condition, for example.
 * The sequence number can be advanced in triggers
-* A sequence limit is typically set for the final step, but it *can* be infinite.
-* Can be used to change NPC state, unlock or reveal exits, advance Goals, create status effects
+* A sequence limit is typically set for the final step, but it *can* be infinite (well, at least up to `USIZE_MAX`!).
+* Can be used to change NPC state, unlock or reveal exits, advance Goals, create status effects, change room appearance, many more applications
 
 ---
 
 ## Spinners
 * imported from my 'gametools' crate
-* provide humorous rephrasing of common message types to keep them more interesting
+* provide randomized, customizable rephrasing of common message types to keep them more interesting
 * provide intermittent, location-based "ambient" messages for environment
-* defined in data/spinners.toml
 * wedges are Strings and can be weighted by being given different 'widths'
-* widths can be specified in an array of integers and default to 1.
-* intermittent messages are created using a blank wedge ("") with a high width so the blank is selected more frequently than the others
-* since all others default to 1, this is written in the toml just as width = [10 to 30] for the first (blank) wedge
+* intermittent messages are created using a `chance` trigger condition
 * spinner wedges can be added at runtime by triggers, allowing game events to color messages that follow
