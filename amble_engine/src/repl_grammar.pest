@@ -19,6 +19,7 @@ dir_prep    = _{ "in to" | "to" | "at" | "into" | "on" | "in" | "through" }
 // synonyms
 take_verb   = _{ "take" | "get" | "grab" | "snag" | "steal" | "pick" ~ "up" | "remove" }
 start_verb  = _{ "start" | "trigger" | "activate" | "fire" }
+stop_verb   = _{ "stop" | "disable" | "halt" | "kill" }
 switch_verb = _{ "turn" | "switch" | "flip" }
 // " " after go is intentional to keep from matching "goals"
 go_verb = _{ ("go " ~ !"back") | "walk" | "move" | "climb" | "jog" | "run" }
@@ -37,7 +38,27 @@ vm_brief   =  { "brief" }
 list_saves =  { "saves" | ("list" ~ "saves") }
 
 // verb -> single object commands
-verb_obj = _{ look_at | load | save | take | drop | talk_to | turn_on | theme | close | lock | unlock | move_to | open | read | eat | drink | inhale | touch }
+verb_obj = _{
+    look_at
+  | load
+  | save
+  | take
+  | drop
+  | talk_to
+  | turn_on
+  | turn_off
+  | theme
+  | close
+  | lock
+  | unlock
+  | move_to
+  | open
+  | read
+  | eat
+  | drink
+  | inhale
+  | touch
+}
 look_at  =  { "look" ~ prep? ~ artic? ~ phrase }
 load     =  { ("load" | "reload") ~ save_name }
 save     =  { "save" ~ save_name }
@@ -45,6 +66,7 @@ take     =  { take_verb ~ artic? ~ phrase }
 drop     =  { (("drop" | "leave") ~ artic? ~ phrase) | ("put" ~ artic? ~ phrase ~ "down") }
 talk_to  =  { ("talk" | "speak") ~ ("to" | "with") ~ artic? ~ phrase }
 turn_on  =  { (start_verb ~ artic? ~ phrase) | (switch_verb ~ artic? ~ phrase ~ "on") }
+turn_off =  { (stop_verb ~ artic? ~ phrase) | (switch_verb ~ artic? ~ phrase ~ "off") }
 theme    =  { "theme" ~ ident }
 open     =  { "open" ~ artic? ~ phrase }
 close    =  { ("close" | "shut" | "slam") ~ artic? ~ phrase }
