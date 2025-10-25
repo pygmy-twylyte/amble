@@ -12,14 +12,14 @@ phrase    = @{ word ~ (WHITESPACE+ ~ !prep ~ !manner_prep ~ word)* }
 command = _{ verb_do_io | verb_obj | simple }
 
 artic       = _{ "the" | "an" | "a" }
-prep        = _{ "at" | "into" | "on" | "in" | "to" | "from" | "down" }
+prep        = _{ "at" | "into" | "on" | "off" | "in" | "to" | "from" | "down" }
 manner_prep = _{ "with" | "using" }
 dir_prep    = _{ "in to" | "to" | "at" | "into" | "on" | "in" | "through" }
 
 // synonyms
 take_verb   = _{ "take" | "get" | "grab" | "snag" | "steal" | "pick" ~ "up" | "remove" }
-start_verb  = _{ "start" | "trigger" | "activate" | "fire" }
-stop_verb   = _{ "stop" | "disable" | "halt" | "kill" }
+start_verb  = _{ "start" | "trigger" | "activate" | "fire" | "turn" ~ "on" | "switch" ~ "on" }
+stop_verb   = _{ "stop" | "disable" | "halt" | "kill" | "turn" ~ "off" | "switch" ~ "off" }
 switch_verb = _{ "turn" | "switch" | "flip" }
 // " " after go is intentional to keep from matching "goals"
 go_verb = _{ ("go " ~ !"back") | "walk" | "move" | "climb" | "jog" | "run" }
