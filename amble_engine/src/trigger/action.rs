@@ -82,7 +82,7 @@ use uuid::Uuid;
 use crate::Item;
 use crate::helpers::{symbol_from_id, symbol_or_unknown};
 use crate::item::{ContainerState, ItemAbility, ItemHolder};
-use crate::npc::{NpcState, move_npc};
+use crate::npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState, move_npc};
 use crate::player::{Flag, Player};
 use crate::room::Exit;
 use crate::scheduler::{EventCondition, OnFalsePolicy};
@@ -181,6 +181,8 @@ pub enum TriggerAction {
     ModifyItem { item_id: Uuid, patch: ItemPatch },
     /// Modifies multiple aspects of a `Room` at once using a `RoomPatch`
     ModifyRoom { room_id: Uuid, patch: RoomPatch },
+    /// Modifies multiple aspects of an `Npc` at once using an `NpcPatch`
+    ModifyNpc { npc_id: Uuid, patch: NpcPatch },
     /// Makes an NPC refuse an item with a custom message
     NpcRefuseItem { npc_id: Uuid, reason: String },
     /// Makes an NPC speak a specific line of dialogue
@@ -261,6 +263,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
     match action {
         ModifyItem { item_id, patch } => modify_item(world, *item_id, patch)?,
         ModifyRoom { room_id, patch } => modify_room(world, *room_id, patch)?,
+        ModifyNpc { npc_id, patch } => modify_npc(world, *npc_id, patch)?,
         SetNpcActive { npc_id, active } => set_npc_active(world, npc_id, *active)?,
         SetContainerState { item_id, state } => set_container_state(world, *item_id, *state)?,
         ReplaceItem { old_id, new_id } => replace_item(world, old_id, new_id)?,
@@ -425,6 +428,49 @@ impl Default for RoomExitPatch {
     }
 }
 
+/// Represents a line of dialogue to be appended to a specific NPC state when applying an `NpcPatch`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct NpcDialoguePatch {
+    pub state: NpcState,
+    pub line: String,
+}
+
+/// Movement updates that may accompany an `NpcPatch`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct NpcMovementPatch {
+    #[serde(default)]
+    pub route: Option<Vec<Uuid>>,
+    #[serde(default)]
+    pub random_rooms: Option<HashSet<Uuid>>,
+    pub timing: Option<MovementTiming>,
+    pub active: Option<bool>,
+    pub loop_route: Option<bool>,
+}
+impl NpcMovementPatch {
+    pub fn has_updates(&self) -> bool {
+        self.route.is_some()
+            || self.random_rooms.is_some()
+            || self.timing.is_some()
+            || self.active.is_some()
+            || self.loop_route.is_some()
+    }
+
+    fn wants_new_instance(&self) -> bool {
+        self.route.is_some() || self.random_rooms.is_some()
+    }
+}
+
+/// Patch that can be applied to modify multiple properties of an `Npc` at once.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct NpcPatch {
+    pub name: Option<String>,
+    pub desc: Option<String>,
+    pub state: Option<NpcState>,
+    #[serde(default)]
+    pub add_lines: Vec<NpcDialoguePatch>,
+    pub movement: Option<NpcMovementPatch>,
+}
+
 /*
  *
  * ACTION HANDLERS
@@ -451,6 +497,17 @@ pub fn modify_room(world: &mut AmbleWorld, room_id: Uuid, patch: &RoomPatch) -> 
         patch
     );
     apply_room_patch(world, room_id, patch)?;
+    Ok(())
+}
+
+/// Modifies multiple properties of an `Npc` at once by applying an `NpcPatch`.
+pub fn modify_npc(world: &mut AmbleWorld, npc_id: Uuid, patch: &NpcPatch) -> Result<()> {
+    info!(
+        "└─ action: modifying npc {} using patch: {:?}",
+        symbol_or_unknown(&world.npcs, npc_id),
+        patch
+    );
+    apply_npc_patch(world, npc_id, patch)?;
     Ok(())
 }
 
@@ -501,6 +558,141 @@ fn apply_room_patch(world: &mut AmbleWorld, room_id: Uuid, patch: &RoomPatch) ->
         exit.required_flags = addition.required_flags.clone();
         exit.required_items = addition.required_items.clone();
         room.exits.insert(addition.direction.clone(), exit);
+    }
+
+    Ok(())
+}
+
+/// Applies an `NpcPatch` to the targeted `Npc`, mutating it in place.
+fn apply_npc_patch(world: &mut AmbleWorld, npc_id: Uuid, patch: &NpcPatch) -> Result<()> {
+    let npc = world
+        .npcs
+        .get_mut(&npc_id)
+        .with_context(|| format!("patching an npc: Uuid ({npc_id}) not found in world npc map"))?;
+
+    if let Some(ref new_name) = patch.name {
+        npc.name = new_name.clone();
+    }
+    if let Some(ref new_desc) = patch.desc {
+        npc.description = new_desc.clone();
+    }
+    if let Some(ref new_state) = patch.state {
+        npc.state = new_state.clone();
+    }
+
+    if !patch.add_lines.is_empty() {
+        for addition in &patch.add_lines {
+            npc.dialogue
+                .entry(addition.state.clone())
+                .or_default()
+                .push(addition.line.clone());
+        }
+    }
+
+    if let Some(movement_patch) = &patch.movement {
+        if movement_patch.has_updates() {
+            let current_turn = world.turn_count;
+            apply_npc_movement_patch(current_turn, npc, movement_patch)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn apply_npc_movement_patch(current_turn: usize, npc: &mut Npc, patch: &NpcMovementPatch) -> Result<()> {
+    if patch.route.is_some() && patch.random_rooms.is_some() {
+        bail!(
+            "modifyNpc patch for '{}' cannot set both a route and random movement set",
+            npc.symbol()
+        );
+    }
+
+    if let Some(route) = &patch.route {
+        if route.is_empty() {
+            bail!(
+                "modifyNpc patch for '{}' requires at least one room in a movement route",
+                npc.symbol()
+            );
+        }
+    }
+    if let Some(random) = &patch.random_rooms {
+        if random.is_empty() {
+            bail!(
+                "modifyNpc patch for '{}' requires at least one room in a random movement set",
+                npc.symbol()
+            );
+        }
+    }
+
+    let npc_symbol = npc.symbol().to_string();
+
+    if npc.movement.is_none() && patch.wants_new_instance() {
+        npc.movement = Some(NpcMovement {
+            movement_type: if let Some(route) = &patch.route {
+                MovementType::Route {
+                    rooms: route.clone(),
+                    current_idx: 0,
+                    loop_route: patch.loop_route.unwrap_or(true),
+                }
+            } else if let Some(random) = &patch.random_rooms {
+                MovementType::RandomSet { rooms: random.clone() }
+            } else {
+                // shouldn't happen due to wants_new_instance check, but guard anyway
+                warn!(
+                    "modifyNpc patch for '{}' requested new movement without route or random rooms",
+                    npc_symbol
+                );
+                return Ok(());
+            },
+            timing: patch
+                .timing
+                .clone()
+                .unwrap_or_else(|| MovementTiming::EveryNTurns { turns: 1 }),
+            active: patch.active.unwrap_or(true),
+            last_moved_turn: current_turn,
+            paused_until: None,
+        });
+    }
+
+    if let Some(movement) = npc.movement.as_mut() {
+        if let Some(route) = &patch.route {
+            let loop_setting = patch.loop_route.unwrap_or_else(|| match &movement.movement_type {
+                MovementType::Route { loop_route, .. } => *loop_route,
+                MovementType::RandomSet { .. } => true,
+            });
+            movement.movement_type = MovementType::Route {
+                rooms: route.clone(),
+                current_idx: 0,
+                loop_route: loop_setting,
+            };
+        } else if let Some(random) = &patch.random_rooms {
+            movement.movement_type = MovementType::RandomSet { rooms: random.clone() };
+        }
+
+        if let Some(loop_setting) = patch.loop_route {
+            if let MovementType::Route { loop_route, .. } = &mut movement.movement_type {
+                *loop_route = loop_setting;
+            } else {
+                warn!(
+                    "modifyNpc patch attempted to set loop on a non-route movement for '{}'",
+                    npc_symbol
+                );
+            }
+        }
+
+        if let Some(timing) = &patch.timing {
+            movement.timing = timing.clone();
+            movement.last_moved_turn = current_turn;
+        }
+
+        if let Some(active) = patch.active {
+            movement.active = active;
+        }
+    } else {
+        warn!(
+            "modifyNpc patch for '{}' requested movement updates but NPC has no movement configured",
+            npc_symbol
+        );
     }
 
     Ok(())
@@ -1965,7 +2157,7 @@ mod tests {
     use super::*;
     use crate::{
         item::{ContainerState, Item},
-        npc::{Npc, NpcState},
+        npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState},
         player::Flag,
         room::Room,
         world::{AmbleWorld, Location},
@@ -2114,6 +2306,116 @@ mod tests {
             ..Default::default()
         };
         assert!(modify_room(&mut world, room_id, &patch).is_ok());
+    }
+
+    #[test]
+    fn modify_npc_updates_identity_and_dialogue() {
+        let (mut world, room_id, _) = build_test_world();
+        let npc_id = Uuid::new_v4();
+        let mut npc = make_npc(npc_id, Location::Room(room_id), NpcState::Normal);
+        npc.dialogue.insert(NpcState::Normal, vec!["Hello there.".into()]);
+        world.npcs.insert(npc_id, npc);
+
+        let patch = NpcPatch {
+            name: Some("Professor Whistles".into()),
+            desc: Some("An eccentric inventor with wild hair.".into()),
+            state: Some(NpcState::Happy),
+            add_lines: vec![NpcDialoguePatch {
+                state: NpcState::Happy,
+                line: "Have you met my clockwork ferret?".into(),
+            }],
+            movement: None,
+        };
+
+        modify_npc(&mut world, npc_id, &patch).expect("modify npc succeeds");
+
+        let npc = world.npcs.get(&npc_id).expect("npc present");
+        assert_eq!(npc.name, "Professor Whistles");
+        assert_eq!(npc.description, "An eccentric inventor with wild hair.");
+        assert!(matches!(npc.state, NpcState::Happy));
+        let happy_lines = npc.dialogue.get(&NpcState::Happy).expect("happy dialogue");
+        assert!(
+            happy_lines
+                .iter()
+                .any(|line| line == "Have you met my clockwork ferret?")
+        );
+    }
+
+    #[test]
+    fn modify_npc_updates_movement_and_flags() {
+        let (mut world, room_a, room_b) = build_test_world();
+        let npc_id = Uuid::new_v4();
+        let mut npc = make_npc(npc_id, Location::Room(room_a), NpcState::Normal);
+        npc.movement = Some(NpcMovement {
+            movement_type: MovementType::Route {
+                rooms: vec![room_a],
+                current_idx: 0,
+                loop_route: true,
+            },
+            timing: MovementTiming::EveryNTurns { turns: 2 },
+            active: true,
+            last_moved_turn: 0,
+            paused_until: None,
+        });
+        world.npcs.insert(npc_id, npc);
+
+        let patch = NpcPatch {
+            movement: Some(NpcMovementPatch {
+                route: Some(vec![room_a, room_b]),
+                random_rooms: None,
+                timing: Some(MovementTiming::EveryNTurns { turns: 5 }),
+                active: Some(false),
+                loop_route: Some(false),
+            }),
+            ..Default::default()
+        };
+
+        modify_npc(&mut world, npc_id, &patch).expect("modify npc succeeds");
+
+        let npc = world.npcs.get(&npc_id).expect("npc present");
+        let movement = npc.movement.as_ref().expect("movement present");
+        match &movement.movement_type {
+            MovementType::Route {
+                rooms,
+                current_idx,
+                loop_route,
+            } => {
+                assert_eq!(rooms, &vec![room_a, room_b]);
+                assert_eq!(*current_idx, 0);
+                assert!(!loop_route);
+            },
+            other => panic!("expected route movement, got {other:?}"),
+        }
+        assert!(matches!(movement.timing, MovementTiming::EveryNTurns { turns: 5 }));
+        assert!(!movement.active);
+        assert_eq!(movement.last_moved_turn, world.turn_count);
+    }
+
+    #[test]
+    fn modify_npc_creates_movement_if_missing() {
+        let (mut world, room_id, other_room) = build_test_world();
+        let npc_id = Uuid::new_v4();
+        let npc = make_npc(npc_id, Location::Room(room_id), NpcState::Normal);
+        world.npcs.insert(npc_id, npc);
+
+        let patch = NpcPatch {
+            movement: Some(NpcMovementPatch {
+                route: Some(vec![room_id, other_room]),
+                random_rooms: None,
+                timing: Some(MovementTiming::OnTurn { turn: 7 }),
+                active: Some(true),
+                loop_route: Some(true),
+            }),
+            ..Default::default()
+        };
+
+        modify_npc(&mut world, npc_id, &patch).expect("modify npc succeeds");
+
+        let npc = world.npcs.get(&npc_id).expect("npc present");
+        let movement = npc.movement.as_ref().expect("movement present");
+        assert!(matches!(movement.movement_type, MovementType::Route { .. }));
+        assert!(matches!(movement.timing, MovementTiming::OnTurn { turn: 7 }));
+        assert!(movement.active);
     }
 
     fn make_item(id: Uuid, location: Location, container_state: Option<ContainerState>) -> Item {

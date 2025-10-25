@@ -7,9 +7,13 @@ use std::collections::HashSet;
 use super::raw_condition::RawTriggerCondition;
 use crate::loader::items::RawItemAbility;
 use crate::scheduler::{EventCondition, OnFalsePolicy};
-use crate::trigger::{ItemPatch, RoomExitPatch, RoomPatch};
+use crate::trigger::{ItemPatch, NpcDialoguePatch, NpcMovementPatch, NpcPatch, RoomExitPatch, RoomPatch};
 use crate::{
-    item::ContainerState, loader::SymbolTable, npc::NpcState, player::Flag, spinners::SpinnerType,
+    item::ContainerState,
+    loader::SymbolTable,
+    npc::{MovementTiming, NpcState},
+    player::Flag,
+    spinners::SpinnerType,
     trigger::TriggerAction,
 };
 
@@ -147,6 +151,130 @@ impl RawRoomPatch {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct RawNpcDialoguePatch {
+    pub state: NpcState,
+    pub line: String,
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct RawNpcMovementPatch {
+    pub route: Option<Vec<String>>,
+    pub random_rooms: Option<Vec<String>>,
+    pub timing: Option<RawMovementTimingPatch>,
+    pub active: Option<bool>,
+    pub loop_route: Option<bool>,
+}
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum RawMovementTimingPatch {
+    EveryNTurns { turns: usize },
+    OnTurn { turn: usize },
+}
+impl RawNpcMovementPatch {
+    pub fn to_patch(&self, symbols: &SymbolTable) -> Result<NpcMovementPatch> {
+        let route = if let Some(route_syms) = &self.route {
+            let mut resolved = Vec::new();
+            for room_sym in route_syms {
+                if let Some(room_id) = symbols.rooms.get(room_sym) {
+                    resolved.push(*room_id);
+                } else {
+                    bail!("loading TriggerAction:ModifyNpc: route room symbol ({room_sym}) not in table");
+                }
+            }
+            Some(resolved)
+        } else {
+            None
+        };
+
+        let random_rooms = if let Some(random_syms) = &self.random_rooms {
+            let mut resolved = HashSet::new();
+            for room_sym in random_syms {
+                if let Some(room_id) = symbols.rooms.get(room_sym) {
+                    resolved.insert(*room_id);
+                } else {
+                    bail!("loading TriggerAction:ModifyNpc: random room symbol ({room_sym}) not in table");
+                }
+            }
+            Some(resolved)
+        } else {
+            None
+        };
+
+        if let Some(route) = &route {
+            if route.is_empty() {
+                bail!("loading TriggerAction:ModifyNpc: movement route must include at least one room");
+            }
+        }
+        if let Some(random) = &random_rooms {
+            if random.is_empty() {
+                bail!("loading TriggerAction:ModifyNpc: random room set must include at least one room");
+            }
+        }
+        if route.is_some() && random_rooms.is_some() {
+            bail!("loading TriggerAction:ModifyNpc: cannot set both route and random rooms");
+        }
+
+        let timing = if let Some(timing_str) = &self.timing {
+            Some(match timing_str {
+                RawMovementTimingPatch::EveryNTurns { turns } => MovementTiming::EveryNTurns { turns: *turns },
+                RawMovementTimingPatch::OnTurn { turn } => MovementTiming::OnTurn { turn: *turn },
+            })
+        } else {
+            None
+        };
+
+        Ok(NpcMovementPatch {
+            route,
+            random_rooms,
+            timing,
+            active: self.active,
+            loop_route: self.loop_route,
+        })
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RawNpcPatch {
+    pub name: Option<String>,
+    pub desc: Option<String>,
+    pub state: Option<NpcState>,
+    #[serde(default)]
+    pub add_lines: Vec<RawNpcDialoguePatch>,
+    pub movement: Option<RawNpcMovementPatch>,
+}
+impl RawNpcPatch {
+    pub fn to_patch(&self, symbols: &SymbolTable) -> Result<NpcPatch> {
+        let add_lines = self
+            .add_lines
+            .iter()
+            .map(|raw| NpcDialoguePatch {
+                state: raw.state.clone(),
+                line: raw.line.clone(),
+            })
+            .collect();
+
+        let movement = if let Some(raw_mvmt) = &self.movement {
+            let mvmt_patch = raw_mvmt.to_patch(symbols)?;
+            if mvmt_patch.has_updates() {
+                Some(mvmt_patch)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        Ok(NpcPatch {
+            name: self.name.clone(),
+            desc: self.desc.clone(),
+            state: self.state.clone(),
+            add_lines,
+            movement,
+        })
+    }
+}
+
+#[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum RawTriggerAction {
     ModifyItem {
@@ -156,6 +284,10 @@ pub enum RawTriggerAction {
     ModifyRoom {
         room_sym: String,
         patch: RawRoomPatch,
+    },
+    ModifyNpc {
+        npc_sym: String,
+        patch: RawNpcPatch,
     },
     SpawnNpcIntoRoom {
         npc_sym: String,
@@ -314,6 +446,7 @@ impl RawTriggerAction {
         match self {
             Self::ModifyItem { item_sym, patch } => cook_modify_item(symbols, item_sym, patch),
             Self::ModifyRoom { room_sym, patch } => cook_modify_room(symbols, room_sym, patch),
+            Self::ModifyNpc { npc_sym, patch } => cook_modify_npc(symbols, npc_sym, patch),
             Self::SpawnNpcIntoRoom { npc_sym, room_sym } => cook_spawn_npc_into_room(symbols, npc_sym, room_sym),
             Self::DespawnNpc { npc_sym } => cook_despawn_npc(symbols, npc_sym),
             Self::SetNpcActive { npc_sym, active } => cook_set_npc_active(symbols, npc_sym, *active),
@@ -412,6 +545,17 @@ fn cook_modify_room(symbols: &SymbolTable, room_sym: &str, patch: &RawRoomPatch)
         })
     } else {
         bail!("loading TriggerAction:ModifyRoom: room symbol ({room_sym}) not in table");
+    }
+}
+
+fn cook_modify_npc(symbols: &SymbolTable, npc_sym: &str, patch: &RawNpcPatch) -> Result<TriggerAction> {
+    if let Some(npc_id) = symbols.characters.get(npc_sym) {
+        Ok(TriggerAction::ModifyNpc {
+            npc_id: *npc_id,
+            patch: patch.to_patch(symbols)?,
+        })
+    } else {
+        bail!("loading TriggerAction:ModifyNpc: npc symbol ({npc_sym}) not in table");
     }
 }
 

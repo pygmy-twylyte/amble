@@ -64,8 +64,17 @@ when touch item big_red_button {
 }
 
 trigger "Big Blue Button Pushed"
-note "test npc despawn"
+note "test modify npc"
 when touch item big_blue_button {
-    do show "Bye, Luggage!"
-    do despawn npc the_luggage
+    do show "Modifying the Luggage..."
+    do modify npc the_luggage {
+        name "Hungry Luggage"
+        desc "The Luggage is ravenous! Beware!!"
+        state custom(hungry)
+        add line "(The Luggage nearly bites your face off when you approach.)" to state custom(hungry)
+        random rooms (high-ridge, ice-pit, lounge)
+        timing every 2 turns
+        active true
+        loop true
+    }
 }
