@@ -22,8 +22,8 @@ What started as a simple little game blossomed into a fully data-driven game eng
 
 - Data-first design so stories live entirely in TOML, not code
 - Rooms with conditional description overlays that can adapt to world state and connections that can be conditional, hidden, locked, or remapped entirely during play
-- Items support a variety of capabilities (like "ignite" or "smash" or "turn on") and interaction types and can be consumable; items can also be containers and nested indefinitely
-- NPCs supported with dialogue, trade options (via triggers), moods/states, and movement on either prescribed routes or randomly through a defined area
+- Items support a variety of capabilities (like "ignite" or "smash" or "turn on") and interactions, and can be consumable; items can also be containers and nested to an arbitrary depth.
+- NPCs supported with dialogue, trade options (via triggers), moods/states, and movement on either predetermined routes or randomly through a defined area
 - Goals / Achievement system to help guide players to important objectives and mark progress
 - Configurable point scoring system
 - Customizable status effects
