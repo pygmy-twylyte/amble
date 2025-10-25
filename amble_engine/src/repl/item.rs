@@ -10,6 +10,7 @@
 //! ## Item Usage
 //! - [`use_item_on_handler`] - Use one item on another with specific interactions
 //! - [`turn_on_handler`] - Activate items that can be switched on
+//! - [`turn_off_handler`] - Stop / disable items that have that ability
 //!
 //! ## Container Management
 //! - [`open_handler`] - Open closed containers to access contents
@@ -474,6 +475,87 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
     Ok(())
 }
 
+/// Disables an item if it has the ability to be turned off.
+///
+/// This handler attempts to turn off or disable items in the current room
+/// that have switch-like functionality. Items must have the `TurnOff` ability
+/// to be stopped, and that can be tied to various game world responses via triggers.
+///
+/// # Parameters
+///
+/// * `world` - Mutable reference to the game world
+/// * `view` - Mutable reference to the player's view for feedback messages
+/// * `item_pattern` - Pattern string to match against items in current room
+///
+/// # Returns
+///
+/// Returns `Ok(())` after attempting to disable, regardless of success in doing so.
+///
+/// # Behavior
+///
+/// - Searches current room for items matching the pattern
+/// - Verifies the item has the `TurnOff` ability
+/// - Fires `TriggerCondition::UseItem` with `ItemAbility::TurnOff`
+/// - Provides appropriate feedback based on whether triggers fire
+///
+/// # Error Handling
+///
+/// - Item not found: Standard "not found" message
+/// - Item cannot be turned off: Specific capability message
+/// - NPC matched: Humorous rejection message
+/// - No effect: Generic "nothing happens" message when no triggers fire
+pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<()> {
+    let current_room = world.player_room_ref()?;
+    if let Some(entity) = find_world_object(&current_room.contents, &world.items, &world.npcs, item_pattern) {
+        if let Some(item) = entity.item() {
+            if item.abilities.contains(&ItemAbility::TurnOff) {
+                info!("Player switched off {} ({})", item.name(), item.symbol());
+                let sent_id = item.id();
+                let fired_triggers = check_triggers(
+                    world,
+                    view,
+                    &[TriggerCondition::UseItem {
+                        item_id: sent_id,
+                        ability: ItemAbility::TurnOff,
+                    }],
+                )?;
+                let sent_trigger_fired = triggers_contain_condition(&fired_triggers, |cond| match cond {
+                    TriggerCondition::UseItem { item_id, ability } => {
+                        *item_id == sent_id && *ability == ItemAbility::TurnOff
+                    },
+                    _ => false,
+                });
+                if !sent_trigger_fired {
+                    view.push(ViewItem::ActionFailure(format!(
+                        "{}",
+                        "You hear a clicking sound and then... nothing happens.".italic()
+                    )));
+                }
+            } else {
+                info!(
+                    "Player tried to turn off unswitchable item {} ({})",
+                    item.name(),
+                    item.symbol()
+                );
+                view.push(ViewItem::ActionFailure(format!(
+                    "The {} can't be turned off.",
+                    item.name().item_style()
+                )));
+            }
+        } else if let Some(npc) = entity.npc() {
+            info!("Player tried to turn off an NPC {} ({})", npc.name(), npc.symbol());
+            view.push(ViewItem::ActionFailure(format!(
+                "{} is already turned off, believe me.",
+                npc.name().npc_style()
+            )));
+        }
+    } else {
+        entity_not_found(world, view, item_pattern);
+        return Ok(());
+    }
+    world.turn_count += 1;
+    Ok(())
+}
 /// Opens a closed container item, making its contents accessible.
 ///
 /// This handler attempts to open container items that are currently in a
