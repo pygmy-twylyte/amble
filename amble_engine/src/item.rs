@@ -294,8 +294,11 @@ pub fn consume(world: &mut AmbleWorld, item_id: &Uuid, ability: ItemAbility) -> 
 
 /// Methods common to things that can hold items.
 pub trait ItemHolder {
+    /// Insert an item into the holder's contents.
     fn add_item(&mut self, item_id: Uuid);
+    /// Remove an item from the holder's contents.
     fn remove_item(&mut self, item_id: Uuid);
+    /// Return `true` when the holder already contains the given item.
     fn contains_item(&self, item_id: Uuid) -> bool;
 }
 

@@ -23,6 +23,7 @@ use std::{
     path::PathBuf,
 };
 
+/// Initialize env_logger based on AMBLE_* environment variables.
 fn init_logging() -> Result<()> {
     let raw_level = match env::var("AMBLE_LOG") {
         Ok(value) => value,
@@ -85,12 +86,14 @@ fn init_logging() -> Result<()> {
     Ok(())
 }
 
+/// Derive a default log file path next to the executable.
 fn default_log_path() -> Result<PathBuf> {
     let mut executable = env::current_exe().context("resolving current executable path")?;
     executable.set_file_name(format!("amble-{AMBLE_VERSION}.log"));
     Ok(executable)
 }
 
+/// Entry point: loads content, initializes themes, and starts the REPL.
 fn main() -> Result<()> {
     init_logging()?;
     info!("Starting Amble engine (version {AMBLE_VERSION})");

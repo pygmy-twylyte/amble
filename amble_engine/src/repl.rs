@@ -39,15 +39,19 @@ use variantly::Variantly;
 
 use input::{InputEvent, InputManager};
 
-/// Enum used to control exit from the repl loop.
+/// Control flow signal used by handlers to exit the REPL.
 pub enum ReplControl {
     Continue,
     Quit,
 }
 
-/// Run the main command loop for the game.
+/// Run the main read–eval–print loop until the user quits.
+///
+/// Handles prompting, command parsing, dispatching to the various handler modules,
+/// and advancing world time. Returns when a handler signals `Quit`.
+///
 /// # Errors
-/// - Returns an error if unable to resolve the location (Room) of the player
+/// - Propagates failures from handlers, such as a missing room for the player.
 pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     use Command::*;
     let mut view = View::new();

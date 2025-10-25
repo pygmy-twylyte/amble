@@ -414,6 +414,8 @@ pub fn dev_list_sched_handler(world: &mut AmbleWorld, view: &mut View) {
 }
 
 /// Summarize an `OnFalsePolicy` to a compact, human-friendly string.
+///
+/// This keeps scheduler listings tidy while still conveying retry behavior.
 fn summarize_on_false(p: &OnFalsePolicy) -> String {
     match p {
         OnFalsePolicy::Cancel => "cancel".to_string(),
@@ -422,7 +424,7 @@ fn summarize_on_false(p: &OnFalsePolicy) -> String {
     }
 }
 
-/// Summarize an `EventCondition` into a concise string using symbols where possible.
+/// Render an `EventCondition` using world symbols for concise logging.
 fn summarize_event_condition(world: &AmbleWorld, ec: &EventCondition) -> String {
     match ec {
         EventCondition::Trigger(tc) => summarize_trigger_condition(world, tc),
@@ -437,7 +439,7 @@ fn summarize_event_condition(world: &AmbleWorld, ec: &EventCondition) -> String 
     }
 }
 
-/// Summarize a `TriggerCondition` into a compact form with symbols.
+/// Render a `TriggerCondition` using world symbols for concise logging.
 fn summarize_trigger_condition(world: &AmbleWorld, tc: &TriggerCondition) -> String {
     match tc {
         TriggerCondition::Touch(item) => {

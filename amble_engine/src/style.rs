@@ -23,7 +23,10 @@ pub fn normal_block() -> Options<'static> {
     Options::with_termwidth().wrap_algorithm(textwrap::WrapAlgorithm::OptimalFit(Penalties::new()))
 }
 
-/// Convenience trait for applying color and style to text output.
+/// Convenience trait for applying theme-aware color and style to text output.
+///
+/// Implementations render strings according to the currently selected terminal
+/// theme, providing a single place to keep styling consistent across views.
 pub trait GameStyle {
     fn prompt_style(&self) -> ColoredString;
     fn status_style(&self) -> ColoredString;

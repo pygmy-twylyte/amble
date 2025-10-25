@@ -34,10 +34,14 @@ where
     list.iter().any(|t| t.conditions.iter().any(&matcher))
 }
 
-/// Determine which triggers meet conditions to fire now, fire them, and return a list of fired triggers.
+/// Evaluate triggers against recent events, execute matching actions, and return the fired set.
+///
+/// The provided `events` slice represents instantaneous conditions (e.g., player just entered a room).
+/// Persistent predicates are checked via [`TriggerCondition::is_ongoing`]. Each matching trigger
+/// has its actions dispatched in order, respecting the `only_once` flag.
 ///
 /// # Errors
-/// - on any failed uuid lookup during trigger dispatch
+/// - Propagates failures from action dispatch such as missing UUID references.
 pub fn check_triggers<'a>(
     world: &'a mut AmbleWorld,
     view: &mut View,

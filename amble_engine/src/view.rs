@@ -746,20 +746,29 @@ impl View {
 /// Subsections of the output.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Section {
+    /// Transitional text/log lines between turns.
     Transition,
+    /// Room description, exits, and ambient context.
     Environment,
+    /// Direct results of the player's command.
     DirectResult,
+    /// Follow-up reactions from the world or NPCs.
     WorldResponse,
+    /// Ambient chatter and scheduled flavour text.
     Ambient,
+    /// Meta/game-system feedback (saves, help, etc.).
     System,
 }
 
 /// `ViewMode` alters the way that each "frame" is rendered.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ViewMode {
-    ClearVerbose, // clears before every room description
-    Verbose,      // always shows full room description
-    Brief,        // only show full description on first entry
+    /// Always render full descriptions and clear before each frame.
+    ClearVerbose,
+    /// Always render full descriptions without clearing between turns.
+    Verbose,
+    /// Render brief descriptions after the first visit to a room.
+    Brief,
 }
 
 /// `ViewItems` are each of the various types of information / messages that may be displayed to the player.
@@ -850,6 +859,7 @@ pub enum ViewItem {
     TriggeredEvent(String),
 }
 impl ViewItem {
+    /// Classify a view item into a top-level output section.
     pub fn section(&self) -> Section {
         match self {
             ViewItem::RoomDescription { .. }
@@ -897,21 +907,21 @@ impl ViewItem {
         }
     }
 }
-/// Different actions that can be applied to status effects.
+/// Indicates whether a status effect is being applied or removed.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum StatusAction {
     Apply,
     Remove,
 }
 
-/// Information needed to display a contents list for an item correctly
+/// Row data for listing container contents.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContentLine {
     pub item_name: String,
     pub restricted: bool,
 }
 
-/// Information needed to display a line in the room exit list
+/// Row data for the exit listing portion of the view.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExitLine {
     pub direction: String,
@@ -920,7 +930,7 @@ pub struct ExitLine {
     pub dest_visited: bool,
 }
 
-/// Information needed to display a line in the room NPC list
+/// Row data for the NPC list within room descriptions.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NpcLine {
     pub name: String,

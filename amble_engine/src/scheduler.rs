@@ -71,6 +71,9 @@ impl Scheduler {
     }
 
     /// Schedule actions in the future with an optional condition and on-false policy.
+    ///
+    /// Primarily used by conditional scheduling trigger actions; events that fail
+    /// the condition at execution time can be retried according to `on_false`.
     pub fn schedule_in_if(
         &mut self,
         now: usize,
@@ -123,6 +126,8 @@ impl Scheduler {
     }
 
     /// Pop the next due event, if any.
+    ///
+    /// Returns `None` when the earliest scheduled event is still in the future.
     pub fn pop_due(&mut self, now: usize) -> Option<ScheduledEvent> {
         if let Some(Reverse((turn_due, idx))) = self.heap.peek().copied() {
             if now >= turn_due {
@@ -137,6 +142,7 @@ impl Scheduler {
         None
     }
 
+    /// Rebuild the underlying storage when too many placeholder tombstones accumulate.
     fn compact_if_needed(&mut self) {
         let placeholder_count = self.events.iter().filter(|e| e.is_placeholder()).count();
         if placeholder_count > PLACEHOLDER_THRESHOLD {
@@ -178,6 +184,7 @@ pub struct ScheduledEvent {
 }
 
 impl ScheduledEvent {
+    /// Placeholder events mark consumed slots within the scheduler. Determine whether this is one of them.
     fn is_placeholder(&self) -> bool {
         self.on_turn == 0 && self.actions.is_empty() && self.note.is_none() && self.condition.is_none()
     }
@@ -224,6 +231,7 @@ pub enum EventCondition {
 }
 
 impl EventCondition {
+    /// Evaluate the condition against the current world state.
     pub fn eval(&self, world: &crate::world::AmbleWorld) -> bool {
         match self {
             EventCondition::Trigger(tc) => tc.is_ongoing(world),

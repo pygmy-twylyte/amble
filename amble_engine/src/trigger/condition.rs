@@ -90,6 +90,7 @@ pub enum TriggerCondition {
 }
 
 impl TriggerCondition {
+    /// Check whether this condition appears in a list of fired events.
     pub fn matches_event_in(&self, events: &[TriggerCondition]) -> bool {
         events.contains(self)
     }
@@ -106,7 +107,10 @@ impl TriggerCondition {
         }
     }
 
-    /// Returns true if a state check is true (or if the Chance trigger returns true in that case.)
+    /// Evaluate non-event-driven conditions against the live world state.
+    ///
+    /// This covers ongoing predicates such as flags, inventory membership,
+    /// and NPC states. For chance triggers it performs the random roll.
     pub fn is_ongoing(&self, world: &AmbleWorld) -> bool {
         let player_flag_set = |flag_str: &str| world.player.flags.iter().any(|f| f.value() == *flag_str);
         match self {
