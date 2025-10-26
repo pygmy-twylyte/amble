@@ -54,6 +54,9 @@ use log::info;
 use uuid::Uuid;
 
 /// Shows description of surroundings.
+///
+/// # Errors
+/// Returns an error if the player's current room cannot be resolved.
 pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let room = world.player_room_ref()?;
     room.show(
@@ -81,6 +84,9 @@ pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
 }
 
 /// Shows description of something (scoped to nearby items and npcs and inventory)
+///
+/// # Errors
+/// Returns an error if the player's current room or the scoped items cannot be resolved.
 pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
     // scope = local items + npcs + player inventory (including items visible in transparent containers)
@@ -109,6 +115,9 @@ pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> 
 }
 
 /// Shows list of items held in inventory.
+///
+/// # Errors
+/// This handler never produces an error and always returns `Ok(())`.
 pub fn inv_handler(world: &AmbleWorld, view: &mut View) -> Result<()> {
     info!("{} checked inventory.", world.player.name());
     view.push(ViewItem::Inventory(
@@ -131,6 +140,10 @@ pub fn inv_handler(world: &AmbleWorld, view: &mut View) -> Result<()> {
 /// A DenyRead("reason") trigger action can be set to make reading an item conditional.
 /// Ex. `TriggerCondition::UseItem{...read`} + `TriggerCondition::MissingItem(magnifying_glass)` -->
 /// `TriggerAction::DenyRead("The` text is too small for you to read unaided.")
+///
+/// # Errors
+/// Returns an error if the current room cannot be determined, if scoping nearby items fails,
+/// or if trigger evaluation encounters missing world entities.
 pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
     // scope search to items in room + inventory

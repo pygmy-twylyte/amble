@@ -177,6 +177,9 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
 }
 
 /// Check the scheduler for any due events and fire them.
+///
+/// # Errors
+/// Returns an error if dispatching a scheduled trigger action fails.
 pub fn check_scheduled_events(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let now = world.turn_count;
     while let Some(event) = world.scheduler.pop_due(now) {

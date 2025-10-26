@@ -91,6 +91,10 @@ use uuid::Uuid;
 /// - Item is not portable (displays specific message)
 /// - Pattern matches non-item entity (handled gracefully)
 /// - World state corruption (returns error)
+///
+/// # Errors
+/// Returns an error if the player's current room cannot be determined, if the item state
+/// cannot be updated due to missing world entries, or if trigger evaluation fails.
 pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     if let Some(entity) = find_world_object(&world.player.inventory, &world.items, &world.npcs, thing) {
         if let Some(item) = entity.item() {
@@ -179,6 +183,10 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
 /// - Room contents (lying on the ground)
 /// - Open containers (boxes, chests, etc.)
 /// - Other accessible locations
+///
+/// # Errors
+/// Returns an error if the player's current room cannot be resolved, if world entities
+/// referenced during transfer cannot be found, or if trigger evaluation fails.
 pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     let take_verb = world.spin_core(CoreSpinnerType::TakeVerb, "take");
     let room_id = world.player_room_ref()?.id();
@@ -349,6 +357,10 @@ pub enum VesselType {
 ///
 /// Then player inventory, vessel inventory/contents, and item location are all
 /// updated to maintain consistent game state.
+///
+/// # Errors
+/// Returns an error if the player is not currently in a valid room, if container or NPC
+/// references cannot be resolved, or if trigger evaluation encounters invalid data.
 pub fn take_from_handler(
     world: &mut AmbleWorld,
     view: &mut View,
@@ -687,6 +699,10 @@ pub fn transfer_to_player(
 ///
 /// This allows the game to respond to both the specific act of organized storage
 /// and the general act of item placement.
+///
+/// # Errors
+/// Returns an error if the player's room or the target container cannot be resolved,
+/// if world state updates fail due to missing entities, or if trigger evaluation fails.
 pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, container: &str) -> Result<()> {
     // get uuid of item and container
     let (item_id, item_name) =

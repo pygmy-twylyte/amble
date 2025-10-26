@@ -102,47 +102,47 @@ use crate::world::{AmbleWorld, Location, WorldObject};
 /// # Action Types
 ///
 /// ## Flag Management
-/// - [`AddFlag`] - Adds a status flag to the player
-/// - [`AdvanceFlag`] - Advances a sequence flag to the next step
-/// - [`RemoveFlag`] - Removes a flag from the player
-/// - [`ResetFlag`] - Resets a sequence flag to step 0
+/// - `AddFlag` - Adds a status flag to the player
+/// - `AdvanceFlag` - Advances a sequence flag to the next step
+/// - `RemoveFlag` - Removes a flag from the player
+/// - `ResetFlag` - Resets a sequence flag to step 0
 ///
 /// ## Item Manipulation
-/// - [`SetContainerState`] - Monkey wrench for containers: open/close, lock/unlock, set transparency.
-/// - [`ReplaceDropItem`] - Drops item at current location AND replaces it with another.
-/// - [`DespawnItem`] - Removes an item from the world entirely
-/// - [`ReplaceItem`] - Replaces one item with another, in the same location.
-/// - [`LockItem`] - Locks a container item
-/// - [`RestrictItem`] - Makes an item non-transferable
-/// - [`SpawnItemCurrentRoom`] - Creates an item in the player's current room
-/// - [`SpawnItemInContainer`] - Creates an item inside a container
-/// - [`SpawnItemInInventory`] - Creates an item in the player's inventory
-/// - [`SpawnItemInRoom`] - Creates an item in a specific room
-/// - [`UnlockItem`] - Unlocks a container item
-/// - [`SetItemDescription`] - Sets a new description for an item
+/// - `SetContainerState` - Monkey wrench for containers: open/close, lock/unlock, set transparency.
+/// - `ReplaceDropItem` - Drops item at current location AND replaces it with another.
+/// - `DespawnItem` - Removes an item from the world entirely
+/// - `ReplaceItem` - Replaces one item with another, in the same location.
+/// - `LockItem` - Locks a container item
+/// - `RestrictItem` - Makes an item non-transferable
+/// - `SpawnItemCurrentRoom` - Creates an item in the player's current room
+/// - `SpawnItemInContainer` - Creates an item inside a container
+/// - `SpawnItemInInventory` - Creates an item in the player's inventory
+/// - `SpawnItemInRoom` - Creates an item in a specific room
+/// - `UnlockItem` - Unlocks a container item
+/// - `SetItemDescription` - Sets a new description for an item
 ///
 /// ## Player Actions
-/// - [`AwardPoints`] - Adds or subtracts points from the player's score
-/// - [`GiveItemToPlayer`] - Transfers an item from an NPC to the player
-/// - [`PushPlayerTo`] - Instantly moves the player to a different room
+/// - `AwardPoints` - Adds or subtracts points from the player's score
+/// - `GiveItemToPlayer` - Transfers an item from an NPC to the player
+/// - `PushPlayerTo` - Instantly moves the player to a different room
 ///
 /// ## NPC Interactions
-/// - [`NpcRefuseItem`] - Makes an NPC refuse an item with a custom message
-/// - [`NpcSays`] - Makes an NPC speak a specific line
-/// - [`NpcSaysRandom`] - Makes an NPC speak a random line based on their mood
-/// - [`SetNPCState`] - Changes an NPC's behavioral state
+/// - `NpcRefuseItem` - Makes an NPC refuse an item with a custom message
+/// - `NpcSays` - Makes an NPC speak a specific line
+/// - `NpcSaysRandom` - Makes an NPC speak a random line based on their mood
+/// - `SetNPCState` - Changes an NPC's behavioral state
 ///
 /// ## World Modification
-/// - [`LockExit`] - Locks a room exit, preventing passage
-/// - [`RevealExit`] - Makes a hidden exit visible and usable
-/// - [`SetBarredMessage`] - Sets a custom message for blocked exits
-/// - [`UnlockExit`] - Unlocks a previously locked exit
+/// - `LockExit` - Locks a room exit, preventing passage
+/// - `RevealExit` - Makes a hidden exit visible and usable
+/// - `SetBarredMessage` - Sets a custom message for blocked exits
+/// - `UnlockExit` - Unlocks a previously locked exit
 ///
 /// ## UI/UX Actions
-/// - [`AddSpinnerWedge`] - Adds a new random text option to a spinner
-/// - [`DenyRead`] - Prevents reading an item with a custom message
-/// - [`ShowMessage`] - Displays a message to the player
-/// - [`SpinnerMessage`] - Displays a random message from a spinner
+/// - `AddSpinnerWedge` - Adds a new random text option to a spinner
+/// - `DenyRead` - Prevents reading an item with a custom message
+/// - `ShowMessage` - Displays a message to the player
+/// - `SpinnerMessage` - Displays a random message from a spinner
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TriggerAction {
     /// Set the activity state of an NPC
@@ -482,7 +482,11 @@ pub struct NpcPatch {
  *
  */
 
-/// Modifies multiple properties of an `Item` at once by applying an `ItemPatch`
+/// Modifies multiple properties of an `Item` at once by applying an `ItemPatch`.
+///
+/// # Errors
+/// Returns an error if the target item cannot be found or if referenced
+/// container/item identifiers inside the patch are missing.
 pub fn modify_item(world: &mut AmbleWorld, item_id: Uuid, patch: &ItemPatch) -> Result<()> {
     info!(
         "└─ action: modifying item {} using patch: {:?}",
@@ -495,6 +499,10 @@ pub fn modify_item(world: &mut AmbleWorld, item_id: Uuid, patch: &ItemPatch) -> 
 }
 
 /// Modifies multiple properties of a `Room` at once by applying a `RoomPatch`.
+///
+/// # Errors
+/// Returns an error if the target room cannot be found or if referenced exits
+/// or items in the patch cannot be resolved.
 pub fn modify_room(world: &mut AmbleWorld, room_id: Uuid, patch: &RoomPatch) -> Result<()> {
     info!(
         "└─ action: modifying room {} using patch: {:?}",
@@ -506,6 +514,10 @@ pub fn modify_room(world: &mut AmbleWorld, room_id: Uuid, patch: &RoomPatch) -> 
 }
 
 /// Modifies multiple properties of an `Npc` at once by applying an `NpcPatch`.
+///
+/// # Errors
+/// Returns an error if the NPC cannot be found or if movement patches contain
+/// inconsistent data (such as empty routes or unknown rooms).
 pub fn modify_npc(world: &mut AmbleWorld, npc_id: Uuid, patch: &NpcPatch) -> Result<()> {
     info!(
         "└─ action: modifying npc {} using patch: {:?}",
@@ -758,6 +770,9 @@ fn apply_item_patch(world: &mut AmbleWorld, item_id: Uuid, patch: &ItemPatch) ->
 }
 
 /// Spawn an NPC in a Room. If the NPC is already in the world, it will be moved and a warning logged.
+///
+/// # Errors
+/// Propagates errors when the NPC or destination room cannot be found.
 pub fn spawn_npc_in_room(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, room_id: Uuid) -> Result<()> {
     info!(
         "└─ action: spawning NPC '{}' in Room '{}'",
@@ -778,6 +793,10 @@ pub fn spawn_npc_in_room(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, 
 }
 
 /// Remove an NPC from the world.
+///
+/// # Errors
+/// Returns an error if the NPC cannot be found or movement fails while
+/// clearing their location.
 pub fn despawn_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid) -> Result<()> {
     info!("└─ action: despawning NPC '{}'", symbol_or_unknown(&world.npcs, npc_id));
     move_npc(world, view, npc_id, Location::Nowhere)?;
@@ -785,6 +804,9 @@ pub fn despawn_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid) -> Res
 }
 
 /// Toggle an NPC's active movement flag without relocating them.
+///
+/// # Errors
+/// Returns an error if the NPC does not exist in the world.
 pub fn set_npc_active(world: &mut AmbleWorld, npc_id: &Uuid, active: bool) -> Result<()> {
     if let Some(npc) = world.npcs.get_mut(&npc_id) {
         if let Some(ref mut mvmt) = npc.movement {
@@ -797,6 +819,9 @@ pub fn set_npc_active(world: &mut AmbleWorld, npc_id: &Uuid, active: bool) -> Re
 }
 
 /// Update an item's container state (or clear it entirely, if it is empty).
+///
+/// # Errors
+/// Returns an error if the item cannot be found in the world.
 pub fn set_container_state(world: &mut AmbleWorld, item_id: Uuid, state: Option<ContainerState>) -> Result<()> {
     if let Some(item) = world.items.get_mut(&item_id) {
         item.container_state = state;
@@ -807,7 +832,11 @@ pub fn set_container_state(world: &mut AmbleWorld, item_id: Uuid, state: Option<
     Ok(())
 }
 
-/// Replace one item with another at the same `Location`
+/// Replace one item with another at the same `Location`.
+///
+/// # Errors
+/// Returns an error if either item cannot be found or if required containers,
+/// rooms, or NPCs are missing when transferring ownership.
 pub fn replace_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -> Result<()> {
     // record old item's location and symbol
     let (location, old_sym) = if let Some(old_item) = world.items.get(&old_id) {
@@ -854,6 +883,10 @@ pub fn replace_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -> Res
 }
 
 /// Drop an item in the current room and immediately spawn its replacement.
+///
+/// # Errors
+/// Returns an error if either item cannot be found or if despawning/spawning
+/// fails due to missing room context.
 pub fn replace_drop_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -> Result<()> {
     despawn_item(world, old_id)?;
     spawn_item_in_current_room(world, new_id)?;
@@ -861,6 +894,9 @@ pub fn replace_drop_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -
 }
 
 /// Overwrite an item's description text at runtime.
+///
+/// # Errors
+/// Returns an error if the item does not exist.
 pub fn set_item_description(world: &mut AmbleWorld, item_id: &Uuid, text: &str) -> Result<()> {
     let item = world
         .get_item_mut(*item_id)
@@ -916,6 +952,9 @@ pub fn set_barred_message(world: &mut AmbleWorld, exit_from: &Uuid, exit_to: &Uu
 }
 
 /// Emit feedback when an NPC declines an offered item.
+///
+/// # Errors
+/// Returns an error if either the NPC or their dialogue data cannot be found.
 pub fn npc_refuse_item(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, reason: &str) -> Result<()> {
     npc_says(world, view, &npc_id, reason)?;
     let npc_name = world
@@ -1893,6 +1932,9 @@ pub fn deny_read(view: &mut View, reason: &String) {
 /// - The event will fire automatically during the REPL turn processing
 /// - Multiple events can be scheduled for the same future turn
 /// - Scheduled events persist across game saves/loads
+///
+/// # Errors
+/// This action never produces an error; scheduling always succeeds.
 pub fn schedule_in(
     world: &mut AmbleWorld,
     _view: &mut View,
@@ -1937,6 +1979,9 @@ pub fn schedule_in(
 /// - Multiple events can be scheduled for the same turn
 /// - Events fire in FIFO order when scheduled for the same turn
 /// - Scheduled events persist across game saves/loads
+///
+/// # Errors
+/// This action never produces an error; scheduling always succeeds.
 pub fn schedule_on(
     world: &mut AmbleWorld,
     _view: &mut View,
@@ -1955,6 +2000,9 @@ pub fn schedule_on(
 }
 
 /// Schedule actions to fire in the future, gated by a condition.
+///
+/// # Errors
+/// This action never produces an error; scheduling always succeeds.
 pub fn schedule_in_if(
     world: &mut AmbleWorld,
     _view: &mut View,
@@ -1981,6 +2029,9 @@ pub fn schedule_in_if(
 }
 
 /// Schedule actions to fire on a specific turn, gated by a condition.
+///
+/// # Errors
+/// This action never produces an error; scheduling always succeeds.
 pub fn schedule_on_if(
     world: &mut AmbleWorld,
     _view: &mut View,
@@ -2002,6 +2053,9 @@ pub fn schedule_on_if(
 }
 
 /// Convenience: schedule with condition that player is in any of the supplied rooms.
+///
+/// # Errors
+/// - propagates any errors from scheduler call
 pub fn schedule_if_player_in_any(
     world: &mut AmbleWorld,
     _view: &mut View,
@@ -2024,6 +2078,9 @@ pub fn schedule_if_player_in_any(
 }
 
 /// Convenience: schedule on an absolute turn with condition that player is in any of the supplied rooms.
+///
+/// # Errors
+/// - propagates any errors from scheduler call
 pub fn schedule_on_if_player_in_any(
     world: &mut AmbleWorld,
     _view: &mut View,
@@ -2046,6 +2103,9 @@ pub fn schedule_on_if_player_in_any(
 }
 
 /// Convenience: schedule in N turns if the player has a specific item.
+///
+/// # Errors
+/// - propagates any errors from scheduler call
 pub fn schedule_in_if_player_has_item(
     world: &mut AmbleWorld,
     _view: &mut View,
@@ -2060,6 +2120,9 @@ pub fn schedule_in_if_player_has_item(
 }
 
 /// Convenience: schedule on a specific turn if the player has a specific item.
+///
+/// # Errors
+/// - propagates any errors from scheduler call
 pub fn schedule_on_if_player_has_item(
     world: &mut AmbleWorld,
     _view: &mut View,
@@ -2074,6 +2137,9 @@ pub fn schedule_on_if_player_has_item(
 }
 
 /// Convenience: schedule in N turns if the player is missing a specific item.
+///
+/// # Errors
+/// - propagates any errors from scheduler call
 pub fn schedule_in_if_player_missing_item(
     world: &mut AmbleWorld,
     _view: &mut View,
@@ -2088,6 +2154,9 @@ pub fn schedule_in_if_player_missing_item(
 }
 
 /// Convenience: schedule on a specific turn if the player is missing a specific item.
+///
+/// # Errors
+/// - propagates any errors from scheduler call
 pub fn schedule_on_if_player_missing_item(
     world: &mut AmbleWorld,
     _view: &mut View,
@@ -2102,6 +2171,9 @@ pub fn schedule_on_if_player_missing_item(
 }
 
 /// Convenience: schedule in N turns if a flag is set.
+///
+/// # Errors
+/// - propagates any errors from scheduler call
 pub fn schedule_in_if_flag_set(
     world: &mut AmbleWorld,
     _view: &mut View,
@@ -2116,6 +2188,9 @@ pub fn schedule_in_if_flag_set(
 }
 
 /// Convenience: schedule on a specific turn if a flag is set.
+///
+/// # Errors
+/// - propagates any errors from scheduler call
 pub fn schedule_on_if_flag_set(
     world: &mut AmbleWorld,
     _view: &mut View,
@@ -2130,9 +2205,12 @@ pub fn schedule_on_if_flag_set(
 }
 
 /// Convenience: schedule in N turns if a flag is missing.
+///
+/// # Errors
+/// - propagates any errors from scheduler call
 pub fn schedule_in_if_flag_missing(
     world: &mut AmbleWorld,
-    _view: &mut View,
+    view: &mut View,
     turns_ahead: usize,
     flag: &str,
     on_false: OnFalsePolicy,
@@ -2140,13 +2218,16 @@ pub fn schedule_in_if_flag_missing(
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::MissingFlag(flag.to_string()));
-    schedule_in_if(world, _view, turns_ahead, &condition, on_false, actions, note)
+    schedule_in_if(world, view, turns_ahead, &condition, on_false, actions, note)
 }
 
 /// Convenience: schedule on a specific turn if a flag is missing.
+///
+/// # Errors
+/// - propagates any errors from scheduler call
 pub fn schedule_on_if_flag_missing(
     world: &mut AmbleWorld,
-    _view: &mut View,
+    view: &mut View,
     on_turn: usize,
     flag: &str,
     on_false: OnFalsePolicy,
@@ -2154,7 +2235,7 @@ pub fn schedule_on_if_flag_missing(
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::MissingFlag(flag.to_string()));
-    schedule_on_if(world, _view, on_turn, &condition, on_false, actions, note)
+    schedule_on_if(world, view, on_turn, &condition, on_false, actions, note)
 }
 
 #[cfg(test)]

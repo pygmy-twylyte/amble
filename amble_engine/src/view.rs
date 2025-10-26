@@ -328,7 +328,7 @@ impl View {
                     format_modified(modified).dimmed()
                 )
             } else {
-                format!("  • {} {}", slot_label, version_label)
+                format!("  • {slot_label} {version_label}")
             };
             println!("{header}");
 

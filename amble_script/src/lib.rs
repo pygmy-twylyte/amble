@@ -424,12 +424,20 @@ pub enum CompileError {
 /// `showMessage`, `addFlag`, and `awardPoints` respectively.
 ///
 /// Returns a pretty TOML string.
+///
+/// # Errors
+/// Returns an error if the trigger AST is missing required fields or contains
+/// constructs (such as unsupported condition groups) that cannot be lowered.
 pub fn compile_trigger_to_toml(ast: &TriggerAst) -> Result<String, CompileError> {
     let doc = compile_triggers_to_doc(&[ast.clone()])?;
     Ok(doc.to_string())
 }
 
 /// Compile multiple triggers into a single TOML string with one `triggers` array.
+///
+/// # Errors
+/// Returns an error if any trigger AST is invalid or contains unsupported
+/// constructs that cannot be emitted to TOML.
 pub fn compile_triggers_to_toml(asts: &[TriggerAst]) -> Result<String, CompileError> {
     let doc = compile_triggers_to_doc(asts)?;
     Ok(doc.to_string())
@@ -990,6 +998,10 @@ pub enum NpcLocationAst {
 }
 
 /// Compile rooms into TOML string matching amble_engine/data/rooms.toml structure.
+///
+/// # Errors
+/// Returns an error if a room is missing required identifiers, or if exits and
+/// overlays reference symbols that cannot be resolved.
 pub fn compile_rooms_to_toml(rooms: &[RoomAst]) -> Result<String, CompileError> {
     let mut doc = Document::new();
     let mut aot = ArrayOfTables::new();
@@ -1129,6 +1141,10 @@ pub fn compile_rooms_to_toml(rooms: &[RoomAst]) -> Result<String, CompileError> 
 }
 
 /// Compile items into TOML string matching amble_engine/data/items.toml structure.
+///
+/// # Errors
+/// Returns an error if an item is missing required data or if referenced
+/// locations/containers cannot be resolved.
 pub fn compile_items_to_toml(items: &[ItemAst]) -> Result<String, CompileError> {
     let mut doc = Document::new();
     let mut aot = ArrayOfTables::new();
@@ -1237,6 +1253,9 @@ pub fn compile_items_to_toml(items: &[ItemAst]) -> Result<String, CompileError> 
 }
 
 /// Compile spinners into TOML string matching amble_engine/data/spinners.toml structure.
+///
+/// # Errors
+/// Returns an error if a spinner identifier is missing.
 pub fn compile_spinners_to_toml(spinners: &[SpinnerAst]) -> Result<String, CompileError> {
     let mut doc = Document::new();
     let mut aot = ArrayOfTables::new();
@@ -1271,6 +1290,10 @@ pub fn compile_spinners_to_toml(spinners: &[SpinnerAst]) -> Result<String, Compi
 }
 
 /// Compile NPCs into TOML string matching amble_engine/data/npcs.toml structure.
+///
+/// # Errors
+/// Returns an error if an NPC definition is missing required data or references
+/// rooms/items that cannot be resolved.
 pub fn compile_npcs_to_toml(npcs: &[NpcAst]) -> Result<String, CompileError> {
     let mut doc = Document::new();
     let mut aot = ArrayOfTables::new();
@@ -1400,6 +1423,11 @@ pub struct GoalAst {
     pub src_line: usize,
 }
 
+/// Compile goals into TOML string matching amble_engine/data/goals.toml structure.
+///
+/// # Errors
+/// Returns an error if a goal is missing identifiers or uses an unsupported
+/// condition.
 pub fn compile_goals_to_toml(goals: &[GoalAst]) -> Result<String, CompileError> {
     let mut doc = Document::new();
     let mut aot = ArrayOfTables::new();

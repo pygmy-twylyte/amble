@@ -168,6 +168,9 @@ impl ItemHolder for Room {
 }
 impl Room {
     /// Displays full description, exit, and NPC information for the `Room`.
+    ///
+    /// # Errors
+    /// Returns an error if any referenced rooms cannot be resolved while showing exits.
     pub fn show(&self, world: &AmbleWorld, view: &mut View, force_mode: Option<ViewMode>) -> Result<()> {
         view.push(ViewItem::RoomDescription {
             name: self.name.to_string(),
@@ -221,6 +224,9 @@ impl Room {
     }
 
     /// Displays list of available exits from the Room.
+    ///
+    /// # Errors
+    /// Returns an error if a referenced destination room cannot be found.
     pub fn show_exits(&self, world: &AmbleWorld, view: &mut View) -> Result<()> {
         let mut exit_lines = Vec::new();
         for (direction, exit) in &self.exits {

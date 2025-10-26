@@ -65,7 +65,11 @@ use colored::Colorize;
 use log::{info, warn};
 use uuid::Uuid;
 
-/// Touch or press an `Item`
+/// Touch or press an `Item`.
+///
+/// # Errors
+/// Returns an error if the player's current room cannot be resolved or if the scoped items
+/// referenced during trigger evaluation cannot be found.
 pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) -> Result<()> {
     let room_id = world.player.location.room_id()?;
     let scope: HashSet<Uuid> = nearby_reachable_items(world, room_id)?
@@ -114,6 +118,10 @@ pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) ->
 }
 
 /// Ingests an item (or single portion of a multi-use item).
+///
+/// # Errors
+/// Returns an error if the player's current room cannot be located, if scoped items cannot be
+/// resolved, or if trigger evaluation encounters missing world state.
 pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, mode: IngestMode) -> Result<()> {
     let room_id = world.player_room_ref()?.id();
 
@@ -256,6 +264,10 @@ pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, m
 /// - Success: Determined by whether appropriate triggers fire
 /// - Failure: Provides specific feedback about missing requirements
 /// - No effect: Generic message from the NoEffect spinner when no triggers handle the interaction
+///
+/// # Errors
+/// Returns an error if the player's current room cannot be determined, if tool or target items
+/// cannot be resolved from world data, or if trigger evaluation fails.
 pub fn use_item_on_handler(
     world: &mut AmbleWorld,
     view: &mut View,
@@ -422,6 +434,10 @@ pub fn use_item_on_handler(
 /// - Item cannot be turned on: Specific capability message
 /// - NPC matched: Humorous rejection message
 /// - No effect: Generic "nothing happens" message when no triggers fire
+///
+/// # Errors
+/// Returns an error if the player's current room cannot be determined or if trigger execution
+/// fails due to missing world data.
 pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
     if let Some(entity) = find_world_object(&current_room.contents, &world.items, &world.npcs, item_pattern) {
@@ -504,6 +520,10 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
 /// - Item cannot be turned off: Specific capability message
 /// - NPC matched: Humorous rejection message
 /// - No effect: Generic "nothing happens" message when no triggers fire
+///
+/// # Errors
+/// Returns an error if the player's current room cannot be determined or if trigger execution
+/// fails because required world data is missing.
 pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
     if let Some(entity) = find_world_object(&current_room.contents, &world.items, &world.npcs, item_pattern) {
@@ -592,6 +612,10 @@ pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &
 /// Searches both the current room and player inventory for containers,
 /// allowing players to open containers they're carrying as well as
 /// those in their environment.
+///
+/// # Errors
+/// Returns an error if the player's current room cannot be resolved, if the targeted container
+/// cannot be retrieved, or if trigger execution fails due to missing data.
 pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     // search player's location for an item matching search
     let room = world.player_room_ref()?;
@@ -694,6 +718,10 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
 ///
 /// Searches both current room and player inventory for containers,
 /// allowing closure of both environmental and carried containers.
+///
+/// # Errors
+/// Returns an error if the player's current room cannot be resolved or if the targeted container
+/// cannot be retrieved from the world.
 pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     let room = world.player_room_ref()?;
     let search_scope: HashSet<Uuid> = room.contents.union(&world.player.inventory).copied().collect();
@@ -783,6 +811,10 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
 ///
 /// Only searches the current room for containers to lock, as locking
 /// items in inventory is less commonly needed in gameplay scenarios.
+///
+/// # Errors
+/// Returns an error if the player's current room cannot be determined or if the targeted container
+/// cannot be located within the world state.
 pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     let room = world.player_room_ref()?;
     let (uuid, name) = if let Some(entity) = find_world_object(&room.contents, &world.items, &world.npcs, pattern) {
@@ -875,6 +907,10 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
 ///
 /// The key must be in the player's inventory - keys in the room or
 /// in other containers cannot be used, maintaining gameplay challenge.
+///
+/// # Errors
+/// Returns an error if the player's current room cannot be determined, if the targeted container
+/// cannot be resolved from the world state, or if trigger evaluation fails.
 pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     let room = world.player_room_ref()?;
     let (container_id, container_name) =

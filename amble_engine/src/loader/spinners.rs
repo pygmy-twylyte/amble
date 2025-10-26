@@ -133,6 +133,9 @@ impl SpinnerFile {
 /// Load spinners from a TOML file.
 /// Returns a map with all core spinners (using defaults) plus any custom spinners defined in the file.
 /// Core spinners can be overridden by including them in the TOML file.
+///
+/// # Errors
+/// Returns an error if the TOML file is readable but fails to parse.
 pub fn load_spinners(toml_path: &Path) -> Result<HashMap<SpinnerType, Spinner<String>>> {
     match std::fs::read_to_string(toml_path) {
         Ok(file_content) => {

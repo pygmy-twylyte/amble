@@ -185,7 +185,10 @@ impl ThemeManager {
         }
     }
 
-    /// Load themes from a TOML file
+    /// Load themes from a TOML file.
+    ///
+    /// # Errors
+    /// Returns an error if the file cannot be read or if the TOML contents fail to parse.
     pub fn load_themes_from_file(&mut self, path: &Path) -> Result<()> {
         if !path.exists() {
             // If the themes file doesn't exist, that's okay - we'll just use defaults
@@ -211,6 +214,10 @@ impl ThemeManager {
     }
 
     /// Switch to a different theme by name.
+    ///
+    /// # Errors
+    /// Returns an error if the requested theme does not exist or if the active theme lock
+    /// cannot be acquired.
     pub fn set_theme(&self, name: &str) -> Result<()> {
         let theme = self
             .themes
@@ -251,7 +258,10 @@ lazy_static::lazy_static! {
     pub static ref THEME_MANAGER: RwLock<ThemeManager> = RwLock::new(ThemeManager::new());
 }
 
-/// Initialize the theme system by loading themes from the data directory
+/// Initialize the theme system by loading themes from the data directory.
+///
+/// # Errors
+/// Returns an error if the global theme manager lock cannot be acquired or if theme loading fails.
 pub fn init_themes() -> Result<()> {
     let themes_path = Path::new("amble_engine/data/themes.toml");
 

@@ -49,6 +49,10 @@ pub enum RawItemAbility {
     Use,
 }
 impl RawItemAbility {
+    /// Convert this raw ability into an engine [`ItemAbility`].
+    ///
+    /// # Errors
+    /// Returns an error if referenced item symbols cannot be resolved in the symbol table.
     pub fn to_ability(&self, symbols: &SymbolTable) -> Result<ItemAbility> {
         let ability = match self {
             Self::Attach => ItemAbility::Attach,
@@ -98,6 +102,10 @@ pub enum RawConsumeType {
     ReplaceCurrentRoom { replacement: String },
 }
 impl RawConsumeType {
+    /// Convert this raw consume behavior into an engine [`ConsumeType`].
+    ///
+    /// # Errors
+    /// Returns an error if referenced replacement items cannot be found in the symbol table.
     pub fn to_consume_type(&self, symbols: &SymbolTable) -> Result<ConsumeType> {
         match self {
             Self::Despawn => Ok(ConsumeType::Despawn),

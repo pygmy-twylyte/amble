@@ -48,6 +48,9 @@ pub struct SaveFileEntry {
 }
 
 /// Discover save slot files stored in `dir`.
+///
+/// # Errors
+/// Returns an error if the directory contents cannot be read or enumerated.
 pub fn collect_save_slots(dir: &Path) -> Result<Vec<SaveSlot>> {
     if !dir.exists() {
         return Ok(Vec::new());
@@ -89,6 +92,9 @@ pub fn collect_save_slots(dir: &Path) -> Result<Vec<SaveSlot>> {
 }
 
 /// Build descriptive entries for save files located in `dir`.
+///
+/// # Errors
+/// Returns an error if reading the directory or loading a save slot fails.
 pub fn build_save_entries(dir: &Path) -> Result<Vec<SaveFileEntry>> {
     let slots = collect_save_slots(dir)?;
     let mut entries: Vec<_> = slots.into_iter().map(entry_for_slot).collect();

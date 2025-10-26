@@ -149,7 +149,10 @@ impl RawRoom {
     }
 }
 
-/// Convert a `RawOverlayCondition` to an `OverlayCondition`
+/// Convert a `RawOverlayCondition` to an `OverlayCondition`.
+///
+/// # Errors
+/// Returns an error if any referenced room or symbol cannot be resolved while converting conditions.
 pub fn convert_overlay_conditions(
     raw_conditions: &Vec<RawOverlayCondition>,
     symbols: &mut SymbolTable,

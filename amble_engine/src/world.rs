@@ -207,7 +207,10 @@ pub fn nearby_reachable_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashS
     })
 }
 
-/// Get all items that are visible in the room, including those in transparent containers
+/// Get all items that are visible in the room, including those in transparent containers.
+///
+/// # Errors
+/// - if supplied `room_id` is invalid
 pub fn nearby_visible_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashSet<Uuid>> {
     collect_room_items(world, room_id, |item| {
         item.container_state == Some(ContainerState::Open)

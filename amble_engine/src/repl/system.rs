@@ -161,6 +161,9 @@ pub fn set_viewmode_handler(view: &mut View, mode: ViewMode) {
 /// cannot be loaded). Each rank has a threshold percentage, a title, and
 /// a personalized evaluation message reflecting the player's exploration
 /// and puzzle-solving success.
+///
+/// # Errors
+/// This handler never produces an error; it always returns `Ok(ReplControl::Quit)`.
 pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> {
     info!("$$ {} quit with a score of {}", world.player.name(), world.player.score);
     let path: Vec<_> = world
@@ -779,7 +782,7 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) {
 /// 4. **Data writing** - Write serialized world to file
 /// 5. **Confirmation** - Display success message with file details
 ///
-/// # Error Handling
+/// # Errors
 ///
 /// Potential failure points:
 /// - World serialization errors (corrupted game state)
@@ -833,7 +836,14 @@ pub fn save_handler(world: &AmbleWorld, view: &mut View, gamefile: &str) -> Resu
     Ok(())
 }
 
-/// Handler for the theme command - changes the active color scheme
+/// Changes the active UI theme shown in the terminal.
+///
+/// This handler either applies a requested theme or lists available themes when
+/// invoked with an empty argument or the literal `"list"`.
+///
+/// # Errors
+/// Returns an error if the global theme manager cannot be accessed or if applying the
+/// requested theme fails.
 pub fn theme_handler(view: &mut View, theme_name: &str) -> Result<()> {
     let manager = THEME_MANAGER
         .read()

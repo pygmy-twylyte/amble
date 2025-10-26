@@ -99,7 +99,7 @@ impl TriggerCondition {
     ///
     /// This allows us to check chance conditions without having to pass an AmbleWorld
     /// reference, avoid some conflicts with the borrow checker. Returns true if called
-    /// on any other type of TriggerCondition.
+    /// on any other type of `TriggerCondition`.
     pub fn chance_value(&self) -> bool {
         match self {
             Self::Chance { one_in } => random_bool(1.0 / *one_in),
@@ -138,7 +138,7 @@ impl TriggerCondition {
                 })
                 .is_some_and(Flag::is_complete),
             Self::HasVisited(room_id) => world.rooms.get(room_id).is_some_and(|r| r.visited),
-            Self::InRoom(room_id) => world.player.location.room_id().map_or(false, |id| *room_id == id),
+            Self::InRoom(room_id) => world.player.location.room_id().is_ok_and(|id| *room_id == id),
             Self::NpcHasItem { npc_id, item_id } => {
                 world.npcs.get(npc_id).is_some_and(|npc| npc.contains_item(*item_id))
             },

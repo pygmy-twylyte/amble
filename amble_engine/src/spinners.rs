@@ -37,9 +37,9 @@ pub enum CoreSpinnerType {
     UnrecognizedCommand,
     /// Used for quit/exit messages
     QuitMsg,
-    /// Used for <NPC> entered messages
+    /// Used for "NPC entered" messages
     NpcEntered,
-    /// Used for <NPC> left messages
+    /// Used for "NPC left" messages
     NpcLeft,
 }
 

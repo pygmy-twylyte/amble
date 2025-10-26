@@ -79,6 +79,10 @@ use log::info;
 ///
 /// Moving back to previously visited rooms does not award points, as this is
 /// considered backtracking rather than exploration of new areas.
+///
+/// # Errors
+/// Returns an error when the player is not currently in a room or when the
+/// stored previous room identifier cannot be resolved.
 pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let leaving_id = world.player.location.room_id().map_err(|e| {
         view.push(ViewItem::ActionFailure("You're not in a room.".to_string()));
@@ -166,6 +170,11 @@ pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
 /// - **First visit**: Full verbose description shown automatically
 /// - **Return visit**: Brief description shown (unless in verbose mode)
 /// - **Travel message**: Randomized flavor text for immersion
+///
+/// # Errors
+/// Returns an error when the player is not currently in a room, when exit
+/// definitions reference unknown rooms, or when required items/flags cannot be
+/// resolved.
 ///
 /// # Error Conditions
 ///

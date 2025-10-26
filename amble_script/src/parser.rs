@@ -30,18 +30,28 @@ pub enum AstError {
 }
 
 /// Parse a single trigger source string; returns the first trigger found.
+///
+/// # Errors
+/// Returns an error if the source cannot be parsed or if no trigger is found.
 pub fn parse_trigger(source: &str) -> Result<TriggerAst, AstError> {
     let v = parse_program(source)?;
     v.into_iter().next().ok_or(AstError::Shape("no trigger found"))
 }
 
 /// Parse multiple triggers from a full source file (triggers only view).
+///
+/// # Errors
+/// Returns an error if the source cannot be parsed.
 pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
     let (trigs, _rooms, _items, _spinners, _npcs, _goals) = parse_program_full(source)?;
     Ok(trigs)
 }
 
 /// Parse a full program returning triggers, rooms, items, and spinners.
+///
+/// # Errors
+/// Returns an error when parsing fails or when the grammar encounters an
+/// unexpected shape.
 pub fn parse_program_full(
     source: &str,
 ) -> Result<
@@ -1534,29 +1544,49 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
 }
 
 /// Parse only rooms from a source (helper/testing).
+/// Parse only room definitions from the given source.
+///
+/// # Errors
+/// Returns an error if the source cannot be parsed into rooms.
 pub fn parse_rooms(source: &str) -> Result<Vec<RoomAst>, AstError> {
     let (_, rooms, _, _, _, _) = parse_program_full(source)?;
     Ok(rooms)
 }
 
 /// Parse only items from a source (helper/testing).
+/// Parse only item definitions from the given source.
+///
+/// # Errors
+/// Returns an error if the source cannot be parsed into items.
 pub fn parse_items(source: &str) -> Result<Vec<ItemAst>, AstError> {
     let (_, _, items, _, _, _) = parse_program_full(source)?;
     Ok(items)
 }
 
 /// Parse only spinners from a source (helper/testing).
+/// Parse only spinner definitions from the given source.
+///
+/// # Errors
+/// Returns an error if the source cannot be parsed into spinners.
 pub fn parse_spinners(source: &str) -> Result<Vec<SpinnerAst>, AstError> {
     let (_, _, _, spinners, _, _) = parse_program_full(source)?;
     Ok(spinners)
 }
 
 /// Parse only npcs from a source (helper/testing).
+/// Parse only NPC definitions from the given source.
+///
+/// # Errors
+/// Returns an error if the source cannot be parsed into NPCs.
 pub fn parse_npcs(source: &str) -> Result<Vec<NpcAst>, AstError> {
     let (_, _, _, _, npcs, _) = parse_program_full(source)?;
     Ok(npcs)
 }
 
+/// Parse only goal definitions from the given source.
+///
+/// # Errors
+/// Returns an error if the source cannot be parsed into goals.
 pub fn parse_goals(source: &str) -> Result<Vec<GoalAst>, AstError> {
     let (_, _, _, _, _, goals) = parse_program_full(source)?;
     Ok(goals)

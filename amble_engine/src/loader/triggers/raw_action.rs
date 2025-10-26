@@ -52,6 +52,10 @@ pub struct RawItemPatch {
     pub remove_abilities: Vec<RawItemAbility>,
 }
 impl RawItemPatch {
+    /// Convert this raw item patch into an engine [`ItemPatch`].
+    ///
+    /// # Errors
+    /// Returns an error if any referenced item abilities cannot be resolved in the symbol table.
     pub fn to_patch(&self, symbols: &SymbolTable) -> Result<ItemPatch> {
         Ok(ItemPatch {
             name: self.name.clone(),
@@ -101,6 +105,10 @@ pub struct RawPatchedExit {
 }
 
 impl RawRoomPatch {
+    /// Convert this raw room patch into an engine [`RoomPatch`].
+    ///
+    /// # Errors
+    /// Returns an error if referenced rooms or items cannot be found in the symbol table.
     pub fn to_patch(&self, symbols: &SymbolTable) -> Result<RoomPatch> {
         let mut remove_exits = Vec::new();
         for dest_sym in &self.remove_exits {
@@ -174,6 +182,10 @@ pub enum RawMovementTimingPatch {
     OnTurn { turn: usize },
 }
 impl RawNpcMovementPatch {
+    /// Convert this raw NPC movement patch into an engine [`NpcMovementPatch`].
+    ///
+    /// # Errors
+    /// Returns an error if referenced rooms in the route or random pool cannot be resolved.
     pub fn to_patch(&self, symbols: &SymbolTable) -> Result<NpcMovementPatch> {
         let route = if let Some(route_syms) = &self.route {
             let mut resolved = Vec::new();
@@ -246,6 +258,10 @@ pub struct RawNpcPatch {
     pub movement: Option<RawNpcMovementPatch>,
 }
 impl RawNpcPatch {
+    /// Convert this raw NPC patch into an engine [`NpcPatch`].
+    ///
+    /// # Errors
+    /// Returns an error if the nested movement patch references symbols that cannot be resolved.
     pub fn to_patch(&self, symbols: &SymbolTable) -> Result<NpcPatch> {
         let add_lines = self
             .add_lines
@@ -445,6 +461,9 @@ pub enum RawTriggerAction {
 }
 impl RawTriggerAction {
     /// Convert the TOML representation of this action to a fully realized `TriggerAction`.
+    ///
+    /// # Errors
+    /// Returns an error if referenced symbols cannot be resolved or if nested actions fail to convert.
     pub fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
             Self::ModifyItem { item_sym, patch } => cook_modify_item(symbols, item_sym, patch),

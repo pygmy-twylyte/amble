@@ -57,6 +57,10 @@ pub enum RawTriggerCondition {
     WithNpc { npc_id: String, },
 }
 impl RawTriggerCondition {
+    /// Convert this raw trigger condition into a runtime [`TriggerCondition`].
+    ///
+    /// # Errors
+    /// Returns an error if any referenced symbols cannot be resolved while constructing the condition.
     pub fn to_condition(&self, symbols: &SymbolTable) -> Result<TriggerCondition> {
         match self {
             Self::Touch { item_id } => cook_touch_item(symbols, item_id),

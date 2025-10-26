@@ -122,6 +122,9 @@ fn select_npc<'a>(location: &Location, world_npcs: &'a HashMap<Uuid, Npc>, query
 /// - If no triggers fire, uses NPC's mood to select random dialogue
 /// - All dialogue is displayed with proper NPC speech formatting
 /// - Conversation attempts are logged for debugging and narrative tracking
+///
+/// # Errors
+/// Returns an error if trigger evaluation fails or if the player's current location cannot be resolved.
 pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) -> Result<()> {
     // find one that matches npc_name in present room
     let sent_id = if let Some(npc) = select_npc(world.player.location(), &world.npcs, npc_name) {
@@ -205,7 +208,7 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
 /// - Item added to NPC inventory
 /// - `TriggerCondition::Drop` fired for item placement effects
 ///
-/// # Error Conditions
+/// # Errors
 ///
 /// - NPC not found in current room
 /// - Item not found in player inventory

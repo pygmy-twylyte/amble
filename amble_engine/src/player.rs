@@ -161,8 +161,8 @@ pub enum Flag {
 }
 impl Flag {
     /// Return string value of the flag.
-    /// For 'Simple' this is "<name>".
-    /// For "Sequence" this is "<name>#<step>".
+    /// For 'Simple' this is just "flag_name".
+    /// For "Sequence" this is "flag_name#N" where N is the current sequence step number.
     pub fn value(&self) -> String {
         match self {
             Self::Simple { name, .. } => name.to_string(),
@@ -270,7 +270,7 @@ impl Hash for Flag {
 
 /// Formats a sequence-type flag into a string value
 ///
-/// Format is <name>#<step>, e.g. "`hal_reboot#2`"
+/// Format is "name"#"step", e.g. "`hal_reboot#2`"
 pub fn format_sequence_value(name: &str, step: u8) -> String {
     format!("{name}#{step}")
 }
