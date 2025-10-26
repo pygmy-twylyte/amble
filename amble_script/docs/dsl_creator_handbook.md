@@ -333,6 +333,58 @@ See the [Goals DSL Guide](./goals_dsl_guide.md) for condition details and compil
 
 ---
 
+## Debugging Toolkit
+
+### Enable logging
+
+The engine ships with structured logging you can enable without rebuilding:
+
+```bash
+AMBLE_LOG=info cargo run --bin amble_engine
+
+# or if already built
+AMBLE_LOG=info target/debug/amble_engine 
+```
+
+- Valid levels: `error`, `warn`, `info`, `debug`, `trace` (case-insensitive). Use `AMBLE_LOG=off` or unset the variable to disable logging.
+- By default logs are written to `amble-VERSION.log` alongside the executable (for `cargo run`, this ends up in `target/debug/`).
+- Override the destination with `AMBLE_LOG_OUTPUT`:
+  - `AMBLE_LOG_OUTPUT=stderr` or `stdout` streams directly to the console.
+  - Any other value (or unset) keeps the default file sink. Set `AMBLE_LOG_FILE=/custom/path/amble.log` to choose a specific file.
+
+Logging is invaluable when tracing trigger evaluations, scheduler activity, and DEV commands (all DEV commands emit `warn`-level entries). `info`-level logging is most useful when trying to examine game flow in general. `warn`-level is best if you only want unusual (but recoverable) error states and any DEV command usage logged.
+
+### Developer commands (`DEV_MODE`)
+
+Interactive developer commands let you bend the world for fast testing. Build or run the engine with the `dev-mode` feature to enable them:
+
+```bash
+cargo run -p amble_engine --features dev-mode
+
+# if using the xtask
+cargo xtask build-engine --dev-mode enable
+```
+
+Once loaded, `:help dev` lists all commands; the most common are summarized below:
+
+| Command | Purpose |
+| --- | --- |
+| `:teleport <room>` / `:port <room>` | Jump to any room by its symbol. |
+| `:spawn <item>` / `:item <item>` | Move an item into the player inventory (spawns it if it is 'Nowhere'). |
+| `:npcs` | List every NPC with current location and state. |
+| `:flags` | Dump all flags on the player (`sequence#step` format). |
+| `:sched` | Show scheduled events with due turn, note, and on-false policy. |
+| `:schedule cancel <idx>` | Cancel a scheduled event by index (from `:sched`). |
+| `:schedule delay <idx> <+turns>` | Push a scheduled event forward by N turns. |
+| `:set-flag <flag>` | Create/set a simple flag immediately. |
+| `:init-seq <flag> <limit|none>` | Create a sequence flag with an optional max step. |
+| `:adv-seq <flag>` | Advance a sequence flag by one step. |
+| `:reset-seq <flag>` | Reset a sequence flag to step 0. |
+
+All developer actions log at `warn` level (see logging section above) so you can audit what changed during a test session.
+
+---
+
 ## Putting It Together
 
 A typical content pack keeps all these entities side-by-side in one or more `.amble` files:

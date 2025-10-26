@@ -9,6 +9,25 @@ I'm a long-term hobbyist developer since the Apple II+ was peak technology, and 
 
 What started as a simple little game blossomed into a fully data-driven game engine that could be used for building any variety of adventures and a full set of developer tools for game creation, as well as a reasonably sized fully playable demo. It seemed a shame for me to be the only one to ever play or use it.
 
+## Quickstart
+
+### Play the bundled demo
+1. Install the latest stable Rust toolchain (the workspace tracks the version in `rust-toolchain`).
+2. Clone this repository and change into the workspace directory.
+3. Run the engine with the shipped content:
+   `cargo run -p amble_engine`
+4. Use `help` in the REPL for command assistance. Save games land under `saved_games/`.
+
+### Author new content
+1. Explore the DSL guides in `amble_script/docs/`—start with `dsl_creator_handbook.md`.
+2. Compile the sample DSL to TOML:
+   `cargo run -p amble_script -- compile-dir amble_script/data/Amble --out-dir amble_engine/data`
+3. Launch the engine to test your changes:
+   `cargo run -p amble_engine`
+4. Iterate with `amble_script lint …` to catch missing references early.
+
+For a fully featured authoring experience, the [Zed Amble extension](./zed_extension.md) adds syntax highlighting, linting, and navigation tailored to the DSL.
+
 ## Crates in this Repository
 - `amble_engine` - loads game data either from TOML files or a saved state (in RON format) and runs the game
 - `amble_script` - an intuitive, English-like language (DSL) for defining the game world, which is compiled into the TOML used by `amble_engine`
