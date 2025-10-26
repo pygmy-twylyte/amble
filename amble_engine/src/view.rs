@@ -700,9 +700,9 @@ impl View {
         {
             let mut full_ovl = String::new();
             for ovl in text {
-                let _ = write!(full_ovl, "* {ovl}");
+                let _ = write!(full_ovl, "{ovl} ");
             }
-            println!("{}", fill(&full_ovl, normal_block()).to_string().overlay_style());
+            println!("{}\n", fill(&full_ovl, normal_block()).to_string().overlay_style());
         }
     }
 
