@@ -2,6 +2,7 @@
 //! This contains the view to the game world / messages.
 //! Rather than printing to the console from each handler, we'll aggregate needed information and messages
 //! to be organized and displayed at the end of the turn.
+use std::fmt::Write;
 
 use colored::Colorize;
 use log::info;
@@ -662,7 +663,7 @@ impl View {
         if let Some(ViewItem::RoomExits(exit_lines)) = self.items.iter().find(|i| matches!(i, ViewItem::RoomExits(_))) {
             println!("{}:", "Exits".subheading_style());
             for exit in exit_lines {
-                print!("   > ");
+                print!("    > ");
                 match (exit.dest_visited, exit.exit_locked) {
                     (true, false) => println!(
                         "{} (to {})",
@@ -686,8 +687,7 @@ impl View {
         if let Some(ViewItem::RoomItems(names)) = self.items.iter().find(|i| matches!(i, ViewItem::RoomItems(_))) {
             println!("{}:", "Items".subheading_style());
             for name in names {
-                println!("   {}", name.item_style());
-                println!();
+                println!("    * {}", name.item_style());
             }
         }
     }
@@ -698,10 +698,11 @@ impl View {
         if let Some(ViewItem::RoomOverlays { text, .. }) =
             self.items.iter().find(|i| matches!(i, ViewItem::RoomOverlays { .. }))
         {
+            let mut full_ovl = String::new();
             for ovl in text {
-                println!("{}", fill(ovl, normal_block()).to_string().overlay_style());
-                println!();
+                let _ = write!(full_ovl, "* {ovl}");
             }
+            println!("{}", fill(&full_ovl, normal_block()).to_string().overlay_style());
         }
     }
 

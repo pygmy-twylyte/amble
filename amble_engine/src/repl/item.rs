@@ -51,7 +51,7 @@ use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
     command::IngestMode,
     helpers::{plural_s, symbol_or_unknown},
-    item::{ContainerState, ItemAbility, ItemInteractionType, consume},
+    item::{ContainerState, Item, ItemAbility, ItemInteractionType, consume},
     loader::items::interaction_requirement_met,
     repl::{entity_not_found, find_world_object},
     spinners::CoreSpinnerType,
@@ -282,30 +282,9 @@ pub fn use_item_on_handler(
     tool_str: &str,
     target_str: &str,
 ) -> Result<()> {
-    // make sure we can find valid matches for tool and target items and notify player if not
-    let items_nearby = &world.player_room_ref()?.contents;
-    let target_scope: HashSet<_> = items_nearby.union(&world.player.inventory).collect();
-    let maybe_target =
-        find_world_object(target_scope, &world.items, &world.npcs, target_str).and_then(super::WorldEntity::item);
-    let maybe_tool = find_world_object(&world.player.inventory, &world.items, &world.npcs, tool_str)
-        .and_then(super::WorldEntity::item);
-    if maybe_target.is_none() {
-        view.push(ViewItem::ActionFailure(format!(
-            "You don't see any {} nearby.",
-            target_str.error_style()
-        )));
+    let Some((target, tool)) = resolve_use_item_participants(world, view, tool_str, target_str)? else {
         return Ok(());
-    }
-    if maybe_tool.is_none() {
-        view.push(ViewItem::ActionFailure(format!(
-            "You don't have any {} in inventory.",
-            tool_str.error_style()
-        )));
-        return Ok(());
-    }
-    // unwrap OK here because we just checked for None above
-    let target = maybe_target.expect("maybe_target already checked for None case");
-    let tool = maybe_tool.expect("maybe_tool already checked for None case");
+    };
     let target_name = target.name().to_string();
     let target_id = target.id();
     let tool_name = tool.name().to_string();
@@ -329,11 +308,6 @@ pub fn use_item_on_handler(
         world.turn_count += 1;
         return Ok(());
     }
-    // do the interaction as appropriate
-    let sent_interaction = interaction;
-    let sent_target_id = target.id();
-    let sent_tool_id = tool.id();
-
     // The utilized ItemAbility is needed to send a UseItem TriggerCondition. ItemAbility::Use is
     // a reasonable default but should never come up, since the presence of this Interaction (which
     // implies a matching ability which has already been verified by the
@@ -343,39 +317,7 @@ pub fn use_item_on_handler(
         .get(&interaction)
         .unwrap_or(&ItemAbility::Use);
 
-    let fired = check_triggers(
-        world,
-        view,
-        &[
-            TriggerCondition::UseItemOnItem {
-                interaction,
-                target_id,
-                tool_id,
-            },
-            TriggerCondition::ActOnItem {
-                action: interaction,
-                target_id: target.id(),
-            },
-            TriggerCondition::UseItem {
-                item_id: tool_id,
-                ability: used_ability,
-            },
-        ],
-    )?;
-
-    // Check for any triggered reaction to the conditions we sent
-    let interaction_fired = triggers_contain_condition(&fired, |cond| match cond {
-        TriggerCondition::ActOnItem { action, target_id } => {
-            *action == sent_interaction && *target_id == sent_target_id
-        },
-        TriggerCondition::UseItem { ability, .. } => *ability == used_ability,
-        TriggerCondition::UseItemOnItem {
-            interaction,
-            target_id,
-            tool_id,
-        } => *interaction == sent_interaction && *target_id == sent_target_id && *tool_id == sent_tool_id,
-        _ => false,
-    });
+    let interaction_fired = dispatch_use_item_triggers(world, view, interaction, target_id, tool_id, used_ability)?;
 
     // Nope, no triggered reaction to these conditions
     if !interaction_fired {
@@ -412,6 +354,81 @@ pub fn use_item_on_handler(
     }
     world.turn_count += 1;
     Ok(())
+}
+
+fn resolve_use_item_participants<'a>(
+    world: &'a AmbleWorld,
+    view: &mut View,
+    tool_str: &str,
+    target_str: &str,
+) -> Result<Option<(&'a Item, &'a Item)>> {
+    let room_contents = &world.player_room_ref()?.contents;
+    let target_scope: HashSet<_> = room_contents.union(&world.player.inventory).collect();
+    let maybe_target =
+        find_world_object(target_scope, &world.items, &world.npcs, target_str).and_then(super::WorldEntity::item);
+    let maybe_tool = find_world_object(&world.player.inventory, &world.items, &world.npcs, tool_str)
+        .and_then(super::WorldEntity::item);
+
+    let Some(target) = maybe_target else {
+        view.push(ViewItem::ActionFailure(format!(
+            "You don't see any {} nearby.",
+            target_str.error_style()
+        )));
+        return Ok(None);
+    };
+
+    let Some(tool) = maybe_tool else {
+        view.push(ViewItem::ActionFailure(format!(
+            "You don't have any {} in inventory.",
+            tool_str.error_style()
+        )));
+        return Ok(None);
+    };
+
+    Ok(Some((target, tool)))
+}
+
+fn dispatch_use_item_triggers(
+    world: &mut AmbleWorld,
+    view: &mut View,
+    interaction: ItemInteractionType,
+    target_id: Uuid,
+    tool_id: Uuid,
+    used_ability: ItemAbility,
+) -> Result<bool> {
+    let fired = check_triggers(
+        world,
+        view,
+        &[
+            TriggerCondition::UseItemOnItem {
+                interaction,
+                target_id,
+                tool_id,
+            },
+            TriggerCondition::ActOnItem {
+                action: interaction,
+                target_id,
+            },
+            TriggerCondition::UseItem {
+                item_id: tool_id,
+                ability: used_ability,
+            },
+        ],
+    )?;
+
+    Ok(triggers_contain_condition(&fired, |cond| match cond {
+        TriggerCondition::ActOnItem {
+            action,
+            target_id: fired_target,
+        } => *action == interaction && *fired_target == target_id,
+        TriggerCondition::UseItem { ability, .. } => *ability == used_ability,
+        TriggerCondition::UseItemOnItem {
+            interaction: fired_interaction,
+            target_id: fired_target,
+            tool_id: fired_tool,
+        } => *fired_interaction == interaction && *fired_target == target_id && *fired_tool == tool_id,
+        _ => false,
+    }))
 }
 /// Activates an item if it has the ability to be turned on.
 ///
