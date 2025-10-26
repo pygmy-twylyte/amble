@@ -1,4 +1,4 @@
-//! amble_script: Minimal DSL and compiler for Amble triggers
+//! `amble_script`: Minimal DSL and compiler for Amble triggers
 //!
 //! This first iteration supports a single trigger shape:
 //! - `trigger "name" when enter room <ident> {`
@@ -10,7 +10,7 @@
 //! - `}`
 //!
 //! The compiler produces a TOML representation matching the Amble engine's
-//! expected RawTrigger schema and prints it to stdout.
+//! expected `RawTrigger` schema and prints it to stdout.
 
 mod parser;
 pub use parser::{AstError, parse_program, parse_trigger};

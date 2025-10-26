@@ -27,7 +27,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Build the Amble engine with optional DEV_MODE support.
+    /// Build the Amble engine with optional `DEV_MODE` support.
     BuildEngine(BuildEngineArgs),
     /// Packaging workflows for shipping binaries and data.
     Package {
@@ -58,7 +58,7 @@ struct BuildEngineArgs {
 enum PackageCommands {
     /// Package the engine binary and compiled data (TOML) only.
     Engine(PackageEngineArgs),
-    /// Package the engine, amble_script CLI, and source data.
+    /// Package the engine, `amble_script` CLI, and source data.
     Full(PackageFullArgs),
 }
 

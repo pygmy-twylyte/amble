@@ -76,7 +76,7 @@ use crate::{
 /// - Story progression requirements
 ///
 /// # Panics
-/// None -- item_id is already known to be valid and exist in symbol table before expect() is called
+/// None -- `item_id` is already known to be valid and exist in symbol table before `expect()` is called
 pub fn dev_spawn_item_handler(world: &mut AmbleWorld, view: &mut View, symbol: &str) {
     let item_id = uuid_from_token(&NAMESPACE_ITEM, symbol);
     if world.items.contains_key(&item_id) {
