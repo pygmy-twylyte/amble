@@ -43,7 +43,7 @@ fn main() {
     } else if cmd == "lint" {
         run_lint(&rest[1..]);
     } else {
-        eprintln!("unknown command: {}", cmd);
+        eprintln!("unknown command: {cmd}");
         process::exit(2);
     }
 }
@@ -134,11 +134,11 @@ fn run_compile(args: &[String]) {
     }
     let path = path.unwrap();
     let src = fs::read_to_string(&path).unwrap_or_else(|e| {
-        eprintln!("error: unable to read '{}': {}", &path, e);
+        eprintln!("error: unable to read '{path}': {e}");
         process::exit(1);
     });
     let (triggers, rooms, items, spinners, npcs, goals) = parse_program_full(&src).unwrap_or_else(|e| {
-        eprintln!("parse error: {}", e);
+        eprintln!("parse error: {e}");
         process::exit(1);
     });
     for t in &triggers {
@@ -155,12 +155,12 @@ fn run_compile(args: &[String]) {
                     &path,
                     fnv64(&src)
                 );
-                let toml = format!("{}{}", header, toml);
+                let toml = format!("{header}{toml}");
                 if let Some(out) = out_path.clone() {
-                    fs::write(&out, toml).unwrap_or_else(|e| {
-                        eprintln!("error: writing '{}': {}", &out, e);
+                    if let Err(e) = fs::write(&out, &toml) {
+                        eprintln!("error: writing '{out}': {e}");
                         process::exit(1);
-                    });
+                    }
                 } else if rooms.is_empty()
                     && spinners.is_empty()
                     && items.is_empty()
@@ -168,11 +168,11 @@ fn run_compile(args: &[String]) {
                     && goals.is_empty()
                 {
                     // Preserve old behavior: print to stdout if only triggers are present
-                    println!("{}", toml);
+                    println!("{toml}");
                 }
             },
             Err(e) => {
-                eprintln!("compile error: {}", e);
+                eprintln!("compile error: {e}");
                 process::exit(1);
             },
         }
@@ -186,12 +186,12 @@ fn run_compile(args: &[String]) {
                     &path,
                     fnv64(&src)
                 );
-                let toml = format!("{}{}", header, toml);
+                let toml = format!("{header}{toml}");
                 if let Some(out) = out_items.clone() {
-                    fs::write(&out, toml).unwrap_or_else(|e| {
-                        eprintln!("error: writing '{}': {}", &out, e);
+                    if let Err(e) = fs::write(&out, &toml) {
+                        eprintln!("error: writing '{out}': {e}");
                         process::exit(1);
-                    });
+                    }
                 } else if triggers.is_empty()
                     && rooms.is_empty()
                     && spinners.is_empty()
@@ -202,11 +202,11 @@ fn run_compile(args: &[String]) {
                     && out_spinners.is_none()
                 {
                     // If only items present and no other outputs, print to stdout
-                    println!("{}", toml);
+                    println!("{toml}");
                 }
             },
             Err(e) => {
-                eprintln!("compile error (items): {}", e);
+                eprintln!("compile error (items): {e}");
                 process::exit(1);
             },
         }
@@ -220,12 +220,12 @@ fn run_compile(args: &[String]) {
                     &path,
                     fnv64(&src)
                 );
-                let toml = format!("{}{}", header, toml);
+                let toml = format!("{header}{toml}");
                 if let Some(out) = out_rooms.clone() {
-                    fs::write(&out, toml).unwrap_or_else(|e| {
-                        eprintln!("error: writing '{}': {}", &out, e);
+                    if let Err(e) = fs::write(&out, &toml) {
+                        eprintln!("error: writing '{out}': {e}");
                         process::exit(1);
-                    });
+                    }
                 } else if triggers.is_empty()
                     && items.is_empty()
                     && spinners.is_empty()
@@ -234,11 +234,11 @@ fn run_compile(args: &[String]) {
                     && out_path.is_none()
                 {
                     // If only rooms present and no triggers output path, print rooms to stdout
-                    println!("{}", toml);
+                    println!("{toml}");
                 }
             },
             Err(e) => {
-                eprintln!("compile error (rooms): {}", e);
+                eprintln!("compile error (rooms): {e}");
                 process::exit(1);
             },
         }
@@ -252,12 +252,12 @@ fn run_compile(args: &[String]) {
                     &path,
                     fnv64(&src)
                 );
-                let toml = format!("{}{}", header, toml);
-                if let Some(ref out) = out_spinners {
-                    fs::write(&out, toml).unwrap_or_else(|e| {
-                        eprintln!("error: writing '{}': {}", &out, e);
+                let toml = format!("{header}{toml}");
+                if let Some(out) = out_spinners.as_ref() {
+                    if let Err(e) = fs::write(out, &toml) {
+                        eprintln!("error: writing '{out}': {e}");
                         process::exit(1);
-                    });
+                    }
                 } else if triggers.is_empty()
                     && rooms.is_empty()
                     && items.is_empty()
@@ -267,11 +267,11 @@ fn run_compile(args: &[String]) {
                     && out_rooms.is_none()
                 {
                     // If only spinners present and no other outputs, print to stdout
-                    println!("{}", toml);
+                    println!("{toml}");
                 }
             },
             Err(e) => {
-                eprintln!("compile error (spinners): {}", e);
+                eprintln!("compile error (spinners): {e}");
                 process::exit(1);
             },
         }
@@ -285,12 +285,12 @@ fn run_compile(args: &[String]) {
                     &path,
                     fnv64(&src)
                 );
-                let toml = format!("{}{}", header, toml);
+                let toml = format!("{header}{toml}");
                 if let Some(out) = out_npcs.clone() {
-                    fs::write(&out, toml).unwrap_or_else(|e| {
-                        eprintln!("error: writing '{}': {}", &out, e);
+                    if let Err(e) = fs::write(&out, &toml) {
+                        eprintln!("error: writing '{out}': {e}");
                         process::exit(1);
-                    });
+                    }
                 } else if triggers.is_empty()
                     && rooms.is_empty()
                     && spinners.is_empty()
@@ -301,11 +301,11 @@ fn run_compile(args: &[String]) {
                     && out_items.is_none()
                 {
                     // If only npcs present and no other outputs, print to stdout
-                    println!("{}", toml);
+                    println!("{toml}");
                 }
             },
             Err(e) => {
-                eprintln!("compile error (npcs): {}", e);
+                eprintln!("compile error (npcs): {e}");
                 process::exit(1);
             },
         }
@@ -319,12 +319,12 @@ fn run_compile(args: &[String]) {
                     &path,
                     fnv64(&src)
                 );
-                let toml = format!("{}{}", header, toml);
+                let toml = format!("{header}{toml}");
                 if let Some(out) = out_goals.clone() {
-                    fs::write(&out, toml).unwrap_or_else(|e| {
-                        eprintln!("error: writing '{}': {}", &out, e);
+                    if let Err(e) = fs::write(&out, &toml) {
+                        eprintln!("error: writing '{out}': {e}");
                         process::exit(1);
-                    });
+                    }
                 } else if triggers.is_empty()
                     && rooms.is_empty()
                     && spinners.is_empty()
@@ -336,11 +336,11 @@ fn run_compile(args: &[String]) {
                     && out_items.is_none()
                     && out_npcs.is_none()
                 {
-                    println!("{}", toml);
+                    println!("{toml}");
                 }
             },
             Err(e) => {
-                eprintln!("compile error (goals): {}", e);
+                eprintln!("compile error (goals): {e}");
                 process::exit(1);
             },
         }
@@ -425,7 +425,7 @@ fn run_compile_dir(args: &[String]) {
         let src = match fs::read_to_string(f) {
             Ok(s) => s,
             Err(e) => {
-                eprintln!("compile-dir: cannot read '{}': {}", f, e);
+                eprintln!("compile-dir: cannot read '{f}': {e}");
                 had_error = true;
                 continue;
             },
@@ -443,8 +443,7 @@ fn run_compile_dir(args: &[String]) {
                 goals.extend(g);
                 if verbose {
                     eprintln!(
-                        "{}: triggers={}, rooms={}, items={}, spinners={}, npcs={}, goals={}",
-                        f,
+                        "{f}: triggers={}, rooms={}, items={}, spinners={}, npcs={}, goals={}",
                         trigs.len(),
                         rooms.len(),
                         items.len(),
@@ -461,7 +460,7 @@ fn run_compile_dir(args: &[String]) {
                 total_g = goals.len();
             },
             Err(e) => {
-                eprintln!("compile-dir: parse error in '{}': {}", f, e);
+                eprintln!("compile-dir: parse error in '{f}': {e}");
                 had_error = true;
             },
         }
@@ -483,160 +482,159 @@ fn run_compile_dir(args: &[String]) {
     // Ensure out_dir exists
     if !Path::new(&out_dir).exists() {
         if let Err(e) = fs::create_dir_all(&out_dir) {
-            eprintln!("compile-dir: cannot create out-dir '{}': {}", &out_dir, e);
+            eprintln!("compile-dir: cannot create out-dir '{out_dir}': {e}");
             process::exit(1);
         }
     }
     // Write each category; emit empty skeletons when no entries to avoid stale cross-file refs
     let allows = |k: &str| -> bool { only.as_ref().map(|s| s.contains(k)).unwrap_or(true) };
     if allows("triggers") {
-        let p = format!("{}/triggers.toml", &out_dir);
+        let p = format!("{out_dir}/triggers.toml");
         if !trigs.is_empty() {
             match compile_triggers_to_toml(&trigs) {
                 Ok(t) => {
                     let text = header("triggers", &src_dir, &t);
                     fs::write(&p, text).unwrap_or_else(|e| {
-                        eprintln!("write '{}': {}", &p, e);
+                        eprintln!("write '{p}': {e}");
                         process::exit(1);
                     });
                 },
                 Err(e) => {
-                    eprintln!("compile-dir error (triggers): {}", e);
+                    eprintln!("compile-dir error (triggers): {e}");
                     process::exit(1);
                 },
             }
         } else {
             let text = header("triggers", &src_dir, "triggers = []\n");
             fs::write(&p, text).unwrap_or_else(|e| {
-                eprintln!("write '{}': {}", &p, e);
+                eprintln!("write '{p}': {e}");
                 process::exit(1);
             });
         }
     }
     if allows("rooms") {
-        let p = format!("{}/rooms.toml", &out_dir);
+        let p = format!("{out_dir}/rooms.toml");
         if !rooms.is_empty() {
             match compile_rooms_to_toml(&rooms) {
                 Ok(t) => {
                     let text = header("rooms", &src_dir, &t);
                     fs::write(&p, text).unwrap_or_else(|e| {
-                        eprintln!("write '{}': {}", &p, e);
+                        eprintln!("write '{p}': {e}");
                         process::exit(1);
                     });
                 },
                 Err(e) => {
-                    eprintln!("compile-dir error (rooms): {}", e);
+                    eprintln!("compile-dir error (rooms): {e}");
                     process::exit(1);
                 },
             }
         } else {
             let text = header("rooms", &src_dir, "rooms = []\n");
             fs::write(&p, text).unwrap_or_else(|e| {
-                eprintln!("write '{}': {}", &p, e);
+                eprintln!("write '{p}': {e}");
                 process::exit(1);
             });
         }
     }
     if allows("items") {
-        let p = format!("{}/items.toml", &out_dir);
+        let p = format!("{out_dir}/items.toml");
         if !items.is_empty() {
             match amble_script::compile_items_to_toml(&items) {
                 Ok(t) => {
                     let text = header("items", &src_dir, &t);
                     fs::write(&p, text).unwrap_or_else(|e| {
-                        eprintln!("write '{}': {}", &p, e);
+                        eprintln!("write '{p}': {e}");
                         process::exit(1);
                     });
                 },
                 Err(e) => {
-                    eprintln!("compile-dir error (items): {}", e);
+                    eprintln!("compile-dir error (items): {e}");
                     process::exit(1);
                 },
             }
         } else {
             let text = header("items", &src_dir, "items = []\n");
             fs::write(&p, text).unwrap_or_else(|e| {
-                eprintln!("write '{}': {}", &p, e);
+                eprintln!("write '{p}': {e}");
                 process::exit(1);
             });
         }
     }
     if allows("spinners") {
-        let p = format!("{}/spinners.toml", &out_dir);
+        let p = format!("{out_dir}/spinners.toml");
         if !spinners.is_empty() {
             match compile_spinners_to_toml(&spinners) {
                 Ok(t) => {
                     let text = header("spinners", &src_dir, &t);
                     fs::write(&p, text).unwrap_or_else(|e| {
-                        eprintln!("write '{}': {}", &p, e);
+                        eprintln!("write '{p}': {e}");
                         process::exit(1);
                     });
                 },
                 Err(e) => {
-                    eprintln!("compile-dir error (spinners): {}", e);
+                    eprintln!("compile-dir error (spinners): {e}");
                     process::exit(1);
                 },
             }
         } else {
             let text = header("spinners", &src_dir, "spinners = []\n");
             fs::write(&p, text).unwrap_or_else(|e| {
-                eprintln!("write '{}': {}", &p, e);
+                eprintln!("write '{p}': {e}");
                 process::exit(1);
             });
         }
     }
     if allows("npcs") {
-        let p = format!("{}/npcs.toml", &out_dir);
+        let p = format!("{out_dir}/npcs.toml");
         if !npcs.is_empty() {
             match compile_npcs_to_toml(&npcs) {
                 Ok(t) => {
                     let text = header("npcs", &src_dir, &t);
                     fs::write(&p, text).unwrap_or_else(|e| {
-                        eprintln!("write '{}': {}", &p, e);
+                        eprintln!("write '{p}': {e}");
                         process::exit(1);
                     });
                 },
                 Err(e) => {
-                    eprintln!("compile-dir error (npcs): {}", e);
+                    eprintln!("compile-dir error (npcs): {e}");
                     process::exit(1);
                 },
             }
         } else {
             let text = header("npcs", &src_dir, "npcs = []\n");
             fs::write(&p, text).unwrap_or_else(|e| {
-                eprintln!("write '{}': {}", &p, e);
+                eprintln!("write '{p}': {e}");
                 process::exit(1);
             });
         }
     }
     if allows("goals") {
-        let p = format!("{}/goals.toml", &out_dir);
+        let p = format!("{out_dir}/goals.toml");
         if !goals.is_empty() {
             match compile_goals_to_toml(&goals) {
                 Ok(t) => {
                     let text = header("goals", &src_dir, &t);
                     fs::write(&p, text).unwrap_or_else(|e| {
-                        eprintln!("write '{}': {}", &p, e);
+                        eprintln!("write '{p}': {e}");
                         process::exit(1);
                     });
                 },
                 Err(e) => {
-                    eprintln!("compile-dir error (goals): {}", e);
+                    eprintln!("compile-dir error (goals): {e}");
                     process::exit(1);
                 },
             }
         } else {
             let text = header("goals", &src_dir, "goals = []\n");
             fs::write(&p, text).unwrap_or_else(|e| {
-                eprintln!("write '{}': {}", &p, e);
+                eprintln!("write '{p}': {e}");
                 process::exit(1);
             });
         }
     }
     if verbose {
         eprintln!(
-            "Summary: triggers={}, rooms={}, items={}, spinners={}, npcs={}, goals={}",
-            total_t, total_r, total_i, total_sp, total_n, total_g
+            "Summary: triggers={total_t}, rooms={total_r}, items={total_i}, spinners={total_sp}, npcs={total_n}, goals={total_g}"
         );
     }
 }
@@ -734,14 +732,14 @@ fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
     let src = match fs::read_to_string(path) {
         Ok(s) => s,
         Err(e) => {
-            eprintln!("lint: cannot read '{}': {}", path, e);
+            eprintln!("lint: cannot read '{path}': {e}");
             return 0;
         },
     };
     let (asts, rooms_asts, item_asts, spinner_asts, npc_asts, goal_asts) = match parse_program_full(&src) {
         Ok(v) => v,
         Err(e) => {
-            eprintln!("lint: parse error in '{}': {}", path, e);
+            eprintln!("lint: parse error in '{path}': {e}");
             return 0;
         },
     };
@@ -936,13 +934,10 @@ fn report_missing_with_location(
     } else {
         let suggestions = suggest_ids(id, candidates);
         if suggestions.is_empty() {
-            eprintln!("{}: unknown {} '{}'", path, kind, id);
+            eprintln!("{path}: unknown {kind} '{id}'");
         } else {
             eprintln!(
-                "{}: unknown {} '{}' (did you mean: {}?)",
-                path,
-                kind,
-                id,
+                "{path}: unknown {kind} '{id}' (did you mean: {}?)",
                 suggestions.join(", ")
             );
         }
@@ -1286,16 +1281,16 @@ fn load_world_refs(dir: &str) -> Result<WorldRefs, String> {
         set
     }
 
-    let items_path = format!("{}/items.toml", dir);
-    let rooms_path = format!("{}/rooms.toml", dir);
-    let npcs_path = format!("{}/npcs.toml", dir);
-    let spinners_path = format!("{}/spinners.toml", dir);
-    let goals_path = format!("{}/goals.toml", dir);
-    let triggers_path = format!("{}/triggers.toml", dir);
+    let items_path = format!("{dir}/items.toml");
+    let rooms_path = format!("{dir}/rooms.toml");
+    let npcs_path = format!("{dir}/npcs.toml");
+    let spinners_path = format!("{dir}/spinners.toml");
+    let goals_path = format!("{dir}/goals.toml");
+    let triggers_path = format!("{dir}/triggers.toml");
 
     let read = |p: &str| -> Result<Document, String> {
-        let s = fs::read_to_string(p).map_err(|e| format!("{}", e))?;
-        s.parse::<Document>().map_err(|e| format!("{}", e))
+        let s = fs::read_to_string(p).map_err(|e| format!("{e}"))?;
+        s.parse::<Document>().map_err(|e| format!("{e}"))
     };
 
     if let Ok(doc) = read(&items_path) {
@@ -1333,8 +1328,7 @@ fn load_world_refs(dir: &str) -> Result<WorldRefs, String> {
                     let have = format!("{:016x}", fnv64(&src_text));
                     if have != want_hash {
                         eprintln!(
-                            "lint: warning: triggers.toml hash mismatch vs '{}'; TOML may be stale (expected {}, found {})",
-                            src_abs, have, want_hash
+                            "lint: warning: triggers.toml hash mismatch vs '{src_abs}'; TOML may be stale (expected {have}, found {want_hash})"
                         );
                         flags = flags_from_triggers_dsl(&src_text);
                     } else {
@@ -1425,8 +1419,7 @@ fn warn_if_stale_generated(toml_text: &str, data_dir: &str, kind: &str) {
             let h = format!("{:016x}", fnv64(&s));
             if h != hh {
                 eprintln!(
-                    "lint: warning: {}.toml hash mismatch vs '{}'; TOML may be stale (expected {}, found {})",
-                    kind, src, h, hh
+                    "lint: warning: {kind}.toml hash mismatch vs '{src}'; TOML may be stale (expected {h}, found {hh})"
                 );
             }
         }

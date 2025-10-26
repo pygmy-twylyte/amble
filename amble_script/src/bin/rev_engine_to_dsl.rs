@@ -11,10 +11,10 @@ use std::fs;
 
 fn q(s: &str) -> String {
     if s.contains('\n') {
-        format!("\"\"\"{}\"\"\"", s)
+        format!("\"\"\"{s}\"\"\"")
     } else {
         let esc = s.replace('"', "\\\"");
-        format!("\"{}\"", esc)
+        format!("\"{esc}\"")
     }
 }
 
@@ -31,25 +31,25 @@ fn main() {
             let name = it.get("name").and_then(|v| v.as_str()).unwrap_or("");
             let desc = it.get("description").and_then(|v| v.as_str()).unwrap_or("");
             let portable = it.get("portable").and_then(|v| v.as_bool()).unwrap_or(false);
-            out_items.push_str(&format!("item {} {{\n", id));
+            out_items.push_str(&format!("item {id} {{\n"));
             out_items.push_str(&format!("  name {}\n", q(name)));
             out_items.push_str(&format!("  desc {}\n", q(desc)));
             out_items.push_str(&format!("  portable {}\n", if portable { "true" } else { "false" }));
             if let Some(loc) = it.get("location").and_then(|v| v.as_table()) {
                 if let Some(s) = loc.get("Inventory").and_then(|v| v.as_str()) {
-                    out_items.push_str(&format!("  location inventory {}\n", s));
+                    out_items.push_str(&format!("  location inventory {s}\n"));
                 } else if let Some(s) = loc.get("Room").and_then(|v| v.as_str()) {
-                    out_items.push_str(&format!("  location room {}\n", s));
+                    out_items.push_str(&format!("  location room {s}\n"));
                 } else if let Some(s) = loc.get("Npc").and_then(|v| v.as_str()) {
-                    out_items.push_str(&format!("  location npc {}\n", s));
+                    out_items.push_str(&format!("  location npc {s}\n"));
                 } else if let Some(s) = loc.get("Chest").and_then(|v| v.as_str()) {
-                    out_items.push_str(&format!("  location chest {}\n", s));
+                    out_items.push_str(&format!("  location chest {s}\n"));
                 } else if let Some(s) = loc.get("Nowhere").and_then(|v| v.as_str()) {
                     out_items.push_str(&format!("  location nowhere {}\n", q(s)));
                 }
             }
             if let Some(cs) = it.get("container_state").and_then(|v| v.as_str()) {
-                out_items.push_str(&format!("  container state {}\n", cs));
+                out_items.push_str(&format!("  container state {cs}\n"));
             }
             if let Some(true) = it.get("restricted").and_then(|v| v.as_bool()) {
                 out_items.push_str("  restricted true\n");
@@ -60,7 +60,7 @@ fn main() {
             if let Some(abs) = it.get("abilities").and_then(|v| v.as_array()) {
                 for ab in abs {
                     if let Some(typ) = ab.get("type").and_then(|v| v.as_str()) {
-                        out_items.push_str(&format!("  ability {}\n", typ));
+                        out_items.push_str(&format!("  ability {typ}\n"));
                     }
                 }
             }
@@ -68,7 +68,7 @@ fn main() {
                 for (interaction, v) in req.iter() {
                     if let Some(ability) = v.as_str() {
                         // New DSL: requires <ability> to <interaction>
-                        out_items.push_str(&format!("  requires {} to {}\n", ability, interaction));
+                        out_items.push_str(&format!("  requires {ability} to {interaction}\n"));
                     }
                 }
             }
@@ -156,38 +156,38 @@ fn main() {
                     }
                 }
             }
-            out_npcs.push_str(&format!("npc {} {{\n", id));
+            out_npcs.push_str(&format!("npc {id} {{\n"));
             out_npcs.push_str(&format!("  name {}\n", q(&name)));
             out_npcs.push_str(&format!("  desc {}\n", q(&desc)));
             if let Some(r) = loc_room {
-                out_npcs.push_str(&format!("  location room {}\n", r));
+                out_npcs.push_str(&format!("  location room {r}\n"));
             }
             if let Some(nw) = loc_nowhere {
                 out_npcs.push_str(&format!("  location nowhere {}\n", q(&nw)));
             }
             if let Some(c) = state_custom {
-                out_npcs.push_str(&format!("  state custom {}\n", c));
+                out_npcs.push_str(&format!("  state custom {c}\n"));
             } else if let Some(s) = state_inline {
-                out_npcs.push_str(&format!("  state {}\n", s));
+                out_npcs.push_str(&format!("  state {s}\n"));
             }
             if let Some(mt) = mv_type {
-                out_npcs.push_str(&format!("  movement {} rooms ({} )", mt, mv_rooms.join(", ")));
+                out_npcs.push_str(&format!("  movement {mt} rooms ({} )", mv_rooms.join(", ")));
                 if let Some(ti) = mv_timing {
-                    out_npcs.push_str(&format!(" timing {}", ti));
+                    out_npcs.push_str(&format!(" timing {ti}"));
                 }
                 if let Some(ac) = mv_active {
                     if ac {
                         out_npcs.push_str(" active true");
                     }
                 }
-                out_npcs.push_str("\n");
+                out_npcs.push('\n');
             }
             // dialogue buckets
             for (k, lines) in dialogue {
                 if let Some(rest) = k.strip_prefix("custom:") {
-                    out_npcs.push_str(&format!("  dialogue custom {} {{\n", rest));
+                    out_npcs.push_str(&format!("  dialogue custom {rest} {{\n"));
                 } else {
-                    out_npcs.push_str(&format!("  dialogue {} {{\n", k));
+                    out_npcs.push_str(&format!("  dialogue {k} {{\n"));
                 }
                 for ln in lines {
                     out_npcs.push_str(&format!("    {}\n", q(&ln)));

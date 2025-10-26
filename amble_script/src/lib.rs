@@ -596,7 +596,7 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
                 // shouldn't be other types here
                 let mut t = InlineTable::new();
                 t.insert("type", toml_edit::Value::from("unknown"));
-                t.insert("text", toml_edit::Value::from(format!("{:?}", other)));
+                t.insert("text", toml_edit::Value::from(format!("{other:?}")));
                 conds.push(toml_edit::Value::from(t));
             },
         }

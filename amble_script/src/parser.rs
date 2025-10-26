@@ -1378,7 +1378,7 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                         .ok_or(AstError::Shape("custom dialogue state ident"))?
                         .as_str()
                         .to_string();
-                    format!("custom:{}", id)
+                    format!("custom:{id}")
                 };
                 let mut lines: Vec<String> = Vec::new();
                 for p in di {
@@ -1485,7 +1485,7 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                     let (key, after_key) = if let Some(val) = rest.strip_prefix("custom ") {
                         let mut parts = val.splitn(2, char::is_whitespace);
                         let id = parts.next().unwrap_or("").to_string();
-                        (format!("custom:{}", id), parts.next().unwrap_or("").to_string())
+                        (format!("custom:{id}"), parts.next().unwrap_or("").to_string())
                     } else {
                         let mut parts = rest.splitn(2, char::is_whitespace);
                         let id = parts.next().unwrap_or("").to_string();
