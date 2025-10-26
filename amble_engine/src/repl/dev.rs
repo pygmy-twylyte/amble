@@ -32,6 +32,8 @@
 //! development actions, making it easy to track what changes were made
 //! during testing sessions.
 
+use std::fmt::Write as _;
+
 use log::{info, warn};
 
 use crate::helpers::symbol_or_unknown;
@@ -348,7 +350,12 @@ pub fn dev_list_npcs_handler(world: &mut AmbleWorld, view: &mut View) {
 /// Lists all player flags currently set (`DEV_MODE` only).
 /// Simple flags are displayed as their name, sequence flags as name#step.
 pub fn dev_list_flags_handler(world: &mut AmbleWorld, view: &mut View) {
-    let mut flags: Vec<String> = world.player.flags.iter().map(super::super::player::Flag::value).collect();
+    let mut flags: Vec<String> = world
+        .player
+        .flags
+        .iter()
+        .map(super::super::player::Flag::value)
+        .collect();
     flags.sort();
     if flags.is_empty() {
         view.push(ViewItem::EngineMessage("No flags are currently set.".to_string()));
@@ -399,13 +406,13 @@ pub fn dev_list_sched_handler(world: &mut AmbleWorld, view: &mut View) {
         ));
 
         // Metadata lines are separated for readability
-        msg.push_str(&format!("   on_false: {}\n", summarize_on_false(&policy)));
+        let _ = write!(msg, "   on_false: {}\n", summarize_on_false(&policy));
         if let Some(cond) = &cond_opt {
-            msg.push_str(&format!("   cond: {}\n", summarize_event_condition(world, cond)));
+            let _ = write!(msg, "   cond: {}\n", summarize_event_condition(world, cond));
         } else {
             msg.push_str("   cond: <none>\n");
         }
-        msg.push_str(&format!("   note: {note}\n"));
+        let _ = write!(msg, "   note: {note}\n");
         msg.push('\n');
     }
     view.push(ViewItem::EngineMessage(msg));

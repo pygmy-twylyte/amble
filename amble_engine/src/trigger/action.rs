@@ -262,8 +262,16 @@ pub enum TriggerAction {
 ///
 /// # Errors
 /// - Returns an error if the underlying handler cannot resolve referenced objects.
+#[allow(clippy::too_many_lines)]
 pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &TriggerAction) -> Result<()> {
-    use TriggerAction::{ModifyItem, ModifyRoom, ModifyNpc, SetNpcActive, SetContainerState, ReplaceItem, ReplaceDropItem, SetBarredMessage, AddSpinnerWedge, ResetFlag, AdvanceFlag, SpinnerMessage, RestrictItem, NpcRefuseItem, NpcSaysRandom, NpcSays, DenyRead, DespawnItem, DespawnNpc, GiveItemToPlayer, LockItem, PushPlayerTo, RevealExit, SetItemDescription, SetNPCState, ShowMessage, SpawnItemInContainer, SpawnItemInInventory, SpawnItemCurrentRoom, SpawnItemInRoom, SpawnNpcInRoom, UnlockItem, UnlockExit, LockExit, AddFlag, RemoveFlag, AwardPoints, Conditional, ScheduleIn, ScheduleOn, ScheduleInIf, ScheduleOnIf};
+    use TriggerAction::{
+        AddFlag, AddSpinnerWedge, AdvanceFlag, AwardPoints, Conditional, DenyRead, DespawnItem, DespawnNpc,
+        GiveItemToPlayer, LockExit, LockItem, ModifyItem, ModifyNpc, ModifyRoom, NpcRefuseItem, NpcSays, NpcSaysRandom,
+        PushPlayerTo, RemoveFlag, ReplaceDropItem, ReplaceItem, ResetFlag, RestrictItem, RevealExit, ScheduleIn,
+        ScheduleInIf, ScheduleOn, ScheduleOnIf, SetBarredMessage, SetContainerState, SetItemDescription, SetNPCState,
+        SetNpcActive, ShowMessage, SpawnItemCurrentRoom, SpawnItemInContainer, SpawnItemInInventory, SpawnItemInRoom,
+        SpawnNpcInRoom, SpinnerMessage, UnlockExit, UnlockItem,
+    };
     match action {
         ModifyItem { item_id, patch } => modify_item(world, *item_id, patch)?,
         ModifyRoom { room_id, patch } => modify_room(world, *room_id, patch)?,

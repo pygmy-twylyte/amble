@@ -53,6 +53,7 @@ pub enum ReplControl {
 ///
 /// # Errors
 /// - Propagates failures from handlers, such as a missing room for the player.
+#[allow(clippy::too_many_lines)]
 pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     #[allow(clippy::enum_glob_use)]
     use Command::*;
@@ -81,9 +82,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         .prompt_style()
         .to_string();
 
-        let input_event = if let Ok(event) = input_manager.read_line(&prompt) {
-            event
-        } else {
+        let Ok(input_event) = input_manager.read_line(&prompt) else {
             view.push(ViewItem::Error("Failed to read input. Try again.".red().to_string()));
             view.flush();
             continue;
@@ -341,7 +340,7 @@ impl WorldEntity<'_> {
 /// Returns Some(&'a `WorldEntity`) or None.
 pub fn find_world_object<'a, S: BuildHasher>(
     nearby_ids: impl IntoIterator<Item = &'a Uuid>,
-    world_items: &'a HashMap<Uuid, Item>,
+    world_items: &'a HashMap<Uuid, Item, S>,
     world_npcs: &'a HashMap<Uuid, Npc, S>,
     search_term: &str,
 ) -> Option<WorldEntity<'a>> {

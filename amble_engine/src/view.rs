@@ -462,6 +462,7 @@ impl View {
         }
     }
 
+    #[allow(clippy::cast_precision_loss)]
     fn quit_summary(&mut self) {
         if let Some(ViewItem::QuitSummary {
             title,
