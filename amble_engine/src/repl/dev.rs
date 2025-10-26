@@ -406,13 +406,13 @@ pub fn dev_list_sched_handler(world: &mut AmbleWorld, view: &mut View) {
         ));
 
         // Metadata lines are separated for readability
-        let _ = write!(msg, "   on_false: {}\n", summarize_on_false(&policy));
+        let _ = writeln!(msg, "   on_false: {}", summarize_on_false(&policy));
         if let Some(cond) = &cond_opt {
-            let _ = write!(msg, "   cond: {}\n", summarize_event_condition(world, cond));
+            let _ = writeln!(msg, "   cond: {}", summarize_event_condition(world, cond));
         } else {
             msg.push_str("   cond: <none>\n");
         }
-        let _ = write!(msg, "   note: {note}\n");
+        let _ = writeln!(msg, "   note: {note}");
         msg.push('\n');
     }
     view.push(ViewItem::EngineMessage(msg));

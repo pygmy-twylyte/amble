@@ -23,7 +23,7 @@ use std::{
     path::PathBuf,
 };
 
-/// Initialize env_logger based on AMBLE_* environment variables.
+/// Initialize `env_logger` based on AMBLE_* environment variables.
 fn init_logging() -> Result<()> {
     let Ok(raw_level) = env::var("AMBLE_LOG") else {
         return Ok(());
