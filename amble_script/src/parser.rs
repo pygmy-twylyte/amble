@@ -43,8 +43,8 @@ pub fn parse_trigger(source: &str) -> Result<TriggerAst, AstError> {
 /// # Errors
 /// Returns an error if the source cannot be parsed.
 pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
-    let (trigs, _rooms, _items, _spinners, _npcs, _goals) = parse_program_full(source)?;
-    Ok(trigs)
+    let (triggers, ..) = parse_program_full(source)?;
+    Ok(triggers)
 }
 
 /// Parse a full program returning triggers, rooms, items, and spinners.
@@ -52,19 +52,7 @@ pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
 /// # Errors
 /// Returns an error when parsing fails or when the grammar encounters an
 /// unexpected shape.
-pub fn parse_program_full(
-    source: &str,
-) -> Result<
-    (
-        Vec<TriggerAst>,
-        Vec<RoomAst>,
-        Vec<ItemAst>,
-        Vec<SpinnerAst>,
-        Vec<NpcAst>,
-        Vec<GoalAst>,
-    ),
-    AstError,
-> {
+pub fn parse_program_full(source: &str) -> Result<ProgramAstBundle, AstError> {
     let mut pairs = DslParser::parse(Rule::program, source).map_err(|e| AstError::Pest(e.to_string()))?;
     let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
     let smap = SourceMap::new(source);
@@ -3688,3 +3676,12 @@ trigger "bad ident" when enter room trigger {
         }
     }
 }
+/// Composite AST collections returned by [`parse_program_full`].
+pub type ProgramAstBundle = (
+    Vec<TriggerAst>,
+    Vec<RoomAst>,
+    Vec<ItemAst>,
+    Vec<SpinnerAst>,
+    Vec<NpcAst>,
+    Vec<GoalAst>,
+);
