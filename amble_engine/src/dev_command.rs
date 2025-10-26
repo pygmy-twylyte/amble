@@ -32,15 +32,21 @@ pub fn parse_dev_command(input: &str, view: &mut View) -> Option<Command> {
             ["npcs"] => Some(Command::ListNpcs),
             ["flags"] => Some(Command::ListFlags),
             ["sched" | "schedule"] => Some(Command::ListSched),
-            ["sched" | "schedule", "cancel", idx_str] => if let Ok(idx) = idx_str.parse::<usize>() { Some(Command::SchedCancel(idx)) } else {
-                view.push(ViewItem::ActionFailure(format!(
-                    "Invalid index '{}' for :schedule cancel.",
-                    idx_str.error_style()
-                )));
-                None
+            ["sched" | "schedule", "cancel", idx_str] => {
+                if let Ok(idx) = idx_str.parse::<usize>() {
+                    Some(Command::SchedCancel(idx))
+                } else {
+                    view.push(ViewItem::ActionFailure(format!(
+                        "Invalid index '{}' for :schedule cancel.",
+                        idx_str.error_style()
+                    )));
+                    None
+                }
             },
             ["sched" | "schedule", "delay", idx_str, turns_str] => {
-                if let (Ok(idx), Ok(turns)) = (idx_str.parse::<usize>(), turns_str.parse::<usize>()) { Some(Command::SchedDelay { idx, turns }) } else {
+                if let (Ok(idx), Ok(turns)) = (idx_str.parse::<usize>(), turns_str.parse::<usize>()) {
+                    Some(Command::SchedDelay { idx, turns })
+                } else {
                     view.push(ViewItem::ActionFailure(
                         "Usage: :schedule delay <idx> <+turns>".to_string(),
                     ));
@@ -67,7 +73,7 @@ pub fn parse_dev_command(input: &str, view: &mut View) -> Option<Command> {
             ));
             warn!(
                 "player attempted to use developer command '{:?}' with DEV_MODE = false",
-                maybe_command.expect("maybe_command already should not be None here")
+                maybe_command.unwrap_or(Command::Unknown)
             );
             return None;
         }

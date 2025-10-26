@@ -1316,11 +1316,9 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                         }
                     }
                 }
-                let timing = if let Some(idx) = s.find(" timing ") {
-                    Some(s[idx + 8..].split_whitespace().next().unwrap_or("").to_string())
-                } else {
-                    None
-                };
+                let timing = s
+                    .find(" timing ")
+                    .map(|idx| s[idx + 8..].split_whitespace().next().unwrap_or("").to_string());
                 let active = if let Some(idx) = s.find(" active ") {
                     let rest = &s[idx + 8..];
                     if rest.trim_start().starts_with("true") {
@@ -1428,11 +1426,11 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                             }
                         }
                     }
-                    let timing = if let Some(idx) = txt.find(" timing ") {
-                        Some(txt[idx + 8..].split_whitespace().next().unwrap_or("").to_string())
-                    } else {
-                        None
-                    };
+
+                    let timing = txt
+                        .find(" timing ")
+                        .map(|idx| txt[idx + 8..].split_whitespace().next().unwrap_or("").to_string());
+
                     let active = if let Some(idx) = txt.find(" active ") {
                         let rest = &txt[idx + 8..];
                         if rest.trim_start().starts_with("true") {
@@ -1748,13 +1746,12 @@ fn extract_body(src: &str) -> Result<&str, AstError> {
         if in_str {
             if escape {
                 escape = false;
-            } else {
-                if c == '\\' {
-                    escape = true;
-                } else if c == '"' {
-                    in_str = false;
-                }
+            } else if c == '\\' {
+                escape = true;
+            } else if c == '"' {
+                in_str = false;
             }
+
             // inside string, line starts don't apply
             i += 1;
             continue;
@@ -2327,7 +2324,7 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
     }
     if let Some(rest) = t.strip_prefix("do set container state ") {
         // do set container state <item> <state|none>
-        let mut parts = rest.trim().split_whitespace();
+        let mut parts = rest.split_whitespace();
         let item = parts
             .next()
             .ok_or(AstError::Shape("set container state missing item"))?
@@ -3029,9 +3026,8 @@ fn parse_schedule_action(
     let mut note = None;
     let mut cond: Option<ConditionAst> = None;
 
-    if header.starts_with("if ") {
+    if let Some(hdr_after_if) = header.strip_prefix("if ") {
         // Conditional schedule path
-        let hdr_after_if = &header[3..];
         let onfalse_pos = hdr_after_if.find(" onFalse ");
         let note_pos = hdr_after_if.find(" note ");
         let mut cond_end = hdr_after_if.len();
