@@ -227,7 +227,7 @@ pub fn inner_string(pair: Pair<Rule>) -> String {
     if let Some(inner) = pair.into_inner().next() {
         inner.as_str().to_string()
     } else {
-        "".to_string()
+        String::new()
     }
 }
 
@@ -239,7 +239,7 @@ pub fn inner_string_duo(pair: Pair<Rule>) -> (String, String) {
     {
         (first.as_str().to_string(), second.as_str().to_string())
     } else {
-        ("".to_string(), "".to_string())
+        (String::new(), String::new())
     }
 }
 

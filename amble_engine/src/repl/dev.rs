@@ -45,7 +45,7 @@ use crate::{
     trigger::{self, spawn_item_in_inventory},
 };
 
-/// Spawns an item directly into the player's inventory (DEV_MODE only).
+/// Spawns an item directly into the player's inventory (`DEV_MODE` only).
 ///
 /// This development command instantly adds any item to the player's inventory
 /// by its symbol name. If the item already exists elsewhere in the world, it
@@ -86,7 +86,7 @@ pub fn dev_spawn_item_handler(world: &mut AmbleWorld, view: &mut View, symbol: &
     }
 }
 
-/// Instantly teleports the player to any room by its TOML identifier (DEV_MODE only).
+/// Instantly teleports the player to any room by its TOML identifier (`DEV_MODE` only).
 ///
 /// This development command bypasses all normal movement restrictions and
 /// immediately transports the player to the specified room. This is useful
@@ -132,7 +132,7 @@ pub fn dev_teleport_handler(world: &mut AmbleWorld, view: &mut View, room_toml_i
     }
 }
 
-/// Creates a new sequence flag with optional step limit (DEV_MODE only).
+/// Creates a new sequence flag with optional step limit (`DEV_MODE` only).
 ///
 /// This development command creates a sequence flag that can track multi-step
 /// progress through game events. Sequence flags start at step 0 and can be
@@ -172,7 +172,7 @@ pub fn dev_start_seq_handler(world: &mut AmbleWorld, view: &mut View, seq_name: 
     trigger::add_flag(world, view, &seq);
 }
 
-/// Sets a simple boolean flag on the player (DEV_MODE only).
+/// Sets a simple boolean flag on the player (`DEV_MODE` only).
 ///
 /// This development command creates or sets a simple flag that represents
 /// a boolean condition or completed state. Simple flags are either present
@@ -254,11 +254,11 @@ pub fn dev_advance_seq_handler(world: &mut AmbleWorld, view: &mut View, seq_name
             "No sequence flag '{}' found. Use :init-seq to create it first.",
             seq_name.error_style()
         )));
-        warn!("DEV_MODE AdvanceSeq failed: sequence flag '{}' not found", seq_name);
+        warn!("DEV_MODE AdvanceSeq failed: sequence flag '{seq_name}' not found");
     }
 }
 
-/// Resets a sequence flag back to step 0 (DEV_MODE only).
+/// Resets a sequence flag back to step 0 (`DEV_MODE` only).
 ///
 /// This development command resets a sequence flag to its initial state,
 /// effectively undoing any progress made on that sequence. This is useful
@@ -304,11 +304,11 @@ pub fn dev_reset_seq_handler(world: &mut AmbleWorld, view: &mut View, seq_name: 
             "No sequence flag '{}' found. Use :init-seq to create it first.",
             seq_name.error_style()
         )));
-        warn!("DEV_MODE ResetSeq failed: sequence flag '{}' not found", seq_name);
+        warn!("DEV_MODE ResetSeq failed: sequence flag '{seq_name}' not found");
     }
 }
 
-/// Lists all NPCs with their current location and state (DEV_MODE only).
+/// Lists all NPCs with their current location and state (`DEV_MODE` only).
 ///
 /// Displays a developer-focused summary of all NPCs in the world, including
 /// their symbol, name, location, and current state.
@@ -333,22 +333,22 @@ pub fn dev_list_npcs_handler(world: &mut AmbleWorld, view: &mut View) {
     npcs.sort_by(|a, b| a.0.cmp(&b.0));
 
     if npcs.is_empty() {
-        view.push(ViewItem::EngineMessage("No NPCs found in world.".to_string()))
+        view.push(ViewItem::EngineMessage("No NPCs found in world.".to_string()));
     } else {
         let mut msg = String::new();
         msg.push_str(&format!("NPCs [{}]:\n", npcs.len()));
         for (name, symbol, loc, state) in npcs {
-            msg.push_str(&format!(" - {} ({}) @ {} [{}]\n", name, symbol, loc, state));
+            msg.push_str(&format!(" - {name} ({symbol}) @ {loc} [{state}]\n"));
         }
         view.push(ViewItem::EngineMessage(msg));
     }
     warn!("DEV_MODE command used: :npcs (list NPCs)");
 }
 
-/// Lists all player flags currently set (DEV_MODE only).
+/// Lists all player flags currently set (`DEV_MODE` only).
 /// Simple flags are displayed as their name, sequence flags as name#step.
 pub fn dev_list_flags_handler(world: &mut AmbleWorld, view: &mut View) {
-    let mut flags: Vec<String> = world.player.flags.iter().map(|f| f.value()).collect();
+    let mut flags: Vec<String> = world.player.flags.iter().map(super::super::player::Flag::value).collect();
     flags.sort();
     if flags.is_empty() {
         view.push(ViewItem::EngineMessage("No flags are currently set.".to_string()));
@@ -356,18 +356,18 @@ pub fn dev_list_flags_handler(world: &mut AmbleWorld, view: &mut View) {
         let mut msg = String::new();
         msg.push_str(&format!("Flags [{}]:\n", flags.len()));
         for f in flags {
-            msg.push_str(&format!(" - {}\n", f));
+            msg.push_str(&format!(" - {f}\n"));
         }
         view.push(ViewItem::EngineMessage(msg));
     }
     warn!("DEV_MODE command used: :flags (list flags)");
 }
 
-/// Lists upcoming scheduled events from the world's scheduler (DEV_MODE only).
+/// Lists upcoming scheduled events from the world's scheduler (`DEV_MODE` only).
 pub fn dev_list_sched_handler(world: &mut AmbleWorld, view: &mut View) {
     let now = world.turn_count;
     let mut upcoming: Vec<(usize, usize)> = world.scheduler.heap.iter().map(|rev| rev.0).collect();
-    upcoming.sort();
+    upcoming.sort_unstable();
 
     if upcoming.is_empty() {
         view.push(ViewItem::EngineMessage("No events currently scheduled.".to_string()));
@@ -395,8 +395,7 @@ pub fn dev_list_sched_handler(world: &mut AmbleWorld, view: &mut View) {
 
         // Header line stays compact for grep-ability
         msg.push_str(&format!(
-            " - turn {:>4} | idx {:>3} | actions: {}\n",
-            turn_due, idx, actions_len
+            " - turn {turn_due:>4} | idx {idx:>3} | actions: {actions_len}\n"
         ));
 
         // Metadata lines are separated for readability
@@ -406,7 +405,7 @@ pub fn dev_list_sched_handler(world: &mut AmbleWorld, view: &mut View) {
         } else {
             msg.push_str("   cond: <none>\n");
         }
-        msg.push_str(&format!("   note: {}\n", note));
+        msg.push_str(&format!("   note: {note}\n"));
         msg.push('\n');
     }
     view.push(ViewItem::EngineMessage(msg));
@@ -419,7 +418,7 @@ pub fn dev_list_sched_handler(world: &mut AmbleWorld, view: &mut View) {
 fn summarize_on_false(p: &OnFalsePolicy) -> String {
     match p {
         OnFalsePolicy::Cancel => "cancel".to_string(),
-        OnFalsePolicy::RetryAfter(n) => format!("retry+{}", n),
+        OnFalsePolicy::RetryAfter(n) => format!("retry+{n}"),
         OnFalsePolicy::RetryNextTurn => "retry-next".to_string(),
     }
 }
@@ -520,7 +519,7 @@ fn summarize_trigger_condition(world: &AmbleWorld, tc: &TriggerCondition) -> Str
     }
 }
 
-/// Cancel a scheduled event by its internal index (DEV_MODE only).
+/// Cancel a scheduled event by its internal index (`DEV_MODE` only).
 pub fn dev_sched_cancel_handler(world: &mut AmbleWorld, view: &mut View, idx: usize) {
     if idx >= world.scheduler.events.len() {
         view.push(ViewItem::ActionFailure(format!(
@@ -541,7 +540,7 @@ pub fn dev_sched_cancel_handler(world: &mut AmbleWorld, view: &mut View, idx: us
     view.push(ViewItem::ActionSuccess(format!("Scheduled event {idx} canceled.")));
 }
 
-/// Delay a scheduled event by N turns (DEV_MODE only).
+/// Delay a scheduled event by N turns (`DEV_MODE` only).
 pub fn dev_sched_delay_handler(world: &mut AmbleWorld, view: &mut View, idx: usize, turns: usize) {
     if idx >= world.scheduler.events.len() {
         let msg = format!("No scheduled event found at index {idx}.");

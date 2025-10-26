@@ -238,7 +238,7 @@ impl Item {
 /// # Arguments
 /// * `world` - Mutable reference to the game world
 /// * `item_id` - UUID of the item to consume
-/// * `ability` - The ability that triggered the consumption (e.g. ItemAbility::Ignite)
+/// * `ability` - The ability that triggered the consumption (e.g. `ItemAbility::Ignite`)
 ///
 /// # Returns
 /// * `Ok(Some(uses_left))` - Item was consumable and consumed, returns remaining uses

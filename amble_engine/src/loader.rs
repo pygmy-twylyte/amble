@@ -60,7 +60,7 @@ fn map_resolver(table: &HashMap<String, String>, map: &HashMap<String, Uuid>, ke
 /// # Errors
 /// - if room or container token cannot be found in the symbol table
 pub fn resolve_location(table: &HashMap<String, String>, symbols: &SymbolTable) -> Result<Location> {
-    match table.keys().next().map(|key| key.as_str()) {
+    match table.keys().next().map(std::string::String::as_str) {
         Some("Inventory") => Ok(Location::Inventory),
         Some("Room") => map_resolver(table, &symbols.rooms, "Room").map(Location::Room),
         Some("Chest") => map_resolver(table, &symbols.items, "Chest").map(Location::Item),

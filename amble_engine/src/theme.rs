@@ -21,12 +21,12 @@ pub struct ThemeColor {
 }
 
 impl ThemeColor {
-    /// Create a new ThemeColor from RGB values
+    /// Create a new `ThemeColor` from RGB values
     pub fn new(r: u8, g: u8, b: u8) -> Self {
         Self { r, g, b }
     }
 
-    /// Convert to colored::Color for use with the colored crate
+    /// Convert to `colored::Color` for use with the colored crate
     pub fn to_color(&self) -> Color {
         Color::TrueColor {
             r: self.r,

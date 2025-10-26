@@ -45,7 +45,7 @@ impl ScoringConfig {
     /// * `percent` - Percentage of max score achieved (0.0-100.0)
     ///
     /// # Returns
-    /// A tuple of (rank_name, description) for display to the player.
+    /// A tuple of (`rank_name`, description) for display to the player.
     pub fn get_rank(&self, percent: f32) -> (&str, &str) {
         for rank in &self.ranks {
             if percent >= rank.threshold {

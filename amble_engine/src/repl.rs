@@ -185,7 +185,7 @@ pub fn check_scheduled_events(world: &mut AmbleWorld, view: &mut View) -> Result
     let now = world.turn_count;
     while let Some(event) = world.scheduler.pop_due(now) {
         let note_text = event.note.clone().unwrap_or_else(|| "<no note recorded>".to_string());
-        let ok = event.condition.as_ref().map_or(true, |c| c.eval(world));
+        let ok = event.condition.as_ref().is_none_or(|c| c.eval(world));
 
         if ok {
             info!("scheduled event \"{note_text}\" firing --->)");

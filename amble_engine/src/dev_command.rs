@@ -31,26 +31,20 @@ pub fn parse_dev_command(input: &str, view: &mut View) -> Option<Command> {
             ["help", "dev"] => Some(Command::HelpDev),
             ["npcs"] => Some(Command::ListNpcs),
             ["flags"] => Some(Command::ListFlags),
-            ["sched"] | ["schedule"] => Some(Command::ListSched),
-            ["sched" | "schedule", "cancel", idx_str] => match idx_str.parse::<usize>() {
-                Ok(idx) => Some(Command::SchedCancel(idx)),
-                Err(_) => {
-                    view.push(ViewItem::ActionFailure(format!(
-                        "Invalid index '{}' for :schedule cancel.",
-                        idx_str.error_style()
-                    )));
-                    None
-                },
+            ["sched" | "schedule"] => Some(Command::ListSched),
+            ["sched" | "schedule", "cancel", idx_str] => if let Ok(idx) = idx_str.parse::<usize>() { Some(Command::SchedCancel(idx)) } else {
+                view.push(ViewItem::ActionFailure(format!(
+                    "Invalid index '{}' for :schedule cancel.",
+                    idx_str.error_style()
+                )));
+                None
             },
             ["sched" | "schedule", "delay", idx_str, turns_str] => {
-                match (idx_str.parse::<usize>(), turns_str.parse::<usize>()) {
-                    (Ok(idx), Ok(turns)) => Some(Command::SchedDelay { idx, turns }),
-                    _ => {
-                        view.push(ViewItem::ActionFailure(
-                            "Usage: :schedule delay <idx> <+turns>".to_string(),
-                        ));
-                        None
-                    },
+                if let (Ok(idx), Ok(turns)) = (idx_str.parse::<usize>(), turns_str.parse::<usize>()) { Some(Command::SchedDelay { idx, turns }) } else {
+                    view.push(ViewItem::ActionFailure(
+                        "Usage: :schedule delay <idx> <+turns>".to_string(),
+                    ));
+                    None
                 }
             },
             ["teleport" | "port", room_symbol] => Some(Command::Teleport((*room_symbol).into())),

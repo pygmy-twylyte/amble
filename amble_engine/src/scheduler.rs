@@ -2,7 +2,7 @@
 //!
 //! Simple future one-off or recurring events can be accomplished using flags and their associated
 //! "turnstamps" (turn on which they were set.) This system will allow for more complicated series
-//! of events scheduled at arbitrary times in the future. Because it is owned by AmbleWorld, all
+//! of events scheduled at arbitrary times in the future. Because it is owned by `AmbleWorld`, all
 //! scheduled events should persist correctly across saves.
 //!
 //! ### Designer Note:
@@ -166,11 +166,11 @@ impl Scheduler {
     }
 }
 
-/// An event (sequence of TriggerActions) scheduled for a particular turn.
+/// An event (sequence of `TriggerActions`) scheduled for a particular turn.
 ///
 /// ### Fields:
-/// on_turn = turn on which to fire
-/// actions = list of TriggerActions to take when the turn arrives
+/// `on_turn` = turn on which to fire
+/// actions = list of `TriggerActions` to take when the turn arrives
 /// note = description of event (for logging)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScheduledEvent {

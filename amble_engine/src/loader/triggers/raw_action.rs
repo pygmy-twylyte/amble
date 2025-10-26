@@ -229,14 +229,10 @@ impl RawNpcMovementPatch {
             bail!("loading TriggerAction:ModifyNpc: cannot set both route and random rooms");
         }
 
-        let timing = if let Some(timing_str) = &self.timing {
-            Some(match timing_str {
+        let timing = self.timing.as_ref().map(|timing_str| match timing_str {
                 RawMovementTimingPatch::EveryNTurns { turns } => MovementTiming::EveryNTurns { turns: *turns },
                 RawMovementTimingPatch::OnTurn { turn } => MovementTiming::OnTurn { turn: *turn },
-            })
-        } else {
-            None
-        };
+            });
 
         Ok(NpcMovementPatch {
             route,

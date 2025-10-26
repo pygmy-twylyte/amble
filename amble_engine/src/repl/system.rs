@@ -312,8 +312,8 @@ pub fn help_handler(view: &mut View) {
     }
 }
 
-/// Show only developer commands in help (DEV_MODE only).
-/// Falls back to a standard disabled message when not in DEV_MODE.
+/// Show only developer commands in help (`DEV_MODE` only).
+/// Falls back to a standard disabled message when not in `DEV_MODE`.
 pub fn help_handler_dev(view: &mut View) {
     if !crate::DEV_MODE {
         view.push(ViewItem::Error(
@@ -460,7 +460,7 @@ pub fn list_saves_handler(view: &mut View) {
             directory: SAVE_DIR.to_string(),
             entries,
         }),
-        Err(err) => view.push(ViewItem::Error(format!("Unable to list saved games: {}", err))),
+        Err(err) => view.push(ViewItem::Error(format!("Unable to list saved games: {err}"))),
     }
 }
 

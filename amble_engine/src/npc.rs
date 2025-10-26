@@ -280,7 +280,7 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
 /// overlays can also change according to NPC presence / state. Custom states allow for
 /// other "moods" and can be used to pin selections of dialogue to particular game states.
 /// Ex: player does something -> puzzle advanced to puzzle#2 -> trigger sets custom NPC state
-/// "player_at_puzzle_step_2" which has specific dialogue.
+/// "`player_at_puzzle_step_2`" which has specific dialogue.
 #[derive(Clone, Debug, variantly::Variantly, PartialEq, Hash, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum NpcState {

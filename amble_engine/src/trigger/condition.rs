@@ -97,7 +97,7 @@ impl TriggerCondition {
 
     /// Returns a random boolean according the parameters of a Chance trigger.
     ///
-    /// This allows us to check chance conditions without having to pass an AmbleWorld
+    /// This allows us to check chance conditions without having to pass an `AmbleWorld`
     /// reference, avoid some conflicts with the borrow checker. Returns true if called
     /// on any other type of `TriggerCondition`.
     pub fn chance_value(&self) -> bool {

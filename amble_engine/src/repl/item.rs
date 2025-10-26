@@ -266,7 +266,7 @@ pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, m
 ///
 /// - Success: Determined by whether appropriate triggers fire
 /// - Failure: Provides specific feedback about missing requirements
-/// - No effect: Generic message from the NoEffect spinner when no triggers handle the interaction
+/// - No effect: Generic message from the `NoEffect` spinner when no triggers handle the interaction
 ///
 /// # Errors
 /// Returns an error if the player's current room cannot be determined, if tool or target items

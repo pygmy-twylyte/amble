@@ -12,12 +12,12 @@ use uuid::Uuid;
 
 /// Generic: Returns the TOML symbol for a given object's uuid.
 pub fn symbol_from_id<T: WorldObject>(map: &HashMap<Uuid, T>, id: Uuid) -> Option<&str> {
-    map.get(&id).map(|obj| obj.symbol())
+    map.get(&id).map(super::world::WorldObject::symbol)
 }
 
 /// Generic: Returns the display name for a given object's uuid.
 pub fn name_from_id<T: WorldObject>(map: &HashMap<Uuid, T>, id: Uuid) -> Option<&str> {
-    map.get(&id).map(|obj| obj.name())
+    map.get(&id).map(super::world::WorldObject::name)
 }
 
 /// Convenience: Returns the symbol or a standard fallback string.

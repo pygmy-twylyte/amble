@@ -56,7 +56,7 @@ impl Player {
 
     /// Returns list of applied status effects.
     ///
-    /// Status effects are created by using a `Flag` with a name in the form "status:<status_type>",
+    /// Status effects are created by using a `Flag` with a name in the form "status:<`status_type`>",
     /// e.g. "status:nausea"
     pub fn status(&self) -> HashSet<&str> {
         self.flags
@@ -161,8 +161,8 @@ pub enum Flag {
 }
 impl Flag {
     /// Return string value of the flag.
-    /// For 'Simple' this is just "flag_name".
-    /// For "Sequence" this is "flag_name#N" where N is the current sequence step number.
+    /// For 'Simple' this is just "`flag_name`".
+    /// For "Sequence" this is "`flag_name#N`" where N is the current sequence step number.
     pub fn value(&self) -> String {
         match self {
             Self::Simple { name, .. } => name.to_string(),
@@ -247,7 +247,7 @@ use std::hash::{Hash, Hasher};
 impl PartialEq for Flag {
     /// Defines equality of two flags as based on name only (not step).
     ///
-    /// This is crucial for HashSet operations - flags are considered equal
+    /// This is crucial for `HashSet` operations - flags are considered equal
     /// if they have the same name, regardless of their current step in a sequence.
     /// This allows updating sequence flags by removing the old version and
     /// inserting the updated version.
@@ -259,7 +259,7 @@ impl PartialEq for Flag {
 impl Eq for Flag {}
 
 impl Hash for Flag {
-    /// Hash implementation that matches the PartialEq implementation.
+    /// Hash implementation that matches the `PartialEq` implementation.
     ///
     /// Since equality is based only on the flag name, we hash only the name
     /// to maintain the invariant that equal items have equal hashes.

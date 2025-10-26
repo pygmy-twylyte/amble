@@ -147,7 +147,7 @@ use crate::world::{AmbleWorld, Location, WorldObject};
 pub enum TriggerAction {
     /// Set the activity state of an NPC
     SetNpcActive { npc_id: Uuid, active: bool },
-    /// Set the ContainerState of an Item
+    /// Set the `ContainerState` of an Item
     SetContainerState { item_id: Uuid, state: Option<ContainerState> },
     /// Replaces an item at its current location
     ReplaceItem { old_id: Uuid, new_id: Uuid },
@@ -263,7 +263,7 @@ pub enum TriggerAction {
 /// # Errors
 /// - Returns an error if the underlying handler cannot resolve referenced objects.
 pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &TriggerAction) -> Result<()> {
-    use TriggerAction::*;
+    use TriggerAction::{ModifyItem, ModifyRoom, ModifyNpc, SetNpcActive, SetContainerState, ReplaceItem, ReplaceDropItem, SetBarredMessage, AddSpinnerWedge, ResetFlag, AdvanceFlag, SpinnerMessage, RestrictItem, NpcRefuseItem, NpcSaysRandom, NpcSays, DenyRead, DespawnItem, DespawnNpc, GiveItemToPlayer, LockItem, PushPlayerTo, RevealExit, SetItemDescription, SetNPCState, ShowMessage, SpawnItemInContainer, SpawnItemInInventory, SpawnItemCurrentRoom, SpawnItemInRoom, SpawnNpcInRoom, UnlockItem, UnlockExit, LockExit, AddFlag, RemoveFlag, AwardPoints, Conditional, ScheduleIn, ScheduleOn, ScheduleInIf, ScheduleOnIf};
     match action {
         ModifyItem { item_id, patch } => modify_item(world, *item_id, patch)?,
         ModifyRoom { room_id, patch } => modify_room(world, *room_id, patch)?,
