@@ -544,7 +544,7 @@ pub fn dev_sched_cancel_handler(world: &mut AmbleWorld, view: &mut View, idx: us
 /// Delay a scheduled event by N turns (DEV_MODE only).
 pub fn dev_sched_delay_handler(world: &mut AmbleWorld, view: &mut View, idx: usize, turns: usize) {
     if idx >= world.scheduler.events.len() {
-        let msg = format!("No scheduled event found at index {i}.");
+        let msg = format!("No scheduled event found at index {idx}.");
         view.push(ViewItem::ActionFailure(msg));
         return;
     }
