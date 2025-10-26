@@ -17,9 +17,8 @@ Keep this quick reference open while authoring `.amble` files. It summarises the
 ## Trigger Essentials
 
 ```amble
-trigger "Name" when <event> {
-  [note "Debug note"]
-  [only once]
+trigger "Name" [only once] [note "Debug note"]
+when <event> {
   [if <condition> { <actions> } ...]
   [do <action>]
 }
@@ -30,6 +29,7 @@ trigger "Name" when <event> {
 - `enter room <room>` | `leave room <room>`
 - `take item <item>` | `drop item <item>` | `look at item <item>` | `open item <item>` | `unlock item <item>`
 - `use item <item> ability <ability>` | `act <verb> on item <item>` | `insert item <item> into item <container>`
+- `use item <tool> on item <target> interaction <interaction>`
 - `take item <item> from npc <npc>` | `give item <item> to npc <npc>` | `talk to npc <npc>`
 - `always`
 
@@ -46,11 +46,12 @@ trigger "Name" when <event> {
 
 - Feedback: `do show`, `do award points`
 - Flags: `do add/remove/reset/advance flag`, `do add seq flag [limit n]`
-- Spawn/Despawn: `do spawn item … into room|container|inventory|current room`, `do despawn item`
+- Spawn/Despawn/Swap: `do spawn item … into room|container|inventory|current room`, `do spawn npc … into room …`, `do despawn item`, `do despawn npc`, `do replace item <old> with <new>`, `do replace drop item <old> with <new>`
 - Exits & locks: `do reveal/lock/unlock exit`, `do lock/unlock item`, `do set barred message`
-- NPC dialogue/state: `do npc says`, `do npc says random`, `do npc refuse item`, `do set npc state`
-- Item tweaks: `do set item description`
+- NPC dialogue/state: `do npc says`, `do npc says random`, `do npc refuse item`, `do set npc state`, `do set npc active`
+- Item tweaks: `do set item description`, `do set container state <item> <state|none>`
 - Player/world: `do push player to`, `do restrict item`, `do deny read`
+- Bulk updates: `do modify item|room|npc <id> { … }`
 - Spinners: `do spinner message <spinner>`, `do add wedge "…" width <n> spinner <spinner>`
 - Scheduling: `do schedule in/on <n> { … }`, `do schedule in/on … if <cond> onFalse <policy> [note "…"] { … }`
 
@@ -67,7 +68,7 @@ room <id> {
   name "Title"
   desc "Base description"
   [visited true|false]
-  [exit <dir> <to> [hidden] [locked] [barred "…"] [required_items(a,b)] [required_flags(flag_a,flag_b#3)]]
+  [exit "some direction" -> <destination> {[hidden] [locked] [barred "…"] [required_items(a,b)] [required_flags(flag_a,flag_b#3)]}]
   [overlay if <conditions> { text "…" }]
 }
 ```
@@ -89,6 +90,11 @@ item <id> {
   [ability <Ability> [<target>]]
   [text "Readable text"]
   [requires <ability> to <interaction>]
+  [consumable {
+      uses_left <n>
+      consume_on ability <Ability> [<target>]
+      when_consumed despawn|replace inventory <item>|replace current room <item>
+  }]
 }
 ```
 
@@ -129,8 +135,8 @@ goal <id> {
   name "Display name"
   desc "Description"
   group required|optional|status-effect
-  [activate when <condition>]
-  complete when <condition>
+  [start when <condition>]
+  done when <condition>
   [fail when <condition>]
 }
 ```
@@ -147,6 +153,9 @@ cargo run -p amble_script -- lint content/ --deny-missing
 
 # Compile entire content set into the engine data directory
 cargo run -p amble_script -- compile-dir content/ --out-dir amble_engine/data
+
+# Use xtask to compile, install, and lint all content in the data directory
+cargo xtask content refresh
 ```
 
 Happy world-building!

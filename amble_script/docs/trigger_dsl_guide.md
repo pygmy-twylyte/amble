@@ -87,12 +87,16 @@ Player feedback and flags:
 - `do award points <number>` (negative allowed)
 
 Item/NPC/world state:
-- Spawn/Despawn:
+- Spawn/Despawn/Swap:
   - `do spawn item <item> into room <room>`
   - `do spawn item <item> into container <container>`
+  - `do spawn item <item> in container <container>`
   - `do spawn item <item> in inventory`
   - `do spawn item <item> in current room`
-  - `do despawn item <item>`
+  - `do spawn npc <npc> into room <room>`
+  - `do despawn item <item>` | `do despawn npc <npc>`
+  - `do replace item <old> with <new>` — swaps an item wherever it currently lives
+  - `do replace drop item <old> with <new>` — swaps and drops the replacement if the player held it
 - Exits/Locks:
   - `do reveal exit from <from_room> to <to_room> direction <dir>`
   - `do lock exit from <from_room> direction <dir>`
@@ -101,9 +105,11 @@ Item/NPC/world state:
   - `do set barred message from <from_room> to <to_room> "Message…"`
 - Items/NPCs:
   - `do set item description <item_sym> "New description…"`
+  - `do set container state <item> <state|none>`
   - `do npc says <npc> "Quote…"` | `do npc says random <npc>`
-  - `do set npc state <npc> <state>`
   - `do npc refuse item <npc> "Reason…"`
+  - `do set npc state <npc> <state>`
+  - `do set npc active <npc> <true|false>`
   - `do give item <item> to player from npc <npc>`
 - Player movement/restrictions:
   - `do push player to <room>`
@@ -145,6 +151,31 @@ do schedule on 20 if any(player in room hall, player in room kitchen) onFalse ca
   do award points 5
 }
 ```
+
+### Modify actions
+
+Use `do modify item|room|npc … { … }` blocks to patch existing entities without rewriting the original TOML:
+
+```amble
+do modify item locker {
+  name "Ransacked Locker"
+  container state open
+  remove ability Lockpick
+}
+
+do modify room lobby {
+  remove exit vault
+  add exit east atrium { hidden }
+}
+
+do modify npc guard {
+  active false
+  route (lobby, security-station)
+  timing every 3 turns
+}
+```
+
+Supported statements mirror their top-level counterparts: you can adjust names/descriptions, toggle `portable`/`restricted`, add or remove abilities, switch container states (use `container state off` to clear), add/remove exits, patch overlays, reconfigure NPC movement (`route (…)`, `random rooms (…)`, `timing every <n> turns`, `timing on turn <n>`, `active true|false`, `loop true|false`), and mutate dialogue banks (`add line "…" to state custom panic`). See the entity-specific guides for the complete statement lists.
 
 **NOTE:** The turn counter is advanced immediately after events are scheduled, so an event scheduled in 1 turn will appear to fire with no delay. Use 2 or more for something to fire after an apparent delay.
 

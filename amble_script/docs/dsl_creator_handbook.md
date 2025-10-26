@@ -8,17 +8,17 @@ If you only need a terse reminder of keywords and shapes, see the accompanying [
 
 ## Authoring Workflow Overview
 
-1. **Write DSL files** – author one or more `.amble` (or legacy `.able`) files that define triggers, rooms, items, NPCs, spinners, and goals.
-2. **Validate with `lint`** – catch missing cross-references by running `amble_script lint` against the file or directory you are editing.
-3. **Compile** – translate the DSL into engine-ready TOML via `amble_script compile` (single file) or `amble_script compile-dir` (directory tree).
-4. **Load in the engine** – copy the generated TOML into `amble_engine/data/` or point the engine at the output directory.
-5. **Iterate** – repeat the lint/compile cycle as you expand the world.
+1. **Write DSL files** – author one or more `.amble` files that define triggers, rooms, items, NPCs, spinners, and goals. Files can be organized however you like - the .amble compiler recursively searches all directories under the root data directory.
+2. **Compile TOML and Install** - using `cargo xtask content refresh` will compile, install, and lint all source .amble files using the amble_script CLI.
+3. **Run the Engine** - There are a few different ways to do this, depending on whether you've installed the full repo or a pre-built package. If pre-built, you just run the program that you downloaded. If you're working from the cloned Amble repository, you can use `cargo run --bin amble_engine` from the workspace root. Or you can (re)build the engine with `cargo xtask build-engine --dev-mode enabled` which will build with developer game commands and debugging enabled. The executable will then be in ./target/debug/amble_engine (or amble_engine.exe if building for Windows).
+4. **Iterate** - play with the additions and changes you've made to the game world, go back to the .amble sources and do more, refresh the content, build, and run again.
 
-The compiler writes source provenance comments (file paths, line numbers, and content hashes) into every generated TOML table so that you can confidently trace runtime behaviour back to the DSL source.
 
 ---
 
 ## CLI Tooling
+
+(Note: the amble_script CLI can be used directly when more granular control over workflow  is needed, but most common build / install tasks are already automated and more easily called using the `cargo xtask` commands.)
 
 The `amble_script` binary ships inside this repository and can be run via `cargo run -p amble_script -- <command> …` or directly after `cargo install --path amble_script`.
 
@@ -42,14 +42,9 @@ Key details:
 - `--out` still works as a deprecated alias for `--out-triggers` and prints a warning so you know to update scripts.
 - The emitted TOML is prefixed with a generated header containing the source file path and an FNV-64 hash of the DSL to detect stale copies.
 
-Typical uses:
-
-- Convert an isolated prototype trigger file into `triggers.toml` before copying it into `amble_engine/data/`.
-- Split a combined `.amble` file into separate outputs (`--out-triggers`, `--out-rooms`, …) to avoid manual editing.
-
 ### `compile-dir`
 
-Batch-compile an entire directory tree of `.amble`/`.able` files.
+Batch-compile an entire directory tree of `.amble` files.
 
 ```bash
 cargo run -p amble_script -- compile-dir content/ --out-dir amble_engine/data \
@@ -59,7 +54,7 @@ cargo run -p amble_script -- compile-dir content/ --out-dir amble_engine/data \
 What it does:
 
 - Recursively scans the source directory for DSL files, parses them, and merges all matching entity definitions.
-- Writes one TOML file per category into the target `--out-dir`. When a category has no definitions, the tool still writes an empty skeleton (for example `triggers = []`) so that other generated files cannot go stale.
+- Writes one TOML file per category (rooms.toml, items.toml, etc. - as expected by amble_engine) into the target `--out-dir`. When a category has no definitions, the tool still writes an empty skeleton (for example `triggers = []`) so that other generated files cannot go stale.
 - Accepts `--only` to restrict which categories are written. Provide a comma-separated list (`--only triggers,items`) to leave other TOML files untouched.
 - `--verbose` (or `-v`) prints per-file and summary counts, which is useful while refactoring a larger project.
 
@@ -80,13 +75,13 @@ Highlights:
 - Loads identifiers from the target `--data-dir` (defaults to `amble_engine/data`) so it can verify that exits point at existing rooms, trigger references mention valid items/NPCs, spinner IDs exist, etc.
 - Reports each missing reference with file, line/column, and a caret indicator. The command exits with code 1 when `--deny-missing` is supplied and at least one issue was found—perfect for CI pipelines.
 
-Run the linter before compiling to catch typos and outdated IDs early.
+__Note: Because the linter uses the TOML files in the engine's data directory as a reference, the .amble source should be compiled and installed before linting, or you may get false reports on missing cross-references.__
 
 ---
 
 ## Triggers
 
-Triggers drive the bulk of interactive logic. They listen for a game event, optionally gate on additional conditions, and execute one or more actions.
+Triggers drive the bulk of interactive logic. They listen for a game event or particular game state, optionally gate on additional conditions, and execute one or more actions.
 
 ### Skeleton
 
@@ -114,6 +109,7 @@ The DSL supports a wide range of trigger events. A trigger fires when the player
 
 - Room transitions: `enter room <room_id>`, `leave room <room_id>`
 - Item interactions: `take item <item_id>`, `drop item <item_id>`, `look at item <item_id>`, `open item <item_id>`, `unlock item <item_id>`, `use item <item_id> ability <ability>`, `act <verb> on item <item_id>`, `insert item <item_id> into item <container_id>`, `take item <item_id> from npc <npc_id>`, `give item <item_id> to npc <npc_id>`
+- Item-on-item interactions: `use item <tool_id> on item <target_id> interaction <interaction>`
 - NPC interactions: `talk to npc <npc_id>`
 - Ambient/status: `always` (evaluated every turn against conditions)
 
@@ -134,15 +130,21 @@ Each condition group inside an `if` compiles into a flat list of engine conditio
 Actions describe the outcomes once all conditions pass. Common categories include:
 
 - **Player feedback and flags:** `do show "…"`, `do award points 5`, `do add flag …`, `do add seq flag goal limit 3`, `do advance flag goal`, `do reset flag goal`, `do remove flag goal`
-- **Item and NPC manipulation:** `do spawn item keycard into room security-office`, `do spawn item keycard into container locker`, `do spawn item kit in inventory`, `do despawn item vines`, `do set item description statue "…"`, `do set npc state guard alert`, `do npc says receptionist "We’re closed."`, `do npc says random receptionist`, `do npc refuse item receptionist "That’s not helpful."`, `do give item badge to player from npc guard`
-- **World structure:** `do reveal exit from lab to hallway direction east`, `do lock exit from lobby direction north`, `do unlock exit from lobby direction north`, `do set barred message from lobby to vault "The door doesn’t budge."`, `do lock item locker`, `do unlock item locker`
+- **Item/NPC/world state:**
+  - Spawn/Despawn/Swap: `do spawn item keycard into room security-office`, `do spawn item keycard into container locker`, `do spawn item kit in inventory`, `do spawn item kit in current room`, `do spawn npc guard into room lobby`, `do despawn item vines`, `do despawn npc guard`, `do replace item glow-rod with drained-rod`, `do replace drop item badge with badge-fragments`
+  - Exits/locks: `do reveal exit from lab to hallway direction east`, `do lock exit from lobby direction north`, `do unlock exit from lobby direction north`, `do lock item locker`, `do unlock item locker`, `do set barred message from lobby to vault "The door doesn’t budge."`
+  - Items/NPCs: `do set item description statue "…"`, `do set container state locker locked`, `do npc says receptionist "We’re closed."`, `do npc says random receptionist`, `do npc refuse item receptionist "That’s not helpful."`, `do set npc state guard alert`, `do set npc active guard false`, `do give item badge to player from npc guard`
 - **Player movement & restrictions:** `do push player to infirmary`, `do restrict item trophy`, `do deny read "It’s encrypted."`
 - **Spinners (ambient random lines):** `do spinner message ambientInterior`, `do add wedge "Clanging pipes" width 2 spinner ambientInterior`
 - **Scheduling follow-up actions:**
   - Unconditional: `do schedule in 2 { … }`, `do schedule on 15 { … }`
   - Conditional: `do schedule in 1 if player in room lobby onFalse retryNextTurn note "ambient-chime" { … }`
   - Conditional absolute: `do schedule on 30 if has flag finaleReady onFalse cancel { … }`
-  - `onFalse` policies: `cancel`, `retryAfter <turns>`, `retryNextTurn`
+  - `onFalse` policies: `cancel`, `retryAfter <turns>`, `retryNextTurn`; `note "label"` tags the scheduled event for debugging.
+
+You can also patch existing content with `do modify item|room|npc … { … }` blocks. They accept the same fields as the primary definitions—tweak names/descriptions, toggle `portable`/`restricted`, adjust container state (`container state off` clears it), add/remove abilities, exits, overlays, dialogue, or NPC movement (`route (…)`, `random rooms (…)`, `timing every 3 turns`, `timing on turn 5`, `active true|false`, `loop true|false`).
+
+Need a deeper dive? See the [Trigger DSL Guide](./trigger_dsl_guide.md).
 
 ### Sets for Ambient Conditions
 
@@ -227,6 +229,23 @@ Key fields:
 - Each `ability` entry becomes a `[[items.abilities]]` table with optional target (`ability Unlock vault_door`).
 - `text` attaches readable flavour.
 - `requires <ability> to <interaction>` gates interactions (e.g., require an item ability `cut` to perform the `open` interaction on this item).
+- `consumable { … }` configures limited-use items that despawn or transform after their charges are spent.
+
+Consumable blocks support:
+
+```amble
+consumable {
+  uses_left 2
+  consume_on ability Use
+  when_consumed replace inventory drained-portal-gun
+}
+```
+
+- `uses_left <n>` sets the starting charge count (≥ 0).
+- `consume_on ability <Ability> [<target>]` declares which abilities decrement the counter.
+- `when_consumed …` chooses the depletion behaviour: `despawn`, `replace inventory <item>`, or `replace current room <item>`.
+
+See the [Items DSL Guide](./items_dsl_guide.md) for exhaustive field coverage and emitted TOML structure.
 
 ---
 
@@ -265,11 +284,13 @@ Highlights:
 - Movement supports `route` (default) or `random` with a list of rooms. Optional `timing <schedule_id>` selects an engine-defined timing, `active true|false` toggles whether the routine starts running immediately, and `loop true|false` controls whether a route loops or stops at the final room.
 - Dialogue blocks associate one or more lines with a state key. Use `dialogue custom panic { … }` for custom states; internally the compiler prefixes the key with `custom:` to match engine expectations.
 
+For movement and dialogue patching examples, see the [NPCs DSL Guide](./npcs_dsl_guide.md).
+
 ---
 
 ## Spinners
 
-Spinners are ambient random text selectors. Each spinner contains one or more wedges, each with text and an optional width (weight).
+Spinners are random text selectors. They are used by the engine to vary common messages (like command not found) to keep things fresh. There are defaults for each of those spinners, but they can be overridden by content creators simply by including a spinner with one of the core spinner identifiers. They can also be used to create ambient effects, status effects, bits of randomized dialogue, etc. Each spinner contains one or more wedges, each with text and an optional width (weight). Widths default to 1, so all wedges are equally likely to be selected if they are omitted (which is usually the desired behavior.)
 
 ```amble
 spinner ambientLobby {
@@ -279,6 +300,8 @@ spinner ambientLobby {
 ```
 
 When referenced from triggers (`do spinner message ambientLobby`), the engine rolls a wedge according to its weight.
+
+Check the [Spinners DSL Guide](./spinners_dsl_guide.md) for weighting tips and additional examples.
 
 ---
 
@@ -291,8 +314,8 @@ goal stabilize-reactor {
   name "Stabilize the Reactor"
   desc "Restore power to the facility."
   group required
-  activate when has flag mission:assigned
-  complete when flag complete reactor:calibration
+  start when has flag mission:assigned
+  done when flag complete reactor:calibration
   fail when has flag mission:aborted
 }
 ```
@@ -305,6 +328,8 @@ Components:
 - `fail when …` is optional and uses the same condition set to model failure states.
 
 Goals compile into `goals.toml`, matching the engine schema for in-game goal tracking.
+
+See the [Goals DSL Guide](./goals_dsl_guide.md) for condition details and compiler output samples.
 
 ---
 

@@ -7,7 +7,8 @@ Highlights:
 - Optional `container state` (`open`, `closed`, `locked`, `transparentClosed`, `transparentLocked`).
 - Optional `text` field for readable items and `restricted` flag for non-droppable items.
 - `ability` entries compile to `[[items.abilities]]` tables with an optional `target`.
- - Interaction requirements: `requires <ability> to <interaction>` compiles to `interaction_requires`.
+- Interaction requirements: `requires <ability> to <interaction>` compiles to `interaction_requires`.
+- `consumable { … }` blocks model limited-use items that despawn or transform after depletion.
 
 ## Minimal Item
 
@@ -64,10 +65,14 @@ Each ability becomes an entry in `[[items.abilities]]` with `type` and optional 
 
 ```
 text "Authorized personnel only."
-restricted true  # item cannot be dropped
+ability Read
+
+restricted true  # item cannot be taken by player, but it is portable and can be given to them or unrestricted later
+portable true # if false, item cannot be moved under any circumstances
 ```
 
 `text` is emitted as the item’s readable text. `restricted` defaults to `false` and is only emitted when set to `true`.
+Note: the "read" and "examine" player commands are synonyms as far as the engine is concerned, so this extra text field can be used for extra detail descriptions or clues in addition to items that actually have legible text.
 
 ## Interaction Requirements
 
@@ -88,6 +93,29 @@ This compiles to TOML as:
 handle = "insulate"
 open = "cut"
 ```
+
+## Consumables
+
+Attach a `consumable { … }` block to define limited-use tools, medicine, or gadgets:
+
+```
+consumable {
+  uses_left 3
+  consume_on ability TurnOn
+  when_consumed replace inventory drained-battery
+}
+```
+
+Available options:
+
+- `uses_left <n>` sets how many charges remain (must be ≥ 0).
+- `consume_on ability <Ability> [<target>]` declares which abilities consume a charge. Provide multiple lines for multiple abilities.
+- `when_consumed …` chooses what happens at zero charges:
+  - `when_consumed despawn` removes the item.
+  - `when_consumed replace inventory <item>` swaps it for another item in the player’s inventory.
+  - `when_consumed replace current room <item>` drops a replacement into the room where it was used.
+
+The compiler emits these into the `[[items.consumable]]` tables with the correct structure expected by the engine.
 
 ## Library Usage
 
