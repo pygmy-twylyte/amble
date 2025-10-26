@@ -283,7 +283,7 @@ fn parse_trigger_pair(
                 other => {
                     return Err(AstError::ShapeAt {
                         msg: "unsupported ingest mode",
-                        context: format!("{other}"),
+                        context: other.to_string(),
                     });
                 },
             };
@@ -556,7 +556,6 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
     let mut it = room.into_inner();
     // capture source line from the outer pair's span; .line_col() is 1-based
     // Note: this is the start of the room keyword; good enough for a reference
-    let src_line = src_line;
     let id = it
         .next()
         .ok_or(AstError::Shape("expected room ident"))?
@@ -730,27 +729,27 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
                         conds.push(crate::OverlayCondAst::ItemAbsent(item));
                         continue;
                     }
-                    if let Some(_) = text.strip_prefix("player has item ") {
+                    if text.starts_with("player has item ") {
                         let item = kids.next().ok_or(AstError::Shape("item id"))?.as_str().to_string();
                         conds.push(crate::OverlayCondAst::PlayerHasItem(item));
                         continue;
                     }
-                    if let Some(_) = text.strip_prefix("player missing item ") {
+                    if text.starts_with("player missing item ") {
                         let item = kids.next().ok_or(AstError::Shape("item id"))?.as_str().to_string();
                         conds.push(crate::OverlayCondAst::PlayerMissingItem(item));
                         continue;
                     }
-                    if let Some(_) = text.strip_prefix("npc present ") {
+                    if text.starts_with("npc present ") {
                         let npc = kids.next().ok_or(AstError::Shape("npc id"))?.as_str().to_string();
                         conds.push(crate::OverlayCondAst::NpcPresent(npc));
                         continue;
                     }
-                    if let Some(_) = text.strip_prefix("npc absent ") {
+                    if text.starts_with("npc absent ") {
                         let npc = kids.next().ok_or(AstError::Shape("npc id"))?.as_str().to_string();
                         conds.push(crate::OverlayCondAst::NpcAbsent(npc));
                         continue;
                     }
-                    if let Some(_) = text.strip_prefix("npc in state ") {
+                    if text.starts_with("npc in state ") {
                         let npc = kids.next().ok_or(AstError::Shape("npc id"))?.as_str().to_string();
                         let nxt = kids.next().ok_or(AstError::Shape("state token"))?;
                         let oc = match nxt.as_rule() {
@@ -774,7 +773,7 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
                         conds.push(oc);
                         continue;
                     }
-                    if let Some(_) = text.strip_prefix("item in room ") {
+                    if text.starts_with("item in room ") {
                         let item = kids.next().ok_or(AstError::Shape("item id"))?.as_str().to_string();
                         let room = kids.next().ok_or(AstError::Shape("room id"))?.as_str().to_string();
                         conds.push(crate::OverlayCondAst::ItemInRoom { item, room });
