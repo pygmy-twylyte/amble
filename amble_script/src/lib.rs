@@ -1546,7 +1546,7 @@ fn action_to_value(a: &ActionAst) -> toml_edit::Value {
         ActionAst::AwardPoints(amount) => {
             let mut t = InlineTable::new();
             t.insert("type", toml_edit::Value::from("awardPoints"));
-            t.insert("amount", toml_edit::Value::from(*amount as i64));
+            t.insert("amount", toml_edit::Value::from(*amount));
             toml_edit::Value::from(t)
         },
         ActionAst::RemoveFlag(name) => {

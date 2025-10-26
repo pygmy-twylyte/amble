@@ -140,9 +140,8 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
     }
 
     // parse gameplay commands; fall back to Unknown on parse failure
-    let mut pairs = match CommandParser::parse(Rule::repl_input, &lc_input) {
-        Ok(pairs) => pairs,
-        Err(_) => return Command::Unknown,
+    let Ok(mut pairs) = CommandParser::parse(Rule::repl_input, &lc_input) else {
+        return Command::Unknown;
     };
     let Some(repl_input_pair) = pairs.next() else {
         return Command::Unknown;
