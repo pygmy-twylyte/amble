@@ -30,20 +30,25 @@ use npcs::{build_npcs, load_raw_npcs, place_npcs};
 use player::build_player;
 use rooms::build_rooms;
 use std::collections::HashMap;
+use std::hash::BuildHasher;
 use std::path::Path;
 use triggers::build_triggers;
 use uuid::Uuid;
 
 /// Lookup table to find the uuid for a given token
 #[derive(Default, Debug)]
-pub struct SymbolTable {
-    rooms: HashMap<String, Uuid>,
-    items: HashMap<String, Uuid>,
-    characters: HashMap<String, Uuid>,
+pub struct SymbolTable<S: BuildHasher> {
+    rooms: HashMap<String, Uuid, S>,
+    items: HashMap<String, Uuid, S>,
+    characters: HashMap<String, Uuid, S>,
 }
 
 /// Resolve a token from a TOML location table against the symbol cache.
-fn map_resolver(table: &HashMap<String, String>, map: &HashMap<String, Uuid>, key: &str) -> Result<Uuid> {
+fn map_resolver<S: BuildHasher>(
+    table: &HashMap<String, String, S>,
+    map: &HashMap<String, Uuid, S>,
+    key: &str,
+) -> Result<Uuid> {
     let key_lc = key.to_lowercase();
     if let Some(uuid) = map.get(
         table
@@ -59,7 +64,7 @@ fn map_resolver(table: &HashMap<String, String>, map: &HashMap<String, Uuid>, ke
 /// Converts the TOML table representation of location into a proper Location
 /// # Errors
 /// - if room or container token cannot be found in the symbol table
-pub fn resolve_location(table: &HashMap<String, String>, symbols: &SymbolTable) -> Result<Location> {
+pub fn resolve_location<S: BuildHasher>(table: &HashMap<String, String, S>, symbols: &SymbolTable) -> Result<Location> {
     match table.keys().next().map(std::string::String::as_str) {
         Some("Inventory") => Ok(Location::Inventory),
         Some("Room") => map_resolver(table, &symbols.rooms, "Room").map(Location::Room),

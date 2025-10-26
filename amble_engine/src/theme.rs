@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, LazyLock, RwLock};
 
 /// RGB color representation for theme configuration
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -254,9 +254,7 @@ impl Default for ThemeManager {
 }
 
 // Global theme manager shared across modules.
-lazy_static::lazy_static! {
-    pub static ref THEME_MANAGER: RwLock<ThemeManager> = RwLock::new(ThemeManager::new());
-}
+pub static THEME_MANAGER: LazyLock<RwLock<ThemeManager>> = LazyLock::new(|| RwLock::new(ThemeManager::new()));
 
 /// Initialize the theme system by loading themes from the data directory.
 ///

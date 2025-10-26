@@ -74,6 +74,9 @@ use crate::{
 /// - Container access restrictions
 /// - Inventory space limitations
 /// - Story progression requirements
+///
+/// # Panics
+/// None -- item_id is already known to be valid and exist in symbol table before expect() is called
 pub fn dev_spawn_item_handler(world: &mut AmbleWorld, view: &mut View, symbol: &str) {
     let item_id = uuid_from_token(&NAMESPACE_ITEM, symbol);
     if world.items.contains_key(&item_id) {
@@ -338,9 +341,9 @@ pub fn dev_list_npcs_handler(world: &mut AmbleWorld, view: &mut View) {
         view.push(ViewItem::EngineMessage("No NPCs found in world.".to_string()));
     } else {
         let mut msg = String::new();
-        msg.push_str(&format!("NPCs [{}]:\n", npcs.len()));
+        let _ = writeln!(msg, "NPCs [{}]:", npcs.len());
         for (name, symbol, loc, state) in npcs {
-            msg.push_str(&format!(" - {name} ({symbol}) @ {loc} [{state}]\n"));
+            let _ = writeln!(msg, " - {name} ({symbol}) @ {loc} [{state}]");
         }
         view.push(ViewItem::EngineMessage(msg));
     }
@@ -361,9 +364,9 @@ pub fn dev_list_flags_handler(world: &mut AmbleWorld, view: &mut View) {
         view.push(ViewItem::EngineMessage("No flags are currently set.".to_string()));
     } else {
         let mut msg = String::new();
-        msg.push_str(&format!("Flags [{}]:\n", flags.len()));
+        let _ = writeln!(msg, "Flags [{}]:", flags.len());
         for f in flags {
-            msg.push_str(&format!(" - {f}\n"));
+            let _ = writeln!(msg, " - {f}");
         }
         view.push(ViewItem::EngineMessage(msg));
     }
@@ -383,11 +386,7 @@ pub fn dev_list_sched_handler(world: &mut AmbleWorld, view: &mut View) {
     }
 
     let mut msg = String::new();
-    msg.push_str(&format!(
-        "Scheduled events [{}], current turn = {}:\n",
-        upcoming.len(),
-        now
-    ));
+    let _ = writeln!(msg, "Scheduled events [{}], current turn = {now}:", upcoming.len());
     for (turn_due, idx) in upcoming {
         let (note, actions_len, cond_opt, policy) = if let Some(ev) = world.scheduler.events.get(idx) {
             (
@@ -401,9 +400,7 @@ pub fn dev_list_sched_handler(world: &mut AmbleWorld, view: &mut View) {
         };
 
         // Header line stays compact for grep-ability
-        msg.push_str(&format!(
-            " - turn {turn_due:>4} | idx {idx:>3} | actions: {actions_len}\n"
-        ));
+        let _ = writeln!(msg, " - turn {turn_due:>4} | idx {idx:>3} | actions: {actions_len}");
 
         // Metadata lines are separated for readability
         let _ = writeln!(msg, "   on_false: {}", summarize_on_false(&policy));

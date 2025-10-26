@@ -6,8 +6,8 @@
 use std::fs;
 use std::io::{self, IsTerminal, Write};
 use std::path::{Path, PathBuf};
+use std::sync::{LazyLock, RwLock};
 
-use lazy_static::lazy_static;
 use log::{info, warn};
 use pest_meta::ast::Expr;
 use pest_meta::parser::{Rule as PestRule, consume_rules, parse};
@@ -28,9 +28,7 @@ pub enum InputEvent {
     Interrupted,
 }
 
-lazy_static! {
-    static ref COMMAND_TERMS: Vec<String> = build_command_terms();
-}
+pub static COMMAND_TERMS: LazyLock<RwLock<Vec<String>>> = LazyLock::new(|| RwLock::new(build_command_terms()));
 
 const DEV_COMMANDS: &[&str] = &[
     ":help dev",
@@ -74,7 +72,8 @@ impl Completer for AmbleHelper {
             return Ok((replacement_start, candidates));
         }
         let mut pairs = Vec::new();
-        for term in COMMAND_TERMS.iter() {
+        let terms = COMMAND_TERMS.read().expect("command term list poisoned");
+        for term in terms.iter() {
             if term.starts_with(&lower) {
                 pairs.push(Pair {
                     display: term.clone(),
@@ -488,17 +487,21 @@ mod tests {
 
     #[test]
     fn grammar_terms_include_expected_commands() {
-        assert!(COMMAND_TERMS.iter().any(|term| term == "inventory"));
-        assert!(COMMAND_TERMS.iter().any(|term| term == "take"));
+        let terms = COMMAND_TERMS.read().expect("command term catalog poisoned");
+        assert!(terms.iter().any(|term| term == "inventory"));
+        let terms = COMMAND_TERMS.read().expect("command term catalog poisoned");
+        assert!(terms.iter().any(|term| term == "take"));
     }
 
     #[test]
     fn grammar_terms_exclude_articles() {
-        assert!(!COMMAND_TERMS.iter().any(|term| term == "the"));
+        let terms = COMMAND_TERMS.read().expect("command term catalog poisoned");
+        assert!(!terms.iter().any(|term| term == "the"));
     }
 
     #[test]
     fn dev_commands_are_present() {
-        assert!(COMMAND_TERMS.iter().any(|term| term == ":sched"));
+        let terms = COMMAND_TERMS.read().expect("command term catalog poisoned");
+        assert!(terms.iter().any(|term| term == ":sched"));
     }
 }

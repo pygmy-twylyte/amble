@@ -201,6 +201,9 @@ impl Flag {
     }
 
     /// Returns true if a sequence is complete, or if called on a simple flag.
+    ///
+    /// # Panics
+    /// Cannot panic unless sunspots alter the value of `end` between evaluation of the last two match arms
     pub fn is_complete(&self) -> bool {
         match self {
             Self::Simple { .. } => true,

@@ -3,7 +3,7 @@
 //! Parses goal definitions from disk and converts them into runtime
 //! structures, resolving symbols against the global table.
 
-use std::{fs, path::Path};
+use std::{fs, hash::BuildHasher, path::Path};
 
 use anyhow::{Context, Result, bail};
 use log::info;
@@ -30,7 +30,7 @@ impl RawGoal {
     /// Converts a `RawGoal` from TOML to a `Goal`
     /// # Errors
     /// - on failed symbol lookup
-    pub fn to_goal(&self, symbols: &SymbolTable) -> Result<Goal> {
+    pub fn to_goal<S: BuildHasher>(&self, symbols: &SymbolTable<S>) -> Result<Goal> {
         let act_when = self
             .activate_when
             .as_ref()
