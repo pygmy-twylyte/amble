@@ -10,7 +10,7 @@ fn extract_enum_variants(source: &str, enum_name: &str) -> Vec<String> {
     let mut inside = false;
 
     for line in &mut lines {
-        if line.trim_start().starts_with(&format!("pub enum {}", enum_name)) {
+        if line.trim_start().starts_with(&format!("pub enum {enum_name}")) {
             inside = true;
             continue;
         }

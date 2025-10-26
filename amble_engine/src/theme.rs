@@ -195,7 +195,8 @@ impl ThemeManager {
             return Ok(());
         }
 
-        let contents = fs::read_to_string(path).with_context(|| format!("Failed to read themes file at {:?}", path))?;
+        let contents =
+            fs::read_to_string(path).with_context(|| format!("Failed to read themes file at {}", path.display()))?;
 
         let theme_data: ThemeData = toml::from_str(&contents).with_context(|| "Failed to parse themes TOML")?;
 
@@ -242,8 +243,7 @@ impl ThemeManager {
     pub fn current_name(&self) -> String {
         self.current_theme
             .read()
-            .map(|t| t.name.clone())
-            .unwrap_or_else(|_| "default".to_string())
+            .map_or_else(|_| "default".to_string(), |t| t.name.clone())
     }
 }
 

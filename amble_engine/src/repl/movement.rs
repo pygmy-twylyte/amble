@@ -84,9 +84,8 @@ use log::info;
 /// Returns an error when the player is not currently in a room or when the
 /// stored previous room identifier cannot be resolved.
 pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
-    let leaving_id = world.player.location.room_id().map_err(|e| {
+    let leaving_id = world.player.location.room_id().inspect_err(|_| {
         view.push(ViewItem::ActionFailure("You're not in a room.".to_string()));
-        e
     })?;
 
     if let Some(previous_room_id) = world.player.go_back() {
@@ -185,9 +184,8 @@ pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
 pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str) -> Result<()> {
     let player_name = world.player.name.clone();
     let travel_message = world.spin_core(CoreSpinnerType::Movement, "You head that way...");
-    let leaving_id = world.player.location.room_id().map_err(|e| {
+    let leaving_id = world.player.location.room_id().inspect_err(|_| {
         view.push(ViewItem::ActionFailure("You're not in a room.".to_string()));
-        e
     })?;
 
     // match "input_dir" to an Exit

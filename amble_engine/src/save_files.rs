@@ -116,7 +116,7 @@ fn entry_for_slot(slot: SaveSlot) -> SaveFileEntry {
     let (summary, status) = match fs::read_to_string(&slot.path) {
         Ok(raw) => match ron::from_str::<AmbleWorld>(&raw) {
             Ok(world) => {
-                version = world.version.clone();
+                version.clone_from(&world.version);
                 let status = if world.version == AMBLE_VERSION {
                     SaveFileStatus::Ready
                 } else {
@@ -143,7 +143,7 @@ fn entry_for_slot(slot: SaveSlot) -> SaveFileEntry {
                 (
                     None,
                     SaveFileStatus::Corrupted {
-                        message: format!("parse error: {}", trim_error(err)),
+                        message: format!("parse error: {}", trim_error(&err)),
                     },
                 )
             },
@@ -153,7 +153,7 @@ fn entry_for_slot(slot: SaveSlot) -> SaveFileEntry {
             (
                 None,
                 SaveFileStatus::Corrupted {
-                    message: format!("read error: {}", trim_error(err)),
+                    message: format!("read error: {}", trim_error(&err)),
                 },
             )
         },
@@ -211,7 +211,7 @@ fn format_duration(duration: Duration) -> String {
 }
 
 /// Clamp verbose error messages to a readable length.
-fn trim_error(err: impl ToString) -> String {
+fn trim_error(err: &impl ToString) -> String {
     let message = err.to_string();
     if message.chars().count() <= 120 {
         return message;

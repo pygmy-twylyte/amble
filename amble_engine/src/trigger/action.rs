@@ -71,12 +71,12 @@
 //! This provides an audit trail of all world state changes and helps with
 //! debugging game logic.
 
-use std::collections::{HashMap, HashSet};
-
 use anyhow::{Context, Result, anyhow, bail};
 use gametools::{Spinner, Wedge};
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
+use std::hash::BuildHasher;
 use uuid::Uuid;
 
 use crate::Item;
@@ -546,8 +546,8 @@ fn apply_room_patch(world: &mut AmbleWorld, room_id: Uuid, patch: &RoomPatch) ->
             } else {
                 let target_sym = symbol_or_unknown(&world.rooms, *target_room_id);
                 warn!(
-                    "modifyRoom patch attempted to remove exit to '{}' but room '{}' has no such exit",
-                    target_sym, room_ref.symbol
+                    "modifyRoom patch attempted to remove exit to '{target_sym}' but room '{}' has no such exit",
+                    room_ref.symbol
                 );
             }
         }
@@ -556,11 +556,11 @@ fn apply_room_patch(world: &mut AmbleWorld, room_id: Uuid, patch: &RoomPatch) ->
     let room = world.rooms.get_mut(&room_id).expect("room existence validated above");
 
     if let Some(ref new_name) = patch.name {
-        room.name = new_name.clone();
+        room.name.clone_from(new_name);
     }
 
     if let Some(ref new_desc) = patch.desc {
-        room.base_description = new_desc.clone();
+        room.base_description.clone_from(new_desc);
     }
 
     for (direction, _) in &removal_plan {
@@ -571,9 +571,9 @@ fn apply_room_patch(world: &mut AmbleWorld, room_id: Uuid, patch: &RoomPatch) ->
         let mut exit = Exit::new(addition.to);
         exit.hidden = addition.hidden;
         exit.locked = addition.locked;
-        exit.barred_message = addition.barred_message.clone();
-        exit.required_flags = addition.required_flags.clone();
-        exit.required_items = addition.required_items.clone();
+        exit.barred_message.clone_from(&addition.barred_message);
+        exit.required_flags.clone_from(&addition.required_flags);
+        exit.required_items.clone_from(&addition.required_items);
         room.exits.insert(addition.direction.clone(), exit);
     }
 
@@ -588,10 +588,10 @@ fn apply_npc_patch(world: &mut AmbleWorld, npc_id: Uuid, patch: &NpcPatch) -> Re
         .with_context(|| format!("patching an npc: Uuid ({npc_id}) not found in world npc map"))?;
 
     if let Some(ref new_name) = patch.name {
-        npc.name = new_name.clone();
+        npc.name.clone_from(new_name);
     }
     if let Some(ref new_desc) = patch.desc {
-        npc.description = new_desc.clone();
+        npc.description.clone_from(new_desc);
     }
     if let Some(ref new_state) = patch.state {
         npc.state = new_state.clone();
@@ -655,16 +655,10 @@ fn apply_npc_movement_patch(current_turn: usize, npc: &mut Npc, patch: &NpcMovem
                 MovementType::RandomSet { rooms: random.clone() }
             } else {
                 // shouldn't happen due to wants_new_instance check, but guard anyway
-                warn!(
-                    "modifyNpc patch for '{}' requested new movement without route or random rooms",
-                    npc_symbol
-                );
+                warn!("modifyNpc patch for '{npc_symbol}' requested new movement without route or random rooms");
                 return Ok(());
             },
-            timing: patch
-                .timing
-                .clone()
-                .unwrap_or_else(|| MovementTiming::EveryNTurns { turns: 1 }),
+            timing: patch.timing.clone().unwrap_or(MovementTiming::EveryNTurns { turns: 1 }),
             active: patch.active.unwrap_or(true),
             last_moved_turn: current_turn,
             paused_until: None,
@@ -673,7 +667,7 @@ fn apply_npc_movement_patch(current_turn: usize, npc: &mut Npc, patch: &NpcMovem
 
     if let Some(movement) = npc.movement.as_mut() {
         if let Some(route) = &patch.route {
-            let loop_setting = patch.loop_route.unwrap_or_else(|| match &movement.movement_type {
+            let loop_setting = patch.loop_route.unwrap_or(match &movement.movement_type {
                 MovementType::Route { loop_route, .. } => *loop_route,
                 MovementType::RandomSet { .. } => true,
             });
@@ -690,10 +684,7 @@ fn apply_npc_movement_patch(current_turn: usize, npc: &mut Npc, patch: &NpcMovem
             if let MovementType::Route { loop_route, .. } = &mut movement.movement_type {
                 *loop_route = loop_setting;
             } else {
-                warn!(
-                    "modifyNpc patch attempted to set loop on a non-route movement for '{}'",
-                    npc_symbol
-                );
+                warn!("modifyNpc patch attempted to set loop on a non-route movement for '{npc_symbol}'");
             }
         }
 
@@ -706,10 +697,7 @@ fn apply_npc_movement_patch(current_turn: usize, npc: &mut Npc, patch: &NpcMovem
             movement.active = active;
         }
     } else {
-        warn!(
-            "modifyNpc patch for '{}' requested movement updates but NPC has no movement configured",
-            npc_symbol
-        );
+        warn!("modifyNpc patch for '{npc_symbol}' requested movement updates but NPC has no movement configured");
     }
 
     Ok(())
@@ -724,15 +712,15 @@ fn apply_item_patch(world: &mut AmbleWorld, item_id: Uuid, patch: &ItemPatch) ->
     };
 
     if let Some(ref new_name) = patch.name {
-        patched.name = new_name.clone();
+        patched.name.clone_from(new_name);
     }
 
     if let Some(ref new_desc) = patch.desc {
-        patched.description = new_desc.clone();
+        patched.description.clone_from(new_desc);
     }
 
     if patch.text.is_some() {
-        patched.text = patch.text.clone();
+        patched.text.clone_from(&patch.text);
     }
 
     if let Some(new_portable) = patch.portable {
@@ -808,7 +796,7 @@ pub fn despawn_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid) -> Res
 /// # Errors
 /// Returns an error if the NPC does not exist in the world.
 pub fn set_npc_active(world: &mut AmbleWorld, npc_id: &Uuid, active: bool) -> Result<()> {
-    if let Some(npc) = world.npcs.get_mut(&npc_id) {
+    if let Some(npc) = world.npcs.get_mut(npc_id) {
         if let Some(ref mut mvmt) = npc.movement {
             mvmt.active = active;
         }
@@ -839,14 +827,14 @@ pub fn set_container_state(world: &mut AmbleWorld, item_id: Uuid, state: Option<
 /// rooms, or NPCs are missing when transferring ownership.
 pub fn replace_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -> Result<()> {
     // record old item's location and symbol
-    let (location, old_sym) = if let Some(old_item) = world.items.get(&old_id) {
+    let (location, old_sym) = if let Some(old_item) = world.items.get(old_id) {
         (old_item.location, old_item.symbol.clone())
     } else {
         bail!("replacing item {old_id}: item not found");
     };
 
     // despawn old item
-    despawn_item(world, &old_id)?;
+    despawn_item(world, old_id)?;
 
     // update location of new item in world.items
     if let Some(new_item) = world.get_item_mut(*new_id) {
@@ -997,8 +985,8 @@ pub fn npc_refuse_item(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, re
 /// ```ignore
 /// add_spinner_wedge(spinners, SpinnerType::Core(CoreSpinnerType::TakeVerb), "snatch", 3)?;
 /// ```
-pub fn add_spinner_wedge(
-    spinners: &mut HashMap<SpinnerType, Spinner<String>>,
+pub fn add_spinner_wedge<S: BuildHasher>(
+    spinners: &mut HashMap<SpinnerType, Spinner<String>, S>,
     spin_type: &SpinnerType,
     text: &str,
     width: usize,
@@ -2058,7 +2046,7 @@ pub fn schedule_on_if(
 /// - propagates any errors from scheduler call
 pub fn schedule_if_player_in_any(
     world: &mut AmbleWorld,
-    _view: &mut View,
+    view: &mut View,
     turns_ahead: usize,
     room_ids: impl IntoIterator<Item = uuid::Uuid>,
     on_false: OnFalsePolicy,
@@ -2074,7 +2062,7 @@ pub fn schedule_if_player_in_any(
     } else {
         EventCondition::Any(conds)
     };
-    schedule_in_if(world, _view, turns_ahead, &condition, on_false, actions, note)
+    schedule_in_if(world, view, turns_ahead, &condition, on_false, actions, note)
 }
 
 /// Convenience: schedule on an absolute turn with condition that player is in any of the supplied rooms.
@@ -2083,7 +2071,7 @@ pub fn schedule_if_player_in_any(
 /// - propagates any errors from scheduler call
 pub fn schedule_on_if_player_in_any(
     world: &mut AmbleWorld,
-    _view: &mut View,
+    view: &mut View,
     on_turn: usize,
     room_ids: impl IntoIterator<Item = uuid::Uuid>,
     on_false: OnFalsePolicy,
@@ -2099,7 +2087,7 @@ pub fn schedule_on_if_player_in_any(
     } else {
         EventCondition::Any(conds)
     };
-    schedule_on_if(world, _view, on_turn, &condition, on_false, actions, note)
+    schedule_on_if(world, view, on_turn, &condition, on_false, actions, note)
 }
 
 /// Convenience: schedule in N turns if the player has a specific item.
@@ -2108,7 +2096,7 @@ pub fn schedule_on_if_player_in_any(
 /// - propagates any errors from scheduler call
 pub fn schedule_in_if_player_has_item(
     world: &mut AmbleWorld,
-    _view: &mut View,
+    view: &mut View,
     turns_ahead: usize,
     item_id: uuid::Uuid,
     on_false: OnFalsePolicy,
@@ -2116,7 +2104,7 @@ pub fn schedule_in_if_player_has_item(
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::HasItem(item_id));
-    schedule_in_if(world, _view, turns_ahead, &condition, on_false, actions, note)
+    schedule_in_if(world, view, turns_ahead, &condition, on_false, actions, note)
 }
 
 /// Convenience: schedule on a specific turn if the player has a specific item.
@@ -2125,7 +2113,7 @@ pub fn schedule_in_if_player_has_item(
 /// - propagates any errors from scheduler call
 pub fn schedule_on_if_player_has_item(
     world: &mut AmbleWorld,
-    _view: &mut View,
+    view: &mut View,
     on_turn: usize,
     item_id: uuid::Uuid,
     on_false: OnFalsePolicy,
@@ -2133,7 +2121,7 @@ pub fn schedule_on_if_player_has_item(
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::HasItem(item_id));
-    schedule_on_if(world, _view, on_turn, &condition, on_false, actions, note)
+    schedule_on_if(world, view, on_turn, &condition, on_false, actions, note)
 }
 
 /// Convenience: schedule in N turns if the player is missing a specific item.
@@ -2142,7 +2130,7 @@ pub fn schedule_on_if_player_has_item(
 /// - propagates any errors from scheduler call
 pub fn schedule_in_if_player_missing_item(
     world: &mut AmbleWorld,
-    _view: &mut View,
+    view: &mut View,
     turns_ahead: usize,
     item_id: uuid::Uuid,
     on_false: OnFalsePolicy,
@@ -2150,7 +2138,7 @@ pub fn schedule_in_if_player_missing_item(
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::MissingItem(item_id));
-    schedule_in_if(world, _view, turns_ahead, &condition, on_false, actions, note)
+    schedule_in_if(world, view, turns_ahead, &condition, on_false, actions, note)
 }
 
 /// Convenience: schedule on a specific turn if the player is missing a specific item.
@@ -2159,7 +2147,7 @@ pub fn schedule_in_if_player_missing_item(
 /// - propagates any errors from scheduler call
 pub fn schedule_on_if_player_missing_item(
     world: &mut AmbleWorld,
-    _view: &mut View,
+    view: &mut View,
     on_turn: usize,
     item_id: uuid::Uuid,
     on_false: OnFalsePolicy,
@@ -2167,7 +2155,7 @@ pub fn schedule_on_if_player_missing_item(
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::MissingItem(item_id));
-    schedule_on_if(world, _view, on_turn, &condition, on_false, actions, note)
+    schedule_on_if(world, view, on_turn, &condition, on_false, actions, note)
 }
 
 /// Convenience: schedule in N turns if a flag is set.
@@ -2176,7 +2164,7 @@ pub fn schedule_on_if_player_missing_item(
 /// - propagates any errors from scheduler call
 pub fn schedule_in_if_flag_set(
     world: &mut AmbleWorld,
-    _view: &mut View,
+    view: &mut View,
     turns_ahead: usize,
     flag: &str,
     on_false: OnFalsePolicy,
@@ -2184,7 +2172,7 @@ pub fn schedule_in_if_flag_set(
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::HasFlag(flag.to_string()));
-    schedule_in_if(world, _view, turns_ahead, &condition, on_false, actions, note)
+    schedule_in_if(world, view, turns_ahead, &condition, on_false, actions, note)
 }
 
 /// Convenience: schedule on a specific turn if a flag is set.
@@ -2193,7 +2181,7 @@ pub fn schedule_in_if_flag_set(
 /// - propagates any errors from scheduler call
 pub fn schedule_on_if_flag_set(
     world: &mut AmbleWorld,
-    _view: &mut View,
+    view: &mut View,
     on_turn: usize,
     flag: &str,
     on_false: OnFalsePolicy,
@@ -2201,7 +2189,7 @@ pub fn schedule_on_if_flag_set(
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::HasFlag(flag.to_string()));
-    schedule_on_if(world, _view, on_turn, &condition, on_false, actions, note)
+    schedule_on_if(world, view, on_turn, &condition, on_false, actions, note)
 }
 
 /// Convenience: schedule in N turns if a flag is missing.

@@ -108,7 +108,7 @@ fn current_prefix(line: &str, pos: usize) -> (usize, String) {
 
 fn build_command_terms() -> Vec<String> {
     let mut terms = collect_grammar_terms();
-    terms.extend(DEV_COMMANDS.iter().map(|cmd| cmd.to_string()));
+    terms.extend(DEV_COMMANDS.iter().map(std::string::ToString::to_string));
     terms.sort_unstable();
     terms.dedup();
     terms
@@ -233,7 +233,7 @@ fn load_command_completions(prefix: &str, lower: &str, start: usize) -> Option<(
         for slot in slots {
             pairs.push(Pair {
                 display: format!("{command_part} {slot}"),
-                replacement: format!(" {}", slot),
+                replacement: format!(" {slot}"),
             });
         }
         return Some((start + prefix.len(), pairs));
@@ -261,7 +261,7 @@ fn matches_keyword(lower: &str, keyword: &str) -> bool {
         return true;
     }
     if lower.starts_with(keyword) {
-        return lower.chars().nth(keyword.len()).map_or(false, char::is_whitespace);
+        return lower.chars().nth(keyword.len()).is_some_and(char::is_whitespace);
     }
     false
 }
@@ -272,7 +272,7 @@ fn available_save_slots() -> Vec<String> {
         Ok(slots) => {
             let mut names = Vec::new();
             for slot in slots {
-                if names.last().map_or(true, |last| last != &slot.slot) {
+                if names.last() != Some(&slot.slot) {
                     names.push(slot.slot);
                 }
             }
@@ -303,7 +303,7 @@ impl InputManager {
                     Backend::Rustyline(editor)
                 },
                 Err(err) => {
-                    warn!("failed to initialize rustyline ({}), falling back to basic stdin", err);
+                    warn!("failed to initialize rustyline ({err}), falling back to basic stdin");
                     Backend::plain()
                 },
             }
@@ -322,7 +322,7 @@ impl InputManager {
             Ok(event) => Ok(event),
             Err(err) => {
                 if self.backend.is_rustyline() {
-                    warn!("rustyline input failed: {} -- switching to basic stdin", err);
+                    warn!("rustyline input failed: {err} -- switching to basic stdin");
                     self.backend = Backend::plain();
                     self.backend.read_line(prompt)
                 } else {
@@ -333,6 +333,7 @@ impl InputManager {
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 enum Backend {
     Rustyline(RustylineInput),
     Plain(StdinInput),
@@ -364,7 +365,7 @@ struct RustylineInput {
 impl RustylineInput {
     fn new() -> io::Result<Self> {
         let mut editor = rustyline::Editor::<AmbleHelper, _>::new().map_err(map_io_err)?;
-        editor.set_helper(Some(AmbleHelper::default()));
+        editor.set_helper(Some(AmbleHelper));
         let history_path = history_file_path();
 
         if let Some(path) = history_path.as_ref() {
@@ -394,7 +395,7 @@ impl RustylineInput {
             Ok(line) => {
                 if !line.trim().is_empty() {
                     if let Err(err) = self.editor.add_history_entry(line.as_str()) {
-                        warn!("failed to append to history: {}", err);
+                        warn!("failed to append to history: {err}");
                     }
                     if let Some(path) = self.history_path.as_ref() {
                         if let Err(err) = self.editor.save_history(path) {
@@ -418,7 +419,7 @@ struct StdinInput {
 impl StdinInput {
     /// Read a line from standard input with a synchronous prompt.
     fn read_line(&mut self, prompt: &str) -> io::Result<InputEvent> {
-        print!("{}", prompt);
+        print!("{prompt}");
         io::stdout().flush()?;
 
         self.buffer.clear();
@@ -443,14 +444,14 @@ fn convert_readline_error(err: ReadlineError) -> io::Result<InputEvent> {
         ReadlineError::Interrupted => Ok(InputEvent::Interrupted),
         ReadlineError::Eof => Ok(InputEvent::Eof),
         ReadlineError::Io(io_err) => Err(io_err),
-        other => Err(io::Error::new(io::ErrorKind::Other, other)),
+        other => Err(io::Error::other(other)),
     }
 }
 
 fn map_io_err(err: ReadlineError) -> io::Error {
     match err {
         ReadlineError::Io(io_err) => io_err,
-        other => io::Error::new(io::ErrorKind::Other, other),
+        other => io::Error::other(other),
     }
 }
 

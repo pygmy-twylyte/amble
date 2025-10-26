@@ -25,9 +25,8 @@ use std::{
 
 /// Initialize env_logger based on AMBLE_* environment variables.
 fn init_logging() -> Result<()> {
-    let raw_level = match env::var("AMBLE_LOG") {
-        Ok(value) => value,
-        Err(_) => return Ok(()),
+    let Ok(raw_level) = env::var("AMBLE_LOG") else {
+        return Ok(());
     };
 
     let trimmed = raw_level.trim();
@@ -55,8 +54,7 @@ fn init_logging() -> Result<()> {
         _ => {
             let log_path = env::var_os("AMBLE_LOG_FILE")
                 .map(PathBuf::from)
-                .map(Ok)
-                .unwrap_or_else(|| default_log_path().context("determining default log file path"))?;
+                .map_or_else(|| default_log_path().context("determining default log file path"), Ok)?;
 
             match OpenOptions::new()
                 .create(true)
@@ -103,7 +101,7 @@ fn main() -> Result<()> {
 
     // Initialize the theme system
     if let Err(e) = init_themes() {
-        warn!("Failed to load themes: {}. Using default theme.", e);
+        warn!("Failed to load themes: {e}. Using default theme.");
     }
 
     // clear the screen

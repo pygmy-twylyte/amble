@@ -34,6 +34,7 @@ use crate::{Item, View, ViewItem, WorldObject};
 use anyhow::Result;
 use colored::Colorize;
 use std::collections::HashMap;
+use std::hash::BuildHasher;
 use uuid::Uuid;
 use variantly::Variantly;
 
@@ -53,6 +54,7 @@ pub enum ReplControl {
 /// # Errors
 /// - Propagates failures from handlers, such as a missing room for the player.
 pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
+    #[allow(clippy::enum_glob_use)]
     use Command::*;
     let mut view = View::new();
 
@@ -79,13 +81,12 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         .prompt_style()
         .to_string();
 
-        let input_event = match input_manager.read_line(&prompt) {
-            Ok(event) => event,
-            Err(_) => {
-                view.push(ViewItem::Error("Failed to read input. Try again.".red().to_string()));
-                view.flush();
-                continue;
-            },
+        let input_event = if let Ok(event) = input_manager.read_line(&prompt) {
+            event
+        } else {
+            view.push(ViewItem::Error("Failed to read input. Try again.".red().to_string()));
+            view.flush();
+            continue;
         };
 
         let mut input = match input_event {
@@ -184,17 +185,17 @@ pub fn check_scheduled_events(world: &mut AmbleWorld, view: &mut View) -> Result
     let now = world.turn_count;
     while let Some(event) = world.scheduler.pop_due(now) {
         let note_text = event.note.clone().unwrap_or_else(|| "<no note recorded>".to_string());
-        let ok = event.condition.as_ref().map(|c| c.eval(world)).unwrap_or(true);
+        let ok = event.condition.as_ref().map_or(true, |c| c.eval(world));
 
         if ok {
-            info!("scheduled event \"{}\" firing --->)", note_text);
+            info!("scheduled event \"{note_text}\" firing --->)");
             for action in event.actions {
                 dispatch_action(world, view, &action)?;
             }
         } else {
             match event.on_false {
                 OnFalsePolicy::Cancel => {
-                    info!("scheduled event \"{}\" canceled (condition false)", note_text);
+                    info!("scheduled event \"{note_text}\" canceled (condition false)");
                 },
                 OnFalsePolicy::RetryAfter(dt) => {
                     let new_turn = now.saturating_add(dt);
@@ -205,10 +206,7 @@ pub fn check_scheduled_events(world: &mut AmbleWorld, view: &mut View) -> Result
                         event.actions.clone(),
                         event.note.clone(),
                     );
-                    info!(
-                        "scheduled event \"{}\" rescheduled for turn {} (RetryAfter {})",
-                        note_text, new_turn, dt
-                    );
+                    info!("scheduled event \"{note_text}\" rescheduled for turn {new_turn} (RetryAfter {dt})");
                 },
                 OnFalsePolicy::RetryNextTurn => {
                     let new_turn = now.saturating_add(1);
@@ -219,10 +217,7 @@ pub fn check_scheduled_events(world: &mut AmbleWorld, view: &mut View) -> Result
                         event.actions.clone(),
                         event.note.clone(),
                     );
-                    info!(
-                        "scheduled event \"{}\" rescheduled for next turn {}",
-                        note_text, new_turn
-                    );
+                    info!("scheduled event \"{note_text}\" rescheduled for next turn {new_turn}");
                 },
             }
         }
@@ -249,7 +244,7 @@ pub fn check_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()>
                 if let Some(resume_turn) = movement.paused_until {
                     if current_turn >= resume_turn {
                         info!("movement pause expiring for npc '{}': resuming activity", npc.symbol);
-                        movement.paused_until = None
+                        movement.paused_until = None;
                     } else {
                         info!(
                             "npc '{}' is paused for player interaction, skipping movement check",
@@ -306,8 +301,10 @@ pub fn check_ambient_triggers(world: &mut AmbleWorld, view: &mut View) -> Result
 
 /// Returns true if there is no `Chance` within `conditions`, or if the `Chance` "roll" returns true.
 /// Returns false only if there is a `Chance` condition present *and* it "rolls" false.
-fn chance_check(conditions: &Vec<TriggerCondition>) -> bool {
-    conditions.iter().all(|cond| cond.chance_value())
+fn chance_check(conditions: &[TriggerCondition]) -> bool {
+    conditions
+        .iter()
+        .all(super::trigger::condition::TriggerCondition::chance_value)
 }
 
 /// Encapsulates references to different types of `WorldObjects` to allow search across different types.
@@ -316,7 +313,7 @@ pub enum WorldEntity<'a> {
     Item(&'a Item),
     Npc(&'a Npc),
 }
-impl<'a> WorldEntity<'a> {
+impl WorldEntity<'_> {
     /// Get the name of the entity
     pub fn name(&self) -> &str {
         match self {
@@ -342,10 +339,10 @@ impl<'a> WorldEntity<'a> {
 
 /// Searches a list of `WorldEntities`' uuids to find a `WorldObject` with a matching name.
 /// Returns Some(&'a `WorldEntity`) or None.
-pub fn find_world_object<'a>(
+pub fn find_world_object<'a, S: BuildHasher>(
     nearby_ids: impl IntoIterator<Item = &'a Uuid>,
     world_items: &'a HashMap<Uuid, Item>,
-    world_npcs: &'a HashMap<Uuid, Npc>,
+    world_npcs: &'a HashMap<Uuid, Npc, S>,
     search_term: &str,
 ) -> Option<WorldEntity<'a>> {
     let lc_term = search_term.to_lowercase();

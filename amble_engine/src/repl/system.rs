@@ -90,9 +90,9 @@ use std::path::Path;
 ///
 /// # Available Modes
 ///
-/// - **ClearVerbose**: Clears screen on movement, always shows full descriptions
-/// - **Verbose**: Always shows full room descriptions without screen clearing
-/// - **Brief**: Shows full descriptions only on first visit and when explicitly looking
+/// - `ClearVerbose`: Clears screen on movement, always shows full descriptions
+/// - `Verbose`: Always shows full room descriptions without screen clearing
+/// - `Brief`: Shows full descriptions only on first visit and when explicitly looking
 ///
 /// # Behavior
 ///
@@ -183,6 +183,7 @@ pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> 
         .filter_map(|uuid| world.items.get(uuid))
         .for_each(|i| info!("$$ -> {} ({})", i.name(), i.symbol()));
 
+    #[allow(clippy::cast_precision_loss)]
     let percent = (world.player.score as f32 / world.max_score as f32) * 100.0;
 
     let (rank, eval) = world.scoring.get_rank(percent);
@@ -605,10 +606,6 @@ mod tests {
 /// - Returns only goals matching the requested status
 /// - Goal status is computed dynamically, not stored statically
 /// - Enables real-time goal status updates as game state changes
-/// Collect goals that match the requested status.
-///
-/// Used by the goals handler to show active and completed objectives without
-/// repeatedly filtering the full list.
 pub fn filtered_goals(world: &AmbleWorld, status: GoalStatus) -> Vec<&Goal> {
     world.goals.iter().filter(|goal| goal.status(world) == status).collect()
 }
@@ -663,7 +660,7 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) {
     let mut slots = match save_files::collect_save_slots(save_dir) {
         Ok(slots) => slots,
         Err(err) => {
-            view.push(ViewItem::Error(format!("Unable to inspect saved games: {}", err)));
+            view.push(ViewItem::Error(format!("Unable to inspect saved games: {err}")));
             return;
         },
     };
@@ -860,7 +857,7 @@ pub fn theme_handler(view: &mut View, theme_name: &str) -> Result<()> {
                 .iter()
                 .map(|t| {
                     if t == &current {
-                        format!("{} (current)", t).status_style().to_string()
+                        format!("{t} (current)").status_style().to_string()
                     } else {
                         t.to_string()
                     }
@@ -873,13 +870,12 @@ pub fn theme_handler(view: &mut View, theme_name: &str) -> Result<()> {
 
     // Try to set the requested theme
     match manager.set_theme(theme_name) {
-        Ok(_) => {
-            view.push(ViewItem::ActionSuccess(format!("Theme changed to '{}'", theme_name)));
+        Ok(()) => {
+            view.push(ViewItem::ActionSuccess(format!("Theme changed to '{theme_name}'")));
         },
         Err(_) => {
             view.push(ViewItem::Error(format!(
-                "Theme '{}' not found. Use 'theme list' to see available themes.",
-                theme_name
+                "Theme '{theme_name}' not found. Use 'theme list' to see available themes."
             )));
         },
     }

@@ -493,9 +493,9 @@ impl View {
             if item_lines.is_empty() {
                 println!("   {}", "You have... nothing at all.".italic().dimmed());
             } else {
-                item_lines
-                    .iter()
-                    .for_each(|line| println!("   {}", line.item_name.item_style()));
+                for line in item_lines {
+                    println!("   {}", line.item_name.item_style());
+                }
             }
         }
     }
@@ -650,8 +650,10 @@ impl View {
     fn room_npc_list(&mut self) {
         if let Some(ViewItem::RoomNpcs(npcs)) = self.items.iter().find(|i| matches!(i, ViewItem::RoomNpcs(_))) {
             println!("{}:", "Others".subheading_style());
-            npcs.iter().for_each(|npc| println!("   {}", npc.name.npc_style()));
-            println!();
+            for npc in npcs {
+                println!("   {}", npc.name.npc_style());
+                println!();
+            }
         }
     }
 
@@ -682,8 +684,10 @@ impl View {
     fn room_item_list(&mut self) {
         if let Some(ViewItem::RoomItems(names)) = self.items.iter().find(|i| matches!(i, ViewItem::RoomItems(_))) {
             println!("{}:", "Items".subheading_style());
-            names.iter().for_each(|name| println!("   {}", name.item_style()));
-            println!();
+            for name in names {
+                println!("   {}", name.item_style());
+                println!();
+            }
         }
     }
 

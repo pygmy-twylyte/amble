@@ -94,7 +94,8 @@ pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) ->
                 return Ok(());
             }
         } else {
-            return Ok(entity_not_found(world, view, item_str));
+            entity_not_found(world, view, item_str);
+            return Ok(());
         };
 
     let triggers_fired = check_triggers(world, view, &[TriggerCondition::Touch(item_id)])?;
@@ -165,7 +166,8 @@ pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, m
         }
     } else {
         // no entity in search scope matched player input
-        return Ok(entity_not_found(world, view, item_str));
+        entity_not_found(world, view, item_str);
+        return Ok(());
     };
 
     /* we now have the UUID (item_id) of an item that is available nearby,
@@ -201,6 +203,7 @@ pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, m
                 item_name.item_style()
             )));
         } else {
+            #[allow(clippy::cast_possible_wrap)]
             view.push(ViewItem::ActionSuccess(format!(
                 "The {} has {} use{} left",
                 item_name.item_style(),
@@ -268,6 +271,10 @@ pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, m
 /// # Errors
 /// Returns an error if the player's current room cannot be determined, if tool or target items
 /// cannot be resolved from world data, or if trigger evaluation fails.
+///
+/// # Panics
+/// Zero. The cases are checked for `None` and handled gracefully before the `expect()` calls occur
+#[allow(clippy::too_many_lines)]
 pub fn use_item_on_handler(
     world: &mut AmbleWorld,
     view: &mut View,
@@ -393,6 +400,7 @@ pub fn use_item_on_handler(
                     tool_name.item_style()
                 )));
             } else {
+                #[allow(clippy::cast_possible_wrap)]
                 view.push(ViewItem::ActionSuccess(format!(
                     "The {} has {} use{} left",
                     tool_name.item_style(),

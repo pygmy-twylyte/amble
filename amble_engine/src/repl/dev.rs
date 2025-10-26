@@ -35,7 +35,7 @@
 use log::{info, warn};
 
 use crate::helpers::symbol_or_unknown;
-use crate::scheduler::{EventCondition, OnFalsePolicy};
+use crate::scheduler::{EventCondition, OnFalsePolicy, ScheduledEvent};
 use crate::trigger::TriggerCondition;
 use crate::{
     AmbleWorld, Location, View, ViewItem, WorldObject,
@@ -448,10 +448,10 @@ fn summarize_trigger_condition(world: &AmbleWorld, tc: &TriggerCondition) -> Str
         TriggerCondition::Ingest { item_id, mode } => {
             format!("ingest:{}:{mode}", symbol_or_unknown(&world.items, *item_id))
         },
-        TriggerCondition::HasFlag(f) => format!("hasFlag:{}", f),
-        TriggerCondition::MissingFlag(f) => format!("missingFlag:{}", f),
-        TriggerCondition::FlagInProgress(f) => format!("flagInProgress:{}", f),
-        TriggerCondition::FlagComplete(f) => format!("flagComplete:{}", f),
+        TriggerCondition::HasFlag(f) => format!("hasFlag:{f}"),
+        TriggerCondition::MissingFlag(f) => format!("missingFlag:{f}"),
+        TriggerCondition::FlagInProgress(f) => format!("flagInProgress:{f}"),
+        TriggerCondition::FlagComplete(f) => format!("flagComplete:{f}"),
         TriggerCondition::HasItem(item) => format!("hasItem:{}", symbol_or_unknown(&world.items, *item)),
         TriggerCondition::MissingItem(item) => format!("missingItem:{}", symbol_or_unknown(&world.items, *item)),
         TriggerCondition::InRoom(room) => format!("inRoom:{}", symbol_or_unknown(&world.rooms, *room)),
@@ -462,7 +462,7 @@ fn summarize_trigger_condition(world: &AmbleWorld, tc: &TriggerCondition) -> Str
         TriggerCondition::NpcInState { npc_id, mood } => format!(
             "npcState:{}:{}",
             symbol_or_unknown(&world.npcs, *npc_id),
-            format!("{:?}", mood).to_lowercase()
+            format!("{mood:?}").to_lowercase()
         ),
         TriggerCondition::NpcHasItem { npc_id, item_id } => format!(
             "npcHasItem:{}:{}",
@@ -497,7 +497,7 @@ fn summarize_trigger_condition(world: &AmbleWorld, tc: &TriggerCondition) -> Str
         TriggerCondition::UseItem { item_id, ability } => format!(
             "useItem:{}:{}",
             symbol_or_unknown(&world.items, *item_id),
-            format!("{:?}", ability).to_lowercase()
+            format!("{ability:?}").to_lowercase()
         ),
         TriggerCondition::UseItemOnItem {
             interaction,
@@ -507,16 +507,16 @@ fn summarize_trigger_condition(world: &AmbleWorld, tc: &TriggerCondition) -> Str
             "useItemOn:{}->{}:{}",
             symbol_or_unknown(&world.items, *tool_id),
             symbol_or_unknown(&world.items, *target_id),
-            format!("{:?}", interaction).to_lowercase()
+            format!("{interaction:?}").to_lowercase()
         ),
         TriggerCondition::TalkToNpc(npc) => format!("talkToNpc:{}", symbol_or_unknown(&world.npcs, *npc)),
         TriggerCondition::ActOnItem { target_id, action } => format!(
             "actOnItem:{}:{}",
             symbol_or_unknown(&world.items, *target_id),
-            format!("{:?}", action).to_lowercase()
+            format!("{action:?}").to_lowercase()
         ),
         TriggerCondition::Ambient { spinner, .. } => format!("ambient:{}", spinner.as_toml_key()),
-        TriggerCondition::Chance { one_in } => format!("chance:1-in-{:.0}", one_in),
+        TriggerCondition::Chance { one_in } => format!("chance:1-in-{one_in:.0}"),
     }
 }
 
@@ -524,34 +524,33 @@ fn summarize_trigger_condition(world: &AmbleWorld, tc: &TriggerCondition) -> Str
 pub fn dev_sched_cancel_handler(world: &mut AmbleWorld, view: &mut View, idx: usize) {
     if idx >= world.scheduler.events.len() {
         view.push(ViewItem::ActionFailure(format!(
-            "No scheduled event found at index {}.",
-            idx
+            "No scheduled event found at index {idx}."
         )));
         return;
     }
     let ev = &mut world.scheduler.events[idx];
     let was_placeholder = ev.on_turn == 0 && ev.actions.is_empty() && ev.note.is_none() && ev.condition.is_none();
     if was_placeholder {
-        let msg = format!("Event at index {} is already cleared/canceled.", idx);
+        let msg = format!("Event at index {idx} is already cleared/canceled.");
         view.push(ViewItem::ActionFailure(msg));
         return;
     }
     let note = ev.note.clone().unwrap_or_else(|| "<no note>".to_string());
-    *ev = Default::default();
-    warn!("DEV_MODE: canceled scheduled event idx {} (note: {})", idx, note);
-    view.push(ViewItem::ActionSuccess(format!("Scheduled event {} canceled.", idx)));
+    *ev = ScheduledEvent::default();
+    warn!("DEV_MODE: canceled scheduled event idx {idx} (note: {note})");
+    view.push(ViewItem::ActionSuccess(format!("Scheduled event {idx} canceled.")));
 }
 
 /// Delay a scheduled event by N turns (DEV_MODE only).
 pub fn dev_sched_delay_handler(world: &mut AmbleWorld, view: &mut View, idx: usize, turns: usize) {
     if idx >= world.scheduler.events.len() {
-        let msg = format!("No scheduled event found at index {}.", idx);
+        let msg = format!("No scheduled event found at index {i}.");
         view.push(ViewItem::ActionFailure(msg));
         return;
     }
     let ev = world.scheduler.events.get(idx).cloned().unwrap_or_default();
     if ev.on_turn == 0 && ev.actions.is_empty() && ev.note.is_none() && ev.condition.is_none() {
-        let msg = format!("Event at index {} is empty/cleared.", idx);
+        let msg = format!("Event at index {idx} is empty/cleared.");
         view.push(ViewItem::ActionFailure(msg));
         return;
     }
@@ -562,15 +561,11 @@ pub fn dev_sched_delay_handler(world: &mut AmbleWorld, view: &mut View, idx: usi
         .schedule_on_if(new_turn, ev.condition, ev.on_false, ev.actions, note.clone());
     // clear the original (leave its heap entries as harmless placeholders when due)
     if let Some(slot) = world.scheduler.events.get_mut(idx) {
-        *slot = Default::default();
+        *slot = ScheduledEvent::default();
     }
-    warn!(
-        "DEV_MODE: delayed scheduled event idx {} by {} turns (new turn {})",
-        idx, turns, new_turn
-    );
+    warn!("DEV_MODE: delayed scheduled event idx {idx} by {turns} turns (new turn {new_turn})");
     view.push(ViewItem::ActionSuccess(format!(
-        "Scheduled event {} delayed by {} turn(s) (now on {}).",
-        idx, turns, new_turn
+        "Scheduled event {idx} delayed by {turns} turn(s) (now on {new_turn})."
     )));
 }
 

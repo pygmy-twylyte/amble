@@ -203,20 +203,15 @@ impl Default for ScheduledEvent {
 }
 
 /// Policy controlling behavior when a scheduled event's condition is false.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum OnFalsePolicy {
     /// Cancel the event and do not retry.
+    #[default]
     Cancel,
     /// Retry after the specified number of turns.
     RetryAfter(usize),
     /// Retry on the next turn.
     RetryNextTurn,
-}
-
-impl Default for OnFalsePolicy {
-    fn default() -> Self {
-        OnFalsePolicy::Cancel
-    }
 }
 
 /// Condition for scheduled events. Can wrap a `TriggerCondition` or combine multiple.
