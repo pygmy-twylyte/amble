@@ -5,23 +5,24 @@
 //! utilities here to avoid duplication across the codebase.
 
 use std::collections::HashMap;
+use std::hash::BuildHasher;
 
 use crate::world::WorldObject;
 use crate::{Item, Npc, Room};
 use uuid::Uuid;
 
 /// Generic: Returns the TOML symbol for a given object's uuid.
-pub fn symbol_from_id<T: WorldObject>(map: &HashMap<Uuid, T>, id: Uuid) -> Option<&str> {
+pub fn symbol_from_id<T: WorldObject, S: BuildHasher>(map: &HashMap<Uuid, T, S>, id: Uuid) -> Option<&str> {
     map.get(&id).map(super::world::WorldObject::symbol)
 }
 
 /// Generic: Returns the display name for a given object's uuid.
-pub fn name_from_id<T: WorldObject>(map: &HashMap<Uuid, T>, id: Uuid) -> Option<&str> {
+pub fn name_from_id<T: WorldObject, S: BuildHasher>(map: &HashMap<Uuid, T, S>, id: Uuid) -> Option<&str> {
     map.get(&id).map(super::world::WorldObject::name)
 }
 
 /// Convenience: Returns the symbol or a standard fallback string.
-pub fn symbol_or_unknown<T: WorldObject>(map: &HashMap<Uuid, T>, id: Uuid) -> String {
+pub fn symbol_or_unknown<T: WorldObject, S: BuildHasher>(map: &HashMap<Uuid, T, S>, id: Uuid) -> String {
     symbol_from_id(map, id).unwrap_or("<not_found>").to_string()
 }
 
@@ -36,16 +37,16 @@ pub fn pluralize(word: &str, count: isize) -> String {
 }
 
 /// Returns the TOML symbol for a given room's uuid.
-pub fn room_symbol_from_id(rooms: &HashMap<Uuid, Room>, room_id: Uuid) -> Option<&str> {
+pub fn room_symbol_from_id<S: BuildHasher>(rooms: &HashMap<Uuid, Room, S>, room_id: Uuid) -> Option<&str> {
     symbol_from_id(rooms, room_id)
 }
 
 /// Returns the TOML symbol for a given item's uuid.
-pub fn item_symbol_from_id(items: &HashMap<Uuid, Item>, item_id: Uuid) -> Option<&str> {
+pub fn item_symbol_from_id<S: BuildHasher>(items: &HashMap<Uuid, Item, S>, item_id: Uuid) -> Option<&str> {
     symbol_from_id(items, item_id)
 }
 
 /// Returns the TOML symbol for a given character's uuid.
-pub fn npc_symbol_from_id(npcs: &HashMap<Uuid, Npc>, npc_id: Uuid) -> Option<&str> {
+pub fn npc_symbol_from_id<S: BuildHasher>(npcs: &HashMap<Uuid, Npc, S>, npc_id: Uuid) -> Option<&str> {
     symbol_from_id(npcs, npc_id)
 }
