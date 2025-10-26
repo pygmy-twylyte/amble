@@ -37,18 +37,18 @@ use uuid::Uuid;
 
 /// Lookup table to find the uuid for a given token
 #[derive(Default, Debug)]
-pub struct SymbolTable<S: BuildHasher> {
-    rooms: HashMap<String, Uuid, S>,
-    items: HashMap<String, Uuid, S>,
-    characters: HashMap<String, Uuid, S>,
+pub struct SymbolTable {
+    pub(crate) rooms: HashMap<String, Uuid>,
+    pub(crate) items: HashMap<String, Uuid>,
+    pub(crate) characters: HashMap<String, Uuid>,
 }
 
 /// Resolve a token from a TOML location table against the symbol cache.
-fn map_resolver<S: BuildHasher>(
-    table: &HashMap<String, String, S>,
-    map: &HashMap<String, Uuid, S>,
-    key: &str,
-) -> Result<Uuid> {
+fn map_resolver<S, H>(table: &HashMap<String, String, S>, map: &HashMap<String, Uuid, H>, key: &str) -> Result<Uuid>
+where
+    S: BuildHasher,
+    H: BuildHasher,
+{
     let key_lc = key.to_lowercase();
     if let Some(uuid) = map.get(
         table
