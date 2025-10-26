@@ -166,14 +166,14 @@ pub struct ThemeData {
     pub themes: Vec<Theme>,
 }
 
-/// Global theme manager that handles theme loading and switching
+/// Manages the catalog of available themes and the active selection.
 pub struct ThemeManager {
     themes: HashMap<String, Theme>,
     current_theme: Arc<RwLock<Theme>>,
 }
 
 impl ThemeManager {
-    /// Create a new ThemeManager with the default theme
+    /// Create a new theme manager seeded with the built-in default theme.
     pub fn new() -> Self {
         let mut themes = HashMap::new();
         let default_theme = Theme::default();
@@ -203,14 +203,14 @@ impl ThemeManager {
         Ok(())
     }
 
-    /// Get a list of available theme names
+    /// Return an alphabetized list of installed theme names.
     pub fn list_themes(&self) -> Vec<String> {
         let mut names: Vec<String> = self.themes.keys().cloned().collect();
         names.sort();
         names
     }
 
-    /// Switch to a different theme by name
+    /// Switch to a different theme by name.
     pub fn set_theme(&self, name: &str) -> Result<()> {
         let theme = self
             .themes
@@ -226,12 +226,12 @@ impl ThemeManager {
         Ok(())
     }
 
-    /// Get the currently active theme
+    /// Get the currently active theme.
     pub fn current(&self) -> Arc<RwLock<Theme>> {
         Arc::clone(&self.current_theme)
     }
 
-    /// Get the name of the currently active theme
+    /// Return the name of the active theme, falling back to `default`.
     pub fn current_name(&self) -> String {
         self.current_theme
             .read()
@@ -246,7 +246,7 @@ impl Default for ThemeManager {
     }
 }
 
-// Global theme manager instance
+// Global theme manager shared across modules.
 lazy_static::lazy_static! {
     pub static ref THEME_MANAGER: RwLock<ThemeManager> = RwLock::new(ThemeManager::new());
 }
@@ -264,7 +264,7 @@ pub fn init_themes() -> Result<()> {
     Ok(())
 }
 
-/// Get the current theme colors
+/// Snapshot the color palette for the active theme, defaulting if unavailable.
 pub fn current_theme_colors() -> ThemeColors {
     THEME_MANAGER
         .read()

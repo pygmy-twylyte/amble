@@ -602,6 +602,10 @@ mod tests {
 /// - Returns only goals matching the requested status
 /// - Goal status is computed dynamically, not stored statically
 /// - Enables real-time goal status updates as game state changes
+/// Collect goals that match the requested status.
+///
+/// Used by the goals handler to show active and completed objectives without
+/// repeatedly filtering the full list.
 pub fn filtered_goals(world: &AmbleWorld, status: GoalStatus) -> Vec<&Goal> {
     world.goals.iter().filter(|goal| goal.status(world) == status).collect()
 }

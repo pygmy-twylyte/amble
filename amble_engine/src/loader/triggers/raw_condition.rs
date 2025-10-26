@@ -1,4 +1,7 @@
-//! Trigger loader submodule for `RawConditions`
+//! Raw trigger condition translation.
+//!
+//! Maps serialized condition definitions onto runtime trigger predicates,
+//! resolving identifiers and validating referenced entities.
 
 use std::collections::HashSet;
 

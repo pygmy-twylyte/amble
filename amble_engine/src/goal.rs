@@ -1,5 +1,7 @@
-//! module: goal
+//! Goal definitions and progress evaluation.
 //!
+//! Provides the data structures that track player objectives along with
+//! helpers for determining whether goal conditions are satisfied.
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;

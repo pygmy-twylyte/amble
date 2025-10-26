@@ -254,10 +254,14 @@ pub enum TriggerAction {
     },
 }
 
-/// Fires the matching trigger action by calling its handler function
+/// Execute a single trigger action against the current world state.
+///
+/// This is the central dispatch point used by the trigger system; it routes
+/// each [`TriggerAction`] variant to its concrete handler and propagates any
+/// error from the handlers back to the caller.
 ///
 /// # Errors
-/// - on failed triggered actions due to bad uuids
+/// - Returns an error if the underlying handler cannot resolve referenced objects.
 pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &TriggerAction) -> Result<()> {
     use TriggerAction::*;
     match action {
@@ -447,6 +451,7 @@ pub struct NpcMovementPatch {
     pub loop_route: Option<bool>,
 }
 impl NpcMovementPatch {
+    /// Return `true` if any movement-related field should be updated.
     pub fn has_updates(&self) -> bool {
         self.route.is_some()
             || self.random_rooms.is_some()
@@ -779,6 +784,7 @@ pub fn despawn_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid) -> Res
     Ok(())
 }
 
+/// Toggle an NPC's active movement flag without relocating them.
 pub fn set_npc_active(world: &mut AmbleWorld, npc_id: &Uuid, active: bool) -> Result<()> {
     if let Some(npc) = world.npcs.get_mut(&npc_id) {
         if let Some(ref mut mvmt) = npc.movement {
@@ -790,6 +796,7 @@ pub fn set_npc_active(world: &mut AmbleWorld, npc_id: &Uuid, active: bool) -> Re
     Ok(())
 }
 
+/// Update an item's container state (or clear it entirely, if it is empty).
 pub fn set_container_state(world: &mut AmbleWorld, item_id: Uuid, state: Option<ContainerState>) -> Result<()> {
     if let Some(item) = world.items.get_mut(&item_id) {
         item.container_state = state;
@@ -800,7 +807,7 @@ pub fn set_container_state(world: &mut AmbleWorld, item_id: Uuid, state: Option<
     Ok(())
 }
 
-/// Replaces an item with another, wherever it's located
+/// Replace one item with another at the same `Location`
 pub fn replace_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -> Result<()> {
     // record old item's location and symbol
     let (location, old_sym) = if let Some(old_item) = world.items.get(&old_id) {
@@ -846,14 +853,14 @@ pub fn replace_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -> Res
     Ok(())
 }
 
-/// Drops an item in the current room and replaces it with the new version.
+/// Drop an item in the current room and immediately spawn its replacement.
 pub fn replace_drop_item(world: &mut AmbleWorld, old_id: &Uuid, new_id: &Uuid) -> Result<()> {
     despawn_item(world, old_id)?;
     spawn_item_in_current_room(world, new_id)?;
     Ok(())
 }
 
-/// Sets a new description for an `Item`
+/// Overwrite an item's description text at runtime.
 pub fn set_item_description(world: &mut AmbleWorld, item_id: &Uuid, text: &str) -> Result<()> {
     let item = world
         .get_item_mut(*item_id)
@@ -908,9 +915,7 @@ pub fn set_barred_message(world: &mut AmbleWorld, exit_from: &Uuid, exit_to: &Uu
     Ok(())
 }
 
-/// Make NPC refuse a specific item for a specific reason.
-/// # Errors
-///
+/// Emit feedback when an NPC declines an offered item.
 pub fn npc_refuse_item(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, reason: &str) -> Result<()> {
     npc_says(world, view, &npc_id, reason)?;
     let npc_name = world

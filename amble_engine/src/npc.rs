@@ -1,4 +1,7 @@
-//! NPC Module
+//! Non-player character definitions and behavior helpers.
+//!
+//! Contains the runtime NPC data model alongside dialogue, movement,
+//! and interaction utilities.
 
 use anyhow::{Context, Result, bail};
 use log::{info, warn};
@@ -33,14 +36,14 @@ pub struct Npc {
     pub movement: Option<NpcMovement>,
 }
 impl Npc {
-    /// Pauses
+    /// Pause scripted movement for the given number of turns.
     pub fn pause_movement(&mut self, current_turn: usize, duration: usize) {
         if let Some(ref mut mvmt_config) = self.movement {
             mvmt_config.paused_until = Some(current_turn + duration);
         }
     }
 
-    /// Returns a random line of dialogue from within the NPCs current Mood.
+    /// Pick a random line of dialogue respecting the NPC's current state / mood.
     pub fn random_dialogue(&self, ignore_spinner: &Spinner<String>) -> String {
         if let Some(lines) = self.dialogue.get(&self.state) {
             let mut rng = rand::rng();
@@ -58,7 +61,7 @@ impl Npc {
             ignore_spinner.spin().unwrap_or("Ignores you.".to_string())
         }
     }
-    /// Display NPC info to the player
+    /// Display the NPC description and visible inventory.
     pub fn show(&self, world: &AmbleWorld, view: &mut View) {
         view.push(ViewItem::NpcDescription {
             name: self.name.clone(),
@@ -139,7 +142,7 @@ pub enum MovementTiming {
     OnTurn { turn: usize },
 }
 
-/// Returns true if movement should occur according to the '`NpcMovement`' parameters given.
+/// Determine whether an NPC should move this turn.
 pub fn move_scheduled(movement: &NpcMovement, current_turn: usize) -> bool {
     // return false if paused - pauses are cleared to None by the check_npc_movement function
     // in the REPL when they expire, so we just need to check for Some()
@@ -153,7 +156,7 @@ pub fn move_scheduled(movement: &NpcMovement, current_turn: usize) -> bool {
     }
 }
 
-/// Returns `Location` NPC is set to move to next, if any.
+/// Calculate the next destination for a moving NPC.
 pub fn calculate_next_location(movement: &mut NpcMovement) -> Option<Location> {
     use crate::npc::MovementType::{RandomSet, Route};
     match &mut movement.movement_type {
@@ -303,6 +306,7 @@ impl Display for NpcState {
     }
 }
 impl NpcState {
+    /// Parse a dialogue map key into an [`NpcState`].
     pub fn from_key(key: &str) -> Self {
         match key {
             "sad" => NpcState::Sad,
@@ -319,6 +323,7 @@ impl NpcState {
         }
     }
 
+    /// Serialize the state into a dialogue map key.
     pub fn as_key(&self) -> String {
         match self {
             NpcState::Sad => "sad".into(),

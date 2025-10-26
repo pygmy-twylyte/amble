@@ -1,3 +1,12 @@
+//! Reverse-engineering utility for existing engine data.
+//!
+//! Reads the engine's TOML content and emits an approximate Amble DSL
+//! representation to help bootstrap script authoring. This tool is left in place for
+//! legacy purposes (it was used when much of the Amble demo was first written directly
+//! in TOML directly and the DSL was being created). It shouldn't be needed at all any
+//! more, and it hasn't been maintained with further developments of the DSL and engine,
+//! so the amblescript that it generates will likely not be 100% correct in more complex cases.
+
 use std::fs;
 
 fn q(s: &str) -> String {

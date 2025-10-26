@@ -1,3 +1,8 @@
+//! Save-game discovery and serialization helpers.
+//!
+//! Provides file management utilities for listing, loading, and writing
+//! player save slots with version awareness.
+
 use crate::{AMBLE_VERSION, AmbleWorld, Location, WorldObject};
 use anyhow::{Context, Result};
 use log::warn;
@@ -99,6 +104,7 @@ pub fn format_modified(modified: SystemTime) -> String {
     }
 }
 
+/// Build a full [`SaveFileEntry`] from a discovered save slot.
 fn entry_for_slot(slot: SaveSlot) -> SaveFileEntry {
     let mut version = slot.version.clone();
     let (summary, status) = match fs::read_to_string(&slot.path) {
@@ -158,6 +164,7 @@ fn entry_for_slot(slot: SaveSlot) -> SaveFileEntry {
     }
 }
 
+/// Render the player's current location into a human-readable label.
 fn describe_location(world: &AmbleWorld) -> Option<String> {
     match world.player.location {
         Location::Room(room_id) => world.rooms.get(&room_id).map(|room| room.name.clone()),
@@ -168,6 +175,7 @@ fn describe_location(world: &AmbleWorld) -> Option<String> {
     }
 }
 
+/// Convert a duration into a compact "time ago" string.
 fn format_duration(duration: Duration) -> String {
     const MINUTE: u64 = 60;
     const HOUR: u64 = MINUTE * 60;
@@ -196,6 +204,7 @@ fn format_duration(duration: Duration) -> String {
     }
 }
 
+/// Clamp verbose error messages to a readable length.
 fn trim_error(err: impl ToString) -> String {
     let message = err.to_string();
     if message.chars().count() <= 120 {

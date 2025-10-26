@@ -1,8 +1,7 @@
-//! `loader::spinners` module
+//! Spinner loader for ambient text generators.
 //!
-//! This module implements the loading of spinner data from TOML.
-//! It supports both core engine spinners (with built-in defaults) and
-//! custom game-specific spinners defined entirely in TOML files.
+//! Imports both core and custom spinner definitions from TOML, ensuring
+//! engine defaults exist while applying per-game overrides.
 
 use std::{collections::HashMap, path::Path};
 

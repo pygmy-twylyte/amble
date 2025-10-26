@@ -368,7 +368,9 @@ pub struct NpcDialoguePatchAst {
 /// Movement timing update for an NPC.
 #[derive(Debug, Clone, PartialEq)]
 pub enum NpcTimingPatchAst {
+    /// NPC moves every _n_ turns.
     EveryNTurns(usize),
+    /// NPC moves on the specified absolute turn.
     OnTurn(usize),
 }
 
@@ -395,8 +397,11 @@ pub struct NpcPatchAst {
 /// Policy to apply when a scheduled condition evaluates to false at fire time.
 #[derive(Debug, Clone, PartialEq)]
 pub enum OnFalseAst {
+    /// Drop the scheduled event entirely.
     Cancel,
+    /// Reschedule the event the specified number of turns ahead.
     RetryAfter { turns: usize },
+    /// Reschedule the event for the very next turn.
     RetryNextTurn,
 }
 
@@ -800,6 +805,7 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
 // -----------------
 
 /// Minimal AST for a room definition.
+/// AST node describing a compiled room definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RoomAst {
     pub id: String,
@@ -811,6 +817,7 @@ pub struct RoomAst {
     pub src_line: usize,
 }
 
+/// Connection between rooms emitted within a room AST.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExitAst {
     pub to: String,
@@ -821,12 +828,14 @@ pub struct ExitAst {
     pub required_items: Vec<String>,
 }
 
+/// Conditional overlay text applied to a room.
 #[derive(Debug, Clone, PartialEq)]
 pub struct OverlayAst {
     pub conditions: Vec<OverlayCondAst>,
     pub text: String,
 }
 
+/// Overlay predicate used when computing room description variants.
 #[derive(Debug, Clone, PartialEq)]
 pub enum OverlayCondAst {
     FlagSet(String),
@@ -842,12 +851,14 @@ pub enum OverlayCondAst {
     ItemInRoom { item: String, room: String },
 }
 
+/// NPC state reference used in overlays and patches.
 #[derive(Debug, Clone, PartialEq)]
 pub enum NpcStateValue {
     Named(String),
     Custom(String),
 }
 
+/// AST node describing an item definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ItemAst {
     pub id: String,
@@ -864,6 +875,7 @@ pub struct ItemAst {
     pub src_line: usize,
 }
 
+/// Possible item locations in the DSL.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ItemLocationAst {
     Inventory(String),
@@ -873,6 +885,7 @@ pub enum ItemLocationAst {
     Nowhere(String),
 }
 
+/// Container states expressible in the DSL.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ContainerStateAst {
     Open,
@@ -893,12 +906,14 @@ impl ContainerStateAst {
     }
 }
 
+/// Single item ability entry declared within an item.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ItemAbilityAst {
     pub ability: String,
     pub target: Option<String>,
 }
 
+/// Consumable configuration attached to an item.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConsumableAst {
     pub uses_left: usize,
@@ -906,6 +921,7 @@ pub struct ConsumableAst {
     pub when_consumed: ConsumableWhenAst,
 }
 
+/// Behavior when a consumable item is depleted.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConsumableWhenAst {
     Despawn,
@@ -917,6 +933,7 @@ pub enum ConsumableWhenAst {
 // Spinners
 // -----------------
 
+/// Spinner definition containing weighted text wedges.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SpinnerAst {
     pub id: String,
@@ -924,6 +941,7 @@ pub struct SpinnerAst {
     pub src_line: usize,
 }
 
+/// Individual wedge (value + weight) inside a spinner.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SpinnerWedgeAst {
     pub text: String,
@@ -934,12 +952,14 @@ pub struct SpinnerWedgeAst {
 // NPCs
 // -----------------
 
+/// Movement types supported for NPC definitions.
 #[derive(Debug, Clone, PartialEq)]
 pub enum NpcMovementTypeAst {
     Route,
     Random,
 }
 
+/// Movement configuration emitted for NPCs.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NpcMovementAst {
     pub movement_type: NpcMovementTypeAst,
@@ -949,6 +969,7 @@ pub struct NpcMovementAst {
     pub loop_route: Option<bool>,
 }
 
+/// AST node describing an NPC definition.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NpcAst {
     pub id: String,
@@ -961,6 +982,7 @@ pub struct NpcAst {
     pub src_line: usize,
 }
 
+/// Location specifier used for NPC placement.
 #[derive(Debug, Clone, PartialEq)]
 pub enum NpcLocationAst {
     Room(String),
@@ -1335,24 +1357,37 @@ pub fn compile_npcs_to_toml(npcs: &[NpcAst]) -> Result<String, CompileError> {
 // Goals
 // -----------------
 
+/// Logical grouping for goals used when rendering score breakdowns.
 #[derive(Debug, Clone, PartialEq)]
 pub enum GoalGroupAst {
+    /// Mandatory goals that count toward completion.
     Required,
+    /// Optional side objectives.
     Optional,
+    /// Status effects or temporary conditions.
     StatusEffect,
 }
 
+/// Conditions that can activate, complete, or fail a goal.
 #[derive(Debug, Clone, PartialEq)]
 pub enum GoalCondAst {
+    /// Goal requires the player to have a flag.
     HasFlag(String),
+    /// Goal requires the player to be missing a flag.
     MissingFlag(String),
+    /// Goal requires the player to possess an item.
     HasItem(String),
+    /// Goal requires the player to reach a room.
     ReachedRoom(String),
+    /// Goal requires another goal to be complete.
     GoalComplete(String),
+    /// Goal depends on a sequence flag progressing but not finishing.
     FlagInProgress(String),
+    /// Goal requires a sequence flag to reach its terminal step.
     FlagComplete(String),
 }
 
+/// High-level representation of a single goal definition in the DSL.
 #[derive(Debug, Clone, PartialEq)]
 pub struct GoalAst {
     pub id: String,

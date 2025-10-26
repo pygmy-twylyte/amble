@@ -1,3 +1,11 @@
+//! Room definitions and spatial utilities.
+//!
+//! Any location a player or NPC can inhabit is represented as a "Room", whether it's a closet
+//! or a canyon.
+//!
+//! Captures room metadata, exits, and overlays along with helpers used
+//! during movement, rendering, and trigger evaluation.
+
 use crate::{
     ItemHolder, Location, View, ViewItem, WorldObject,
     npc::NpcState,

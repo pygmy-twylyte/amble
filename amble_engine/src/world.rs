@@ -46,12 +46,17 @@ impl Location {
     }
 }
 
-/// Methods common to any object in the world.
+/// Common API shared by rooms, items, NPCs, and the player.
 pub trait WorldObject {
+    /// Stable UUID assigned to the object.
     fn id(&self) -> Uuid;
+    /// Symbol used in TOML content to refer to the object.
     fn symbol(&self) -> &str;
+    /// Display-friendly name.
     fn name(&self) -> &str;
+    /// Long-form description shown to players.
     fn description(&self) -> &str;
+    /// Current location of the object within the world.
     fn location(&self) -> &Location;
 }
 
@@ -156,15 +161,17 @@ impl AmbleWorld {
         }
     }
 
-    /// Get mutable reference to a world item.
+    /// Get a mutable reference to an item by UUID, if present.
     pub fn get_item_mut(&mut self, item_id: Uuid) -> Option<&mut Item> {
         self.items.get_mut(&item_id)
     }
 }
 
-/// Collects and returns a set of items from a location according to a predicate function.
-/// Items contained in the room itself are always part of the set.
-/// Items within containers are only included if the container fits the predicate (open, open or transparent, etc.)
+/// Collect all item UUIDs visible within a `Room` according to a predicate.
+///
+/// Items stored directly in the room are always included. Contents of containers are only
+/// traversed if the supplied `should_include_contents` function returns `true` for the
+/// container item (typically when it either is open or transparent).
 fn collect_room_items(
     world: &AmbleWorld,
     room_id: Uuid,

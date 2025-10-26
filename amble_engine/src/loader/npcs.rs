@@ -1,4 +1,7 @@
-//! NPC loader submodule
+//! NPC loader for TOML content.
+//!
+//! Builds runtime NPC structures from serialized data, setting up dialogue, custom states,
+//! movement schedules, and initial inventories.
 
 use std::{
     collections::{HashMap, HashSet},

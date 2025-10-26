@@ -34,14 +34,15 @@ use std::path::Path;
 use triggers::build_triggers;
 use uuid::Uuid;
 
-#[derive(Default, Debug)]
 /// Lookup table to find the uuid for a given token
+#[derive(Default, Debug)]
 pub struct SymbolTable {
     rooms: HashMap<String, Uuid>,
     items: HashMap<String, Uuid>,
     characters: HashMap<String, Uuid>,
 }
 
+/// Resolve a token from a TOML location table against the symbol cache.
 fn map_resolver(table: &HashMap<String, String>, map: &HashMap<String, Uuid>, key: &str) -> Result<Uuid> {
     let key_lc = key.to_lowercase();
     if let Some(uuid) = map.get(

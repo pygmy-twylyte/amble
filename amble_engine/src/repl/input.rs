@@ -1,3 +1,8 @@
+//! Terminal input handling for the Amble REPL.
+//!
+//! Wraps rustyline configuration, validation, and completion tailored to
+//! the engine's command set and save-file workflow.
+
 use std::fs;
 use std::io::{self, IsTerminal, Write};
 use std::path::{Path, PathBuf};
@@ -289,6 +294,7 @@ pub struct InputManager {
 }
 
 impl InputManager {
+    /// Create a new input manager, choosing the best available backend.
     pub fn new() -> Self {
         let backend = if io::stdin().is_terminal() {
             match RustylineInput::new() {
@@ -333,6 +339,7 @@ enum Backend {
 }
 
 impl Backend {
+    /// Construct a plain stdin backend.
     fn plain() -> Self {
         Backend::Plain(StdinInput::default())
     }
@@ -402,12 +409,14 @@ impl RustylineInput {
     }
 }
 
+/// Minimal fallback reader used when `rustyline` is unavailable.
 #[derive(Default)]
 struct StdinInput {
     buffer: String,
 }
 
 impl StdinInput {
+    /// Read a line from standard input with a synchronous prompt.
     fn read_line(&mut self, prompt: &str) -> io::Result<InputEvent> {
         print!("{}", prompt);
         io::stdout().flush()?;

@@ -1,6 +1,7 @@
-//! Command module
+//! Player command parsing and representation.
 //!
-//! Describes possible commands used during gameplay.
+//! Defines the command vocabulary understood by the REPL, including
+//! parsing helpers that convert raw input into strongly typed commands.
 
 use std::fmt::Display;
 
@@ -87,6 +88,7 @@ pub enum Command {
     },
 }
 
+/// Modes of using ingestible items.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum IngestMode {
@@ -104,6 +106,7 @@ impl Display for IngestMode {
     }
 }
 
+/// PEG parser generated from `repl_grammar.pest`.
 #[derive(Parser)]
 #[grammar = "repl_grammar.pest"]
 pub struct CommandParser;
@@ -219,7 +222,7 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
     }
 }
 
-/// Helper to extract user input from a `Pair<Rule>` (when a single string).
+/// Extract a single string argument from a parsed rule.
 pub fn inner_string(pair: Pair<Rule>) -> String {
     if let Some(inner) = pair.into_inner().next() {
         inner.as_str().to_string()
@@ -228,7 +231,7 @@ pub fn inner_string(pair: Pair<Rule>) -> String {
     }
 }
 
-/// Helper to extract a pair of strings from inner rules.
+/// Extract two string arguments from a parsed rule.
 pub fn inner_string_duo(pair: Pair<Rule>) -> (String, String) {
     let mut inner = pair.into_inner();
     if let Some(first) = inner.next()
@@ -240,7 +243,8 @@ pub fn inner_string_duo(pair: Pair<Rule>) -> (String, String) {
     }
 }
 
-/// Create a verb-target-with-tool form (`UseItemOn`) command from ItemInteractionType and a Pair.
+/// Build a `UseItemOn` command for interaction rules that follow
+/// "verb target with tool" (e.g. "light fuse with candle") grammar.
 pub fn twt_command(verb: ItemInteractionType, pair: Pair<Rule>) -> Command {
     let (target, tool) = inner_string_duo(pair);
     Command::UseItemOn { verb, tool, target }
