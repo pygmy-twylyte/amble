@@ -454,16 +454,26 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
     let mut doc = Document::new();
 
     // Helper: emit a single trigger to the given ArrayOfTables with the provided flat conditions
-    fn emit_trigger(
-        aot: &mut ArrayOfTables,
-        name: &str,
-        note: &Option<String>,
+    struct EmitTriggerArgs<'a> {
+        name: &'a str,
+        note: &'a Option<String>,
         src_line: usize,
-        event: &ConditionAst,
-        flat_conds: &[ConditionAst],
-        actions: &[ActionAst],
+        event: &'a ConditionAst,
+        flat_conds: &'a [ConditionAst],
+        actions: &'a [ActionAst],
         only_once: bool,
-    ) {
+    }
+
+    fn emit_trigger(aot: &mut ArrayOfTables, args: EmitTriggerArgs<'_>) {
+        let EmitTriggerArgs {
+            name,
+            note,
+            src_line,
+            event,
+            flat_conds,
+            actions,
+            only_once,
+        } = args;
         let mut trig = Table::new();
         trig["name"] = value(name.to_string());
         if only_once {
@@ -780,25 +790,29 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
         if expanded.is_empty() {
             emit_trigger(
                 &mut aot,
-                &ast.name,
-                &ast.note,
-                ast.src_line,
-                &ast.event,
-                &[],
-                &ast.actions,
-                ast.only_once,
+                EmitTriggerArgs {
+                    name: &ast.name,
+                    note: &ast.note,
+                    src_line: ast.src_line,
+                    event: &ast.event,
+                    flat_conds: &[],
+                    actions: &ast.actions,
+                    only_once: ast.only_once,
+                },
             );
         } else {
             for flat in expanded {
                 emit_trigger(
                     &mut aot,
-                    &ast.name,
-                    &ast.note,
-                    ast.src_line,
-                    &ast.event,
-                    &flat,
-                    &ast.actions,
-                    ast.only_once,
+                    EmitTriggerArgs {
+                        name: &ast.name,
+                        note: &ast.note,
+                        src_line: ast.src_line,
+                        event: &ast.event,
+                        flat_conds: &flat,
+                        actions: &ast.actions,
+                        only_once: ast.only_once,
+                    },
                 );
             }
         }
