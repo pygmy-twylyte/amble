@@ -11,16 +11,18 @@ room dev-room {
 }
 
 # this should allow us to create an exit from the start room (high-ridge) to the
-# playground at game start from here, so we don't have to put one in the actual high-ridge
-# room file (so this file can simply be removed to cleanly get rid of playground items)
+# playground at game start (after 1 turn taken) so we don't have to put one in the actual
+# start room file (so this file can simply be removed to cleanly get rid of playground
+# items)
 #
-# one could also just comment out the trigger below to make the playground inaccessible from
-# the game without deleting the file
-trigger "Create Dev Playground Exit" only once when always {
-    do modify room high-ridge {
-        add exit "to dev playground" -> dev-room
-    }
-}
+# you can also just comment out the trigger below to make the playground inaccessible from
+# the game without deleting the file:
+#
+# trigger "Create Dev Playground Exit" only once when always {
+    #     do modify room high-ridge {
+        #         add exit "to dev playground" -> dev-room
+        #     }
+    # }
 
 item big_red_button {
     name "Big Red Button"
