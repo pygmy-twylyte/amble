@@ -57,3 +57,7 @@ For a fully featured authoring experience, the [Zed Amble extension](./zed_exten
 - Comprehensive test suite and CLI harness for fast iteration
 
 ## Engine Development / Contributions
+- Any ideas / contributions welcome!
+- At initial release, I feel like the UI is the weakest point. I tried to encapsulate everything display-related into the view module, hopefully making it easier to create a better TUI without having to modify the engine much.
+- Bugs and ideas for enhancements to the engine, demo game, DSL or tooling should be submitted as Issues on GitHub.
+- To contribute code, create a branch and submit a pull request. 
