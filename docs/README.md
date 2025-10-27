@@ -31,7 +31,7 @@ For a fully featured authoring experience, the [Zed Amble extension](./zed_exten
 ## Crates in this Repository
 - `amble_engine` - loads game data either from TOML files or a saved state (in RON format) and runs the game
 - `amble_script` - an intuitive, English-like language (DSL) for defining the game world, which is compiled into the TOML used by `amble_engine`
-- `xtask` - commands to simplify linting / compiling and installing / packaging from .amble sources
+- [`xtask`](../xtask/README.md) - automation helpers for builds, packaging, and the content pipeline
 
 ## Optional (but nice!) External Repositories for Developers
 - `tree-sitter-amble` - a tree-sitter parser / syntax highlighter for the amble_script DSL
