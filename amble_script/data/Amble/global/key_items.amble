@@ -30,3 +30,11 @@ item security_locker_key {
     ability Read
     ability Unlock security_locker
 }
+
+item skeleton_key {
+    name "Skeleton Key"
+    desc "A mythical object that unlocks absolutely anything. For developer use only! Probably."
+    portable true
+    location nowhere "must be spawned using dev_mode command"
+    ability Unlock
+}
