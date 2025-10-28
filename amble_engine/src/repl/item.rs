@@ -45,7 +45,7 @@
 //! These triggers enable rich gameplay where item interactions can advance
 //! storylines, solve puzzles, unlock areas, or cause other game effects.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
@@ -955,16 +955,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
             return Ok(());
         };
 
-    // Check player inventory for valid key
-    let has_valid_key = world.player.inventory.iter().any(|id| {
-        world.items.get(id).is_some_and(|i| {
-            i.abilities.iter().any(|a| match a {
-                ItemAbility::Unlock(Some(target)) => *target == container_id,
-                ItemAbility::Unlock(None) => true, // universal key
-                _ => false,
-            })
-        })
-    });
+    let key_data = find_valid_key(&world.items, &world.player.inventory, container_id);
 
     if let Some(target_item) = world.get_item_mut(container_id) {
         match target_item.container_state {
@@ -981,7 +972,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
                 )));
             },
             Some(ContainerState::Locked | ContainerState::TransparentLocked) => {
-                if has_valid_key {
+                if let Some(key) = key_data {
                     // If it was transparent locked, make it transparent closed, otherwise regular closed
                     target_item.container_state =
                         if target_item.container_state == Some(ContainerState::TransparentLocked) {
@@ -990,14 +981,17 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
                             Some(ContainerState::Closed)
                         };
                     view.push(ViewItem::ActionSuccess(format!(
-                        "You unlocked the {}.\n",
-                        target_item.name().item_style()
+                        "You unlocked the {} with the {}.\n",
+                        target_item.name().item_style(),
+                        key.name.item_style(),
                     )));
                     info!(
-                        "{} unlocked the {} ({})",
+                        "{} unlocked '{}' ({}) using key '{}' ({})",
                         world.player.name(),
                         container_name,
-                        symbol_or_unknown(&world.items, container_id)
+                        symbol_or_unknown(&world.items, container_id),
+                        key.name,
+                        key.symbol,
                     );
                     check_triggers(world, view, &[TriggerCondition::Unlock(container_id)])?;
                 } else {
@@ -1011,6 +1005,50 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
         world.turn_count += 1;
     }
     Ok(())
+}
+
+// Key metadata.
+#[derive(Debug, Clone, PartialEq)]
+struct KeyData {
+    id: Uuid,
+    name: String,
+    symbol: String,
+    skeleton: bool,
+}
+
+/// Search a list of items for a valid key to a given lock and return `KeyData` if found.
+///
+/// If a specific key *and* a "skeleton" key are present, the data for the specific key is
+/// returned.
+fn find_valid_key(world_items: &HashMap<Uuid, Item>, maybe_keys: &HashSet<Uuid>, container: Uuid) -> Option<KeyData> {
+    // find and return a specific key
+    let specific = maybe_keys
+        .iter()
+        .filter_map(|uuid| world_items.get(uuid))
+        .find(|item| item.abilities.contains(&ItemAbility::Unlock(Some(container))));
+    if let Some(key) = specific {
+        return Some(KeyData {
+            id: key.id,
+            name: key.name.clone(),
+            symbol: key.symbol.clone(),
+            skeleton: false,
+        });
+    }
+    // if no specific key, find and return a skeleton key
+    let skeleton = maybe_keys
+        .iter()
+        .filter_map(|uuid| world_items.get(uuid))
+        .find(|item| item.abilities.contains(&ItemAbility::Unlock(None)));
+    if let Some(key) = skeleton {
+        return Some(KeyData {
+            id: key.id,
+            name: key.name.clone(),
+            symbol: key.symbol.clone(),
+            skeleton: true,
+        });
+    }
+    // there is no key for this container on the list
+    None
 }
 
 #[cfg(test)]
