@@ -12,6 +12,7 @@ What started as a simple little game blossomed into a fully data-driven game eng
 ## Quickstart
 
 ### Play the bundled demo
+0. Easiest if on Windows or Linux: download the approprate ZIP from the Releases page, extract, and run amble_engine (.exe if on Windows.)
 1. Install the latest stable Rust toolchain (the workspace tracks the version in `rust-toolchain`).
 2. Clone this repository and change into the workspace directory.
 3. Run the engine with the shipped content:
