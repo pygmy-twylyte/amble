@@ -1,0 +1,50 @@
+# ========================================
+# HINT Radio
+# ========================================
+
+# The HINT Radio will be discovered at the guard post.
+# When turned on and in inventory, it will deliver context-
+# sensitive hints. When turned off, or not in inventory,
+# it will be silent.
+
+item hint_radio {
+    name "HINT Radio (off)"
+    desc r#"A black, long-range walkie-talkie style radio transceiver. A label bearing the word "HINTS" is affixed to the side. The transmit button has been removed. The "Power" LED is off."#
+    portable true
+    location room guard-post
+    ability TurnOn
+}
+
+trigger "Turn Hint Radio On" when use item hint_radio ability turnOn {
+    do modify item hint_radio {
+        name "HINT Radio (on)"
+        desc r#"A black, long-range walkie-talkie style radio transceiver. A label bearing the word "HINTS" is affixed to the side. The transmit button has been removed. The "Power" LED is on and soft static whispers from the speaker."#
+        remove ability TurnOn
+        add ability TurnOff
+    }
+    do add flag hint-radio-on
+    do show "The radio clicks on and emits a soft static."
+}
+
+trigger "Turn Hint Radio Off" when use item hint_radio ability turnOff {
+    do modify item hint_radio {
+        name "HINT Radio (off)"
+        desc r#"A black, long-range walkie-talkie style radio transceiver. A label bearing the word "HINTS" is affixed to the side. The transmit button has been removed. The "Power" LED is off."#
+        remove ability TurnOff
+        add ability TurnOn
+    }
+    do remove flag hint-radio-on
+    do show "The radio clicks off."
+}
+
+# Trick here! Make HINT Radio an NPC that never spawns... but that doesn't prevent us from using the
+# "npc says" trigger action, so it's like the radio "character" is talking to the player from nowhere.
+npc hint_radio_npc {
+    name "HINT Radio"
+    desc "<Player should never see this since the NPC will never be spawned.>"
+    location nowhere "never spawn -- used for voice from HINT radio"
+    state normal
+    dialogue normal {
+        "(static)"
+    }
+}
