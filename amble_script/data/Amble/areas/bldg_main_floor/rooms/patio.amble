@@ -51,7 +51,7 @@ item plaque_3 {
     portable false
     location room patio
     ability Read
-    text "Need a pointless but entertaining quote here."
+    text "There are, it has been said, two types of people in the world. There are those who, when presented with a glass that is exactly half full, say: this glass is half full. And then there are those who say: this glass is half empty. The world belongs, however, to those who can look at the glass and say: What's up with this glass? Excuse me? Excuse me? This is my glass? I don't think so. My glass was full! And it was a bigger glass! Who's been pinching my beer?  -- Terry Pratchett"
 }
 
 # ========================================
