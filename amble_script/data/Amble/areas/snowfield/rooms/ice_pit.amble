@@ -73,6 +73,7 @@ when use item plaque_2_frozen ability read {
 
 trigger "[Plaque 2] Read the Plaque" only once
 when use item plaque_2 ability read {
+    do remove flag tried-read-plaque-2
     do add flag read-plaque-2
     do award points 10
 }
@@ -125,6 +126,17 @@ when act burn on item unlit_campfire {
         }
     }
 }
+
+# ========================================
+# Hint Radio Messages
+# ========================================
+trigger "Hint: Find Items to Build a Fire"
+when always {
+    if all(has flag tried-read-plaque-2, missing flag campfire-lit, has flag hint-radio-on, in rooms ice-pit ){
+        do npc says hint_radio_npc "To melt that pillar, you'll need to drop some firewood here and light it with something."
+    }
+}
+
 
 # ========================================
 # Goals
