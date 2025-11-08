@@ -465,7 +465,11 @@ fn dispatch_use_item_triggers(
 /// fails due to missing world data.
 pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
-    if let Some(entity) = find_world_object(&current_room.contents, &world.items, &world.npcs, item_pattern) {
+    let scope = nearby_reachable_items(world, current_room.id)?
+        .union(&world.player.inventory)
+        .copied()
+        .collect::<HashSet<_>>();
+    if let Some(entity) = find_world_object(&scope, &world.items, &world.npcs, item_pattern) {
         if let Some(item) = entity.item() {
             if item.abilities.contains(&ItemAbility::TurnOn) {
                 info!("Player switched on {} ({})", item.name(), item.symbol());
@@ -551,7 +555,11 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
 /// fails because required world data is missing.
 pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<()> {
     let current_room = world.player_room_ref()?;
-    if let Some(entity) = find_world_object(&current_room.contents, &world.items, &world.npcs, item_pattern) {
+    let scope = nearby_reachable_items(world, current_room.id)?
+        .union(&world.player.inventory)
+        .copied()
+        .collect::<HashSet<_>>();
+    if let Some(entity) = find_world_object(&scope, &world.items, &world.npcs, item_pattern) {
         if let Some(item) = entity.item() {
             if item.abilities.contains(&ItemAbility::TurnOff) {
                 info!("Player switched off {} ({})", item.name(), item.symbol());
