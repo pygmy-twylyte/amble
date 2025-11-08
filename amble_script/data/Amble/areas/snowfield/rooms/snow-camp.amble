@@ -23,7 +23,7 @@ item spent_flamethrower {
     name "Spent Flamethrower"
     desc """A scorched and half-fused flamethrower, empty and broken beyond repair. The igniter’s casing is still warm. A faded label reads:
  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-┃ Weyland-Yutani: Thermal Unit / Antarctica Series ┃
+  Weyland-Yutani: Thermal Unit / Antarctica Series
  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
     portable true
