@@ -61,7 +61,7 @@ item plaque_3 {
 trigger "[Plaque 3] Read the Plaque" only once
 when use item plaque_3 ability read {
     do add flag read-plaque-3
-    do award points 10
+    do award points 10 reason "Decoded the third crystal plaque"
 }
 
 trigger "[Patio] Sunglasses Required" when enter room patio {
@@ -78,6 +78,6 @@ trigger "[Patio] Award Points Getting In" only once
 note "separate one-off trigger to award first time getting in"
 when enter room patio {
     if has item peril_sunglasses {
-        do award points 2
+        do award points 2 reason "Reached the patio through the starburst safely"
     }
 }

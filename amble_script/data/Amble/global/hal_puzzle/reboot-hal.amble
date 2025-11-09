@@ -28,7 +28,7 @@ when always {
 trigger "[Monolith-Room] HAL/All Modules In" only once
 when always {
     if flag complete hal-reboot {
-        do award points 10
+        do award points 10 reason "Fully restored HAL's memory core"
         do set npc state hal_9000 custom:memory-3
         do show "All memory now restored, HAL-9000 finishes rebooting and is fully operational."
     }

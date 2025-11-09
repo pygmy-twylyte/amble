@@ -25,7 +25,7 @@ when drink item strange_liquid {
     }
     do schedule in 7 {
         do remove flag status:tripping
-        do award points 5
+        do award points 5 reason "Rode out the strange liquid vision quest"
     }
     do schedule in 20 if missing flag appeased-black-knight onFalse cancel {
         do show "<Flashback> A medieval knight smiles as he slices aluminum cans and tomatoes with his sword."

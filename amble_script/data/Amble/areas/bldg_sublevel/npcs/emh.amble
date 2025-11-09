@@ -38,11 +38,11 @@ note "can add specific has flag conditions here to use this for any nausea-induc
 when talk to npc emh {
     if has flag read-vogon-poetry {
         do remove flag read-vogon-poetry
-        do award points 3
+        do award points 3 reason "Got treatment for reading Vogon poetry"
         do npc says emh "You poor fool, you look horrible. You've been reading Vogon poetry, hmmm? Here, this should help."
     }
     if has flag ate-sausage {
-        do award points 3
+        do award points 3 reason "Recovered from eating Dibbler's sausage"
         do npc says emh "Ugh -- your breath is horrid! You ate one of Dibbler's sausages, didn't you? Tasty but toxic, I say."
         do remove flag ate-sausage
     }

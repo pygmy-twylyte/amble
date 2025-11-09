@@ -84,7 +84,7 @@ when use item crowbar on item vending_machine interaction open
     do add flag vending-machine-pried
     do add flag hal-module-in-crevice
     do set item description vending_machine "A battered and broken vending machine -- even more so since you took a crowbar to it. Miraculously, the glass still remains intact on the front panel which has been pried open and hangs on a slant. Empty now, the machine's contents have all spilled out on the floor."
-    do award points 5
+    do award points 5 reason "Pried the vending machine open to expose HAL's module"
 }
 
 trigger "[Main-Lobby] Fish HAL Module Out of Crevice" only once
@@ -95,7 +95,7 @@ when use item fishing_line on item hal_module_2_crevice interaction handle
         do despawn item hal_module_2_crevice
         do set item description hal_module_2 "Second in the trio of HAL's missing memory modules. Its red LED pulses gently, like a heartbeat—or a warning. Its case was cracked during retrieval from the vending machine and floor crevice, but it still seems serviceable."
         do spawn item hal_module_2 in inventory
-        do award points 10
+        do award points 10 reason "Fished HAL module #2 out of the floor crevice"
         do add flag hal-module-2-retrieved
         do advance flag module-2-puzzle
     }

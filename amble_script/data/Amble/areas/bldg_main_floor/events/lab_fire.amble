@@ -58,7 +58,7 @@ trigger "[Aperture-Lab] FoamSafe Misfire" only once when use item foamsafe_x17 o
         do show "The alarms stop. The fire in the Aperture lab has been extinguised. Hopefully nobody saw you light it, you monster."
         do advance flag foam-fire-in-lab
         do remove flag lab-fire-raging
-        do award points 5
+        do award points 5 reason "Waited out the foam fire you caused"
     }
 }
 

@@ -29,7 +29,7 @@ item empty_battery {
 trigger "[Gonk Droid] Battery Exchange" only once
 note "necessary step in portal gun puzzle"
 when give item empty_battery to npc gonk_droid {
-    do award points 2
+    do award points 2 reason "Swapped the drained battery with the helpful gonk droid"
     do give item charged_battery to player from npc gonk_droid
     do set npc state gonk_droid happy
     do show "Elated that you've given it such a large, empty battery to charge, the gonk droid gives you a fully charged one, free of ... charge?"
@@ -44,7 +44,7 @@ when open item portal_gun {
 trigger "[Portal-Room] Gun Powered"
 when insert item charged_battery into item portal_gun {
     do add flag portal-gun-powered
-    do award points 3
+    do award points 3 reason "Powered up the portal gun"
     do restrict item charged_battery
     do set item description portal_gun "A black and white Portal gun sits bolted to its pedestal, aimed at a target on the wall. A fused battery juts from the compartment and the power indicator glows steadily green."
     do show "Arcing wildly as you insert it, the fully charged 20 KV battery fuses itself to the contacts inside the portal gun -- when then emits a quick high-pitched whine. The POWER indicator lights a steady green."
@@ -55,7 +55,7 @@ when use item portal_gun ability turnOn {
     if has flag portal-gun-powered {
         do reveal exit from portal-room to aperture-lab direction portal
         do add flag portal-opened
-        do award points 5
+        do award points 5 reason "Opened a portal into Aperture Labs"
         do show "A loud SQUIP! comes from the gun when you turn it on. The wall in front of it sizzles for a moment, and then a crackling oval blue portal expands on the wall to reveal a laboratory space on the other side."
     }
 }

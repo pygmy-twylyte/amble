@@ -33,7 +33,7 @@ trigger "[Lift-Bank-Main] Point Award On First Activation" only once when enter 
     if has item elevator_keycard {
         do add flag elevator-activated
         do show "The main lift lights up, and Muzak plays over a tinny speaker inside. In horror, you realize: It's Porcupine Tree's 'The Sound of Muzak' -- the Muzak version."
-        do award points 3
+        do award points 3 reason "Activated the main lift with the keycard"
     }
 }
 

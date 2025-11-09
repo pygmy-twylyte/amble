@@ -31,6 +31,6 @@ item emh_button {
 trigger "Spawn the EMH" only once
 when touch item emh_button {
     do spawn npc emh into room med-bay
-    do award points 3
+    do award points 3 reason "Activated the Emergency Medical Hologram"
     do npc says emh "Please state the nature of your medical emergency."
 }

@@ -67,7 +67,7 @@ trigger "Eat a Fortune Cookie"
 note "player gets random different fortunes each time from the 'fortunes' spinner"
 when eat item fortune_cookies_of_doom {
     do show "You dare to eat a Fortune Cookie of Doom..."
-    do award points 1
+    do award points 1 reason "Ate a Fortune Cookie of Doom"
     do spinner message fortunes
 }
 
@@ -168,7 +168,7 @@ when enter room main-lobby
     do schedule in 3 if player in room main-lobby onFalse cancel
     note "lobby loitering reminder" {
         do show """A chime echoes through the lobby. "Candidates: Please do not loiter in the lobby," intones an overhead voice."""
-        do award points -1
+        do award points -1 reason "Ignored the lobby loitering reminder"
     }
 }
 
@@ -180,7 +180,7 @@ when use item zircon_tweezers on item hal_module_2_crevice interaction handle
         do show "The glint of the zircon-encrusted tweezers is truly something to behold, but the tweezers are too short to reach the memory module. In fact, in trying to reach that far into the crack with them, the tweezers slip from your fingers and fall into the crevice too."
         do replace drop item zircon_tweezers with zircon_tweezers_crevice
         do add flag lost-tweezers
-        do award points -2
+        do award points -2 reason "Dropped your zircon tweezers into the vending machine crevice"
     }
 }
 
@@ -191,5 +191,5 @@ when use item fishing_line on item zircon_tweezers_crevice interaction handle
     do despawn item zircon_tweezers_crevice
     do spawn item zircon_tweezers in inventory
     do add flag recovered-tweezers
-    do award points 3
+    do award points 3 reason "Fished the zircon tweezers out of the vending machine"
 }

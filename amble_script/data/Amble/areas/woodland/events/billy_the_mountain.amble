@@ -15,7 +15,7 @@ when use item scrawled_note ability read
         do schedule on 11 note "lol just Billy" {
             do show "The rumbling stops. Then, after a minute, the voice again: \"Erm, it turns out that was just Billy waking up. Cancel the evacuation, and have a productive day.\""
             do remove flag self-destruct-armed
-            do award points 2
+            do award points 2 reason "Kept your cool through Billy the Mountain's fake self-destruct"
             do add flag survived-fake-explosion
         }
     }

@@ -230,9 +230,9 @@ impl RawNpcMovementPatch {
         }
 
         let timing = self.timing.as_ref().map(|timing_str| match timing_str {
-                RawMovementTimingPatch::EveryNTurns { turns } => MovementTiming::EveryNTurns { turns: *turns },
-                RawMovementTimingPatch::OnTurn { turn } => MovementTiming::OnTurn { turn: *turn },
-            });
+            RawMovementTimingPatch::EveryNTurns { turns } => MovementTiming::EveryNTurns { turns: *turns },
+            RawMovementTimingPatch::OnTurn { turn } => MovementTiming::OnTurn { turn: *turn },
+        });
 
         Ok(NpcMovementPatch {
             route,
@@ -343,6 +343,7 @@ pub enum RawTriggerAction {
     },
     AwardPoints {
         amount: isize,
+        reason: String,
     },
     SetBarredMessage {
         exit_from: String,
@@ -493,7 +494,10 @@ impl RawTriggerAction {
             Self::NpcSays { npc_id, quote } => cook_npc_says(symbols, npc_id, quote),
             Self::AddFlag { flag } => Ok(TriggerAction::AddFlag(flag.clone())),
             Self::RemoveFlag { flag } => Ok(TriggerAction::RemoveFlag(flag.to_string())),
-            Self::AwardPoints { amount } => Ok(TriggerAction::AwardPoints(*amount)),
+            Self::AwardPoints { amount, reason } => Ok(TriggerAction::AwardPoints {
+                amount: *amount,
+                reason: reason.clone(),
+            }),
             Self::SpawnItemCurrentRoom { item_id } => cook_spawn_item_current_room(symbols, item_id),
             Self::PushPlayerTo { room_id } => cook_push_player_to(symbols, room_id),
             Self::GiveItemToPlayer { npc_id, item_id } => cook_give_item_to_player(symbols, npc_id, item_id),
