@@ -57,7 +57,7 @@ trigger "[Sublevel-1-Entrance] Sharpen Knight's Sword" only once when act sharpe
     do replace item dull_longsword with keen_longsword
     do show "After years of sharpening Ginsu knives to cut open aluminum cans and tomatoes, you have no problem honing the Black Knight's sword to a keen edge."
     do add flag sword-sharpened
-    do award points 3
+    do award points 3 reason "Sharpened the Black Knight's sword"
 }
 
 trigger "[Sublevel-1-Entrance] Black Knight Kicks Player After Sword Taken" when always {
@@ -73,7 +73,7 @@ when give item keen_longsword to npc black_knight
     do restrict item keen_longsword
     do add flag appeased-black-knight
     do set barred message from sublevel-1-entrance to room-aa-3b "As you near the door, you are overwhelmed by a sense of spinning through an unending series of fictional realities, compelling you to step away."
-    do award points 5
+    do award points 5 reason "Appeased the Black Knight with a sharpened blade"
     do set npc state black_knight happy
     do npc says black_knight "hank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like."
 }

@@ -52,7 +52,7 @@ trigger "[Poetry-Panic] Acquired Elevator Keycard" only once when take item elev
 }
 
 trigger "[Office] Insert Poems to Open Panic Room" only once when insert item vogon_poetry_book into item poetry_performer {
-    do award points 5
+    do award points 5 reason "Unlocked the poetry panic room with Vogon verse"
     do despawn item vogon_poetry_book
     do add flag panic-room-open
     do reveal exit from b-a-office to poetry-panic direction west

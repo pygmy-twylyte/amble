@@ -154,7 +154,7 @@ trigger "[Loading-Dock] Open Security Crate (Burn)" only once when act burn on i
 trigger "[Loading-Dock] Got Crowbar" only once when take item crowbar {
     do show "You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?"
     do add flag got-crowbar
-    do award points 3
+    do award points 3 reason "Recovered the iconic crowbar"
     do schedule in 2 note "notice fiction bleed" {
         do show "... and then you wonder why you're thinking of Barney as a real person instead of a character in a game. And Gordon, for that matter. Wait, he was just *fiction*, right? Come to think of it, you feel a little unsure of reality, and it's worse the nearer you are to the building."
     }

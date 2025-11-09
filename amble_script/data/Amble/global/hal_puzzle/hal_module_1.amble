@@ -74,7 +74,7 @@ note "advance to mobilize-emh#2 when mobile emitter repaired"
 when act repair on item broken_emitter {
     do show "After a few seconds, the emitter lights up and reboots, passing all self-tests."
     do replace item broken_emitter with working_emitter
-    do award points 3
+    do award points 3 reason "Repaired the EMH's mobile emitter"
     do advance flag mobilize-emh
 }
 

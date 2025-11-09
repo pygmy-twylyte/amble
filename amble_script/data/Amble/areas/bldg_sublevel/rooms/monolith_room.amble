@@ -54,7 +54,7 @@ when touch item monolith
     }
     if flag complete hal-reboot {
         do add flag touched-monolith
-        do award points 15
+        do award points 15 reason "Made contact with the monolith"
         do show "You reach out and place your palm against the monolith's impossibly smooth surface. For a moment, nothing happens. Then reality seems to shiver around you. Images flash through your mind - star-filled voids, impossible geometries, the birth and death of civilizations. You stagger backward, forever changed by the contact. The path to understanding has opened."
     }
 }

@@ -50,7 +50,7 @@ when use item plaque_1 ability read {
 trigger "[Parish-Landing] Plaque 1 Cleaned" only once
 when act clean on item plaque_1 {
     do add flag cleaned-plaque-1
-    do award points 3
+    do award points 3 reason "Cleaned the grime off plaque 1"
     do show "With some saliva and a little effort, you're able to remove the grime and bring the plaque to a dull shine."
 }
 
@@ -58,7 +58,7 @@ trigger "[Parish-Landing] Read Cleaned Plaque 1" only once
 when use item plaque_1 ability read {
     if has flag cleaned-plaque-1 {
         do add flag read-plaque-1
-        do award points 5
+        do award points 5 reason "Read the first crystal plaque"
     }
 }
 

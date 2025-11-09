@@ -25,7 +25,7 @@ trigger "[Two-Sheds-Landing] Cut or Chop Tree" only once when act cut on item fa
     do despawn item fallen_tree
     do add flag cleared-fallen-tree
     do add flag chopped-fallen-tree
-    do award points 5
+    do award points 5 reason "Cleared the fallen tree the hard way"
 }
 
 trigger "[Two-Sheds-Landing] Arson-Aid Used on Tree" only once
@@ -37,7 +37,7 @@ trigger "[Two-Sheds-Landing] Burn Tree" only once when act burn on item fallen_t
     do despawn item fallen_tree
     do add flag cleared-fallen-tree
     do add flag burned-fallen-tree
-    do award points 5
+    do award points 5 reason "Vaporized the fallen tree with an inferno"
     do show "WHOOOOOMPH! The fallen tree erupts into flame and, quite improbably, is reduced to ash in mere seconds."
 }
 

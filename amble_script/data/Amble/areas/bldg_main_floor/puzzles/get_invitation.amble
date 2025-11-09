@@ -53,7 +53,7 @@ trigger "[Aperture-Lab] Print Invitation on Asbestos" only once
 when use item lab_printer ability turnOn {
     if container lab_printer has item asbestos_sheet {
         do add flag invitation-sans-ignition
-        do award points 10
+        do award points 10 reason "Printed the invitation on asbestos stock"
         do despawn item asbestos_sheet
         do show "The PlasmaJet emits a blinding flash of light, leaving a printer-shaped purple blob in your visual field and blinding you for a few moments."
         do schedule in 2 note "blindness clears" {
@@ -73,7 +73,7 @@ when act handle on item invitation {
     do despawn item invitation
     do spawn item invitation in inventory
     do add flag got-invitation
-    do award points 5
+    do award points 5 reason "Grabbed the molten invitation with a towel"
     do show "Using your towel as insulation, you're able to wrangle the still-hot invitation into your pack."
 }
 

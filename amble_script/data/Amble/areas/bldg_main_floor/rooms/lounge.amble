@@ -58,7 +58,7 @@ item hot_coffee {
 trigger "[Lounge] Rug Taken / Reveal Trapdoor" only once when take item lebowski_rug {
     do reveal exit from lounge to portal-room direction down
     do add flag found-portal-room
-    do award points 3
+    do award points 3 reason "Found the trapdoor beneath the rug"
     do show "Light shines around the edges of a trap door revealed in the floor when you remove the rug. The room no longer seems tied together."
 }
 
@@ -66,7 +66,7 @@ trigger "[Lounge] Rug Burned Away" only once when act burn on item lebowski_rug 
     do despawn item lebowski_rug
     do reveal exit from lounge to portal-room direction down
     do add flag found-portal-room
-    do award points 3
+    do award points 3 reason "Revealed the trapdoor by torching the rug"
     do show "When the acrid smoke clears and your eyes stop burning, you can make out a trap door revealed in the floor where the rug used to be."
 }
 
@@ -80,7 +80,7 @@ when use item coffee_machine ability turnOn
         do show "♪ BEEP BEEP BEEP! ♪ The coffee machine chimes cheerfully. The rich aroma of freshly brewed coffee fills the air."
         do spawn item hot_coffee into room lounge
         do add flag coffee-brewed
-        do award points 2
+        do award points 2 reason "Brewed a cup of hot coffee"
     }
 }
 
