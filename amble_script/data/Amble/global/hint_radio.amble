@@ -26,6 +26,20 @@ trigger "Turn Hint Radio On" when use item hint_radio ability turnOn {
     do show "The radio clicks on and emits a soft static."
 }
 
+trigger "Turn Hint Radio On: First Time" only once
+note "explanatory message and points only on first activation"
+when use item hint_radio ability turnOn {
+    do show "A soothing yet somehow disquieting and familiar voice flows from the radio's speaker."
+    if has flag burned-fallen-tree {
+        do npc says hint_radio_npc "Congratulations, Candidate, you've passed your first obstacle - though you lose a point for nearly starting a forest fire. I am your -- handler, let's say -- and this is your HINT radio. In some circumstances, I may be able to provide some extra direction to help you along -- but it looks better if you don't rely on me too heavily."
+        do award points -1
+    }
+    if has flag chopped-fallen-tree {
+        do npc says hint_radio_npc "Congratulations, Candidate. You've cleared the fallen tree, and you get a bonus point for choosing the hard path of chopping through the tree rather than starting a forest fire. I am your -- handler, let's say -- and this is your HINT radio. In some circumstances, I may be able to provide some extra direction to help you along -- but it looks better if you don't rely on me too heavily."
+        do award points 1
+    }
+}
+
 trigger "Turn Hint Radio Off" when use item hint_radio ability turnOff {
     do modify item hint_radio {
         name "HINT Radio (off)"
