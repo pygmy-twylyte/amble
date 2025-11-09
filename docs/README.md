@@ -1,7 +1,7 @@
 # Amble
 
 <picture>
-  <source srcset="amble_logo_transparent.png" />
+  <source srcset="amble_logo.png" />
   <img src="amble_logo.png" alt="Amble Logo" width="260" />
 </picture>
 
