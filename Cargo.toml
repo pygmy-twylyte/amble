@@ -1,3 +1,11 @@
 [workspace]
 members = ["amble_engine", "amble_script", "xtask"]
 resolver = "3"
+
+[workspace.package]
+edition = "2024"
+license = "MIT"
+homepage = "https://github.com/pygmy-twylyte/amble"
+repository = "https://github.com/pygmy-twylyte/amble"
+documentation = "https://github.com/pygmy-twylyte/amble"
+readme = "README.md"

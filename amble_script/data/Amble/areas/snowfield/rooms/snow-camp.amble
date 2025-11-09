@@ -37,3 +37,11 @@ item firewood {
     location room snow-camp
     requires ignite to burn
 }
+
+trigger "Firewood HINT"
+note "HINT radio: use firewood in ice-pit for plaque 2"
+when always {
+    if all(has flag hint-radio-on, has flag tried-read-plaque-2, in rooms snow-camp) {
+        do npc says hint_radio_npc "Looks like the researchers didn't get their fire lit before the dog-Thing got to them. Bad day for them, but maybe good for you. Maybe you can move it down into the ice pit to melt the ice encasing the pillar there."
+    }
+}

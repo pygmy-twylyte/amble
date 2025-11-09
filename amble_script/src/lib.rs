@@ -2718,7 +2718,7 @@ trigger "Aperture-Lab: Can't Enter While On Fire" when enter room aperture-lab {
         assert!(
             ast.actions
                 .iter()
-                .any(|a| matches!(a, ActionAst::PushPlayerTo(ref r) if r == "portal-room"))
+                .any(|a| matches!(a, ActionAst::PushPlayerTo(r) if r == "portal-room"))
         );
 
         let toml = compile_trigger_to_toml(&ast).expect("compile ok");

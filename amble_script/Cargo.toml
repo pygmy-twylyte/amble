@@ -1,8 +1,15 @@
 [package]
 name = "amble_script"
-version = "0.60.0"
-edition = "2021"
-description = "DSL for the Amble game engine."
+version = "0.62.0"
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+documentation.workspace = true
+readme.workspace = true
+description = "Authoring-focused DSL, parser, and compiler that produces Amble engine TOML data."
+keywords = ["dsl", "parser", "compiler", "interactive-fiction", "cli"]
+categories = ["compilers", "parsing", "command-line-utilities"]
 
 [lib]
 name = "amble_script"
