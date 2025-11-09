@@ -2348,11 +2348,23 @@ fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
         return Ok(ActionAst::DespawnItem(rest.trim().to_string()));
     }
     if let Some(rest) = t.strip_prefix("do award points ") {
-        let n: i64 = rest
-            .trim()
+        let rest = rest.trim();
+        let mut parts = rest.splitn(2, ' ');
+        let amount_part = parts.next().ok_or(AstError::Shape("award points missing amount"))?;
+        let amount: i64 = amount_part
             .parse()
             .map_err(|_| AstError::Shape("invalid points number"))?;
-        return Ok(ActionAst::AwardPoints(n));
+        let remainder = parts
+            .next()
+            .ok_or(AstError::Shape("award points missing reason"))?
+            .trim();
+        let reason_text = remainder
+            .strip_prefix("reason")
+            .ok_or(AstError::Shape("award points missing reason keyword"))?
+            .trim();
+        let (reason, _used) =
+            parse_string_at(reason_text).map_err(|_| AstError::Shape("award points missing or invalid reason"))?;
+        return Ok(ActionAst::AwardPoints { amount, reason });
     }
     Err(AstError::Shape("unknown action"))
 }

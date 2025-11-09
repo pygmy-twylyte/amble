@@ -141,7 +141,7 @@ fn test_style_item() {
 fn test_trigger_award_points() {
     let mut world = world::AmbleWorld::new_empty();
     let mut view = View::new();
-    trigger::award_points(&mut world, &mut view, 5);
+    trigger::award_points(&mut world, &mut view, 5, "test harness bonus");
     assert_eq!(world.player.score, 6); // default 1 + 5
 }
 

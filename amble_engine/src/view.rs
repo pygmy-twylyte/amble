@@ -21,6 +21,7 @@ const ICON_TRIGGER: &str = "⚡︎"; // U+26A1 U+FE0E
 const ICON_AMBIENT: &str = "⌘";
 const ICON_NEGATIVE: &str = "➖";
 const ICON_POSITIVE: &str = "➕";
+const ICON_CELEBRATE: &str = "🎉"; // U+1F389
 const ICON_ENGINE: &str = "⚙";
 const ICON_STATUS: &str = "⚕";
 const ICON_NPC_ENTER: &str = "→"; // U+2192
@@ -202,21 +203,16 @@ impl View {
     fn points_awarded(&mut self) {
         let point_msgs = self.items.iter().filter(|i| i.is_points_awarded());
         for msg in point_msgs {
-            if let ViewItem::PointsAwarded(amount) = msg {
+            if let ViewItem::PointsAwarded { amount, reason } = msg {
                 if amount.is_negative() {
-                    println!(
-                        "{:<4}You were penalized {} point{}.",
-                        ICON_NEGATIVE.bright_red(),
-                        amount.abs(),
-                        plural_s(amount.abs())
-                    );
+                    let text = format!("{} (-{} point{})", reason, amount.abs(), plural_s(amount.abs())).bright_red();
+                    println!("{:<4}{}", ICON_NEGATIVE.bright_red(), text);
+                } else if *amount > 15 {
+                    let text = format!("{} (+{} point{}!)", reason, amount, plural_s(*amount)).bright_blue();
+                    println!("{:<4}{}", ICON_CELEBRATE.bright_blue(), text);
                 } else {
-                    println!(
-                        "{:<4}You were awarded {} point{}.",
-                        ICON_POSITIVE.bright_green(),
-                        amount,
-                        plural_s(*amount)
-                    );
+                    let text = format!("{} (+{} point{})", reason, amount, plural_s(*amount)).bright_green();
+                    println!("{:<4}{}", ICON_POSITIVE.bright_green(), text);
                 }
             }
         }
@@ -834,7 +830,10 @@ pub enum ViewItem {
         npc_name: String,
         spin_msg: String,
     },
-    PointsAwarded(isize),
+    PointsAwarded {
+        amount: isize,
+        reason: String,
+    },
     QuitSummary {
         title: String,
         rank: String,
@@ -889,7 +888,7 @@ impl ViewItem {
             | ViewItem::NpcEntered { .. }
             | ViewItem::NpcLeft { .. }
             | ViewItem::TriggeredEvent(_)
-            | ViewItem::PointsAwarded(_)
+            | ViewItem::PointsAwarded { .. }
             | ViewItem::StatusChange { .. } => Section::WorldResponse,
             ViewItem::AmbientEvent(_) => Section::Ambient,
             ViewItem::QuitSummary { .. }

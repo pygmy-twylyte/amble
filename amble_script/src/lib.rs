@@ -5,7 +5,7 @@
 //! - `  if missing flag <ident> {`
 //! - `    do show "..."`
 //! - `    do add flag <ident>`
-//! - `    do award points <number>`
+//! - `    do award points <number> reason "text"`
 //! - `  }`
 //! - `}`
 //!
@@ -169,8 +169,11 @@ pub enum ActionAst {
         name: String,
         end: Option<u8>,
     },
-    /// Award points to the player's score.
-    AwardPoints(i64),
+    /// Award points to the player's score with a reason string.
+    AwardPoints {
+        amount: i64,
+        reason: String,
+    },
     /// Remove a flag by name.
     RemoveFlag(String),
     /// Replace an item instance by symbol with another
@@ -1557,10 +1560,11 @@ fn action_to_value(a: &ActionAst) -> toml_edit::Value {
             t.insert("flag", toml_edit::Value::from(flag_tbl));
             toml_edit::Value::from(t)
         },
-        ActionAst::AwardPoints(amount) => {
+        ActionAst::AwardPoints { amount, reason } => {
             let mut t = InlineTable::new();
             t.insert("type", toml_edit::Value::from("awardPoints"));
             t.insert("amount", toml_edit::Value::from(*amount));
+            t.insert("reason", toml_edit::Value::from(reason.clone()));
             toml_edit::Value::from(t)
         },
         ActionAst::RemoveFlag(name) => {
@@ -2382,7 +2386,7 @@ trigger "first visit high-ridge" when enter room high-ridge {
   if missing flag visited:high-ridge {
     do show "You take in the view."
     do add flag visited:high-ridge
-    do award points 1
+    do award points 1 reason "First visit to the high ridge"
   }
 }
 "#;
@@ -2398,7 +2402,10 @@ trigger "first visit high-ridge" when enter room high-ridge {
             vec![
                 ActionAst::Show("You take in the view.".into()),
                 ActionAst::AddFlag("visited:high-ridge".into()),
-                ActionAst::AwardPoints(1),
+                ActionAst::AwardPoints {
+                    amount: 1,
+                    reason: "First visit to the high ridge".into(),
+                },
             ]
         );
 
@@ -2446,7 +2453,7 @@ trigger "example spawn" when enter room pantry {
     do add flag cake-spawned
     do remove flag got-key
     do despawn item old-cake
-    do award points 2
+    do award points 2 reason "Conjured a cake in the pantry"
   }
 }
 "#;
@@ -2487,11 +2494,13 @@ trigger "example spawn" when enter room pantry {
                 .iter()
                 .any(|a| matches!(a, ActionAst::DespawnItem(s) if s == "old-cake"))
         );
-        assert!(
-            ast.actions
-                .iter()
-                .any(|a| matches!(a, ActionAst::AwardPoints(n) if *n == 2))
-        );
+        assert!(ast.actions.iter().any(|a| {
+            matches!(
+                a,
+                ActionAst::AwardPoints { amount, reason }
+                    if *amount == 2 && reason == "Conjured a cake in the pantry"
+            )
+        }));
 
         // compile to TOML and spot-check keys
         let toml = compile_trigger_to_toml(&ast).expect("compile ok");
@@ -2787,7 +2796,7 @@ trigger "schedule demo" when enter room lab {
       do add flag scheduled
     }
     do schedule on 20 if missing flag late onFalse cancel {
-      do award points 1
+      do award points 1 reason "Stayed on schedule"
     }
   }
 }
@@ -2841,7 +2850,7 @@ trigger "schedule simple" when enter room lab {
     do show "soon"
   }
   do schedule on 42 note "absolute" {
-    do award points 5
+    do award points 5 reason "Hit the exact scheduled turn"
   }
 }
 "#;

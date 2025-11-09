@@ -60,6 +60,7 @@ keyword = {
   | "restrict"
   | "barred"
   | "message"
+  | "reason"
   | "loop"
   | "eat"
   | "drink"
@@ -193,7 +194,7 @@ do_action        =  {
   | ("spawn" ~ "npc" ~ ident ~ "into" ~ "room" ~ ident)
   | ("despawn" ~ "item" ~ ident)
   | ("despawn" ~ "npc" ~ ident)
-  | ("award" ~ "points" ~ number)
+  | ("award" ~ "points" ~ number ~ "reason" ~ string)
   | ("schedule" ~ (!"{" ~ ANY)* ~ balanced_braces)
   | ("lock" ~ "item" ~ ident)
   | ("unlock" ~ "item" ~ ident)

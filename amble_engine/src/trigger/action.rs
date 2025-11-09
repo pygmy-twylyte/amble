@@ -162,7 +162,7 @@ pub enum TriggerAction {
     /// Removes a flag from the player
     RemoveFlag(String),
     /// Awards points to the player (negative values subtract points)
-    AwardPoints(isize),
+    AwardPoints { amount: isize, reason: String },
     /// Sets a custom message for a blocked exit between two rooms
     SetBarredMessage { exit_from: Uuid, exit_to: Uuid, msg: String },
     /// Prevents reading an item with a custom denial message
@@ -325,7 +325,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
         LockExit { from_room, direction } => lock_exit(world, from_room, direction)?,
         AddFlag(flag) => add_flag(world, view, flag),
         RemoveFlag(flag) => remove_flag(world, view, flag),
-        AwardPoints(amount) => award_points(world, view, *amount),
+        AwardPoints { amount, reason } => award_points(world, view, *amount, reason),
         Conditional { condition, actions } => {
             if condition.eval(world) {
                 for nested in actions {
@@ -1232,16 +1232,20 @@ pub fn npc_says(world: &AmbleWorld, view: &mut View, npc_id: &Uuid, quote: &str)
 /// * `world` - Mutable reference to the game world containing the player
 /// * `view` - Mutable reference to the player's view for displaying the point award
 /// * `amount` - Number of points to award (negative values subtract points)
+/// * `reason` - Text shown to the player explaining why the score changed
 ///
 /// # Behavior
 ///
 /// - Player's score is updated using saturating arithmetic to prevent overflow/underflow
 /// - A message is displayed to the player showing the point change
 /// - The action is logged for audit purposes
-pub fn award_points(world: &mut AmbleWorld, view: &mut View, amount: isize) {
+pub fn award_points(world: &mut AmbleWorld, view: &mut View, amount: isize, reason: &str) {
     world.player.score = world.player.score.saturating_add_signed(amount);
-    info!("└─ action: AwardPoints({amount})");
-    view.push(ViewItem::PointsAwarded(amount));
+    info!("└─ action: AwardPoints({amount}, reason: {reason})");
+    view.push(ViewItem::PointsAwarded {
+        amount,
+        reason: reason.to_string(),
+    });
 }
 
 /// Adds a status flag to the player.
@@ -2584,9 +2588,9 @@ mod tests {
     fn award_points_modifies_player_score() {
         let (mut world, _, _) = build_test_world();
         let mut view = View::new();
-        award_points(&mut world, &mut view, 5);
+        award_points(&mut world, &mut view, 5, "test gain");
         assert_eq!(world.player.score, 6);
-        award_points(&mut world, &mut view, -3);
+        award_points(&mut world, &mut view, -3, "test loss");
         assert_eq!(world.player.score, 3);
     }
 
@@ -2872,7 +2876,10 @@ mod tests {
         let mut view = View::new();
         let actions = vec![
             TriggerAction::ShowMessage("First message".to_string()),
-            TriggerAction::AwardPoints(10),
+            TriggerAction::AwardPoints {
+                amount: 10,
+                reason: "scheduler bonus".into(),
+            },
             TriggerAction::ShowMessage("Second message".to_string()),
         ];
 
@@ -2887,7 +2894,10 @@ mod tests {
     fn schedule_on_with_no_note() {
         let (mut world, _, _) = build_test_world();
         let mut view = View::new();
-        let actions = vec![TriggerAction::AwardPoints(5)];
+        let actions = vec![TriggerAction::AwardPoints {
+            amount: 5,
+            reason: "scheduled payout".into(),
+        }];
 
         schedule_on(&mut world, &mut view, 100, &actions, None).unwrap();
 
@@ -2922,7 +2932,10 @@ mod tests {
         let mut view = View::new();
 
         let nested_actions = vec![
-            TriggerAction::AwardPoints(25),
+            TriggerAction::AwardPoints {
+                amount: 25,
+                reason: "exact timing".into(),
+            },
             TriggerAction::ShowMessage("Exact timing!".to_string()),
         ];
         let action = TriggerAction::ScheduleOn {
