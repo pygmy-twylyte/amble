@@ -1,5 +1,5 @@
 // Amble DSL Grammar
-// Amble version 0.60.0
+// Amble version 0.62.1
 
 COMMENT    = _{ "#" ~ (!NEWLINE ~ ANY)* }
 WHITESPACE = _{ " " | "\t" | NEWLINE | COMMENT }
@@ -241,8 +241,8 @@ item_add_ability           = { "add" ~ "ability" ~ ability_id }
 item_remove_ability        = { "remove" ~ "ability" ~ ability_id }
 ability_id                 = { ("Unlock" ~ "(" ~ ident ~ ")") | ident }
 
-npc_patch_block     = { "{" ~ npc_patch_stmt+ ~ "}" }
-npc_patch_stmt      = _{
+npc_patch_block        =  { "{" ~ npc_patch_stmt+ ~ "}" }
+npc_patch_stmt         = _{
     npc_patch_name
   | npc_patch_desc
   | npc_patch_state
@@ -254,18 +254,18 @@ npc_patch_stmt      = _{
   | npc_patch_active
   | npc_patch_loop
 }
-npc_patch_name           = { "name" ~ string }
-npc_patch_desc           = { ("description" | "desc") ~ string }
-npc_patch_state          = { "state" ~ npc_state_value }
-npc_patch_add_line       = { "add" ~ "line" ~ string ~ "to" ~ "state" ~ npc_state_value }
-npc_patch_route          = { "route" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")" }
-npc_patch_random_rooms   = { "random" ~ "rooms" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")" }
-npc_patch_timing_every   = { "timing" ~ "every" ~ number ~ "turns" }
-npc_patch_timing_on      = { "timing" ~ "on" ~ "turn" ~ number }
-npc_patch_active         = { "active" ~ boolean }
-npc_patch_loop           = { "loop" ~ boolean }
-npc_state_value          = { ident | npc_custom_state }
-npc_custom_state         = { "custom" ~ "(" ~ ident ~ ")" }
+npc_patch_name         =  { "name" ~ string }
+npc_patch_desc         =  { ("description" | "desc") ~ string }
+npc_patch_state        =  { "state" ~ npc_state_value }
+npc_patch_add_line     =  { "add" ~ "line" ~ string ~ "to" ~ "state" ~ npc_state_value }
+npc_patch_route        =  { "route" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")" }
+npc_patch_random_rooms =  { "random" ~ "rooms" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")" }
+npc_patch_timing_every =  { "timing" ~ "every" ~ number ~ "turns" }
+npc_patch_timing_on    =  { "timing" ~ "on" ~ "turn" ~ number }
+npc_patch_active       =  { "active" ~ boolean }
+npc_patch_loop         =  { "loop" ~ boolean }
+npc_state_value        =  { ident | npc_custom_state }
+npc_custom_state       =  { "custom" ~ "(" ~ ident ~ ")" }
 
 room_patch_block       =  { "{" ~ room_patch_stmt+ ~ "}" }
 room_patch_stmt        = _{
