@@ -1,5 +1,7 @@
-//! CLI entry point for amble_script.
-//! Usage: cargo run -p amble_script -- compile examples/first.able
+//! CLI entry point for `amble_script`.
+//! Typical usage:
+//! - `cargo run -p amble_script -- compile-dir /path/to/root/data/dir --out-dir amble_engine/data`
+//! - `cargo run -p amble_script -- lint amble_script/data/Amble --deny-missing`
 
 use std::{env, fs, process};
 

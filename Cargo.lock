@@ -56,7 +56,7 @@ dependencies = [
 
 [[package]]
 name = "amble_script"
-version = "0.62.0"
+version = "0.62.1"
 dependencies = [
  "pest",
  "pest_derive",

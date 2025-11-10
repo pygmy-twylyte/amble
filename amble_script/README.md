@@ -9,6 +9,11 @@
 - Linter catches unresolved references, type mismatches, and missing assets early.
 - CLI supports compiling single files, entire directories, or lint-only passes.
 
+## Amble DSL Syntax
+- one bit of the base game's code for handling a cake item gag can be seen in the screenshot from the Zed editor below
+
+<img src="docs/amble_zed_dsl_screenshot.png" alt="Amble DSL in Zed with syntax highlighting" width="950" />
+
 ## CLI Usage
 
 ```bash

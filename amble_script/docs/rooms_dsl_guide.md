@@ -177,11 +177,15 @@ Notes:
 ## CLI Usage
 
 ```
-# Compile rooms to TOML
-cargo run -p amble_script -- compile amble_script/examples/rooms_demo.amble --out-rooms /tmp/rooms.toml
+# Compile rooms (and any goals in the same file) to TOML
+cargo run -p amble_script -- compile \
+  amble_script/data/Amble/areas/bldg_perimeter/rooms/front_entrance.amble \
+  --out-rooms /tmp/rooms.toml --out-goals /tmp/goals.toml
 
-# Lint (rooms + triggers) with friendly suggestions and line/column pointers
-cargo run -p amble_script -- lint amble_script/examples/rooms_demo.amble --data-dir amble_engine/data --deny-missing
+# Lint a file with engine data for symbol validation
+cargo run -p amble_script -- lint \
+  amble_script/data/Amble/areas/bldg_perimeter/rooms/front_entrance.amble \
+  --data-dir amble_engine/data --deny-missing
 ```
 
 Generated files include a header comment indicating the source `.amble` and a “do not edit” notice. Each room entry is prefixed with a comment containing the DSL source line number.

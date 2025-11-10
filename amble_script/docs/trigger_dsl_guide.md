@@ -231,10 +231,13 @@ From the repo root:
 
 ```bash
 # Compile a DSL file to TOML (stdout)
-cargo run -p amble_script -- compile amble_script/examples/first.amble
+cargo run -p amble_script -- compile \
+  amble_script/data/Amble/global/anywhere_events.amble
 
-# Compile to a file
-cargo run -p amble_script -- compile amble_script/examples/third.amble --out /tmp/triggers.toml
+# Compile triggers to a file
+cargo run -p amble_script -- compile \
+  amble_script/data/Amble/global/anywhere_events.amble \
+  --out-triggers /tmp/triggers.toml
 
 # Run tests for the DSL crate
 cargo test -p amble_script

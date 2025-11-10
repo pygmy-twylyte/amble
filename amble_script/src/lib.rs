@@ -1,16 +1,30 @@
-//! `amble_script`: Minimal DSL and compiler for Amble triggers
+//! `amble_script` – authoring-focused DSL, parser, and compiler for building
+//! Amble worlds.
 //!
-//! This first iteration supports a single trigger shape:
-//! - `trigger "name" when enter room <ident> {`
-//! - `  if missing flag <ident> {`
-//! - `    do show "..."`
-//! - `    do add flag <ident>`
-//! - `    do award points <number> reason "text"`
-//! - `  }`
-//! - `}`
+//! The crate powers the `amble_script` CLI but is fully usable as a library.
+//! Major capabilities:
+//! - Parse and lint `.amble` sources for rooms, items, triggers, spinners, NPCs,
+//!   and goals, catching unresolved references early.
+//! - Compile the DSL into structured TOML that the `amble_engine` crate consumes.
+//! - Provide AST types so tooling can analyze or transform worlds before
+//!   serialization.
 //!
-//! The compiler produces a TOML representation matching the Amble engine's
-//! expected `RawTrigger` schema and prints it to stdout.
+//! ```ignore
+//! use amble_script::{parse_rooms, compile_rooms_to_toml};
+//!
+//! let src = r#"
+//! room foyer {
+//!   name "Foyer"
+//!   desc "An inviting entryway."
+//! }
+//! "#;
+//! let rooms = parse_rooms(src).expect("valid DSL");
+//! let toml = compile_rooms_to_toml(&rooms).expect("compiles");
+//! println!("{toml}");
+//! ```
+//!
+//! For a full language tour see `amble_script/docs/dsl_creator_handbook.md` in
+//! the repository.
 
 mod parser;
 pub use parser::{AstError, parse_program, parse_trigger};
