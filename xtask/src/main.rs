@@ -15,6 +15,8 @@ use std::{
 use anyhow::{Context, Result, anyhow, bail};
 use cargo_metadata::MetadataCommand;
 use clap::{Args, Parser, Subcommand, ValueEnum};
+use semver::Version;
+use toml_edit::{Document, value};
 use walkdir::WalkDir;
 use zip::{CompressionMethod, ZipWriter, write::FileOptions};
 
@@ -39,6 +41,8 @@ enum Commands {
         #[command(subcommand)]
         command: ContentCommands,
     },
+    /// End-to-end release workflow (version bump, publish, packages).
+    Release(ReleaseArgs),
 }
 
 #[derive(Args)]
@@ -115,6 +119,22 @@ struct ContentRefreshArgs {
     deny_missing: bool,
 }
 
+#[derive(Args)]
+struct ReleaseArgs {
+    /// Version applied to both amble_engine and amble_script (SemVer).
+    #[arg(long, value_name = "SEMVER")]
+    version: String,
+    /// Target triple used for Linux packages (defaults to host triple).
+    #[arg(long, value_name = "TRIPLE")]
+    linux_target: Option<String>,
+    /// Target triple used for Windows packages.
+    #[arg(long, value_name = "TRIPLE", default_value = "x86_64-pc-windows-msvc")]
+    windows_target: String,
+    /// Run every step except publishing to crates.io (useful for dry runs).
+    #[arg(long)]
+    skip_publish: bool,
+}
+
 #[derive(Clone, Copy, ValueEnum)]
 enum DevMode {
     Enabled,
@@ -159,7 +179,7 @@ struct Workspace {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    let workspace = Workspace::detect()?;
+    let mut workspace = Workspace::detect()?;
 
     match cli.command {
         Commands::BuildEngine(args) => build_engine(&workspace, &args),
@@ -170,6 +190,7 @@ fn main() -> Result<()> {
         Commands::Content { command } => match command {
             ContentCommands::Refresh(args) => refresh_content(&workspace, &args),
         },
+        Commands::Release(args) => release(&mut workspace, &args),
     }
 }
 
@@ -251,6 +272,255 @@ fn refresh_content(workspace: &Workspace, args: &ContentRefreshArgs) -> Result<(
     }
 
     run_command(&mut lint_cmd, "amble_script lint")
+}
+
+fn release(workspace: &mut Workspace, args: &ReleaseArgs) -> Result<()> {
+    let new_version = Version::parse(&args.version).context("parsing --version argument")?;
+    let linux_target = args
+        .linux_target
+        .clone()
+        .unwrap_or_else(|| workspace.host_triple.clone());
+    let windows_target = args.windows_target.clone();
+
+    println!("==> Verifying git status");
+    ensure_git_clean(workspace)?;
+    ensure_on_main(workspace)?;
+    ensure_git_synced_with_origin(workspace)?;
+
+    println!("==> Running cargo check (workspace, all targets)");
+    cargo_check_all_targets(workspace)?;
+    println!("==> Running cargo test (workspace)");
+    cargo_test_workspace(workspace)?;
+
+    println!("==> Refreshing compiled content");
+    let refresh_args = ContentRefreshArgs {
+        source: PathBuf::from("amble_script/data/Amble"),
+        out_dir: PathBuf::from("amble_engine/data"),
+        deny_missing: true,
+    };
+    refresh_content(workspace, &refresh_args)?;
+
+    ensure_git_clean(workspace).context("content refresh produced changes; commit or revert them before releasing")?;
+
+    println!("==> Updating crate versions to v{new_version}");
+    update_manifest_version(&workspace.root.join("amble_engine/Cargo.toml"), &new_version)?;
+    update_manifest_version(&workspace.root.join("amble_script/Cargo.toml"), &new_version)?;
+    update_lock_versions(&workspace.root.join("Cargo.lock"), &new_version)?;
+
+    workspace.engine_version = new_version.to_string();
+    workspace.script_version = new_version.to_string();
+
+    println!("==> Rechecking workspace after version bump");
+    cargo_check_all_targets(workspace)?;
+
+    let files_to_commit = [
+        workspace.root.join("amble_engine/Cargo.toml"),
+        workspace.root.join("amble_script/Cargo.toml"),
+        workspace.root.join("Cargo.lock"),
+    ];
+    git_add(workspace, &files_to_commit)?;
+
+    let commit_message = format!("Release v{}", new_version);
+    println!("==> Creating commit: {commit_message}");
+    git_commit(workspace, &commit_message)?;
+
+    let tag_name = format!("v{}", new_version);
+    println!("==> Tagging release: {tag_name}");
+    git_tag(workspace, &tag_name, &commit_message)?;
+
+    println!("==> Pushing main branch and tag");
+    git_push(workspace, "origin", "main")?;
+    git_push(workspace, "origin", &tag_name)?;
+
+    if args.skip_publish {
+        println!("==> Skipping cargo publish steps (flag enabled)");
+    } else {
+        println!("==> Publishing amble_script");
+        cargo_publish(workspace, "amble_script")?;
+        println!("==> Publishing amble_engine");
+        cargo_publish(workspace, "amble_engine")?;
+    }
+
+    println!("==> Building Linux distributions");
+    let linux_engine = PackageEngineArgs {
+        options: PackageOptions {
+            target: Some(linux_target.clone()),
+            profile: Profile::Release,
+            dev_mode: DevMode::Disabled,
+            dist_dir: None,
+            format: ArchiveFormat::Zip,
+            name: None,
+        },
+    };
+    package_engine(workspace, &linux_engine)?;
+
+    let linux_full = PackageFullArgs {
+        options: PackageOptions {
+            target: Some(linux_target),
+            profile: Profile::Release,
+            dev_mode: DevMode::Enabled,
+            dist_dir: None,
+            format: ArchiveFormat::Zip,
+            name: None,
+        },
+    };
+    package_full(workspace, &linux_full)?;
+
+    println!("==> Building Windows distributions");
+    let windows_engine = PackageEngineArgs {
+        options: PackageOptions {
+            target: Some(windows_target.clone()),
+            profile: Profile::Release,
+            dev_mode: DevMode::Disabled,
+            dist_dir: None,
+            format: ArchiveFormat::Zip,
+            name: None,
+        },
+    };
+    package_engine(workspace, &windows_engine)?;
+
+    let windows_full = PackageFullArgs {
+        options: PackageOptions {
+            target: Some(windows_target),
+            profile: Profile::Release,
+            dev_mode: DevMode::Enabled,
+            dist_dir: None,
+            format: ArchiveFormat::Zip,
+            name: None,
+        },
+    };
+    package_full(workspace, &windows_full)?;
+
+    println!("==> Release v{new_version} completed");
+    Ok(())
+}
+
+fn cargo_check_all_targets(workspace: &Workspace) -> Result<()> {
+    let mut command = cargo_cmd("check", workspace);
+    command.arg("--workspace").arg("--all-targets");
+    run_command(&mut command, "cargo check --workspace --all-targets")
+}
+
+fn cargo_test_workspace(workspace: &Workspace) -> Result<()> {
+    let mut command = cargo_cmd("test", workspace);
+    command.arg("--workspace");
+    run_command(&mut command, "cargo test --workspace")
+}
+
+fn cargo_publish(workspace: &Workspace, package: &str) -> Result<()> {
+    let mut command = cargo_cmd("publish", workspace);
+    command.arg("-p").arg(package);
+    let label = format!("cargo publish ({package})");
+    run_command(&mut command, &label)
+}
+
+fn ensure_git_clean(workspace: &Workspace) -> Result<()> {
+    let mut command = git_cmd(workspace);
+    command.arg("status").arg("--porcelain");
+    let output = command.output().context("git status --porcelain failed to run")?;
+    if !output.status.success() {
+        bail!("git status --porcelain exited with {}", output.status);
+    }
+    let stdout = String::from_utf8(output.stdout).context("git status output is not valid UTF-8")?;
+    if !stdout.trim().is_empty() {
+        bail!("working tree has local changes; please commit or stash them before running release");
+    }
+    Ok(())
+}
+
+fn ensure_on_main(workspace: &Workspace) -> Result<()> {
+    let branch = git_output(workspace, &["rev-parse", "--abbrev-ref", "HEAD"])?;
+    let branch = branch.trim();
+    if branch != "main" {
+        bail!("release command must run from 'main' (current branch: {branch})");
+    }
+    Ok(())
+}
+
+fn ensure_git_synced_with_origin(workspace: &Workspace) -> Result<()> {
+    let mut fetch = git_cmd(workspace);
+    fetch.arg("fetch").arg("origin");
+    run_command(&mut fetch, "git fetch origin")?;
+
+    let head = git_output(workspace, &["rev-parse", "HEAD"])?;
+    let remote = git_output(workspace, &["rev-parse", "origin/main"])?;
+    if head.trim() != remote.trim() {
+        bail!("local main is not up to date with origin/main; please pull or push pending commits");
+    }
+    Ok(())
+}
+
+fn git_add(workspace: &Workspace, paths: &[PathBuf]) -> Result<()> {
+    let mut command = git_cmd(workspace);
+    command.arg("add");
+    for path in paths {
+        command.arg(path);
+    }
+    run_command(&mut command, "git add")
+}
+
+fn git_commit(workspace: &Workspace, message: &str) -> Result<()> {
+    let mut command = git_cmd(workspace);
+    command.arg("commit").arg("-m").arg(message);
+    let label = format!("git commit ({message})");
+    run_command(&mut command, &label)
+}
+
+fn git_tag(workspace: &Workspace, tag: &str, message: &str) -> Result<()> {
+    let mut command = git_cmd(workspace);
+    command.arg("tag").arg("-a").arg(tag).arg("-m").arg(message);
+    let label = format!("git tag {tag}");
+    run_command(&mut command, &label)
+}
+
+fn git_push(workspace: &Workspace, remote: &str, reference: &str) -> Result<()> {
+    let mut command = git_cmd(workspace);
+    command.arg("push").arg(remote).arg(reference);
+    let label = format!("git push {remote} {reference}");
+    run_command(&mut command, &label)
+}
+
+fn update_manifest_version(manifest: &Path, version: &Version) -> Result<()> {
+    let contents = fs::read_to_string(manifest).with_context(|| format!("unable to read {}", manifest.display()))?;
+    let mut doc: Document = contents
+        .parse()
+        .with_context(|| format!("parsing {} as TOML", manifest.display()))?;
+    doc["package"]["version"] = value(version.to_string());
+    fs::write(manifest, doc.to_string()).with_context(|| format!("writing updated {}", manifest.display()))?;
+    Ok(())
+}
+
+fn update_lock_versions(lock_path: &Path, version: &Version) -> Result<()> {
+    let contents = fs::read_to_string(lock_path).with_context(|| format!("unable to read {}", lock_path.display()))?;
+    let mut doc: Document = contents
+        .parse()
+        .with_context(|| format!("parsing {} as TOML", lock_path.display()))?;
+    let mut engine_updated = false;
+    let mut script_updated = false;
+    let packages = doc["package"]
+        .as_array_of_tables_mut()
+        .context("Cargo.lock missing [[package]] entries")?;
+    for package in packages.iter_mut() {
+        let Some(name) = package.get("name").and_then(|item| item.as_str()) else {
+            continue;
+        };
+        match name {
+            "amble_engine" => {
+                package["version"] = value(version.to_string());
+                engine_updated = true;
+            },
+            "amble_script" => {
+                package["version"] = value(version.to_string());
+                script_updated = true;
+            },
+            _ => {},
+        }
+    }
+    if !engine_updated || !script_updated {
+        bail!("failed to update Cargo.lock entries for amble_engine and amble_script");
+    }
+    fs::write(lock_path, doc.to_string()).with_context(|| format!("writing updated {}", lock_path.display()))?;
+    Ok(())
 }
 
 fn build_script(workspace: &Workspace, profile: Profile, target: Option<&str>) -> Result<()> {
@@ -456,6 +726,12 @@ fn cargo_cmd(subcommand: &str, workspace: &Workspace) -> Command {
     cmd
 }
 
+fn git_cmd(workspace: &Workspace) -> Command {
+    let mut cmd = Command::new("git");
+    cmd.current_dir(&workspace.root);
+    cmd
+}
+
 fn run_command(command: &mut Command, label: &str) -> Result<()> {
     let status = command.status().with_context(|| format!("{label} failed to start"))?;
     if !status.success() {
@@ -525,4 +801,19 @@ fn detect_host_triple() -> Result<String> {
         .lines()
         .find_map(|line| line.strip_prefix("host: ").map(str::to_string))
         .ok_or_else(|| anyhow!("failed to parse host triple from rustc -vV output"))
+}
+
+fn git_output(workspace: &Workspace, args: &[&str]) -> Result<String> {
+    let mut command = git_cmd(workspace);
+    for arg in args {
+        command.arg(arg);
+    }
+    let output = command
+        .output()
+        .with_context(|| format!("git {} failed to run", args.join(" ")))?;
+    if !output.status.success() {
+        bail!("git {} exited with {}", args.join(" "), output.status);
+    }
+    let stdout = String::from_utf8(output.stdout).context("git output is not valid UTF-8")?;
+    Ok(stdout)
 }

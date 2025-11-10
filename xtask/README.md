@@ -21,6 +21,9 @@ cargo xtask package engine
 # Package engine, amble_script CLI, compiled data, and DSL sources
 cargo xtask package full --format zip
 
+# Perform the full release workflow (bump versions, publish, package)
+cargo xtask release --version 0.63.0
+
 # Recompile DSL content and lint it against the generated TOML
 cargo xtask content refresh --deny-missing
 ```
@@ -91,6 +94,31 @@ The task runs two steps in sequence:
 2. `cargo run -p amble_script --bin amble_script -- lint …`
 
 Both commands execute in the workspace root, so relative paths match those in the repository.
+
+---
+
+## `release`
+
+Automates the end-to-end release checklist:
+
+1. Verifies the working tree is clean, on `main`, and matches `origin/main`.
+2. Runs `cargo check --workspace --all-targets` and `cargo test --workspace`.
+3. Executes `cargo xtask content refresh --deny-missing`.
+4. Bumps `amble_engine` + `amble_script` to the provided `--version` and updates `Cargo.lock`.
+5. Commits the version bump, creates an annotated tag `v<version>`, and pushes to `origin`.
+6. Publishes `amble_script` followed by `amble_engine` on crates.io.
+7. Builds four distributable packages (Linux + Windows, engine-only + full suite) via the existing packaging tasks.
+
+Options:
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--version <semver>` | *required* | Version number applied to both crates (and tag). |
+| `--linux-target <triple>` | host triple | Target triple for Linux packages (`x86_64-unknown-linux-gnu` on Linux hosts). |
+| `--windows-target <triple>` | `x86_64-pc-windows-msvc` | Target triple for Windows packages. |
+| `--skip-publish` | off | Run every step except `cargo publish` (useful for rehearsals). |
+
+All steps abort on the first failure so nothing half-finished sneaks through. Provide API tokens / credentials ahead of time for `git push` and `cargo publish`.
 
 ---
 

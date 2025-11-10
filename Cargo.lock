@@ -1468,6 +1468,8 @@ dependencies = [
  "anyhow",
  "cargo_metadata",
  "clap",
+ "semver",
+ "toml_edit 0.21.1",
  "walkdir",
  "zip",
 ]
