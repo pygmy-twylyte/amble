@@ -7,6 +7,20 @@
 # sensitive hints. When turned off, or not in inventory,
 # it will be silent.
 
+# To create a hint radio trigger that fires only once and only when appropriate:
+# trigger "Trigger Name" only once
+# when <activates situation that may require hint> {
+    #   do schedule in 2
+    #   if any(
+    #       all( <conditions for when hint should be given> ),
+    #       <condition when hint will never be needed (puzzle solved or failed)>
+    #   ) onFalse retryNextTurn {
+        #       if all(<same conditions for when hint should be given) {
+            #           <give the hint>
+            #       }
+        #   }
+    # }
+
 item hint_radio {
     name "HINT Radio (off)"
     desc r#"A black, long-range walkie-talkie style radio transceiver. A label bearing the word "HINTS" is affixed to the side. The transmit button has been removed. The "Power" LED is off."#
