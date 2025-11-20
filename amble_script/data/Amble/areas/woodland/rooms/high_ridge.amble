@@ -22,7 +22,7 @@ room high-ridge {
 
 item scrawled_note {
     name "Scrawled Note"
-    desc "A note scrawled all caps and red permanent marker on a sheet of yellow legal paper."
+    desc "A note scrawled all caps and green permanent marker on a sheet of yellow legal paper."
     portable true
     location room high-ridge
     text """CANDIDATES: PROCEED TO OFFICE TO OBTAIN VISITOR PASS
