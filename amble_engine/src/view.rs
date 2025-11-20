@@ -2,6 +2,7 @@
 //! This contains the view to the game world / messages.
 //! Rather than printing to the console from each handler, we'll aggregate needed information and messages
 //! to be organized and displayed at the end of the turn.
+use std::collections::HashMap;
 use std::fmt::Write;
 
 use colored::Colorize;
@@ -33,7 +34,7 @@ const ICON_NPC_LEAVE: &str = "←"; // U+2190
 pub struct View {
     pub width: usize,
     pub mode: ViewMode,
-    pub items: Vec<ViewItem>,
+    pub items: Vec<ViewEntry>,
 }
 impl Default for View {
     fn default() -> Self {
@@ -52,9 +53,47 @@ impl View {
         }
     }
 
-    /// Add something to be displayed in the next frame.
     pub fn push(&mut self, item: ViewItem) {
-        self.items.push(item);
+        // determine default priority for this type of item
+        let priority: isize = match &item {
+            ViewItem::ActionFailure(_) => 0,
+            ViewItem::ActionSuccess(_) => 0,
+            ViewItem::ActiveGoal { .. } => 0,
+            ViewItem::AmbientEvent(_) => 0,
+            ViewItem::CompleteGoal { .. } => 0,
+            ViewItem::EngineMessage(_) => 0,
+            ViewItem::Error(_) => 0,
+            ViewItem::GameLoaded { .. } => 0,
+            ViewItem::GameSaved { .. } => 0,
+            ViewItem::SavedGamesList { .. } => 0,
+            ViewItem::Help { .. } => 0,
+            ViewItem::Inventory(_) => 0,
+            ViewItem::ItemConsumableStatus(_) => 0,
+            ViewItem::ItemContents(_) => 0,
+            ViewItem::ItemDescription { .. } => 0,
+            ViewItem::ItemText(_) => 0,
+            ViewItem::NpcDescription { .. } => 0,
+            ViewItem::NpcInventory(_) => 0,
+            ViewItem::NpcSpeech { .. } => 0,
+            ViewItem::NpcEntered { .. } => 0,
+            ViewItem::NpcLeft { .. } => 0,
+            ViewItem::PointsAwarded { .. } => 0,
+            ViewItem::QuitSummary { .. } => 0,
+            ViewItem::RoomDescription { .. } => 0,
+            ViewItem::RoomExits(_) => 0,
+            ViewItem::RoomItems(_) => 0,
+            ViewItem::RoomNpcs(_) => 0,
+            ViewItem::RoomOverlays { .. } => 0,
+            ViewItem::StatusChange { .. } => 0,
+            ViewItem::TransitionMessage(_) => 0,
+            ViewItem::TriggeredEvent(_) => 0,
+        };
+        self.items.push(ViewEntry {
+            section: item.section(),
+            priority,
+            custom_priority: None,
+            view_item: item,
+        })
     }
 
     /// Compose and diplay all message contents in the current frame / turn.
@@ -771,6 +810,15 @@ pub enum ViewMode {
     Verbose,
     /// Render brief descriptions after the first visit to a room.
     Brief,
+}
+
+/// Wrapper for a `ViewItem` to allow flexible ordering of display items.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ViewEntry {
+    pub section: Section,
+    pub priority: isize,
+    pub custom_priority: Option<isize>,
+    pub view_item: ViewItem,
 }
 
 /// `ViewItems` are each of the various types of information / messages that may be displayed to the player.
