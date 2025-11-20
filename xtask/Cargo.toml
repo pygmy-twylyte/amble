@@ -1,5 +1,6 @@
 [package]
 name = "xtask"
+description = "Building and packaging automations for the Amble game engine."
 version = "0.1.0"
 publish = false
 edition.workspace = true
@@ -7,7 +8,7 @@ license.workspace = true
 homepage.workspace = true
 repository.workspace = true
 documentation.workspace = true
-readme.workspace = true
+readme = "README.md"
 
 [dependencies]
 anyhow = "1.0.98"
