@@ -2965,11 +2965,9 @@ mod tests {
 
         dispatch_action(&mut world, &mut view, &action).unwrap();
 
-        assert!(
-            view.items
-                .iter()
-                .any(|vi| matches!(vi, ViewItem::TriggeredEvent(msg) if msg.contains("Conditional fired")))
-        );
+        assert!(view.items.iter().any(
+            |entry| matches!(&entry.view_item, ViewItem::TriggeredEvent(msg) if msg.contains("Conditional fired"))
+        ));
     }
 
     #[test]
@@ -2985,11 +2983,12 @@ mod tests {
 
         dispatch_action(&mut world, &mut view, &action).unwrap();
 
-        assert!(
-            view.items
-                .iter()
-                .all(|vi| !matches!(vi, ViewItem::TriggeredEvent(msg) if msg.contains("Should not appear")))
-        );
+        assert!(view.items.iter().all(|entry| {
+            !matches!(
+                &entry.view_item,
+                ViewItem::TriggeredEvent(msg) if msg.contains("Should not appear")
+            )
+        }));
     }
 
     #[test]
@@ -3039,7 +3038,7 @@ mod tests {
         npc_says(&world, &mut view, &npc_id, "Hello there").unwrap();
 
         assert!(matches!(
-            view.items.last(),
+            view.items.last().map(|entry| &entry.view_item),
             Some(ViewItem::NpcSpeech { quote, .. }) if quote == "Hello there"
         ));
     }
@@ -3061,7 +3060,7 @@ mod tests {
         npc_says_random(&world, &mut view, &npc_id).unwrap();
 
         assert!(matches!(
-            view.items.last(),
+            view.items.last().map(|entry| &entry.view_item),
             Some(ViewItem::NpcSpeech { quote, .. }) if quote == "Howdy"
         ));
     }

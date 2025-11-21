@@ -597,7 +597,7 @@ mod tests {
 
         // Should have an error message
         assert_eq!(view.items.len(), 1);
-        if let ViewItem::ActionFailure(msg) = &view.items[0] {
+        if let ViewItem::ActionFailure(msg) = &view.items[0].view_item {
             // Strip ANSI color codes for comparison
             let clean_msg = msg
                 .replace("\u{1b}[38;2;230;30;30m", "")
@@ -623,7 +623,7 @@ mod tests {
 
         // Should have a success message
         assert_eq!(view.items.len(), 1);
-        if let ViewItem::ActionSuccess(msg) = &view.items[0] {
+        if let ViewItem::ActionSuccess(msg) = &view.items[0].view_item {
             assert!(msg.contains("Sequence 'test_seq' advanced to [test_seq#1]"));
         } else {
             panic!("Expected ActionSuccess, got {:?}", view.items[0]);
@@ -639,7 +639,7 @@ mod tests {
 
         // Should have an error message
         assert_eq!(view.items.len(), 1);
-        if let ViewItem::ActionFailure(msg) = &view.items[0] {
+        if let ViewItem::ActionFailure(msg) = &view.items[0].view_item {
             // Strip ANSI color codes for comparison
             let clean_msg = msg
                 .replace("\u{1b}[38;2;230;30;30m", "")
@@ -648,7 +648,7 @@ mod tests {
             assert!(clean_msg.contains("No sequence flag 'nonexistent_flag' found"));
             assert!(clean_msg.contains("Use :init-seq to create it first"));
         } else {
-            panic!("Expected ActionFailure, got {:?}", view.items[0]);
+            panic!("Expected ActionFailure, got {:?}", view.items[0].view_item);
         }
     }
 
@@ -668,7 +668,7 @@ mod tests {
 
         // Should have a success message
         assert_eq!(view.items.len(), 1);
-        if let ViewItem::ActionSuccess(msg) = &view.items[0] {
+        if let ViewItem::ActionSuccess(msg) = &view.items[0].view_item {
             assert!(msg.contains("Sequence 'test_seq' reset to [test_seq#0]"));
         } else {
             panic!("Expected ActionSuccess, got {:?}", view.items[0]);
@@ -684,7 +684,7 @@ mod tests {
         assert!(
             view.items
                 .iter()
-                .any(|i| matches!(i, ViewItem::EngineMessage(msg) if msg.contains("No flags")))
+                .any(|i| matches!(&i.view_item, ViewItem::EngineMessage(msg) if msg.contains("No flags")))
         );
 
         // add flags and check listing
@@ -699,7 +699,7 @@ mod tests {
         let combined = view
             .items
             .iter()
-            .filter_map(|i| match i {
+            .filter_map(|i| match &i.view_item {
                 ViewItem::EngineMessage(s) => Some(s.clone()),
                 _ => None,
             })
@@ -754,7 +754,7 @@ mod tests {
         let combined = view
             .items
             .iter()
-            .filter_map(|i| match i {
+            .filter_map(|i| match &i.view_item {
                 ViewItem::EngineMessage(s) => Some(s.clone()),
                 _ => None,
             })
@@ -774,7 +774,7 @@ mod tests {
         assert!(
             view.items
                 .iter()
-                .any(|i| matches!(i, ViewItem::EngineMessage(msg) if msg.contains("No events")))
+                .any(|i| matches!(&i.view_item, ViewItem::EngineMessage(msg) if msg.contains("No events")))
         );
 
         // add an event
@@ -786,7 +786,7 @@ mod tests {
         let combined = view
             .items
             .iter()
-            .filter_map(|i| match i {
+            .filter_map(|i| match &i.view_item {
                 ViewItem::EngineMessage(s) => Some(s.clone()),
                 _ => None,
             })

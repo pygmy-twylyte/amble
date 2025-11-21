@@ -51,7 +51,7 @@ fn toml_schedule_in_if_reschedules_then_fires() {
     assert!(
         view.items
             .iter()
-            .all(|vi| !matches!(vi, ae::ViewItem::TriggeredEvent(_)))
+            .all(|entry| !matches!(&entry.view_item, ae::ViewItem::TriggeredEvent(_)))
     );
     // A new event should be queued (original popped, new scheduled)
     assert!(world.scheduler.heap.len() >= 1);
@@ -64,11 +64,12 @@ fn toml_schedule_in_if_reschedules_then_fires() {
     world.turn_count = 2;
     ae::repl::check_scheduled_events(&mut world, &mut view).expect("check schedule 2");
     // Should have displayed the message
-    assert!(
-        view.items
-            .iter()
-            .any(|vi| matches!(vi, ae::ViewItem::TriggeredEvent(msg) if msg.contains("fired")))
-    );
+    assert!(view.items.iter().any(|entry| {
+        matches!(
+            &entry.view_item,
+            ae::ViewItem::TriggeredEvent(msg) if msg.contains("fired")
+        )
+    }));
 }
 
 #[test]
@@ -113,7 +114,7 @@ fn toml_schedule_in_if_retry_after() {
     assert!(
         view.items
             .iter()
-            .all(|vi| !matches!(vi, ae::ViewItem::TriggeredEvent(_)))
+            .all(|entry| !matches!(&entry.view_item, ae::ViewItem::TriggeredEvent(_)))
     );
 
     // Next turn (2) should not yet fire
@@ -122,7 +123,7 @@ fn toml_schedule_in_if_retry_after() {
     assert!(
         view.items
             .iter()
-            .all(|vi| !matches!(vi, ae::ViewItem::TriggeredEvent(_)))
+            .all(|entry| !matches!(&entry.view_item, ae::ViewItem::TriggeredEvent(_)))
     );
 
     // Set flag and reach rescheduled due turn (3) -> should fire
@@ -132,11 +133,12 @@ fn toml_schedule_in_if_retry_after() {
         .insert(ae::player::Flag::simple("g", world.turn_count));
     world.turn_count = 3;
     ae::repl::check_scheduled_events(&mut world, &mut view).expect("check 3");
-    assert!(
-        view.items
-            .iter()
-            .any(|vi| matches!(vi, ae::ViewItem::TriggeredEvent(msg) if msg.contains("retry-fired")))
-    );
+    assert!(view.items.iter().any(|entry| {
+        matches!(
+            &entry.view_item,
+            ae::ViewItem::TriggeredEvent(msg) if msg.contains("retry-fired")
+        )
+    }));
 }
 
 #[test]
@@ -179,7 +181,7 @@ fn toml_schedule_on_if_cancel() {
     assert!(
         view.items
             .iter()
-            .all(|vi| !matches!(vi, ae::ViewItem::TriggeredEvent(_)))
+            .all(|entry| !matches!(&entry.view_item, ae::ViewItem::TriggeredEvent(_)))
     );
 
     // Even if condition becomes true later, event was canceled, should not fire
@@ -189,11 +191,12 @@ fn toml_schedule_on_if_cancel() {
         .insert(ae::player::Flag::simple("h", world.turn_count));
     world.turn_count = 6;
     ae::repl::check_scheduled_events(&mut world, &mut view).expect("check 6");
-    assert!(
-        view.items
-            .iter()
-            .all(|vi| !matches!(vi, ae::ViewItem::TriggeredEvent(msg) if msg.contains("cancel-should-not-fire")))
-    );
+    assert!(view.items.iter().all(|entry| {
+        !matches!(
+            &entry.view_item,
+            ae::ViewItem::TriggeredEvent(msg) if msg.contains("cancel-should-not-fire")
+        )
+    }));
 }
 
 #[test]
@@ -249,9 +252,10 @@ fn toml_schedule_nested_all_any() {
     ae::trigger::dispatch_action(&mut world, &mut view, &triggers[0].actions[0]).expect("dispatch");
     world.turn_count = 1;
     ae::repl::check_scheduled_events(&mut world, &mut view).expect("check");
-    assert!(
-        view.items
-            .iter()
-            .any(|vi| matches!(vi, ae::ViewItem::TriggeredEvent(msg) if msg.contains("nested-fired")))
-    );
+    assert!(view.items.iter().any(|entry| {
+        matches!(
+            &entry.view_item,
+            ae::ViewItem::TriggeredEvent(msg) if msg.contains("nested-fired")
+        )
+    }));
 }

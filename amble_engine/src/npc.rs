@@ -476,20 +476,35 @@ mod tests {
 
         // Check that the view contains the expected items
         let items = &view.items;
-        assert!(items.iter().any(|item| matches!(item, ViewItem::NpcDescription { .. })));
-        assert!(items.iter().any(|item| matches!(item, ViewItem::NpcInventory(_))));
+        assert!(
+            items
+                .iter()
+                .any(|entry| matches!(&entry.view_item, ViewItem::NpcDescription { .. }))
+        );
+        assert!(
+            items
+                .iter()
+                .any(|entry| matches!(&entry.view_item, ViewItem::NpcInventory(_)))
+        );
 
-        if let Some(ViewItem::NpcDescription { name, description }) = items
-            .iter()
-            .find(|item| matches!(item, ViewItem::NpcDescription { .. }))
-        {
+        if let Some((name, description)) = items.iter().find_map(|entry| {
+            if let ViewItem::NpcDescription { name, description } = &entry.view_item {
+                Some((name, description))
+            } else {
+                None
+            }
+        }) {
             assert_eq!(name, "Test NPC");
             assert_eq!(description, "A test NPC");
         }
 
-        if let Some(ViewItem::NpcInventory(inventory)) =
-            items.iter().find(|item| matches!(item, ViewItem::NpcInventory(_)))
-        {
+        if let Some(inventory) = items.iter().find_map(|entry| {
+            if let ViewItem::NpcInventory(inventory) = &entry.view_item {
+                Some(inventory)
+            } else {
+                None
+            }
+        }) {
             assert_eq!(inventory.len(), 1);
             assert_eq!(inventory[0].item_name, "Test Item");
         }
@@ -503,9 +518,13 @@ mod tests {
 
         npc.show(&world, &mut view);
 
-        if let Some(ViewItem::NpcInventory(inventory)) =
-            view.items.iter().find(|item| matches!(item, ViewItem::NpcInventory(_)))
-        {
+        if let Some(inventory) = view.items.iter().find_map(|entry| {
+            if let ViewItem::NpcInventory(inventory) = &entry.view_item {
+                Some(inventory)
+            } else {
+                None
+            }
+        }) {
             assert!(inventory.is_empty());
         }
     }
@@ -624,9 +643,13 @@ mod tests {
         let _ = move_npc(&mut world, &mut view, npc_id, Location::Room(other_room_id));
 
         // Check that NpcLeft ViewItem was created
-        let left_items: Vec<_> = view.items.iter().filter(|item| item.is_npc_left()).collect();
+        let left_items: Vec<_> = view
+            .items
+            .iter()
+            .filter(|entry| entry.view_item.is_npc_left())
+            .collect();
         assert_eq!(left_items.len(), 1);
-        if let ViewItem::NpcLeft { npc_name, .. } = &left_items[0] {
+        if let ViewItem::NpcLeft { npc_name, .. } = &left_items[0].view_item {
             assert_eq!(npc_name, "Test NPC");
         } else {
             panic!("Expected NpcLeft ViewItem");
@@ -638,9 +661,13 @@ mod tests {
         let _ = move_npc(&mut world, &mut view, npc_id, Location::Room(player_room_id));
 
         // Check that NpcEntered ViewItem was created
-        let entered_items: Vec<_> = view.items.iter().filter(|item| item.is_npc_entered()).collect();
+        let entered_items: Vec<_> = view
+            .items
+            .iter()
+            .filter(|entry| entry.view_item.is_npc_entered())
+            .collect();
         assert_eq!(entered_items.len(), 1);
-        if let ViewItem::NpcEntered { npc_name, .. } = &entered_items[0] {
+        if let ViewItem::NpcEntered { npc_name, .. } = &entered_items[0].view_item {
             assert_eq!(npc_name, "Test NPC");
         } else {
             panic!("Expected NpcEntered ViewItem");
@@ -707,9 +734,24 @@ mod tests {
         let _ = move_npc(&mut world, &mut view, npc_id, Location::Room(other_room_id));
 
         // Verify we have all three event types
-        assert_eq!(view.items.iter().filter(|i| i.is_npc_entered()).count(), 1);
-        assert_eq!(view.items.iter().filter(|i| i.is_npc_speech()).count(), 1);
-        assert_eq!(view.items.iter().filter(|i| i.is_npc_left()).count(), 1);
+        assert_eq!(
+            view.items
+                .iter()
+                .filter(|entry| entry.view_item.is_npc_entered())
+                .count(),
+            1
+        );
+        assert_eq!(
+            view.items
+                .iter()
+                .filter(|entry| entry.view_item.is_npc_speech())
+                .count(),
+            1
+        );
+        assert_eq!(
+            view.items.iter().filter(|entry| entry.view_item.is_npc_left()).count(),
+            1
+        );
 
         // The ordering should be: enter → speech → leave
         // This is now handled by the npc_events_sorted() method in the view
