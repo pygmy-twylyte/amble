@@ -33,7 +33,8 @@ const ICON_NPC_LEAVE: &str = "←"; // U+2190
 pub struct View {
     pub width: usize,
     pub mode: ViewMode,
-    pub items: Vec<ViewItem>,
+    pub items: Vec<ViewEntry>,
+    pub sequence: usize,
 }
 impl Default for View {
     fn default() -> Self {
@@ -49,12 +50,29 @@ impl View {
             width: termwidth(),
             mode: ViewMode::Verbose,
             items: Vec::new(),
+            sequence: 0,
         }
     }
 
-    /// Add something to be displayed in the next frame.
     pub fn push(&mut self, item: ViewItem) {
-        self.items.push(item);
+        self.push_with_custom_priority(item, None);
+    }
+
+    /// Push a `ViewItem` for the next frame with a custom set priority
+    pub fn push_with_priority(&mut self, item: ViewItem, priority: isize) {
+        self.push_with_custom_priority(item, Some(priority));
+    }
+
+    /// Push a `ViewItem` honoring an optional custom priority override.
+    pub fn push_with_custom_priority(&mut self, item: ViewItem, priority: Option<isize>) {
+        self.items.push(ViewEntry {
+            section: item.section(),
+            priority: item.default_priority(),
+            custom_priority: priority,
+            view_item: item,
+            sequence: self.sequence,
+        });
+        self.sequence += 1;
     }
 
     /// Compose and diplay all message contents in the current frame / turn.
@@ -70,7 +88,7 @@ impl View {
         let mut ambient = Vec::new();
         let mut system = Vec::new();
         for item in &self.items {
-            match item.section() {
+            match item.view_item.section() {
                 Section::Transition => transitions.push(item.clone()),
                 Section::Environment => environment.push(item.clone()),
                 Section::DirectResult => direct.push(item.clone()),
@@ -81,11 +99,11 @@ impl View {
         }
 
         // Section Zero: Movement transition message, if any
-        if let Some(msg) = transitions.iter().find_map(|i| match i {
+        if let Some(msg) = transitions.iter().find_map(|i| match &i.view_item {
             ViewItem::TransitionMessage(msg) => Some(msg),
             _ => None,
         }) {
-            println!("\n{}", fill(msg, normal_block()).transition_style());
+            println!("\n{}", fill(msg.as_str(), normal_block()).transition_style());
         }
 
         // First Section: Environment / Frame of Reference
@@ -146,11 +164,54 @@ impl View {
         self.errors();
     }
 
+    /// Collect world reaction-type entries, sort, and display them in batches (`bucket`) according to priority view order.
     fn world_reaction(&mut self) {
-        self.npc_events_sorted();
-        self.triggered_event();
-        self.status_change();
-        self.points_awarded();
+        let world_entries = self.world_entries_sorted();
+        if world_entries.is_empty() {
+            return;
+        }
+
+        let mut current_priority: Option<isize> = None;
+        let mut bucket: Vec<&ViewEntry> = Vec::new();
+        for entry in world_entries {
+            let priority = entry.effective_priority();
+            if current_priority.map_or(false, |p| p != priority) {
+                Self::render_world_bucket(&bucket);
+                bucket.clear();
+            }
+            bucket.push(entry);
+            current_priority = Some(priority);
+        }
+        if !bucket.is_empty() {
+            Self::render_world_bucket(&bucket);
+        }
+    }
+
+    /// Display a collection of view entries that have the same effective priority.
+    fn render_world_bucket(entries: &[&ViewEntry]) {
+        if entries.is_empty() {
+            return;
+        }
+        Self::npc_events_sorted(entries);
+        Self::triggered_event(entries);
+        Self::status_change(entries);
+        Self::points_awarded(entries);
+    }
+
+    /// Filter all `ViewEntry`s for this frame, retaining only those in the `WorldResponse` section and sort them
+    /// by effective priority (lowest priority value shows first, e.g. 1 goes before 10, -10 goes before 1).
+    fn world_entries_sorted(&self) -> Vec<&ViewEntry> {
+        let mut world_entries: Vec<&ViewEntry> = self
+            .items
+            .iter()
+            .filter(|entry| entry.section == Section::WorldResponse)
+            .collect();
+        world_entries.sort_by(|a, b| {
+            a.effective_priority()
+                .cmp(&b.effective_priority())
+                .then_with(|| a.sequence.cmp(&b.sequence))
+        });
+        world_entries
     }
 
     fn ambience(&mut self) {
@@ -166,10 +227,14 @@ impl View {
     }
 
     // INDIVIDUAL VIEW ITEM HANDLERS START HERE -------------------------------
-    fn status_change(&mut self) {
-        let status_msgs: Vec<_> = self.items.iter().filter(|item| item.is_status_change()).collect();
+    fn status_change(entries: &[&ViewEntry]) {
+        let status_msgs: Vec<_> = entries
+            .iter()
+            .copied()
+            .filter(|entry| entry.view_item.is_status_change())
+            .collect();
         for msg in &status_msgs {
-            if let ViewItem::StatusChange { action, status } = msg {
+            if let ViewItem::StatusChange { action, status } = &msg.view_item {
                 println!(
                     "{:<4}Status {}: {}",
                     ICON_STATUS.yellow(),
@@ -187,12 +252,12 @@ impl View {
     }
 
     fn engine_message(&mut self) {
-        let engine_msgs = self.items.iter().filter(|i| i.is_engine_message());
+        let engine_msgs = self.items.iter().filter(|i| i.view_item.is_engine_message());
         for msg in engine_msgs {
             println!(
                 "{}",
                 fill(
-                    format!("{ICON_ENGINE:<4}{}", msg.clone().unwrap_engine_message()).as_str(),
+                    format!("{ICON_ENGINE:<4}{}", msg.view_item.clone().unwrap_engine_message()).as_str(),
                     normal_block()
                 )
             );
@@ -200,10 +265,10 @@ impl View {
         println!();
     }
 
-    fn points_awarded(&mut self) {
-        let point_msgs = self.items.iter().filter(|i| i.is_points_awarded());
+    fn points_awarded(entries: &[&ViewEntry]) {
+        let point_msgs = entries.iter().copied().filter(|i| i.view_item.is_points_awarded());
         for msg in point_msgs {
-            if let ViewItem::PointsAwarded { amount, reason } = msg {
+            if let ViewItem::PointsAwarded { amount, reason } = &msg.view_item {
                 if amount.is_negative() {
                     let text = format!("{} (-{} point{})", reason, amount.abs(), plural_s(amount.abs())).bright_red();
                     println!("{:<4}{}", ICON_NEGATIVE.bright_red(), text);
@@ -219,45 +284,59 @@ impl View {
     }
 
     fn ambient_event(&mut self) {
-        let trig_messages = self.items.iter().filter(|i| matches!(i, ViewItem::AmbientEvent(_)));
+        let trig_messages = self
+            .items
+            .iter()
+            .filter(|i| matches!(i.view_item, ViewItem::AmbientEvent(_)));
         for msg in trig_messages {
             let formatted = format!(
                 "{:<4}{}",
                 ICON_AMBIENT.ambient_icon_style(),
-                msg.clone().unwrap_ambient_event().ambient_trig_style()
+                msg.view_item.clone().unwrap_ambient_event().ambient_trig_style()
             );
             println!("{}", fill(formatted.as_str(), normal_block()));
             println!();
         }
     }
-    fn triggered_event(&mut self) {
-        let trig_messages = self.items.iter().filter(|i| matches!(i, ViewItem::TriggeredEvent(_)));
+    fn triggered_event(entries: &[&ViewEntry]) {
+        let trig_messages = entries
+            .iter()
+            .copied()
+            .filter(|i| matches!(i.view_item, ViewItem::TriggeredEvent(_)));
         for msg in trig_messages {
             let formatted = format!(
                 "{:<4}{}",
                 ICON_TRIGGER.trig_icon_style(),
-                msg.clone().unwrap_triggered_event().triggered_style()
+                msg.view_item.clone().unwrap_triggered_event().triggered_style()
             );
             println!("{}", fill(formatted.as_str(), normal_block()));
             println!();
         }
     }
 
-    fn npc_events_sorted(&mut self) {
+    fn npc_events_sorted(entries: &[&ViewEntry]) {
         // Collect all NPC-related events
-        let mut npc_enters: Vec<_> = self.items.iter().filter(|i| i.is_npc_entered()).collect();
-        let mut npc_leaves: Vec<_> = self.items.iter().filter(|i| i.is_npc_left()).collect();
-        let speech_msgs: Vec<_> = self.items.iter().filter(|i| i.is_npc_speech()).collect();
+        let mut npc_enters: Vec<_> = entries
+            .iter()
+            .copied()
+            .filter(|i| i.view_item.is_npc_entered())
+            .collect();
+        let mut npc_leaves: Vec<_> = entries.iter().copied().filter(|i| i.view_item.is_npc_left()).collect();
+        let speech_msgs: Vec<_> = entries
+            .iter()
+            .copied()
+            .filter(|i| i.view_item.is_npc_speech())
+            .collect();
 
         // Sort by NPC name for consistent ordering
-        npc_enters.sort_by(|a, b| a.npc_name().cmp(b.npc_name()));
-        npc_leaves.sort_by(|a, b| a.npc_name().cmp(b.npc_name()));
+        npc_enters.sort_by(|a, b| a.view_item.npc_name().cmp(b.view_item.npc_name()));
+        npc_leaves.sort_by(|a, b| a.view_item.npc_name().cmp(b.view_item.npc_name()));
 
         let has_events = !npc_enters.is_empty() || !npc_leaves.is_empty() || !speech_msgs.is_empty();
 
         // Display entered events first
         for msg in npc_enters {
-            if let ViewItem::NpcEntered { npc_name, spin_msg } = msg {
+            if let ViewItem::NpcEntered { npc_name, spin_msg } = &msg.view_item {
                 let formatted = format!(
                     "{:<4}{}",
                     ICON_NPC_ENTER.trig_icon_style(),
@@ -269,7 +348,7 @@ impl View {
 
         // Then display speech events
         for quote in speech_msgs {
-            if let ViewItem::NpcSpeech { speaker, quote } = quote {
+            if let ViewItem::NpcSpeech { speaker, quote } = &quote.view_item {
                 println!("{} says:", speaker.npc_style());
                 println!(
                     "{}",
@@ -280,7 +359,7 @@ impl View {
 
         // Finally display left events
         for msg in npc_leaves {
-            if let ViewItem::NpcLeft { npc_name, spin_msg } = msg {
+            if let ViewItem::NpcLeft { npc_name, spin_msg } = &msg.view_item {
                 let formatted = format!(
                     "{:<4}{}",
                     ICON_NPC_LEAVE.trig_icon_style(),
@@ -297,7 +376,7 @@ impl View {
     }
 
     fn saved_games(&mut self) {
-        let Some((directory, entries)) = self.items.iter().find_map(|item| match item {
+        let Some((directory, entries)) = self.items.iter().find_map(|entry| match &entry.view_item {
             ViewItem::SavedGamesList { directory, entries } => Some((directory, entries)),
             _ => None,
         }) else {
@@ -364,15 +443,21 @@ impl View {
     }
 
     fn load_or_save(&mut self) {
-        if let Some(ViewItem::GameSaved { save_slot, save_file }) =
-            self.items.iter().find(|i| matches!(i, ViewItem::GameSaved { .. }))
+        if let Some(entry) = self
+            .items
+            .iter()
+            .find(|i| matches!(i.view_item, ViewItem::GameSaved { .. }))
+            && let ViewItem::GameSaved { save_slot, save_file } = &entry.view_item
         {
             println!("{}: \"{}\" ({})", "Game Saved".green().bold(), save_slot, save_file);
             println!("{}", format!("Type \"load {save_slot}\" to reload it.").italic());
             println!();
         }
-        if let Some(ViewItem::GameLoaded { save_slot, save_file }) =
-            self.items.iter().find(|i| matches!(i, ViewItem::GameLoaded { .. }))
+        if let Some(entry) = self
+            .items
+            .iter()
+            .find(|i| matches!(i.view_item, ViewItem::GameLoaded { .. }))
+            && let ViewItem::GameLoaded { save_slot, save_file } = &entry.view_item
         {
             println!("{}: \"{}\" ({})", "Game Loaded".green().bold(), save_slot, save_file);
             println!();
@@ -383,13 +468,13 @@ impl View {
         let active: Vec<_> = self
             .items
             .iter()
-            .filter(|i| matches!(i, ViewItem::ActiveGoal { .. }))
+            .filter(|i| matches!(i.view_item, ViewItem::ActiveGoal { .. }))
             .collect();
 
         let complete: Vec<_> = self
             .items
             .iter()
-            .filter(|i| matches!(i, ViewItem::CompleteGoal { .. }))
+            .filter(|i| matches!(i.view_item, ViewItem::CompleteGoal { .. }))
             .collect();
         if !active.is_empty() || !complete.is_empty() {
             println!("{}:", "Active Goals".subheading_style());
@@ -397,13 +482,11 @@ impl View {
                 println!("   {}", "Nothing here - explore more!".italic().dimmed());
             } else {
                 for goal in active {
-                    if let ViewItem::ActiveGoal { name, description } = goal {
+                    if let ViewItem::ActiveGoal { name, description } = &goal.view_item {
                         println!("{}", name.goal_active_style());
                         println!(
                             "{}",
-                            fill(description.as_str(), indented_block())
-                                .to_string()
-                                .description_style()
+                            fill(description, indented_block()).to_string().description_style()
                         );
                     }
                 }
@@ -413,7 +496,7 @@ impl View {
             if !complete.is_empty() {
                 println!("{}:", "Completed Goals".subheading_style());
                 for goal in complete {
-                    if let ViewItem::CompleteGoal { name, .. } = goal {
+                    if let ViewItem::CompleteGoal { name, .. } = &goal.view_item {
                         println!("{}", name.goal_complete_style());
                     }
                 }
@@ -422,8 +505,11 @@ impl View {
     }
 
     fn show_help(&mut self) {
-        if let Some(ViewItem::Help { basic_text, commands }) =
-            self.items.iter().find(|item| matches!(item, ViewItem::Help { .. }))
+        if let Some(entry) = self
+            .items
+            .iter()
+            .find(|item| matches!(&item.view_item, ViewItem::Help { .. }))
+            && let ViewItem::Help { basic_text, commands } = &entry.view_item
         {
             // Print the basic help text with proper text wrapping
             println!("{}", fill(basic_text, normal_block()).italic().cyan());
@@ -461,18 +547,19 @@ impl View {
 
     #[allow(clippy::cast_precision_loss)]
     fn quit_summary(&mut self) {
-        if let Some(ViewItem::QuitSummary {
-            title,
-            rank,
-            notes,
-            score,
-            max_score,
-            visited,
-            max_visited,
-        }) = self
+        if let Some(entry) = self
             .items
             .iter()
-            .find(|item| matches!(item, ViewItem::QuitSummary { .. }))
+            .find(|entry| matches!(entry.view_item, ViewItem::QuitSummary { .. }))
+            && let ViewItem::QuitSummary {
+                title,
+                rank,
+                notes,
+                score,
+                max_score,
+                visited,
+                max_visited,
+            } = &entry.view_item
         {
             let score_pct = 100.0 * (*score as f32 / *max_score as f32);
             let visit_pct = 100.0 * (*visited as f32 / *max_visited as f32);
@@ -485,7 +572,11 @@ impl View {
     }
 
     fn inventory(&mut self) {
-        if let Some(ViewItem::Inventory(item_lines)) = self.items.iter().find(|i| matches!(i, ViewItem::Inventory(..)))
+        if let Some(entry) = self
+            .items
+            .iter()
+            .find(|i| matches!(i.view_item, ViewItem::Inventory(..)))
+            && let ViewItem::Inventory(item_lines) = &entry.view_item
         {
             println!("{}:", "Inventory".subheading_style());
             if item_lines.is_empty() {
@@ -502,7 +593,7 @@ impl View {
         let messages: Vec<_> = self
             .items
             .iter()
-            .filter_map(|i| match i {
+            .filter_map(|i| match &i.view_item {
                 ViewItem::ActionSuccess(msg) => Some(msg),
                 _ => None,
             })
@@ -522,7 +613,7 @@ impl View {
         let messages: Vec<_> = self
             .items
             .iter()
-            .filter_map(|i| match i {
+            .filter_map(|i| match &i.view_item {
                 ViewItem::ActionFailure(msg) => Some(msg),
                 _ => None,
             })
@@ -542,7 +633,7 @@ impl View {
         let messages: Vec<_> = self
             .items
             .iter()
-            .filter_map(|i| match i {
+            .filter_map(|i| match &i.view_item {
                 ViewItem::Error(msg) => Some(msg),
                 _ => None,
             })
@@ -559,7 +650,9 @@ impl View {
     }
 
     fn item_text(&mut self) {
-        if let Some(ViewItem::ItemText(text)) = self.items.iter().find(|i| matches!(i, ViewItem::ItemText(_))) {
+        if let Some(entry) = self.items.iter().find(|i| matches!(i.view_item, ViewItem::ItemText(_)))
+            && let ViewItem::ItemText(text) = &entry.view_item
+        {
             println!("{}:\n", "Upon closer inspection, you see".subheading_style());
             println!("{}", fill(text, indented_block()).item_text_style());
             println!();
@@ -567,8 +660,11 @@ impl View {
     }
 
     fn npc_detail(&mut self) {
-        if let Some(ViewItem::NpcDescription { name, description }) =
-            self.items.iter().find(|i| matches!(i, ViewItem::NpcDescription { .. }))
+        if let Some(entry) = self
+            .items
+            .iter()
+            .find(|i| matches!(i.view_item, ViewItem::NpcDescription { .. }))
+            && let ViewItem::NpcDescription { name, description } = &entry.view_item
         {
             println!("{}", name.npc_style().underline());
             println!(
@@ -579,9 +675,10 @@ impl View {
             );
             println!();
         }
-        if let Some(ViewItem::NpcInventory(content_lines)) =
-            self.items.iter().find(|i| matches!(i, ViewItem::NpcInventory(_)))
-        {
+        if let Some(ViewItem::NpcInventory(content_lines)) = self.items.iter().find_map(|i| match i.view_item {
+            ViewItem::NpcInventory(_) => Some(&i.view_item),
+            _ => None,
+        }) {
             println!("{}:", "Inventory".subheading_style());
             if content_lines.is_empty() {
                 println!("   {}", "(Empty)".dimmed().italic());
@@ -598,10 +695,11 @@ impl View {
     }
 
     fn item_detail(&mut self) {
-        if let Some(ViewItem::ItemDescription { name, description }) = self
-            .items
-            .iter()
-            .find(|i| matches!(i, ViewItem::ItemDescription { .. }))
+        if let Some(ViewItem::ItemDescription { name, description }) =
+            self.items.iter().find_map(|i| match i.view_item {
+                ViewItem::ItemDescription { .. } => Some(&i.view_item),
+                _ => None,
+            })
         {
             println!("{}", name.item_style().underline());
             println!(
@@ -611,9 +709,13 @@ impl View {
             println!();
         }
 
-        if let Some(ViewItem::ItemConsumableStatus(status_line)) =
-            self.items.iter().find(|i| i.is_item_consumable_status())
-        {
+        if let Some(ViewItem::ItemConsumableStatus(status_line)) = self.items.iter().find_map(|i| {
+            if i.view_item.is_item_consumable_status() {
+                Some(&i.view_item)
+            } else {
+                None
+            }
+        }) {
             println!(
                 "{}",
                 fill(
@@ -626,9 +728,10 @@ impl View {
             println!();
         }
 
-        if let Some(ViewItem::ItemContents(content_lines)) =
-            self.items.iter().find(|i| matches!(i, ViewItem::ItemContents(_)))
-        {
+        if let Some(ViewItem::ItemContents(content_lines)) = self.items.iter().find_map(|i| match i.view_item {
+            ViewItem::ItemContents(_) => Some(&i.view_item),
+            _ => None,
+        }) {
             println!("{}:", "Contents".subheading_style());
             if content_lines.is_empty() {
                 println!("   {}", "Empty".italic().dimmed());
@@ -646,7 +749,10 @@ impl View {
     }
 
     fn room_npc_list(&mut self) {
-        if let Some(ViewItem::RoomNpcs(npcs)) = self.items.iter().find(|i| matches!(i, ViewItem::RoomNpcs(_))) {
+        if let Some(ViewItem::RoomNpcs(npcs)) = self.items.iter().find_map(|i| match i.view_item {
+            ViewItem::RoomNpcs(_) => Some(&i.view_item),
+            _ => None,
+        }) {
             println!("{}:", "Others".subheading_style());
             for npc in npcs {
                 println!("   {}", npc.name.npc_style());
@@ -656,7 +762,10 @@ impl View {
     }
 
     fn room_exit_list(&mut self) {
-        if let Some(ViewItem::RoomExits(exit_lines)) = self.items.iter().find(|i| matches!(i, ViewItem::RoomExits(_))) {
+        if let Some(ViewItem::RoomExits(exit_lines)) = self.items.iter().find_map(|i| match i.view_item {
+            ViewItem::RoomExits(_) => Some(&i.view_item),
+            _ => None,
+        }) {
             println!("{}:", "Exits".subheading_style());
             for exit in exit_lines {
                 print!("    > ");
@@ -680,7 +789,10 @@ impl View {
     }
 
     fn room_item_list(&mut self) {
-        if let Some(ViewItem::RoomItems(names)) = self.items.iter().find(|i| matches!(i, ViewItem::RoomItems(_))) {
+        if let Some(ViewItem::RoomItems(names)) = self.items.iter().find_map(|i| match i.view_item {
+            ViewItem::RoomItems(_) => Some(&i.view_item),
+            _ => None,
+        }) {
             println!("{}:", "Items".subheading_style());
             for name in names {
                 println!("    * {}", name.item_style());
@@ -691,9 +803,10 @@ impl View {
     fn room_overlays(&mut self) {
         // Note: force_mode is passed with a RoomOverlay item but currently unused
         // (overlays are displayed regardless of view mode)
-        if let Some(ViewItem::RoomOverlays { text, .. }) =
-            self.items.iter().find(|i| matches!(i, ViewItem::RoomOverlays { .. }))
-        {
+        if let Some(ViewItem::RoomOverlays { text, .. }) = self.items.iter().find_map(|i| match i.view_item {
+            ViewItem::RoomOverlays { .. } => Some(&i.view_item),
+            _ => None,
+        }) {
             let mut full_ovl = String::new();
             for ovl in text {
                 let _ = write!(full_ovl, "{ovl} ");
@@ -709,11 +822,10 @@ impl View {
             description,
             visited,
             force_mode,
-        }) = self
-            .items
-            .iter()
-            .find(|i| matches!(i, ViewItem::RoomDescription { .. }))
-        {
+        }) = self.items.iter().find_map(|i| match i.view_item {
+            ViewItem::RoomDescription { .. } => Some(&i.view_item),
+            _ => None,
+        }) {
             // Use the forced display mode if there is one, otherwise use current setting
             let display_mode = force_mode.unwrap_or(self.mode);
             if display_mode == ViewMode::ClearVerbose {
@@ -771,6 +883,23 @@ pub enum ViewMode {
     Verbose,
     /// Render brief descriptions after the first visit to a room.
     Brief,
+}
+
+/// Wrapper for a `ViewItem` to allow flexible ordering of display items.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ViewEntry {
+    pub section: Section,
+    pub priority: isize,
+    pub custom_priority: Option<isize>,
+    pub view_item: ViewItem,
+    pub sequence: usize,
+}
+
+impl ViewEntry {
+    /// Returns an overriding custom display priority if one is set, otherwise the base value.
+    fn effective_priority(&self) -> isize {
+        self.custom_priority.unwrap_or(self.priority)
+    }
 }
 
 /// `ViewItems` are each of the various types of information / messages that may be displayed to the player.
@@ -901,6 +1030,42 @@ impl ViewItem {
         }
     }
 
+    pub fn default_priority(&self) -> isize {
+        match &self {
+            ViewItem::ActionFailure(_) => 0,
+            ViewItem::ActionSuccess(_) => 0,
+            ViewItem::ActiveGoal { .. } => -20,
+            ViewItem::AmbientEvent(_) => -10,
+            ViewItem::CompleteGoal { .. } => -10,
+            ViewItem::EngineMessage(_) => 0,
+            ViewItem::Error(_) => 0,
+            ViewItem::GameLoaded { .. } => 0,
+            ViewItem::GameSaved { .. } => 0,
+            ViewItem::SavedGamesList { .. } => 0,
+            ViewItem::Help { .. } => 0,
+            ViewItem::Inventory(_) => 0,
+            ViewItem::ItemConsumableStatus(_) => -10,
+            ViewItem::ItemContents(_) => -20,
+            ViewItem::ItemDescription { .. } => -30,
+            ViewItem::ItemText(_) => -20,
+            ViewItem::NpcDescription { .. } => -30,
+            ViewItem::NpcInventory(_) => -20,
+            ViewItem::NpcSpeech { .. } => -10,
+            ViewItem::NpcEntered { .. } => -20,
+            ViewItem::NpcLeft { .. } => 0,
+            ViewItem::PointsAwarded { .. } => 20,
+            ViewItem::QuitSummary { .. } => 30,
+            ViewItem::RoomDescription { .. } => -30,
+            ViewItem::RoomExits(_) => -10,
+            ViewItem::RoomItems(_) => -20,
+            ViewItem::RoomNpcs(_) => 0,
+            ViewItem::RoomOverlays { .. } => -25,
+            ViewItem::StatusChange { .. } => 0,
+            ViewItem::TransitionMessage(_) => -30,
+            ViewItem::TriggeredEvent(_) => 0,
+        }
+    }
+
     /// Extract NPC name from NPC transit items.
     pub fn npc_name(&self) -> &str {
         match self {
@@ -940,4 +1105,55 @@ pub struct ExitLine {
 pub struct NpcLine {
     pub name: String,
     pub description: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn world_entries_sorted_respects_custom_priority() {
+        let mut view = View::new();
+        view.push(ViewItem::ActionSuccess("ignored".into()));
+        view.push(ViewItem::NpcSpeech {
+            speaker: "NPC".into(),
+            quote: "Hello".into(),
+        });
+        view.push_with_priority(ViewItem::TriggeredEvent("Radio hums".into()), -25);
+        view.push_with_priority(
+            ViewItem::StatusChange {
+                action: StatusAction::Apply,
+                status: "Poisoned".into(),
+            },
+            5,
+        );
+
+        let ordered: Vec<&str> = view
+            .world_entries_sorted()
+            .iter()
+            .map(|entry| match &entry.view_item {
+                ViewItem::TriggeredEvent(_) => "triggered",
+                ViewItem::NpcSpeech { .. } => "speech",
+                ViewItem::StatusChange { .. } => "status",
+                other => panic!("Unexpected ViewItem in results: {other:?}"),
+            })
+            .collect();
+
+        assert_eq!(ordered, vec!["triggered", "speech", "status"]);
+    }
+
+    #[test]
+    fn world_entries_sorted_excludes_other_sections() {
+        let mut view = View::new();
+        view.push(ViewItem::ActionSuccess("direct result".into()));
+        view.push(ViewItem::AmbientEvent("ambient".into()));
+        view.push(ViewItem::NpcSpeech {
+            speaker: "NPC".into(),
+            quote: "Priority".into(),
+        });
+
+        let entries = view.world_entries_sorted();
+        assert_eq!(entries.len(), 1);
+        assert!(matches!(entries[0].view_item, ViewItem::NpcSpeech { .. }));
+    }
 }

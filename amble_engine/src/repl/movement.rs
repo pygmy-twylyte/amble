@@ -472,7 +472,7 @@ mod tests {
         let result = move_to_handler(&mut world, &mut view, "north");
         assert!(result.is_err());
         assert_eq!(view.items.len(), 1);
-        assert!(matches!(view.items[0], ViewItem::ActionFailure(ref msg) if msg == "You're not in a room."));
+        assert!(matches!(view.items[0].view_item, ViewItem::ActionFailure(ref msg) if msg == "You're not in a room."));
     }
 
     #[test]
@@ -482,7 +482,7 @@ mod tests {
         let result = go_back_handler(&mut world, &mut view);
         assert!(result.is_err());
         assert_eq!(view.items.len(), 1);
-        assert!(matches!(view.items[0], ViewItem::ActionFailure(ref msg) if msg == "You're not in a room."));
+        assert!(matches!(view.items[0].view_item, ViewItem::ActionFailure(ref msg) if msg == "You're not in a room."));
     }
 
     #[test]

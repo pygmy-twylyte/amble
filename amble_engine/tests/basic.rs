@@ -347,19 +347,22 @@ fn test_filtered_goals_empty() {
 
 #[test]
 fn test_check_scheduled_events() {
-    use ae::trigger::TriggerAction;
+    use ae::trigger::{ScriptedAction, TriggerAction};
     let mut world = world::AmbleWorld::new_empty();
     let mut view = View::new();
-    world
-        .scheduler
-        .schedule_on(1, vec![TriggerAction::ShowMessage("test".to_string())], None);
+    world.scheduler.schedule_on(
+        1,
+        vec![ScriptedAction::new(TriggerAction::ShowMessage("test".to_string()))],
+        None,
+    );
     world.turn_count = 1;
     ae::repl::check_scheduled_events(&mut world, &mut view).unwrap();
-    assert!(
-        view.items
-            .iter()
-            .any(|item| matches!(item, view::ViewItem::TriggeredEvent(msg) if msg.contains("test")))
-    );
+    assert!(view.items.iter().any(|entry| {
+        matches!(
+            &entry.view_item,
+            view::ViewItem::TriggeredEvent(msg) if msg.contains("test")
+        )
+    }));
 }
 
 #[test]
@@ -464,11 +467,12 @@ fn test_check_ambient_triggers() {
     };
     world.triggers.push(trigger);
     ae::repl::check_ambient_triggers(&mut world, &mut view).unwrap();
-    assert!(
-        view.items
-            .iter()
-            .any(|item| matches!(item, view::ViewItem::AmbientEvent(msg) if msg.contains("test message")))
-    );
+    assert!(view.items.iter().any(|entry| {
+        matches!(
+            &entry.view_item,
+            view::ViewItem::AmbientEvent(msg) if msg.contains("test message")
+        )
+    }));
 }
 
 #[test]
@@ -476,9 +480,10 @@ fn test_entity_not_found() {
     let world = world::AmbleWorld::new_empty();
     let mut view = View::new();
     ae::repl::entity_not_found(&world, &mut view, "test_entity");
-    assert!(
-        view.items
-            .iter()
-            .any(|item| matches!(item, view::ViewItem::Error(msg) if msg.contains("test_entity")))
-    );
+    assert!(view.items.iter().any(|entry| {
+        matches!(
+            &entry.view_item,
+            view::ViewItem::Error(msg) if msg.contains("test_entity")
+        )
+    }));
 }

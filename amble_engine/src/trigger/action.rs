@@ -222,18 +222,18 @@ pub enum TriggerAction {
     /// Conditionally run nested actions when the condition evaluates to true.
     Conditional {
         condition: EventCondition,
-        actions: Vec<TriggerAction>,
+        actions: Vec<ScriptedAction>,
     },
     /// Schedules a list of actions to fire after a specified number of turns
     ScheduleIn {
         turns_ahead: usize,
-        actions: Vec<TriggerAction>,
+        actions: Vec<ScriptedAction>,
         note: Option<String>,
     },
     /// Schedules a list of actions to fire on a specific turn
     ScheduleOn {
         on_turn: usize,
-        actions: Vec<TriggerAction>,
+        actions: Vec<ScriptedAction>,
         note: Option<String>,
     },
     /// Schedules actions in the future with a condition and on-false policy
@@ -241,7 +241,7 @@ pub enum TriggerAction {
         turns_ahead: usize,
         condition: EventCondition,
         on_false: OnFalsePolicy,
-        actions: Vec<TriggerAction>,
+        actions: Vec<ScriptedAction>,
         note: Option<String>,
     },
     /// Schedules actions on a specific turn with a condition and on-false policy
@@ -249,9 +249,26 @@ pub enum TriggerAction {
         on_turn: usize,
         condition: EventCondition,
         on_false: OnFalsePolicy,
-        actions: Vec<TriggerAction>,
+        actions: Vec<ScriptedAction>,
         note: Option<String>,
     },
+}
+
+/// Wrapper for a trigger action with optional metadata that influences rendering.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ScriptedAction {
+    pub action: TriggerAction,
+    #[serde(default)]
+    pub priority: Option<isize>,
+}
+impl ScriptedAction {
+    pub fn new(action: TriggerAction) -> Self {
+        Self { action, priority: None }
+    }
+
+    pub fn with_priority(action: TriggerAction, priority: Option<isize>) -> Self {
+        Self { action, priority }
+    }
 }
 
 /// Execute a single trigger action against the current world state.
@@ -263,7 +280,7 @@ pub enum TriggerAction {
 /// # Errors
 /// - Returns an error if the underlying handler cannot resolve referenced objects.
 #[allow(clippy::too_many_lines)]
-pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &TriggerAction) -> Result<()> {
+pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, scripted: &ScriptedAction) -> Result<()> {
     use TriggerAction::{
         AddFlag, AddSpinnerWedge, AdvanceFlag, AwardPoints, Conditional, DenyRead, DespawnItem, DespawnNpc,
         GiveItemToPlayer, LockExit, LockItem, ModifyItem, ModifyNpc, ModifyRoom, NpcRefuseItem, NpcSays, NpcSaysRandom,
@@ -272,6 +289,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
         SetNpcActive, ShowMessage, SpawnItemCurrentRoom, SpawnItemInContainer, SpawnItemInInventory, SpawnItemInRoom,
         SpawnNpcInRoom, SpinnerMessage, UnlockExit, UnlockItem,
     };
+    let ScriptedAction { action, priority } = scripted;
     match action {
         ModifyItem { item_id, patch } => modify_item(world, *item_id, patch)?,
         ModifyRoom { room_id, patch } => modify_room(world, *room_id, patch)?,
@@ -290,11 +308,11 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
         },
         ResetFlag(flag_name) => reset_flag(&mut world.player, flag_name),
         AdvanceFlag(flag_name) => advance_flag(&mut world.player, flag_name),
-        SpinnerMessage { spinner } => spinner_message(world, view, spinner)?,
+        SpinnerMessage { spinner } => spinner_message(world, view, spinner, *priority)?,
         RestrictItem(item_id) => restrict_item(world, item_id)?,
-        NpcRefuseItem { npc_id, reason } => npc_refuse_item(world, view, *npc_id, reason)?,
-        NpcSaysRandom { npc_id } => npc_says_random(world, view, npc_id)?,
-        NpcSays { npc_id, quote } => npc_says(world, view, npc_id, quote)?,
+        NpcRefuseItem { npc_id, reason } => npc_refuse_item(world, view, *npc_id, reason, *priority)?,
+        NpcSaysRandom { npc_id } => npc_says_random(world, view, npc_id, *priority)?,
+        NpcSays { npc_id, quote } => npc_says(world, view, npc_id, quote, *priority)?,
         DenyRead(reason) => deny_read(view, reason),
         DespawnItem { item_id } => despawn_item(world, item_id)?,
         DespawnNpc { npc_id } => despawn_npc(world, view, *npc_id)?,
@@ -310,7 +328,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
         } => reveal_exit(world, direction, exit_from, exit_to)?,
         SetItemDescription { item_id, text } => set_item_description(world, item_id, text)?,
         SetNPCState { npc_id, state } => set_npc_state(world, npc_id, state)?,
-        ShowMessage(text) => show_message(view, text),
+        ShowMessage(text) => show_message_with_priority(view, text, *priority),
         SpawnItemInContainer { item_id, container_id } => {
             spawn_item_in_container(world, item_id, container_id)?;
         },
@@ -323,9 +341,9 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, action: &Trigger
         UnlockItem(item_id) => unlock_item(world, item_id)?,
         UnlockExit { from_room, direction } => unlock_exit(world, from_room, direction)?,
         LockExit { from_room, direction } => lock_exit(world, from_room, direction)?,
-        AddFlag(flag) => add_flag(world, view, flag),
-        RemoveFlag(flag) => remove_flag(world, view, flag),
-        AwardPoints { amount, reason } => award_points(world, view, *amount, reason),
+        AddFlag(flag) => add_flag_with_priority(world, view, flag, *priority),
+        RemoveFlag(flag) => remove_flag_with_priority(world, view, flag, *priority),
+        AwardPoints { amount, reason } => award_points_with_priority(world, view, *amount, reason, *priority),
         Conditional { condition, actions } => {
             if condition.eval(world) {
                 for nested in actions {
@@ -951,17 +969,23 @@ pub fn set_barred_message(world: &mut AmbleWorld, exit_from: &Uuid, exit_to: &Uu
 ///
 /// # Errors
 /// Returns an error if either the NPC or their dialogue data cannot be found.
-pub fn npc_refuse_item(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, reason: &str) -> Result<()> {
-    npc_says(world, view, &npc_id, reason)?;
+pub fn npc_refuse_item(
+    world: &mut AmbleWorld,
+    view: &mut View,
+    npc_id: Uuid,
+    reason: &str,
+    priority: Option<isize>,
+) -> Result<()> {
+    npc_says(world, view, &npc_id, reason, priority)?;
     let npc_name = world
         .npcs
         .get(&npc_id)
         .with_context(|| "looking up NPC {npc_id} during item refusal")?
         .name();
-    view.push(ViewItem::TriggeredEvent(format!(
-        "{} returns it to you.",
-        npc_name.npc_style()
-    )));
+    view.push_with_custom_priority(
+        ViewItem::TriggeredEvent(format!("{} returns it to you.", npc_name.npc_style())),
+        priority,
+    );
     info!("└─ action: NpcRefuseItem({npc_name}, \"{reason}\"");
     Ok(())
 }
@@ -1076,11 +1100,19 @@ pub fn advance_flag(player: &mut Player, flag_name: &str) {
 /// - Selects a random weighted message from the spinner
 /// - If the spinner returns an empty message, nothing is displayed
 /// - Messages are styled as ambient events for visual distinction
-pub fn spinner_message(world: &mut AmbleWorld, view: &mut View, spinner_type: &SpinnerType) -> Result<()> {
+pub fn spinner_message(
+    world: &mut AmbleWorld,
+    view: &mut View,
+    spinner_type: &SpinnerType,
+    priority: Option<isize>,
+) -> Result<()> {
     if let Some(spinner) = world.spinners.get(spinner_type) {
         let msg = spinner.spin().unwrap_or_default();
         if !msg.is_empty() {
-            view.push(ViewItem::AmbientEvent(format!("{}", msg.ambient_trig_style())));
+            view.push_with_custom_priority(
+                ViewItem::AmbientEvent(format!("{}", msg.ambient_trig_style())),
+                priority,
+            );
         }
         info!("└─ action: SpinnerMessage(\"{msg}\")");
         Ok(())
@@ -1108,14 +1140,21 @@ pub fn spinner_message(world: &mut AmbleWorld, view: &mut View, spinner_type: &S
 /// - If the flag doesn't exist, a warning is logged but no error occurs
 /// - Both simple and sequence flags can be removed with this action
 pub fn remove_flag(world: &mut AmbleWorld, view: &mut View, flag: &str) {
+    remove_flag_with_priority(world, view, flag, None);
+}
+
+fn remove_flag_with_priority(world: &mut AmbleWorld, view: &mut View, flag: &str, priority: Option<isize>) {
     let target = Flag::simple(flag, 0);
     if world.player.flags.remove(&target) {
         info!("└─ action: RemoveFlag(\"{flag}\")");
         if let Some(status) = flag.strip_prefix("status:") {
-            view.push(ViewItem::StatusChange {
-                action: StatusAction::Remove,
-                status: status.to_string(),
-            });
+            view.push_with_custom_priority(
+                ViewItem::StatusChange {
+                    action: StatusAction::Remove,
+                    status: status.to_string(),
+                },
+                priority,
+            );
         }
     } else {
         warn!("└─ action: RemoveFlag(\"{flag}\") - flag was not set");
@@ -1169,7 +1208,7 @@ pub fn restrict_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
 ///
 /// - If the specified NPC doesn't exist in the world
 /// - If the `NpcIgnore` spinner required for dialogue generation is missing
-pub fn npc_says_random(world: &AmbleWorld, view: &mut View, npc_id: &Uuid) -> Result<()> {
+pub fn npc_says_random(world: &AmbleWorld, view: &mut View, npc_id: &Uuid, priority: Option<isize>) -> Result<()> {
     let npc = world
         .npcs
         .get(npc_id)
@@ -1179,10 +1218,13 @@ pub fn npc_says_random(world: &AmbleWorld, view: &mut View, npc_id: &Uuid) -> Re
         .get(&SpinnerType::Core(CoreSpinnerType::NpcIgnore))
         .with_context(|| "failed lookup of NpcIgnore spinner".to_string())?;
     let line = npc.random_dialogue(ignore_spinner);
-    view.push(ViewItem::NpcSpeech {
-        speaker: npc.name().to_string(),
-        quote: line.clone(),
-    });
+    view.push_with_custom_priority(
+        ViewItem::NpcSpeech {
+            speaker: npc.name().to_string(),
+            quote: line.clone(),
+        },
+        priority,
+    );
     info!("└─ action: NpcSays({}, \"{line}\")", npc.symbol());
     Ok(())
 }
@@ -1207,16 +1249,25 @@ pub fn npc_says_random(world: &AmbleWorld, view: &mut View, npc_id: &Uuid) -> Re
 /// # Errors
 ///
 /// - If the specified NPC doesn't exist in the world
-pub fn npc_says(world: &AmbleWorld, view: &mut View, npc_id: &Uuid, quote: &str) -> Result<()> {
+pub fn npc_says(
+    world: &AmbleWorld,
+    view: &mut View,
+    npc_id: &Uuid,
+    quote: &str,
+    priority: Option<isize>,
+) -> Result<()> {
     let npc_name = world
         .npcs
         .get(npc_id)
         .with_context(|| format!("action NpcSays({npc_id},_): npc not found"))?
         .name();
-    view.push(ViewItem::NpcSpeech {
-        speaker: npc_name.to_string(),
-        quote: quote.to_string(),
-    });
+    view.push_with_custom_priority(
+        ViewItem::NpcSpeech {
+            speaker: npc_name.to_string(),
+            quote: quote.to_string(),
+        },
+        priority,
+    );
     info!("└─ action: NpcSays({npc_name}, \"{quote}\")");
     Ok(())
 }
@@ -1240,12 +1291,25 @@ pub fn npc_says(world: &AmbleWorld, view: &mut View, npc_id: &Uuid, quote: &str)
 /// - A message is displayed to the player showing the point change
 /// - The action is logged for audit purposes
 pub fn award_points(world: &mut AmbleWorld, view: &mut View, amount: isize, reason: &str) {
+    award_points_with_priority(world, view, amount, reason, None);
+}
+
+fn award_points_with_priority(
+    world: &mut AmbleWorld,
+    view: &mut View,
+    amount: isize,
+    reason: &str,
+    priority: Option<isize>,
+) {
     world.player.score = world.player.score.saturating_add_signed(amount);
     info!("└─ action: AwardPoints({amount}, reason: {reason})");
-    view.push(ViewItem::PointsAwarded {
-        amount,
-        reason: reason.to_string(),
-    });
+    view.push_with_custom_priority(
+        ViewItem::PointsAwarded {
+            amount,
+            reason: reason.to_string(),
+        },
+        priority,
+    );
 }
 
 /// Adds a status flag to the player.
@@ -1266,11 +1330,18 @@ pub fn award_points(world: &mut AmbleWorld, view: &mut View, amount: isize, reas
 /// - If a flag with the same name already exists, it's replaced
 /// - Both simple and sequence flags can be added
 pub fn add_flag(world: &mut AmbleWorld, view: &mut View, flag: &Flag) {
+    add_flag_with_priority(world, view, flag, None);
+}
+
+fn add_flag_with_priority(world: &mut AmbleWorld, view: &mut View, flag: &Flag, priority: Option<isize>) {
     if let Some(status) = flag.name().strip_prefix("status:") {
-        view.push(ViewItem::StatusChange {
-            action: StatusAction::Apply,
-            status: status.to_string(),
-        });
+        view.push_with_custom_priority(
+            ViewItem::StatusChange {
+                action: StatusAction::Apply,
+                status: status.to_string(),
+            },
+            priority,
+        );
     }
     world.player.flags.insert(flag.clone());
     info!("└─ action: AddFlag(\"{flag}\")");
@@ -1613,7 +1684,14 @@ pub fn spawn_item_in_container(world: &mut AmbleWorld, item_id: &Uuid, container
 /// - The message is styled as a triggered event for visual distinction
 /// - Long messages are truncated in the log for readability (first 50 characters)
 pub fn show_message(view: &mut View, text: &String) {
-    view.push(ViewItem::TriggeredEvent(format!("{}", text.triggered_style())));
+    show_message_with_priority(view, text, None);
+}
+
+fn show_message_with_priority(view: &mut View, text: &String, priority: Option<isize>) {
+    view.push_with_custom_priority(
+        ViewItem::TriggeredEvent(format!("{}", text.triggered_style())),
+        priority,
+    );
     info!(
         "└─ action: ShowMessage(\"{}...\")",
         &text[..std::cmp::min(text.len(), 50)]
@@ -1939,7 +2017,7 @@ pub fn schedule_in(
     world: &mut AmbleWorld,
     _view: &mut View,
     turns_ahead: usize,
-    actions: &[TriggerAction],
+    actions: &[ScriptedAction],
     note: Option<String>,
 ) -> Result<()> {
     let log_note = note.as_deref().unwrap_or("<no note>");
@@ -1986,7 +2064,7 @@ pub fn schedule_on(
     world: &mut AmbleWorld,
     _view: &mut View,
     on_turn: usize,
-    actions: &[TriggerAction],
+    actions: &[ScriptedAction],
     note: Option<String>,
 ) -> Result<()> {
     let log_note = note.as_deref().unwrap_or("<no note>");
@@ -2009,7 +2087,7 @@ pub fn schedule_in_if(
     turns_ahead: usize,
     condition: &EventCondition,
     on_false: OnFalsePolicy,
-    actions: &[TriggerAction],
+    actions: &[ScriptedAction],
     note: Option<String>,
 ) -> Result<()> {
     let log_note = note.as_deref().unwrap_or("<no note>");
@@ -2038,7 +2116,7 @@ pub fn schedule_on_if(
     on_turn: usize,
     condition: &EventCondition,
     on_false: OnFalsePolicy,
-    actions: &[TriggerAction],
+    actions: &[ScriptedAction],
     note: Option<String>,
 ) -> Result<()> {
     let log_note = note.as_deref().unwrap_or("<no note>");
@@ -2062,7 +2140,7 @@ pub fn schedule_if_player_in_any(
     turns_ahead: usize,
     room_ids: impl IntoIterator<Item = uuid::Uuid>,
     on_false: OnFalsePolicy,
-    actions: &[TriggerAction],
+    actions: &[ScriptedAction],
     note: Option<String>,
 ) -> Result<()> {
     let mut conds = Vec::new();
@@ -2087,7 +2165,7 @@ pub fn schedule_on_if_player_in_any(
     on_turn: usize,
     room_ids: impl IntoIterator<Item = uuid::Uuid>,
     on_false: OnFalsePolicy,
-    actions: &[TriggerAction],
+    actions: &[ScriptedAction],
     note: Option<String>,
 ) -> Result<()> {
     let mut conds = Vec::new();
@@ -2112,7 +2190,7 @@ pub fn schedule_in_if_player_has_item(
     turns_ahead: usize,
     item_id: uuid::Uuid,
     on_false: OnFalsePolicy,
-    actions: &[TriggerAction],
+    actions: &[ScriptedAction],
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::HasItem(item_id));
@@ -2129,7 +2207,7 @@ pub fn schedule_on_if_player_has_item(
     on_turn: usize,
     item_id: uuid::Uuid,
     on_false: OnFalsePolicy,
-    actions: &[TriggerAction],
+    actions: &[ScriptedAction],
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::HasItem(item_id));
@@ -2146,7 +2224,7 @@ pub fn schedule_in_if_player_missing_item(
     turns_ahead: usize,
     item_id: uuid::Uuid,
     on_false: OnFalsePolicy,
-    actions: &[TriggerAction],
+    actions: &[ScriptedAction],
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::MissingItem(item_id));
@@ -2163,7 +2241,7 @@ pub fn schedule_on_if_player_missing_item(
     on_turn: usize,
     item_id: uuid::Uuid,
     on_false: OnFalsePolicy,
-    actions: &[TriggerAction],
+    actions: &[ScriptedAction],
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::MissingItem(item_id));
@@ -2180,7 +2258,7 @@ pub fn schedule_in_if_flag_set(
     turns_ahead: usize,
     flag: &str,
     on_false: OnFalsePolicy,
-    actions: &[TriggerAction],
+    actions: &[ScriptedAction],
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::HasFlag(flag.to_string()));
@@ -2197,7 +2275,7 @@ pub fn schedule_on_if_flag_set(
     on_turn: usize,
     flag: &str,
     on_false: OnFalsePolicy,
-    actions: &[TriggerAction],
+    actions: &[ScriptedAction],
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::HasFlag(flag.to_string()));
@@ -2214,7 +2292,7 @@ pub fn schedule_in_if_flag_missing(
     turns_ahead: usize,
     flag: &str,
     on_false: OnFalsePolicy,
-    actions: &[TriggerAction],
+    actions: &[ScriptedAction],
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::MissingFlag(flag.to_string()));
@@ -2231,7 +2309,7 @@ pub fn schedule_on_if_flag_missing(
     on_turn: usize,
     flag: &str,
     on_false: OnFalsePolicy,
-    actions: &[TriggerAction],
+    actions: &[ScriptedAction],
     note: Option<String>,
 ) -> Result<()> {
     let condition = EventCondition::Trigger(TriggerCondition::MissingFlag(flag.to_string()));
@@ -2833,7 +2911,9 @@ mod tests {
     fn schedule_in_adds_event_to_scheduler() {
         let (mut world, _, _) = build_test_world();
         let mut view = View::new();
-        let actions = vec![TriggerAction::ShowMessage("Test message".to_string())];
+        let actions = vec![ScriptedAction::new(TriggerAction::ShowMessage(
+            "Test message".to_string(),
+        ))];
 
         schedule_in(&mut world, &mut view, 5, &actions, Some("Test event".to_string())).unwrap();
 
@@ -2850,7 +2930,9 @@ mod tests {
     fn schedule_on_adds_event_to_scheduler() {
         let (mut world, _, _) = build_test_world();
         let mut view = View::new();
-        let actions = vec![TriggerAction::ShowMessage("Test message".to_string())];
+        let actions = vec![ScriptedAction::new(TriggerAction::ShowMessage(
+            "Test message".to_string(),
+        ))];
 
         schedule_on(
             &mut world,
@@ -2875,12 +2957,12 @@ mod tests {
         let (mut world, _, _) = build_test_world();
         let mut view = View::new();
         let actions = vec![
-            TriggerAction::ShowMessage("First message".to_string()),
-            TriggerAction::AwardPoints {
+            ScriptedAction::new(TriggerAction::ShowMessage("First message".to_string())),
+            ScriptedAction::new(TriggerAction::AwardPoints {
                 amount: 10,
                 reason: "scheduler bonus".into(),
-            },
-            TriggerAction::ShowMessage("Second message".to_string()),
+            }),
+            ScriptedAction::new(TriggerAction::ShowMessage("Second message".to_string())),
         ];
 
         schedule_in(&mut world, &mut view, 3, &actions, None).unwrap();
@@ -2894,10 +2976,10 @@ mod tests {
     fn schedule_on_with_no_note() {
         let (mut world, _, _) = build_test_world();
         let mut view = View::new();
-        let actions = vec![TriggerAction::AwardPoints {
+        let actions = vec![ScriptedAction::new(TriggerAction::AwardPoints {
             amount: 5,
             reason: "scheduled payout".into(),
-        }];
+        })];
 
         schedule_on(&mut world, &mut view, 100, &actions, None).unwrap();
 
@@ -2911,12 +2993,14 @@ mod tests {
         let (mut world, _, _) = build_test_world();
         let mut view = View::new();
 
-        let nested_actions = vec![TriggerAction::ShowMessage("Delayed message".to_string())];
-        let action = TriggerAction::ScheduleIn {
+        let nested_actions = vec![ScriptedAction::new(TriggerAction::ShowMessage(
+            "Delayed message".to_string(),
+        ))];
+        let action = ScriptedAction::new(TriggerAction::ScheduleIn {
             turns_ahead: 7,
             actions: nested_actions,
             note: Some("Integration test".to_string()),
-        };
+        });
 
         dispatch_action(&mut world, &mut view, &action).unwrap();
 
@@ -2932,17 +3016,17 @@ mod tests {
         let mut view = View::new();
 
         let nested_actions = vec![
-            TriggerAction::AwardPoints {
+            ScriptedAction::new(TriggerAction::AwardPoints {
                 amount: 25,
                 reason: "exact timing".into(),
-            },
-            TriggerAction::ShowMessage("Exact timing!".to_string()),
+            }),
+            ScriptedAction::new(TriggerAction::ShowMessage("Exact timing!".to_string())),
         ];
-        let action = TriggerAction::ScheduleOn {
+        let action = ScriptedAction::new(TriggerAction::ScheduleOn {
             on_turn: 50,
             actions: nested_actions,
             note: None,
-        };
+        });
 
         dispatch_action(&mut world, &mut view, &action).unwrap();
 
@@ -2958,18 +3042,18 @@ mod tests {
         let (mut world, _, _) = build_test_world();
         let mut view = View::new();
 
-        let action = TriggerAction::Conditional {
+        let action = ScriptedAction::new(TriggerAction::Conditional {
             condition: EventCondition::Trigger(TriggerCondition::MissingFlag("hint".into())),
-            actions: vec![TriggerAction::ShowMessage("Conditional fired".into())],
-        };
+            actions: vec![ScriptedAction::new(TriggerAction::ShowMessage(
+                "Conditional fired".into(),
+            ))],
+        });
 
         dispatch_action(&mut world, &mut view, &action).unwrap();
 
-        assert!(
-            view.items
-                .iter()
-                .any(|vi| matches!(vi, ViewItem::TriggeredEvent(msg) if msg.contains("Conditional fired")))
-        );
+        assert!(view.items.iter().any(
+            |entry| matches!(&entry.view_item, ViewItem::TriggeredEvent(msg) if msg.contains("Conditional fired"))
+        ));
     }
 
     #[test]
@@ -2978,18 +3062,21 @@ mod tests {
         world.player.flags.insert(Flag::simple("hint".into(), world.turn_count));
         let mut view = View::new();
 
-        let action = TriggerAction::Conditional {
+        let action = ScriptedAction::new(TriggerAction::Conditional {
             condition: EventCondition::Trigger(TriggerCondition::MissingFlag("hint".into())),
-            actions: vec![TriggerAction::ShowMessage("Should not appear".into())],
-        };
+            actions: vec![ScriptedAction::new(TriggerAction::ShowMessage(
+                "Should not appear".into(),
+            ))],
+        });
 
         dispatch_action(&mut world, &mut view, &action).unwrap();
 
-        assert!(
-            view.items
-                .iter()
-                .all(|vi| !matches!(vi, ViewItem::TriggeredEvent(msg) if msg.contains("Should not appear")))
-        );
+        assert!(view.items.iter().all(|entry| {
+            !matches!(
+                &entry.view_item,
+                ViewItem::TriggeredEvent(msg) if msg.contains("Should not appear")
+            )
+        }));
     }
 
     #[test]
@@ -3036,10 +3123,10 @@ mod tests {
         world.npcs.insert(npc_id, npc);
 
         let mut view = View::new();
-        npc_says(&world, &mut view, &npc_id, "Hello there").unwrap();
+        npc_says(&world, &mut view, &npc_id, "Hello there", None).unwrap();
 
         assert!(matches!(
-            view.items.last(),
+            view.items.last().map(|entry| &entry.view_item),
             Some(ViewItem::NpcSpeech { quote, .. }) if quote == "Hello there"
         ));
     }
@@ -3058,10 +3145,10 @@ mod tests {
         world.npcs.insert(npc_id, npc);
 
         let mut view = View::new();
-        npc_says_random(&world, &mut view, &npc_id).unwrap();
+        npc_says_random(&world, &mut view, &npc_id, None).unwrap();
 
         assert!(matches!(
-            view.items.last(),
+            view.items.last().map(|entry| &entry.view_item),
             Some(ViewItem::NpcSpeech { quote, .. }) if quote == "Howdy"
         ));
     }

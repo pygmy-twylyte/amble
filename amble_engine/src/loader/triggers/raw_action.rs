@@ -10,14 +10,15 @@ use std::collections::HashSet;
 use super::raw_condition::RawTriggerCondition;
 use crate::loader::items::RawItemAbility;
 use crate::scheduler::{EventCondition, OnFalsePolicy};
-use crate::trigger::{ItemPatch, NpcDialoguePatch, NpcMovementPatch, NpcPatch, RoomExitPatch, RoomPatch};
+use crate::trigger::{
+    ItemPatch, NpcDialoguePatch, NpcMovementPatch, NpcPatch, RoomExitPatch, RoomPatch, ScriptedAction, TriggerAction,
+};
 use crate::{
     item::ContainerState,
     loader::SymbolTable,
     npc::{MovementTiming, NpcState},
     player::Flag,
     spinners::SpinnerType,
-    trigger::TriggerAction,
 };
 
 #[derive(Debug, Deserialize)]
@@ -290,6 +291,20 @@ impl RawNpcPatch {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct RawActionStmt {
+    #[serde(default)]
+    pub priority: Option<isize>,
+    #[serde(flatten)]
+    pub action: RawTriggerAction,
+}
+impl RawActionStmt {
+    pub fn to_action(&self, symbols: &SymbolTable) -> Result<ScriptedAction> {
+        let cooked = self.action.to_action(symbols)?;
+        Ok(ScriptedAction::with_priority(cooked, self.priority))
+    }
+}
+
+#[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum RawTriggerAction {
     ModifyItem {
@@ -429,30 +444,30 @@ pub enum RawTriggerAction {
     },
     Conditional {
         condition: RawEventCondition,
-        actions: Vec<RawTriggerAction>,
+        actions: Vec<RawActionStmt>,
     },
     ScheduleIn {
         turns_ahead: usize,
-        actions: Vec<RawTriggerAction>,
+        actions: Vec<RawActionStmt>,
         note: Option<String>,
     },
     ScheduleOn {
         on_turn: usize,
-        actions: Vec<RawTriggerAction>,
+        actions: Vec<RawActionStmt>,
         note: Option<String>,
     },
     ScheduleInIf {
         turns_ahead: usize,
         condition: RawEventCondition,
         on_false: RawOnFalsePolicy,
-        actions: Vec<RawTriggerAction>,
+        actions: Vec<RawActionStmt>,
         note: Option<String>,
     },
     ScheduleOnIf {
         on_turn: usize,
         condition: RawEventCondition,
         on_false: RawOnFalsePolicy,
-        actions: Vec<RawTriggerAction>,
+        actions: Vec<RawActionStmt>,
         note: Option<String>,
     },
 }
@@ -881,16 +896,20 @@ fn cook_npc_says(
     }
 }
 
+fn cook_scripted_actions(symbols: &SymbolTable, raw_actions: &[RawActionStmt]) -> Result<Vec<ScriptedAction>> {
+    raw_actions
+        .iter()
+        .map(|raw_action| raw_action.to_action(symbols))
+        .collect()
+}
+
 fn cook_schedule_in(
     symbols: &SymbolTable,
     turns_ahead: usize,
-    raw_actions: &[RawTriggerAction],
+    raw_actions: &[RawActionStmt],
     note: Option<String>,
 ) -> Result<TriggerAction> {
-    let mut cooked_actions = Vec::new();
-    for raw_action in raw_actions {
-        cooked_actions.push(raw_action.to_action(symbols)?);
-    }
+    let cooked_actions = cook_scripted_actions(symbols, raw_actions)?;
     Ok(TriggerAction::ScheduleIn {
         turns_ahead,
         actions: cooked_actions,
@@ -901,13 +920,10 @@ fn cook_schedule_in(
 fn cook_schedule_on(
     symbols: &SymbolTable,
     on_turn: usize,
-    raw_actions: &[RawTriggerAction],
+    raw_actions: &[RawActionStmt],
     note: Option<String>,
 ) -> Result<TriggerAction> {
-    let mut cooked_actions = Vec::new();
-    for raw_action in raw_actions {
-        cooked_actions.push(raw_action.to_action(symbols)?);
-    }
+    let cooked_actions = cook_scripted_actions(symbols, raw_actions)?;
     Ok(TriggerAction::ScheduleOn {
         on_turn,
         actions: cooked_actions,
@@ -946,12 +962,9 @@ fn raw_on_false_to_policy(raw: &RawOnFalsePolicy) -> OnFalsePolicy {
 fn cook_conditional(
     symbols: &SymbolTable,
     condition: &RawEventCondition,
-    raw_actions: &[RawTriggerAction],
+    raw_actions: &[RawActionStmt],
 ) -> Result<TriggerAction> {
-    let mut cooked_actions = Vec::new();
-    for raw_action in raw_actions {
-        cooked_actions.push(raw_action.to_action(symbols)?);
-    }
+    let cooked_actions = cook_scripted_actions(symbols, raw_actions)?;
     let event_condition = raw_event_condition_to_event_condition(symbols, condition)?;
     Ok(TriggerAction::Conditional {
         condition: event_condition,
@@ -964,13 +977,10 @@ fn cook_schedule_in_if(
     turns_ahead: usize,
     condition: &RawEventCondition,
     on_false: &RawOnFalsePolicy,
-    raw_actions: &[RawTriggerAction],
+    raw_actions: &[RawActionStmt],
     note: Option<String>,
 ) -> Result<TriggerAction> {
-    let mut cooked_actions = Vec::new();
-    for raw_action in raw_actions {
-        cooked_actions.push(raw_action.to_action(symbols)?);
-    }
+    let cooked_actions = cook_scripted_actions(symbols, raw_actions)?;
     let ec = raw_event_condition_to_event_condition(symbols, condition)?;
     let policy = raw_on_false_to_policy(on_false);
     Ok(TriggerAction::ScheduleInIf {
@@ -987,13 +997,10 @@ fn cook_schedule_on_if(
     on_turn: usize,
     condition: &RawEventCondition,
     on_false: &RawOnFalsePolicy,
-    raw_actions: &[RawTriggerAction],
+    raw_actions: &[RawActionStmt],
     note: Option<String>,
 ) -> Result<TriggerAction> {
-    let mut cooked_actions = Vec::new();
-    for raw_action in raw_actions {
-        cooked_actions.push(raw_action.to_action(symbols)?);
-    }
+    let cooked_actions = cook_scripted_actions(symbols, raw_actions)?;
     let ec = raw_event_condition_to_event_condition(symbols, condition)?;
     let policy = raw_on_false_to_policy(on_false);
     Ok(TriggerAction::ScheduleOnIf {

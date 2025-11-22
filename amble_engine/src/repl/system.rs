@@ -478,7 +478,13 @@ mod tests {
         let mut view = View::new();
         help_handler(&mut view);
         // Find Help ViewItem and ensure at least one DEV command is present
-        if let Some(ViewItem::Help { commands, .. }) = view.items.iter().find(|i| matches!(i, ViewItem::Help { .. })) {
+        if let Some(commands) = view.items.iter().find_map(|entry| {
+            if let ViewItem::Help { commands, .. } = &entry.view_item {
+                Some(commands)
+            } else {
+                None
+            }
+        }) {
             let cmds: Vec<&str> = commands.iter().map(|c| c.command.as_str()).collect();
             assert!(cmds.iter().any(|c| *c == ":npcs"));
             assert!(cmds.iter().any(|c| *c == ":flags"));
@@ -495,7 +501,13 @@ mod tests {
         }
         let mut view = View::new();
         help_handler_dev(&mut view);
-        if let Some(ViewItem::Help { commands, .. }) = view.items.iter().find(|i| matches!(i, ViewItem::Help { .. })) {
+        if let Some(commands) = view.items.iter().find_map(|entry| {
+            if let ViewItem::Help { commands, .. } = &entry.view_item {
+                Some(commands)
+            } else {
+                None
+            }
+        }) {
             assert!(!commands.is_empty());
             assert!(commands.iter().all(|c| c.command.starts_with(':')));
         } else {
@@ -544,14 +556,20 @@ mod tests {
         assert!(matches!(result, Ok(ReplControl::Quit)));
 
         // Verify the QuitSummary uses the custom scoring config
-        if let Some(ViewItem::QuitSummary {
-            rank,
-            notes,
-            score,
-            max_score,
-            ..
-        }) = view.items.iter().find(|i| matches!(i, ViewItem::QuitSummary { .. }))
-        {
+        if let Some((rank, notes, score, max_score)) = view.items.iter().find_map(|entry| {
+            if let ViewItem::QuitSummary {
+                rank,
+                notes,
+                score,
+                max_score,
+                ..
+            } = &entry.view_item
+            {
+                Some((rank, notes, score, max_score))
+            } else {
+                None
+            }
+        }) {
             // 60/100 = 60%, should get "Test Novice" rank
             assert_eq!(rank, "Test Novice");
             assert_eq!(notes, "You passed.");
@@ -576,9 +594,13 @@ mod tests {
         assert!(matches!(result, Ok(ReplControl::Quit)));
 
         // Verify it uses default ranks (100% = "Quantum Overachiever")
-        if let Some(ViewItem::QuitSummary { rank, .. }) =
-            view.items.iter().find(|i| matches!(i, ViewItem::QuitSummary { .. }))
-        {
+        if let Some(rank) = view.items.iter().find_map(|entry| {
+            if let ViewItem::QuitSummary { rank, .. } = &entry.view_item {
+                Some(rank)
+            } else {
+                None
+            }
+        }) {
             assert_eq!(rank, "Quantum Overachiever");
         } else {
             panic!("quit_handler did not produce a QuitSummary ViewItem");

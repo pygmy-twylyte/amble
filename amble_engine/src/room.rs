@@ -501,11 +501,23 @@ mod tests {
         assert!(
             items
                 .iter()
-                .any(|item| matches!(item, ViewItem::RoomDescription { .. }))
+                .any(|entry| matches!(&entry.view_item, ViewItem::RoomDescription { .. }))
         );
-        assert!(items.iter().any(|item| matches!(item, ViewItem::RoomItems(_))));
-        assert!(items.iter().any(|item| matches!(item, ViewItem::RoomExits(_))));
-        assert!(items.iter().any(|item| matches!(item, ViewItem::RoomNpcs(_))));
+        assert!(
+            items
+                .iter()
+                .any(|entry| matches!(&entry.view_item, ViewItem::RoomItems(_)))
+        );
+        assert!(
+            items
+                .iter()
+                .any(|entry| matches!(&entry.view_item, ViewItem::RoomExits(_)))
+        );
+        assert!(
+            items
+                .iter()
+                .any(|entry| matches!(&entry.view_item, ViewItem::RoomNpcs(_)))
+        );
     }
 
     #[test]
@@ -531,11 +543,13 @@ mod tests {
         let room = world.rooms.get(&room_id).unwrap();
         room.show_overlays(&world, &mut view, None);
 
-        if let Some(ViewItem::RoomOverlays { text, .. }) = view
-            .items
-            .iter()
-            .find(|item| matches!(item, ViewItem::RoomOverlays { .. }))
-        {
+        if let Some(text) = view.items.iter().find_map(|entry| {
+            if let ViewItem::RoomOverlays { text, .. } = &entry.view_item {
+                Some(text)
+            } else {
+                None
+            }
+        }) {
             assert_eq!(text.len(), 1);
             assert_eq!(text[0], "This is an overlay text");
         } else {
@@ -555,7 +569,13 @@ mod tests {
         let room = world.rooms.get(&room_id).unwrap();
         room.show_npcs(&world, &mut view);
 
-        if let Some(ViewItem::RoomNpcs(npcs)) = view.items.iter().find(|item| matches!(item, ViewItem::RoomNpcs(_))) {
+        if let Some(npcs) = view.items.iter().find_map(|entry| {
+            if let ViewItem::RoomNpcs(npcs) = &entry.view_item {
+                Some(npcs)
+            } else {
+                None
+            }
+        }) {
             assert_eq!(npcs.len(), 1);
             assert_eq!(npcs[0].name, "Test NPC");
         } else {
@@ -583,8 +603,13 @@ mod tests {
         let room = world.rooms.get(&room_id).unwrap();
         room.show_exits(&world, &mut view).unwrap();
 
-        if let Some(ViewItem::RoomExits(exits)) = view.items.iter().find(|item| matches!(item, ViewItem::RoomExits(_)))
-        {
+        if let Some(exits) = view.items.iter().find_map(|entry| {
+            if let ViewItem::RoomExits(exits) = &entry.view_item {
+                Some(exits)
+            } else {
+                None
+            }
+        }) {
             assert_eq!(exits.len(), 1);
             assert_eq!(exits[0].direction, "north");
             assert_eq!(exits[0].destination, "Test Room");
@@ -647,12 +672,24 @@ mod tests {
         assert!(
             items
                 .iter()
-                .any(|item| matches!(item, ViewItem::RoomDescription { .. }))
+                .any(|entry| matches!(&entry.view_item, ViewItem::RoomDescription { .. }))
         );
         // Items, NPCs, and exits should not be shown if empty
-        assert!(!items.iter().any(|item| matches!(item, ViewItem::RoomItems(_))));
-        assert!(!items.iter().any(|item| matches!(item, ViewItem::RoomNpcs(_))));
-        assert!(items.iter().any(|item| matches!(item, ViewItem::RoomExits(_)))); // Empty exits still shown
+        assert!(
+            !items
+                .iter()
+                .any(|entry| matches!(&entry.view_item, ViewItem::RoomItems(_)))
+        );
+        assert!(
+            !items
+                .iter()
+                .any(|entry| matches!(&entry.view_item, ViewItem::RoomNpcs(_)))
+        );
+        assert!(
+            items
+                .iter()
+                .any(|entry| matches!(&entry.view_item, ViewItem::RoomExits(_)))
+        ); // Empty exits still shown
     }
 
     #[test]
@@ -680,8 +717,13 @@ mod tests {
         let room = world.rooms.get(&room_id).unwrap();
         room.show_exits(&world, &mut view).unwrap();
 
-        if let Some(ViewItem::RoomExits(exits)) = view.items.iter().find(|item| matches!(item, ViewItem::RoomExits(_)))
-        {
+        if let Some(exits) = view.items.iter().find_map(|entry| {
+            if let ViewItem::RoomExits(exits) = &entry.view_item {
+                Some(exits)
+            } else {
+                None
+            }
+        }) {
             assert_eq!(exits.len(), 1);
             assert!(exits[0].exit_locked);
         }

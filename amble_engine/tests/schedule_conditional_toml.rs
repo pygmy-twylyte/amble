@@ -1,5 +1,9 @@
 use amble_engine as ae;
 
+fn stmt(action: ae::loader::triggers::raw_action::RawTriggerAction) -> ae::loader::triggers::raw_action::RawActionStmt {
+    ae::loader::triggers::raw_action::RawActionStmt { priority: None, action }
+}
+
 #[test]
 fn toml_schedule_in_if_reschedules_then_fires() {
     use ae::View;
@@ -17,13 +21,13 @@ fn toml_schedule_in_if_reschedules_then_fires() {
     let raw_trigger = RawTrigger {
         name: "test-sched-if".into(),
         conditions: vec![],
-        actions: vec![RawTriggerAction::ScheduleInIf {
+        actions: vec![stmt(RawTriggerAction::ScheduleInIf {
             turns_ahead: 1,
             condition: RawEventCondition::Trigger(RawTriggerCondition::HasFlag { flag: "f".into() }),
             on_false: RawOnFalsePolicy::RetryNextTurn,
-            actions: vec![RawTriggerAction::ShowMessage { text: "fired".into() }],
+            actions: vec![stmt(RawTriggerAction::ShowMessage { text: "fired".into() })],
             note: Some("cond-test".into()),
-        }],
+        })],
         only_once: false,
     };
 
@@ -51,7 +55,7 @@ fn toml_schedule_in_if_reschedules_then_fires() {
     assert!(
         view.items
             .iter()
-            .all(|vi| !matches!(vi, ae::ViewItem::TriggeredEvent(_)))
+            .all(|entry| !matches!(&entry.view_item, ae::ViewItem::TriggeredEvent(_)))
     );
     // A new event should be queued (original popped, new scheduled)
     assert!(world.scheduler.heap.len() >= 1);
@@ -64,11 +68,12 @@ fn toml_schedule_in_if_reschedules_then_fires() {
     world.turn_count = 2;
     ae::repl::check_scheduled_events(&mut world, &mut view).expect("check schedule 2");
     // Should have displayed the message
-    assert!(
-        view.items
-            .iter()
-            .any(|vi| matches!(vi, ae::ViewItem::TriggeredEvent(msg) if msg.contains("fired")))
-    );
+    assert!(view.items.iter().any(|entry| {
+        matches!(
+            &entry.view_item,
+            ae::ViewItem::TriggeredEvent(msg) if msg.contains("fired")
+        )
+    }));
 }
 
 #[test]
@@ -86,17 +91,17 @@ fn toml_schedule_in_if_retry_after() {
     let raw_trigger = RawTrigger {
         name: "retry-after".into(),
         conditions: vec![],
-        actions: vec![RawTriggerAction::ScheduleInIf {
+        actions: vec![stmt(RawTriggerAction::ScheduleInIf {
             turns_ahead: 1,
             condition: RawEventCondition::Trigger(ae::loader::triggers::raw_condition::RawTriggerCondition::HasFlag {
                 flag: "g".into(),
             }),
             on_false: RawOnFalsePolicy::RetryAfter { turns: 2 },
-            actions: vec![RawTriggerAction::ShowMessage {
+            actions: vec![stmt(RawTriggerAction::ShowMessage {
                 text: "retry-fired".into(),
-            }],
+            })],
             note: Some("retry-after-note".into()),
-        }],
+        })],
         only_once: false,
     };
     let triggers = build_triggers(&[raw_trigger], &symbols).expect("to_trigger ok");
@@ -113,7 +118,7 @@ fn toml_schedule_in_if_retry_after() {
     assert!(
         view.items
             .iter()
-            .all(|vi| !matches!(vi, ae::ViewItem::TriggeredEvent(_)))
+            .all(|entry| !matches!(&entry.view_item, ae::ViewItem::TriggeredEvent(_)))
     );
 
     // Next turn (2) should not yet fire
@@ -122,7 +127,7 @@ fn toml_schedule_in_if_retry_after() {
     assert!(
         view.items
             .iter()
-            .all(|vi| !matches!(vi, ae::ViewItem::TriggeredEvent(_)))
+            .all(|entry| !matches!(&entry.view_item, ae::ViewItem::TriggeredEvent(_)))
     );
 
     // Set flag and reach rescheduled due turn (3) -> should fire
@@ -132,11 +137,12 @@ fn toml_schedule_in_if_retry_after() {
         .insert(ae::player::Flag::simple("g", world.turn_count));
     world.turn_count = 3;
     ae::repl::check_scheduled_events(&mut world, &mut view).expect("check 3");
-    assert!(
-        view.items
-            .iter()
-            .any(|vi| matches!(vi, ae::ViewItem::TriggeredEvent(msg) if msg.contains("retry-fired")))
-    );
+    assert!(view.items.iter().any(|entry| {
+        matches!(
+            &entry.view_item,
+            ae::ViewItem::TriggeredEvent(msg) if msg.contains("retry-fired")
+        )
+    }));
 }
 
 #[test]
@@ -152,17 +158,17 @@ fn toml_schedule_on_if_cancel() {
     let raw_trigger = RawTrigger {
         name: "cancel-on-false".into(),
         conditions: vec![],
-        actions: vec![RawTriggerAction::ScheduleOnIf {
+        actions: vec![stmt(RawTriggerAction::ScheduleOnIf {
             on_turn: 5,
             condition: RawEventCondition::Trigger(ae::loader::triggers::raw_condition::RawTriggerCondition::HasFlag {
                 flag: "h".into(),
             }),
             on_false: RawOnFalsePolicy::Cancel,
-            actions: vec![RawTriggerAction::ShowMessage {
+            actions: vec![stmt(RawTriggerAction::ShowMessage {
                 text: "cancel-should-not-fire".into(),
-            }],
+            })],
             note: Some("cancel-test".into()),
-        }],
+        })],
         only_once: false,
     };
     let triggers = build_triggers(&[raw_trigger], &symbols).expect("to_trigger ok");
@@ -179,7 +185,7 @@ fn toml_schedule_on_if_cancel() {
     assert!(
         view.items
             .iter()
-            .all(|vi| !matches!(vi, ae::ViewItem::TriggeredEvent(_)))
+            .all(|entry| !matches!(&entry.view_item, ae::ViewItem::TriggeredEvent(_)))
     );
 
     // Even if condition becomes true later, event was canceled, should not fire
@@ -189,11 +195,12 @@ fn toml_schedule_on_if_cancel() {
         .insert(ae::player::Flag::simple("h", world.turn_count));
     world.turn_count = 6;
     ae::repl::check_scheduled_events(&mut world, &mut view).expect("check 6");
-    assert!(
-        view.items
-            .iter()
-            .all(|vi| !matches!(vi, ae::ViewItem::TriggeredEvent(msg) if msg.contains("cancel-should-not-fire")))
-    );
+    assert!(view.items.iter().all(|entry| {
+        !matches!(
+            &entry.view_item,
+            ae::ViewItem::TriggeredEvent(msg) if msg.contains("cancel-should-not-fire")
+        )
+    }));
 }
 
 #[test]
@@ -227,15 +234,15 @@ fn toml_schedule_nested_all_any() {
     let raw_trigger = RawTrigger {
         name: "nested-all-any".into(),
         conditions: vec![],
-        actions: vec![RawTriggerAction::ScheduleInIf {
+        actions: vec![stmt(RawTriggerAction::ScheduleInIf {
             turns_ahead: 1,
             condition: cond,
             on_false: RawOnFalsePolicy::Cancel,
-            actions: vec![RawTriggerAction::ShowMessage {
+            actions: vec![stmt(RawTriggerAction::ShowMessage {
                 text: "nested-fired".into(),
-            }],
+            })],
             note: None,
-        }],
+        })],
         only_once: false,
     };
     let triggers = build_triggers(&[raw_trigger], &symbols).expect("to_trigger ok");
@@ -249,9 +256,10 @@ fn toml_schedule_nested_all_any() {
     ae::trigger::dispatch_action(&mut world, &mut view, &triggers[0].actions[0]).expect("dispatch");
     world.turn_count = 1;
     ae::repl::check_scheduled_events(&mut world, &mut view).expect("check");
-    assert!(
-        view.items
-            .iter()
-            .any(|vi| matches!(vi, ae::ViewItem::TriggeredEvent(msg) if msg.contains("nested-fired")))
-    );
+    assert!(view.items.iter().any(|entry| {
+        matches!(
+            &entry.view_item,
+            ae::ViewItem::TriggeredEvent(msg) if msg.contains("nested-fired")
+        )
+    }));
 }

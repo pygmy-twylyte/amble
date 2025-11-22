@@ -277,7 +277,7 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
     let refused = fired_triggers.iter().any(|t| {
         t.actions
             .iter()
-            .any(|a| matches!(a, TriggerAction::NpcRefuseItem { .. }))
+            .any(|a| matches!(&a.action, TriggerAction::NpcRefuseItem { .. }))
     });
 
     // the trigger fired -- proceed with item transfer if it wasn't a refusal
