@@ -7,7 +7,7 @@
 pub mod raw_action;
 pub mod raw_condition;
 
-use raw_action::RawTriggerAction;
+use raw_action::RawActionStmt;
 use raw_condition::RawTriggerCondition;
 
 use std::{fs, path::Path};
@@ -29,7 +29,7 @@ struct RawTriggerFile {
 pub struct RawTrigger {
     pub name: String,
     pub conditions: Vec<RawTriggerCondition>,
-    pub actions: Vec<RawTriggerAction>,
+    pub actions: Vec<RawActionStmt>,
     #[serde(default)]
     pub only_once: bool,
 }
