@@ -347,12 +347,14 @@ fn test_filtered_goals_empty() {
 
 #[test]
 fn test_check_scheduled_events() {
-    use ae::trigger::TriggerAction;
+    use ae::trigger::{ScriptedAction, TriggerAction};
     let mut world = world::AmbleWorld::new_empty();
     let mut view = View::new();
-    world
-        .scheduler
-        .schedule_on(1, vec![TriggerAction::ShowMessage("test".to_string())], None);
+    world.scheduler.schedule_on(
+        1,
+        vec![ScriptedAction::new(TriggerAction::ShowMessage("test".to_string()))],
+        None,
+    );
     world.turn_count = 1;
     ae::repl::check_scheduled_events(&mut world, &mut view).unwrap();
     assert!(view.items.iter().any(|entry| {
