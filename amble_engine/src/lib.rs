@@ -27,6 +27,7 @@ pub const DEV_MODE: bool = false;
 
 // Core modules
 pub mod command;
+pub mod data_paths;
 pub mod dev_command;
 pub mod goal;
 pub mod helpers;

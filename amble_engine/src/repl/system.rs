@@ -60,8 +60,9 @@
 use colored::Colorize;
 use std::fs;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
+use crate::data_paths::data_path;
 use crate::goal::GoalStatus;
 use crate::helpers::symbol_or_unknown;
 use crate::loader::help::{HelpCommand, load_help_data};
@@ -75,7 +76,6 @@ use crate::{AmbleWorld, WorldObject, repl::ReplControl};
 
 use anyhow::{Context, Result};
 use log::{info, warn};
-use std::path::Path;
 
 /// Changes the display verbosity and screen clearing behavior.
 ///
@@ -215,8 +215,8 @@ pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> 
 ///
 /// # Help Content Sources
 ///
-/// - **Basic Text**: `amble_engine/data/help_basic.txt` - General game instructions
-/// - **Commands**: `amble_engine/data/help_commands.toml` - Command reference with examples
+/// - **Basic Text**: `data/help_basic.txt` (or `amble_engine/data/help_basic.txt` in source checkouts) - General game instructions
+/// - **Commands**: `data/help_commands.toml` (or `amble_engine/data/help_commands.toml`) - Command reference with examples
 ///
 /// # Command Documentation Format
 ///
@@ -240,19 +240,10 @@ pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> 
 /// 1. **Basic Instructions** - Game concepts, objectives, basic interaction
 /// 2. **Command Reference** - Detailed list of available commands with syntax
 pub fn help_handler(view: &mut View) {
-    // Support running from workspace root (engine binary) and from crate dir (unit tests)
-    let basic_text_path = if Path::new("amble_engine/data/help_basic.txt").exists() {
-        Path::new("amble_engine/data/help_basic.txt")
-    } else {
-        Path::new("data/help_basic.txt")
-    };
-    let commands_toml_path = if Path::new("amble_engine/data/help_commands.toml").exists() {
-        Path::new("amble_engine/data/help_commands.toml")
-    } else {
-        Path::new("data/help_commands.toml")
-    };
+    let basic_text_path = data_path("help_basic.txt");
+    let commands_toml_path = data_path("help_commands.toml");
 
-    match load_help_data(basic_text_path, commands_toml_path) {
+    match load_help_data(&basic_text_path, &commands_toml_path) {
         Ok(mut help_data) => {
             // Append developer-only commands if DEV_MODE is enabled
             if crate::DEV_MODE {
@@ -326,18 +317,10 @@ pub fn help_handler_dev(view: &mut View) {
     }
 
     // Load the same help data
-    let basic_text_path = if Path::new("amble_engine/data/help_basic.txt").exists() {
-        Path::new("amble_engine/data/help_basic.txt")
-    } else {
-        Path::new("data/help_basic.txt")
-    };
-    let commands_toml_path = if Path::new("amble_engine/data/help_commands.toml").exists() {
-        Path::new("amble_engine/data/help_commands.toml")
-    } else {
-        Path::new("data/help_commands.toml")
-    };
+    let basic_text_path = data_path("help_basic.txt");
+    let commands_toml_path = data_path("help_commands.toml");
 
-    match load_help_data(basic_text_path, commands_toml_path) {
+    match load_help_data(&basic_text_path, &commands_toml_path) {
         Ok(mut help_data) => {
             // Replace commands with only DEV commands
             let mut dev_cmds: Vec<HelpCommand> = vec![

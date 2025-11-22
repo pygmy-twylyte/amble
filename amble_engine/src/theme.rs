@@ -4,6 +4,8 @@
 //! different color schemes. Themes can be loaded from a TOML file and applied
 //! dynamically during gameplay.
 
+use crate::data_paths::data_path;
+
 use anyhow::{Context, Result};
 use colored::Color;
 use serde::{Deserialize, Serialize};
@@ -261,13 +263,13 @@ pub static THEME_MANAGER: LazyLock<RwLock<ThemeManager>> = LazyLock::new(|| RwLo
 /// # Errors
 /// Returns an error if the global theme manager lock cannot be acquired or if theme loading fails.
 pub fn init_themes() -> Result<()> {
-    let themes_path = Path::new("amble_engine/data/themes.toml");
+    let themes_path = data_path("themes.toml");
 
     let mut manager = THEME_MANAGER
         .write()
         .map_err(|_| anyhow::anyhow!("Failed to acquire theme manager lock"))?;
 
-    manager.load_themes_from_file(themes_path)?;
+    manager.load_themes_from_file(&themes_path)?;
 
     Ok(())
 }
