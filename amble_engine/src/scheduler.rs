@@ -17,7 +17,7 @@ use std::collections::BinaryHeap;
 use log::info;
 use serde::{Deserialize, Serialize};
 
-use crate::trigger::{TriggerAction, TriggerCondition};
+use crate::trigger::{ScriptedAction, TriggerCondition};
 
 #[cfg(test)]
 const PLACEHOLDER_THRESHOLD: usize = 4;
@@ -34,7 +34,7 @@ pub struct Scheduler {
 }
 impl Scheduler {
     /// Schedule some `TriggerActions` to fire a specified number of turns in the future.
-    pub fn schedule_in(&mut self, now: usize, turns_ahead: usize, actions: Vec<TriggerAction>, note: Option<String>) {
+    pub fn schedule_in(&mut self, now: usize, turns_ahead: usize, actions: Vec<ScriptedAction>, note: Option<String>) {
         let idx = self.events.len();
         let on_turn = now + turns_ahead;
         let log_msg = match &note {
@@ -53,7 +53,7 @@ impl Scheduler {
     }
 
     /// Schedule some `TriggerActions` to fire on a specific turn.
-    pub fn schedule_on(&mut self, on_turn: usize, actions: Vec<TriggerAction>, note: Option<String>) {
+    pub fn schedule_on(&mut self, on_turn: usize, actions: Vec<ScriptedAction>, note: Option<String>) {
         let idx = self.events.len();
         let log_msg = match &note {
             Some(note) => note.as_str(),
@@ -80,7 +80,7 @@ impl Scheduler {
         turns_ahead: usize,
         condition: Option<EventCondition>,
         on_false: OnFalsePolicy,
-        actions: Vec<TriggerAction>,
+        actions: Vec<ScriptedAction>,
         note: Option<String>,
     ) {
         let idx = self.events.len();
@@ -106,7 +106,7 @@ impl Scheduler {
         on_turn: usize,
         condition: Option<EventCondition>,
         on_false: OnFalsePolicy,
-        actions: Vec<TriggerAction>,
+        actions: Vec<ScriptedAction>,
         note: Option<String>,
     ) {
         let idx = self.events.len();
@@ -175,7 +175,7 @@ impl Scheduler {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScheduledEvent {
     pub on_turn: usize,
-    pub actions: Vec<TriggerAction>,
+    pub actions: Vec<ScriptedAction>,
     pub note: Option<String>,
     /// Optional condition that must be true for the event to fire.
     pub condition: Option<EventCondition>,
@@ -241,13 +241,13 @@ mod tests {
     use super::*;
     use crate::trigger::TriggerAction;
 
-    fn create_test_action() -> TriggerAction {
-        TriggerAction::ShowMessage("Test message".to_string())
+    fn create_test_action() -> ScriptedAction {
+        ScriptedAction::new(TriggerAction::ShowMessage("Test message".to_string()))
     }
 
-    fn create_test_actions(count: usize) -> Vec<TriggerAction> {
+    fn create_test_actions(count: usize) -> Vec<ScriptedAction> {
         (0..count)
-            .map(|i| TriggerAction::ShowMessage(format!("Message {}", i)))
+            .map(|i| ScriptedAction::new(TriggerAction::ShowMessage(format!("Message {}", i))))
             .collect()
     }
 
