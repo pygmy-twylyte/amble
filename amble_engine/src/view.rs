@@ -55,44 +55,20 @@ impl View {
     }
 
     pub fn push(&mut self, item: ViewItem) {
-        // determine default priority for this type of item
-        let priority: isize = match &item {
-            ViewItem::ActionFailure(_) => 0,
-            ViewItem::ActionSuccess(_) => 0,
-            ViewItem::ActiveGoal { .. } => -20,
-            ViewItem::AmbientEvent(_) => -10,
-            ViewItem::CompleteGoal { .. } => -10,
-            ViewItem::EngineMessage(_) => 0,
-            ViewItem::Error(_) => 0,
-            ViewItem::GameLoaded { .. } => 0,
-            ViewItem::GameSaved { .. } => 0,
-            ViewItem::SavedGamesList { .. } => 0,
-            ViewItem::Help { .. } => 0,
-            ViewItem::Inventory(_) => 0,
-            ViewItem::ItemConsumableStatus(_) => -10,
-            ViewItem::ItemContents(_) => -20,
-            ViewItem::ItemDescription { .. } => -30,
-            ViewItem::ItemText(_) => -20,
-            ViewItem::NpcDescription { .. } => -30,
-            ViewItem::NpcInventory(_) => -20,
-            ViewItem::NpcSpeech { .. } => -10,
-            ViewItem::NpcEntered { .. } => -20,
-            ViewItem::NpcLeft { .. } => 0,
-            ViewItem::PointsAwarded { .. } => 20,
-            ViewItem::QuitSummary { .. } => 30,
-            ViewItem::RoomDescription { .. } => -30,
-            ViewItem::RoomExits(_) => -10,
-            ViewItem::RoomItems(_) => -20,
-            ViewItem::RoomNpcs(_) => 0,
-            ViewItem::RoomOverlays { .. } => -25,
-            ViewItem::StatusChange { .. } => 0,
-            ViewItem::TransitionMessage(_) => -30,
-            ViewItem::TriggeredEvent(_) => 0,
-        };
+        self.push_with_custom_priority(item, None);
+    }
+
+    /// Push a `ViewItem` for the next frame with a custom set priority
+    pub fn push_with_priority(&mut self, item: ViewItem, priority: isize) {
+        self.push_with_custom_priority(item, Some(priority));
+    }
+
+    /// Push a `ViewItem` honoring an optional custom priority override.
+    pub fn push_with_custom_priority(&mut self, item: ViewItem, priority: Option<isize>) {
         self.items.push(ViewEntry {
             section: item.section(),
-            priority,
-            custom_priority: None,
+            priority: item.default_priority(),
+            custom_priority: priority,
             view_item: item,
             sequence: self.sequence,
         });
@@ -188,11 +164,54 @@ impl View {
         self.errors();
     }
 
+    /// Collect world reaction-type entries, sort, and display them in batches (`bucket`) according to priority view order.
     fn world_reaction(&mut self) {
-        self.npc_events_sorted();
-        self.triggered_event();
-        self.status_change();
-        self.points_awarded();
+        let world_entries = self.world_entries_sorted();
+        if world_entries.is_empty() {
+            return;
+        }
+
+        let mut current_priority: Option<isize> = None;
+        let mut bucket: Vec<&ViewEntry> = Vec::new();
+        for entry in world_entries {
+            let priority = entry.effective_priority();
+            if current_priority.map_or(false, |p| p != priority) {
+                Self::render_world_bucket(&bucket);
+                bucket.clear();
+            }
+            bucket.push(entry);
+            current_priority = Some(priority);
+        }
+        if !bucket.is_empty() {
+            Self::render_world_bucket(&bucket);
+        }
+    }
+
+    /// Display a collection of view entries that have the same effective priority.
+    fn render_world_bucket(entries: &[&ViewEntry]) {
+        if entries.is_empty() {
+            return;
+        }
+        Self::npc_events_sorted(entries);
+        Self::triggered_event(entries);
+        Self::status_change(entries);
+        Self::points_awarded(entries);
+    }
+
+    /// Filter all `ViewEntry`s for this frame, retaining only those in the `WorldResponse` section and sort them
+    /// by effective priority (lowest priority value shows first, e.g. 1 goes before 10, -10 goes before 1).
+    fn world_entries_sorted(&self) -> Vec<&ViewEntry> {
+        let mut world_entries: Vec<&ViewEntry> = self
+            .items
+            .iter()
+            .filter(|entry| entry.section == Section::WorldResponse)
+            .collect();
+        world_entries.sort_by(|a, b| {
+            a.effective_priority()
+                .cmp(&b.effective_priority())
+                .then_with(|| a.sequence.cmp(&b.sequence))
+        });
+        world_entries
     }
 
     fn ambience(&mut self) {
@@ -208,10 +227,10 @@ impl View {
     }
 
     // INDIVIDUAL VIEW ITEM HANDLERS START HERE -------------------------------
-    fn status_change(&mut self) {
-        let status_msgs: Vec<_> = self
-            .items
+    fn status_change(entries: &[&ViewEntry]) {
+        let status_msgs: Vec<_> = entries
             .iter()
+            .copied()
             .filter(|entry| entry.view_item.is_status_change())
             .collect();
         for msg in &status_msgs {
@@ -246,8 +265,8 @@ impl View {
         println!();
     }
 
-    fn points_awarded(&mut self) {
-        let point_msgs = self.items.iter().filter(|i| i.view_item.is_points_awarded());
+    fn points_awarded(entries: &[&ViewEntry]) {
+        let point_msgs = entries.iter().copied().filter(|i| i.view_item.is_points_awarded());
         for msg in point_msgs {
             if let ViewItem::PointsAwarded { amount, reason } = &msg.view_item {
                 if amount.is_negative() {
@@ -279,10 +298,10 @@ impl View {
             println!();
         }
     }
-    fn triggered_event(&mut self) {
-        let trig_messages = self
-            .items
+    fn triggered_event(entries: &[&ViewEntry]) {
+        let trig_messages = entries
             .iter()
+            .copied()
             .filter(|i| matches!(i.view_item, ViewItem::TriggeredEvent(_)));
         for msg in trig_messages {
             let formatted = format!(
@@ -295,11 +314,19 @@ impl View {
         }
     }
 
-    fn npc_events_sorted(&mut self) {
+    fn npc_events_sorted(entries: &[&ViewEntry]) {
         // Collect all NPC-related events
-        let mut npc_enters: Vec<_> = self.items.iter().filter(|i| i.view_item.is_npc_entered()).collect();
-        let mut npc_leaves: Vec<_> = self.items.iter().filter(|i| i.view_item.is_npc_left()).collect();
-        let speech_msgs: Vec<_> = self.items.iter().filter(|i| i.view_item.is_npc_speech()).collect();
+        let mut npc_enters: Vec<_> = entries
+            .iter()
+            .copied()
+            .filter(|i| i.view_item.is_npc_entered())
+            .collect();
+        let mut npc_leaves: Vec<_> = entries.iter().copied().filter(|i| i.view_item.is_npc_left()).collect();
+        let speech_msgs: Vec<_> = entries
+            .iter()
+            .copied()
+            .filter(|i| i.view_item.is_npc_speech())
+            .collect();
 
         // Sort by NPC name for consistent ordering
         npc_enters.sort_by(|a, b| a.view_item.npc_name().cmp(b.view_item.npc_name()));
@@ -868,6 +895,13 @@ pub struct ViewEntry {
     pub sequence: usize,
 }
 
+impl ViewEntry {
+    /// Returns an overriding custom display priority if one is set, otherwise the base value.
+    fn effective_priority(&self) -> isize {
+        self.custom_priority.unwrap_or(self.priority)
+    }
+}
+
 /// `ViewItems` are each of the various types of information / messages that may be displayed to the player.
 #[derive(Debug, Clone, PartialEq, Eq, Variantly)]
 pub enum ViewItem {
@@ -996,6 +1030,42 @@ impl ViewItem {
         }
     }
 
+    pub fn default_priority(&self) -> isize {
+        match &self {
+            ViewItem::ActionFailure(_) => 0,
+            ViewItem::ActionSuccess(_) => 0,
+            ViewItem::ActiveGoal { .. } => -20,
+            ViewItem::AmbientEvent(_) => -10,
+            ViewItem::CompleteGoal { .. } => -10,
+            ViewItem::EngineMessage(_) => 0,
+            ViewItem::Error(_) => 0,
+            ViewItem::GameLoaded { .. } => 0,
+            ViewItem::GameSaved { .. } => 0,
+            ViewItem::SavedGamesList { .. } => 0,
+            ViewItem::Help { .. } => 0,
+            ViewItem::Inventory(_) => 0,
+            ViewItem::ItemConsumableStatus(_) => -10,
+            ViewItem::ItemContents(_) => -20,
+            ViewItem::ItemDescription { .. } => -30,
+            ViewItem::ItemText(_) => -20,
+            ViewItem::NpcDescription { .. } => -30,
+            ViewItem::NpcInventory(_) => -20,
+            ViewItem::NpcSpeech { .. } => -10,
+            ViewItem::NpcEntered { .. } => -20,
+            ViewItem::NpcLeft { .. } => 0,
+            ViewItem::PointsAwarded { .. } => 20,
+            ViewItem::QuitSummary { .. } => 30,
+            ViewItem::RoomDescription { .. } => -30,
+            ViewItem::RoomExits(_) => -10,
+            ViewItem::RoomItems(_) => -20,
+            ViewItem::RoomNpcs(_) => 0,
+            ViewItem::RoomOverlays { .. } => -25,
+            ViewItem::StatusChange { .. } => 0,
+            ViewItem::TransitionMessage(_) => -30,
+            ViewItem::TriggeredEvent(_) => 0,
+        }
+    }
+
     /// Extract NPC name from NPC transit items.
     pub fn npc_name(&self) -> &str {
         match self {
@@ -1035,4 +1105,55 @@ pub struct ExitLine {
 pub struct NpcLine {
     pub name: String,
     pub description: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn world_entries_sorted_respects_custom_priority() {
+        let mut view = View::new();
+        view.push(ViewItem::ActionSuccess("ignored".into()));
+        view.push(ViewItem::NpcSpeech {
+            speaker: "NPC".into(),
+            quote: "Hello".into(),
+        });
+        view.push_with_priority(ViewItem::TriggeredEvent("Radio hums".into()), -25);
+        view.push_with_priority(
+            ViewItem::StatusChange {
+                action: StatusAction::Apply,
+                status: "Poisoned".into(),
+            },
+            5,
+        );
+
+        let ordered: Vec<&str> = view
+            .world_entries_sorted()
+            .iter()
+            .map(|entry| match &entry.view_item {
+                ViewItem::TriggeredEvent(_) => "triggered",
+                ViewItem::NpcSpeech { .. } => "speech",
+                ViewItem::StatusChange { .. } => "status",
+                other => panic!("Unexpected ViewItem in results: {other:?}"),
+            })
+            .collect();
+
+        assert_eq!(ordered, vec!["triggered", "speech", "status"]);
+    }
+
+    #[test]
+    fn world_entries_sorted_excludes_other_sections() {
+        let mut view = View::new();
+        view.push(ViewItem::ActionSuccess("direct result".into()));
+        view.push(ViewItem::AmbientEvent("ambient".into()));
+        view.push(ViewItem::NpcSpeech {
+            speaker: "NPC".into(),
+            quote: "Priority".into(),
+        });
+
+        let entries = view.world_entries_sorted();
+        assert_eq!(entries.len(), 1);
+        assert!(matches!(entries[0].view_item, ViewItem::NpcSpeech { .. }));
+    }
 }
