@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 pub struct Trigger {
     pub name: String,
     pub conditions: Vec<TriggerCondition>,
-    pub actions: Vec<TriggerAction>,
+    pub actions: Vec<ScriptedAction>,
     pub only_once: bool,
     pub fired: bool,
 }
@@ -131,7 +131,7 @@ mod tests {
         let trigger = Trigger {
             name: "move".into(),
             conditions: vec![TriggerCondition::Enter(start_id)],
-            actions: vec![TriggerAction::PushPlayerTo(dest_id)],
+            actions: vec![ScriptedAction::new(TriggerAction::PushPlayerTo(dest_id))],
             only_once: true,
             fired: false,
         };
