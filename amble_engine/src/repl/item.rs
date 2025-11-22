@@ -1065,7 +1065,7 @@ mod tests {
     use crate::{
         item::{ContainerState, Item, ItemAbility, ItemInteractionType},
         room::Room,
-        trigger::{Trigger, TriggerAction, TriggerCondition},
+        trigger::{ScriptedAction, Trigger, TriggerAction, TriggerCondition},
         world::{AmbleWorld, Location},
     };
     use std::collections::{HashMap, HashSet};
@@ -1182,7 +1182,7 @@ mod tests {
                 target_id: container_id,
                 tool_id,
             }],
-            actions: vec![TriggerAction::UnlockItem(container_id)],
+            actions: vec![ScriptedAction::new(TriggerAction::UnlockItem(container_id))],
             only_once: false,
             fired: false,
         });
@@ -1208,7 +1208,7 @@ mod tests {
                 target_id: container_id,
                 tool_id,
             }],
-            actions: vec![TriggerAction::UnlockItem(container_id)],
+            actions: vec![ScriptedAction::new(TriggerAction::UnlockItem(container_id))],
             only_once: false,
             fired: false,
         });
@@ -1228,7 +1228,7 @@ mod tests {
                 item_id: lamp_id,
                 ability: ItemAbility::TurnOn,
             }],
-            actions: vec![TriggerAction::UnlockItem(container_id)],
+            actions: vec![ScriptedAction::new(TriggerAction::UnlockItem(container_id))],
             only_once: false,
             fired: false,
         });
