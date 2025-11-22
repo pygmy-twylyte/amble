@@ -153,7 +153,7 @@ pub fn load_world() -> Result<AmbleWorld> {
 
     for trigger in &world.triggers {
         for action in &trigger.actions {
-            if let TriggerAction::AwardPoints { amount, .. } = action
+            if let TriggerAction::AwardPoints { amount, .. } = &action.action
                 && *amount > 0
             {
                 world.max_score = world.max_score.saturating_add_signed(*amount);
