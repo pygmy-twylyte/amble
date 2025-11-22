@@ -187,7 +187,7 @@ pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
             trigger
                 .actions
                 .iter()
-                .any(|action| matches!(action, TriggerAction::DenyRead(_)))
+                .any(|action| matches!(&action.action, TriggerAction::DenyRead(_)))
         });
         if !denied {
             let item = world
