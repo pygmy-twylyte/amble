@@ -1,5 +1,5 @@
 // Amble DSL Grammar
-// Amble version 0.62.1
+// Amble version 0.63.0
 
 COMMENT    = _{ "#" ~ (!NEWLINE ~ ANY)* }
 WHITESPACE = _{ " " | "\t" | NEWLINE | COMMENT }
@@ -171,7 +171,7 @@ if_block = { "if" ~ cond ~ block_inner }
 block_inner = { "{" ~ (do_stmt)+ ~ "}" }
 
 priority_clause = { "priority" ~ number }
-do_stmt = { "do" ~ priority_clause? ~ do_action }
+do_stmt         = { "do" ~ priority_clause? ~ do_action }
 
 // Helper rule for balanced braces - handles nested { } pairs properly
 balanced_braces  = { "{" ~ balanced_content ~ "}" }
