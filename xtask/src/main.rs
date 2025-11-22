@@ -582,9 +582,9 @@ fn package_impl(workspace: &Workspace, options: &PackageOptions, kind: PackageKi
     fs::create_dir_all(&dist_root).with_context(|| format!("unable to ensure dist dir {}", dist_root.display()))?;
 
     let package_name = options.name.clone().unwrap_or_else(|| match kind {
-        PackageKind::EngineOnly => format!("amble-engine-{}-{}", workspace.engine_version, target_triple),
+        PackageKind::EngineOnly => format!("amble-engine-v{}-{}", workspace.engine_version, target_triple),
         PackageKind::FullSuite => format!(
-            "amble-suite-{}-{}-{}",
+            "amble-suite-v{}+cli{}-{}",
             workspace.engine_version, workspace.script_version, target_triple
         ),
     });
@@ -593,9 +593,7 @@ fn package_impl(workspace: &Workspace, options: &PackageOptions, kind: PackageKi
     ensure_clean_dir(&staging_dir)?;
 
     // Always include the engine binary.
-    let bin_dir = staging_dir.join("bin");
-    fs::create_dir_all(&bin_dir).with_context(|| format!("unable to create {}", bin_dir.display()))?;
-    fs::copy(&engine_binary_path, bin_dir.join(&engine_binary_name))
+    fs::copy(&engine_binary_path, staging_dir.join(&engine_binary_name))
         .with_context(|| format!("failed to copy {}", engine_binary_path.display()))?;
 
     if matches!(kind, PackageKind::FullSuite) {
@@ -606,22 +604,24 @@ fn package_impl(workspace: &Workspace, options: &PackageOptions, kind: PackageKi
             options.profile,
             options.target.as_deref(),
         );
-        fs::copy(&script_path, bin_dir.join(&script_name))
+        fs::copy(&script_path, staging_dir.join(&script_name))
             .with_context(|| format!("failed to copy {}", script_path.display()))?;
     }
 
     // Copy compiled TOML data.
     let data_src = workspace.root.join("amble_engine/data");
-    let data_dst = staging_dir.join("amble_engine/data");
+    let data_dst = staging_dir.join("data");
     copy_dir_recursive(&data_src, &data_dst)
         .with_context(|| format!("copying data directory from {}", data_src.display()))?;
 
     if matches!(kind, PackageKind::FullSuite) {
         let amble_src = workspace.root.join("amble_script/data/Amble");
-        let amble_dst = staging_dir.join("amble_script/data/Amble");
+        let amble_dst = staging_dir.join("content/Amble");
         copy_dir_recursive(&amble_src, &amble_dst)
             .with_context(|| format!("copying amble sources from {}", amble_src.display()))?;
     }
+
+    copy_support_files(workspace, &staging_dir)?;
 
     match options.format {
         ArchiveFormat::Directory => {
@@ -671,6 +671,25 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
                 .with_context(|| format!("copying '{}' to '{}'", path.display(), target_path.display()))?;
         }
     }
+    Ok(())
+}
+
+fn copy_support_files(workspace: &Workspace, staging_dir: &Path) -> Result<()> {
+    let license_src = workspace.root.join("LICENSE");
+    copy_optional_file(&license_src, &staging_dir.join("LICENSE"))?;
+
+    let readme_src = workspace.root.join("docs/dist_readme.md");
+    copy_optional_file(&readme_src, &staging_dir.join("README.md"))
+}
+
+fn copy_optional_file(src: &Path, dst: &Path) -> Result<()> {
+    if !src.exists() {
+        return Ok(());
+    }
+    if let Some(parent) = dst.parent() {
+        fs::create_dir_all(parent).with_context(|| format!("creating {}", parent.display()))?;
+    }
+    fs::copy(src, dst).with_context(|| format!("copying '{}' to '{}'", src.display(), dst.display()))?;
     Ok(())
 }
 
