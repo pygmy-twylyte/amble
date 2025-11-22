@@ -7,12 +7,12 @@ use pest::Parser;
 use pest_derive::Parser as PestParser;
 
 use crate::{
-    ActionAst, ConditionAst, ConsumableAst, ConsumableWhenAst, ContainerStateAst, GoalAst, GoalCondAst, GoalGroupAst,
-    IngestModeAst, ItemAbilityAst, ItemAst, ItemLocationAst, ItemPatchAst, NpcAst, NpcDialoguePatchAst, NpcMovementAst,
-    NpcMovementPatchAst, NpcMovementTypeAst, NpcPatchAst, NpcStateValue, NpcTimingPatchAst, OnFalseAst, RoomAst,
-    RoomExitPatchAst, RoomPatchAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
+    ActionAst, ActionStmt, ConditionAst, ConsumableAst, ConsumableWhenAst, ContainerStateAst, GoalAst, GoalCondAst,
+    GoalGroupAst, IngestModeAst, ItemAbilityAst, ItemAst, ItemLocationAst, ItemPatchAst, NpcAst, NpcDialoguePatchAst,
+    NpcMovementAst, NpcMovementPatchAst, NpcMovementTypeAst, NpcPatchAst, NpcStateValue, NpcTimingPatchAst, OnFalseAst,
+    RoomAst, RoomExitPatchAst, RoomPatchAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
 };
-use std::collections::HashMap;
+use std::{borrow::Cow, collections::HashMap};
 
 #[derive(PestParser)]
 #[grammar = "src/grammar.pest"]
@@ -350,7 +350,7 @@ fn parse_trigger_pair(
     // - Each top-level `if { ... }` becomes its own trigger with those actions.
     // - Top-level `do ...` lines (not inside any if) become an unconditional trigger (if any).
     let inner = extract_body(block.as_str())?;
-    let mut unconditional_actions: Vec<ActionAst> = Vec::new();
+    let mut unconditional_actions: Vec<ActionStmt> = Vec::new();
     let mut lowered: Vec<TriggerAst> = Vec::new();
     let bytes = inner.as_bytes();
     let mut i = 0usize;
@@ -480,11 +480,14 @@ fn parse_trigger_pair(
             Err(e) => return Err(e),
         }
         // Top-level do schedule ... or do ... line
-        if remainder.starts_with("do schedule in ") || remainder.starts_with("do schedule on ") {
-            let (action, used) = parse_schedule_action(remainder, source, smap, sets)?;
-            unconditional_actions.push(action);
-            i += used;
-            continue;
+        match parse_schedule_action(remainder, source, smap, sets) {
+            Ok((action, used)) => {
+                unconditional_actions.push(action);
+                i += used;
+                continue;
+            },
+            Err(AstError::Shape("not a schedule action")) => {},
+            Err(e) => return Err(e),
         }
         if remainder.starts_with("do ") {
             // Consume a single line
@@ -2013,16 +2016,8 @@ fn split_top_level_commas(s: &str) -> Vec<&str> {
     out
 }
 
-fn parse_action_from_str(text: &str) -> Result<ActionAst, AstError> {
+fn parse_action_core(text: &str) -> Result<ActionAst, AstError> {
     let t = text.trim();
-    if t.starts_with("do modify item ") {
-        let (action, _) = parse_modify_item_action(t)?;
-        return Ok(action);
-    }
-    if t.starts_with("do modify room ") {
-        let (action, _) = parse_modify_room_action(t)?;
-        return Ok(action);
-    }
     if let Some(rest) = t.strip_prefix("do show ") {
         return Ok(ActionAst::Show(super::parser::unquote(rest.trim())));
     }
@@ -2374,7 +2369,7 @@ fn parse_actions_from_body(
     source: &str,
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
-) -> Result<Vec<ActionAst>, AstError> {
+) -> Result<Vec<ActionStmt>, AstError> {
     let mut out = Vec::new();
     let bytes = body.as_bytes();
     let mut i = 0usize;
@@ -2416,17 +2411,16 @@ fn parse_actions_from_body(
             let block_after = &rest[brace_rel..];
             let inner_body = extract_body(block_after)?;
             let actions = parse_actions_from_body(inner_body, source, smap, sets)?;
-            out.push(ActionAst::Conditional {
+            out.push(ActionStmt::new(ActionAst::Conditional {
                 condition: Box::new(cond),
                 actions,
-            });
+            }));
             let consumed = brace_rel + 1 + inner_body.len() + 1;
             i = if_pos + 3 + consumed;
             continue;
         }
         let remainder = &body[i..];
         let trimmed_remainder = remainder.trim_start();
-        let ws_leading = remainder.len() - trimmed_remainder.len();
 
         match parse_modify_item_action(remainder) {
             Ok((action, used)) => {
@@ -2497,11 +2491,14 @@ fn parse_actions_from_body(
             Err(e) => return Err(e),
         }
 
-        if trimmed_remainder.starts_with("do schedule in ") || trimmed_remainder.starts_with("do schedule on ") {
-            let (action, used) = parse_schedule_action(&body[i + ws_leading..], source, smap, sets)?;
-            out.push(action);
-            i += ws_leading + used;
-            continue;
+        match parse_schedule_action(remainder, source, smap, sets) {
+            Ok((action, used)) => {
+                out.push(action);
+                i += used;
+                continue;
+            },
+            Err(AstError::Shape("not a schedule action")) => {},
+            Err(e) => return Err(e),
         }
         if trimmed_remainder.starts_with("do ") {
             let mut j = i;
@@ -2536,11 +2533,16 @@ fn parse_actions_from_body(
     Ok(out)
 }
 
-fn parse_modify_item_action(text: &str) -> Result<(ActionAst, usize), AstError> {
+fn parse_modify_item_action(text: &str) -> Result<(ActionStmt, usize), AstError> {
     let s = text.trim_start();
     let leading_ws = text.len() - s.len();
-    let rest0 = s
-        .strip_prefix("do modify item ")
+    let (priority, rest_after_do) = match strip_priority_clause(s) {
+        Ok(v) => v,
+        Err(AstError::Shape("not a do action")) => return Err(AstError::Shape("not a modify item action")),
+        Err(e) => return Err(e),
+    };
+    let rest0 = rest_after_do
+        .strip_prefix("modify item ")
         .ok_or(AstError::Shape("not a modify item action"))?;
     let rest0 = rest0.trim_start();
     let ident_len = rest0.chars().take_while(|&c| is_ident_char(c)).count();
@@ -2672,14 +2674,25 @@ fn parse_modify_item_action(text: &str) -> Result<(ActionAst, usize), AstError> 
         }
     }
 
-    Ok((ActionAst::ModifyItem { item, patch }, consumed))
+    Ok((
+        ActionStmt {
+            priority,
+            action: ActionAst::ModifyItem { item, patch },
+        },
+        consumed,
+    ))
 }
 
-fn parse_modify_room_action(text: &str) -> Result<(ActionAst, usize), AstError> {
+fn parse_modify_room_action(text: &str) -> Result<(ActionStmt, usize), AstError> {
     let s = text.trim_start();
     let leading_ws = text.len() - s.len();
-    let rest0 = s
-        .strip_prefix("do modify room ")
+    let (priority, rest_after_do) = match strip_priority_clause(s) {
+        Ok(v) => v,
+        Err(AstError::Shape("not a do action")) => return Err(AstError::Shape("not a modify room action")),
+        Err(e) => return Err(e),
+    };
+    let rest0 = rest_after_do
+        .strip_prefix("modify room ")
         .ok_or(AstError::Shape("not a modify room action"))?;
     let rest0 = rest0.trim_start();
     let ident_len = rest0.chars().take_while(|&c| is_ident_char(c)).count();
@@ -2764,14 +2777,25 @@ fn parse_modify_room_action(text: &str) -> Result<(ActionAst, usize), AstError> 
         }
     }
 
-    Ok((ActionAst::ModifyRoom { room, patch }, consumed))
+    Ok((
+        ActionStmt {
+            priority,
+            action: ActionAst::ModifyRoom { room, patch },
+        },
+        consumed,
+    ))
 }
 
-fn parse_modify_npc_action(text: &str) -> Result<(ActionAst, usize), AstError> {
+fn parse_modify_npc_action(text: &str) -> Result<(ActionStmt, usize), AstError> {
     let s = text.trim_start();
     let leading_ws = text.len() - s.len();
-    let rest0 = s
-        .strip_prefix("do modify npc ")
+    let (priority, rest_after_do) = match strip_priority_clause(s) {
+        Ok(v) => v,
+        Err(AstError::Shape("not a do action")) => return Err(AstError::Shape("not a modify npc action")),
+        Err(e) => return Err(e),
+    };
+    let rest0 = rest_after_do
+        .strip_prefix("modify npc ")
         .ok_or(AstError::Shape("not a modify npc action"))?;
     let rest0 = rest0.trim_start();
     let ident_len = rest0.chars().take_while(|&c| is_ident_char(c)).count();
@@ -2915,7 +2939,13 @@ fn parse_modify_npc_action(text: &str) -> Result<(ActionAst, usize), AstError> {
         patch.movement = Some(movement_patch);
     }
 
-    Ok((ActionAst::ModifyNpc { npc, patch }, consumed))
+    Ok((
+        ActionStmt {
+            priority,
+            action: ActionAst::ModifyNpc { npc, patch },
+        },
+        consumed,
+    ))
 }
 
 fn parse_room_patch_exit_opts(opts: pest::iterators::Pair<Rule>, exit: &mut RoomExitPatchAst) -> Result<(), AstError> {
@@ -3009,11 +3039,17 @@ fn parse_schedule_action(
     source: &str,
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
-) -> Result<(ActionAst, usize), AstError> {
+) -> Result<(ActionStmt, usize), AstError> {
     let s = text.trim_start();
-    let (rest0, is_in) = if let Some(r) = s.strip_prefix("do schedule in ") {
+    let leading_ws = text.len() - s.len();
+    let (priority, rest_after_do) = match strip_priority_clause(s) {
+        Ok(v) => v,
+        Err(AstError::Shape("not a do action")) => return Err(AstError::Shape("not a schedule action")),
+        Err(e) => return Err(e),
+    };
+    let (rest0, is_in) = if let Some(r) = rest_after_do.strip_prefix("schedule in ") {
         (r, true)
-    } else if let Some(r) = s.strip_prefix("do schedule on ") {
+    } else if let Some(r) = rest_after_do.strip_prefix("schedule on ") {
         (r, false)
     } else {
         return Err(AstError::Shape("not a schedule action"));
@@ -3114,7 +3150,7 @@ fn parse_schedule_action(
     }
     let inner_body = &rest1[brace_pos + 1..p];
     let actions = parse_actions_from_body(inner_body, source, smap, sets)?;
-    let consumed = s.len() - rest1[p + 1..].len();
+    let consumed = leading_ws + (s.len() - rest1[p + 1..].len());
 
     let act = match (is_in, cond) {
         (true, Some(c)) => ActionAst::ScheduleInIf {
@@ -3142,7 +3178,7 @@ fn parse_schedule_action(
             note,
         },
     };
-    Ok((act, consumed))
+    Ok((ActionStmt { priority, action: act }, consumed))
 }
 
 #[allow(dead_code)]
@@ -3254,7 +3290,7 @@ trigger "He said:\n\"hi\"" when always {
         assert!(ast.name.contains('\n'));
         assert!(ast.name.contains('"'));
         // show contains a newline
-        match &ast.actions[0] {
+        match &ast.actions[0].action {
             ActionAst::Show(s) => {
                 assert!(s.contains('\n'));
                 assert_eq!(s, "Line1\nLine2");
@@ -3262,7 +3298,7 @@ trigger "He said:\n\"hi\"" when always {
             _ => panic!("expected show"),
         }
         // npc says contains a quote
-        match &ast.actions[1] {
+        match &ast.actions[1].action {
             ActionAst::NpcSays { npc, quote } => {
                 assert_eq!(npc, "gonk");
                 assert!(quote.contains('"'));
@@ -3310,7 +3346,7 @@ trigger "patch locker" when always {
 "#;
         let ast = parse_trigger(src).expect("parse ok");
         assert_eq!(ast.actions.len(), 1);
-        let action = &ast.actions[0];
+        let action = &ast.actions[0].action;
         match action {
             ActionAst::ModifyItem { item, patch } => {
                 assert_eq!(item, "locker");
@@ -3366,10 +3402,10 @@ trigger "patch lab" when always {
         let offset = src.find("do modify room").expect("snippet find");
         let snippet = &src[offset..];
         let (helper_action, _used) = super::parse_modify_room_action(snippet).expect("parse helper on snippet");
-        assert!(matches!(helper_action, ActionAst::ModifyRoom { .. }));
+        assert!(matches!(&helper_action.action, ActionAst::ModifyRoom { .. }));
         let ast = parse_trigger(src).expect("parse ok");
         assert_eq!(ast.actions.len(), 1);
-        match &ast.actions[0] {
+        match &ast.actions[0].action {
             ActionAst::ModifyRoom { room, patch } => {
                 assert_eq!(room, "aperture-lab");
                 assert_eq!(patch.name.as_deref(), Some("Ruined Lab"));
@@ -3416,10 +3452,10 @@ trigger "patch emh" when always {
         let offset = src.find("do modify npc").expect("snippet find");
         let snippet = &src[offset..];
         let (helper_action, _used) = super::parse_modify_npc_action(snippet).expect("parse helper on snippet");
-        assert!(matches!(helper_action, ActionAst::ModifyNpc { .. }));
+        assert!(matches!(&helper_action.action, ActionAst::ModifyNpc { .. }));
         let ast = parse_trigger(src).expect("parse ok");
         assert_eq!(ast.actions.len(), 1);
-        match &ast.actions[0] {
+        match &ast.actions[0].action {
             ActionAst::ModifyNpc { npc, patch } => {
                 assert_eq!(npc, "emh");
                 assert_eq!(patch.name.as_deref(), Some("Emergency Medical Hologram"));
@@ -3467,7 +3503,7 @@ trigger "patch guard" when always {
 "#;
         let ast = parse_trigger(src).expect("parse ok");
         assert_eq!(ast.actions.len(), 1);
-        match &ast.actions[0] {
+        match &ast.actions[0].action {
             ActionAst::ModifyNpc { npc, patch } => {
                 assert_eq!(npc, "guard");
                 let movement = patch.movement.as_ref().expect("movement patch");
@@ -3492,7 +3528,7 @@ trigger "patch guard" when always {
         let snippet = "do modify room lab { name \"Ruined\" }\n";
         let (action, used) = super::parse_modify_room_action(snippet).expect("parse helper");
         assert_eq!(&snippet[..used], "do modify room lab { name \"Ruined\" }");
-        match action {
+        match &action.action {
             ActionAst::ModifyRoom { room, patch } => {
                 assert_eq!(room, "lab");
                 assert_eq!(patch.name.as_deref(), Some("Ruined"));
@@ -3506,7 +3542,7 @@ trigger "patch guard" when always {
         let snippet = "do modify item locker { name \"Ok\" }\n";
         let (action, used) = super::parse_modify_item_action(snippet).expect("parse helper");
         assert_eq!(&snippet[..used], "do modify item locker { name \"Ok\" }");
-        match action {
+        match &action.action {
             ActionAst::ModifyItem { item, patch } => {
                 assert_eq!(item, "locker");
                 assert_eq!(patch.name.as_deref(), Some("Ok"));
@@ -3526,7 +3562,7 @@ trigger "patch chest" when always {
 "#;
         let ast = parse_trigger(src).expect("parse ok");
         let action = ast.actions.first().expect("expected modify item action");
-        match action {
+        match &action.action {
             ActionAst::ModifyItem { item, patch } => {
                 assert_eq!(item, "chest");
                 assert!(patch.container_state.is_none());
@@ -3693,3 +3729,38 @@ pub type ProgramAstBundle = (
     Vec<NpcAst>,
     Vec<GoalAst>,
 );
+fn strip_priority_clause(text: &str) -> Result<(Option<isize>, &str), AstError> {
+    let rest = text.strip_prefix("do").ok_or(AstError::Shape("not a do action"))?;
+    let mut after = rest.trim_start();
+    if let Some(rem) = after.strip_prefix("priority") {
+        after = rem.trim_start();
+        let mut idx = 0usize;
+        if after.starts_with('-') {
+            idx += 1;
+        }
+        while idx < after.len() && after.as_bytes()[idx].is_ascii_digit() {
+            idx += 1;
+        }
+        if idx == 0 || (idx == 1 && after.starts_with('-')) {
+            return Err(AstError::Shape("priority missing number"));
+        }
+        let num: isize = after[..idx]
+            .parse()
+            .map_err(|_| AstError::Shape("invalid priority number"))?;
+        let tail = after[idx..].trim_start();
+        return Ok((Some(num), tail));
+    }
+    Ok((None, after))
+}
+
+fn parse_action_from_str(text: &str) -> Result<ActionStmt, AstError> {
+    let trimmed = text.trim();
+    let (priority, rest) = strip_priority_clause(trimmed)?;
+    let source = if priority.is_some() {
+        Cow::Owned(format!("do {rest}"))
+    } else {
+        Cow::Borrowed(trimmed)
+    };
+    let action = parse_action_core(&source)?;
+    Ok(ActionStmt { priority, action })
+}

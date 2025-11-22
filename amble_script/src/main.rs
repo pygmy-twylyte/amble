@@ -6,8 +6,8 @@
 use std::{env, fs, process};
 
 use amble_script::{
-    ActionAst, ConditionAst, GoalCondAst, compile_goals_to_toml, compile_npcs_to_toml, compile_rooms_to_toml,
-    compile_spinners_to_toml, compile_triggers_to_toml, parse_program_full,
+    ActionAst, ActionStmt, ConditionAst, GoalCondAst, compile_goals_to_toml, compile_npcs_to_toml,
+    compile_rooms_to_toml, compile_spinners_to_toml, compile_triggers_to_toml, parse_program_full,
 };
 use std::collections::{HashMap, HashSet};
 use toml_edit::Document;
@@ -777,8 +777,8 @@ fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
         for c in &t.conditions {
             gather_refs_from_condition(c, &mut refs);
         }
-        for a in &t.actions {
-            gather_refs_from_action(a, &mut refs);
+        for stmt in &t.actions {
+            gather_refs_from_action(stmt, &mut refs);
         }
     }
     for r in &rooms_asts {
@@ -1140,8 +1140,8 @@ fn gather_refs_from_condition(c: &ConditionAst, out: &mut HashMap<&'static str, 
     }
 }
 
-fn gather_refs_from_action(a: &ActionAst, out: &mut HashMap<&'static str, HashSet<String>>) {
-    match a {
+fn gather_refs_from_action(stmt: &ActionStmt, out: &mut HashMap<&'static str, HashSet<String>>) {
+    match &stmt.action {
         ActionAst::ReplaceItem { old_sym, new_sym } | ActionAst::ReplaceDropItem { old_sym, new_sym } => {
             out.get_mut("item").unwrap().insert(old_sym.clone());
             out.get_mut("item").unwrap().insert(new_sym.clone());
@@ -1466,9 +1466,9 @@ fn flags_from_triggers_dsl(src: &str) -> HashSet<String> {
     out
 }
 
-fn collect_flags_from_actions_ast(actions: &[ActionAst], out: &mut HashSet<String>) {
-    for a in actions {
-        match a {
+fn collect_flags_from_actions_ast(actions: &[ActionStmt], out: &mut HashSet<String>) {
+    for stmt in actions {
+        match &stmt.action {
             ActionAst::AddFlag(name) => {
                 out.insert(name.clone());
             },

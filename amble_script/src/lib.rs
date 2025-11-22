@@ -47,7 +47,7 @@ pub struct TriggerAst {
     /// List of conditions (currently only missing-flag).
     pub conditions: Vec<ConditionAst>,
     /// List of actions supported in this minimal version.
-    pub actions: Vec<ActionAst>,
+    pub actions: Vec<ActionStmt>,
     /// If true, the trigger should only fire once.
     pub only_once: bool,
 }
@@ -309,12 +309,12 @@ pub enum ActionAst {
     /// Schedules without conditions
     ScheduleIn {
         turns_ahead: usize,
-        actions: Vec<ActionAst>,
+        actions: Vec<ActionStmt>,
         note: Option<String>,
     },
     ScheduleOn {
         on_turn: usize,
-        actions: Vec<ActionAst>,
+        actions: Vec<ActionStmt>,
         note: Option<String>,
     },
     /// Schedule actions at turns ahead if a condition holds.
@@ -322,7 +322,7 @@ pub enum ActionAst {
         turns_ahead: usize,
         condition: Box<ConditionAst>,
         on_false: Option<OnFalseAst>,
-        actions: Vec<ActionAst>,
+        actions: Vec<ActionStmt>,
         note: Option<String>,
     },
     /// Schedule actions on an absolute turn if a condition holds.
@@ -330,14 +330,37 @@ pub enum ActionAst {
         on_turn: usize,
         condition: Box<ConditionAst>,
         on_false: Option<OnFalseAst>,
-        actions: Vec<ActionAst>,
+        actions: Vec<ActionStmt>,
         note: Option<String>,
     },
     /// Conditionally execute nested actions when the condition evaluates true at runtime.
     Conditional {
         condition: Box<ConditionAst>,
-        actions: Vec<ActionAst>,
+        actions: Vec<ActionStmt>,
     },
+}
+
+/// Top-level action statement with optional priority metadata.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ActionStmt {
+    /// Optional priority assigned via `do priority <n>`.
+    pub priority: Option<isize>,
+    /// The underlying action emitted by the DSL.
+    pub action: ActionAst,
+}
+impl ActionStmt {
+    /// Construct an action statement without priority metadata.
+    pub fn new(action: ActionAst) -> Self {
+        Self { priority: None, action }
+    }
+
+    /// Construct an action statement with an explicit priority.
+    pub fn with_priority(action: ActionAst, priority: isize) -> Self {
+        Self {
+            priority: Some(priority),
+            action,
+        }
+    }
 }
 
 /// Data patch applied to an item when executing a `modify item` action.
@@ -477,7 +500,7 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
         src_line: usize,
         event: &'a ConditionAst,
         flat_conds: &'a [ConditionAst],
-        actions: &'a [ActionAst],
+        actions: &'a [ActionStmt],
         only_once: bool,
     }
 
@@ -1537,8 +1560,8 @@ pub fn compile_goals_to_toml(goals: &[GoalAst]) -> Result<String, CompileError> 
     Ok(doc.to_string())
 }
 
-fn action_to_value(a: &ActionAst) -> toml_edit::Value {
-    match a {
+fn action_to_value(stmt: &ActionStmt) -> toml_edit::Value {
+    let mut value = match &stmt.action {
         ActionAst::Show(text) => {
             let mut t = InlineTable::new();
             t.insert("type", toml_edit::Value::from("showMessage"));
@@ -1915,7 +1938,13 @@ fn action_to_value(a: &ActionAst) -> toml_edit::Value {
             t.insert("spinner", toml_edit::Value::from(spinner.clone()));
             toml_edit::Value::from(t)
         },
+    };
+    if let Some(priority) = stmt.priority {
+        if let Some(tbl) = value.as_inline_table_mut() {
+            tbl.insert("priority", toml_edit::Value::from(priority as i64));
+        }
     }
+    value
 }
 
 fn item_patch_to_inline_table(patch: &ItemPatchAst) -> InlineTable {
@@ -2414,12 +2443,12 @@ trigger "first visit high-ridge" when enter room high-ridge {
         assert_eq!(
             ast.actions,
             vec![
-                ActionAst::Show("You take in the view.".into()),
-                ActionAst::AddFlag("visited:high-ridge".into()),
-                ActionAst::AwardPoints {
+                ActionStmt::new(ActionAst::Show("You take in the view.".into())),
+                ActionStmt::new(ActionAst::AddFlag("visited:high-ridge".into())),
+                ActionStmt::new(ActionAst::AwardPoints {
                     amount: 1,
                     reason: "First visit to the high ridge".into(),
-                },
+                }),
             ]
         );
 
@@ -2451,10 +2480,13 @@ trigger "reveal special exit" when always {
         let ast = &asts[0];
         assert_eq!(ast.name, "reveal special exit");
         assert!(matches!(ast.event, ConditionAst::Always));
-        assert!(asts[0]
-            .actions
-            .iter()
-            .any(|a| matches!(a, ActionAst::RevealExit { exit_from, exit_to, direction } if exit_from == "hallway" && exit_to == "armory" && direction == "along the shore")));
+        assert!(asts[0].actions.iter().any(|a| {
+            matches!(
+                &a.action,
+                ActionAst::RevealExit { exit_from, exit_to, direction }
+                    if exit_from == "hallway" && exit_to == "armory" && direction == "along the shore"
+            )
+        }));
     }
 
     #[test]
@@ -2483,34 +2515,33 @@ trigger "example spawn" when enter room pantry {
             other => panic!("unexpected condition: {:?}", other),
         }
         // actions include spawn, show, add, remove, despawn, award
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::SpawnItemIntoRoom{ item, room } if item == "cake" && room == "pantry"
+        )));
         assert!(
             ast.actions
                 .iter()
-                .any(|a| matches!(a, ActionAst::SpawnItemIntoRoom{ item, room } if item == "cake" && room == "pantry"))
+                .any(|a| matches!(&a.action, ActionAst::Show(s) if s == "A cake materializes out of nowhere."))
         );
         assert!(
             ast.actions
                 .iter()
-                .any(|a| matches!(a, ActionAst::Show(s) if s == "A cake materializes out of nowhere."))
+                .any(|a| matches!(&a.action, ActionAst::AddFlag(s) if s == "cake-spawned"))
         );
         assert!(
             ast.actions
                 .iter()
-                .any(|a| matches!(a, ActionAst::AddFlag(s) if s == "cake-spawned"))
+                .any(|a| matches!(&a.action, ActionAst::RemoveFlag(s) if s == "got-key"))
         );
         assert!(
             ast.actions
                 .iter()
-                .any(|a| matches!(a, ActionAst::RemoveFlag(s) if s == "got-key"))
-        );
-        assert!(
-            ast.actions
-                .iter()
-                .any(|a| matches!(a, ActionAst::DespawnItem(s) if s == "old-cake"))
+                .any(|a| matches!(&a.action, ActionAst::DespawnItem(s) if s == "old-cake"))
         );
         assert!(ast.actions.iter().any(|a| {
             matches!(
-                a,
+                &a.action,
                 ActionAst::AwardPoints { amount, reason }
                     if *amount == 2 && reason == "Conjured a cake in the pantry"
             )
@@ -2732,7 +2763,7 @@ trigger "Aperture-Lab: Can't Enter While On Fire" when enter room aperture-lab {
         assert!(
             ast.actions
                 .iter()
-                .any(|a| matches!(a, ActionAst::PushPlayerTo(r) if r == "portal-room"))
+                .any(|a| matches!(&a.action, ActionAst::PushPlayerTo(r) if r == "portal-room"))
         );
 
         let toml = compile_trigger_to_toml(&ast).expect("compile ok");
@@ -2879,6 +2910,39 @@ trigger "schedule simple" when enter room lab {
     }
 
     #[test]
+    fn parse_priority_metadata_on_actions() {
+        let src = r#"
+trigger "priority demo" when always {
+  do priority -25 show "Radio hums quietly."
+  do schedule in 3 {
+    do priority 4 show "Timer beeps."
+  }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        assert_eq!(ast.actions.len(), 2);
+        assert_eq!(ast.actions[0].priority, Some(-25));
+        match &ast.actions[0].action {
+            ActionAst::Show(msg) => assert_eq!(msg, "Radio hums quietly."),
+            other => panic!("expected show action, got {other:?}"),
+        }
+        match &ast.actions[1].action {
+            ActionAst::ScheduleIn { actions, .. } => {
+                assert_eq!(actions.len(), 1);
+                assert_eq!(actions[0].priority, Some(4));
+                match &actions[0].action {
+                    ActionAst::Show(msg) => assert_eq!(msg, "Timer beeps."),
+                    other => panic!("expected nested show action, got {other:?}"),
+                }
+            },
+            other => panic!("expected schedule action, got {other:?}"),
+        }
+        let toml = compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("priority = -25"));
+        assert!(toml.contains("priority = 4"));
+    }
+
+    #[test]
     fn parse_without_if_block() {
         let src = r#"
 trigger "burn fallen tree" when act burn on item fallen_tree {
@@ -2891,7 +2955,7 @@ trigger "burn fallen tree" when act burn on item fallen_tree {
             matches!(ast.event, ConditionAst::ActOnItem { ref target, ref action } if target == "fallen_tree" && action == "burn")
         );
         assert!(ast.conditions.is_empty());
-        assert!(matches!(ast.actions[0], ActionAst::Show(_)));
+        assert!(matches!(&ast.actions[0].action, ActionAst::Show(_)));
     }
 
     #[test]
@@ -2987,22 +3051,22 @@ trigger "misc actions" when enter room lab {
 }
 "#;
         let ast = parse_trigger(src).expect("parse ok");
-        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::AddSpinnerWedge { spinner, width, text } if spinner == "ambientInterior" && *width == 1 && text == "Chime")));
-        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::ReplaceItem { old_sym, new_sym } if old_sym == "dull_longsword" && new_sym == "keen_longsword")));
-        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::ReplaceDropItem { old_sym, new_sym } if old_sym == "schrodingers_sandwich" && new_sym == "schrodingers_sandwich")));
-        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::SetBarredMessage { exit_from, exit_to, msg } if exit_from == "hallway" && exit_to == "armory" && msg.starts_with("You can't"))));
-        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::GiveItemToPlayer { npc, item } if npc == "receptionist" && item == "printer_paper")));
+        assert!(ast.actions.iter().any(|a| matches!(&a.action, ActionAst::AddSpinnerWedge { spinner, width, text } if spinner == "ambientInterior" && *width == 1 && text == "Chime")));
+        assert!(ast.actions.iter().any(|a| matches!(&a.action, ActionAst::ReplaceItem { old_sym, new_sym } if old_sym == "dull_longsword" && new_sym == "keen_longsword")));
+        assert!(ast.actions.iter().any(|a| matches!(&a.action, ActionAst::ReplaceDropItem { old_sym, new_sym } if old_sym == "schrodingers_sandwich" && new_sym == "schrodingers_sandwich")));
+        assert!(ast.actions.iter().any(|a| matches!(&a.action, ActionAst::SetBarredMessage { exit_from, exit_to, msg } if exit_from == "hallway" && exit_to == "armory" && msg.starts_with("You can't"))));
+        assert!(ast.actions.iter().any(|a| matches!(&a.action, ActionAst::GiveItemToPlayer { npc, item } if npc == "receptionist" && item == "printer_paper")));
         assert!(ast.actions.iter().any(
-            |a| matches!(a, ActionAst::NpcRefuseItem { npc, reason } if npc == "emh" && reason.starts_with("That's"))
+            |a| matches!(&a.action, ActionAst::NpcRefuseItem { npc, reason } if npc == "emh" && reason.starts_with("That's"))
         ));
-        assert!(ast.actions.iter().any(|a| matches!(a, ActionAst::SetContainerState { item, state } if item == "evidence_locker_open" && state.as_deref() == Some("locked"))));
+        assert!(ast.actions.iter().any(|a| matches!(&a.action, ActionAst::SetContainerState { item, state } if item == "evidence_locker_open" && state.as_deref() == Some("locked"))));
         assert!(ast.actions.iter().any(
-            |a| matches!(a, ActionAst::SetNpcState { npc, state } if npc == "emh" && state == "custom:want-emitter")
+            |a| matches!(&a.action, ActionAst::SetNpcState { npc, state } if npc == "emh" && state == "custom:want-emitter")
         ));
         assert!(
             ast.actions
                 .iter()
-                .any(|a| matches!(a, ActionAst::SpinnerMessage { spinner } if spinner == "ambientInterior"))
+                .any(|a| matches!(&a.action, ActionAst::SpinnerMessage { spinner } if spinner == "ambientInterior"))
         );
 
         let toml = compile_trigger_to_toml(&ast).expect("compile ok");
@@ -3039,7 +3103,7 @@ trigger "spinner add" when always {
         assert!(ast
             .actions
             .iter()
-            .any(|a| matches!(a, ActionAst::AddSpinnerWedge { spinner, width, text } if spinner == "ambientInterior" && *width == 1 && text == "Ding")));
+            .any(|a| matches!(&a.action, ActionAst::AddSpinnerWedge { spinner, width, text } if spinner == "ambientInterior" && *width == 1 && text == "Ding")));
         let toml = compile_trigger_to_toml(&ast).expect("compile ok");
         assert!(toml.contains("type = \"addSpinnerWedge\""));
         assert!(toml.contains("spinner = \"ambientInterior\""));
@@ -3077,10 +3141,10 @@ trigger "spawn in container" when always {
 "#;
         let ast = parse_trigger(src).expect("parse ok");
         assert!(matches!(ast.event, ConditionAst::Always));
-        assert!(ast
-            .actions
-            .iter()
-            .any(|a| matches!(a, ActionAst::SpawnItemInContainer { item, container } if item == "broken_emitter" && container == "lost_and_found_box")));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::SpawnItemInContainer { item, container } if item == "broken_emitter" && container == "lost_and_found_box"
+        )));
         let toml = compile_trigger_to_toml(&ast).expect("compile ok");
         assert!(toml.contains("type = \"spawnItemInContainer\""));
         assert!(toml.contains("item_id = \"broken_emitter\""));
@@ -3165,12 +3229,12 @@ trigger "test set npc active" when always {
         assert!(
             ast.actions
                 .iter()
-                .any(|a| matches!(a, ActionAst::SetNpcActive { npc, active } if npc == "robot" && *active == true))
+                .any(|a| matches!(&a.action, ActionAst::SetNpcActive { npc, active } if npc == "robot" && *active))
         );
         assert!(
             ast.actions
                 .iter()
-                .any(|a| matches!(a, ActionAst::SetNpcActive { npc, active } if npc == "guard" && *active == false))
+                .any(|a| matches!(&a.action, ActionAst::SetNpcActive { npc, active } if npc == "guard" && !*active))
         );
 
         // Compile to TOML and verify output
