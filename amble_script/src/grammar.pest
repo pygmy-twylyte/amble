@@ -35,6 +35,7 @@ keyword = {
   | "player"
   | "if"
   | "do"
+  | "priority"
   | "show"
   | "add"
   | "wedge"
@@ -169,7 +170,8 @@ if_block = { "if" ~ cond ~ block_inner }
 
 block_inner = { "{" ~ (do_stmt)+ ~ "}" }
 
-do_stmt = { "do" ~ do_action }
+priority_clause = { "priority" ~ number }
+do_stmt = { "do" ~ priority_clause? ~ do_action }
 
 // Helper rule for balanced braces - handles nested { } pairs properly
 balanced_braces  = { "{" ~ balanced_content ~ "}" }
