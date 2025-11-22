@@ -766,7 +766,7 @@ mod tests {
 
     #[test]
     fn dev_list_sched_handler_shows_entries() {
-        use crate::trigger::TriggerAction;
+        use crate::trigger::{ScriptedAction, TriggerAction};
         let mut world = create_test_world();
         let mut view = View::new();
         // empty
@@ -779,9 +779,11 @@ mod tests {
 
         // add an event
         view.items.clear();
-        world
-            .scheduler
-            .schedule_on(5, vec![TriggerAction::ShowMessage("m".into())], Some("test".into()));
+        world.scheduler.schedule_on(
+            5,
+            vec![ScriptedAction::new(TriggerAction::ShowMessage("m".into()))],
+            Some("test".into()),
+        );
         dev_list_sched_handler(&mut world, &mut view);
         let combined = view
             .items
