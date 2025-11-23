@@ -8,7 +8,7 @@ room high-ridge {
     visited true
     desc "A small, flat ridge in the midst of a steeply sloped wooded area. Probably west of something, depending on how you're oriented. The only egress seems to be a flight of rough stone steps carved into the slope, which curve upward and then disappear into the trees."
     overlay if item present scrawled_note {
-        text "A note scrawled in red marker on bright yellow paper is nailed to a tree trunk near the base of the steps."
+        text "A note scrawled in green marker on bright yellow paper is nailed to a tree trunk near the base of the steps."
     }
     overlay if item present ephemeral_cake {
         text "Strangely, a slice of birthday cake on a paper plate sits precariously balanced on top of a thin boulder nearby."
