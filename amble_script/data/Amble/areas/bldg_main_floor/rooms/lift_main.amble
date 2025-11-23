@@ -33,13 +33,21 @@ item main_button_main {
 # Triggers
 # ========================================
 
-trigger "[Lift Main] Pressed AA-3 Button" when touch item aa_3_button_main {
+trigger "[Lift Main] Pressed AA-3 Button"
+note "aa-3 elevator button controller"
+when touch item aa_3_button_main {
     if all(has item elevator_keycard, has item visitor_pass) {
         do push player to lift-sublevel-1
         do show "The elevator giggles and lurches gleefully downward, nearly taking you off your feet. Just as your spleen is becoming accustomed to sharing space with your tonsils, a sudden deceleration throws it all the way down into your pelvis and you come to an abrupt stop at the deep sublevel entrance."
     }
-    if any(missing item elevator_keycard, missing item visitor_pass) {
-        do show "The elevator seems truly upset when it tells you it can't take you down to the sublevel, and laments that its programming won't allow it to move for anyone without a proximity keycard. A valid visitor pass is also required to access the AA-3 sublevel."
+    if all(missing item elevator_keycard, missing item visitor_pass) {
+        do show "The elevator seems truly upset when it tells you it can't move unless you have a visitor pass *and* a proximity keycard."
+    }
+    if all(has item visitor_pass, missing item elevator_keycard) {
+        do show "With a sigh, the elevator acknowledges your psychic Visitor Pass (which currently identifies you as a master elevator technician) but reminds you that it can't budge unless you have a proximity card."
+    }
+    if all(missing item visitor_pass, has item elevator_keycard) {
+        do show "The elevator begins to move... and then freezes when it realizes that you have lost your visitor pass."
     }
 }
 
