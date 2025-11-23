@@ -19,7 +19,7 @@
             #           <give the hint>
             #       }
         #   }
-    # }
+    #   }
 
 item hint_radio {
     name "HINT Radio (off)"
