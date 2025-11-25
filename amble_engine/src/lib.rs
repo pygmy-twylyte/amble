@@ -30,6 +30,7 @@ pub mod command;
 pub mod data_paths;
 pub mod dev_command;
 pub mod goal;
+pub mod health;
 pub mod helpers;
 pub mod idgen;
 pub mod item;
