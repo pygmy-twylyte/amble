@@ -154,6 +154,14 @@ impl LivingEntity for Player {
     fn life_state(&self) -> crate::health::LifeState {
         self.health.life_state()
     }
+
+    fn damage(&mut self, amount: u32) {
+        self.health.damage(amount);
+    }
+
+    fn heal(&mut self, amount: u32) {
+        self.health.heal(amount);
+    }
 }
 
 /// Flags that can be applied to the player
