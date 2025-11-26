@@ -15,6 +15,7 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{
+    health::HealthState,
     idgen::{NAMESPACE_CHARACTER, uuid_from_token},
     player::{Flag, Player},
 };
@@ -25,14 +26,24 @@ use super::{SymbolTable, resolve_location};
 #[derive(Debug, Deserialize)]
 /// Serialized version of Player, used for staged loading from TOML.
 pub struct RawPlayer {
+    /// The string used to identify the player and generate its UUID.
     pub id: String,
+    /// The name of the player character.
     pub name: String,
+    /// A brief description of the player character.
     pub description: String,
+    /// The player's starting `Location`.
     pub location: HashMap<String, String>,
+    /// The player's maximum hit points (health).
+    pub max_hp: u32,
+    /// Player's inventory PLACEHOLDER. Items should not (cannot) be loaded into inventory here.
+    /// To start a player with inventory, create items with a starting `Location::Inventory`.
     #[serde(default)]
     pub inventory: HashMap<String, String>,
+    /// Any flags applied to the player at game start. (None by default.)
     #[serde(default)]
     pub flags: HashSet<String>,
+    /// Initial score, defaults to zero if not specified.
     #[serde(default)]
     pub score: usize,
 }
@@ -59,6 +70,7 @@ impl RawPlayer {
             inventory: HashSet::<Uuid>::default(),
             flags: HashSet::<Flag>::default(),
             score: self.score,
+            health: HealthState::new_at_max(self.max_hp),
         };
         Ok(player)
     }
