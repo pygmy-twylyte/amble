@@ -76,6 +76,8 @@ impl HealthState {
 pub trait LivingEntity {
     fn max_hp(&self) -> u32;
     fn current_hp(&self) -> u32;
+    fn damage(&mut self, amount: u32);
+    fn heal(&mut self, amount: u32);
     fn life_state(&self) -> LifeState;
 }
 
