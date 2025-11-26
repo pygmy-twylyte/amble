@@ -9,6 +9,7 @@ name = "C.M.O.T. Dibbler"
 description = "A persistent entrepreneur with a tray of questionable meat products and an optimistic attitude about food safety. He wears a grease-stained apron and carries himself with the confidence of someone who's never met a customer he couldn't eventually convince."
 state = "normal"
 location = { Room = "main-lobby" }
+max_hp = 10
 
 [npcs.movement]
 movement_type = "random"
@@ -27,6 +28,7 @@ name = "Gonk Droid"
 description = "A walking battery charger that looks like a trash bin."
 state = "normal"
 location = { Room = "main-lobby" }
+max_hp = 10
 
 [npcs.movement]
 movement_type = "route"
@@ -43,6 +45,7 @@ name = "Receptionist"
 description = "A neatly dressed android sitting at the reception desk."
 state = "normal"
 location = { Room = "b-a-office" }
+max_hp = 10
 
 [npcs.dialogue]
 bored = ["Good job getting the keycard. Many of our previous applicants have died in the attempt. Very promising! The evaluator will be pleased. Strong lateral thinking and slight psychosis are essential for such a dangerous position, as I'm sure you are aware.", "You can now use the elevator to find room AA-3B for the next stage of your initiation.",]
@@ -55,6 +58,7 @@ name = "The Black Knight"
 description = "A dark, glowering presence in a black suit of armor with a longsword."
 state = "normal"
 location = { Room = "sublevel-1-entrance" }
+max_hp = 10
 
 [npcs.dialogue]
 happy = ["None shall pa-- oh, no, you can go.", "YOU may pass, Candidate; I will be sure to dice anyone who dares to follow.", "You may pass, but beware and steer clear of Room AA-3B, should it reappear.", "Behold! (slices an aluminum can and then a tomato, laughing maniacally)",]
@@ -67,6 +71,7 @@ name = "Emergency Medical Hologram"
 description = "A balding and somewhat anxious-appearing holographic doctor in a Starfleet uniform."
 state = "normal"
 location = { Nowhere = "spawns in med-bay after button pressed" }
+max_hp = 5
 
 [npcs.movement]
 movement_type = "random"
@@ -85,6 +90,7 @@ name = "HAL-9000"
 description = "A superintelligent AI whose track record is flawless, but whose motives are... sketchy."
 state = { custom = "suspend" }
 location = { Room = "monolith-room" }
+max_hp = 50
 
 [npcs.dialogue]
 "custom:memory-0" = ["(Emits a brief warped sound of a human voice, then goes silent.)",]
@@ -100,6 +106,7 @@ name = "Strange Husky"
 description = "A slightly oversized Husky dog. It stands unmoving, watching you, keeping a cautious distance. It never seems to blink or shift its gaze away from you."
 state = "normal"
 location = { Nowhere = "spawns at snow_camp if charred_journal read" }
+max_hp = 30
 
 [npcs.dialogue]
 normal = ["(It maintains its distance, but continues watching you intently.)",]
@@ -110,6 +117,7 @@ name = "The Luggage"
 description = "A large chest with dozens of legs, layered sharp teeth around its lid, and a strong tendency to violence."
 state = "normal"
 location = { Nowhere = "spawns at dev-room for testing" }
+max_hp = 10000
 
 [npcs.dialogue]
 normal = ["(stares at you with menace)",]
@@ -120,6 +128,7 @@ name = "HINT Radio"
 description = "<Player should never see this since the NPC will never be spawned.>"
 state = "normal"
 location = { Nowhere = "never spawn -- used for voice from HINT radio" }
+max_hp = 100
 
 [npcs.dialogue]
 normal = ["(static)",]
