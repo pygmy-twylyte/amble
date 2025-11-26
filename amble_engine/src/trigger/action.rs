@@ -80,6 +80,7 @@ use std::hash::BuildHasher;
 use uuid::Uuid;
 
 use crate::Item;
+use crate::health::LivingEntity;
 use crate::helpers::{symbol_from_id, symbol_or_unknown};
 use crate::item::{ContainerState, ItemAbility, ItemHolder};
 use crate::npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState, move_npc};
@@ -145,6 +146,14 @@ use crate::world::{AmbleWorld, Location, WorldObject};
 /// - `SpinnerMessage` - Displays a random message from a spinner
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TriggerAction {
+    /// Cause physical harm to an NPC.
+    DamageNpc { npc_id: Uuid, amount: u32 },
+    /// Heal an NPC.
+    HealNpc { npc_id: Uuid, amount: u32 },
+    /// Cause physical harm to the player.
+    DamagePlayer { amount: u32 },
+    /// Heal the player a specified amount.
+    HealPlayer { amount: u32 },
     /// Set the activity state of an NPC
     SetNpcActive { npc_id: Uuid, active: bool },
     /// Set the `ContainerState` of an Item
@@ -282,15 +291,29 @@ impl ScriptedAction {
 #[allow(clippy::too_many_lines)]
 pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, scripted: &ScriptedAction) -> Result<()> {
     use TriggerAction::{
-        AddFlag, AddSpinnerWedge, AdvanceFlag, AwardPoints, Conditional, DenyRead, DespawnItem, DespawnNpc,
-        GiveItemToPlayer, LockExit, LockItem, ModifyItem, ModifyNpc, ModifyRoom, NpcRefuseItem, NpcSays, NpcSaysRandom,
-        PushPlayerTo, RemoveFlag, ReplaceDropItem, ReplaceItem, ResetFlag, RestrictItem, RevealExit, ScheduleIn,
-        ScheduleInIf, ScheduleOn, ScheduleOnIf, SetBarredMessage, SetContainerState, SetItemDescription, SetNPCState,
-        SetNpcActive, ShowMessage, SpawnItemCurrentRoom, SpawnItemInContainer, SpawnItemInInventory, SpawnItemInRoom,
-        SpawnNpcInRoom, SpinnerMessage, UnlockExit, UnlockItem,
+        AddFlag, AddSpinnerWedge, AdvanceFlag, AwardPoints, Conditional, DamageNpc, DamagePlayer, DenyRead,
+        DespawnItem, DespawnNpc, GiveItemToPlayer, HealNpc, HealPlayer, LockExit, LockItem, ModifyItem, ModifyNpc,
+        ModifyRoom, NpcRefuseItem, NpcSays, NpcSaysRandom, PushPlayerTo, RemoveFlag, ReplaceDropItem, ReplaceItem,
+        ResetFlag, RestrictItem, RevealExit, ScheduleIn, ScheduleInIf, ScheduleOn, ScheduleOnIf, SetBarredMessage,
+        SetContainerState, SetItemDescription, SetNPCState, SetNpcActive, ShowMessage, SpawnItemCurrentRoom,
+        SpawnItemInContainer, SpawnItemInInventory, SpawnItemInRoom, SpawnNpcInRoom, SpinnerMessage, UnlockExit,
+        UnlockItem,
     };
     let ScriptedAction { action, priority } = scripted;
     match action {
+        DamageNpc { npc_id, amount } => {
+            let npc = world
+                .npcs
+                .get_mut(npc_id)
+                .with_context(|| "npc lookup for damage_NPC")?;
+            damage_character(npc, *amount);
+        },
+        HealNpc { npc_id, amount } => {
+            let npc = world.npcs.get_mut(npc_id).with_context(|| "npc lookup for heal_NPC")?;
+            heal_character(npc, *amount);
+        },
+        DamagePlayer { amount } => damage_character(&mut world.player, *amount),
+        HealPlayer { amount } => heal_character(&mut world.player, *amount),
         ModifyItem { item_id, patch } => modify_item(world, *item_id, patch)?,
         ModifyRoom { room_id, patch } => modify_room(world, *room_id, patch)?,
         ModifyNpc { npc_id, patch } => modify_npc(world, *npc_id, patch)?,
@@ -507,6 +530,16 @@ pub struct NpcPatch {
  * ACTION HANDLERS
  *
  */
+
+/// Cause a specified amount of damage to a character.
+pub fn damage_character(target: &mut impl LivingEntity, amount: u32) {
+    target.damage(amount);
+}
+
+/// Heal a character a specified amount.
+pub fn heal_character(target: &mut impl LivingEntity, amount: u32) {
+    target.heal(amount);
+}
 
 /// Modifies multiple properties of an `Item` at once by applying an `ItemPatch`.
 ///
