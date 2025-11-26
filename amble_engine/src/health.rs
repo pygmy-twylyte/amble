@@ -26,9 +26,17 @@ impl HealthState {
             effects: Vec::new(),
         }
     }
+    /// Get the maximum HP for this entity
+    pub fn max_hp(&self) -> u32 {
+        self.max_hp
+    }
+    /// Get the current HP for this entity
+    pub fn current_hp(&self) -> u32 {
+        self.current_hp
+    }
     /// Return whether this entity is alive or dead.
     /// In the future, there may be additional states -- so not using a boolean here.
-    pub fn viability(&self) -> LifeState {
+    pub fn life_state(&self) -> LifeState {
         if self.current_hp > 0 {
             LifeState::Alive
         } else {
@@ -68,7 +76,7 @@ impl HealthState {
 pub trait LivingEntity {
     fn max_hp(&self) -> u32;
     fn current_hp(&self) -> u32;
-    fn life_status(&self) -> LifeState;
+    fn life_state(&self) -> LifeState;
 }
 
 /// Possible life states for living entities
