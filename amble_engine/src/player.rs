@@ -2,6 +2,7 @@
 //!
 //! Defines the player struct plus helpers for manipulating inventory,
 //! location history, and progression flags.
+use crate::health::{HealthState, LivingEntity};
 use crate::{ItemHolder, Location, WorldObject};
 
 use log::{info, warn};
@@ -24,6 +25,7 @@ pub struct Player {
     pub inventory: HashSet<Uuid>,
     pub flags: HashSet<Flag>,
     pub score: usize,
+    pub health: HealthState,
 }
 impl Player {
     /// Updates one of the existing flags. Emits a warning if the flag isn't found.
@@ -106,6 +108,7 @@ impl Default for Player {
             inventory: HashSet::<Uuid>::default(),
             flags: HashSet::<Flag>::default(),
             score: 1,
+            health: HealthState::default(),
         }
     }
 }
@@ -137,6 +140,19 @@ impl ItemHolder for Player {
 
     fn contains_item(&self, item_id: Uuid) -> bool {
         self.inventory.contains(&item_id)
+    }
+}
+impl LivingEntity for Player {
+    fn max_hp(&self) -> u32 {
+        self.health.max_hp()
+    }
+
+    fn current_hp(&self) -> u32 {
+        self.health.current_hp()
+    }
+
+    fn life_state(&self) -> crate::health::LifeState {
+        self.health.life_state()
     }
 }
 
