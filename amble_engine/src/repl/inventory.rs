@@ -825,6 +825,7 @@ mod tests {
     use super::*;
     use crate::{
         ItemHolder,
+        health::HealthState,
         item::{ContainerState, Item},
         npc::{Npc, NpcState},
         room::Room,
@@ -974,6 +975,7 @@ mod tests {
             dialogue: HashMap::new(),
             state: NpcState::Normal,
             movement: None,
+            health: HealthState::new_at_max(10),
         };
         let npc_item_id = Uuid::new_v4();
         let npc_item = Item {

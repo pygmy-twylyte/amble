@@ -577,6 +577,7 @@ mod tests {
     use super::*;
     use crate::{
         AmbleWorld, View, ViewItem,
+        health::HealthState,
         player::{Flag, Player},
     };
 
@@ -747,6 +748,7 @@ mod tests {
             dialogue: HashMap::new(),
             state: crate::npc::NpcState::Normal,
             movement: None,
+            health: HealthState::new_at_max(10),
         };
         world.npcs.insert(npc.id, npc);
 

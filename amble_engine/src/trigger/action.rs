@@ -2320,6 +2320,7 @@ pub fn schedule_on_if_flag_missing(
 mod tests {
     use super::*;
     use crate::{
+        health::HealthState,
         item::{ContainerState, Item},
         npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState},
         player::Flag,
@@ -2611,6 +2612,7 @@ mod tests {
             dialogue: HashMap::new(),
             state,
             movement: None,
+            health: HealthState::new_at_max(10),
         }
     }
 

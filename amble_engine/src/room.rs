@@ -252,6 +252,7 @@ impl Room {
 mod tests {
     use super::*;
     use crate::{
+        health::HealthState,
         item::Item,
         npc::{Npc, NpcState},
         player::Flag,
@@ -313,6 +314,7 @@ mod tests {
             dialogue: HashMap::new(),
             state: NpcState::Normal,
             movement: None,
+            health: HealthState::new_at_max(10),
         };
         world.npcs.insert(npc_id, npc);
 

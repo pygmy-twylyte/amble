@@ -158,6 +158,7 @@ impl TriggerCondition {
 mod tests {
     use super::*;
     use crate::{
+        health::HealthState,
         item::{ContainerState, Item},
         npc::{Npc, NpcState},
         player::Flag,
@@ -231,6 +232,7 @@ mod tests {
             dialogue: HashMap::new(),
             state,
             movement: None,
+            health: HealthState::new_at_max(20),
         }
     }
 
