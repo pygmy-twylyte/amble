@@ -18,8 +18,12 @@ use rand::{prelude::IndexedRandom, seq::IteratorRandom};
 use uuid::Uuid;
 
 use crate::{
-    ItemHolder, Location, View, ViewItem, WorldObject, helpers::symbol_or_unknown, spinners::CoreSpinnerType,
-    view::ContentLine, world::AmbleWorld,
+    ItemHolder, Location, View, ViewItem, WorldObject,
+    health::{HealthState, LivingEntity},
+    helpers::symbol_or_unknown,
+    spinners::CoreSpinnerType,
+    view::ContentLine,
+    world::AmbleWorld,
 };
 
 /// A non-playable character.
@@ -34,6 +38,7 @@ pub struct Npc {
     pub dialogue: HashMap<NpcState, Vec<String>>,
     pub state: NpcState,
     pub movement: Option<NpcMovement>,
+    pub health: HealthState,
 }
 impl Npc {
     /// Pause scripted movement for the given number of turns.
@@ -107,6 +112,19 @@ impl ItemHolder for Npc {
 
     fn contains_item(&self, item_id: Uuid) -> bool {
         self.inventory.contains(&item_id)
+    }
+}
+impl LivingEntity for Npc {
+    fn max_hp(&self) -> u32 {
+        self.health.max_hp()
+    }
+
+    fn current_hp(&self) -> u32 {
+        self.health.current_hp()
+    }
+
+    fn life_state(&self) -> crate::health::LifeState {
+        self.health.life_state()
     }
 }
 
@@ -363,6 +381,7 @@ mod tests {
             dialogue,
             state: NpcState::Normal,
             movement: None,
+            health: HealthState::new_at_max(10),
         }
     }
 
