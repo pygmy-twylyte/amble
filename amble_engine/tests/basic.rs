@@ -3,6 +3,7 @@ use std::usize;
 use ae::style::GameStyle;
 use ae::*;
 use amble_engine as ae;
+use amble_engine::health::{LivingEntity};
 
 #[test]
 fn test_command_parse() {
@@ -247,9 +248,12 @@ fn test_raw_player_to_player() {
         inventory: HashMap::new(),
         flags: HashSet::new(),
         score: 0,
+        max_hp: 10,
     };
     let player = build_player(&raw, &mut symbols).unwrap();
     assert_eq!(player.name, "P");
+    assert_eq!(player.max_hp(), 10);
+    assert_eq!(player.current_hp(), 10);
 }
 
 #[test]
