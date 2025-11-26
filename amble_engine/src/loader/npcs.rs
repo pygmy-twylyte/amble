@@ -16,6 +16,7 @@ use uuid::Uuid;
 
 use crate::{
     Location, WorldObject,
+    health::HealthState,
     idgen::{self, NAMESPACE_CHARACTER},
     npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState},
     world::AmbleWorld,
@@ -36,6 +37,7 @@ pub struct RawNpc {
     pub name: String,
     pub description: String,
     pub location: HashMap<String, String>,
+    pub max_hp: u32,
     #[serde(default)]
     pub inventory: HashSet<String>,
     pub dialogue: HashMap<String, Vec<String>>,
@@ -94,6 +96,7 @@ impl RawNpc {
             dialogue: processed_dialogue,
             state: self.state.clone(),
             movement,
+            health: HealthState::new_at_max(self.max_hp),
         })
     }
 }
