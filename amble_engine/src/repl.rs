@@ -76,8 +76,12 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         }
 
         let prompt = format!(
-            "\n[Turn: {}|Score: {}{}]>> ",
-            world.turn_count, world.player.score, status_effects
+            "\n[Turn {} | Health {}/{} | Score: {}{}]>> ",
+            world.turn_count,
+            world.player.health.current_hp(),
+            world.player.health.max_hp(),
+            world.player.score,
+            status_effects
         )
         .prompt_style()
         .to_string();
