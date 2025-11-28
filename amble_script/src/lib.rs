@@ -200,6 +200,10 @@ pub enum ActionAst {
         turns: Option<usize>,
         cause: String,
     },
+    /// Remove a queued health effect from the player by cause.
+    RemovePlayerEffect {
+        cause: String,
+    },
     /// Damage an NPC once or over multiple turns.
     DamageNpc {
         npc: String,
@@ -212,6 +216,11 @@ pub enum ActionAst {
         npc: String,
         amount: u32,
         turns: Option<usize>,
+        cause: String,
+    },
+    /// Remove a queued health effect from an NPC by cause.
+    RemoveNpcEffect {
+        npc: String,
         cause: String,
     },
     /// Remove a flag by name.
@@ -1656,6 +1665,12 @@ fn action_to_value(stmt: &ActionStmt) -> toml_edit::Value {
             t.insert("amount", toml_edit::Value::from(*amount as i64));
             toml_edit::Value::from(t)
         },
+        ActionAst::RemovePlayerEffect { cause } => {
+            let mut t = InlineTable::new();
+            t.insert("type", toml_edit::Value::from("removePlayerEffect"));
+            t.insert("cause", toml_edit::Value::from(cause.clone()));
+            toml_edit::Value::from(t)
+        },
         ActionAst::DamageNpc {
             npc,
             amount,
@@ -1690,6 +1705,13 @@ fn action_to_value(stmt: &ActionStmt) -> toml_edit::Value {
             t.insert("npc_id", toml_edit::Value::from(npc.clone()));
             t.insert("cause", toml_edit::Value::from(cause.clone()));
             t.insert("amount", toml_edit::Value::from(*amount as i64));
+            toml_edit::Value::from(t)
+        },
+        ActionAst::RemoveNpcEffect { npc, cause } => {
+            let mut t = InlineTable::new();
+            t.insert("type", toml_edit::Value::from("removeNpcEffect"));
+            t.insert("npc_id", toml_edit::Value::from(npc.clone()));
+            t.insert("cause", toml_edit::Value::from(cause.clone()));
             toml_edit::Value::from(t)
         },
         ActionAst::RemoveFlag(name) => {
@@ -3187,10 +3209,12 @@ trigger "health actions" when always {
   do damage player 2 for 3 turns cause "poison"
   do heal player 4 cause "potion"
   do heal player 1 for 2 turns cause "regen"
+  do remove player effect "poison"
   do damage npc guard 5 cause "fireball"
   do damage npc guard 1 for 2 turns cause "burn"
   do heal npc guard 2 cause "bandage"
   do heal npc guard 1 for 3 turns cause "regen-cloud"
+  do remove npc guard effect "burn"
 }
 "#;
         let ast = parse_trigger(src).expect("parse ok");
@@ -3212,6 +3236,10 @@ trigger "health actions" when always {
         )));
         assert!(ast.actions.iter().any(|a| matches!(
             &a.action,
+            ActionAst::RemovePlayerEffect { cause } if cause == "poison"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
             ActionAst::DamageNpc { npc, amount, turns, cause } if npc == "guard" && *amount == 5 && turns.is_none() && cause == "fireball"
         )));
         assert!(ast.actions.iter().any(|a| matches!(
@@ -3226,16 +3254,22 @@ trigger "health actions" when always {
             &a.action,
             ActionAst::HealNpc { npc, amount, turns, cause } if npc == "guard" && *amount == 1 && matches!(turns, Some(3)) && cause == "regen-cloud"
         )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::RemoveNpcEffect { npc, cause } if npc == "guard" && cause == "burn"
+        )));
 
         let toml = compile_trigger_to_toml(&ast).expect("compile ok");
         assert!(toml.contains("type = \"damagePlayer\""));
         assert!(toml.contains("type = \"damagePlayerOT\""));
         assert!(toml.contains("type = \"healPlayer\""));
         assert!(toml.contains("type = \"healPlayerOT\""));
+        assert!(toml.contains("type = \"removePlayerEffect\""));
         assert!(toml.contains("type = \"damageNpc\""));
         assert!(toml.contains("type = \"damageNpcOT\""));
         assert!(toml.contains("type = \"healNpc\""));
         assert!(toml.contains("type = \"healNpcOT\""));
+        assert!(toml.contains("type = \"removeNpcEffect\""));
     }
 
     #[test]

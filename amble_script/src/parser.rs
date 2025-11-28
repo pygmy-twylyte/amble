@@ -2116,11 +2116,30 @@ fn parse_action_core(text: &str) -> Result<ActionAst, AstError> {
     if let Some(rest) = t.strip_prefix("do heal player ") {
         return parse_player_health_action(rest, false);
     }
+    if let Some(rest) = t.strip_prefix("do remove player effect ") {
+        let r = rest.trim();
+        let (cause, _) =
+            parse_string_at(r).map_err(|_| AstError::Shape("remove player effect missing or invalid cause"))?;
+        return Ok(ActionAst::RemovePlayerEffect { cause });
+    }
     if let Some(rest) = t.strip_prefix("do damage npc ") {
         return parse_npc_health_action(rest, true);
     }
     if let Some(rest) = t.strip_prefix("do heal npc ") {
         return parse_npc_health_action(rest, false);
+    }
+    if let Some(rest) = t.strip_prefix("do remove npc ") {
+        let rest = rest.trim();
+        if let Some((npc, tail)) = rest.split_once(" effect ") {
+            let r = tail.trim();
+            let (cause, _) =
+                parse_string_at(r).map_err(|_| AstError::Shape("remove npc effect missing or invalid cause"))?;
+            return Ok(ActionAst::RemoveNpcEffect {
+                npc: npc.trim().to_string(),
+                cause,
+            });
+        }
+        return Err(AstError::Shape("remove npc effect syntax"));
     }
     if let Some(rest) = t.strip_prefix("do replace item ") {
         let rest = rest.trim();

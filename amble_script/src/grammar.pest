@@ -1,5 +1,5 @@
 // Amble DSL Grammar
-// Amble version 0.63.0
+// Amble version 0.64.0
 
 COMMENT    = _{ "#" ~ (!NEWLINE ~ ANY)* }
 WHITESPACE = _{ " " | "\t" | NEWLINE | COMMENT }
@@ -214,8 +214,10 @@ do_action        =  {
   | ("set" ~ "npc" ~ "state" ~ ident ~ ident)
   | ("damage" ~ "player" ~ number ~ ("for" ~ number ~ "turns")? ~ "cause" ~ string)
   | ("heal" ~ "player" ~ number ~ ("for" ~ number ~ "turns")? ~ "cause" ~ string)
+  | ("remove" ~ "player" ~ "effect" ~ string)
   | ("damage" ~ "npc" ~ ident ~ number ~ ("for" ~ number ~ "turns")? ~ "cause" ~ string)
   | ("heal" ~ "npc" ~ ident ~ number ~ ("for" ~ number ~ "turns")? ~ "cause" ~ string)
+  | ("remove" ~ "npc" ~ ident ~ "effect" ~ string)
   | ("deny" ~ "read" ~ string)
   | ("restrict" ~ "item" ~ ident)
   | ("give" ~ "item" ~ ident ~ "to" ~ "player" ~ "from" ~ "npc" ~ ident)

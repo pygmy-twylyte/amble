@@ -160,6 +160,7 @@ pub trait LivingEntity: WorldObject {
     fn heal(&mut self, amount: u32);
     fn life_state(&self) -> LifeState;
     fn add_health_effect(&mut self, effect: HealthEffect);
+    fn remove_health_effect(&mut self, cause: &str) -> Option<HealthEffect>;
     fn tick_health_effects(&mut self) -> Vec<ViewItem>;
 }
 

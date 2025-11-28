@@ -397,6 +397,10 @@ pub enum RawTriggerAction {
         amount: u32,
         turns: u32,
     },
+    RemoveNpcEffect {
+        npc_id: String,
+        cause: String,
+    },
     DamagePlayer {
         cause: String,
         amount: u32,
@@ -414,6 +418,9 @@ pub enum RawTriggerAction {
         cause: String,
         amount: u32,
         turns: u32,
+    },
+    RemovePlayerEffect {
+        cause: String,
     },
     LockItem {
         item_id: String,
@@ -557,6 +564,7 @@ impl RawTriggerAction {
                 amount,
                 turns,
             } => cook_heal_npc_ot(symbols, npc_id, cause, *amount, *turns),
+            Self::RemoveNpcEffect { npc_id, cause } => cook_remove_npc_effect(symbols, npc_id, cause),
             Self::DamagePlayer { cause, amount } => Ok(TriggerAction::DamagePlayer {
                 cause: cause.clone(),
                 amount: *amount,
@@ -575,6 +583,7 @@ impl RawTriggerAction {
                 amount: *amount,
                 turns: *turns,
             }),
+            Self::RemovePlayerEffect { cause } => Ok(TriggerAction::RemovePlayerEffect { cause: cause.clone() }),
             Self::RestrictItem { item_id } => cook_restrict_item(symbols, item_id),
             Self::NpcRefuseItem { npc_id, reason } => cook_npc_refuse_item(symbols, npc_id, reason),
             Self::NpcSaysRandom { npc_id } => cook_npc_says_random(symbols, npc_id),
@@ -753,6 +762,17 @@ fn cook_heal_npc_ot(
         })
     } else {
         bail!("npc symbol '{npc_sym}' not found when loading raw HealNpcOT action");
+    }
+}
+
+fn cook_remove_npc_effect(symbols: &SymbolTable, npc_sym: &str, cause: &str) -> Result<TriggerAction> {
+    if let Some(&npc_id) = symbols.characters.get(npc_sym) {
+        Ok(TriggerAction::RemoveNpcEffect {
+            npc_id,
+            cause: cause.to_string(),
+        })
+    } else {
+        bail!("npc symbol '{npc_sym}' not found when loading raw RemoveNpcEffect action");
     }
 }
 

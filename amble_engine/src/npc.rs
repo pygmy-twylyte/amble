@@ -135,6 +135,10 @@ impl LivingEntity for Npc {
         self.health.heal(amount);
     }
 
+    fn remove_health_effect(&mut self, cause: &str) -> Option<HealthEffect> {
+        self.health.remove_effect(cause)
+    }
+
     fn tick_health_effects(&mut self) -> Vec<ViewItem> {
         self.health.apply_effects(self.name.as_str())
     }
