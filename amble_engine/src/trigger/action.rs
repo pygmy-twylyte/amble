@@ -2720,6 +2720,112 @@ mod tests {
     }
 
     #[test]
+    fn damage_player_action_applies_on_next_tick() {
+        let mut world = AmbleWorld::new_empty();
+        world.player.name = "Tester".into();
+        world.player.health = HealthState::new_at_max(10);
+        let mut view = View::new();
+
+        let action = ScriptedAction::new(TriggerAction::DamagePlayer {
+            cause: "trap".into(),
+            amount: 3,
+        });
+        dispatch_action(&mut world, &mut view, &action).unwrap();
+
+        // effect is queued, not applied immediately
+        assert_eq!(world.player.current_hp(), 10);
+
+        let applied = world.player.tick_health_effects();
+        assert_eq!(world.player.current_hp(), 7);
+        assert!(applied.contains(&ViewItem::CharacterHarmed {
+            name: "Tester".into(),
+            cause: "trap".into(),
+            amount: 3,
+        }));
+    }
+
+    #[test]
+    fn heal_player_over_time_saturates_and_expires() {
+        let mut world = AmbleWorld::new_empty();
+        world.player.name = "Tester".into();
+        world.player.health = HealthState::new_at_max(10);
+        world.player.damage(5);
+        let mut view = View::new();
+
+        let action = ScriptedAction::new(TriggerAction::HealPlayerOT {
+            cause: "regen".into(),
+            amount: 3,
+            turns: 2,
+        });
+        dispatch_action(&mut world, &mut view, &action).unwrap();
+        assert_eq!(world.player.current_hp(), 5);
+
+        // first tick heals and leaves a follow-up effect
+        let first_tick = world.player.tick_health_effects();
+        assert_eq!(world.player.current_hp(), 8);
+        assert_eq!(world.player.health.effects.len(), 1);
+        assert!(first_tick.contains(&ViewItem::CharacterHealed {
+            name: "Tester".into(),
+            cause: "regen".into(),
+            amount: 3,
+        }));
+
+        // second tick heals up to max and clears the effect
+        world.player.damage(1); // drop below max to exercise saturation logic
+        let second_tick = world.player.tick_health_effects();
+        assert_eq!(world.player.current_hp(), 10);
+        assert!(world.player.health.effects.is_empty());
+        assert!(second_tick.contains(&ViewItem::CharacterHealed {
+            name: "Tester".into(),
+            cause: "regen".into(),
+            amount: 3,
+        }));
+    }
+
+    #[test]
+    fn damage_npc_over_time_ticks_each_turn() {
+        let (mut world, room_id, _) = build_test_world();
+        let npc_id = Uuid::new_v4();
+        world
+            .npcs
+            .insert(npc_id, make_npc(npc_id, Location::Room(room_id), NpcState::Normal));
+        let mut view = View::new();
+
+        let action = ScriptedAction::new(TriggerAction::DamageNpcOT {
+            npc_id,
+            cause: "acid".into(),
+            amount: 2,
+            turns: 2,
+        });
+        dispatch_action(&mut world, &mut view, &action).unwrap();
+
+        // queued only
+        assert_eq!(world.npcs.get(&npc_id).unwrap().current_hp(), 10);
+
+        let first_tick = world.npcs.get_mut(&npc_id).unwrap().tick_health_effects();
+        assert_eq!(world.npcs.get(&npc_id).unwrap().current_hp(), 8);
+        assert_eq!(world.npcs.get(&npc_id).unwrap().health.effects.len(), 1);
+        assert!(first_tick.iter().any(|item| {
+            matches!(
+                item,
+                ViewItem::CharacterHarmed { cause, amount, .. }
+                if cause == "acid" && *amount == 2
+            )
+        }));
+
+        let second_tick = world.npcs.get_mut(&npc_id).unwrap().tick_health_effects();
+        assert_eq!(world.npcs.get(&npc_id).unwrap().current_hp(), 6);
+        assert!(world.npcs.get(&npc_id).unwrap().health.effects.is_empty());
+        assert!(second_tick.iter().any(|item| {
+            matches!(
+                item,
+                ViewItem::CharacterHarmed { cause, amount, .. }
+                if cause == "acid" && *amount == 2
+            )
+        }));
+    }
+
+    #[test]
     fn push_player_moves_player_to_room() {
         let (mut world, _start, dest) = build_test_world();
         assert!(push_player(&mut world, &dest).is_ok());
