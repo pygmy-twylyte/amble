@@ -23,6 +23,7 @@ pub use npc::*;
 pub use system::*;
 
 use crate::command::{Command, parse_command};
+use crate::health::LivingEntity;
 use crate::npc::{Npc, calculate_next_location, move_npc, move_scheduled};
 use crate::scheduler::OnFalsePolicy;
 use crate::spinners::CoreSpinnerType;
@@ -171,6 +172,14 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         if world.turn_count > current_turn {
             check_npc_movement(world, &mut view)?;
             check_scheduled_events(world, &mut view)?;
+
+            let mut health_view_items = Vec::from(world.player.tick_health_effects());
+            for (_, npc) in &mut world.npcs {
+                health_view_items.extend(npc.tick_health_effects());
+            }
+            for item in health_view_items {
+                view.push(item);
+            }
         }
 
         // ambients fire regardless of whether a turn was taken
