@@ -26,6 +26,8 @@ const ICON_ENGINE: &str = "⚙";
 const ICON_STATUS: &str = "⚕";
 const ICON_NPC_ENTER: &str = "→"; // U+2192
 const ICON_NPC_LEAVE: &str = "←"; // U+2190
+const ICON_HARMED: &str = "\u{2623}"; // biohazard sign
+const ICON_HEALED: &str = "\u{2624}"; // caduceus
 
 /// View aggregates information to be displayed on each pass through the REPL and then organizes
 /// and displays the result.
@@ -195,6 +197,8 @@ impl View {
         Self::npc_events_sorted(entries);
         Self::triggered_event(entries);
         Self::status_change(entries);
+        Self::character_harmed(entries);
+        Self::character_healed(entries);
         Self::points_awarded(entries);
     }
 
@@ -629,6 +633,58 @@ impl View {
         }
     }
 
+    fn character_harmed(entries: &[&ViewEntry]) {
+        let messages: Vec<_> = entries
+            .iter()
+            .filter_map(|i| match &i.view_item {
+                ViewItem::CharacterHarmed { name, cause, amount } => Some((name, cause, amount)),
+                _ => None,
+            })
+            .collect();
+        for (name, cause, amount) in messages {
+            println!(
+                "{}",
+                fill(
+                    format!(
+                        "{} {} injured by {}! (-{} hp)",
+                        ICON_HARMED.bright_yellow(),
+                        name.npc_style(),
+                        cause.underline(),
+                        amount.to_string().bright_red()
+                    )
+                    .as_str(),
+                    normal_block()
+                )
+            );
+        }
+    }
+
+    fn character_healed(entries: &[&ViewEntry]) {
+        let messages: Vec<_> = entries
+            .iter()
+            .filter_map(|i| match &i.view_item {
+                ViewItem::CharacterHealed { name, cause, amount } => Some((name, cause, amount)),
+                _ => None,
+            })
+            .collect();
+        for (name, cause, amount) in messages {
+            println!(
+                "{}",
+                fill(
+                    format!(
+                        "{} {} healed by {}! (+{} hp)",
+                        ICON_HEALED.bright_blue(),
+                        name.npc_style(),
+                        cause.underline(),
+                        amount.to_string().bright_green()
+                    )
+                    .as_str(),
+                    normal_block()
+                )
+            );
+        }
+    }
+
     fn errors(&mut self) {
         let messages: Vec<_> = self
             .items
@@ -912,6 +968,16 @@ pub enum ViewItem {
         description: String,
     },
     AmbientEvent(String),
+    CharacterHarmed {
+        name: String,
+        cause: String,
+        amount: u32,
+    },
+    CharacterHealed {
+        name: String,
+        cause: String,
+        amount: u32,
+    },
     CompleteGoal {
         name: String,
         description: String,
@@ -1013,7 +1079,9 @@ impl ViewItem {
             | ViewItem::Inventory(_)
             | ViewItem::ActiveGoal { .. }
             | ViewItem::CompleteGoal { .. } => Section::DirectResult,
-            ViewItem::NpcSpeech { .. }
+            ViewItem::CharacterHarmed { .. }
+            | ViewItem::CharacterHealed { .. }
+            | ViewItem::NpcSpeech { .. }
             | ViewItem::NpcEntered { .. }
             | ViewItem::NpcLeft { .. }
             | ViewItem::TriggeredEvent(_)
@@ -1036,6 +1104,8 @@ impl ViewItem {
             ViewItem::ActionSuccess(_) => 0,
             ViewItem::ActiveGoal { .. } => -20,
             ViewItem::AmbientEvent(_) => -10,
+            ViewItem::CharacterHarmed { .. } => 0,
+            ViewItem::CharacterHealed { .. } => 0,
             ViewItem::CompleteGoal { .. } => -10,
             ViewItem::EngineMessage(_) => 0,
             ViewItem::Error(_) => 0,
