@@ -54,6 +54,9 @@ keyword = {
   | "push"
   | "set"
   | "description"
+  | "max_hp"
+  | "damage"
+  | "heal"
   | "random"
   | "refuse"
   | "state"
@@ -63,9 +66,6 @@ keyword = {
   | "message"
   | "reason"
   | "loop"
-  | "eat"
-  | "drink"
-  | "inhale"
   | "consumable"
   | "container"
   | "fail"
@@ -95,6 +95,9 @@ keyword = {
   | "absent"
   | "custom"
   | "here"
+  | "for"
+  | "turns"
+  | "cause"
   | // container state literals
   "off"
   | "closed"
@@ -209,6 +212,10 @@ do_action        =  {
   | ("npc" ~ "says" ~ ident ~ string)
   | ("npc" ~ "refuse" ~ "item" ~ ident ~ string)
   | ("set" ~ "npc" ~ "state" ~ ident ~ ident)
+  | ("damage" ~ "player" ~ number ~ ("for" ~ number ~ "turns")? ~ "cause" ~ string)
+  | ("heal" ~ "player" ~ number ~ ("for" ~ number ~ "turns")? ~ "cause" ~ string)
+  | ("damage" ~ "npc" ~ ident ~ number ~ ("for" ~ number ~ "turns")? ~ "cause" ~ string)
+  | ("heal" ~ "npc" ~ ident ~ number ~ ("for" ~ number ~ "turns")? ~ "cause" ~ string)
   | ("deny" ~ "read" ~ string)
   | ("restrict" ~ "item" ~ ident)
   | ("give" ~ "item" ~ ident ~ "to" ~ "player" ~ "from" ~ "npc" ~ ident)
@@ -260,8 +267,8 @@ npc_patch_name         =  { "name" ~ string }
 npc_patch_desc         =  { ("description" | "desc") ~ string }
 npc_patch_state        =  { "state" ~ npc_state_value }
 npc_patch_add_line     =  { "add" ~ "line" ~ string ~ "to" ~ "state" ~ npc_state_value }
-npc_patch_route        =  { "route" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")" }
-npc_patch_random_rooms =  { "random" ~ "rooms" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")" }
+npc_patch_route        =  { "route" ~ "(" ~ ident ~ ("," ~ ident)* ~ (",")? ~ ")" }
+npc_patch_random_rooms =  { "random" ~ "rooms" ~ "(" ~ ident ~ ("," ~ ident)* ~ (",")? ~ ")" }
 npc_patch_timing_every =  { "timing" ~ "every" ~ number ~ "turns" }
 npc_patch_timing_on    =  { "timing" ~ "on" ~ "turn" ~ number }
 npc_patch_active       =  { "active" ~ boolean }
@@ -323,7 +330,7 @@ in_rooms = { "in" ~ "rooms" ~ ident ~ ("," ~ ident)* }
 
 all_group = { "all" ~ "(" ~ cond_list ~ ")" }
 any_group = { "any" ~ "(" ~ cond_list ~ ")" }
-cond_list = { cond ~ ("," ~ cond)* }
+cond_list = { cond ~ ("," ~ cond)* ~ (",")? }
 
 // -----------------
 // Rooms (minimal)
@@ -433,12 +440,13 @@ wedge_stmt    = { "wedge" ~ string ~ ("width" ~ number)? }
 
 npc_def            = { "npc" ~ ident ~ npc_block }
 npc_block          = { "{" ~ npc_stmt* ~ "}" }
-npc_stmt           = { npc_name | npc_desc | npc_location | npc_state | npc_movement | npc_dialogue_block }
+npc_stmt           = { npc_name | npc_desc | npc_max_hp | npc_location | npc_state | npc_movement | npc_dialogue_block }
 npc_name           = { "name" ~ string }
 npc_desc           = { ("desc" | "description") ~ string }
+npc_max_hp         = { "max_hp" ~ number }
 npc_location       = { "location" ~ (("room" ~ ident) | ("nowhere" ~ string)) }
 npc_state          = { "state" ~ (ident | ("custom" ~ ident)) }
-npc_movement       = { "movement" ~ ("random" | "route") ~ "rooms" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")" ~ ("timing" ~ ident)? ~ ("active" ~ boolean)? ~ ("loop" ~ boolean)? }
+npc_movement       = { "movement" ~ ("random" | "route") ~ "rooms" ~ "(" ~ ident ~ ("," ~ ident)* ~ (",")? ~ ")" ~ ("timing" ~ ident)? ~ ("active" ~ boolean)? ~ ("loop" ~ boolean)? }
 npc_dialogue_block = { "dialogue" ~ (ident | ("custom" ~ ident)) ~ "{" ~ string+ ~ "}" }
 
 // -----------------
