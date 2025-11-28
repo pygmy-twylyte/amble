@@ -6,6 +6,7 @@ npc b_a_receptionist {
     name "Receptionist"
     desc "A neatly dressed android sitting at the reception desk."
     location room b-a-office
+    max_hp 20
     state normal
     dialogue bored {
         "Good job getting the keycard. Many of our previous applicants have died in the attempt. Very promising! The evaluator will be pleased. Strong lateral thinking and slight psychosis are essential for such a dangerous position, as I'm sure you are aware."
@@ -29,13 +30,21 @@ npc b_a_receptionist {
 # Triggers
 # ========================================
 trigger "[Office] Receptionist Unhelpful if No Pass" when always {
-    if all(with npc b_a_receptionist, missing flag got-visitor-pass, missing flag got-elevator-keycard) {
+    if all(
+        with npc b_a_receptionist,
+        missing flag got-visitor-pass,
+        missing flag got-elevator-keycard,
+    ) {
         do set npc state b_a_receptionist normal
     }
 }
 
 trigger "[Office] Receptionist Helpful Once Pass Acquired" when always {
-    if all(with npc b_a_receptionist, has flag got-visitor-pass, missing flag got-elevator-keycard) {
+    if all(
+        with npc b_a_receptionist,
+        has flag got-visitor-pass,
+        missing flag got-elevator-keycard,
+    ) {
         do set npc state b_a_receptionist happy
     }
 }
@@ -52,14 +61,18 @@ trigger "[Office] Exchange Invitation for Visitor Pass" when give item invitatio
 
 trigger "[Office] Receptionist Comment (Read Poetry)" only once
 when enter room b-a-office {
-    if all(with npc b_a_receptionist, has flag read-vogon-poetry, has flag status:nauseated) {
+    if all(
+        with npc b_a_receptionist,
+        has flag read-vogon-poetry,
+        has flag status:nauseated,
+    ) {
         do npc says emh "You look ill. You didn't read that poetry book, did you? That won't look good on your evaluation. The Emergency Medical Hologram on level AA-3 may be able to help."
     }
 }
 
 trigger "[Office] Receptionist Comment (Broken Emitter Found)"
 when enter room b-a-office {
-    if all(with npc b_a_receptionist, has flag mobilize-emh#0) {
+    if all( with npc b_a_receptionist, has flag mobilize-emh#0 ) {
         do npc says b_a_receptionist "I hear the EMH lost his emitter again. One has been turned into the Lost and Found, but I'm not sure how much good it will do you. Or him."
     }
 }

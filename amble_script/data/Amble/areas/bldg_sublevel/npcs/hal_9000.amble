@@ -2,6 +2,7 @@ npc hal_9000 {
     name "HAL-9000"
     desc "A superintelligent AI whose track record is flawless, but whose motives are... sketchy."
     location room monolith-room
+    max_hp 15
     state custom suspend
     dialogue custom memory-0 {
         "(Emits a brief warped sound of a human voice, then goes silent.)"

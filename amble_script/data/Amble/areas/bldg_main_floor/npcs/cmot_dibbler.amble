@@ -2,8 +2,16 @@ npc cmot_dibbler {
     name "C.M.O.T. Dibbler"
     desc "A persistent entrepreneur with a tray of questionable meat products and an optimistic attitude about food safety. He wears a grease-stained apron and carries himself with the confidence of someone who's never met a customer he couldn't eventually convince."
     location room main-lobby
+    max_hp 50
     state normal
-    movement random rooms (main-lobby, loading-dock, restaurant, lounge, front-entrance, lift-bank-main ) timing every_5_turns active true
+    movement random rooms (
+        main-lobby,
+        loading-dock,
+        restaurant,
+        lounge,
+        front-entrance,
+        lift-bank-main,
+    ) timing every_5_turns active true
     dialogue bored {
         "Not much foot traffic here. Maybe I should try the loading dock."
         "A vendor's work is never done. Time to find some new customers."

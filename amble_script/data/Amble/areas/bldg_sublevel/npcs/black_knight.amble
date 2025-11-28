@@ -2,6 +2,7 @@ npc black_knight {
     name "The Black Knight"
     desc "A dark, glowering presence in a black suit of armor with a longsword."
     location room sublevel-1-entrance
+    max_hp 100
     state normal
     dialogue happy {
         "None shall pa-- oh, no, you can go."
@@ -43,7 +44,7 @@ item dull_longsword {
 trigger "[Sublevel-1-Entrance] Black Knight Hints About Vending Machine" only once
 when always
 {
-    if all(with npc black_knight, flag in progress hal-reboot) {
+    if all( with npc black_knight, flag in progress hal-reboot ) {
         do npc says black_knight "Lo, good Sir! I grow weary, and require a chalice of electrolytes and caffeine, but cannot leave my post. Nor do I want to dull my new sword doing battle with that infernal contraption in the lobby again. If you pass by there, retrieve one for me and I shall be further in your debt."
     }
 }

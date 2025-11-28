@@ -18,11 +18,11 @@ room dev-room {
 # you can also just comment out the trigger below to make the playground inaccessible from
 # the game without deleting the file:
 #
-# trigger "Create Dev Playground Exit" only once when always {
-    #     do modify room high-ridge {
-        #         add exit "to dev playground" -> dev-room
-        #     }
-    # }
+trigger "Create Dev Playground Exit" only once when always {
+    do modify room high-ridge {
+        add exit "to dev playground" -> dev-room
+    }
+}
 
 item big_red_button {
     name "Big Red Button"
@@ -52,7 +52,7 @@ trigger "Cheat Mode" when touch item cheat_button {
         desc "Where there used to be a High Isolated Ridge around you, there is now a blank white room with a door marked 'WIN!'"
         remove exit high-ridge
         add exit "win the game" -> room-aa-3b {
-            required_items(no_cake),
+            required_items( no_cake ),
             barred "You must hold no cake to fathom Room AA-3B's mysteries."
         }
     }
@@ -62,6 +62,7 @@ npc the_luggage {
     name "The Luggage"
     desc "A large chest with dozens of legs, layered sharp teeth around its lid, and a strong tendency to violence."
     location nowhere "spawns at dev-room for testing"
+    max_hp 10000
     dialogue normal {
         "(stares at you with menace)"
     }
@@ -91,37 +92,26 @@ when touch item big_blue_button {
         desc "The Luggage is ravenous! Beware!!"
         state custom(hungry)
         add line "(The Luggage nearly bites your face off when you approach.)" to state custom(hungry)
-        random rooms (dev-room, lounge)
+        random rooms( dev-room, lounge )
         timing every 5 turns
         active true
         loop true
     }
 }
 
-item radio {
-    name "HAM Radio"
-    desc "Radio test item. Initial state - radio is off."
+item poison_bottle {
+    name "Poison!"
+    desc "This potien will injure you by 5 points."
     portable true
     location room dev-room
-    ability TurnOn
+    ability Drink
+    consumable {
+        uses_left 2
+        consume_on ability Drink
+        when_consumed despawn
+    }
 }
 
-trigger "Turn Radio On" when use item radio ability turnOn {
-    do show "An LED on the radio lights, and you can hear faint static."
-    do modify item radio {
-        desc "The radio is now turned on and emitting slight static."
-        remove ability TurnOn
-        add ability TurnOff
-    }
-    do add flag radio-on
-}
-
-trigger "Turn Radio Off" when use item radio ability turnOff {
-    do show "The LED goes off, and the radio goes quiet."
-    do modify item radio {
-        desc "The radio is powered off and quiet."
-        remove ability TurnOff
-        add ability TurnOn
-    }
-    do remove flag radio-on
+trigger "DEV TEST Drink Poison" when drink item poison_bottle {
+    do damage player 5 cause "poison"
 }

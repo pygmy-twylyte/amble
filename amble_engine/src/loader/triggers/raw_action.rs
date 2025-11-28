@@ -375,6 +375,46 @@ pub enum RawTriggerAction {
         npc_id: String,
         item_id: String,
     },
+    DamageNpc {
+        npc_id: String,
+        cause: String,
+        amount: u32,
+    },
+    DamageNpcOT {
+        npc_id: String,
+        cause: String,
+        amount: u32,
+        turns: u32,
+    },
+    HealNpc {
+        npc_id: String,
+        cause: String,
+        amount: u32,
+    },
+    HealNpcOT {
+        npc_id: String,
+        cause: String,
+        amount: u32,
+        turns: u32,
+    },
+    DamagePlayer {
+        cause: String,
+        amount: u32,
+    },
+    DamagePlayerOT {
+        cause: String,
+        amount: u32,
+        turns: u32,
+    },
+    HealPlayer {
+        cause: String,
+        amount: u32,
+    },
+    HealPlayerOT {
+        cause: String,
+        amount: u32,
+        turns: u32,
+    },
     LockItem {
         item_id: String,
     },
@@ -503,6 +543,38 @@ impl RawTriggerAction {
             Self::SpinnerMessage { spinner } => Ok(TriggerAction::SpinnerMessage {
                 spinner: SpinnerType::from_toml_key(spinner),
             }),
+            Self::DamageNpc { npc_id, cause, amount } => cook_damage_npc(symbols, npc_id, cause, *amount),
+            Self::DamageNpcOT {
+                npc_id,
+                cause,
+                amount,
+                turns,
+            } => cook_damage_npc_ot(symbols, npc_id, cause, *amount, *turns),
+            Self::HealNpc { npc_id, cause, amount } => cook_heal_npc(symbols, npc_id, cause, *amount),
+            Self::HealNpcOT {
+                npc_id,
+                cause,
+                amount,
+                turns,
+            } => cook_heal_npc_ot(symbols, npc_id, cause, *amount, *turns),
+            Self::DamagePlayer { cause, amount } => Ok(TriggerAction::DamagePlayer {
+                cause: cause.clone(),
+                amount: *amount,
+            }),
+            Self::DamagePlayerOT { cause, amount, turns } => Ok(TriggerAction::DamagePlayerOT {
+                cause: cause.clone(),
+                amount: *amount,
+                turns: *turns,
+            }),
+            Self::HealPlayer { cause, amount } => Ok(TriggerAction::HealPlayer {
+                cause: cause.clone(),
+                amount: *amount,
+            }),
+            Self::HealPlayerOT { cause, amount, turns } => Ok(TriggerAction::HealPlayerOT {
+                cause: cause.clone(),
+                amount: *amount,
+                turns: *turns,
+            }),
             Self::RestrictItem { item_id } => cook_restrict_item(symbols, item_id),
             Self::NpcRefuseItem { npc_id, reason } => cook_npc_refuse_item(symbols, npc_id, reason),
             Self::NpcSaysRandom { npc_id } => cook_npc_says_random(symbols, npc_id),
@@ -619,6 +691,68 @@ fn cook_set_npc_active(symbols: &SymbolTable, npc_sym: &str, active: bool) -> Re
         Ok(TriggerAction::SetNpcActive { npc_id, active })
     } else {
         bail!("npc symbol '{npc_sym}' not found when loading raw SetNpcActive trigger action");
+    }
+}
+
+fn cook_damage_npc(symbols: &SymbolTable, npc_sym: &str, cause: &str, amount: u32) -> Result<TriggerAction> {
+    if let Some(&npc_id) = symbols.characters.get(npc_sym) {
+        Ok(TriggerAction::DamageNpc {
+            npc_id,
+            cause: cause.to_string(),
+            amount,
+        })
+    } else {
+        bail!("npc symbol '{npc_sym}' not found when loading raw DamageNpc action");
+    }
+}
+
+fn cook_damage_npc_ot(
+    symbols: &SymbolTable,
+    npc_sym: &str,
+    cause: &str,
+    amount: u32,
+    turns: u32,
+) -> Result<TriggerAction> {
+    if let Some(&npc_id) = symbols.characters.get(npc_sym) {
+        Ok(TriggerAction::DamageNpcOT {
+            npc_id,
+            cause: cause.to_string(),
+            amount,
+            turns,
+        })
+    } else {
+        bail!("npc symbol '{npc_sym}' not found when loading raw DamageNpcOT action");
+    }
+}
+
+fn cook_heal_npc(symbols: &SymbolTable, npc_sym: &str, cause: &str, amount: u32) -> Result<TriggerAction> {
+    if let Some(&npc_id) = symbols.characters.get(npc_sym) {
+        Ok(TriggerAction::HealNpc {
+            npc_id,
+            cause: cause.to_string(),
+            amount,
+        })
+    } else {
+        bail!("npc symbol '{npc_sym}' not found when loading raw HealNpc action");
+    }
+}
+
+fn cook_heal_npc_ot(
+    symbols: &SymbolTable,
+    npc_sym: &str,
+    cause: &str,
+    amount: u32,
+    turns: u32,
+) -> Result<TriggerAction> {
+    if let Some(&npc_id) = symbols.characters.get(npc_sym) {
+        Ok(TriggerAction::HealNpcOT {
+            npc_id,
+            cause: cause.to_string(),
+            amount,
+            turns,
+        })
+    } else {
+        bail!("npc symbol '{npc_sym}' not found when loading raw HealNpcOT action");
     }
 }
 
