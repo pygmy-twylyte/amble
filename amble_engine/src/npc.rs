@@ -19,7 +19,7 @@ use uuid::Uuid;
 
 use crate::{
     ItemHolder, Location, View, ViewItem, WorldObject,
-    health::{HealthState, LivingEntity},
+    health::{HealthEffect, HealthState, LivingEntity},
     helpers::symbol_or_unknown,
     spinners::CoreSpinnerType,
     view::ContentLine,
@@ -133,6 +133,14 @@ impl LivingEntity for Npc {
 
     fn heal(&mut self, amount: u32) {
         self.health.heal(amount);
+    }
+
+    fn tick_health_effects(&mut self) -> Vec<ViewItem> {
+        self.health.apply_effects(self.name.as_str())
+    }
+
+    fn add_health_effect(&mut self, effect: HealthEffect) {
+        self.health.add_effect(effect);
     }
 }
 
