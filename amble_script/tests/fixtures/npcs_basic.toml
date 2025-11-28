@@ -3,6 +3,7 @@
 id = "holo_medic"
 name = "Holographic Medic"
 description = "A simulated emergency physician."
+max_hp = 12
 state = { custom = "needs-calibration" }
 
 [npcs.location]
@@ -22,6 +23,7 @@ active = true
 id = "courier_bot"
 name = "Courier Bot"
 description = "A walking delivery crate."
+max_hp = 8
 state = "normal"
 
 [npcs.location]
