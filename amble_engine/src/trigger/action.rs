@@ -80,7 +80,7 @@ use std::hash::BuildHasher;
 use uuid::Uuid;
 
 use crate::Item;
-use crate::health::LivingEntity;
+use crate::health::{HealthEffect, LivingEntity};
 use crate::helpers::{symbol_from_id, symbol_or_unknown};
 use crate::item::{ContainerState, ItemAbility, ItemHolder};
 use crate::npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState, move_npc};
@@ -146,14 +146,32 @@ use crate::world::{AmbleWorld, Location, WorldObject};
 /// - `SpinnerMessage` - Displays a random message from a spinner
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TriggerAction {
-    /// Cause physical harm to an NPC.
-    DamageNpc { npc_id: Uuid, amount: u32 },
-    /// Heal an NPC.
-    HealNpc { npc_id: Uuid, amount: u32 },
-    /// Cause physical harm to the player.
-    DamagePlayer { amount: u32 },
-    /// Heal the player a specified amount.
-    HealPlayer { amount: u32 },
+    /// Cause physical harm to an NPC once.
+    DamageNpc { npc_id: Uuid, cause: String, amount: u32 },
+    /// Cause physical harm to an NPC over multiple turns.
+    DamageNpcOT {
+        npc_id: Uuid,
+        cause: String,
+        amount: u32,
+        turns: u32,
+    },
+    /// Heal an NPC once.
+    HealNpc { npc_id: Uuid, cause: String, amount: u32 },
+    /// Hean an NPC over multiple turns.
+    HealNpcOT {
+        npc_id: Uuid,
+        cause: String,
+        amount: u32,
+        turns: u32,
+    },
+    /// Cause physical harm to the player once.
+    DamagePlayer { cause: String, amount: u32 },
+    /// Cause physical harm to the player over multiple turns.
+    DamagePlayerOT { cause: String, amount: u32, turns: u32 },
+    /// Heal the player a specified amount once.
+    HealPlayer { cause: String, amount: u32 },
+    /// Heal the player a specified amount for multiple turns.
+    HealPlayerOT { cause: String, amount: u32, turns: u32 },
     /// Set the activity state of an NPC
     SetNpcActive { npc_id: Uuid, active: bool },
     /// Set the `ContainerState` of an Item
@@ -291,29 +309,55 @@ impl ScriptedAction {
 #[allow(clippy::too_many_lines)]
 pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, scripted: &ScriptedAction) -> Result<()> {
     use TriggerAction::{
-        AddFlag, AddSpinnerWedge, AdvanceFlag, AwardPoints, Conditional, DamageNpc, DamagePlayer, DenyRead,
-        DespawnItem, DespawnNpc, GiveItemToPlayer, HealNpc, HealPlayer, LockExit, LockItem, ModifyItem, ModifyNpc,
-        ModifyRoom, NpcRefuseItem, NpcSays, NpcSaysRandom, PushPlayerTo, RemoveFlag, ReplaceDropItem, ReplaceItem,
-        ResetFlag, RestrictItem, RevealExit, ScheduleIn, ScheduleInIf, ScheduleOn, ScheduleOnIf, SetBarredMessage,
-        SetContainerState, SetItemDescription, SetNPCState, SetNpcActive, ShowMessage, SpawnItemCurrentRoom,
-        SpawnItemInContainer, SpawnItemInInventory, SpawnItemInRoom, SpawnNpcInRoom, SpinnerMessage, UnlockExit,
-        UnlockItem,
+        AddFlag, AddSpinnerWedge, AdvanceFlag, AwardPoints, Conditional, DamageNpc, DamageNpcOT, DamagePlayer,
+        DamagePlayerOT, DenyRead, DespawnItem, DespawnNpc, GiveItemToPlayer, HealNpc, HealNpcOT, HealPlayer,
+        HealPlayerOT, LockExit, LockItem, ModifyItem, ModifyNpc, ModifyRoom, NpcRefuseItem, NpcSays, NpcSaysRandom,
+        PushPlayerTo, RemoveFlag, ReplaceDropItem, ReplaceItem, ResetFlag, RestrictItem, RevealExit, ScheduleIn,
+        ScheduleInIf, ScheduleOn, ScheduleOnIf, SetBarredMessage, SetContainerState, SetItemDescription, SetNPCState,
+        SetNpcActive, ShowMessage, SpawnItemCurrentRoom, SpawnItemInContainer, SpawnItemInInventory, SpawnItemInRoom,
+        SpawnNpcInRoom, SpinnerMessage, UnlockExit, UnlockItem,
     };
     let ScriptedAction { action, priority } = scripted;
     match action {
-        DamageNpc { npc_id, amount } => {
+        DamageNpc { npc_id, cause, amount } => {
             let npc = world
                 .npcs
                 .get_mut(npc_id)
                 .with_context(|| "npc lookup for damage_NPC")?;
-            damage_character(npc, *amount);
+            damage_character(npc, cause, *amount);
         },
-        HealNpc { npc_id, amount } => {
+        DamageNpcOT {
+            npc_id,
+            cause,
+            amount,
+            turns,
+        } => {
+            let npc = world
+                .npcs
+                .get_mut(npc_id)
+                .with_context(|| "npc lookup for damage_npc_ot")?;
+            damage_character_ot(npc, cause, *amount, *turns);
+        },
+        HealNpc { npc_id, cause, amount } => {
             let npc = world.npcs.get_mut(npc_id).with_context(|| "npc lookup for heal_NPC")?;
-            heal_character(npc, *amount);
+            heal_character(npc, cause, *amount);
         },
-        DamagePlayer { amount } => damage_character(&mut world.player, *amount),
-        HealPlayer { amount } => heal_character(&mut world.player, *amount),
+        HealNpcOT {
+            npc_id,
+            cause,
+            amount,
+            turns,
+        } => {
+            let npc = world
+                .npcs
+                .get_mut(npc_id)
+                .with_context(|| "npc lookup for heal_npc_ot")?;
+            heal_character_ot(npc, cause, *amount, *turns);
+        },
+        DamagePlayer { cause, amount } => damage_character(&mut world.player, cause, *amount),
+        DamagePlayerOT { cause, amount, turns } => damage_character_ot(&mut world.player, cause, *amount, *turns),
+        HealPlayer { cause, amount } => heal_character(&mut world.player, cause, *amount),
+        HealPlayerOT { cause, amount, turns } => heal_character_ot(&mut world.player, cause, *amount, *turns),
         ModifyItem { item_id, patch } => modify_item(world, *item_id, patch)?,
         ModifyRoom { room_id, patch } => modify_room(world, *room_id, patch)?,
         ModifyNpc { npc_id, patch } => modify_npc(world, *npc_id, patch)?,
@@ -531,15 +575,41 @@ pub struct NpcPatch {
  *
  */
 
-/// Cause a specified amount of damage to a character.
-pub fn damage_character(target: &mut impl LivingEntity, amount: u32) {
-    target.damage(amount);
+/// Cause a specified amount of damage to a character, once, when the turn advances.
+pub fn damage_character(target: &mut impl LivingEntity, cause: &str, amount: u32) {
+    target.add_health_effect(HealthEffect::InstantDamage {
+        cause: cause.to_string(),
+        amount,
+    });
 }
 
-/// Heal a character a specified amount.
-pub fn heal_character(target: &mut impl LivingEntity, amount: u32) {
-    target.heal(amount);
+/// Cause a specified amount of damage to a character each turn for a specified number of turns.
+pub fn damage_character_ot(target: &mut impl LivingEntity, cause: &str, amount: u32, turns: u32) {
+    target.add_health_effect(HealthEffect::DamageOverTime {
+        cause: cause.into(),
+        amount,
+        times: turns,
+    });
 }
+
+/// Heal a character a specified amount, once, on the next turn taken.
+pub fn heal_character(target: &mut impl LivingEntity, cause: &str, amount: u32) {
+    target.add_health_effect(HealthEffect::InstantHeal {
+        cause: cause.to_string(),
+        amount,
+    });
+}
+
+/// Heal a character a certain amount each turn for a specified number of turns.
+pub fn heal_character_ot(target: &mut impl LivingEntity, cause: &str, amount: u32, turns: u32) {
+    target.add_health_effect(HealthEffect::HealOverTime {
+        cause: cause.into(),
+        amount,
+        times: turns,
+    });
+}
+
+/// Cause damage to a character over a specified number of turns.
 
 /// Modifies multiple properties of an `Item` at once by applying an `ItemPatch`.
 ///
