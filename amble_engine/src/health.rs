@@ -6,6 +6,8 @@ use std::cmp;
 use log::info;
 use serde::{Deserialize, Serialize};
 
+use crate::{ViewItem, WorldObject};
+
 /// Represents the state of a living entity's health and related effects.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct HealthState {
@@ -18,6 +20,7 @@ impl HealthState {
     pub fn new() -> HealthState {
         HealthState::default()
     }
+
     /// Create a clean `HealthState` with specified maximum health
     pub fn new_at_max(max_hp: u32) -> HealthState {
         HealthState {
@@ -26,14 +29,17 @@ impl HealthState {
             effects: Vec::new(),
         }
     }
+
     /// Get the maximum HP for this entity
     pub fn max_hp(&self) -> u32 {
         self.max_hp
     }
+
     /// Get the current HP for this entity
     pub fn current_hp(&self) -> u32 {
         self.current_hp
     }
+
     /// Return whether this entity is alive or dead.
     /// In the future, there may be additional states -- so not using a boolean here.
     pub fn life_state(&self) -> LifeState {
@@ -43,22 +49,89 @@ impl HealthState {
             LifeState::Dead
         }
     }
+
     /// Do damage to health. Saturates at zero.
     pub fn damage(&mut self, amount: u32) {
         self.current_hp = self.current_hp.saturating_sub(amount);
     }
+
     /// Heal the character. Saturates at max health.
     pub fn heal(&mut self, amount: u32) {
         self.current_hp = cmp::min(self.max_hp, self.current_hp.saturating_add(amount));
     }
+
+    /// Add a `HealthEffect` to the queue
+    pub fn add_effect(&mut self, fx: HealthEffect) {
+        self.effects.push(fx);
+    }
+
+    /// Add a damage over time effect.
+    pub fn add_dot_effect(&mut self, cause: &str, damage: u32, times: u32) {
+        self.effects.push(HealthEffect::DamageOverTime {
+            cause: cause.to_string(),
+            amount: damage,
+            times,
+        })
+    }
+    /// Take an effect out of the queue
+    pub fn remove_effect(&mut self, cause: &str) -> Option<HealthEffect> {
+        if let Some(idx) = self.effects.iter().position(|fx| fx.cause_matches(cause)) {
+            Some(self.effects.remove(idx))
+        } else {
+            None
+        }
+    }
+
     /// Iterate through pending health effects, applying each one.
-    pub fn apply_effects(&mut self) {
+    pub fn apply_effects(&mut self, display_name: &str) -> Vec<ViewItem> {
+        // runny tally of character's hp as effects are processed
         let mut running_hp = self.current_hp;
+        // list of decremented versions of over-time effects to retain for next turn
         let mut ongoing_fx = Vec::new();
+        // an effect after processing -- None if one-off or expired, Some decremented version otherwise
         let mut updated_fx: Option<HealthEffect>;
+        // collection of items to be pushed to the View by the caller
+        let mut view_items = Vec::new();
         for fx in &self.effects {
+            // apply the effect, keeping a running tally of the character's HP
+            // and updating over-time effects (tick down)
             (running_hp, updated_fx) = fx.apply(running_hp, self.max_hp);
-            // break out and return if dead!
+            // log and display each effect
+            match &fx {
+                HealthEffect::InstantDamage { cause, amount } => {
+                    info!("{display_name} damaged by '{cause}' (-{amount} hp)");
+                    view_items.push(ViewItem::CharacterHarmed {
+                        name: display_name.into(),
+                        cause: cause.into(),
+                        amount: *amount,
+                    })
+                },
+                HealthEffect::InstantHeal { cause, amount } => {
+                    info!("{display_name} healed by '{cause}' (+{amount} hp)");
+                    view_items.push(ViewItem::CharacterHealed {
+                        name: display_name.into(),
+                        cause: cause.into(),
+                        amount: *amount,
+                    })
+                },
+                HealthEffect::DamageOverTime { cause, amount, times } => {
+                    info!("{display_name} damaged by '{cause}' d.o.t. (-{amount} hp, {times} left)");
+                    view_items.push(ViewItem::CharacterHarmed {
+                        name: display_name.into(),
+                        cause: cause.into(),
+                        amount: *amount,
+                    })
+                },
+                HealthEffect::HealOverTime { cause, amount, times } => {
+                    info!("{display_name} healed by '{cause}' h.o.t. (-{amount} hp, {times} left)");
+                    view_items.push(ViewItem::CharacterHealed {
+                        name: display_name.into(),
+                        cause: cause.into(),
+                        amount: *amount,
+                    })
+                },
+            }
+            // break out and return if character is dead!
             if running_hp == 0 {
                 self.current_hp = 0;
                 break;
@@ -69,16 +142,19 @@ impl HealthState {
         }
         self.current_hp = running_hp;
         self.effects = ongoing_fx;
+        view_items
     }
 }
 
 /// Abilities common to game entities that are alive
-pub trait LivingEntity {
+pub trait LivingEntity: WorldObject {
     fn max_hp(&self) -> u32;
     fn current_hp(&self) -> u32;
     fn damage(&mut self, amount: u32);
     fn heal(&mut self, amount: u32);
     fn life_state(&self) -> LifeState;
+    fn add_health_effect(&mut self, effect: HealthEffect);
+    fn tick_health_effects(&mut self) -> Vec<ViewItem>;
 }
 
 /// Possible life states for living entities
@@ -98,6 +174,15 @@ pub enum HealthEffect {
     HealOverTime { cause: String, amount: u32, times: u32 },
 }
 impl HealthEffect {
+    /// Returns `true` if the `cause` matches the supplied string
+    pub fn cause_matches(&self, pattern: &str) -> bool {
+        match &self {
+            Self::DamageOverTime { cause, .. }
+            | Self::HealOverTime { cause, .. }
+            | Self::InstantDamage { cause, .. }
+            | Self::InstantHeal { cause, .. } => cause == pattern,
+        }
+    }
     /// Applies this effect to the supplied `HealthState`
     ///
     /// The current and max hp are passed in. The result is a tuple containing updated hp
@@ -186,7 +271,7 @@ mod tests {
             }],
         };
 
-        state.apply_effects();
+        state.apply_effects("test");
         assert_eq!(state.current_hp, 9);
         assert_eq!(state.effects.len(), 1);
 
@@ -198,7 +283,7 @@ mod tests {
             unexpected => panic!("unexpected effect remaining: {unexpected:?}"),
         }
 
-        state.apply_effects();
+        state.apply_effects("test");
         assert_eq!(state.current_hp, 10);
         assert!(state.effects.is_empty());
     }
@@ -221,7 +306,7 @@ mod tests {
             ],
         };
 
-        state.apply_effects();
+        state.apply_effects("test");
         assert_eq!(state.current_hp, 0);
         assert!(state.effects.is_empty());
     }
