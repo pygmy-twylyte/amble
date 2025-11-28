@@ -85,6 +85,8 @@ Player feedback and flags:
 - `do add seq flag <name> limit <n>` — sequence flag with a final step
 - `do remove flag <name>` | `do reset flag <name>` | `do advance flag <name>`
 - `do award points <number>` (negative allowed)
+- `do damage player <amount> [for <turns> turns] cause "<cause>"`
+- `do heal player <amount> [for <turns> turns] cause "<cause>"`
 
 Item/NPC/world state:
 - Spawn/Despawn/Swap:
@@ -110,6 +112,8 @@ Item/NPC/world state:
   - `do npc refuse item <npc> "Reason…"`
   - `do set npc state <npc> <state>`
   - `do set npc active <npc> <true|false>`
+  - `do damage npc <npc> <amount> [for <turns> turns] cause "<cause>"`
+  - `do heal npc <npc> <amount> [for <turns> turns] cause "<cause>"`
   - `do give item <item> to player from npc <npc>`
 - Player movement/restrictions:
   - `do push player to <room>`
