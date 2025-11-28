@@ -188,6 +188,32 @@ pub enum ActionAst {
         amount: i64,
         reason: String,
     },
+    /// Damage the player once or over multiple turns.
+    DamagePlayer {
+        amount: u32,
+        turns: Option<usize>,
+        cause: String,
+    },
+    /// Heal the player once or over multiple turns.
+    HealPlayer {
+        amount: u32,
+        turns: Option<usize>,
+        cause: String,
+    },
+    /// Damage an NPC once or over multiple turns.
+    DamageNpc {
+        npc: String,
+        amount: u32,
+        turns: Option<usize>,
+        cause: String,
+    },
+    /// Heal an NPC once or over multiple turns.
+    HealNpc {
+        npc: String,
+        amount: u32,
+        turns: Option<usize>,
+        cause: String,
+    },
     /// Remove a flag by name.
     RemoveFlag(String),
     /// Replace an item instance by symbol with another
@@ -1037,6 +1063,7 @@ pub struct NpcAst {
     pub id: String,
     pub name: String,
     pub desc: String,
+    pub max_hp: u32,
     pub location: NpcLocationAst,
     pub state: NpcStateValue,
     pub movement: Option<NpcMovementAst>,
@@ -1381,6 +1408,7 @@ pub fn compile_npcs_to_toml(npcs: &[NpcAst]) -> Result<String, CompileError> {
             },
         }
         t["location"] = Item::Value(loc.into());
+        t["max_hp"] = value(n.max_hp as i64);
         // movement (optional)
         if let Some(mv) = &n.movement {
             let mut mt = Table::new();
@@ -1602,6 +1630,66 @@ fn action_to_value(stmt: &ActionStmt) -> toml_edit::Value {
             t.insert("type", toml_edit::Value::from("awardPoints"));
             t.insert("amount", toml_edit::Value::from(*amount));
             t.insert("reason", toml_edit::Value::from(reason.clone()));
+            toml_edit::Value::from(t)
+        },
+        ActionAst::DamagePlayer { amount, turns, cause } => {
+            let mut t = InlineTable::new();
+            if let Some(turns) = turns {
+                t.insert("type", toml_edit::Value::from("damagePlayerOT"));
+                t.insert("turns", toml_edit::Value::from(*turns as i64));
+            } else {
+                t.insert("type", toml_edit::Value::from("damagePlayer"));
+            }
+            t.insert("cause", toml_edit::Value::from(cause.clone()));
+            t.insert("amount", toml_edit::Value::from(*amount as i64));
+            toml_edit::Value::from(t)
+        },
+        ActionAst::HealPlayer { amount, turns, cause } => {
+            let mut t = InlineTable::new();
+            if let Some(turns) = turns {
+                t.insert("type", toml_edit::Value::from("healPlayerOT"));
+                t.insert("turns", toml_edit::Value::from(*turns as i64));
+            } else {
+                t.insert("type", toml_edit::Value::from("healPlayer"));
+            }
+            t.insert("cause", toml_edit::Value::from(cause.clone()));
+            t.insert("amount", toml_edit::Value::from(*amount as i64));
+            toml_edit::Value::from(t)
+        },
+        ActionAst::DamageNpc {
+            npc,
+            amount,
+            turns,
+            cause,
+        } => {
+            let mut t = InlineTable::new();
+            if let Some(turns) = turns {
+                t.insert("type", toml_edit::Value::from("damageNpcOT"));
+                t.insert("turns", toml_edit::Value::from(*turns as i64));
+            } else {
+                t.insert("type", toml_edit::Value::from("damageNpc"));
+            }
+            t.insert("npc_id", toml_edit::Value::from(npc.clone()));
+            t.insert("cause", toml_edit::Value::from(cause.clone()));
+            t.insert("amount", toml_edit::Value::from(*amount as i64));
+            toml_edit::Value::from(t)
+        },
+        ActionAst::HealNpc {
+            npc,
+            amount,
+            turns,
+            cause,
+        } => {
+            let mut t = InlineTable::new();
+            if let Some(turns) = turns {
+                t.insert("type", toml_edit::Value::from("healNpcOT"));
+                t.insert("turns", toml_edit::Value::from(*turns as i64));
+            } else {
+                t.insert("type", toml_edit::Value::from("healNpc"));
+            }
+            t.insert("npc_id", toml_edit::Value::from(npc.clone()));
+            t.insert("cause", toml_edit::Value::from(cause.clone()));
+            t.insert("amount", toml_edit::Value::from(*amount as i64));
             toml_edit::Value::from(t)
         },
         ActionAst::RemoveFlag(name) => {
@@ -3089,6 +3177,65 @@ trigger "misc actions" when enter room lab {
         assert!(toml.contains("type = \"sequence\""));
         assert!(toml.contains("name = \"quest\""));
         assert!(toml.contains("end = 3"));
+    }
+
+    #[test]
+    fn parse_and_compile_health_actions() {
+        let src = r#"
+trigger "health actions" when always {
+  do damage player 3 cause "trap"
+  do damage player 2 for 3 turns cause "poison"
+  do heal player 4 cause "potion"
+  do heal player 1 for 2 turns cause "regen"
+  do damage npc guard 5 cause "fireball"
+  do damage npc guard 1 for 2 turns cause "burn"
+  do heal npc guard 2 cause "bandage"
+  do heal npc guard 1 for 3 turns cause "regen-cloud"
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::DamagePlayer { amount, turns, cause } if *amount == 3 && turns.is_none() && cause == "trap"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::DamagePlayer { amount, turns, cause } if *amount == 2 && matches!(turns, Some(3)) && cause == "poison"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::HealPlayer { amount, turns, cause } if *amount == 4 && turns.is_none() && cause == "potion"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::HealPlayer { amount, turns, cause } if *amount == 1 && matches!(turns, Some(2)) && cause == "regen"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::DamageNpc { npc, amount, turns, cause } if npc == "guard" && *amount == 5 && turns.is_none() && cause == "fireball"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::DamageNpc { npc, amount, turns, cause } if npc == "guard" && *amount == 1 && matches!(turns, Some(2)) && cause == "burn"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::HealNpc { npc, amount, turns, cause } if npc == "guard" && *amount == 2 && turns.is_none() && cause == "bandage"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::HealNpc { npc, amount, turns, cause } if npc == "guard" && *amount == 1 && matches!(turns, Some(3)) && cause == "regen-cloud"
+        )));
+
+        let toml = compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("type = \"damagePlayer\""));
+        assert!(toml.contains("type = \"damagePlayerOT\""));
+        assert!(toml.contains("type = \"healPlayer\""));
+        assert!(toml.contains("type = \"healPlayerOT\""));
+        assert!(toml.contains("type = \"damageNpc\""));
+        assert!(toml.contains("type = \"damageNpcOT\""));
+        assert!(toml.contains("type = \"healNpc\""));
+        assert!(toml.contains("type = \"healNpcOT\""));
     }
 
     #[test]
