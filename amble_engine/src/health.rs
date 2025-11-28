@@ -115,7 +115,10 @@ impl HealthState {
                     })
                 },
                 HealthEffect::DamageOverTime { cause, amount, times } => {
-                    info!("{display_name} damaged by '{cause}' d.o.t. (-{amount} hp, {times} left)");
+                    info!(
+                        "{display_name} damaged by '{cause}' d.o.t. (-{amount} hp, {} left)",
+                        times - 1
+                    );
                     view_items.push(ViewItem::CharacterHarmed {
                         name: display_name.into(),
                         cause: cause.into(),
@@ -123,7 +126,10 @@ impl HealthState {
                     })
                 },
                 HealthEffect::HealOverTime { cause, amount, times } => {
-                    info!("{display_name} healed by '{cause}' h.o.t. (-{amount} hp, {times} left)");
+                    info!(
+                        "{display_name} healed by '{cause}' h.o.t. (-{amount} hp, {} left)",
+                        times - 1
+                    );
                     view_items.push(ViewItem::CharacterHealed {
                         name: display_name.into(),
                         cause: cause.into(),
@@ -190,18 +196,11 @@ impl HealthEffect {
     /// over-time effects.
     pub fn apply(&self, current_hp: u32, max_hp: u32) -> (u32, Option<HealthEffect>) {
         match self {
-            Self::InstantDamage { cause, amount } => {
-                info!("instant damage inflicted: {amount} hp from '{cause}'");
-                (current_hp.saturating_sub(*amount), None)
-            },
-            Self::InstantHeal { cause, amount } => {
-                info!("instant heal applied: {amount} hp from '{cause}'");
-                (cmp::min(max_hp, current_hp.saturating_add(*amount)), None)
-            },
+            Self::InstantDamage { amount, .. } => (current_hp.saturating_sub(*amount), None),
+            Self::InstantHeal { amount, .. } => (cmp::min(max_hp, current_hp.saturating_add(*amount)), None),
             Self::DamageOverTime { cause, amount, times } => {
                 let times_left: u32 = times.saturating_sub(1);
                 let hp_left = current_hp.saturating_sub(*amount);
-                info!("{amount} hp damage from '{cause}' applied, {times_left} times left");
                 let follow_up = if times_left > 0 {
                     Some(Self::DamageOverTime {
                         cause: cause.to_string(),
@@ -216,7 +215,6 @@ impl HealthEffect {
             Self::HealOverTime { cause, amount, times } => {
                 let times_left: u32 = times.saturating_sub(1);
                 let healed_hp = cmp::min(current_hp.saturating_add(*amount), max_hp);
-                info!("{amount} hp healing from '{cause}' applied, {times_left} times left.");
                 let follow_up = if times_left > 0 {
                     Some(Self::HealOverTime {
                         cause: cause.to_string(),
