@@ -101,7 +101,20 @@ when touch item big_blue_button {
 
 item poison_bottle {
     name "Poison!"
-    desc "This potien will injure you by 5 points."
+    desc "This potion will injure you by 5 points."
+    portable true
+    location room dev-room
+    ability Drink
+    consumable {
+        uses_left 2
+        consume_on ability Drink
+        when_consumed despawn
+    }
+}
+
+item antidote {
+    name "Health Potion"
+    desc "Take in case of poison."
     portable true
     location room dev-room
     ability Drink
@@ -113,5 +126,9 @@ item poison_bottle {
 }
 
 trigger "DEV TEST Drink Poison" when drink item poison_bottle {
-    do damage player 5 cause "poison"
+    do damage player 5 for 4 turns cause "poison"
+}
+
+trigger "DEV TEST Drink Health Potion" when drink item antidote {
+    do heal player 5 for 4 turns cause "health potion"
 }

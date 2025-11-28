@@ -30,7 +30,7 @@ item margarine {
 item messiah_kit {
     name "Messiah Starter Kit"
     desc """A masterfully handcrafted wooden box, with primitive bronze hardware and an ornately carved lid with the inscription:
-+| MESSIAH STARTER KIT |+"""
+                +| MESSIAH STARTER KIT |+"""
     portable true
     location room st-alfonzo-parish
     container state closed
