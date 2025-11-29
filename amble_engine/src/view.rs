@@ -28,6 +28,7 @@ const ICON_NPC_ENTER: &str = "→"; // U+2192
 const ICON_NPC_LEAVE: &str = "←"; // U+2190
 const ICON_HARMED: &str = "\u{2623}"; // biohazard sign
 const ICON_HEALED: &str = "\u{2624}"; // caduceus
+const ICON_DEATH: &str = "☠";
 
 /// View aggregates information to be displayed on each pass through the REPL and then organizes
 /// and displays the result.
@@ -197,6 +198,7 @@ impl View {
         Self::npc_events_sorted(entries);
         Self::triggered_event(entries);
         Self::status_change(entries);
+        Self::character_death(entries);
         Self::character_harmed(entries);
         Self::character_healed(entries);
         Self::points_awarded(entries);
@@ -659,6 +661,33 @@ impl View {
         }
     }
 
+    fn character_death(entries: &[&ViewEntry]) {
+        let messages: Vec<_> = entries
+            .iter()
+            .filter_map(|i| match &i.view_item {
+                ViewItem::CharacterDeath { name, cause, is_player } => Some((name, cause, is_player)),
+                _ => None,
+            })
+            .collect();
+        for (name, cause, is_player) in messages {
+            let base = format!("{} {}", ICON_DEATH.red(), name.npc_style());
+            let cause_text = cause
+                .as_ref()
+                .filter(|c| !c.is_empty())
+                .map(|c| format!(" ({c})"))
+                .unwrap_or_default();
+            let suffix = if *is_player {
+                " has fallen.".to_string()
+            } else {
+                " dies.".to_string()
+            };
+            println!(
+                "{}",
+                fill(format!("{base}{cause_text}{suffix}").as_str(), normal_block())
+            );
+        }
+    }
+
     fn character_healed(entries: &[&ViewEntry]) {
         let messages: Vec<_> = entries
             .iter()
@@ -978,6 +1007,11 @@ pub enum ViewItem {
         cause: String,
         amount: u32,
     },
+    CharacterDeath {
+        name: String,
+        cause: Option<String>,
+        is_player: bool,
+    },
     CompleteGoal {
         name: String,
         description: String,
@@ -1080,6 +1114,7 @@ impl ViewItem {
             | ViewItem::ActiveGoal { .. }
             | ViewItem::CompleteGoal { .. } => Section::DirectResult,
             ViewItem::CharacterHarmed { .. }
+            | ViewItem::CharacterDeath { .. }
             | ViewItem::CharacterHealed { .. }
             | ViewItem::NpcSpeech { .. }
             | ViewItem::NpcEntered { .. }
@@ -1105,6 +1140,7 @@ impl ViewItem {
             ViewItem::ActiveGoal { .. } => -20,
             ViewItem::AmbientEvent(_) => -10,
             ViewItem::CharacterHarmed { .. } => 0,
+            ViewItem::CharacterDeath { .. } => 50,
             ViewItem::CharacterHealed { .. } => 0,
             ViewItem::CompleteGoal { .. } => -10,
             ViewItem::EngineMessage(_) => 0,
