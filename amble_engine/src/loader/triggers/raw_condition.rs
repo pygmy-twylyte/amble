@@ -40,9 +40,11 @@ pub enum RawTriggerCondition {
     LookAt { item_id: String, },
     MissingFlag { flag: String, },
     MissingItem { item_id: String, },
+    NpcDeath { npc_id: String, },
     NpcHasItem { npc_id: String, item_id: String, },
     NpcInState { npc_id: String, state: NpcState, },
     Open { item_id: String, },
+    PlayerDeath,
     Take { item_id: String, },
     TakeFromNpc { item_id: String, npc_id: String, },
     TalkToNpc { npc_id: String },
@@ -82,6 +84,8 @@ impl RawTriggerCondition {
             Self::Take { item_id } => cook_take(symbols, item_id),
             Self::Enter { room_id } => cook_enter(symbols, room_id),
             Self::GiveToNpc { item_id, npc_id } => cook_give_to_npc(symbols, item_id, npc_id),
+            Self::PlayerDeath => Ok(TriggerCondition::PlayerDeath),
+            Self::NpcDeath { npc_id } => cook_npc_death(symbols, npc_id),
             Self::Leave { room_id } => cook_leave(symbols, room_id),
             Self::LookAt { item_id } => cook_look_at(symbols, item_id),
             Self::Drop { item_id } => cook_drop(symbols, item_id),
@@ -191,6 +195,14 @@ fn cook_npc_in_state(symbols: &SymbolTable, npc_id: &String, mood: NpcState) -> 
         })
     } else {
         bail!("raw condition NpcInMood({npc_id}, {mood}): token not in symbols");
+    }
+}
+
+fn cook_npc_death(symbols: &SymbolTable, npc_id: &str) -> Result<TriggerCondition> {
+    if let Some(npc_uuid) = symbols.characters.get(npc_id) {
+        Ok(TriggerCondition::NpcDeath(*npc_uuid))
+    } else {
+        bail!("raw condition NpcDeath({npc_id}): token not in symbols");
     }
 }
 

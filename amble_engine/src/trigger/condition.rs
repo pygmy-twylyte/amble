@@ -52,6 +52,7 @@ pub enum TriggerCondition {
         item_id: Uuid,
         mode: IngestMode,
     },
+    PlayerDeath,
     Insert {
         item: Uuid,
         container: Uuid,
@@ -60,6 +61,7 @@ pub enum TriggerCondition {
     LookAt(Uuid),
     MissingFlag(String),
     MissingItem(Uuid),
+    NpcDeath(Uuid),
     NpcHasItem {
         npc_id: Uuid,
         item_id: Uuid,
