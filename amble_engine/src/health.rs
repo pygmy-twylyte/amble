@@ -8,6 +8,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::{ViewItem, WorldObject};
 
+/// Outcome of ticking queued health effects for an entity.
+pub struct HealthTickResult {
+    pub view_items: Vec<ViewItem>,
+    pub death_cause: Option<String>,
+}
+
 /// Represents the state of a living entity's health and related effects.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct HealthState {
@@ -83,7 +89,7 @@ impl HealthState {
     }
 
     /// Iterate through pending health effects, applying each one.
-    pub fn apply_effects(&mut self, display_name: &str) -> Vec<ViewItem> {
+    pub fn apply_effects(&mut self, display_name: &str) -> HealthTickResult {
         // runny tally of character's hp as effects are processed
         let mut running_hp = self.current_hp;
         // list of decremented versions of over-time effects to retain for next turn
@@ -92,6 +98,7 @@ impl HealthState {
         let mut updated_fx: Option<HealthEffect>;
         // collection of items to be pushed to the View by the caller
         let mut view_items = Vec::new();
+        let mut death_cause: Option<String> = None;
         for fx in &self.effects {
             // apply the effect, keeping a running tally of the character's HP
             // and updating over-time effects (tick down)
@@ -140,6 +147,7 @@ impl HealthState {
             // break out and return if character is dead!
             if running_hp == 0 {
                 self.current_hp = 0;
+                death_cause = Some(fx.cause_string());
                 break;
             }
             if let Some(contd_fx) = updated_fx {
@@ -148,7 +156,10 @@ impl HealthState {
         }
         self.current_hp = running_hp;
         self.effects = ongoing_fx;
-        view_items
+        HealthTickResult {
+            view_items,
+            death_cause,
+        }
     }
 }
 
@@ -161,7 +172,7 @@ pub trait LivingEntity: WorldObject {
     fn life_state(&self) -> LifeState;
     fn add_health_effect(&mut self, effect: HealthEffect);
     fn remove_health_effect(&mut self, cause: &str) -> Option<HealthEffect>;
-    fn tick_health_effects(&mut self) -> Vec<ViewItem>;
+    fn tick_health_effects(&mut self) -> HealthTickResult;
 }
 
 /// Possible life states for living entities
@@ -188,6 +199,15 @@ impl HealthEffect {
             | Self::HealOverTime { cause, .. }
             | Self::InstantDamage { cause, .. }
             | Self::InstantHeal { cause, .. } => cause == pattern,
+        }
+    }
+
+    pub fn cause_string(&self) -> String {
+        match &self {
+            Self::DamageOverTime { cause, .. }
+            | Self::HealOverTime { cause, .. }
+            | Self::InstantDamage { cause, .. }
+            | Self::InstantHeal { cause, .. } => cause.clone(),
         }
     }
     /// Applies this effect to the supplied `HealthState`
