@@ -388,6 +388,8 @@ fn resolve_use_item_participants<'a>(
     Ok(Some((target, tool)))
 }
 
+// sends trigger event conditions appropriate to item usage, returns true if any
+// of the conditions caused a trigger to fire
 fn dispatch_use_item_triggers(
     world: &mut AmbleWorld,
     view: &mut View,
@@ -670,6 +672,8 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
             return Ok(());
         };
 
+    // either show failure reasons, or set container state to open
+    let mut container_opened = false;
     if let Some(target_item) = world.get_item_mut(container_id) {
         match target_item.container_state {
             None => {
@@ -700,21 +704,30 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                     )));
                 } else {
                     target_item.container_state = Some(ContainerState::Open);
-                    view.push(ViewItem::ActionSuccess(format!(
-                        "You opened the {}.\n",
-                        target_item.name().item_style()
-                    )));
-                    info!(
-                        "{} opened the {} ({})",
-                        world.player.name(),
-                        name,
-                        symbol_or_unknown(&world.items, container_id)
-                    );
-                    check_triggers(world, view, &[TriggerCondition::Open(container_id)])?;
+                    container_opened = true;
                 }
             },
         }
     }
+
+    // if a container was successfully opened: tell player, show contents, and log it
+    if let Some(opened) = world.items.get(&container_id)
+        && container_opened
+    {
+        opened.show(world, view);
+        info!(
+            "{} opened the {} ({})",
+            world.player.name(),
+            opened.name(),
+            opened.symbol()
+        );
+        view.push_with_priority(
+            ViewItem::ActionSuccess(format!("You opened the {}.\n", opened.name().item_style())),
+            -100,
+        );
+        check_triggers(world, view, &[TriggerCondition::Open(container_id)])?;
+    }
+
     world.turn_count += 1;
     Ok(())
 }
