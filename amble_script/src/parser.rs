@@ -222,6 +222,12 @@ fn parse_trigger_pair(
                 .to_string();
             ConditionAst::LookAtItem(ident)
         },
+        Rule::player_death => ConditionAst::PlayerDeath,
+        Rule::npc_death => {
+            let mut i = when.into_inner();
+            let ident = i.next().ok_or(AstError::Shape("npc death ident"))?.as_str().to_string();
+            ConditionAst::NpcDeath(ident)
+        },
         Rule::use_item => {
             let mut i = when.into_inner();
             let item = i.next().ok_or(AstError::Shape("use item ident"))?.as_str().to_string();

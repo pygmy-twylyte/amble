@@ -92,6 +92,10 @@ pub enum ConditionAst {
         item: String,
         mode: IngestModeAst,
     },
+    /// Event: player dies.
+    PlayerDeath,
+    /// Event: an NPC dies.
+    NpcDeath(String),
     /// Event: player performs an interaction on an item (tool-agnostic).
     ActOnItem {
         target: String,
@@ -638,6 +642,17 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
                 t.insert("mode", toml_edit::Value::from(mode.as_str()));
                 conds.push(toml_edit::Value::from(t));
             },
+            ConditionAst::PlayerDeath => {
+                let mut t = InlineTable::new();
+                t.insert("type", toml_edit::Value::from("playerDeath"));
+                conds.push(toml_edit::Value::from(t));
+            },
+            ConditionAst::NpcDeath(npc) => {
+                let mut t = InlineTable::new();
+                t.insert("type", toml_edit::Value::from("npcDeath"));
+                t.insert("npc_id", toml_edit::Value::from(npc.clone()));
+                conds.push(toml_edit::Value::from(t));
+            },
             ConditionAst::ActOnItem { target, action } => {
                 let mut t = InlineTable::new();
                 t.insert("type", toml_edit::Value::from("actOnItem"));
@@ -738,6 +753,7 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
                     t.insert("flag", toml_edit::Value::from(flag.clone()));
                     conds.push(toml_edit::Value::from(t));
                 },
+                ConditionAst::PlayerDeath | ConditionAst::NpcDeath(_) => { /* event-only */ },
                 ConditionAst::WithNpc(npc) => {
                     let mut t = InlineTable::new();
                     t.insert("type", toml_edit::Value::from("withNpc"));
@@ -2321,6 +2337,9 @@ fn leaf_condition_inline(c: &ConditionAst) -> InlineTable {
             t.insert("type", toml_edit::Value::from("flagComplete"));
             t.insert("flag", toml_edit::Value::from(flag.clone()));
         },
+        ConditionAst::PlayerDeath | ConditionAst::NpcDeath(_) => {
+            t.insert("type", toml_edit::Value::from("unknown"));
+        },
         ConditionAst::WithNpc(npc) => {
             t.insert("type", toml_edit::Value::from("withNpc"));
             t.insert("npc_id", toml_edit::Value::from(npc.clone()));
@@ -3270,6 +3289,29 @@ trigger "health actions" when always {
         assert!(toml.contains("type = \"healNpc\""));
         assert!(toml.contains("type = \"healNpcOT\""));
         assert!(toml.contains("type = \"removeNpcEffect\""));
+    }
+
+    #[test]
+    fn parse_and_compile_death_events() {
+        let player_src = r#"
+trigger "player demise" when player dies {
+  do show "You feel everything fade."
+}
+"#;
+        let npc_src = r#"
+trigger "npc demise" when npc guard dies {
+  do show "The guard drops to the ground."
+}
+"#;
+
+        let player_ast = parse_trigger(player_src).expect("parse ok");
+        let player_toml = compile_trigger_to_toml(&player_ast).expect("compile ok");
+        assert!(player_toml.contains("type = \"playerDeath\""));
+
+        let npc_ast = parse_trigger(npc_src).expect("parse ok");
+        let npc_toml = compile_trigger_to_toml(&npc_ast).expect("compile ok");
+        assert!(npc_toml.contains("type = \"npcDeath\""));
+        assert!(npc_toml.contains("npc_id = \"guard\""));
     }
 
     #[test]
