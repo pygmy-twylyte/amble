@@ -3,7 +3,7 @@
 //! Defines the player struct plus helpers for manipulating inventory,
 //! location history, and progression flags.
 use crate::health::{HealthEffect, HealthState, LivingEntity};
-use crate::{ItemHolder, Location, ViewItem, WorldObject};
+use crate::{ItemHolder, Location, WorldObject};
 
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
@@ -171,7 +171,7 @@ impl LivingEntity for Player {
         self.health.remove_effect(cause)
     }
 
-    fn tick_health_effects(&mut self) -> Vec<ViewItem> {
+    fn tick_health_effects(&mut self) -> crate::health::HealthTickResult {
         self.health.apply_effects(self.name.as_str())
     }
 }

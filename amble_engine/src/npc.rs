@@ -139,7 +139,7 @@ impl LivingEntity for Npc {
         self.health.remove_effect(cause)
     }
 
-    fn tick_health_effects(&mut self) -> Vec<ViewItem> {
+    fn tick_health_effects(&mut self) -> crate::health::HealthTickResult {
         self.health.apply_effects(self.name.as_str())
     }
 
