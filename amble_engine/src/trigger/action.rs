@@ -2760,7 +2760,7 @@ mod tests {
 
         let applied = world.player.tick_health_effects();
         assert_eq!(world.player.current_hp(), 7);
-        assert!(applied.contains(&ViewItem::CharacterHarmed {
+        assert!(applied.view_items.contains(&ViewItem::CharacterHarmed {
             name: "Tester".into(),
             cause: "trap".into(),
             amount: 3,
@@ -2787,7 +2787,7 @@ mod tests {
         let first_tick = world.player.tick_health_effects();
         assert_eq!(world.player.current_hp(), 8);
         assert_eq!(world.player.health.effects.len(), 1);
-        assert!(first_tick.contains(&ViewItem::CharacterHealed {
+        assert!(first_tick.view_items.contains(&ViewItem::CharacterHealed {
             name: "Tester".into(),
             cause: "regen".into(),
             amount: 3,
@@ -2798,7 +2798,7 @@ mod tests {
         let second_tick = world.player.tick_health_effects();
         assert_eq!(world.player.current_hp(), 10);
         assert!(world.player.health.effects.is_empty());
-        assert!(second_tick.contains(&ViewItem::CharacterHealed {
+        assert!(second_tick.view_items.contains(&ViewItem::CharacterHealed {
             name: "Tester".into(),
             cause: "regen".into(),
             amount: 3,
@@ -2828,7 +2828,7 @@ mod tests {
         let first_tick = world.npcs.get_mut(&npc_id).unwrap().tick_health_effects();
         assert_eq!(world.npcs.get(&npc_id).unwrap().current_hp(), 8);
         assert_eq!(world.npcs.get(&npc_id).unwrap().health.effects.len(), 1);
-        assert!(first_tick.iter().any(|item| {
+        assert!(first_tick.view_items.iter().any(|item| {
             matches!(
                 item,
                 ViewItem::CharacterHarmed { cause, amount, .. }
@@ -2839,7 +2839,7 @@ mod tests {
         let second_tick = world.npcs.get_mut(&npc_id).unwrap().tick_health_effects();
         assert_eq!(world.npcs.get(&npc_id).unwrap().current_hp(), 6);
         assert!(world.npcs.get(&npc_id).unwrap().health.effects.is_empty());
-        assert!(second_tick.iter().any(|item| {
+        assert!(second_tick.view_items.iter().any(|item| {
             matches!(
                 item,
                 ViewItem::CharacterHarmed { cause, amount, .. }
