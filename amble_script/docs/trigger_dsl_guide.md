@@ -41,6 +41,8 @@ trigger "First time in the Lab" when enter room lab {
 - `take item <item> from npc <npc>`
 - `give item <item> to npc <npc>`
 - `talk to npc <npc>`
+- `player dies`
+- `npc <npc> dies`
 - `always` — eventless; trigger is evaluated each turn against its conditions (useful for ambients/status).
 
 ## Conditions (`if …`)
