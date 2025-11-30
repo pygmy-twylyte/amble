@@ -42,6 +42,7 @@ use std::collections::HashSet;
 
 use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
+    helpers::symbol_or_unknown,
     spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers},
@@ -289,11 +290,21 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
                 .map(|rm| (rm.name(), rm.symbol()))
                 .with_context(|| format!("accessing room {}", destination_exit.to))?;
 
+            let unmet_item_list = unmet_items
+                .iter()
+                .map(|&id| symbol_or_unknown(&world.items, *id))
+                .collect::<Vec<String>>()
+                .join(", ");
+
+            let unmet_flag_list = unmet_flags
+                .iter()
+                .map(|&flag| flag.name())
+                .collect::<Vec<&str>>()
+                .join(", ");
+
             info!(
-                "{} denied access to {dest_name} ({dest_sym}): missing items ({:?}) or flags ({:?})",
+                "{} denied access to {dest_name} ({dest_sym}): missing items ({unmet_item_list}) or flags ({unmet_flag_list})",
                 world.player.name(),
-                unmet_items,
-                unmet_flags,
             );
         }
         world.turn_count += 1;
