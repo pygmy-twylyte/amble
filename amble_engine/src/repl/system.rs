@@ -664,13 +664,13 @@ pub fn filtered_goals(world: &AmbleWorld, status: GoalStatus) -> Vec<&Goal> {
 /// - Original world state remains unchanged
 /// - Error details logged for debugging
 /// - Game continues with current state
-pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) {
+pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> bool {
     let save_dir = Path::new(SAVE_DIR);
     let mut slots = match save_files::collect_save_slots(save_dir) {
         Ok(slots) => slots,
         Err(err) => {
             view.push(ViewItem::Error(format!("Unable to inspect saved games: {err}")));
-            return;
+            return false;
         },
     };
 
@@ -722,6 +722,7 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) {
                     load_path.display(),
                     world.version
                 );
+                return true;
             },
             Err(err) => {
                 view.push(ViewItem::ActionFailure(format!(
@@ -733,6 +734,7 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) {
                     "player attempted to load '{gamefile}' from '{}': parse failure ({err})",
                     load_path.display()
                 );
+                return false;
             },
         },
         Err(err) => {
@@ -754,6 +756,7 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) {
                 load_path.display(),
                 err
             );
+            return false;
         },
     }
 }
