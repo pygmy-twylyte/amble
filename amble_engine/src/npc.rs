@@ -71,6 +71,8 @@ impl Npc {
         view.push(ViewItem::NpcDescription {
             name: self.name.clone(),
             description: self.description.clone(),
+            health: self.health.clone(),
+            state: self.state.clone(),
         });
         view.push(ViewItem::NpcInventory(
             self.inventory
@@ -526,15 +528,23 @@ mod tests {
                 .any(|entry| matches!(&entry.view_item, ViewItem::NpcInventory(_)))
         );
 
-        if let Some((name, description)) = items.iter().find_map(|entry| {
-            if let ViewItem::NpcDescription { name, description } = &entry.view_item {
-                Some((name, description))
+        if let Some((name, description, health, state)) = items.iter().find_map(|entry| {
+            if let ViewItem::NpcDescription {
+                name,
+                description,
+                health,
+                state,
+            } = &entry.view_item
+            {
+                Some((name, description, health, state))
             } else {
                 None
             }
         }) {
             assert_eq!(name, "Test NPC");
             assert_eq!(description, "A test NPC");
+            assert_eq!(*health, HealthState::new_at_max(10));
+            assert_eq!(*state, NpcState::Normal);
         }
 
         if let Some(inventory) = items.iter().find_map(|entry| {
