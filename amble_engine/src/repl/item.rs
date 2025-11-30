@@ -655,22 +655,21 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
     // search player's location for an item matching search
     let room = world.player_room_ref()?;
     let search_scope: HashSet<Uuid> = room.contents.union(&world.player.inventory).copied().collect();
-    let (container_id, name) =
-        if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, pattern) {
-            if let Some(item) = entity.item() {
-                (item.id(), item.name().to_string())
-            } else {
-                warn!("Player attempted to open a non-Item WorldEntity by searching ({pattern})");
-                view.push(ViewItem::Error(format!(
-                    "{} isn't an item. You can't open it.",
-                    pattern.error_style()
-                )));
-                return Ok(());
-            }
+    let container_id = if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, pattern) {
+        if let Some(item) = entity.item() {
+            item.id()
         } else {
-            entity_not_found(world, view, pattern);
+            warn!("Player attempted to open a non-Item WorldEntity by searching ({pattern})");
+            view.push(ViewItem::Error(format!(
+                "{} isn't an item. You can't open it.",
+                pattern.error_style()
+            )));
             return Ok(());
-        };
+        }
+    } else {
+        entity_not_found(world, view, pattern);
+        return Ok(());
+    };
 
     // either show failure reasons, or set container state to open
     let mut container_opened = false;
