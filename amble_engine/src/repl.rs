@@ -150,7 +150,15 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             TurnOn(thing) => turn_on_handler(world, &mut view, thing)?,
             TurnOff(thing) => turn_off_handler(world, &mut view, thing)?,
             Read(thing) => read_handler(world, &mut view, thing)?,
-            Load(gamefile) => load_handler(world, &mut view, gamefile),
+            Load(gamefile) => {
+                if !load_handler(world, &mut view, gamefile) {
+                    view.push(ViewItem::EngineMessage(
+                        format!("- error loading world from '{gamefile}' -")
+                            .error_style()
+                            .to_string(),
+                    ))
+                }
+            },
             Save(gamefile) => save_handler(world, &mut view, gamefile)?,
             Theme(theme_name) => theme_handler(&mut view, theme_name)?,
             UseItemOn { verb, tool, target } => {
@@ -418,9 +426,15 @@ fn handle_player_death(
         if let Some(rest) = trimmed.strip_prefix("load") {
             let slot = rest.trim();
             let slot = if slot.is_empty() { "autosave" } else { slot };
-            crate::repl::system::load_handler(world, view, slot);
-            *current_turn = world.turn_count.saturating_sub(1);
-            return Ok(false);
+            if crate::repl::system::load_handler(world, view, slot) {
+                *current_turn = world.turn_count.saturating_sub(1);
+                return Ok(false);
+            } else {
+                view.push(ViewItem::EngineMessage(format!(
+                    "Unable to resume from {}. Try another option.",
+                    slot.error_style()
+                )));
+            }
         }
 
         view.push(ViewItem::EngineMessage(
