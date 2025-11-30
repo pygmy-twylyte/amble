@@ -61,9 +61,21 @@ trigger "[Sublevel-1-Entrance] Sharpen Knight's Sword" only once when act sharpe
 }
 
 trigger "[Sublevel-1-Entrance] Black Knight Kicks Player After Sword Taken" when always {
-    if all(with npc black_knight, npc in state black_knight mad, missing flag appeased-black-knight) {
-        do show "The Black Knight prances around the room, occasionally trying to kick you in the shins."
-        do npc random dialogue black_knight
+    if all(
+        with npc black_knight,
+        npc in state black_knight mad,
+        missing flag appeased-black-knight,
+    ) {
+        do priority -30 show "The Black Knight prances around the room, occasionally trying to kick you in the shins."
+        do priority -10 npc random dialogue black_knight
+    }
+    if all(
+        chance 50%,
+        with npc black_knight,
+        npc in state black_knight mad,
+        missing flag appeased-black-knight,
+    ) {
+        do priority -20 damage player 2 cause "knight's shin-kick"
     }
 }
 
@@ -75,7 +87,7 @@ when give item keen_longsword to npc black_knight
     do set barred message from sublevel-1-entrance to room-aa-3b "As you near the door, you are overwhelmed by a sense of spinning through an unending series of fictional realities, compelling you to step away."
     do award points 5 reason "Appeased the Black Knight with a sharpened blade"
     do set npc state black_knight happy
-    do npc says black_knight "hank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like."
+    do priority 10 npc says black_knight "Thank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like."
 }
 
 # ========================================
