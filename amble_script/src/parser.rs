@@ -1066,8 +1066,8 @@ fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<I
                             let val: i64 = raw
                                 .parse()
                                 .map_err(|_| AstError::Shape("consumable uses must be a number"))?;
-                            if val < 0 {
-                                return Err(AstError::Shape("consumable uses must be >= 0"));
+                            if val <= 0 {
+                                return Err(AstError::Shape("consumable uses must be > 0"));
                             }
                             uses_left = Some(val as usize);
                         },
@@ -1157,10 +1157,14 @@ fn parse_spinner_pair(sp: pest::iterators::Pair<Rule>, _source: &str) -> Result<
         let text = unquote(text_pair.as_str());
         // width is optional; default to 1
         let width: usize = if let Some(width_pair) = wi.next() {
-            width_pair
+            let width = width_pair
                 .as_str()
                 .parse()
-                .map_err(|_| AstError::Shape("invalid wedge width"))?
+                .map_err(|_| AstError::Shape("invalid wedge width"))?;
+            if width == 0 {
+                return Err(AstError::Shape("wedge width must be at least 1"));
+            }
+            width
         } else {
             1
         };
@@ -1984,6 +1988,9 @@ fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Resu
             .trim()
             .parse()
             .map_err(|_| AstError::Shape("invalid chance percent"))?;
+        if pct <= 0.0 {
+            return Err(AstError::Shape("chance percent must be greater than 0"));
+        }
         return Ok(ConditionAst::ChancePercent(pct));
     }
     Err(AstError::Shape("unknown condition"))
@@ -2490,6 +2497,9 @@ fn parse_amount_turns_and_cause(rest: &str, label: &str) -> Result<(u32, Option<
         let tval: usize = after_for[..len]
             .parse()
             .map_err(|_| AstError::Shape("health action turns must be a positive number"))?;
+        if tval == 0 {
+            return Err(AstError::Shape("health action turns must be a positive number"));
+        }
         turns = Some(tval);
         tail = after_for[len..].trim_start();
         tail = tail
@@ -3038,8 +3048,8 @@ fn parse_modify_npc_action(text: &str) -> Result<(ActionStmt, usize), AstError> 
                     .as_str()
                     .parse()
                     .map_err(|_| AstError::Shape("modify npc timing every invalid number"))?;
-                if turns < 0 {
-                    return Err(AstError::Shape("modify npc timing every requires non-negative turns"));
+                if turns <= 0 {
+                    return Err(AstError::Shape("modify npc timing every requires positive turns"));
                 }
                 movement_patch.timing = Some(NpcTimingPatchAst::EveryNTurns(turns as usize));
                 movement_touched = true;
@@ -3053,8 +3063,8 @@ fn parse_modify_npc_action(text: &str) -> Result<(ActionStmt, usize), AstError> 
                     .as_str()
                     .parse()
                     .map_err(|_| AstError::Shape("modify npc timing on invalid number"))?;
-                if turn < 0 {
-                    return Err(AstError::Shape("modify npc timing on requires non-negative turn"));
+                if turn <= 0 {
+                    return Err(AstError::Shape("modify npc timing on requires a positive turn"));
                 }
                 movement_patch.timing = Some(NpcTimingPatchAst::OnTurn(turn as usize));
                 movement_touched = true;
@@ -3474,6 +3484,41 @@ trigger "note escapes" when always {
         let t = crate::compile_trigger_to_toml(&ast).expect("compile ok");
         assert!(t.contains("lineA"));
         assert!(t.contains("lineB"));
+    }
+
+    #[test]
+    fn schedule_if_chance_requires_positive_percent() {
+        let src = r#"
+trigger "bad chance" when always {
+  do schedule in 1 if chance 0% {
+    do show "nope"
+  }
+}
+"#;
+        let err = parse_trigger(src).expect_err("expected parse failure");
+        match err {
+            AstError::Shape(msg) => assert_eq!(msg, "chance percent must be greater than 0"),
+            other => panic!("expected shape error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn schedule_actions_reject_zero_turn_health_effects() {
+        let src = r#"
+trigger "zero turns" when always {
+  do schedule in 1 {
+    do damage player 1 for 0 turns cause "noop"
+  }
+}
+"#;
+        let err = parse_trigger(src).expect_err("expected parse failure");
+        match err {
+            AstError::ShapeAt { msg, context } => {
+                assert_eq!(msg, "health action turns must be a positive number");
+                assert!(context.contains("for 0 turns"), "{context}");
+            },
+            other => panic!("expected shape-at error, got {other:?}"),
+        }
     }
 
     #[test]
