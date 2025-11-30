@@ -15,7 +15,7 @@ pub struct HealthTickResult {
 }
 
 /// Represents the state of a living entity's health and related effects.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct HealthState {
     max_hp: u32,
     current_hp: u32,
@@ -183,7 +183,7 @@ pub enum LifeState {
 }
 
 /// Types of health effects that can be applied to living game entities.
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum HealthEffect {
     InstantDamage { cause: String, amount: u32 },
