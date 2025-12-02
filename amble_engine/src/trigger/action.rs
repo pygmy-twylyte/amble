@@ -80,7 +80,7 @@ use std::hash::BuildHasher;
 use uuid::Uuid;
 
 use crate::Item;
-use crate::health::{HealthEffect, LivingEntity};
+use crate::health::{HealthEffect, LifeState, LivingEntity};
 use crate::helpers::{symbol_from_id, symbol_or_unknown};
 use crate::item::{ContainerState, ItemAbility, ItemHolder};
 use crate::npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState, move_npc};
@@ -949,6 +949,10 @@ pub fn despawn_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid) -> Res
 /// Returns an error if the NPC does not exist in the world.
 pub fn set_npc_active(world: &mut AmbleWorld, npc_id: &Uuid, active: bool) -> Result<()> {
     if let Some(npc) = world.npcs.get_mut(npc_id) {
+        if matches!(npc.life_state(), LifeState::Dead) {
+            warn!("attempted to change activity of dead NPC {}", npc.symbol());
+            return Ok(());
+        }
         if let Some(ref mut mvmt) = npc.movement {
             mvmt.active = active;
         }
@@ -1102,17 +1106,24 @@ pub fn npc_refuse_item(
     reason: &str,
     priority: Option<isize>,
 ) -> Result<()> {
-    npc_says(world, view, &npc_id, reason, priority)?;
-    let npc_name = world
+    let npc = world
         .npcs
         .get(&npc_id)
-        .with_context(|| "looking up NPC {npc_id} during item refusal")?
-        .name();
+        .with_context(|| "failed npc lookup".to_string())?;
+    if matches!(npc.life_state(), LifeState::Dead) {
+        // this action should only be called after a "give to npc" event is triggered, and
+        // that already will have checked for death and reported to the player; this should
+        // never occur unless npc_refuse_item is used in some nonstandard way.
+        info!("bypassing refuse_item action for dead NPC '{}'", npc.name());
+        return Ok(());
+    }
+    npc_says(world, view, &npc_id, reason, priority)?;
+
     view.push_with_custom_priority(
-        ViewItem::TriggeredEvent(format!("{} returns it to you.", npc_name.npc_style())),
+        ViewItem::TriggeredEvent(format!("{} returns it to you.", npc.name().npc_style())),
         priority,
     );
-    info!("└─ action: NpcRefuseItem({npc_name}, \"{reason}\"");
+    info!("└─ action: NpcRefuseItem({}, \"{reason}\"", npc.name());
     Ok(())
 }
 
@@ -1339,6 +1350,10 @@ pub fn npc_says_random(world: &AmbleWorld, view: &mut View, npc_id: &Uuid, prior
         .npcs
         .get(npc_id)
         .with_context(|| format!("action NpcSaysRandom({npc_id}): npc not found"))?;
+    if matches!(npc.life_state(), LifeState::Dead) {
+        info!("bypassing speech for dead NPC '{}'", npc.symbol());
+        return Ok(());
+    }
     let ignore_spinner = world
         .spinners
         .get(&SpinnerType::Core(CoreSpinnerType::NpcIgnore))
@@ -1382,19 +1397,22 @@ pub fn npc_says(
     quote: &str,
     priority: Option<isize>,
 ) -> Result<()> {
-    let npc_name = world
+    let npc = world
         .npcs
         .get(npc_id)
-        .with_context(|| format!("action NpcSays({npc_id},_): npc not found"))?
-        .name();
+        .with_context(|| format!("action NpcSays({npc_id},_): npc not found"))?;
+    if matches!(npc.life_state(), LifeState::Dead) {
+        info!("blocked speech for dead NPC '{}'", npc.symbol());
+        return Ok(());
+    }
     view.push_with_custom_priority(
         ViewItem::NpcSpeech {
-            speaker: npc_name.to_string(),
+            speaker: npc.name.to_string(),
             quote: quote.to_string(),
         },
         priority,
     );
-    info!("└─ action: NpcSays({npc_name}, \"{quote}\")");
+    info!("└─ action: NpcSays({}, \"{quote}\")", npc.name());
     Ok(())
 }
 
@@ -2022,10 +2040,13 @@ pub fn give_to_player(world: &mut AmbleWorld, npc_id: &Uuid, item_id: &Uuid) -> 
         npc.remove_item(*item_id);
         world.player.add_item(*item_id);
         info!("└─ action: GiveItemToPlayer({}, {})", npc.symbol(), item.symbol());
-        Ok(())
     } else {
-        bail!("item {} not found in NPC {} inventory", item_id, npc_id);
+        error!(
+            "item {} not found in NPC {} inventory to give to player",
+            item_id, npc_id
+        );
     }
+    Ok(())
 }
 
 /// Completely removes an item from the world.
