@@ -2059,7 +2059,11 @@ pub fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
         .get_mut(item_id)
         .ok_or_else(|| anyhow!("unknown item {}", item_id))?;
     let prev_loc = std::mem::replace(&mut item.location, Location::Nowhere);
-    info!("└─ action: DespawnItem({})", item.symbol());
+    info!(
+        "└─ action: DespawnItem({}) - removing from {:?}",
+        item.symbol(),
+        prev_loc
+    );
     match prev_loc {
         Location::Room(id) => {
             if let Some(r) = world.rooms.get_mut(&id) {
