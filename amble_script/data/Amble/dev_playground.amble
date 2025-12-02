@@ -62,7 +62,7 @@ npc the_luggage {
     name "The Luggage"
     desc "A large chest with dozens of legs, layered sharp teeth around its lid, and a strong tendency to violence."
     location nowhere "spawns at dev-room for testing"
-    max_hp 10000
+    max_hp 10
     dialogue normal {
         "(stares at you with menace)"
     }
@@ -73,15 +73,8 @@ note "test for the touch item command/event -- works!"
 when touch item big_red_button {
     do show "Always never press the big red button! Now look what you've done!"
     do spawn npc the_luggage into room dev-room
-    do modify item big_blue_button {
-        name "Big Green Button"
-        desc "A big GREEN button, just waiting for you to press it."
-        text "This used to be a blue button."
-        add ability Read
-        add ability Unlock(big_red_button)
-        container state off
-    }
 }
+
 
 trigger "Big Blue Button Pushed"
 note "test modify npc"
@@ -100,8 +93,8 @@ when touch item big_blue_button {
 }
 
 item poison_bottle {
-    name "Poison!"
-    desc "This potion will injure you by 5 points."
+    name "Furniture Poison"
+    desc "Guaranteed to kill violent bits of luggage, dead."
     portable true
     location room dev-room
     ability Drink
@@ -125,10 +118,21 @@ item antidote {
     }
 }
 
-trigger "DEV TEST Drink Poison" when drink item poison_bottle {
-    do damage player 5 for 4 turns cause "poison"
+trigger "[DEV] Poison the Luggage"
+when give item poison_bottle to npc the_luggage {
+    if npc in state the_luggage normal {
+        do npc refuse item the_luggage "Despite having no eyes, the Luggage glares at you, keeping its lid tightly shut."
+    }
+    if npc in state the_luggage custom:hungry {
+        do show "The Luggage snaps at your hand and hungrily swallows the whole bottle."
+        do damage npc the_luggage 5 for 4 turns cause "poison"
+        do despawn item poison_bottle
+    }
 }
 
-trigger "DEV TEST Drink Health Potion" when drink item antidote {
-    do heal player 5 for 4 turns cause "health potion"
+trigger "[DEV] Luggage Dies" when npc the_luggage dies {
+    do show "The Luggage dies with a gasp, its tongue lolling out of the lid."
+    do modify npc the_luggage {
+        desc "The magnificent magical Luggage lies dead, lid ajar, tongue lolling and cut by the razor-sharp teeth lining the lid."
+    }
 }
