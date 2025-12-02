@@ -282,21 +282,32 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
 
     // the trigger fired -- proceed with item transfer if it wasn't a refusal
     if fired && !refused {
-        // set new location in NPC on world item
-        world
-            .get_item_mut(item_id)
+        // The item may be despawned by a fired trigger -- so we skip
+        // the location transfer below if the item is "nowhere" (otherwise the despawned
+        // item winds up in the NPCs inventory anyway.)
+        if world
+            .items
+            .get(&item_id)
             .with_context(|| format!("looking up item {item_id}"))?
-            .set_location_npc(npc_id);
+            .location
+            .is_not_nowhere()
+        {
+            // set new location in NPC on world item
+            world
+                .get_item_mut(item_id)
+                .with_context(|| format!("looking up item {item_id}"))?
+                .set_location_npc(npc_id);
 
-        // add to npc inventory
-        world
-            .npcs
-            .get_mut(&npc_id)
-            .with_context(|| format!("looking up NPC {npc_id}"))?
-            .add_item(item_id);
+            // add to npc inventory
+            world
+                .npcs
+                .get_mut(&npc_id)
+                .with_context(|| format!("looking up NPC {npc_id}"))?
+                .add_item(item_id);
 
-        // remove from player inventory
-        world.player.remove_item(item_id);
+            // remove from player inventory
+            world.player.remove_item(item_id);
+        }
         check_triggers(world, view, &[TriggerCondition::Drop(item_id)])?;
 
         // report and log success
