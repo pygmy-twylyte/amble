@@ -866,7 +866,7 @@ impl View {
             println!("{}:", "Others".subheading_style());
             for npc in npcs {
                 println!("   {}", npc.name.npc_style());
-                println!();
+                println!("{}", fill(npc.description.as_str(), indented_block()).italic());
             }
         }
     }
