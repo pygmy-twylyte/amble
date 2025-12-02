@@ -158,6 +158,8 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
                             .to_string(),
                     ))
                 }
+                // re-sync current turn to loaded game
+                current_turn = world.turn_count.saturating_sub(1);
             },
             Save(gamefile) => save_handler(world, &mut view, gamefile)?,
             Theme(theme_name) => theme_handler(&mut view, theme_name)?,
