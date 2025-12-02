@@ -48,6 +48,7 @@ use std::collections::HashMap;
 
 use crate::{
     AmbleWorld, ItemHolder, Location, View, ViewItem, WorldObject,
+    health::{LifeState, LivingEntity},
     helpers::symbol_or_unknown,
     npc::Npc,
     repl::{entity_not_found, find_world_object},
@@ -128,6 +129,15 @@ fn select_npc<'a>(location: &Location, world_npcs: &'a HashMap<Uuid, Npc>, query
 pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) -> Result<()> {
     // find one that matches npc_name in present room
     let sent_id = if let Some(npc) = select_npc(world.player.location(), &world.npcs, npc_name) {
+        // disallow talking to the dead
+        if matches!(npc.life_state(), LifeState::Dead) {
+            info!("talking to dead NPC {} disallowed", npc.symbol());
+            view.push(ViewItem::ActionFailure(format!(
+                "Sorry - {} is dead and there is no Ouija board in sight.",
+                npc.name().npc_style()
+            )));
+            return Ok(());
+        }
         npc.id()
     } else {
         entity_not_found(world, view, npc_name);
@@ -220,6 +230,14 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
     let (npc_id, npc_name) = if let Some(entity) = find_world_object(&current_room.npcs, &world.items, &world.npcs, npc)
     {
         if let Some(npc) = entity.npc() {
+            if matches!(npc.life_state(), LifeState::Dead) {
+                info!("gift to dead npc {} disallowed", npc.symbol());
+                view.push(ViewItem::ActionFailure(format!(
+                    "Sorry -- {} is dead, and cannot accept your gift.",
+                    npc.name().npc_style()
+                )));
+                return Ok(());
+            }
             (npc.id(), npc.name.to_string())
         } else {
             view.push(ViewItem::Error(format!(
