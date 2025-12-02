@@ -1232,7 +1232,7 @@ mod tests {
                 action: StatusAction::Apply,
                 status: "Poisoned".into(),
             },
-            5,
+            25,
         );
 
         let ordered: Vec<&str> = view
