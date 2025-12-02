@@ -134,7 +134,7 @@ pub enum ConditionAst {
     },
     NpcInState {
         npc: String,
-        state: String,
+        state: NpcStateValue,
     },
     ContainerHasItem {
         container: String,
@@ -771,7 +771,7 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
                     let mut t = InlineTable::new();
                     t.insert("type", toml_edit::Value::from("npcInState"));
                     t.insert("npc_id", toml_edit::Value::from(npc.clone()));
-                    t.insert("state", toml_edit::Value::from(state.clone()));
+                    t.insert("state", npc_state_value_to_value(state));
                     conds.push(toml_edit::Value::from(t));
                 },
                 ConditionAst::ContainerHasItem { container, item } => {
@@ -2352,7 +2352,7 @@ fn leaf_condition_inline(c: &ConditionAst) -> InlineTable {
         ConditionAst::NpcInState { npc, state } => {
             t.insert("type", toml_edit::Value::from("npcInState"));
             t.insert("npc_id", toml_edit::Value::from(npc.clone()));
-            t.insert("state", toml_edit::Value::from(state.clone()));
+            t.insert("state", npc_state_value_to_value(state));
         },
         ConditionAst::ContainerHasItem { container, item } => {
             t.insert("type", toml_edit::Value::from("containerHasItem"));
@@ -3218,6 +3218,29 @@ trigger "misc actions" when enter room lab {
         assert!(toml.contains("type = \"sequence\""));
         assert!(toml.contains("name = \"quest\""));
         assert!(toml.contains("end = 3"));
+    }
+
+    #[test]
+    fn npc_state_condition_emits_custom_table() {
+        let src = r#"
+trigger "state check" when give item poison_bottle to npc the_luggage {
+  if npc in state the_luggage custom:hungry {
+    do show "hungry luggage"
+  }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        match &ast.conditions[0] {
+            ConditionAst::NpcInState { npc, state } => {
+                assert_eq!(npc, "the_luggage");
+                assert!(matches!(state, NpcStateValue::Custom(s) if s == "hungry"));
+            },
+            other => panic!("unexpected condition: {other:?}"),
+        }
+        let toml = compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("type = \"npcInState\""));
+        assert!(toml.contains("npc_id = \"the_luggage\""));
+        assert!(toml.contains("custom = \"hungry\""));
     }
 
     #[test]

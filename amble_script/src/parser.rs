@@ -1902,9 +1902,10 @@ fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Resu
         if let Some(space) = rest.find(' ') {
             let npc = &rest[..space];
             let state = rest[space + 1..].trim();
+            let parsed_state = parse_condition_npc_state(state)?;
             return Ok(ConditionAst::NpcInState {
                 npc: npc.to_string(),
-                state: state.to_string(),
+                state: parsed_state,
             });
         }
         return Err(AstError::Shape("npc in state syntax"));
@@ -1994,6 +1995,42 @@ fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Resu
         return Ok(ConditionAst::ChancePercent(pct));
     }
     Err(AstError::Shape("unknown condition"))
+}
+
+fn parse_condition_npc_state(token: &str) -> Result<NpcStateValue, AstError> {
+    let trimmed = token.trim();
+    if trimmed.is_empty() {
+        return Err(AstError::Shape("npc in state missing state value"));
+    }
+    if trimmed.len() >= 6 && trimmed[..6].eq_ignore_ascii_case("custom") {
+        let mut rest = &trimmed[6..];
+        rest = rest.trim_start();
+        if rest.starts_with(':') {
+            rest = rest[1..].trim_start();
+        } else if rest.starts_with('(') {
+            rest = rest[1..].trim_start();
+            if let Some(idx) = rest.rfind(')') {
+                rest = rest[..idx].trim_end();
+            }
+        }
+        rest = rest.trim();
+        rest = rest.trim_end_matches(')');
+        rest = rest.trim();
+        if rest.starts_with('"') {
+            let (value, _) =
+                parse_string_at(rest).map_err(|_| AstError::Shape("custom npc state invalid quoted string"))?;
+            return Ok(NpcStateValue::Custom(value));
+        }
+        if rest.is_empty() {
+            return Err(AstError::Shape("custom npc state missing identifier"));
+        }
+        return Ok(NpcStateValue::Custom(rest.to_string()));
+    }
+    if trimmed.starts_with('"') {
+        let (value, _) = parse_string_at(trimmed).map_err(|_| AstError::Shape("npc state invalid quoted string"))?;
+        return Ok(NpcStateValue::Custom(value));
+    }
+    Ok(NpcStateValue::Named(trimmed.to_string()))
 }
 
 fn split_top_level_commas(s: &str) -> Vec<&str> {
