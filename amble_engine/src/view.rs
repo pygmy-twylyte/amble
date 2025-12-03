@@ -660,6 +660,7 @@ impl View {
                     normal_block()
                 )
             );
+            println!();
         }
     }
 
@@ -687,6 +688,7 @@ impl View {
                 "{}",
                 fill(format!("{base}{cause_text}{suffix}").as_str(), normal_block())
             );
+            println!();
         }
     }
 
@@ -713,6 +715,7 @@ impl View {
                     normal_block()
                 )
             );
+            println!();
         }
     }
 
