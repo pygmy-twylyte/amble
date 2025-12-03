@@ -8,6 +8,7 @@
 
 use crate::{
     ItemHolder, Location, View, ViewItem, WorldObject,
+    health::{LifeState, LivingEntity},
     npc::NpcState,
     player::Flag,
     view::{ExitLine, NpcLine, ViewMode},
@@ -215,8 +216,11 @@ impl Room {
                 .iter()
                 .filter_map(|npc_id| world.npcs.get(npc_id))
                 .map(|npc| NpcLine {
-                    name: npc.name.clone(),
-                    description: npc.description.clone(),
+                    name: match npc.life_state() {
+                        LifeState::Dead => format!("{} (dead)", npc.name()),
+                        _ => npc.name.clone(),
+                    },
+                    description: npc.description.to_string(),
                 })
                 .collect();
             view.push(ViewItem::RoomNpcs(npc_lines));
@@ -252,6 +256,7 @@ impl Room {
 mod tests {
     use super::*;
     use crate::{
+        health::HealthState,
         item::Item,
         npc::{Npc, NpcState},
         player::Flag,
@@ -313,6 +318,7 @@ mod tests {
             dialogue: HashMap::new(),
             state: NpcState::Normal,
             movement: None,
+            health: HealthState::new_at_max(10),
         };
         world.npcs.insert(npc_id, npc);
 

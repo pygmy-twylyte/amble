@@ -41,6 +41,8 @@ trigger "First time in the Lab" when enter room lab {
 - `take item <item> from npc <npc>`
 - `give item <item> to npc <npc>`
 - `talk to npc <npc>`
+- `player dies`
+- `npc <npc> dies`
 - `always` — eventless; trigger is evaluated each turn against its conditions (useful for ambients/status).
 
 ## Conditions (`if …`)
@@ -85,6 +87,9 @@ Player feedback and flags:
 - `do add seq flag <name> limit <n>` — sequence flag with a final step
 - `do remove flag <name>` | `do reset flag <name>` | `do advance flag <name>`
 - `do award points <number>` (negative allowed)
+- `do damage player <amount> [for <turns> turns] cause "<cause>"`
+- `do heal player <amount> [for <turns> turns] cause "<cause>"`
+- `do remove player effect "<cause>"`
 
 Item/NPC/world state:
 - Spawn/Despawn/Swap:
@@ -110,6 +115,9 @@ Item/NPC/world state:
   - `do npc refuse item <npc> "Reason…"`
   - `do set npc state <npc> <state>`
   - `do set npc active <npc> <true|false>`
+  - `do damage npc <npc> <amount> [for <turns> turns] cause "<cause>"`
+  - `do heal npc <npc> <amount> [for <turns> turns] cause "<cause>"`
+  - `do remove npc <npc> effect "<cause>"`
   - `do give item <item> to player from npc <npc>`
 - Player movement/restrictions:
   - `do push player to <room>`

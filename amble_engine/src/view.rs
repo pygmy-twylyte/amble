@@ -9,8 +9,10 @@ use log::info;
 use textwrap::{fill, termwidth};
 use variantly::Variantly;
 
+use crate::health::HealthState;
 use crate::helpers::plural_s;
 use crate::loader::help::HelpCommand;
+use crate::npc::NpcState;
 use crate::save_files::{SaveFileEntry, SaveFileStatus, format_modified};
 use crate::style::{GameStyle, indented_block, normal_block};
 
@@ -26,6 +28,9 @@ const ICON_ENGINE: &str = "⚙";
 const ICON_STATUS: &str = "⚕";
 const ICON_NPC_ENTER: &str = "→"; // U+2192
 const ICON_NPC_LEAVE: &str = "←"; // U+2190
+const ICON_HARMED: &str = "\u{2623}"; // biohazard sign
+const ICON_HEALED: &str = "\u{2624}"; // caduceus
+const ICON_DEATH: &str = "☠";
 
 /// View aggregates information to be displayed on each pass through the REPL and then organizes
 /// and displays the result.
@@ -111,6 +116,11 @@ impl View {
             println!("{:.>width$}\n", "scene".section_style(), width = self.width);
             self.environment();
         }
+        // Fourth Section: Messages not related to last command / action (ambients, goals, etc.)
+        if !ambient.is_empty() {
+            println!("{:.>width$}\n", "situation".section_style(), width = self.width);
+            self.ambience();
+        }
         // Second Section: Immediate/ direct results of player command
         if !direct.is_empty() {
             println!("{:.>width$}\n", "results".section_style(), width = self.width);
@@ -120,11 +130,6 @@ impl View {
         if !world.is_empty() {
             println!("{:.>width$}\n", "responses".section_style(), width = self.width);
             self.world_reaction();
-        }
-        // Fourth Section: Messages not related to last command / action (ambients, goals, etc.)
-        if !ambient.is_empty() {
-            println!("{:.>width$}\n", "situation".section_style(), width = self.width);
-            self.ambience();
         }
         // Fifth Section: System Commands (load/save, help, quit etc)
         if !system.is_empty() {
@@ -192,10 +197,13 @@ impl View {
         if entries.is_empty() {
             return;
         }
-        Self::npc_events_sorted(entries);
         Self::triggered_event(entries);
+        Self::npc_events_sorted(entries);
+        Self::character_harmed(entries);
         Self::status_change(entries);
+        Self::character_healed(entries);
         Self::points_awarded(entries);
+        Self::character_death(entries);
     }
 
     /// Filter all `ViewEntry`s for this frame, retaining only those in the `WorldResponse` section and sort them
@@ -629,6 +637,88 @@ impl View {
         }
     }
 
+    fn character_harmed(entries: &[&ViewEntry]) {
+        let messages: Vec<_> = entries
+            .iter()
+            .filter_map(|i| match &i.view_item {
+                ViewItem::CharacterHarmed { name, cause, amount } => Some((name, cause, amount)),
+                _ => None,
+            })
+            .collect();
+        for (name, cause, amount) in messages {
+            println!(
+                "{}",
+                fill(
+                    format!(
+                        "{:<4}{} injured by {}! (-{} hp)",
+                        ICON_HARMED.bright_yellow(),
+                        name.npc_style(),
+                        cause.underline(),
+                        amount.to_string().bright_red()
+                    )
+                    .as_str(),
+                    normal_block()
+                )
+            );
+            println!();
+        }
+    }
+
+    fn character_death(entries: &[&ViewEntry]) {
+        let messages: Vec<_> = entries
+            .iter()
+            .filter_map(|i| match &i.view_item {
+                ViewItem::CharacterDeath { name, cause, is_player } => Some((name, cause, is_player)),
+                _ => None,
+            })
+            .collect();
+        for (name, cause, is_player) in messages {
+            let base = format!("{:<4}{}", ICON_DEATH.red(), name.npc_style());
+            let cause_text = cause
+                .as_ref()
+                .filter(|c| !c.is_empty())
+                .map(|c| format!(" ({c})"))
+                .unwrap_or_default();
+            let suffix = if *is_player {
+                " has fallen.".to_string()
+            } else {
+                " dies.".to_string()
+            };
+            println!(
+                "{}",
+                fill(format!("{base}{cause_text}{suffix}").as_str(), normal_block())
+            );
+            println!();
+        }
+    }
+
+    fn character_healed(entries: &[&ViewEntry]) {
+        let messages: Vec<_> = entries
+            .iter()
+            .filter_map(|i| match &i.view_item {
+                ViewItem::CharacterHealed { name, cause, amount } => Some((name, cause, amount)),
+                _ => None,
+            })
+            .collect();
+        for (name, cause, amount) in messages {
+            println!(
+                "{}",
+                fill(
+                    format!(
+                        "{:<4}{} healed by {}! (+{} hp)",
+                        ICON_HEALED.bright_blue(),
+                        name.npc_style(),
+                        cause.underline(),
+                        amount.to_string().bright_green()
+                    )
+                    .as_str(),
+                    normal_block()
+                )
+            );
+            println!();
+        }
+    }
+
     fn errors(&mut self) {
         let messages: Vec<_> = self
             .items
@@ -642,7 +732,7 @@ impl View {
             println!(
                 "{}",
                 fill(
-                    format!("{} {}", ICON_ERROR.error_icon_style(), msg).as_str(),
+                    format!("{:<4}{}", ICON_ERROR.error_icon_style(), msg).as_str(),
                     normal_block()
                 )
             );
@@ -664,9 +754,32 @@ impl View {
             .items
             .iter()
             .find(|i| matches!(i.view_item, ViewItem::NpcDescription { .. }))
-            && let ViewItem::NpcDescription { name, description } = &entry.view_item
+            && let ViewItem::NpcDescription {
+                name,
+                description,
+                health,
+                state,
+            } = &entry.view_item
         {
             println!("{}", name.npc_style().underline());
+            let formatted_state = if let NpcState::Custom(custom_state) = state {
+                custom_state.highlight()
+            } else {
+                state.to_string().highlight()
+            };
+            println!(
+                "{}",
+                fill(
+                    format!(
+                        "Health: {}/{} | State: {}",
+                        health.current_hp().to_string().highlight(),
+                        health.max_hp().to_string().highlight(),
+                        formatted_state
+                    )
+                    .as_str(),
+                    indented_block()
+                )
+            );
             println!(
                 "{}",
                 fill(description.as_str(), indented_block())
@@ -756,7 +869,7 @@ impl View {
             println!("{}:", "Others".subheading_style());
             for npc in npcs {
                 println!("   {}", npc.name.npc_style());
-                println!();
+                println!("{}", fill(npc.description.as_str(), indented_block()).italic());
             }
         }
     }
@@ -912,6 +1025,21 @@ pub enum ViewItem {
         description: String,
     },
     AmbientEvent(String),
+    CharacterHarmed {
+        name: String,
+        cause: String,
+        amount: u32,
+    },
+    CharacterHealed {
+        name: String,
+        cause: String,
+        amount: u32,
+    },
+    CharacterDeath {
+        name: String,
+        cause: Option<String>,
+        is_player: bool,
+    },
     CompleteGoal {
         name: String,
         description: String,
@@ -945,6 +1073,8 @@ pub enum ViewItem {
     NpcDescription {
         name: String,
         description: String,
+        health: HealthState,
+        state: NpcState,
     },
     NpcInventory(Vec<ContentLine>),
     NpcSpeech {
@@ -1013,7 +1143,10 @@ impl ViewItem {
             | ViewItem::Inventory(_)
             | ViewItem::ActiveGoal { .. }
             | ViewItem::CompleteGoal { .. } => Section::DirectResult,
-            ViewItem::NpcSpeech { .. }
+            ViewItem::CharacterHarmed { .. }
+            | ViewItem::CharacterDeath { .. }
+            | ViewItem::CharacterHealed { .. }
+            | ViewItem::NpcSpeech { .. }
             | ViewItem::NpcEntered { .. }
             | ViewItem::NpcLeft { .. }
             | ViewItem::TriggeredEvent(_)
@@ -1032,37 +1165,14 @@ impl ViewItem {
 
     pub fn default_priority(&self) -> isize {
         match &self {
-            ViewItem::ActionFailure(_) => 0,
-            ViewItem::ActionSuccess(_) => 0,
-            ViewItem::ActiveGoal { .. } => -20,
-            ViewItem::AmbientEvent(_) => -10,
-            ViewItem::CompleteGoal { .. } => -10,
-            ViewItem::EngineMessage(_) => 0,
-            ViewItem::Error(_) => 0,
-            ViewItem::GameLoaded { .. } => 0,
-            ViewItem::GameSaved { .. } => 0,
-            ViewItem::SavedGamesList { .. } => 0,
-            ViewItem::Help { .. } => 0,
-            ViewItem::Inventory(_) => 0,
-            ViewItem::ItemConsumableStatus(_) => -10,
-            ViewItem::ItemContents(_) => -20,
-            ViewItem::ItemDescription { .. } => -30,
-            ViewItem::ItemText(_) => -20,
-            ViewItem::NpcDescription { .. } => -30,
-            ViewItem::NpcInventory(_) => -20,
-            ViewItem::NpcSpeech { .. } => -10,
-            ViewItem::NpcEntered { .. } => -20,
-            ViewItem::NpcLeft { .. } => 0,
-            ViewItem::PointsAwarded { .. } => 20,
-            ViewItem::QuitSummary { .. } => 30,
-            ViewItem::RoomDescription { .. } => -30,
-            ViewItem::RoomExits(_) => -10,
-            ViewItem::RoomItems(_) => -20,
-            ViewItem::RoomNpcs(_) => 0,
-            ViewItem::RoomOverlays { .. } => -25,
-            ViewItem::StatusChange { .. } => 0,
-            ViewItem::TransitionMessage(_) => -30,
-            ViewItem::TriggeredEvent(_) => 0,
+            ViewItem::TriggeredEvent(_) => -30,
+            ViewItem::CharacterHarmed { .. } => -20,
+            ViewItem::CharacterHealed { .. } => -10,
+            ViewItem::NpcEntered { .. } => 5,
+            ViewItem::NpcSpeech { .. } => 10,
+            ViewItem::NpcLeft { .. } => 15,
+            ViewItem::CharacterDeath { .. } => 100,
+            _ => 0,
         }
     }
 
@@ -1125,7 +1235,7 @@ mod tests {
                 action: StatusAction::Apply,
                 status: "Poisoned".into(),
             },
-            5,
+            25,
         );
 
         let ordered: Vec<&str> = view

@@ -6,8 +6,13 @@ npc emh {
     name "Emergency Medical Hologram"
     desc "A balding and somewhat anxious-appearing holographic doctor in a Starfleet uniform."
     location nowhere "spawns in med-bay after button pressed"
+    max_hp 75
     state normal
-    movement random rooms(med-bay, lounge, loading-dock) timing every_5_turns active false
+    movement random rooms(
+        med-bay,
+        lounge,
+        loading-dock,
+    ) timing every_5_turns active false
     dialogue custom want-emitter {
         "I think I know where to find one of HAL's missing modules, but I can't leave med bay without my mobile emitter."
         "I'd be happy to help you find HAL's memory module, but I can't leave the med bay without my mobile emitter."
@@ -54,7 +59,7 @@ when talk to npc emh {
 
 trigger "[Med-Bay] EMH/After HAL Rebooted" only once
 when always {
-    if all(with npc emh, flag complete hal-reboot) {
+    if all( with npc emh, flag complete hal-reboot ) {
         do set npc state emh normal
         do npc says emh "Well, now you've done it. HAL is operational again. We'll surely regret it -- or at least *you* will."
     }

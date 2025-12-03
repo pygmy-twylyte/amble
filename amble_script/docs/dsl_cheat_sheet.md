@@ -46,6 +46,7 @@ when <event> {
 
 - Feedback: `do show`, `do award points`
 - Flags: `do add/remove/reset/advance flag`, `do add seq flag [limit n]`
+- Health: `do damage/heal player <amt> [for <turns> turns] cause "…"`, `do damage/heal npc <npc> <amt> [for <turns> turns] cause "…"`
 - Spawn/Despawn/Swap: `do spawn item … into room|container|inventory|current room`, `do spawn npc … into room …`, `do despawn item`, `do despawn npc`, `do replace item <old> with <new>`, `do replace drop item <old> with <new>`
 - Exits & locks: `do reveal/lock/unlock exit`, `do lock/unlock item`, `do set barred message`
 - NPC dialogue/state: `do npc says`, `do npc says random`, `do npc refuse item`, `do set npc state`, `do set npc active`

@@ -223,6 +223,7 @@ pub fn nearby_visible_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashSet
 mod tests {
     use super::*;
     use crate::{
+        health::HealthState,
         item::{ContainerState, Item},
         npc::{Npc, NpcState},
         player::Player,
@@ -278,6 +279,7 @@ mod tests {
             dialogue: HashMap::new(),
             state: NpcState::Normal,
             movement: None,
+            health: HealthState::new(),
         }
     }
 

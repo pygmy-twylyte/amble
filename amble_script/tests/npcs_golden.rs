@@ -6,6 +6,7 @@ fn npcs_basic_golden() {
   name "Holographic Medic"
   desc "A simulated emergency physician."
   location room triage-center
+  max_hp 12
   state custom needs-calibration
   movement random rooms (triage-center, commons) timing every_3_turns active true
   dialogue normal {
@@ -20,6 +21,7 @@ npc courier_bot {
   name "Courier Bot"
   desc "A walking delivery crate."
   location room transit-hall
+  max_hp 8
   state normal
   movement route rooms (transit-hall, commons) timing every_2_turns
   dialogue normal { "Package routed." }

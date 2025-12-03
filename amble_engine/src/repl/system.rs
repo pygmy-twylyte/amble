@@ -183,6 +183,12 @@ pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> 
         .filter_map(|uuid| world.items.get(uuid))
         .for_each(|i| info!("$$ -> {} ({})", i.name(), i.symbol()));
 
+    push_quit_summary(world, view);
+
+    Ok(ReplControl::Quit)
+}
+
+pub fn push_quit_summary(world: &AmbleWorld, view: &mut View) {
     #[allow(clippy::cast_precision_loss)]
     let percent = (world.player.score as f32 / world.max_score as f32) * 100.0;
 
@@ -199,8 +205,6 @@ pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> 
         visited,
         max_visited: world.rooms.len(),
     });
-
-    Ok(ReplControl::Quit)
 }
 
 /// Displays comprehensive help information including basic instructions and command reference.
@@ -660,13 +664,13 @@ pub fn filtered_goals(world: &AmbleWorld, status: GoalStatus) -> Vec<&Goal> {
 /// - Original world state remains unchanged
 /// - Error details logged for debugging
 /// - Game continues with current state
-pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) {
+pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> bool {
     let save_dir = Path::new(SAVE_DIR);
     let mut slots = match save_files::collect_save_slots(save_dir) {
         Ok(slots) => slots,
         Err(err) => {
             view.push(ViewItem::Error(format!("Unable to inspect saved games: {err}")));
-            return;
+            return false;
         },
     };
 
@@ -718,6 +722,7 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) {
                     load_path.display(),
                     world.version
                 );
+                return true;
             },
             Err(err) => {
                 view.push(ViewItem::ActionFailure(format!(
@@ -729,6 +734,7 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) {
                     "player attempted to load '{gamefile}' from '{}': parse failure ({err})",
                     load_path.display()
                 );
+                return false;
             },
         },
         Err(err) => {
@@ -750,6 +756,7 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) {
                 load_path.display(),
                 err
             );
+            return false;
         },
     }
 }
@@ -835,6 +842,23 @@ pub fn save_handler(world: &AmbleWorld, view: &mut View, gamefile: &str) -> Resu
         gamefile.underline().green()
     )));
     info!("Player saved game to \"{gamefile}\"");
+    Ok(())
+}
+
+/// Silent save used for autosaves; writes the world state without emitting view messages.
+pub fn autosave_quiet(world: &AmbleWorld, gamefile: &str) -> Result<()> {
+    let world_ron =
+        ron::ser::to_string(world).with_context(|| "error converting AmbleWorld to 'ron' format".to_string())?;
+
+    fs::create_dir_all(SAVE_DIR).with_context(|| "error creating saved_games folder".to_string())?;
+
+    let save_path = PathBuf::from(SAVE_DIR).join(format!("{gamefile}-amble-{AMBLE_VERSION}.ron"));
+    let mut save_file =
+        fs::File::create(save_path.as_path()).with_context(|| format!("creating file '{}'", save_path.display()))?;
+    save_file
+        .write_all(world_ron.as_bytes())
+        .with_context(|| "failed to write AmbleWorld to .ron file".to_string())?;
+    info!("Autosaved game to \"{gamefile}\"");
     Ok(())
 }
 

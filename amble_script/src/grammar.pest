@@ -1,5 +1,5 @@
 // Amble DSL Grammar
-// Amble version 0.63.0
+// Amble version 0.64.0
 
 COMMENT    = _{ "#" ~ (!NEWLINE ~ ANY)* }
 WHITESPACE = _{ " " | "\t" | NEWLINE | COMMENT }
@@ -54,6 +54,9 @@ keyword = {
   | "push"
   | "set"
   | "description"
+  | "max_hp"
+  | "damage"
+  | "heal"
   | "random"
   | "refuse"
   | "state"
@@ -63,9 +66,6 @@ keyword = {
   | "message"
   | "reason"
   | "loop"
-  | "eat"
-  | "drink"
-  | "inhale"
   | "consumable"
   | "container"
   | "fail"
@@ -95,6 +95,9 @@ keyword = {
   | "absent"
   | "custom"
   | "here"
+  | "for"
+  | "turns"
+  | "cause"
   | // container state literals
   "off"
   | "closed"
@@ -108,7 +111,8 @@ ident_char = _{ ASCII_ALPHANUMERIC | "-" | ":" | "_" | "#" }
 // Disallow exact keywords, but allow identifiers that merely start with a keyword (e.g., "readable")
 ident = @{ !(keyword ~ !ident_char) ~ ident_char+ }
 
-number = @{ "-"* ~ ASCII_DIGIT+ }
+number  = @{ "-"* ~ ASCII_DIGIT+ }
+pos_int = @{ ASCII_NONZERO_DIGIT ~ ASCII_DIGIT* }
 
 // Quoted strings with common escape sequences: \n, \r, \t, \", \\
 escape      = _{ "\\" ~ ("n" | "r" | "t" | "\\" | "\"") }
@@ -141,8 +145,10 @@ note_kw      = { "note" ~ string }
 trigger = { "trigger" ~ string ~ (only_once_kw | note_kw)* ~ "when" ~ when_cond ~ block }
 
 // Event ("when") conditions supported in this iteration
-when_cond        = { always_event | enter_room | leave_room | look_at_item | touch_item | open_item | use_item_on_item | use_item | give_to_npc | take_from_npc | insert_item_into | take_item | drop_item | unlock_item | talk_to_npc | act_on_item | ingest_item }
+when_cond        = { always_event | player_death | npc_death | enter_room | leave_room | look_at_item | touch_item | open_item | use_item_on_item | use_item | give_to_npc | take_from_npc | insert_item_into | take_item | drop_item | unlock_item | talk_to_npc | act_on_item | ingest_item }
 always_event     = { "always" }
+player_death     = { "player" ~ "dies" }
+npc_death        = { "npc" ~ ident ~ "dies" }
 enter_room       = { "enter" ~ "room" ~ ident }
 take_item        = { "take" ~ "item" ~ ident }
 talk_to_npc      = { "talk" ~ "to" ~ "npc" ~ ident }
@@ -209,6 +215,12 @@ do_action        =  {
   | ("npc" ~ "says" ~ ident ~ string)
   | ("npc" ~ "refuse" ~ "item" ~ ident ~ string)
   | ("set" ~ "npc" ~ "state" ~ ident ~ ident)
+  | ("damage" ~ "player" ~ number ~ ("for" ~ pos_int ~ "turns")? ~ "cause" ~ string)
+  | ("heal" ~ "player" ~ number ~ ("for" ~ pos_int ~ "turns")? ~ "cause" ~ string)
+  | ("remove" ~ "player" ~ "effect" ~ string)
+  | ("damage" ~ "npc" ~ ident ~ number ~ ("for" ~ pos_int ~ "turns")? ~ "cause" ~ string)
+  | ("heal" ~ "npc" ~ ident ~ number ~ ("for" ~ pos_int ~ "turns")? ~ "cause" ~ string)
+  | ("remove" ~ "npc" ~ ident ~ "effect" ~ string)
   | ("deny" ~ "read" ~ string)
   | ("restrict" ~ "item" ~ ident)
   | ("give" ~ "item" ~ ident ~ "to" ~ "player" ~ "from" ~ "npc" ~ ident)
@@ -260,10 +272,10 @@ npc_patch_name         =  { "name" ~ string }
 npc_patch_desc         =  { ("description" | "desc") ~ string }
 npc_patch_state        =  { "state" ~ npc_state_value }
 npc_patch_add_line     =  { "add" ~ "line" ~ string ~ "to" ~ "state" ~ npc_state_value }
-npc_patch_route        =  { "route" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")" }
-npc_patch_random_rooms =  { "random" ~ "rooms" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")" }
-npc_patch_timing_every =  { "timing" ~ "every" ~ number ~ "turns" }
-npc_patch_timing_on    =  { "timing" ~ "on" ~ "turn" ~ number }
+npc_patch_route        =  { "route" ~ "(" ~ ident ~ ("," ~ ident)* ~ (",")? ~ ")" }
+npc_patch_random_rooms =  { "random" ~ "rooms" ~ "(" ~ ident ~ ("," ~ ident)* ~ (",")? ~ ")" }
+npc_patch_timing_every =  { "timing" ~ "every" ~ pos_int ~ "turns" }
+npc_patch_timing_on    =  { "timing" ~ "on" ~ "turn" ~ pos_int }
 npc_patch_active       =  { "active" ~ boolean }
 npc_patch_loop         =  { "loop" ~ boolean }
 npc_state_value        =  { ident | npc_custom_state }
@@ -316,14 +328,14 @@ npc_in_state   = { "npc" ~ "in" ~ "state" ~ ident ~ ident }
 player_in_room = { "player" ~ "in" ~ "room" ~ ident }
 // DSL phrasing: "container <container> has item <item>"
 container_has_item = { "container" ~ ident ~ "has" ~ "item" ~ ident }
-chance_cond        = { "chance" ~ number ~ "%" }
+chance_cond        = { "chance" ~ pos_int ~ "%" }
 ambient_cond       = { "ambient" ~ ident ~ ("in" ~ "rooms" ~ ident ~ ("," ~ ident)*)? }
 // Preferred shorthand for ambient room gating: "in rooms a,b,c"
 in_rooms = { "in" ~ "rooms" ~ ident ~ ("," ~ ident)* }
 
 all_group = { "all" ~ "(" ~ cond_list ~ ")" }
 any_group = { "any" ~ "(" ~ cond_list ~ ")" }
-cond_list = { cond ~ ("," ~ cond)* }
+cond_list = { cond ~ ("," ~ cond)* ~ (",")? }
 
 // -----------------
 // Rooms (minimal)
@@ -411,7 +423,7 @@ item_consumable = { "consumable" ~ consumable_block }
 
 consumable_block             = { "{" ~ (WHITESPACE* ~ consumable_stmt)* ~ WHITESPACE* ~ "}" }
 consumable_stmt              = { consumable_uses | consumable_consume_on | consumable_when_consumed }
-consumable_uses              = { "uses_left" ~ number }
+consumable_uses              = { "uses_left" ~ pos_int }
 consumable_consume_on        = { "consume_on" ~ "ability" ~ ident ~ (WHITESPACE+ ~ consumable_target_ident)? }
 consumable_target_ident      = { !("when_consumed" ~ !ident_char) ~ ident_char+ }
 consumable_when_consumed     = { "when_consumed" ~ (consume_despawn | consume_replace_inventory | consume_replace_current_room) }
@@ -425,7 +437,7 @@ consume_replace_current_room = { "replace" ~ "current" ~ "room" ~ ident }
 
 spinner_def   = { "spinner" ~ ident ~ spinner_block }
 spinner_block = { "{" ~ wedge_stmt+ ~ "}" }
-wedge_stmt    = { "wedge" ~ string ~ ("width" ~ number)? }
+wedge_stmt    = { "wedge" ~ string ~ ("width" ~ pos_int)? }
 
 // -----------------
 // NPCs
@@ -433,12 +445,13 @@ wedge_stmt    = { "wedge" ~ string ~ ("width" ~ number)? }
 
 npc_def            = { "npc" ~ ident ~ npc_block }
 npc_block          = { "{" ~ npc_stmt* ~ "}" }
-npc_stmt           = { npc_name | npc_desc | npc_location | npc_state | npc_movement | npc_dialogue_block }
+npc_stmt           = { npc_name | npc_desc | npc_max_hp | npc_location | npc_state | npc_movement | npc_dialogue_block }
 npc_name           = { "name" ~ string }
 npc_desc           = { ("desc" | "description") ~ string }
+npc_max_hp         = { "max_hp" ~ pos_int }
 npc_location       = { "location" ~ (("room" ~ ident) | ("nowhere" ~ string)) }
 npc_state          = { "state" ~ (ident | ("custom" ~ ident)) }
-npc_movement       = { "movement" ~ ("random" | "route") ~ "rooms" ~ "(" ~ ident ~ ("," ~ ident)* ~ ")" ~ ("timing" ~ ident)? ~ ("active" ~ boolean)? ~ ("loop" ~ boolean)? }
+npc_movement       = { "movement" ~ ("random" | "route") ~ "rooms" ~ "(" ~ ident ~ ("," ~ ident)* ~ (",")? ~ ")" ~ ("timing" ~ ident)? ~ ("active" ~ boolean)? ~ ("loop" ~ boolean)? }
 npc_dialogue_block = { "dialogue" ~ (ident | ("custom" ~ ident)) ~ "{" ~ string+ ~ "}" }
 
 // -----------------

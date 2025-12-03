@@ -23,11 +23,13 @@ pub use npc::*;
 pub use system::*;
 
 use crate::command::{Command, parse_command};
+use crate::health::{LifeState, LivingEntity};
+use crate::loader::load_world;
 use crate::npc::{Npc, calculate_next_location, move_npc, move_scheduled};
 use crate::scheduler::OnFalsePolicy;
 use crate::spinners::CoreSpinnerType;
 use crate::style::GameStyle;
-use crate::trigger::{TriggerCondition, dispatch_action};
+use crate::trigger::{TriggerCondition, check_triggers, dispatch_action};
 use crate::world::AmbleWorld;
 use crate::{Item, View, ViewItem, WorldObject};
 
@@ -39,6 +41,8 @@ use uuid::Uuid;
 use variantly::Variantly;
 
 use input::{InputEvent, InputManager};
+
+const AUTOSAVE_TURNS: usize = 5;
 
 /// Control flow signal used by handlers to exit the REPL.
 pub enum ReplControl {
@@ -76,8 +80,12 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         }
 
         let prompt = format!(
-            "\n[Turn: {}|Score: {}{}]>> ",
-            world.turn_count, world.player.score, status_effects
+            "\n[Turn {} | Health {}/{} | Score: {}{}]>> ",
+            world.turn_count,
+            world.player.health.current_hp(),
+            world.player.health.max_hp(),
+            world.player.score,
+            status_effects
         )
         .prompt_style()
         .to_string();
@@ -142,7 +150,17 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             TurnOn(thing) => turn_on_handler(world, &mut view, thing)?,
             TurnOff(thing) => turn_off_handler(world, &mut view, thing)?,
             Read(thing) => read_handler(world, &mut view, thing)?,
-            Load(gamefile) => load_handler(world, &mut view, gamefile),
+            Load(gamefile) => {
+                if !load_handler(world, &mut view, gamefile) {
+                    view.push(ViewItem::EngineMessage(
+                        format!("- error loading world from '{gamefile}' -")
+                            .error_style()
+                            .to_string(),
+                    ))
+                }
+                // re-sync current turn to loaded game
+                current_turn = world.turn_count.saturating_sub(1);
+            },
             Save(gamefile) => save_handler(world, &mut view, gamefile)?,
             Theme(theme_name) => theme_handler(&mut view, theme_name)?,
             UseItemOn { verb, tool, target } => {
@@ -165,8 +183,70 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
 
         // move NPCs and fire schedule events only if turn was advanced
         if world.turn_count > current_turn {
+            let mut health_view_items = Vec::new();
+            let mut death_events = Vec::new();
+            let mut player_died = false;
+
+            let player_was_alive = matches!(world.player.life_state(), LifeState::Alive);
+            let player_tick = world.player.tick_health_effects();
+            health_view_items.extend(player_tick.view_items);
+            if player_was_alive && matches!(world.player.life_state(), LifeState::Dead) {
+                player_died = true;
+                death_events.push(TriggerCondition::PlayerDeath);
+                health_view_items.push(ViewItem::CharacterDeath {
+                    name: world.player.name().to_string(),
+                    cause: player_tick.death_cause,
+                    is_player: true,
+                });
+            }
+
+            let npc_ids: Vec<Uuid> = world.npcs.keys().copied().collect();
+            for npc_id in npc_ids {
+                let was_alive = world
+                    .npcs
+                    .get(&npc_id)
+                    .map_or(false, |npc| matches!(npc.life_state(), LifeState::Alive));
+                if let Some(npc) = world.npcs.get_mut(&npc_id) {
+                    let tick = npc.tick_health_effects();
+                    health_view_items.extend(tick.view_items);
+                    if was_alive && matches!(npc.life_state(), LifeState::Dead) {
+                        death_events.push(TriggerCondition::NpcDeath(npc_id));
+                        health_view_items.push(ViewItem::CharacterDeath {
+                            name: npc.name().to_string(),
+                            cause: tick.death_cause,
+                            is_player: false,
+                        });
+                        if let Some(movement) = npc.movement.as_mut() {
+                            movement.active = false;
+                        }
+                    }
+                }
+            }
+
+            for item in health_view_items {
+                view.push(item);
+            }
+
+            if !death_events.is_empty() {
+                check_triggers(world, &mut view, &death_events)?;
+            }
+
+            if player_died {
+                view.flush();
+                if handle_player_death(world, &mut view, &mut input_manager, &mut current_turn)? {
+                    break;
+                }
+                continue;
+            }
+
             check_npc_movement(world, &mut view)?;
             check_scheduled_events(world, &mut view)?;
+
+            if world.turn_count % AUTOSAVE_TURNS == 0 {
+                if let Err(err) = crate::repl::system::autosave_quiet(world, "autosave") {
+                    view.push(ViewItem::Error(format!("Autosave failed: {err}")));
+                }
+            }
         }
 
         // ambients fire regardless of whether a turn was taken
@@ -296,6 +376,74 @@ pub fn check_ambient_triggers(world: &mut AmbleWorld, view: &mut View) -> Result
         }
     }
     Ok(())
+}
+
+fn handle_player_death(
+    world: &mut AmbleWorld,
+    view: &mut View,
+    input_manager: &mut InputManager,
+    current_turn: &mut usize,
+) -> Result<bool> {
+    crate::repl::system::push_quit_summary(world, view);
+    view.push(ViewItem::EngineMessage(
+        "You have died. Type 'load <slot>', 'restart', or 'quit'.".to_string(),
+    ));
+    view.flush();
+
+    loop {
+        let prompt = "[dead] load <slot> | restart | quit >> ";
+        let Ok(input_event) = input_manager.read_line(prompt) else {
+            return Ok(true);
+        };
+        let mut line = match input_event {
+            InputEvent::Line(line) => line,
+            InputEvent::Eof | InputEvent::Interrupted => return Ok(true),
+        };
+        if !line.ends_with('\n') {
+            line.push('\n');
+        }
+        let trimmed = line.trim();
+
+        if trimmed.eq_ignore_ascii_case("quit") {
+            return Ok(true);
+        }
+
+        if trimmed.eq_ignore_ascii_case("restart") {
+            match load_world() {
+                Ok(mut new_world) => {
+                    new_world.turn_count = 1;
+                    *world = new_world;
+                    *current_turn = world.turn_count.saturating_sub(1);
+                    view.push(ViewItem::EngineMessage("Restarted from the beginning.".to_string()));
+                    return Ok(false);
+                },
+                Err(err) => {
+                    view.push(ViewItem::Error(format!("Failed to restart: {err}")));
+                    view.flush();
+                    continue;
+                },
+            }
+        }
+
+        if let Some(rest) = trimmed.strip_prefix("load") {
+            let slot = rest.trim();
+            let slot = if slot.is_empty() { "autosave" } else { slot };
+            if crate::repl::system::load_handler(world, view, slot) {
+                *current_turn = world.turn_count.saturating_sub(1);
+                return Ok(false);
+            } else {
+                view.push(ViewItem::EngineMessage(format!(
+                    "Unable to resume from {}. Try another option.",
+                    slot.error_style()
+                )));
+            }
+        }
+
+        view.push(ViewItem::EngineMessage(
+            "Please enter 'load <slot>', 'restart', or 'quit'.".to_string(),
+        ));
+        view.flush();
+    }
 }
 
 /// Returns true if there is no `Chance` within `conditions`, or if the `Chance` "roll" returns true.

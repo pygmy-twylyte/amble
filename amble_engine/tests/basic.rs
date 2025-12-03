@@ -3,6 +3,7 @@ use std::usize;
 use ae::style::GameStyle;
 use ae::*;
 use amble_engine as ae;
+use amble_engine::health::{HealthState, LivingEntity};
 
 #[test]
 fn test_command_parse() {
@@ -224,6 +225,7 @@ fn test_raw_npc_to_npc() {
         dialogue: HashMap::new(),
         state: ae::npc::NpcState::Normal,
         movement: None,
+        max_hp: 10,
     };
 
     let npc = raw.to_npc(&symbols).unwrap();
@@ -247,9 +249,12 @@ fn test_raw_player_to_player() {
         inventory: HashMap::new(),
         flags: HashSet::new(),
         score: 0,
+        max_hp: 10,
     };
     let player = build_player(&raw, &mut symbols).unwrap();
     assert_eq!(player.name, "P");
+    assert_eq!(player.max_hp(), 10);
+    assert_eq!(player.current_hp(), 10);
 }
 
 #[test]
@@ -410,6 +415,7 @@ fn test_check_npc_movement() {
         inventory: HashSet::new(),
         dialogue: HashMap::new(),
         state: npc::NpcState::Normal,
+        health: HealthState::new_at_max(10),
         movement: Some(NpcMovement {
             movement_type: MovementType::Route {
                 rooms: vec![r1, r2],

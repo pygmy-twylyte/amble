@@ -3,7 +3,7 @@
 This guide covers the NPC portion of the `amble_script` DSL and how it maps to the engine’s `npcs.toml`. Non-player characters can be static flavour, mobile actors that roam rooms, or storytellers with branching dialogue.
 
 Highlights:
-- Required fields: `name`, `desc`, and `location`.
+- Required fields: `name`, `desc`, `max_hp`, and `location`.
 - Optional initial `state` (`normal` by default) or `state custom <id>` for bespoke variants.
 - Movement controls: `movement route rooms (…)` or `movement random rooms (…)` with optional `timing`, `active`, and `loop` modifiers.
 - Dialogue banks keyed by state (`dialogue normal { … }`, `dialogue custom panic { … }`).
@@ -15,6 +15,7 @@ Highlights:
 npc receptionist {
   name "Receptionist"
   desc "Focused on a flickering terminal."
+  max_hp 10
   location room lab-lobby
 }
 ```
@@ -27,6 +28,7 @@ Emits:
 id = "receptionist"
 name = "Receptionist"
 description = "Focused on a flickering terminal."
+max_hp = 10
 location = { Room = "lab-lobby" }
 state = "normal"
 ```

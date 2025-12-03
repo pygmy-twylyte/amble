@@ -388,6 +388,8 @@ fn resolve_use_item_participants<'a>(
     Ok(Some((target, tool)))
 }
 
+// sends trigger event conditions appropriate to item usage, returns true if any
+// of the conditions caused a trigger to fire
 fn dispatch_use_item_triggers(
     world: &mut AmbleWorld,
     view: &mut View,
@@ -653,23 +655,24 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
     // search player's location for an item matching search
     let room = world.player_room_ref()?;
     let search_scope: HashSet<Uuid> = room.contents.union(&world.player.inventory).copied().collect();
-    let (container_id, name) =
-        if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, pattern) {
-            if let Some(item) = entity.item() {
-                (item.id(), item.name().to_string())
-            } else {
-                warn!("Player attempted to open a non-Item WorldEntity by searching ({pattern})");
-                view.push(ViewItem::Error(format!(
-                    "{} isn't an item. You can't open it.",
-                    pattern.error_style()
-                )));
-                return Ok(());
-            }
+    let container_id = if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, pattern) {
+        if let Some(item) = entity.item() {
+            item.id()
         } else {
-            entity_not_found(world, view, pattern);
+            warn!("Player attempted to open a non-Item WorldEntity by searching ({pattern})");
+            view.push(ViewItem::Error(format!(
+                "{} isn't an item. You can't open it.",
+                pattern.error_style()
+            )));
             return Ok(());
-        };
+        }
+    } else {
+        entity_not_found(world, view, pattern);
+        return Ok(());
+    };
 
+    // either show failure reasons, or set container state to open
+    let mut container_opened = false;
     if let Some(target_item) = world.get_item_mut(container_id) {
         match target_item.container_state {
             None => {
@@ -700,21 +703,30 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                     )));
                 } else {
                     target_item.container_state = Some(ContainerState::Open);
-                    view.push(ViewItem::ActionSuccess(format!(
-                        "You opened the {}.\n",
-                        target_item.name().item_style()
-                    )));
-                    info!(
-                        "{} opened the {} ({})",
-                        world.player.name(),
-                        name,
-                        symbol_or_unknown(&world.items, container_id)
-                    );
-                    check_triggers(world, view, &[TriggerCondition::Open(container_id)])?;
+                    container_opened = true;
                 }
             },
         }
     }
+
+    // if a container was successfully opened: tell player, show contents, and log it
+    if let Some(opened) = world.items.get(&container_id)
+        && container_opened
+    {
+        opened.show(world, view);
+        info!(
+            "{} opened the {} ({})",
+            world.player.name(),
+            opened.name(),
+            opened.symbol()
+        );
+        view.push_with_priority(
+            ViewItem::ActionSuccess(format!("You opened the {}.\n", opened.name().item_style())),
+            -100,
+        );
+        check_triggers(world, view, &[TriggerCondition::Open(container_id)])?;
+    }
+
     world.turn_count += 1;
     Ok(())
 }

@@ -222,6 +222,12 @@ fn parse_trigger_pair(
                 .to_string();
             ConditionAst::LookAtItem(ident)
         },
+        Rule::player_death => ConditionAst::PlayerDeath,
+        Rule::npc_death => {
+            let mut i = when.into_inner();
+            let ident = i.next().ok_or(AstError::Shape("npc death ident"))?.as_str().to_string();
+            ConditionAst::NpcDeath(ident)
+        },
         Rule::use_item => {
             let mut i = when.into_inner();
             let item = i.next().ok_or(AstError::Shape("use item ident"))?.as_str().to_string();
@@ -1060,8 +1066,8 @@ fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<I
                             let val: i64 = raw
                                 .parse()
                                 .map_err(|_| AstError::Shape("consumable uses must be a number"))?;
-                            if val < 0 {
-                                return Err(AstError::Shape("consumable uses must be >= 0"));
+                            if val <= 0 {
+                                return Err(AstError::Shape("consumable uses must be > 0"));
                             }
                             uses_left = Some(val as usize);
                         },
@@ -1151,10 +1157,14 @@ fn parse_spinner_pair(sp: pest::iterators::Pair<Rule>, _source: &str) -> Result<
         let text = unquote(text_pair.as_str());
         // width is optional; default to 1
         let width: usize = if let Some(width_pair) = wi.next() {
-            width_pair
+            let width = width_pair
                 .as_str()
                 .parse()
-                .map_err(|_| AstError::Shape("invalid wedge width"))?
+                .map_err(|_| AstError::Shape("invalid wedge width"))?;
+            if width == 0 {
+                return Err(AstError::Shape("wedge width must be at least 1"));
+            }
+            width
         } else {
             1
         };
@@ -1261,6 +1271,7 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
     let mut name: Option<String> = None;
     let mut desc: Option<String> = None;
     let mut location: Option<crate::NpcLocationAst> = None;
+    let mut max_hp: Option<u32> = None;
     let mut state: Option<NpcStateValue> = None;
     let mut movement: Option<NpcMovementAst> = None;
     let mut dialogue: Vec<(String, Vec<String>)> = Vec::new();
@@ -1283,6 +1294,20 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                     _ => return Err(AstError::Shape("npc location")),
                 };
                 location = Some(loc);
+            },
+            Rule::npc_max_hp => {
+                let tok = stmt
+                    .into_inner()
+                    .next()
+                    .ok_or(AstError::Shape("missing max_hp number"))?;
+                let hp: i64 = tok
+                    .as_str()
+                    .parse()
+                    .map_err(|_| AstError::Shape("npc max_hp must be a number"))?;
+                if hp <= 0 {
+                    return Err(AstError::Shape("npc max_hp must be positive"));
+                }
+                max_hp = Some(hp as u32);
             },
             Rule::npc_state => {
                 let mut si = stmt.into_inner();
@@ -1402,6 +1427,17 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                     location = Some(crate::NpcLocationAst::Nowhere(note));
                     continue;
                 }
+                if let Some(rest) = txt.strip_prefix("max_hp ") {
+                    let hp: i64 = rest
+                        .trim()
+                        .parse()
+                        .map_err(|_| AstError::Shape("npc max_hp must be a number"))?;
+                    if hp <= 0 {
+                        return Err(AstError::Shape("npc max_hp must be positive"));
+                    }
+                    max_hp = Some(hp as u32);
+                    continue;
+                }
                 if let Some(rest) = txt.strip_prefix("state ") {
                     let rest = rest.trim();
                     if let Some(val) = rest.strip_prefix("custom ") {
@@ -1518,11 +1554,13 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
     let name = name.ok_or(AstError::Shape("npc missing name"))?;
     let desc = desc.ok_or(AstError::Shape("npc missing desc"))?;
     let location = location.ok_or(AstError::Shape("npc missing location"))?;
+    let max_hp = max_hp.ok_or(AstError::Shape("npc missing max_hp"))?;
     let state = state.unwrap_or(NpcStateValue::Named("normal".to_string()));
     Ok(NpcAst {
         id,
         name,
         desc,
+        max_hp,
         location,
         state,
         movement,
@@ -1864,9 +1902,10 @@ fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Resu
         if let Some(space) = rest.find(' ') {
             let npc = &rest[..space];
             let state = rest[space + 1..].trim();
+            let parsed_state = parse_condition_npc_state(state)?;
             return Ok(ConditionAst::NpcInState {
                 npc: npc.to_string(),
-                state: state.to_string(),
+                state: parsed_state,
             });
         }
         return Err(AstError::Shape("npc in state syntax"));
@@ -1950,9 +1989,48 @@ fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Resu
             .trim()
             .parse()
             .map_err(|_| AstError::Shape("invalid chance percent"))?;
+        if pct <= 0.0 {
+            return Err(AstError::Shape("chance percent must be greater than 0"));
+        }
         return Ok(ConditionAst::ChancePercent(pct));
     }
     Err(AstError::Shape("unknown condition"))
+}
+
+fn parse_condition_npc_state(token: &str) -> Result<NpcStateValue, AstError> {
+    let trimmed = token.trim();
+    if trimmed.is_empty() {
+        return Err(AstError::Shape("npc in state missing state value"));
+    }
+    if trimmed.len() >= 6 && trimmed[..6].eq_ignore_ascii_case("custom") {
+        let mut rest = &trimmed[6..];
+        rest = rest.trim_start();
+        if rest.starts_with(':') {
+            rest = rest[1..].trim_start();
+        } else if rest.starts_with('(') {
+            rest = rest[1..].trim_start();
+            if let Some(idx) = rest.rfind(')') {
+                rest = rest[..idx].trim_end();
+            }
+        }
+        rest = rest.trim();
+        rest = rest.trim_end_matches(')');
+        rest = rest.trim();
+        if rest.starts_with('"') {
+            let (value, _) =
+                parse_string_at(rest).map_err(|_| AstError::Shape("custom npc state invalid quoted string"))?;
+            return Ok(NpcStateValue::Custom(value));
+        }
+        if rest.is_empty() {
+            return Err(AstError::Shape("custom npc state missing identifier"));
+        }
+        return Ok(NpcStateValue::Custom(rest.to_string()));
+    }
+    if trimmed.starts_with('"') {
+        let (value, _) = parse_string_at(trimmed).map_err(|_| AstError::Shape("npc state invalid quoted string"))?;
+        return Ok(NpcStateValue::Custom(value));
+    }
+    Ok(NpcStateValue::Named(trimmed.to_string()))
 }
 
 fn split_top_level_commas(s: &str) -> Vec<&str> {
@@ -2003,7 +2081,10 @@ fn split_top_level_commas(s: &str) -> Vec<&str> {
                             | "any"
                     );
                 if is_sep {
-                    out.push(s[start..i].trim());
+                    let part = s[start..i].trim();
+                    if !part.is_empty() {
+                        out.push(part);
+                    }
                     start = i + 1;
                 }
             },
@@ -2011,7 +2092,10 @@ fn split_top_level_commas(s: &str) -> Vec<&str> {
         }
     }
     if start < s.len() {
-        out.push(s[start..].trim());
+        let tail = s[start..].trim();
+        if !tail.is_empty() {
+            out.push(tail);
+        }
     }
     out
 }
@@ -2075,6 +2159,37 @@ fn parse_action_core(text: &str) -> Result<ActionAst, AstError> {
     }
     if let Some(rest) = t.strip_prefix("do advance flag ") {
         return Ok(ActionAst::AdvanceFlag(rest.trim().to_string()));
+    }
+    if let Some(rest) = t.strip_prefix("do damage player ") {
+        return parse_player_health_action(rest, true);
+    }
+    if let Some(rest) = t.strip_prefix("do heal player ") {
+        return parse_player_health_action(rest, false);
+    }
+    if let Some(rest) = t.strip_prefix("do remove player effect ") {
+        let r = rest.trim();
+        let (cause, _) =
+            parse_string_at(r).map_err(|_| AstError::Shape("remove player effect missing or invalid cause"))?;
+        return Ok(ActionAst::RemovePlayerEffect { cause });
+    }
+    if let Some(rest) = t.strip_prefix("do damage npc ") {
+        return parse_npc_health_action(rest, true);
+    }
+    if let Some(rest) = t.strip_prefix("do heal npc ") {
+        return parse_npc_health_action(rest, false);
+    }
+    if let Some(rest) = t.strip_prefix("do remove npc ") {
+        let rest = rest.trim();
+        if let Some((npc, tail)) = rest.split_once(" effect ") {
+            let r = tail.trim();
+            let (cause, _) =
+                parse_string_at(r).map_err(|_| AstError::Shape("remove npc effect missing or invalid cause"))?;
+            return Ok(ActionAst::RemoveNpcEffect {
+                npc: npc.trim().to_string(),
+                cause,
+            });
+        }
+        return Err(AstError::Shape("remove npc effect syntax"));
     }
     if let Some(rest) = t.strip_prefix("do replace item ") {
         let rest = rest.trim();
@@ -2362,6 +2477,88 @@ fn parse_action_core(text: &str) -> Result<ActionAst, AstError> {
         return Ok(ActionAst::AwardPoints { amount, reason });
     }
     Err(AstError::Shape("unknown action"))
+}
+
+fn parse_player_health_action(rest: &str, is_damage: bool) -> Result<ActionAst, AstError> {
+    let (amount, turns, cause) =
+        parse_amount_turns_and_cause(rest, if is_damage { "damage player" } else { "heal player" })?;
+    Ok(if is_damage {
+        ActionAst::DamagePlayer { amount, turns, cause }
+    } else {
+        ActionAst::HealPlayer { amount, turns, cause }
+    })
+}
+
+fn parse_npc_health_action(rest: &str, is_damage: bool) -> Result<ActionAst, AstError> {
+    let rest = rest.trim();
+    let Some((npc, tail)) = rest.split_once(' ') else {
+        return Err(AstError::Shape("npc health action missing npc id"));
+    };
+    let (amount, turns, cause) = parse_amount_turns_and_cause(tail, if is_damage { "damage npc" } else { "heal npc" })?;
+    Ok(if is_damage {
+        ActionAst::DamageNpc {
+            npc: npc.trim().to_string(),
+            amount,
+            turns,
+            cause,
+        }
+    } else {
+        ActionAst::HealNpc {
+            npc: npc.trim().to_string(),
+            amount,
+            turns,
+            cause,
+        }
+    })
+}
+
+fn parse_amount_turns_and_cause(rest: &str, label: &str) -> Result<(u32, Option<usize>, String), AstError> {
+    let rest = rest.trim();
+    let Some((amount_tok, mut tail)) = rest.split_once(' ') else {
+        return Err(AstError::Shape("health action missing amount"));
+    };
+    let amount: u32 = amount_tok
+        .parse()
+        .map_err(|_| AstError::Shape("health action amount must be a positive number"))?;
+    let mut turns: Option<usize> = None;
+    tail = tail.trim_start();
+    if let Some(after_for) = tail.strip_prefix("for ") {
+        let after_for = after_for.trim_start();
+        let mut len = 0usize;
+        while len < after_for.len() && after_for.as_bytes()[len].is_ascii_digit() {
+            len += 1;
+        }
+        if len == 0 {
+            return Err(AstError::Shape("health action missing turns count after 'for'"));
+        }
+        let tval: usize = after_for[..len]
+            .parse()
+            .map_err(|_| AstError::Shape("health action turns must be a positive number"))?;
+        if tval == 0 {
+            return Err(AstError::Shape("health action turns must be a positive number"));
+        }
+        turns = Some(tval);
+        tail = after_for[len..].trim_start();
+        tail = tail
+            .strip_prefix("turns")
+            .ok_or(AstError::Shape("health action missing 'turns' keyword"))?
+            .trim_start();
+    }
+    let cause_tail = tail
+        .strip_prefix("cause")
+        .ok_or_else(|| {
+            AstError::Shape(match label {
+                l if l.contains("damage player") => "damage player missing 'cause'",
+                l if l.contains("heal player") => "heal player missing 'cause'",
+                l if l.contains("damage npc") => "damage npc missing 'cause'",
+                l if l.contains("heal npc") => "heal npc missing 'cause'",
+                _ => "health action missing 'cause'",
+            })
+        })?
+        .trim_start();
+    let (cause, _used) =
+        parse_string_at(cause_tail).map_err(|_| AstError::Shape("health action cause missing or invalid quote"))?;
+    Ok((amount, turns, cause))
 }
 
 fn parse_actions_from_body(
@@ -2888,8 +3085,8 @@ fn parse_modify_npc_action(text: &str) -> Result<(ActionStmt, usize), AstError> 
                     .as_str()
                     .parse()
                     .map_err(|_| AstError::Shape("modify npc timing every invalid number"))?;
-                if turns < 0 {
-                    return Err(AstError::Shape("modify npc timing every requires non-negative turns"));
+                if turns <= 0 {
+                    return Err(AstError::Shape("modify npc timing every requires positive turns"));
                 }
                 movement_patch.timing = Some(NpcTimingPatchAst::EveryNTurns(turns as usize));
                 movement_touched = true;
@@ -2903,8 +3100,8 @@ fn parse_modify_npc_action(text: &str) -> Result<(ActionStmt, usize), AstError> 
                     .as_str()
                     .parse()
                     .map_err(|_| AstError::Shape("modify npc timing on invalid number"))?;
-                if turn < 0 {
-                    return Err(AstError::Shape("modify npc timing on requires non-negative turn"));
+                if turn <= 0 {
+                    return Err(AstError::Shape("modify npc timing on requires a positive turn"));
                 }
                 movement_patch.timing = Some(NpcTimingPatchAst::OnTurn(turn as usize));
                 movement_touched = true;
@@ -3327,6 +3524,41 @@ trigger "note escapes" when always {
     }
 
     #[test]
+    fn schedule_if_chance_requires_positive_percent() {
+        let src = r#"
+trigger "bad chance" when always {
+  do schedule in 1 if chance 0% {
+    do show "nope"
+  }
+}
+"#;
+        let err = parse_trigger(src).expect_err("expected parse failure");
+        match err {
+            AstError::Shape(msg) => assert_eq!(msg, "chance percent must be greater than 0"),
+            other => panic!("expected shape error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn schedule_actions_reject_zero_turn_health_effects() {
+        let src = r#"
+trigger "zero turns" when always {
+  do schedule in 1 {
+    do damage player 1 for 0 turns cause "noop"
+  }
+}
+"#;
+        let err = parse_trigger(src).expect_err("expected parse failure");
+        match err {
+            AstError::ShapeAt { msg, context } => {
+                assert_eq!(msg, "health action turns must be a positive number");
+                assert!(context.contains("for 0 turns"), "{context}");
+            },
+            other => panic!("expected shape-at error, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn modify_item_parses_patch_fields() {
         let src = r#"
 trigger "patch locker" when always {
@@ -3665,6 +3897,7 @@ npc bot {
   name "Maintenance Bot"
   desc "Keeps the corridors tidy."
   location room hub
+  max_hp 5
   state idle
   movement route rooms (hub, hall) timing every_3_turns active true loop false
 }

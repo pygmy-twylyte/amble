@@ -22,6 +22,11 @@ item fallen_tree {
 
 trigger "[Two-Sheds-Landing] Cut or Chop Tree" only once when act cut on item fallen_tree {
     do show "With considerable effort and just one blister, you're able to chop a path through the branches. The stone steps continue to curve upward from here."
+    # here we create a minor injury that heals itself after 20 turns...
+    do damage player 1 cause "blister"
+    do schedule in 20 note "blister heals" {
+        do heal player 1 cause "time (blister resolved)"
+    }
     do despawn item fallen_tree
     do add flag cleared-fallen-tree
     do add flag chopped-fallen-tree
@@ -30,7 +35,8 @@ trigger "[Two-Sheds-Landing] Cut or Chop Tree" only once when act cut on item fa
 
 trigger "[Two-Sheds-Landing] Arson-Aid Used on Tree" only once
 when use item arson_aid on item fallen_tree interaction burn {
-    do show "You aim the Arson-Aid and begin to squeeze the trigger when the device erupts into a fireball! Panicking, you throw the whole Arson-Aid into the tree."
+    do priority -30 show "You aim the Arson-Aid and begin to squeeze the trigger when the device erupts into a fireball! Panicking, you throw the whole Arson-Aid into the tree."
+    do priority -29 damage player 5 cause "Arson-Aid explosion"
 }
 
 trigger "[Two-Sheds-Landing] Burn Tree" only once when act burn on item fallen_tree {
@@ -38,7 +44,7 @@ trigger "[Two-Sheds-Landing] Burn Tree" only once when act burn on item fallen_t
     do add flag cleared-fallen-tree
     do add flag burned-fallen-tree
     do award points 5 reason "Vaporized the fallen tree with an inferno"
-    do show "WHOOOOOMPH! The fallen tree erupts into flame and, quite improbably, is reduced to ash in mere seconds."
+    do priority -20 show "WHOOOOOMPH! The fallen tree erupts into flame and, quite improbably, is reduced to ash in mere seconds."
 }
 
 # ========================================

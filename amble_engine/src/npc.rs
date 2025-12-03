@@ -18,8 +18,12 @@ use rand::{prelude::IndexedRandom, seq::IteratorRandom};
 use uuid::Uuid;
 
 use crate::{
-    ItemHolder, Location, View, ViewItem, WorldObject, helpers::symbol_or_unknown, spinners::CoreSpinnerType,
-    view::ContentLine, world::AmbleWorld,
+    ItemHolder, Location, View, ViewItem, WorldObject,
+    health::{HealthEffect, HealthState, LivingEntity},
+    helpers::symbol_or_unknown,
+    spinners::CoreSpinnerType,
+    view::ContentLine,
+    world::AmbleWorld,
 };
 
 /// A non-playable character.
@@ -34,6 +38,7 @@ pub struct Npc {
     pub dialogue: HashMap<NpcState, Vec<String>>,
     pub state: NpcState,
     pub movement: Option<NpcMovement>,
+    pub health: HealthState,
 }
 impl Npc {
     /// Pause scripted movement for the given number of turns.
@@ -66,6 +71,8 @@ impl Npc {
         view.push(ViewItem::NpcDescription {
             name: self.name.clone(),
             description: self.description.clone(),
+            health: self.health.clone(),
+            state: self.state.clone(),
         });
         view.push(ViewItem::NpcInventory(
             self.inventory
@@ -107,6 +114,39 @@ impl ItemHolder for Npc {
 
     fn contains_item(&self, item_id: Uuid) -> bool {
         self.inventory.contains(&item_id)
+    }
+}
+impl LivingEntity for Npc {
+    fn max_hp(&self) -> u32 {
+        self.health.max_hp()
+    }
+
+    fn current_hp(&self) -> u32 {
+        self.health.current_hp()
+    }
+
+    fn life_state(&self) -> crate::health::LifeState {
+        self.health.life_state()
+    }
+
+    fn damage(&mut self, amount: u32) {
+        self.health.damage(amount);
+    }
+
+    fn heal(&mut self, amount: u32) {
+        self.health.heal(amount);
+    }
+
+    fn remove_health_effect(&mut self, cause: &str) -> Option<HealthEffect> {
+        self.health.remove_effect(cause)
+    }
+
+    fn tick_health_effects(&mut self) -> crate::health::HealthTickResult {
+        self.health.apply_effects(self.name.as_str())
+    }
+
+    fn add_health_effect(&mut self, effect: HealthEffect) {
+        self.health.add_effect(effect);
     }
 }
 
@@ -363,6 +403,7 @@ mod tests {
             dialogue,
             state: NpcState::Normal,
             movement: None,
+            health: HealthState::new_at_max(10),
         }
     }
 
@@ -487,15 +528,23 @@ mod tests {
                 .any(|entry| matches!(&entry.view_item, ViewItem::NpcInventory(_)))
         );
 
-        if let Some((name, description)) = items.iter().find_map(|entry| {
-            if let ViewItem::NpcDescription { name, description } = &entry.view_item {
-                Some((name, description))
+        if let Some((name, description, health, state)) = items.iter().find_map(|entry| {
+            if let ViewItem::NpcDescription {
+                name,
+                description,
+                health,
+                state,
+            } = &entry.view_item
+            {
+                Some((name, description, health, state))
             } else {
                 None
             }
         }) {
             assert_eq!(name, "Test NPC");
             assert_eq!(description, "A test NPC");
+            assert_eq!(*health, HealthState::new_at_max(10));
+            assert_eq!(*state, NpcState::Normal);
         }
 
         if let Some(inventory) = items.iter().find_map(|entry| {

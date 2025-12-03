@@ -1095,6 +1095,10 @@ fn gather_refs_from_condition(c: &ConditionAst, out: &mut HashMap<&'static str, 
             out.get_mut("item").unwrap().insert(tool.clone());
             out.get_mut("item").unwrap().insert(target.clone());
         },
+        ConditionAst::NpcDeath(npc) => {
+            out.get_mut("npc").unwrap().insert(npc.clone());
+        },
+        ConditionAst::PlayerDeath => { /* no references */ },
         ConditionAst::ActOnItem { target, .. } => {
             out.get_mut("item").unwrap().insert(target.clone());
         },

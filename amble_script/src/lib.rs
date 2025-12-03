@@ -92,6 +92,10 @@ pub enum ConditionAst {
         item: String,
         mode: IngestModeAst,
     },
+    /// Event: player dies.
+    PlayerDeath,
+    /// Event: an NPC dies.
+    NpcDeath(String),
     /// Event: player performs an interaction on an item (tool-agnostic).
     ActOnItem {
         target: String,
@@ -130,7 +134,7 @@ pub enum ConditionAst {
     },
     NpcInState {
         npc: String,
-        state: String,
+        state: NpcStateValue,
     },
     ContainerHasItem {
         container: String,
@@ -187,6 +191,41 @@ pub enum ActionAst {
     AwardPoints {
         amount: i64,
         reason: String,
+    },
+    /// Damage the player once or over multiple turns.
+    DamagePlayer {
+        amount: u32,
+        turns: Option<usize>,
+        cause: String,
+    },
+    /// Heal the player once or over multiple turns.
+    HealPlayer {
+        amount: u32,
+        turns: Option<usize>,
+        cause: String,
+    },
+    /// Remove a queued health effect from the player by cause.
+    RemovePlayerEffect {
+        cause: String,
+    },
+    /// Damage an NPC once or over multiple turns.
+    DamageNpc {
+        npc: String,
+        amount: u32,
+        turns: Option<usize>,
+        cause: String,
+    },
+    /// Heal an NPC once or over multiple turns.
+    HealNpc {
+        npc: String,
+        amount: u32,
+        turns: Option<usize>,
+        cause: String,
+    },
+    /// Remove a queued health effect from an NPC by cause.
+    RemoveNpcEffect {
+        npc: String,
+        cause: String,
     },
     /// Remove a flag by name.
     RemoveFlag(String),
@@ -603,6 +642,17 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
                 t.insert("mode", toml_edit::Value::from(mode.as_str()));
                 conds.push(toml_edit::Value::from(t));
             },
+            ConditionAst::PlayerDeath => {
+                let mut t = InlineTable::new();
+                t.insert("type", toml_edit::Value::from("playerDeath"));
+                conds.push(toml_edit::Value::from(t));
+            },
+            ConditionAst::NpcDeath(npc) => {
+                let mut t = InlineTable::new();
+                t.insert("type", toml_edit::Value::from("npcDeath"));
+                t.insert("npc_id", toml_edit::Value::from(npc.clone()));
+                conds.push(toml_edit::Value::from(t));
+            },
             ConditionAst::ActOnItem { target, action } => {
                 let mut t = InlineTable::new();
                 t.insert("type", toml_edit::Value::from("actOnItem"));
@@ -703,6 +753,7 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
                     t.insert("flag", toml_edit::Value::from(flag.clone()));
                     conds.push(toml_edit::Value::from(t));
                 },
+                ConditionAst::PlayerDeath | ConditionAst::NpcDeath(_) => { /* event-only */ },
                 ConditionAst::WithNpc(npc) => {
                     let mut t = InlineTable::new();
                     t.insert("type", toml_edit::Value::from("withNpc"));
@@ -720,7 +771,7 @@ fn compile_triggers_to_doc(asts: &[TriggerAst]) -> Result<Document, CompileError
                     let mut t = InlineTable::new();
                     t.insert("type", toml_edit::Value::from("npcInState"));
                     t.insert("npc_id", toml_edit::Value::from(npc.clone()));
-                    t.insert("state", toml_edit::Value::from(state.clone()));
+                    t.insert("state", npc_state_value_to_value(state));
                     conds.push(toml_edit::Value::from(t));
                 },
                 ConditionAst::ContainerHasItem { container, item } => {
@@ -1037,6 +1088,7 @@ pub struct NpcAst {
     pub id: String,
     pub name: String,
     pub desc: String,
+    pub max_hp: u32,
     pub location: NpcLocationAst,
     pub state: NpcStateValue,
     pub movement: Option<NpcMovementAst>,
@@ -1381,6 +1433,7 @@ pub fn compile_npcs_to_toml(npcs: &[NpcAst]) -> Result<String, CompileError> {
             },
         }
         t["location"] = Item::Value(loc.into());
+        t["max_hp"] = value(n.max_hp as i64);
         // movement (optional)
         if let Some(mv) = &n.movement {
             let mut mt = Table::new();
@@ -1602,6 +1655,79 @@ fn action_to_value(stmt: &ActionStmt) -> toml_edit::Value {
             t.insert("type", toml_edit::Value::from("awardPoints"));
             t.insert("amount", toml_edit::Value::from(*amount));
             t.insert("reason", toml_edit::Value::from(reason.clone()));
+            toml_edit::Value::from(t)
+        },
+        ActionAst::DamagePlayer { amount, turns, cause } => {
+            let mut t = InlineTable::new();
+            if let Some(turns) = turns {
+                t.insert("type", toml_edit::Value::from("damagePlayerOT"));
+                t.insert("turns", toml_edit::Value::from(*turns as i64));
+            } else {
+                t.insert("type", toml_edit::Value::from("damagePlayer"));
+            }
+            t.insert("cause", toml_edit::Value::from(cause.clone()));
+            t.insert("amount", toml_edit::Value::from(*amount as i64));
+            toml_edit::Value::from(t)
+        },
+        ActionAst::HealPlayer { amount, turns, cause } => {
+            let mut t = InlineTable::new();
+            if let Some(turns) = turns {
+                t.insert("type", toml_edit::Value::from("healPlayerOT"));
+                t.insert("turns", toml_edit::Value::from(*turns as i64));
+            } else {
+                t.insert("type", toml_edit::Value::from("healPlayer"));
+            }
+            t.insert("cause", toml_edit::Value::from(cause.clone()));
+            t.insert("amount", toml_edit::Value::from(*amount as i64));
+            toml_edit::Value::from(t)
+        },
+        ActionAst::RemovePlayerEffect { cause } => {
+            let mut t = InlineTable::new();
+            t.insert("type", toml_edit::Value::from("removePlayerEffect"));
+            t.insert("cause", toml_edit::Value::from(cause.clone()));
+            toml_edit::Value::from(t)
+        },
+        ActionAst::DamageNpc {
+            npc,
+            amount,
+            turns,
+            cause,
+        } => {
+            let mut t = InlineTable::new();
+            if let Some(turns) = turns {
+                t.insert("type", toml_edit::Value::from("damageNpcOT"));
+                t.insert("turns", toml_edit::Value::from(*turns as i64));
+            } else {
+                t.insert("type", toml_edit::Value::from("damageNpc"));
+            }
+            t.insert("npc_id", toml_edit::Value::from(npc.clone()));
+            t.insert("cause", toml_edit::Value::from(cause.clone()));
+            t.insert("amount", toml_edit::Value::from(*amount as i64));
+            toml_edit::Value::from(t)
+        },
+        ActionAst::HealNpc {
+            npc,
+            amount,
+            turns,
+            cause,
+        } => {
+            let mut t = InlineTable::new();
+            if let Some(turns) = turns {
+                t.insert("type", toml_edit::Value::from("healNpcOT"));
+                t.insert("turns", toml_edit::Value::from(*turns as i64));
+            } else {
+                t.insert("type", toml_edit::Value::from("healNpc"));
+            }
+            t.insert("npc_id", toml_edit::Value::from(npc.clone()));
+            t.insert("cause", toml_edit::Value::from(cause.clone()));
+            t.insert("amount", toml_edit::Value::from(*amount as i64));
+            toml_edit::Value::from(t)
+        },
+        ActionAst::RemoveNpcEffect { npc, cause } => {
+            let mut t = InlineTable::new();
+            t.insert("type", toml_edit::Value::from("removeNpcEffect"));
+            t.insert("npc_id", toml_edit::Value::from(npc.clone()));
+            t.insert("cause", toml_edit::Value::from(cause.clone()));
             toml_edit::Value::from(t)
         },
         ActionAst::RemoveFlag(name) => {
@@ -2211,6 +2337,9 @@ fn leaf_condition_inline(c: &ConditionAst) -> InlineTable {
             t.insert("type", toml_edit::Value::from("flagComplete"));
             t.insert("flag", toml_edit::Value::from(flag.clone()));
         },
+        ConditionAst::PlayerDeath | ConditionAst::NpcDeath(_) => {
+            t.insert("type", toml_edit::Value::from("unknown"));
+        },
         ConditionAst::WithNpc(npc) => {
             t.insert("type", toml_edit::Value::from("withNpc"));
             t.insert("npc_id", toml_edit::Value::from(npc.clone()));
@@ -2223,7 +2352,7 @@ fn leaf_condition_inline(c: &ConditionAst) -> InlineTable {
         ConditionAst::NpcInState { npc, state } => {
             t.insert("type", toml_edit::Value::from("npcInState"));
             t.insert("npc_id", toml_edit::Value::from(npc.clone()));
-            t.insert("state", toml_edit::Value::from(state.clone()));
+            t.insert("state", npc_state_value_to_value(state));
         },
         ConditionAst::ContainerHasItem { container, item } => {
             t.insert("type", toml_edit::Value::from("containerHasItem"));
@@ -3089,6 +3218,123 @@ trigger "misc actions" when enter room lab {
         assert!(toml.contains("type = \"sequence\""));
         assert!(toml.contains("name = \"quest\""));
         assert!(toml.contains("end = 3"));
+    }
+
+    #[test]
+    fn npc_state_condition_emits_custom_table() {
+        let src = r#"
+trigger "state check" when give item poison_bottle to npc the_luggage {
+  if npc in state the_luggage custom:hungry {
+    do show "hungry luggage"
+  }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        match &ast.conditions[0] {
+            ConditionAst::NpcInState { npc, state } => {
+                assert_eq!(npc, "the_luggage");
+                assert!(matches!(state, NpcStateValue::Custom(s) if s == "hungry"));
+            },
+            other => panic!("unexpected condition: {other:?}"),
+        }
+        let toml = compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("type = \"npcInState\""));
+        assert!(toml.contains("npc_id = \"the_luggage\""));
+        assert!(toml.contains("custom = \"hungry\""));
+    }
+
+    #[test]
+    fn parse_and_compile_health_actions() {
+        let src = r#"
+trigger "health actions" when always {
+  do damage player 3 cause "trap"
+  do damage player 2 for 3 turns cause "poison"
+  do heal player 4 cause "potion"
+  do heal player 1 for 2 turns cause "regen"
+  do remove player effect "poison"
+  do damage npc guard 5 cause "fireball"
+  do damage npc guard 1 for 2 turns cause "burn"
+  do heal npc guard 2 cause "bandage"
+  do heal npc guard 1 for 3 turns cause "regen-cloud"
+  do remove npc guard effect "burn"
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::DamagePlayer { amount, turns, cause } if *amount == 3 && turns.is_none() && cause == "trap"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::DamagePlayer { amount, turns, cause } if *amount == 2 && matches!(turns, Some(3)) && cause == "poison"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::HealPlayer { amount, turns, cause } if *amount == 4 && turns.is_none() && cause == "potion"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::HealPlayer { amount, turns, cause } if *amount == 1 && matches!(turns, Some(2)) && cause == "regen"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::RemovePlayerEffect { cause } if cause == "poison"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::DamageNpc { npc, amount, turns, cause } if npc == "guard" && *amount == 5 && turns.is_none() && cause == "fireball"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::DamageNpc { npc, amount, turns, cause } if npc == "guard" && *amount == 1 && matches!(turns, Some(2)) && cause == "burn"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::HealNpc { npc, amount, turns, cause } if npc == "guard" && *amount == 2 && turns.is_none() && cause == "bandage"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::HealNpc { npc, amount, turns, cause } if npc == "guard" && *amount == 1 && matches!(turns, Some(3)) && cause == "regen-cloud"
+        )));
+        assert!(ast.actions.iter().any(|a| matches!(
+            &a.action,
+            ActionAst::RemoveNpcEffect { npc, cause } if npc == "guard" && cause == "burn"
+        )));
+
+        let toml = compile_trigger_to_toml(&ast).expect("compile ok");
+        assert!(toml.contains("type = \"damagePlayer\""));
+        assert!(toml.contains("type = \"damagePlayerOT\""));
+        assert!(toml.contains("type = \"healPlayer\""));
+        assert!(toml.contains("type = \"healPlayerOT\""));
+        assert!(toml.contains("type = \"removePlayerEffect\""));
+        assert!(toml.contains("type = \"damageNpc\""));
+        assert!(toml.contains("type = \"damageNpcOT\""));
+        assert!(toml.contains("type = \"healNpc\""));
+        assert!(toml.contains("type = \"healNpcOT\""));
+        assert!(toml.contains("type = \"removeNpcEffect\""));
+    }
+
+    #[test]
+    fn parse_and_compile_death_events() {
+        let player_src = r#"
+trigger "player demise" when player dies {
+  do show "You feel everything fade."
+}
+"#;
+        let npc_src = r#"
+trigger "npc demise" when npc guard dies {
+  do show "The guard drops to the ground."
+}
+"#;
+
+        let player_ast = parse_trigger(player_src).expect("parse ok");
+        let player_toml = compile_trigger_to_toml(&player_ast).expect("compile ok");
+        assert!(player_toml.contains("type = \"playerDeath\""));
+
+        let npc_ast = parse_trigger(npc_src).expect("parse ok");
+        let npc_toml = compile_trigger_to_toml(&npc_ast).expect("compile ok");
+        assert!(npc_toml.contains("type = \"npcDeath\""));
+        assert!(npc_toml.contains("npc_id = \"guard\""));
     }
 
     #[test]

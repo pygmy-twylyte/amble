@@ -52,6 +52,7 @@ pub enum TriggerCondition {
         item_id: Uuid,
         mode: IngestMode,
     },
+    PlayerDeath,
     Insert {
         item: Uuid,
         container: Uuid,
@@ -60,6 +61,7 @@ pub enum TriggerCondition {
     LookAt(Uuid),
     MissingFlag(String),
     MissingItem(Uuid),
+    NpcDeath(Uuid),
     NpcHasItem {
         npc_id: Uuid,
         item_id: Uuid,
@@ -158,6 +160,7 @@ impl TriggerCondition {
 mod tests {
     use super::*;
     use crate::{
+        health::HealthState,
         item::{ContainerState, Item},
         npc::{Npc, NpcState},
         player::Flag,
@@ -231,6 +234,7 @@ mod tests {
             dialogue: HashMap::new(),
             state,
             movement: None,
+            health: HealthState::new_at_max(20),
         }
     }
 

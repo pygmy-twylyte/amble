@@ -80,6 +80,7 @@ use std::hash::BuildHasher;
 use uuid::Uuid;
 
 use crate::Item;
+use crate::health::{HealthEffect, LifeState, LivingEntity};
 use crate::helpers::{symbol_from_id, symbol_or_unknown};
 use crate::item::{ContainerState, ItemAbility, ItemHolder};
 use crate::npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState, move_npc};
@@ -145,6 +146,36 @@ use crate::world::{AmbleWorld, Location, WorldObject};
 /// - `SpinnerMessage` - Displays a random message from a spinner
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TriggerAction {
+    /// Cause physical harm to an NPC once.
+    DamageNpc { npc_id: Uuid, cause: String, amount: u32 },
+    /// Cause physical harm to an NPC over multiple turns.
+    DamageNpcOT {
+        npc_id: Uuid,
+        cause: String,
+        amount: u32,
+        turns: u32,
+    },
+    /// Heal an NPC once.
+    HealNpc { npc_id: Uuid, cause: String, amount: u32 },
+    /// Hean an NPC over multiple turns.
+    HealNpcOT {
+        npc_id: Uuid,
+        cause: String,
+        amount: u32,
+        turns: u32,
+    },
+    /// Remove a pending health effect from an NPC by cause.
+    RemoveNpcEffect { npc_id: Uuid, cause: String },
+    /// Cause physical harm to the player once.
+    DamagePlayer { cause: String, amount: u32 },
+    /// Cause physical harm to the player over multiple turns.
+    DamagePlayerOT { cause: String, amount: u32, turns: u32 },
+    /// Heal the player a specified amount once.
+    HealPlayer { cause: String, amount: u32 },
+    /// Heal the player a specified amount for multiple turns.
+    HealPlayerOT { cause: String, amount: u32, turns: u32 },
+    /// Remove a pending health effect from the player by cause.
+    RemovePlayerEffect { cause: String },
     /// Set the activity state of an NPC
     SetNpcActive { npc_id: Uuid, active: bool },
     /// Set the `ContainerState` of an Item
@@ -282,15 +313,64 @@ impl ScriptedAction {
 #[allow(clippy::too_many_lines)]
 pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, scripted: &ScriptedAction) -> Result<()> {
     use TriggerAction::{
-        AddFlag, AddSpinnerWedge, AdvanceFlag, AwardPoints, Conditional, DenyRead, DespawnItem, DespawnNpc,
-        GiveItemToPlayer, LockExit, LockItem, ModifyItem, ModifyNpc, ModifyRoom, NpcRefuseItem, NpcSays, NpcSaysRandom,
-        PushPlayerTo, RemoveFlag, ReplaceDropItem, ReplaceItem, ResetFlag, RestrictItem, RevealExit, ScheduleIn,
-        ScheduleInIf, ScheduleOn, ScheduleOnIf, SetBarredMessage, SetContainerState, SetItemDescription, SetNPCState,
-        SetNpcActive, ShowMessage, SpawnItemCurrentRoom, SpawnItemInContainer, SpawnItemInInventory, SpawnItemInRoom,
-        SpawnNpcInRoom, SpinnerMessage, UnlockExit, UnlockItem,
+        AddFlag, AddSpinnerWedge, AdvanceFlag, AwardPoints, Conditional, DamageNpc, DamageNpcOT, DamagePlayer,
+        DamagePlayerOT, DenyRead, DespawnItem, DespawnNpc, GiveItemToPlayer, HealNpc, HealNpcOT, HealPlayer,
+        HealPlayerOT, LockExit, LockItem, ModifyItem, ModifyNpc, ModifyRoom, NpcRefuseItem, NpcSays, NpcSaysRandom,
+        PushPlayerTo, RemoveFlag, RemoveNpcEffect, RemovePlayerEffect, ReplaceDropItem, ReplaceItem, ResetFlag,
+        RestrictItem, RevealExit, ScheduleIn, ScheduleInIf, ScheduleOn, ScheduleOnIf, SetBarredMessage,
+        SetContainerState, SetItemDescription, SetNPCState, SetNpcActive, ShowMessage, SpawnItemCurrentRoom,
+        SpawnItemInContainer, SpawnItemInInventory, SpawnItemInRoom, SpawnNpcInRoom, SpinnerMessage, UnlockExit,
+        UnlockItem,
     };
     let ScriptedAction { action, priority } = scripted;
     match action {
+        DamageNpc { npc_id, cause, amount } => {
+            let npc = world
+                .npcs
+                .get_mut(npc_id)
+                .with_context(|| "npc lookup for damage_NPC")?;
+            damage_character(npc, cause, *amount);
+        },
+        DamageNpcOT {
+            npc_id,
+            cause,
+            amount,
+            turns,
+        } => {
+            let npc = world
+                .npcs
+                .get_mut(npc_id)
+                .with_context(|| "npc lookup for damage_npc_ot")?;
+            damage_character_ot(npc, cause, *amount, *turns);
+        },
+        HealNpc { npc_id, cause, amount } => {
+            let npc = world.npcs.get_mut(npc_id).with_context(|| "npc lookup for heal_NPC")?;
+            heal_character(npc, cause, *amount);
+        },
+        HealNpcOT {
+            npc_id,
+            cause,
+            amount,
+            turns,
+        } => {
+            let npc = world
+                .npcs
+                .get_mut(npc_id)
+                .with_context(|| "npc lookup for heal_npc_ot")?;
+            heal_character_ot(npc, cause, *amount, *turns);
+        },
+        RemoveNpcEffect { npc_id, cause } => {
+            let npc = world
+                .npcs
+                .get_mut(npc_id)
+                .with_context(|| "npc lookup for remove_npc_effect")?;
+            remove_health_effect(npc, cause, "npc");
+        },
+        DamagePlayer { cause, amount } => damage_character(&mut world.player, cause, *amount),
+        DamagePlayerOT { cause, amount, turns } => damage_character_ot(&mut world.player, cause, *amount, *turns),
+        HealPlayer { cause, amount } => heal_character(&mut world.player, cause, *amount),
+        HealPlayerOT { cause, amount, turns } => heal_character_ot(&mut world.player, cause, *amount, *turns),
+        RemovePlayerEffect { cause } => remove_health_effect(&mut world.player, cause, "player"),
         ModifyItem { item_id, patch } => modify_item(world, *item_id, patch)?,
         ModifyRoom { room_id, patch } => modify_room(world, *room_id, patch)?,
         ModifyNpc { npc_id, patch } => modify_npc(world, *npc_id, patch)?,
@@ -507,6 +587,52 @@ pub struct NpcPatch {
  * ACTION HANDLERS
  *
  */
+
+/// Cause a specified amount of damage to a character, once, when the turn advances.
+pub fn damage_character(target: &mut impl LivingEntity, cause: &str, amount: u32) {
+    target.add_health_effect(HealthEffect::InstantDamage {
+        cause: cause.to_string(),
+        amount,
+    });
+}
+
+/// Cause a specified amount of damage to a character each turn for a specified number of turns.
+pub fn damage_character_ot(target: &mut impl LivingEntity, cause: &str, amount: u32, turns: u32) {
+    target.add_health_effect(HealthEffect::DamageOverTime {
+        cause: cause.into(),
+        amount,
+        times: turns,
+    });
+}
+
+/// Heal a character a specified amount, once, on the next turn taken.
+pub fn heal_character(target: &mut impl LivingEntity, cause: &str, amount: u32) {
+    target.add_health_effect(HealthEffect::InstantHeal {
+        cause: cause.to_string(),
+        amount,
+    });
+}
+
+/// Heal a character a certain amount each turn for a specified number of turns.
+pub fn heal_character_ot(target: &mut impl LivingEntity, cause: &str, amount: u32, turns: u32) {
+    target.add_health_effect(HealthEffect::HealOverTime {
+        cause: cause.into(),
+        amount,
+        times: turns,
+    });
+}
+
+/// Remove a queued health effect from a character by cause string.
+pub fn remove_health_effect(target: &mut impl LivingEntity, cause: &str, target_label: &str) {
+    let removed = target.remove_health_effect(cause);
+    let name = target.name();
+    match removed {
+        Some(_) => info!("└─ action: removed health effect '{cause}' from {target_label} {name}"),
+        None => info!("└─ action: no health effect '{cause}' found on {target_label} {name}"),
+    }
+}
+
+/// Cause damage to a character over a specified number of turns.
 
 /// Modifies multiple properties of an `Item` at once by applying an `ItemPatch`.
 ///
@@ -823,6 +949,10 @@ pub fn despawn_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid) -> Res
 /// Returns an error if the NPC does not exist in the world.
 pub fn set_npc_active(world: &mut AmbleWorld, npc_id: &Uuid, active: bool) -> Result<()> {
     if let Some(npc) = world.npcs.get_mut(npc_id) {
+        if matches!(npc.life_state(), LifeState::Dead) {
+            warn!("attempted to change activity of dead NPC {}", npc.symbol());
+            return Ok(());
+        }
         if let Some(ref mut mvmt) = npc.movement {
             mvmt.active = active;
         }
@@ -976,17 +1106,24 @@ pub fn npc_refuse_item(
     reason: &str,
     priority: Option<isize>,
 ) -> Result<()> {
-    npc_says(world, view, &npc_id, reason, priority)?;
-    let npc_name = world
+    let npc = world
         .npcs
         .get(&npc_id)
-        .with_context(|| "looking up NPC {npc_id} during item refusal")?
-        .name();
+        .with_context(|| "failed npc lookup".to_string())?;
+    if matches!(npc.life_state(), LifeState::Dead) {
+        // this action should only be called after a "give to npc" event is triggered, and
+        // that already will have checked for death and reported to the player; this should
+        // never occur unless npc_refuse_item is used in some nonstandard way.
+        info!("bypassing refuse_item action for dead NPC '{}'", npc.name());
+        return Ok(());
+    }
+    npc_says(world, view, &npc_id, reason, priority)?;
+
     view.push_with_custom_priority(
-        ViewItem::TriggeredEvent(format!("{} returns it to you.", npc_name.npc_style())),
+        ViewItem::TriggeredEvent(format!("{} returns it to you.", npc.name().npc_style())),
         priority,
     );
-    info!("└─ action: NpcRefuseItem({npc_name}, \"{reason}\"");
+    info!("└─ action: NpcRefuseItem({}, \"{reason}\"", npc.name());
     Ok(())
 }
 
@@ -1213,6 +1350,10 @@ pub fn npc_says_random(world: &AmbleWorld, view: &mut View, npc_id: &Uuid, prior
         .npcs
         .get(npc_id)
         .with_context(|| format!("action NpcSaysRandom({npc_id}): npc not found"))?;
+    if matches!(npc.life_state(), LifeState::Dead) {
+        info!("bypassing speech for dead NPC '{}'", npc.symbol());
+        return Ok(());
+    }
     let ignore_spinner = world
         .spinners
         .get(&SpinnerType::Core(CoreSpinnerType::NpcIgnore))
@@ -1256,19 +1397,22 @@ pub fn npc_says(
     quote: &str,
     priority: Option<isize>,
 ) -> Result<()> {
-    let npc_name = world
+    let npc = world
         .npcs
         .get(npc_id)
-        .with_context(|| format!("action NpcSays({npc_id},_): npc not found"))?
-        .name();
+        .with_context(|| format!("action NpcSays({npc_id},_): npc not found"))?;
+    if matches!(npc.life_state(), LifeState::Dead) {
+        info!("blocked speech for dead NPC '{}'", npc.symbol());
+        return Ok(());
+    }
     view.push_with_custom_priority(
         ViewItem::NpcSpeech {
-            speaker: npc_name.to_string(),
+            speaker: npc.name.to_string(),
             quote: quote.to_string(),
         },
         priority,
     );
-    info!("└─ action: NpcSays({npc_name}, \"{quote}\")");
+    info!("└─ action: NpcSays({}, \"{quote}\")", npc.name());
     Ok(())
 }
 
@@ -1896,10 +2040,13 @@ pub fn give_to_player(world: &mut AmbleWorld, npc_id: &Uuid, item_id: &Uuid) -> 
         npc.remove_item(*item_id);
         world.player.add_item(*item_id);
         info!("└─ action: GiveItemToPlayer({}, {})", npc.symbol(), item.symbol());
-        Ok(())
     } else {
-        bail!("item {} not found in NPC {} inventory", item_id, npc_id);
+        error!(
+            "item {} not found in NPC {} inventory to give to player",
+            item_id, npc_id
+        );
     }
+    Ok(())
 }
 
 /// Completely removes an item from the world.
@@ -1933,7 +2080,11 @@ pub fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
         .get_mut(item_id)
         .ok_or_else(|| anyhow!("unknown item {}", item_id))?;
     let prev_loc = std::mem::replace(&mut item.location, Location::Nowhere);
-    info!("└─ action: DespawnItem({})", item.symbol());
+    info!(
+        "└─ action: DespawnItem({}) - removing from {:?}",
+        item.symbol(),
+        prev_loc
+    );
     match prev_loc {
         Location::Room(id) => {
             if let Some(r) = world.rooms.get_mut(&id) {
@@ -2320,6 +2471,7 @@ pub fn schedule_on_if_flag_missing(
 mod tests {
     use super::*;
     use crate::{
+        health::{HealthEffect, HealthState},
         item::{ContainerState, Item},
         npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState},
         player::Flag,
@@ -2611,7 +2763,170 @@ mod tests {
             dialogue: HashMap::new(),
             state,
             movement: None,
+            health: HealthState::new_at_max(10),
         }
+    }
+
+    #[test]
+    fn damage_player_action_applies_on_next_tick() {
+        let mut world = AmbleWorld::new_empty();
+        world.player.name = "Tester".into();
+        world.player.health = HealthState::new_at_max(10);
+        let mut view = View::new();
+
+        let action = ScriptedAction::new(TriggerAction::DamagePlayer {
+            cause: "trap".into(),
+            amount: 3,
+        });
+        dispatch_action(&mut world, &mut view, &action).unwrap();
+
+        // effect is queued, not applied immediately
+        assert_eq!(world.player.current_hp(), 10);
+
+        let applied = world.player.tick_health_effects();
+        assert_eq!(world.player.current_hp(), 7);
+        assert!(applied.view_items.contains(&ViewItem::CharacterHarmed {
+            name: "Tester".into(),
+            cause: "trap".into(),
+            amount: 3,
+        }));
+    }
+
+    #[test]
+    fn heal_player_over_time_saturates_and_expires() {
+        let mut world = AmbleWorld::new_empty();
+        world.player.name = "Tester".into();
+        world.player.health = HealthState::new_at_max(10);
+        world.player.damage(5);
+        let mut view = View::new();
+
+        let action = ScriptedAction::new(TriggerAction::HealPlayerOT {
+            cause: "regen".into(),
+            amount: 3,
+            turns: 2,
+        });
+        dispatch_action(&mut world, &mut view, &action).unwrap();
+        assert_eq!(world.player.current_hp(), 5);
+
+        // first tick heals and leaves a follow-up effect
+        let first_tick = world.player.tick_health_effects();
+        assert_eq!(world.player.current_hp(), 8);
+        assert_eq!(world.player.health.effects.len(), 1);
+        assert!(first_tick.view_items.contains(&ViewItem::CharacterHealed {
+            name: "Tester".into(),
+            cause: "regen".into(),
+            amount: 3,
+        }));
+
+        // second tick heals up to max and clears the effect
+        world.player.damage(1); // drop below max to exercise saturation logic
+        let second_tick = world.player.tick_health_effects();
+        assert_eq!(world.player.current_hp(), 10);
+        assert!(world.player.health.effects.is_empty());
+        assert!(second_tick.view_items.contains(&ViewItem::CharacterHealed {
+            name: "Tester".into(),
+            cause: "regen".into(),
+            amount: 3,
+        }));
+    }
+
+    #[test]
+    fn damage_npc_over_time_ticks_each_turn() {
+        let (mut world, room_id, _) = build_test_world();
+        let npc_id = Uuid::new_v4();
+        world
+            .npcs
+            .insert(npc_id, make_npc(npc_id, Location::Room(room_id), NpcState::Normal));
+        let mut view = View::new();
+
+        let action = ScriptedAction::new(TriggerAction::DamageNpcOT {
+            npc_id,
+            cause: "acid".into(),
+            amount: 2,
+            turns: 2,
+        });
+        dispatch_action(&mut world, &mut view, &action).unwrap();
+
+        // queued only
+        assert_eq!(world.npcs.get(&npc_id).unwrap().current_hp(), 10);
+
+        let first_tick = world.npcs.get_mut(&npc_id).unwrap().tick_health_effects();
+        assert_eq!(world.npcs.get(&npc_id).unwrap().current_hp(), 8);
+        assert_eq!(world.npcs.get(&npc_id).unwrap().health.effects.len(), 1);
+        assert!(first_tick.view_items.iter().any(|item| {
+            matches!(
+                item,
+                ViewItem::CharacterHarmed { cause, amount, .. }
+                if cause == "acid" && *amount == 2
+            )
+        }));
+
+        let second_tick = world.npcs.get_mut(&npc_id).unwrap().tick_health_effects();
+        assert_eq!(world.npcs.get(&npc_id).unwrap().current_hp(), 6);
+        assert!(world.npcs.get(&npc_id).unwrap().health.effects.is_empty());
+        assert!(second_tick.view_items.iter().any(|item| {
+            matches!(
+                item,
+                ViewItem::CharacterHarmed { cause, amount, .. }
+                if cause == "acid" && *amount == 2
+            )
+        }));
+    }
+
+    #[test]
+    fn remove_player_effect_action_removes_matching_effect() {
+        let mut world = AmbleWorld::new_empty();
+        world.player.name = "Tester".into();
+        world.player.health = HealthState::new_at_max(10);
+        world.player.health.effects = vec![
+            HealthEffect::DamageOverTime {
+                cause: "poison".into(),
+                amount: 1,
+                times: 3,
+            },
+            HealthEffect::InstantHeal {
+                cause: "bandage".into(),
+                amount: 1,
+            },
+        ];
+        let mut view = View::new();
+
+        let action = ScriptedAction::new(TriggerAction::RemovePlayerEffect { cause: "poison".into() });
+        dispatch_action(&mut world, &mut view, &action).unwrap();
+
+        assert_eq!(world.player.health.effects.len(), 1);
+        assert!(matches!(
+            world.player.health.effects[0],
+            HealthEffect::InstantHeal { .. }
+        ));
+    }
+
+    #[test]
+    fn remove_npc_effect_action_clears_effect_and_is_idempotent() {
+        let (mut world, room_id, _) = build_test_world();
+        let npc_id = Uuid::new_v4();
+        let mut npc = make_npc(npc_id, Location::Room(room_id), NpcState::Normal);
+        npc.health.effects.push(HealthEffect::DamageOverTime {
+            cause: "burn".into(),
+            amount: 2,
+            times: 2,
+        });
+        world.npcs.insert(npc_id, npc);
+        let mut view = View::new();
+
+        let action = ScriptedAction::new(TriggerAction::RemoveNpcEffect {
+            npc_id,
+            cause: "burn".into(),
+        });
+        dispatch_action(&mut world, &mut view, &action).unwrap();
+        assert!(world.npcs.get(&npc_id).unwrap().health.effects.is_empty());
+
+        let repeat = ScriptedAction::new(TriggerAction::RemoveNpcEffect {
+            npc_id,
+            cause: "burn".into(),
+        });
+        dispatch_action(&mut world, &mut view, &repeat).unwrap();
+        assert!(world.npcs.get(&npc_id).unwrap().health.effects.is_empty());
     }
 
     #[test]

@@ -48,6 +48,7 @@ use std::collections::HashMap;
 
 use crate::{
     AmbleWorld, ItemHolder, Location, View, ViewItem, WorldObject,
+    health::{LifeState, LivingEntity},
     helpers::symbol_or_unknown,
     npc::Npc,
     repl::{entity_not_found, find_world_object},
@@ -128,6 +129,15 @@ fn select_npc<'a>(location: &Location, world_npcs: &'a HashMap<Uuid, Npc>, query
 pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) -> Result<()> {
     // find one that matches npc_name in present room
     let sent_id = if let Some(npc) = select_npc(world.player.location(), &world.npcs, npc_name) {
+        // disallow talking to the dead
+        if matches!(npc.life_state(), LifeState::Dead) {
+            info!("talking to dead NPC {} disallowed", npc.symbol());
+            view.push(ViewItem::ActionFailure(format!(
+                "Sorry - {} is dead and there is no Ouija board in sight.",
+                npc.name().npc_style()
+            )));
+            return Ok(());
+        }
         npc.id()
     } else {
         entity_not_found(world, view, npc_name);
@@ -220,6 +230,14 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
     let (npc_id, npc_name) = if let Some(entity) = find_world_object(&current_room.npcs, &world.items, &world.npcs, npc)
     {
         if let Some(npc) = entity.npc() {
+            if matches!(npc.life_state(), LifeState::Dead) {
+                info!("gift to dead npc {} disallowed", npc.symbol());
+                view.push(ViewItem::ActionFailure(format!(
+                    "Sorry -- {} is dead, and cannot accept your gift.",
+                    npc.name().npc_style()
+                )));
+                return Ok(());
+            }
             (npc.id(), npc.name.to_string())
         } else {
             view.push(ViewItem::Error(format!(
@@ -282,21 +300,32 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
 
     // the trigger fired -- proceed with item transfer if it wasn't a refusal
     if fired && !refused {
-        // set new location in NPC on world item
-        world
-            .get_item_mut(item_id)
+        // The item may be despawned by a fired trigger -- so we skip
+        // the location transfer below if the item is "nowhere" (otherwise the despawned
+        // item winds up in the NPCs inventory anyway.)
+        if world
+            .items
+            .get(&item_id)
             .with_context(|| format!("looking up item {item_id}"))?
-            .set_location_npc(npc_id);
+            .location
+            .is_not_nowhere()
+        {
+            // set new location in NPC on world item
+            world
+                .get_item_mut(item_id)
+                .with_context(|| format!("looking up item {item_id}"))?
+                .set_location_npc(npc_id);
 
-        // add to npc inventory
-        world
-            .npcs
-            .get_mut(&npc_id)
-            .with_context(|| format!("looking up NPC {npc_id}"))?
-            .add_item(item_id);
+            // add to npc inventory
+            world
+                .npcs
+                .get_mut(&npc_id)
+                .with_context(|| format!("looking up NPC {npc_id}"))?
+                .add_item(item_id);
 
-        // remove from player inventory
-        world.player.remove_item(item_id);
+            // remove from player inventory
+            world.player.remove_item(item_id);
+        }
         check_triggers(world, view, &[TriggerCondition::Drop(item_id)])?;
 
         // report and log success

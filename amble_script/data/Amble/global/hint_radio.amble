@@ -10,16 +10,16 @@
 # To create a hint radio trigger that fires only once and only when appropriate:
 # trigger "Trigger Name" only once
 # when <activates situation that may require hint> {
-    #   do schedule in 2
-    #   if any(
-    #       all( <conditions for when hint should be given> ),
-    #       <condition when hint will never be needed (puzzle solved or failed)>
-    #   ) onFalse retryNextTurn {
-        #       if all(<same conditions for when hint should be given) {
-            #           <give the hint>
-            #       }
-        #   }
-    #   }
+#   do schedule in 2
+#   if any(
+#       all( <conditions for when hint should be given> ),
+#       <condition when hint will never be needed (puzzle solved or failed)>
+#   ) onFalse retryNextTurn {
+#       if all(<same conditions for when hint should be given) {
+#           <give the hint>
+#       }
+#   }
+#   }
 
 item hint_radio {
     name "HINT Radio (off)"
@@ -71,6 +71,7 @@ npc hint_radio_npc {
     name "HINT Radio"
     desc "<Player should never see this since the NPC will never be spawned.>"
     location nowhere "never spawn -- used for voice from HINT radio"
+    max_hp 10
     state normal
     dialogue normal {
         "(static)"

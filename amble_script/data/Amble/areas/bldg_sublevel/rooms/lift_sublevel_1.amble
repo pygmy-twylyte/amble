@@ -33,10 +33,11 @@ item aa_3_button_sublevel {
 trigger "[Sublevel Lift] Press Main Button"
 when touch item main_button_sublevel {
     do push player to lift-main
-    do show r#"The elevator shouts "Yeeee-Haw!", and you're off literally like a rocket, accelerating and pressed into the floor of the elevator for what seems like a minute. You decelerate nearly as quickly, slamming into the elevator ceiling and then falling again when you arrive at the main level. "Have a WONDERFUL day!", it intones as the doors slide softly open."#
+    do show r#"The elevator shouts "Yeeee-Haw!", and you're off literally like a rocket, accelerating and pressed into the floor of the elevator for what seems like a minute. You decelerate nearly as quickly, slamming into the elevator ceiling and then falling again when you arrive at the main level. "Have a WONDERFUL day!", the lift intones gleefully as the doors slide softly open."#
+    do damage player 1 cause "elevator deceleration"
 }
 
 trigger "[Sublevel Lift] Press AA-3 Button"
 when touch item aa_3_button_sublevel {
-    do show "The elevator closes and opens its doors a few times, as if to show you that you're already at that level."
+    do show "The elevator closes and then opens its doors a few times, as if to show you that you're already on that level."
 }

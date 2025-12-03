@@ -512,6 +512,8 @@ fn summarize_trigger_condition(world: &AmbleWorld, tc: &TriggerCondition) -> Str
             symbol_or_unknown(&world.items, *target_id),
             format!("{interaction:?}").to_lowercase()
         ),
+        TriggerCondition::PlayerDeath => "playerDeath".to_string(),
+        TriggerCondition::NpcDeath(npc_id) => format!("npcDeath:{}", symbol_or_unknown(&world.npcs, *npc_id)),
         TriggerCondition::TalkToNpc(npc) => format!("talkToNpc:{}", symbol_or_unknown(&world.npcs, *npc)),
         TriggerCondition::ActOnItem { target_id, action } => format!(
             "actOnItem:{}:{}",
@@ -577,6 +579,7 @@ mod tests {
     use super::*;
     use crate::{
         AmbleWorld, View, ViewItem,
+        health::HealthState,
         player::{Flag, Player},
     };
 
@@ -747,6 +750,7 @@ mod tests {
             dialogue: HashMap::new(),
             state: crate::npc::NpcState::Normal,
             movement: None,
+            health: HealthState::new_at_max(10),
         };
         world.npcs.insert(npc.id, npc);
 
