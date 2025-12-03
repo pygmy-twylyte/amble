@@ -32,7 +32,7 @@ npc black_knight {
 # ========================================
 item dull_longsword {
     name "Dull Longsword"
-    desc "The Black Knight's masterfully forged longsword, dulled from years of hacking up those who absolutelyinsist upon passing."
+    desc "The Black Knight's masterfully forged longsword, dulled from years of hacking up those who absolutely *insist* upon passing."
     portable true
     location npc black_knight
 }

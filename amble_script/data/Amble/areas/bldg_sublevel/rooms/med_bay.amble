@@ -10,7 +10,7 @@ room med-bay {
         happy  "The EMH smiles and hums a bright tune while adjusting the diagnostic displays."
         custom(want-emitter) "The EMH fidgets restlessly, casting longing glances toward the door as if craving a mobile emitter."
     }
-    exit west -> corridor-north
+    exit "north corridor" -> corridor-north
 }
 
 # ========================================
@@ -18,7 +18,7 @@ room med-bay {
 # ========================================
 
 item emh_button {
-    name "Button: Activate E.M.H."
+    name "[E-M-H] Button"
     desc "A large red button mounted to the wall next to the bio-bed, used to summon the Emergency Medical Hologram."
     portable false
     location room med-bay

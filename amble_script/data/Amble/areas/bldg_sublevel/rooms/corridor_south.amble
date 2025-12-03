@@ -1,6 +1,6 @@
 room corridor-south {
     name "Research Corridor (South)"
-    desc "The research corridor continues here, though the walls are noticeably more patched and hastily reinforced. Warning stripes mark a wide door to the west, and faint heat shimmers pulse across the floor, as if reality itself is running a fever. Somewhere far too close, a light flickers in time with your heartbeat."
-    exit north -> corridor-north
-    exit west -> monolith-room
+    desc "The research corridor continues here, though the walls are noticeably more patched and hastily reinforced. Warning stripes mark a wide door to the west, and faint heat shimmers pulse across the floor, as if reality itself is running a fever. Somewhere far too close, a light flickers in time with your quickening  pulse."
+    exit "toward the elevator" -> corridor-north
+    exit "wide striped door" -> monolith-room
 }

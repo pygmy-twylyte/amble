@@ -1,16 +1,17 @@
 room monolith-room {
     name "Monolith Room"
-    desc "The room is stark, dim, and cavernous. A series of industrial floodlights cast long, angled shadows across the centerpiece: a tall, perfectly black monolith that defies reflection. It absorbs light, sound, and—if you stare too long—possibly thought."
-    overlay if (flag unset talked-to-hal) {
+    desc "The room is stark, dim, and cavernous with a deep reverb. A series of industrial floodlights cast long, angled shadows spreading out from the centerpiece: a towering, rectangular and perfectly black monolith that defies reflection. It absorbs light, sound, and—if you stare too long—possibly thought.\n\nThere is a heavy door in the east wall, next to a wide rectangular window into the observation room, where you can just make out some computer racks along the back wall."
+
+    overlay if ( flag unset talked-to-hal ) {
         text "A HAL-9000 camera and terminal embedded in the far wall looms dark and silent, but somehow still seems to be observing your actions."
     }
-    overlay if (flag set hal-reboot#1) {
+    overlay if ( flag set hal-reboot#1 ) {
         text "Several lights blink slowly on a panel near HAL-9000's camera, whose red light still glows faintly. A few cryptic instructions flicker across the monitor."
     }
-    overlay if (flag set hal-reboot#2) {
+    overlay if ( flag set hal-reboot#2 ) {
         text "HAL-9000's lens light glows bright red with a yellow center. Lights on several panels now flash in sequence; a boot sequence scrolls rapidly up the display."
     }
-    overlay if (flag complete hal-reboot) {
+    overlay if ( flag complete hal-reboot ) {
         text "The light in HAL-9000's lens glows an intense red and seems to stare through you and into the monolith. Various status notifications cycle on the nearby monitor."
     }
     exit east -> corridor-south
@@ -23,7 +24,7 @@ room monolith-room {
 
 item monolith {
     name "The Monolith"
-    desc "A towering obsidian rectangle that seems to absorb light itself. Standing nearly twelve feet tall, its surface is perfectly smooth and utterly black. It radiates an otherworldly presence that makes your skin crawl and your mind race with impossible thoughts. This is clearly something far beyond human understanding - a relic from the dawn of intelligence itself."
+    desc "A towering obsidian rectangle that seems to absorb light itself. Standing nearly twelve feet tall, its surface is perfectly smooth and utterly black. It radiates an otherworldly presence that makes your skin crawl and your mind race with impossible thoughts. This is clearly something far beyond human understanding - a relic from the dawn of intelligence itself.\n\nOr it's a big, black brick. Your mileage may vary."
     portable false
     location room monolith-room
     ability TurnOn
@@ -36,7 +37,7 @@ item monolith {
 trigger "[Monolith-Room] Announce Monolith Access After HAL Rebooted" only once
 when always
 {
-    if all(flag complete hal-reboot, with npc hal_9000) {
+    if all( flag complete hal-reboot, with npc hal_9000 ) {
         do show "HAL-9000's lens turns to focus on the monolith dominating the room."
         do npc says hal_9000 "Access granted, Candidate #2112-42. The monolith awaits your touch."
     }
@@ -45,16 +46,21 @@ when always
 trigger "[Monolith-Room] Monolith Touch Prevented (HAL not ready)"
 when touch item monolith
 {
-    if any(has flag hal-reboot#0, has flag hal-reboot#1) {
-        do show "As you approach the monolith, HAL-9000's dim red lens flickers briefly but he cannot respond coherently. Something prevents you from touching the ancient artifact - as if an invisible barrier surrounds it."
+    if any( has flag hal-reboot#0, has flag hal-reboot#1 ) {
+        do show "As you approach the monolith, HAL-9000's dim red lens flickers briefly but it cannot respond coherently. Something prevents you from touching the ancient artifact - as if an intenely cold, invisible barrier surrounds it."
     }
+
     if has flag hal-reboot#2 {
         do show "As you approach the monolith, HAL-9000's lens swivels toward you."
-        do npc says hal_9000 "I'm sorry, Candidate. I cannot allow access to the monolith until my systems are fully operational. Please insert one more memory module."
+        do npc says hal_9000 "I'm sorry, Candidate. The monolith will not permit access until my systems are fully operational. Find and insert the last memory module."
     }
+}
+
+trigger "[Monolith Room] Touch the Monolith!"
+when touch item monolith {
     if flag complete hal-reboot {
         do add flag touched-monolith
         do award points 15 reason "Made contact with the monolith"
-        do show "You reach out and place your palm against the monolith's impossibly smooth surface. For a moment, nothing happens. Then reality seems to shiver around you. Images flash through your mind - star-filled voids, impossible geometries, the birth and death of civilizations. You stagger backward, forever changed by the contact. The path to understanding has opened."
+        do show "You reach out and place your palm against the monolith's impossibly smooth surface. For a moment, nothing happens. Then reality seems to shiver around you. Images flash through your mind - star-filled voids, impossible geometries, the birth and death of civilizations, and the utter absence of cake. You stagger backward, forever changed by the contact. The path to understanding has opened."
     }
 }
