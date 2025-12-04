@@ -687,13 +687,13 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                     target_item.name().item_style()
                 )));
             },
-            Some(ContainerState::Open) => {
+            Some(ContainerState::Open | ContainerState::TransparentOpen) => {
                 view.push(ViewItem::ActionSuccess(format!(
                     "The {} is already open.",
                     target_item.name().item_style()
                 )));
             },
-            Some(ContainerState::Closed | ContainerState::TransparentClosed) => {
+            Some(ContainerState::Closed) => {
                 // check to see if any particular interaction type is required to open
                 if let Some(required_ability) = target_item.interaction_requires.get(&ItemInteractionType::Open) {
                     view.push(ViewItem::ActionFailure(format!(
@@ -703,6 +703,19 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                     )));
                 } else {
                     target_item.container_state = Some(ContainerState::Open);
+                    container_opened = true;
+                }
+            },
+            Some(ContainerState::TransparentClosed) => {
+                // check to see if any particular interaction type is required to open
+                if let Some(required_ability) = target_item.interaction_requires.get(&ItemInteractionType::Open) {
+                    view.push(ViewItem::ActionFailure(format!(
+                        "The {} can't be opened without using something that can {}.",
+                        target_item.name().item_style(),
+                        required_ability.to_string().highlight()
+                    )));
+                } else {
+                    target_item.container_state = Some(ContainerState::TransparentOpen);
                     container_opened = true;
                 }
             },
@@ -818,6 +831,19 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
                     symbol_or_unknown(&world.items, uuid)
                 );
             },
+            Some(ContainerState::TransparentOpen) => {
+                target_item.container_state = Some(ContainerState::TransparentClosed);
+                view.push(ViewItem::ActionSuccess(format!(
+                    "You closed the {}.\n",
+                    target_item.name().item_style()
+                )));
+                info!(
+                    "{} closed the {} ({})",
+                    world.player.name(),
+                    name,
+                    symbol_or_unknown(&world.items, uuid)
+                );
+            },
         }
     }
     world.turn_count += 1;
@@ -892,8 +918,21 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                     target_item.name().item_style()
                 )));
             },
-            Some(ContainerState::Open | ContainerState::Closed | ContainerState::TransparentClosed) => {
+            Some(ContainerState::Open | ContainerState::Closed) => {
                 target_item.container_state = Some(ContainerState::Locked);
+                view.push(ViewItem::ActionSuccess(format!(
+                    "You locked the {}.\n",
+                    target_item.name().item_style()
+                )));
+                info!(
+                    "{} locked the {} ({})",
+                    world.player.name(),
+                    name,
+                    symbol_or_unknown(&world.items, uuid)
+                );
+            },
+            Some(ContainerState::TransparentOpen | ContainerState::TransparentClosed) => {
+                target_item.container_state = Some(ContainerState::TransparentLocked);
                 view.push(ViewItem::ActionSuccess(format!(
                     "You locked the {}.\n",
                     target_item.name().item_style()
@@ -985,7 +1024,12 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
                     target_item.name().item_style()
                 )));
             },
-            Some(ContainerState::Open | ContainerState::Closed | ContainerState::TransparentClosed) => {
+            Some(
+                ContainerState::Open
+                | ContainerState::TransparentOpen
+                | ContainerState::Closed
+                | ContainerState::TransparentClosed,
+            ) => {
                 view.push(ViewItem::ActionSuccess(format!(
                     "The {} is already unlocked.",
                     target_item.name().item_style()

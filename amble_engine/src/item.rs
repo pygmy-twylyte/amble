@@ -185,7 +185,7 @@ impl Item {
     /// Returns the reason the item can't be accessed (as a container), if any
     pub fn access_denied_reason(&self) -> Option<String> {
         match self.container_state {
-            Some(ContainerState::Open) => None,
+            Some(ContainerState::Open | ContainerState::TransparentOpen) => None,
             Some(ContainerState::Closed) => {
                 let reason = format!("The {} is {}.", self.name().item_style(), "closed".bold());
                 Some(reason)
@@ -225,7 +225,7 @@ impl Item {
                 self.name().item_style()
             )),
             (_, true) => Some(format!(
-                "You can't take the {}, but it may become available later.",
+                "You can't take the {} now, but it may become available later.",
                 self.name().item_style()
             )),
             _ => None,
@@ -401,6 +401,7 @@ pub enum ContainerState {
     Open,
     Closed,
     Locked,
+    TransparentOpen,
     TransparentClosed,
     TransparentLocked,
 }
