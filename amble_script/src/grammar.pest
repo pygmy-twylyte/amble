@@ -102,12 +102,14 @@ keyword = {
   "off"
   | "closed"
   | "locked"
+  | "transparentOpen"
   | "transparentClosed"
   | "transparentLocked"
   | "none"
 }
 
 ident_char = _{ ASCII_ALPHANUMERIC | "-" | ":" | "_" | "#" }
+
 // Disallow exact keywords, but allow identifiers that merely start with a keyword (e.g., "readable")
 ident = @{ !(keyword ~ !ident_char) ~ ident_char+ }
 
@@ -118,21 +120,26 @@ pos_int = @{ ASCII_NONZERO_DIGIT ~ ASCII_DIGIT* }
 escape      = _{ "\\" ~ ("n" | "r" | "t" | "\\" | "\"") }
 string_char = _{ escape | (!("\\" | "\"") ~ ANY) }
 quoted      = @{ "\"" ~ string_char* ~ "\"" }
+
 // Raw strings: r"..." (no escapes, cannot contain ")
 raw_quoted = @{ "r\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+
 // Hashed raw strings like Rust: r#"..."# up to 5 hashes
 raw_quoted_h1 = @{ "r#\"" ~ (!("\"#") ~ ANY)* ~ "\"#" }
 raw_quoted_h2 = @{ "r##\"" ~ (!("\"##") ~ ANY)* ~ "\"##" }
 raw_quoted_h3 = @{ "r###\"" ~ (!("\"###") ~ ANY)* ~ "\"###" }
 raw_quoted_h4 = @{ "r####\"" ~ (!("\"####") ~ ANY)* ~ "\"####" }
 raw_quoted_h5 = @{ "r#####\"" ~ (!("\"#####") ~ ANY)* ~ "\"#####" }
+
 // Triple-quoted strings: """ ... """ (allow newlines; supports escapes like quoted)
 triple_char   = _{ escape | !("\"\"\"") ~ ANY }
 triple_quoted = @{ "\"\"\"" ~ triple_char* ~ "\"\"\"" }
-// Unified string literal
+
 // Single-quoted strings: '...'
 single_quoted = @{ "'" ~ (escape | (!("\\" | "'") ~ ANY))* ~ "'" }
-string        = @{ triple_quoted | raw_quoted_h5 | raw_quoted_h4 | raw_quoted_h3 | raw_quoted_h2 | raw_quoted_h1 | raw_quoted | quoted | single_quoted }
+
+// Unified string literal
+string = @{ triple_quoted | raw_quoted_h5 | raw_quoted_h4 | raw_quoted_h3 | raw_quoted_h2 | raw_quoted_h1 | raw_quoted | quoted | single_quoted }
 
 program = { SOI ~ (set_decl | trigger | room_def | item_def | spinner_def | npc_def | goal_def)+ ~ EOI }
 
@@ -225,7 +232,7 @@ do_action        =  {
   | ("restrict" ~ "item" ~ ident)
   | ("give" ~ "item" ~ ident ~ "to" ~ "player" ~ "from" ~ "npc" ~ ident)
   | ("set" ~ "barred" ~ "message" ~ "from" ~ ident ~ "to" ~ ident ~ string)
-  | ("set" ~ "container" ~ "state" ~ ident ~ ("open" | "closed" | "locked" | "transparentClosed" | "transparentLocked" | "none"))
+  | ("set" ~ "container" ~ "state" ~ ident ~ ("open" | "closed" | "locked" | "transparentOpen" | "transparentClosed" | "transparentLocked" | "none"))
   | ("spinner" ~ "message" ~ ident)
   | ("modify" ~ "item" ~ ident ~ item_patch_block)
   | ("modify" ~ "room" ~ ident ~ room_patch_block)
@@ -250,7 +257,7 @@ item_portable_patch   = { "portable" ~ boolean }
 item_restricted_patch = { "restricted" ~ boolean }
 // turn item into a non-container; requires special handling in case the item isn't empty
 // setting container_state to "off" -> remove_container_state = true in resulting ItemPatch
-item_container_state_patch = { "container" ~ "state" ~ ("off" | "open" | "closed" | "locked" | "transparentClosed" | "transparentLocked") }
+item_container_state_patch = { "container" ~ "state" ~ ("off" | "open" | "closed" | "locked" | "transparentOpen" | "transparentClosed" | "transparentLocked") }
 item_add_ability           = { "add" ~ "ability" ~ ability_id }
 item_remove_ability        = { "remove" ~ "ability" ~ ability_id }
 ability_id                 = { ("Unlock" ~ "(" ~ ident ~ ")") | ident }
@@ -413,7 +420,7 @@ room_loc             = { "room" ~ ident }
 npc_loc              = { "npc" ~ ident }
 chest_loc            = { "chest" ~ ident }
 nowhere_loc          = { "nowhere" ~ string }
-item_container_state = { "container" ~ "state" ~ ("open" | "closed" | "locked" | "transparentClosed" | "transparentLocked" | "none") }
+item_container_state = { "container" ~ "state" ~ ("open" | "closed" | "locked" | "transparentOpen" | "transparentClosed" | "transparentLocked" | "none") }
 item_ability         = { "ability" ~ ident ~ ident? }
 item_text            = { "text" ~ string }
 item_restricted      = { "restricted" ~ boolean }
