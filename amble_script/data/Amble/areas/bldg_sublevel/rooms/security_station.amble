@@ -1,11 +1,15 @@
+# ========================================
+# Sublevel Security Station
+# ========================================
+
 room security-station {
     name "Level AA-3 Security"
-    desc "A compact but well-equipped station with reinforced blast doors, a wall of cracked CRT monitors, and a swivel chair. The space above the monitors is emblazoned with 'IN CASE OF EMERGENCY, RUN FASTER.' Paperwork is scattered across the floor, including an ominous memo titled 'AA-3B: Risk Management Recommendations.'"
+    desc "A compact but well-equipped station with reinforced blast doors, a wall of cracked CRT monitors, and a swivel chair. The space above the monitors is emblazoned with 'IN CASE OF EMERGENCY, RUN FASTER.' Paperwork is scattered across the floor, including an ominous memo titled 'AA-3B: Risk Ignorance Recommendations.'"
     overlay if item evidence_locker_closed {
         present "A heavy steel evidence locker is embedded in the wall. It's covered in dents, scratches, and scorch marks -- evidence of previous failed attempts to open it."
         absent "The heavy door of the evidence locker, having surrendered at last, hangs loosely from one of its hinges."
     }
-    exit west -> sublevel-1-entrance
+    exit out -> sublevel-1-entrance
 }
 
 # ========================================
@@ -38,8 +42,29 @@ item evidence_log {
 Item:   Tool (Weapon?)
 Place:  Monolith Room
 
-Event:  White male in his 30's found in the monolith room pointing this whirring item at the HAL terminal. Perpetrator states he was trying to fix it. Luckily, he failed. Confiscated the tool from him (he calls it a sonic screwdriver) to prevent any future attempts."""
+Event:  White male in his 30's found in the monolith room pointing this whirring item at the HAL terminal. Perpetrator states he was trying to fix it. Luckily, he failed. Confiscated the tool from him (he calls it a sonic screwdriver -- whatever that means) to prevent any future attempts."""
     ability Read
+}
+
+item risk_management_memo {
+    name "Risk Management Memo"
+    desc "A stern memo to all Amble Adventures staff working in the sublevel / AA-3B area."
+    portable true
+    location room security-station
+    text r#"From: Amble Adventures, Risk Ignorance Division
+
+    Attn: All Sublevel Staff
+
+    The recent wonderful, yet tragic events that unfolded in room AA-3B should not be recalled by any of you, assuming the memory wiping vapor from the biochemistry division has been effective. If you are bewildered by this statement, read no further and burn this memo immediately.
+
+    Now take few deep breaths and pause for 10 seconds. If you're now unsure why you're reading this (or what reading is), burn this memo immediately.
+
+    If you still recall the critical events in AA-3B and cannot reconcile paradoxical quantum cake states, DO NOT attempt to re-enter the containment area, and trust nothing that you see or hear. Or read. Trust us, when we say you should trust no one.
+
+    We never wrote this and do not, in fact, exist.
+    "#
+    ability Read
+    requires ignite to burn
 }
 
 # ========================================

@@ -75,7 +75,7 @@ trigger "[Sublevel-1-Entrance] Black Knight Kicks Player After Sword Taken" when
         npc in state black_knight mad,
         missing flag appeased-black-knight,
     ) {
-        do priority -20 damage player 2 cause "knight's shin-kick"
+        do priority -20 damage player 1 cause "knight's shin-kick"
     }
 }
 
