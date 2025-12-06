@@ -3,8 +3,10 @@
 # ========================================
 
 npc emh {
-    name "Emergency Medical Hologram"
-    desc "A balding and somewhat anxious-appearing holographic doctor in a Starfleet uniform."
+    name "EMH (Emergency Medical Hologram)"
+    desc """A anxious, balding holographic doctor.
+
+The EMH is a holographic AI, intensively trained in xenobiology, who appears dressed in a Starfleet officer's uniform. As a hologram, he would typically be confined to the infirmary where his emitters are mounted, but he can travel to other parts of the facility by way of a mobile holographic emitter unit when he chooses. Inexplicably, he intermittently claims to be an administrator from something called Stargate Command."""
     location nowhere "spawns in med-bay after button pressed"
     max_hp 75
     state normal

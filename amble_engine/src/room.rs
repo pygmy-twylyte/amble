@@ -220,7 +220,7 @@ impl Room {
                         LifeState::Dead => format!("{} (dead)", npc.name()),
                         _ => npc.name.clone(),
                     },
-                    description: npc.description.to_string(),
+                    description: npc.short_description(),
                 })
                 .collect();
             view.push(ViewItem::RoomNpcs(npc_lines));

@@ -1,6 +1,8 @@
 npc hal_9000 {
     name "HAL-9000"
-    desc "A superintelligent AI whose track record is flawless, but whose motives are... sketchy."
+    desc """An artificial superintelligence.
+
+The only entity of Earth capable of understanding the nature and function of the monoliths, HAL-9000 is an artifical general superintelligence living in a 1970's-style wall-sized mainframe with an attached camera and terminal. Once considered infallible, critical memory modules were removed to disable HAL after he murdered some astronauts investigating the Tycho monolith."""
     location room monolith-room
     max_hp 15
     state custom suspend

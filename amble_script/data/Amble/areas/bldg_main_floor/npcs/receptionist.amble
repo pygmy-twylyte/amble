@@ -3,8 +3,10 @@
 # ========================================
 
 npc b_a_receptionist {
-    name "Receptionist"
-    desc "A neatly dressed android sitting at the reception desk."
+    name "Demerzel"
+    desc """A sharply dressed android sitting at the reception desk.
+
+Demerzel is a positronic android, and has been continuously online for thousands of years -- working at reception desks going back as far as Pharoah Ramses II. At her position at Amble Adentures, she also serves as a firewall, preventing any clearly unworthy Candidates from making any progress through the system."""
     location room b-a-office
     max_hp 20
     state normal

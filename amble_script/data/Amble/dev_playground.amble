@@ -60,7 +60,7 @@ trigger "Cheat Mode" when touch item cheat_button {
 
 npc the_luggage {
     name "The Luggage"
-    desc "A large chest with dozens of legs, layered sharp teeth around its lid, and a strong tendency to violence."
+    desc "A wooden chest with dozens of tiny legs, layered sharp teeth around its lid, and a violent temper."
     location nowhere "spawns at dev-room for testing"
     max_hp 10
     dialogue normal {

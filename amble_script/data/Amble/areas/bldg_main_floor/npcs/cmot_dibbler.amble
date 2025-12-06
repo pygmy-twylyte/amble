@@ -1,6 +1,9 @@
 npc cmot_dibbler {
-    name "C.M.O.T. Dibbler"
-    desc "A persistent entrepreneur with a tray of questionable meat products and an optimistic attitude about food safety. He wears a grease-stained apron and carries himself with the confidence of someone who's never met a customer he couldn't eventually convince."
+    name "C-M-O-T Dibbler"
+    desc """An enterprising merchant-venturer.
+
+Cut-Me-Own-Throat Dibbler is a persistently struggling entrepreneur with a tray of questionable meat products, an optimistic attitude about food safety, and a contagious grin. He wears a grease-stained apron and carries himself with the confidence of someone who's never met a customer he couldn't eventually convince."""
+
     location room main-lobby
     max_hp 50
     state normal
