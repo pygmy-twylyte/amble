@@ -780,12 +780,23 @@ impl View {
                     indented_block()
                 )
             );
-            println!(
-                "{}",
-                fill(description.as_str(), indented_block())
-                    .to_string()
-                    .description_style()
-            );
+            // if description has a multiple lines, bold the first as a tagline - otherwise
+            // use the whole thing as the tagline + description.
+            if let Some((tagline, rest)) = description.split_once('\n') {
+                println!(
+                    "{}",
+                    fill(tagline, indented_block()).to_string().description_style().bold()
+                );
+                println!("{}", fill(rest, indented_block()).to_string().description_style());
+            } else {
+                println!(
+                    "{}",
+                    fill(description.as_str(), indented_block())
+                        .to_string()
+                        .description_style()
+                        .bold()
+                );
+            }
             println!();
         }
         if let Some(ViewItem::NpcInventory(content_lines)) = self.items.iter().find_map(|i| match i.view_item {
@@ -867,9 +878,12 @@ impl View {
             _ => None,
         }) {
             println!("{}:", "Others".subheading_style());
-            for npc in npcs {
-                println!("   {}", npc.name.npc_style());
-                println!("{}", fill(npc.description.as_str(), indented_block()).italic());
+            for npc_line in npcs {
+                println!(
+                    "    {} - {}",
+                    npc_line.name.npc_style(),
+                    npc_line.description.description_style()
+                );
             }
         }
     }

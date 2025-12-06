@@ -85,6 +85,15 @@ impl Npc {
                 .collect(),
         ));
     }
+    /// Obtain one-line description for NPC (by convention, the first line of the `description` field).
+    pub fn short_description(&self) -> String {
+        if let Some((short, _rest)) = self.description.split_once("\n") {
+            short.to_string()
+        } else {
+            // return the whole description if there is only one line
+            self.description.clone()
+        }
+    }
 }
 impl WorldObject for Npc {
     fn id(&self) -> Uuid {
