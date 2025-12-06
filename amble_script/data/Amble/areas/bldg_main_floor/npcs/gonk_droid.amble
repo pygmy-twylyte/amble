@@ -4,7 +4,9 @@
 
 npc gonk_droid {
     name "Gonk Droid"
-    desc "A walking battery charger that looks like a trash bin."
+    desc """A walking power source that looks like a trash bin.
+
+Gonk droids are incredibly intelligent, despite looking like trash compactors with stubby legs. They store vast amounts of data about every known type of battery in the galaxy and are eager to recharge them all. Sadly, that consumes 99.9% of their available memory, forcing the designers to reduce the droid's vocabulary to one word: "Gonk"."""
     location room main-lobby
     max_hp 10
     state normal
@@ -12,7 +14,7 @@ npc gonk_droid {
         main-lobby,
         lift-bank-main,
         lounge,
-    ) timing every_2_turns
+    ) timing every_5_turns
     dialogue happy {
         "(You hear a transformer humming a happy tune.)"
     }

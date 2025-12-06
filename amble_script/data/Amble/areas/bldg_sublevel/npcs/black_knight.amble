@@ -1,8 +1,10 @@
 npc black_knight {
     name "The Black Knight"
-    desc "A dark, glowering presence in a black suit of armor with a longsword."
+    desc """A towering, dark presence in a black suit of armor.
+
+Little is known about the Black Knight, an Arthurian legend, except that he is never seen without full black platemail and a longsword, and that he absolutely *hates* to let people pass. If there's one thing he detests more than would-be passers-by, it's a dull blade -- if only because it makes dicing passers-by more difficult. He has never been defeated in combat, and would never admit it if he were."""
     location room sublevel-1-entrance
-    max_hp 100
+    max_hp 500
     state normal
     dialogue happy {
         "None shall pa-- oh, no, you can go."

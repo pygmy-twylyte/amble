@@ -7,7 +7,9 @@
 
 npc husky_thing {
     name "Strange Husky"
-    desc "A slightly oversized Husky dog. It stands unmoving, watching you, keeping a cautious distance. It never seems to blink or shift its gaze away from you."
+    desc """An oversized Husky.
+
+There is something eerily wrong about this dog. It stands unmoving, watching you, but always keeping a cautious distance. It never seems to blink or shift its gaze away from you, as if waiting for some momentary opportunity."""
     location nowhere "spawns at snow_camp if charred_journal read"
     max_hp 20
     state normal
