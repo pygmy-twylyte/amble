@@ -1,5 +1,3 @@
-use std::usize;
-
 use ae::style::GameStyle;
 use ae::*;
 use amble_engine as ae;
