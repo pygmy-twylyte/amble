@@ -77,7 +77,7 @@ impl HealthState {
             cause: cause.to_string(),
             amount: damage,
             times,
-        })
+        });
     }
     /// Take an effect out of the queue
     pub fn remove_effect(&mut self, cause: &str) -> Option<HealthEffect> {
@@ -111,7 +111,7 @@ impl HealthState {
                         name: display_name.into(),
                         cause: cause.into(),
                         amount: *amount,
-                    })
+                    });
                 },
                 HealthEffect::InstantHeal { cause, amount } => {
                     info!("{display_name} healed by '{cause}' (+{amount} hp)");
