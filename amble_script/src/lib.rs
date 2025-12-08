@@ -2471,7 +2471,7 @@ room high-ridge {
         assert_eq!(r.id, "high-ridge");
         assert_eq!(r.name, "High Isolated Ridge");
         assert_eq!(r.desc, "A small, flat ridge.");
-        assert_eq!(r.visited, false);
+        assert!(!r.visited);
         assert_eq!(r.exits.len(), 2);
         assert!(r.exits.iter().any(|(d, e)| d == "up" && e.to == "parish-landing"));
         assert!(r.exits.iter().any(|(d, e)| d == "west" && e.to == "snowfield"));
@@ -2513,7 +2513,7 @@ room start {
 }
 "#;
         let rooms = crate::parse_rooms(src).expect("parse rooms ok");
-        assert_eq!(rooms[0].visited, true);
+        assert!(rooms[0].visited);
         let toml = crate::compile_rooms_to_toml(&rooms).expect("compile ok");
         assert!(toml.contains("visited = true"));
         assert!(toml.contains("[rooms.exits.up]"));
@@ -2641,7 +2641,7 @@ trigger "example spawn" when enter room pantry {
                 assert!(matches!(kids[0], ConditionAst::HasFlag(ref s) if s == "got-key"));
                 assert!(matches!(kids[1], ConditionAst::MissingFlag(ref s) if s == "door-open"));
             },
-            other => panic!("unexpected condition: {:?}", other),
+            other => panic!("unexpected condition: {other:?}"),
         }
         // actions include spawn, show, add, remove, despawn, award
         assert!(ast.actions.iter().any(|a| matches!(
@@ -2725,7 +2725,7 @@ trigger "combo test" when enter room lab {
         let toml = compile_trigger_to_toml(&ast).expect("compile ok");
         // two [[triggers]] markers
         let count = toml.match_indices("[[triggers]]").count();
-        assert_eq!(count, 2, "expected 2 triggers due to any() lowering:\n{}", toml);
+        assert_eq!(count, 2, "expected 2 triggers due to any() lowering:\n{toml}");
         assert!(toml.contains("item_id = \"wrench\""));
         assert!(toml.contains("item_id = \"screwdriver\""));
         assert!(toml.contains("type = \"inRoom\""));
@@ -2796,7 +2796,7 @@ trigger "multi-if" when enter room lab {
         let toml = crate::compile_triggers_to_toml(&asts).expect("compile ok");
         // Count [[triggers]] blocks
         let count = toml.match_indices("[[triggers]]").count();
-        assert_eq!(count, 3, "expected 3 triggers after lowering:\n{}", toml);
+        assert_eq!(count, 3, "expected 3 triggers after lowering:\n{toml}");
         // Contains actions A, B, C
         assert!(toml.contains("text = \"A\""));
         assert!(toml.contains("text = \"B\""));
@@ -2919,7 +2919,7 @@ trigger "npc and progress" when always {
                 assert!(matches!(kids[0], ConditionAst::WithNpc(ref s) if s == "emh"));
                 assert!(matches!(kids[1], ConditionAst::FlagInProgress(ref s) if s == "hal-reboot"));
             },
-            other => panic!("unexpected condition: {:?}", other),
+            other => panic!("unexpected condition: {other:?}"),
         }
     }
 
