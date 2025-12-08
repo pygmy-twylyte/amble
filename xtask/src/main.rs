@@ -320,11 +320,11 @@ fn release(workspace: &mut Workspace, args: &ReleaseArgs) -> Result<()> {
     ];
     git_add(workspace, &files_to_commit)?;
 
-    let commit_message = format!("Release v{}", new_version);
+    let commit_message = format!("Release v{new_version}");
     println!("==> Creating commit: {commit_message}");
     git_commit(workspace, &commit_message)?;
 
-    let tag_name = format!("v{}", new_version);
+    let tag_name = format!("v{new_version}");
     println!("==> Tagging release: {tag_name}");
     git_tag(workspace, &tag_name, &commit_message)?;
 

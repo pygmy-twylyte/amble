@@ -632,8 +632,6 @@ pub fn remove_health_effect(target: &mut impl LivingEntity, cause: &str, target_
     }
 }
 
-/// Cause damage to a character over a specified number of turns.
-
 /// Modifies multiple properties of an `Item` at once by applying an `ItemPatch`.
 ///
 /// # Errors

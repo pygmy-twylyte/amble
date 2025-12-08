@@ -3450,6 +3450,51 @@ fn extract_note(header: &str) -> Option<String> {
     None
 }
 
+/// Composite AST collections returned by [`parse_program_full`].
+pub type ProgramAstBundle = (
+    Vec<TriggerAst>,
+    Vec<RoomAst>,
+    Vec<ItemAst>,
+    Vec<SpinnerAst>,
+    Vec<NpcAst>,
+    Vec<GoalAst>,
+);
+fn strip_priority_clause(text: &str) -> Result<(Option<isize>, &str), AstError> {
+    let rest = text.strip_prefix("do").ok_or(AstError::Shape("not a do action"))?;
+    let mut after = rest.trim_start();
+    if let Some(rem) = after.strip_prefix("priority") {
+        after = rem.trim_start();
+        let mut idx = 0usize;
+        if after.starts_with('-') {
+            idx += 1;
+        }
+        while idx < after.len() && after.as_bytes()[idx].is_ascii_digit() {
+            idx += 1;
+        }
+        if idx == 0 || (idx == 1 && after.starts_with('-')) {
+            return Err(AstError::Shape("priority missing number"));
+        }
+        let num: isize = after[..idx]
+            .parse()
+            .map_err(|_| AstError::Shape("invalid priority number"))?;
+        let tail = after[idx..].trim_start();
+        return Ok((Some(num), tail));
+    }
+    Ok((None, after))
+}
+
+fn parse_action_from_str(text: &str) -> Result<ActionStmt, AstError> {
+    let trimmed = text.trim();
+    let (priority, rest) = strip_priority_clause(trimmed)?;
+    let source = if priority.is_some() {
+        Cow::Owned(format!("do {rest}"))
+    } else {
+        Cow::Borrowed(trimmed)
+    };
+    let action = parse_action_core(&source)?;
+    Ok(ActionStmt { priority, action })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3952,48 +3997,4 @@ trigger "bad ident" when enter room trigger {
             AstError::Pest(_) | AstError::Shape(_) | AstError::ShapeAt { .. } => {},
         }
     }
-}
-/// Composite AST collections returned by [`parse_program_full`].
-pub type ProgramAstBundle = (
-    Vec<TriggerAst>,
-    Vec<RoomAst>,
-    Vec<ItemAst>,
-    Vec<SpinnerAst>,
-    Vec<NpcAst>,
-    Vec<GoalAst>,
-);
-fn strip_priority_clause(text: &str) -> Result<(Option<isize>, &str), AstError> {
-    let rest = text.strip_prefix("do").ok_or(AstError::Shape("not a do action"))?;
-    let mut after = rest.trim_start();
-    if let Some(rem) = after.strip_prefix("priority") {
-        after = rem.trim_start();
-        let mut idx = 0usize;
-        if after.starts_with('-') {
-            idx += 1;
-        }
-        while idx < after.len() && after.as_bytes()[idx].is_ascii_digit() {
-            idx += 1;
-        }
-        if idx == 0 || (idx == 1 && after.starts_with('-')) {
-            return Err(AstError::Shape("priority missing number"));
-        }
-        let num: isize = after[..idx]
-            .parse()
-            .map_err(|_| AstError::Shape("invalid priority number"))?;
-        let tail = after[idx..].trim_start();
-        return Ok((Some(num), tail));
-    }
-    Ok((None, after))
-}
-
-fn parse_action_from_str(text: &str) -> Result<ActionStmt, AstError> {
-    let trimmed = text.trim();
-    let (priority, rest) = strip_priority_clause(trimmed)?;
-    let source = if priority.is_some() {
-        Cow::Owned(format!("do {rest}"))
-    } else {
-        Cow::Borrowed(trimmed)
-    };
-    let action = parse_action_core(&source)?;
-    Ok(ActionStmt { priority, action })
 }

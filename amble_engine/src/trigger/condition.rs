@@ -228,7 +228,7 @@ mod tests {
             id,
             symbol: "n".into(),
             name: "Npc".into(),
-            description: "".into(),
+            description: String::new(),
             location,
             inventory: HashSet::new(),
             dialogue: HashMap::new(),
