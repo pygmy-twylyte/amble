@@ -31,18 +31,31 @@ use variantly::Variantly;
 /// 'consumable' makes an item consumable if present, with various consumable types defined in `ConsumableOpts`
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Item {
+    /// The UUID of this item.
     pub id: Uuid,
+    /// The symbol used to refer to this item in the TOML data.
     pub symbol: String,
+    /// The display name of the item.
     pub name: String,
+    /// A general description of the item.
     pub description: String,
+    /// The current `Location` of the item.
     pub location: Location,
+    /// True if this item is fixed. Its `Location` can never be changed.
     pub portable: bool,
+    /// Some state (open, locked, etc) for the item as a container, or `None` if it is not a container.
     pub container_state: Option<ContainerState>,
+    /// Used to temporarily prevent a portable item from being taken / manipulated.
     pub restricted: bool,
+    /// Set of UUIDs of other items contained by this one.
     pub contents: HashSet<Uuid>,
+    /// Set of capabilities [`ItemAbility`] for this item.
     pub abilities: HashSet<ItemAbility>,
+    /// Relates interactions to abilities. (Ex: to perform the "burn" interaction targeting this item, the other item must have the "ignite" capability.)
     pub interaction_requires: HashMap<ItemInteractionType, ItemAbility>,
+    /// Any legible detail text on the item. **Also used as the detail text for the "examine" command.**
     pub text: Option<String>,
+    /// Some consumable parameters [`ConsumableOpts`], or None it the item isn't consumable.
     pub consumable: Option<ConsumableOpts>,
 }
 impl WorldObject for Item {

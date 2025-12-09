@@ -1,9 +1,9 @@
 #![warn(clippy::pedantic)]
 #![allow(clippy::must_use_candidate)]
 
-//! Amble game engine library.
+//! # Amble game engine.
 //!
-//! A comprehensive text adventure game engine with scripting support.
+//! A full-featured text adventure game engine with scripting support.
 //!
 //! This crate contains the core data structures and logic that power the
 //! Amble command-line adventure game. It provides:
@@ -15,10 +15,18 @@
 //! - **Goal tracking**: Quest and objective management
 //! - **Rich text output**: Styled terminal output with multiple view modes
 //!
-//! The engine is designed to be data-driven, loading most game content
+//! The engine is designed to be data-driven, loading all game content
 //! from TOML configuration files rather than requiring code changes.
+//!
+//! **Note: While the engine reads TOML and you can write directly in TOML
+//! (the first 1/3 of the demo game was written that way), it is vastly easier
+//! to use the full capabilities of the engine by creating content using
+//! the ['amble_script'] DSL -- and easier still if you use the Zed editor
+//! and accompanying Zed Amble extension.
 
 pub const AMBLE_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+// DEV_MODE is enabled or disabled through this const throughout
 #[cfg(feature = "dev-mode")]
 pub const DEV_MODE: bool = true;
 
