@@ -41,7 +41,7 @@ pub struct Item {
     pub description: String,
     /// The current `Location` of the item.
     pub location: Location,
-    /// True if this item is fixed. Its `Location` can never be changed.
+    /// False if this item is fixed, meaning its `Location` can never be changed.
     pub portable: bool,
     /// Some state (open, locked, etc) for the item as a container, or `None` if it is not a container.
     pub container_state: Option<ContainerState>,
@@ -119,8 +119,10 @@ impl Item {
     }
     /// Set location to player inventory
     pub fn set_location_inventory(&mut self) {
-        // once a restricted item has been obtained, must no longer be so
-        // if given back to an NPC it can be optionally re-restricted using a trigger action
+        // once a restricted item has been obtained, it must be unrestricted (or else the player wouldn't
+        // be able to pick it up again after dropping it)
+        // if given back to an NPC or "locked in" to a receiver item,
+        // it can be optionally re-restricted using a trigger action
         self.restricted = false;
         self.location = Location::Inventory;
     }
@@ -138,8 +140,10 @@ impl Item {
 
         // push any consumable status to View
         if let Some(opts) = &self.consumable {
+            let consuming_abilities: Vec<_> = opts.consume_on.iter().map(ItemAbility::to_string).collect();
+            let uses = consuming_abilities.join(" or ").underline();
             view.push(ViewItem::ItemConsumableStatus(format!(
-                "You can use this item {} more time{}.",
+                "You can {uses} this item {} more time{}.",
                 opts.uses_left.to_string().yellow(),
                 if opts.uses_left == 1 { "" } else { "s" }
             )));
