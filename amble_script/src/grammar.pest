@@ -424,9 +424,8 @@ item_container_state = { "container" ~ "state" ~ ("open" | "closed" | "locked" |
 item_ability         = { "ability" ~ ident ~ ident? }
 item_text            = { "text" ~ string }
 item_restricted      = { "restricted" ~ boolean }
-// Change syntax to: requires <ability> to <interaction>
-item_requires   = { "requires" ~ ident ~ "to" ~ ident }
-item_consumable = { "consumable" ~ consumable_block }
+item_requires        = { "requires" ~ ident ~ "to" ~ ident }
+item_consumable      = { "consumable" ~ consumable_block }
 
 consumable_block             = { "{" ~ (WHITESPACE* ~ consumable_stmt)* ~ WHITESPACE* ~ "}" }
 consumable_stmt              = { consumable_uses | consumable_consume_on | consumable_when_consumed }
