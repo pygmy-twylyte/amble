@@ -99,21 +99,22 @@ impl Item {
         }
     }
 
-    /// Returns true if item's contents can be accessed.
+    /// Returns true if item's contents can be accessed directly.
     pub fn is_accessible(&self) -> bool {
-        self.container_state.is_some_and(|cs| cs.is_open())
+        self.container_state
+            .is_some_and(|cs| cs.is_open() || cs.is_transparent_open())
     }
 
-    /// Returns true if item is a transparent container (contents visible but not accessible)
+    /// Returns true if the item is a container and its contents are visible even when closed or locked.
     pub fn is_transparent(&self) -> bool {
         self.container_state
-            .is_some_and(|cs| cs.is_transparent_closed() || cs.is_transparent_locked())
+            .is_some_and(|cs| cs.is_transparent_closed() || cs.is_transparent_locked() || cs.is_transparent_open())
     }
     /// Set location to a `Room` by UUID
     pub fn set_location_room(&mut self, room_id: Uuid) {
         self.location = Location::Room(room_id);
     }
-    /// Set location to another `Item` by UUID
+    /// Set location to inside another container `Item` by UUID
     pub fn set_location_item(&mut self, container_id: Uuid) {
         self.location = Location::Item(container_id);
     }
@@ -194,7 +195,15 @@ impl Item {
         }
     }
 
-    /// For a particular action on this item (e.g. to "Burn" it), what capability (e.g. "Ignite") is needed.
+    /// Determine what ability is required for certain interactions with this item.
+    /// 
+    /// In `<verb> <target> with <tool>` commands, this returns whatever ability the `<tool>` must have
+    /// in order to successfully `<verb>` the `<target>` (this item). 
+    /// 
+    /// Example -- if this item is `candle`, then: 
+    /// 
+    /// `candle.requires_capability_for(ItemInteractionType::Burn)` 
+    /// might return `Some(ItemAbility::Ignite)`.
     pub fn requires_capability_for(&self, inter: ItemInteractionType) -> Option<ItemAbility> {
         self.interaction_requires.get(&inter).copied()
     }
