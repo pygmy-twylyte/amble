@@ -224,7 +224,7 @@ mod tests {
     use super::*;
     use crate::{
         health::HealthState,
-        item::{ContainerState, Item},
+        item::{ContainerState, Item, Movability},
         npc::{Npc, NpcState},
         player::Player,
         room::Room,
@@ -241,9 +241,8 @@ mod tests {
             name: format!("Item {}", id.simple()),
             description: "A test item".into(),
             location,
-            portable: true,
+            movability: Movability::Movable,
             container_state: None,
-            restricted: false,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
@@ -454,8 +453,13 @@ mod tests {
         world.items.insert(item_id, item);
 
         let item_mut = world.get_item_mut(item_id).unwrap();
-        item_mut.restricted = true;
-        assert!(world.items.get(&item_id).unwrap().restricted);
+        item_mut.movability = Movability::Restricted {
+            reason: "restricted".into(),
+        };
+        assert!(matches!(
+            world.items.get(&item_id).unwrap().movability,
+            Movability::Restricted { .. }
+        ));
     }
 
     #[test]
