@@ -21,6 +21,7 @@ use crate::{
     ItemHolder, Location, View, ViewItem, WorldObject,
     health::{HealthEffect, HealthState, LivingEntity},
     helpers::symbol_or_unknown,
+    item::Movability,
     spinners::CoreSpinnerType,
     view::ContentLine,
     world::AmbleWorld,
@@ -80,7 +81,7 @@ impl Npc {
                 .filter_map(|id| world.items.get(id))
                 .map(|item| ContentLine {
                     item_name: item.name.clone(),
-                    restricted: item.restricted,
+                    restricted: matches!(item.movability, Movability::Restricted { .. }),
                 })
                 .collect(),
         ));
@@ -425,10 +426,9 @@ mod tests {
             symbol: "test_item".into(),
             name: "Test Item".into(),
             description: "A test item".into(),
+            movability: Movability::Movable,
             location: Location::Nowhere,
-            portable: true,
             container_state: None,
-            restricted: false,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
