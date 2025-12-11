@@ -50,6 +50,7 @@ use crate::{
     AmbleWorld, ItemHolder, Location, View, ViewItem, WorldObject,
     health::{LifeState, LivingEntity},
     helpers::symbol_or_unknown,
+    item::Movability,
     npc::Npc,
     repl::{entity_not_found, find_world_object},
     spinners::CoreSpinnerType,
@@ -262,10 +263,10 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
     let (item_id, item_name) =
         if let Some(entity) = find_world_object(&world.player.inventory, &world.items, &world.npcs, item) {
             if let Some(item) = entity.item() {
-                if !item.portable {
+                if let Movability::Fixed { reason } = &item.movability {
                     info!("player tried to move fixed item {} ({})", item.name(), item.symbol());
                     view.push(ViewItem::ActionFailure(format!(
-                        "Sorry, the {} isn't portable.",
+                        "Sorry, the {} isn't transferrable. {reason}",
                         item.name().error_style()
                     )));
                     return Ok(());
