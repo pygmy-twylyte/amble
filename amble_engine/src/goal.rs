@@ -124,7 +124,7 @@ impl Goal {
 mod tests {
     use super::*;
     use crate::{
-        item::Item,
+        item::{Item, Movability},
         player::Flag,
         room::Room,
         world::{AmbleWorld, Location},
@@ -160,9 +160,8 @@ mod tests {
             name: "Test Item".into(),
             description: "A test item".into(),
             location: Location::Inventory,
-            portable: true,
+            movability: Movability::Movable,
             container_state: None,
-            restricted: false,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
