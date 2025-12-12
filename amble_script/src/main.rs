@@ -1157,7 +1157,7 @@ fn gather_refs_from_action(stmt: &ActionStmt, out: &mut HashMap<&'static str, Ha
         ActionAst::DespawnItem(i)
         | ActionAst::LockItem(i)
         | ActionAst::UnlockItemAction(i)
-        | ActionAst::RestrictItem(i) => {
+        | ActionAst::SetItemMovability { item: i, .. } => {
             out.get_mut("item").unwrap().insert(i.clone());
         },
         ActionAst::PushPlayerTo(r) => {

@@ -313,6 +313,11 @@ pub enum ActionAst {
         item: String,
         text: String,
     },
+    /// Set movability for an item by symbol.
+    SetItemMovability {
+        item: String,
+        movability: MovabilityAst,
+    },
     NpcSays {
         npc: String,
         quote: String,
@@ -335,7 +340,6 @@ pub enum ActionAst {
         state: String,
     },
     DenyRead(String),
-    RestrictItem(String),
     /// Set container state for an item by symbol; omit state to clear
     SetContainerState {
         item: String,
@@ -408,8 +412,7 @@ pub struct ItemPatchAst {
     pub name: Option<String>,
     pub desc: Option<String>,
     pub text: Option<String>,
-    pub portable: Option<bool>,
-    pub restricted: Option<bool>,
+    pub movability: Option<MovabilityAst>,
     pub container_state: Option<ContainerStateAst>,
     pub remove_container_state: bool,
     pub add_abilities: Vec<ItemAbilityAst>,
@@ -977,10 +980,9 @@ pub struct ItemAst {
     pub id: String,
     pub name: String,
     pub desc: String,
-    pub portable: bool,
+    pub movability: MovabilityAst,
     pub location: ItemLocationAst,
     pub container_state: Option<ContainerStateAst>,
-    pub restricted: bool,
     pub abilities: Vec<ItemAbilityAst>,
     pub text: Option<String>,
     pub interaction_requires: Vec<(String, String)>,
@@ -1017,6 +1019,14 @@ impl ContainerStateAst {
             ContainerStateAst::TransparentLocked => "transparentLocked",
         }
     }
+}
+
+/// Movability options for items, mirroring the engine `Movability`.
+#[derive(Debug, Clone, PartialEq)]
+pub enum MovabilityAst {
+    Free,
+    Fixed { reason: String },
+    Restricted { reason: String },
 }
 
 /// Single item ability entry declared within an item.
@@ -1246,6 +1256,26 @@ pub fn compile_rooms_to_toml(rooms: &[RoomAst]) -> Result<String, CompileError> 
     Ok(doc.to_string())
 }
 
+fn movability_to_value(movability: &MovabilityAst) -> toml_edit::Value {
+    match movability {
+        MovabilityAst::Free => toml_edit::Value::from("free"),
+        MovabilityAst::Fixed { reason } => {
+            let mut inner = InlineTable::new();
+            inner.insert("reason", toml_edit::Value::from(reason.clone()));
+            let mut outer = InlineTable::new();
+            outer.insert("fixed", toml_edit::Value::from(inner));
+            toml_edit::Value::from(outer)
+        },
+        MovabilityAst::Restricted { reason } => {
+            let mut inner = InlineTable::new();
+            inner.insert("reason", toml_edit::Value::from(reason.clone()));
+            let mut outer = InlineTable::new();
+            outer.insert("restricted", toml_edit::Value::from(inner));
+            toml_edit::Value::from(outer)
+        },
+    }
+}
+
 /// Compile items into TOML string matching amble_engine/data/items.toml structure.
 ///
 /// # Errors
@@ -1262,7 +1292,7 @@ pub fn compile_items_to_toml(items: &[ItemAst]) -> Result<String, CompileError> 
         t["id"] = value(it.id.clone());
         t["name"] = value(it.name.clone());
         t["description"] = value(it.desc.clone());
-        t["portable"] = value(it.portable);
+        t["movability"] = Item::Value(movability_to_value(&it.movability));
         let mut loc = InlineTable::new();
         match &it.location {
             ItemLocationAst::Inventory(owner) => {
@@ -1284,9 +1314,6 @@ pub fn compile_items_to_toml(items: &[ItemAst]) -> Result<String, CompileError> 
         t["location"] = Item::Value(loc.into());
         if let Some(cs) = &it.container_state {
             t["container_state"] = value(cs.as_str());
-        }
-        if it.restricted {
-            t["restricted"] = value(true);
         }
         if let Some(txt) = &it.text {
             t["text"] = value(txt.clone());
@@ -2043,10 +2070,11 @@ fn action_to_value(stmt: &ActionStmt) -> toml_edit::Value {
             t.insert("reason", toml_edit::Value::from(reason.clone()));
             toml_edit::Value::from(t)
         },
-        ActionAst::RestrictItem(item) => {
+        ActionAst::SetItemMovability { item, movability } => {
             let mut t = InlineTable::new();
-            t.insert("type", toml_edit::Value::from("restrictItem"));
-            t.insert("item_id", toml_edit::Value::from(item.clone()));
+            t.insert("type", toml_edit::Value::from("setItemMovability"));
+            t.insert("item_sym", toml_edit::Value::from(item.clone()));
+            t.insert("movability", movability_to_value(movability));
             toml_edit::Value::from(t)
         },
         ActionAst::SetContainerState { item, state } => {
@@ -2084,11 +2112,8 @@ fn item_patch_to_inline_table(patch: &ItemPatchAst) -> InlineTable {
     if let Some(text) = &patch.text {
         tbl.insert("text", toml_edit::Value::from(text.clone()));
     }
-    if let Some(portable) = patch.portable {
-        tbl.insert("portable", toml_edit::Value::from(portable));
-    }
-    if let Some(restricted) = patch.restricted {
-        tbl.insert("restricted", toml_edit::Value::from(restricted));
+    if let Some(movability) = &patch.movability {
+        tbl.insert("movability", movability_to_value(movability));
     }
     if let Some(cs) = &patch.container_state {
         tbl.insert("container_state", toml_edit::Value::from(cs.as_str()));

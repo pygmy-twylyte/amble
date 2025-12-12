@@ -8,9 +8,9 @@ use pest_derive::Parser as PestParser;
 
 use crate::{
     ActionAst, ActionStmt, ConditionAst, ConsumableAst, ConsumableWhenAst, ContainerStateAst, GoalAst, GoalCondAst,
-    GoalGroupAst, IngestModeAst, ItemAbilityAst, ItemAst, ItemLocationAst, ItemPatchAst, NpcAst, NpcDialoguePatchAst,
-    NpcMovementAst, NpcMovementPatchAst, NpcMovementTypeAst, NpcPatchAst, NpcStateValue, NpcTimingPatchAst, OnFalseAst,
-    RoomAst, RoomExitPatchAst, RoomPatchAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
+    GoalGroupAst, IngestModeAst, ItemAbilityAst, ItemAst, ItemLocationAst, ItemPatchAst, MovabilityAst, NpcAst,
+    NpcDialoguePatchAst, NpcMovementAst, NpcMovementPatchAst, NpcMovementTypeAst, NpcPatchAst, NpcStateValue,
+    NpcTimingPatchAst, OnFalseAst, RoomAst, RoomExitPatchAst, RoomPatchAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
 };
 use std::{borrow::Cow, collections::HashMap};
 
@@ -924,10 +924,9 @@ fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<I
     let block = it.next().ok_or(AstError::Shape("expected item block"))?;
     let mut name: Option<String> = None;
     let mut desc: Option<String> = None;
-    let mut portable: Option<bool> = None;
+    let mut movability: Option<MovabilityAst> = None;
     let mut location: Option<ItemLocationAst> = None;
     let mut container_state: Option<ContainerStateAst> = None;
-    let mut restricted: Option<bool> = None;
     let mut abilities: Vec<ItemAbilityAst> = Vec::new();
     let mut text: Option<String> = None;
     let mut requires: Vec<(String, String)> = Vec::new();
@@ -942,19 +941,13 @@ fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<I
                 let s = stmt.into_inner().next().ok_or(AstError::Shape("missing item desc"))?;
                 desc = Some(unquote(s.as_str()));
             },
-            Rule::item_portable => {
-                let tok = stmt
-                    .into_inner()
-                    .next()
-                    .ok_or(AstError::Shape("missing portable token"))?;
-                portable = Some(tok.as_str() == "true");
-            },
-            Rule::item_restricted => {
-                let tok = stmt
-                    .into_inner()
-                    .next()
-                    .ok_or(AstError::Shape("missing restricted token"))?;
-                restricted = Some(tok.as_str() == "true");
+            Rule::item_movability => {
+                let raw = stmt
+                    .as_str()
+                    .split_once(' ')
+                    .map(|(_, rest)| rest)
+                    .ok_or(AstError::Shape("movability missing value"))?;
+                movability = Some(parse_movability_opt(raw)?);
             },
             Rule::item_location => {
                 let mut li = stmt.into_inner();
@@ -1123,16 +1116,15 @@ fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<I
     }
     let name = name.ok_or(AstError::Shape("item missing name"))?;
     let desc = desc.ok_or(AstError::Shape("item missing desc"))?;
-    let portable = portable.ok_or(AstError::Shape("item missing portable"))?;
+    let movability = movability.unwrap_or(MovabilityAst::Free);
     let location = location.ok_or(AstError::Shape("item missing location"))?;
     Ok(ItemAst {
         id,
         name,
         desc,
-        portable,
+        movability,
         location,
         container_state,
-        restricted: restricted.unwrap_or(false),
         abilities,
         text,
         interaction_requires: requires,
@@ -1764,6 +1756,28 @@ fn parse_string_at(s: &str) -> Result<(String, usize), AstError> {
     Err(AstError::Shape("missing closing quote"))
 }
 
+fn parse_movability_opt(raw: &str) -> Result<MovabilityAst, AstError> {
+    let trimmed = raw.trim();
+    if trimmed == "free" {
+        return Ok(MovabilityAst::Free);
+    }
+    if let Some(rest) = trimmed.strip_prefix("fixed") {
+        let rest = rest.trim_start();
+        let (reason, _) =
+            parse_string_at(rest).map_err(|_| AstError::Shape("movability fixed expects a quoted reason"))?;
+        return Ok(MovabilityAst::Fixed { reason });
+    }
+    if let Some(rest) = trimmed.strip_prefix("restricted") {
+        let rest = rest.trim_start();
+        let (reason, _) =
+            parse_string_at(rest).map_err(|_| AstError::Shape("movability restricted expects a quoted reason"))?;
+        return Ok(MovabilityAst::Restricted { reason });
+    }
+    Err(AstError::Shape(
+        "movability expects free | fixed \"reason\" | restricted \"reason\"",
+    ))
+}
+
 fn extract_body(src: &str) -> Result<&str, AstError> {
     let bytes = src.as_bytes();
     let mut depth = 0i32;
@@ -2358,6 +2372,17 @@ fn parse_action_core(text: &str) -> Result<ActionAst, AstError> {
         }
         return Err(AstError::Shape("set item description syntax"));
     }
+    if let Some(rest) = t.strip_prefix("do set item movability ") {
+        let rest = rest.trim();
+        let (item, mov_text) = rest
+            .split_once(' ')
+            .ok_or(AstError::Shape("set item movability missing item or value"))?;
+        let movability = parse_movability_opt(mov_text)?;
+        return Ok(ActionAst::SetItemMovability {
+            item: item.to_string(),
+            movability,
+        });
+    }
     if let Some(rest) = t.strip_prefix("do npc says ") {
         // format: <npc> "quote"
         let rest = rest.trim();
@@ -2428,9 +2453,6 @@ fn parse_action_core(text: &str) -> Result<ActionAst, AstError> {
         let (msg, _used) =
             parse_string_at(rest.trim()).map_err(|_| AstError::Shape("deny read missing or invalid quote"))?;
         return Ok(ActionAst::DenyRead(msg));
-    }
-    if let Some(rest) = t.strip_prefix("do restrict item ") {
-        return Ok(ActionAst::RestrictItem(rest.trim().to_string()));
     }
     if let Some(rest) = t.strip_prefix("do set container state ") {
         // do set container state <item> <state|none>
@@ -2795,31 +2817,13 @@ fn parse_modify_item_action(text: &str) -> Result<(ActionStmt, usize), AstError>
                     .as_str();
                 patch.text = Some(unquote(val));
             },
-            Rule::item_portable_patch => {
-                let mut inner = stmt.into_inner();
-                let tok = inner
-                    .next()
-                    .ok_or(AstError::Shape("modify item portable missing value"))?
-                    .as_str();
-                let portable = match tok {
-                    "true" => true,
-                    "false" => false,
-                    _ => return Err(AstError::Shape("portable expects true or false")),
-                };
-                patch.portable = Some(portable);
-            },
-            Rule::item_restricted_patch => {
-                let mut inner = stmt.into_inner();
-                let tok = inner
-                    .next()
-                    .ok_or(AstError::Shape("modify item restricted missing value"))?
-                    .as_str();
-                let restricted = match tok {
-                    "true" => true,
-                    "false" => false,
-                    _ => return Err(AstError::Shape("restricted expects true or false")),
-                };
-                patch.restricted = Some(restricted);
+            Rule::item_movability_patch => {
+                let raw = stmt
+                    .as_str()
+                    .split_once(' ')
+                    .map(|(_, rest)| rest)
+                    .ok_or(AstError::Shape("modify item movability missing value"))?;
+                patch.movability = Some(parse_movability_opt(raw)?);
             },
             Rule::item_container_state_patch => {
                 let state_word = stmt
@@ -3611,8 +3615,7 @@ trigger "patch locker" when always {
         name "Unlocked locker"
         description "It's open now"
         text "notes"
-        portable false
-        restricted true
+        movability restricted "It's not yours to take."
         container state locked
         add ability Unlock ( secret-door )
         add ability Ignite
@@ -3630,8 +3633,12 @@ trigger "patch locker" when always {
                 assert_eq!(patch.name.as_deref(), Some("Unlocked locker"));
                 assert_eq!(patch.desc.as_deref(), Some("It's open now"));
                 assert_eq!(patch.text.as_deref(), Some("notes"));
-                assert_eq!(patch.portable, Some(false));
-                assert_eq!(patch.restricted, Some(true));
+                assert_eq!(
+                    patch.movability,
+                    Some(MovabilityAst::Restricted {
+                        reason: "It's not yours to take.".into()
+                    })
+                );
                 assert_eq!(patch.container_state, Some(ContainerStateAst::Locked));
                 assert!(!patch.remove_container_state);
                 assert_eq!(patch.add_abilities.len(), 2);
@@ -3652,8 +3659,7 @@ trigger "patch locker" when always {
         assert!(toml.contains("item_sym = \"locker\""));
         assert!(toml.contains("name = \"Unlocked locker\""));
         assert!(toml.contains("desc = \"It's open now\""));
-        assert!(toml.contains("portable = false"));
-        assert!(toml.contains("restricted = true"));
+        assert!(toml.contains("movability = { restricted = { reason = \"It's not yours to take.\" } }"));
         assert!(toml.contains("container_state = \"locked\""));
         assert!(toml.contains("add_abilities = ["));
         assert!(toml.contains("remove_abilities = ["));
@@ -3961,7 +3967,7 @@ npc bot {
         let src = r#"item snack {
   name "Snack"
   desc "Yum"
-  portable true
+  movability free
   location inventory player
   consumable {
     uses_left 1
