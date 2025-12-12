@@ -3,14 +3,14 @@
 id = "sample_widget"
 name = "Sample Widget"
 description = "Prototype component."
-portable = true
+movability = "free"
 location = { Inventory = "player" }
 # item control_panel (source line 8)
 [[items]]
 id = "control_panel"
 name = "Control Panel"
 description = "A sealed control panel."
-portable = false
+movability = { fixed = { reason = "It's bolted to the wall." } }
 location = { Room = "control-room" }
 container_state = "closed"
 
@@ -21,7 +21,7 @@ type = "TurnOn"
 id = "maintenance_key"
 name = "Maintenance Key"
 description = "A small bronze key."
-portable = true
+movability = "free"
 location = { Npc = "attendant" }
 
 [[items.abilities]]

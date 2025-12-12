@@ -2,10 +2,9 @@
 id = "gizmo"
 name = "Gizmo"
 description = "A handy gizmo."
-portable = true
+movability = "free"
 location = { Room = "lab" }
 
 [items.interaction_requires]
 handle = "insulate"
 clean = "Clean"
-
