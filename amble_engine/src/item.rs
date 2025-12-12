@@ -125,7 +125,9 @@ impl Item {
         // be able to pick it up again after dropping it)
         // if given back to an NPC or "locked in" to a receiver item,
         // it can be optionally re-restricted using a trigger action
-        self.movability = Movability::Movable;
+        if matches!(self.movability, Movability::Restricted { .. }) {
+            self.movability = Movability::Movable;
+        }
         self.location = Location::Inventory;
     }
     /// Set location to NPC inventory by UUID
@@ -608,6 +610,17 @@ mod tests {
         item.set_location_inventory();
         assert_eq!(item.location, Location::Inventory);
         assert!(matches!(item.movability, Movability::Movable));
+    }
+
+    #[test]
+    fn set_location_inventory_preserves_fixed_movability() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.movability = Movability::Fixed {
+            reason: "Bolted down.".to_string(),
+        };
+        item.set_location_inventory();
+        assert_eq!(item.location, Location::Inventory);
+        assert!(matches!(item.movability, Movability::Fixed { .. }));
     }
 
     #[test]
