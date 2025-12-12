@@ -229,7 +229,7 @@ pub enum TriggerAction {
     /// Changes an item's description
     SetItemDescription { item_id: Uuid, text: String },
     /// Restricts or changes movability of an `Item`
-    SetItemMovabliity { item_id: Uuid, movability: Movability },
+    SetItemMovability { item_id: Uuid, movability: Movability },
     /// Changes an NPC's behavioral state
     SetNPCState { npc_id: Uuid, state: NpcState },
     /// Displays a message to the player
@@ -318,7 +318,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, scripted: &Scrip
         HealPlayerOT, LockExit, LockItem, ModifyItem, ModifyNpc, ModifyRoom, NpcRefuseItem, NpcSays, NpcSaysRandom,
         PushPlayerTo, RemoveFlag, RemoveNpcEffect, RemovePlayerEffect, ReplaceDropItem, ReplaceItem, ResetFlag,
         RevealExit, ScheduleIn, ScheduleInIf, ScheduleOn, ScheduleOnIf, SetBarredMessage, SetContainerState,
-        SetItemDescription, SetItemMovabliity, SetNPCState, SetNpcActive, ShowMessage, SpawnItemCurrentRoom,
+        SetItemDescription, SetItemMovability, SetNPCState, SetNpcActive, ShowMessage, SpawnItemCurrentRoom,
         SpawnItemInContainer, SpawnItemInInventory, SpawnItemInRoom, SpawnNpcInRoom, SpinnerMessage, UnlockExit,
         UnlockItem,
     };
@@ -406,7 +406,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, scripted: &Scrip
             exit_to,
         } => reveal_exit(world, direction, exit_from, exit_to)?,
         SetItemDescription { item_id, text } => set_item_description(world, item_id, text)?,
-        SetItemMovabliity { item_id, movability } => set_item_movability(world, item_id, movability)?,
+        SetItemMovability { item_id, movability } => set_item_movability(world, item_id, movability)?,
         SetNPCState { npc_id, state } => set_npc_state(world, npc_id, state)?,
         ShowMessage(text) => show_message_with_priority(view, text, *priority),
         SpawnItemInContainer { item_id, container_id } => {
