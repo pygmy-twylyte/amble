@@ -241,7 +241,7 @@ mod tests {
             name: format!("Item {}", id.simple()),
             description: "A test item".into(),
             location,
-            movability: Movability::Movable,
+            movability: Movability::Free,
             container_state: None,
             contents: HashSet::new(),
             abilities: HashSet::new(),

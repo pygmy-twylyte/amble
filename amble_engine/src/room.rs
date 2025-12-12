@@ -296,7 +296,7 @@ mod tests {
             name: "Test Item".into(),
             description: "A test item".into(),
             location: Location::Room(room_id),
-            movability: crate::item::Movability::Movable,
+            movability: crate::item::Movability::Free,
             container_state: None,
             contents: HashSet::new(),
             abilities: HashSet::new(),

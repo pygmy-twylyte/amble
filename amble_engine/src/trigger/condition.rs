@@ -213,7 +213,7 @@ mod tests {
             description: "".into(),
             location,
             container_state,
-            movability: crate::item::Movability::Movable,
+            movability: crate::item::Movability::Free,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),

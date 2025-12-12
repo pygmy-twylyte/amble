@@ -126,7 +126,7 @@ impl Item {
         // if given back to an NPC or "locked in" to a receiver item,
         // it can be optionally re-restricted using a trigger action
         if matches!(self.movability, Movability::Restricted { .. }) {
-            self.movability = Movability::Movable;
+            self.movability = Movability::Free;
         }
         self.location = Location::Inventory;
     }
@@ -250,7 +250,7 @@ impl Item {
     pub fn take_denied_reason(&self) -> Option<String> {
         match &self.movability {
             Movability::Fixed { reason } | Movability::Restricted { reason } => Some(reason.to_string()),
-            Movability::Movable => None,
+            Movability::Free => None,
         }
     }
 }
@@ -440,7 +440,7 @@ pub enum Movability {
         reason: String,
     },
     #[default]
-    Movable,
+    Free,
 }
 
 /// Extra options / data for consumable items are represented here.
@@ -473,7 +473,7 @@ mod tests {
             name: "Test Item".into(),
             description: "A test item".into(),
             location: Location::Nowhere,
-            movability: Movability::Movable,
+            movability: Movability::Free,
             container_state: None,
             contents: HashSet::new(),
             abilities: HashSet::new(),
@@ -609,7 +609,7 @@ mod tests {
         };
         item.set_location_inventory();
         assert_eq!(item.location, Location::Inventory);
-        assert!(matches!(item.movability, Movability::Movable));
+        assert!(matches!(item.movability, Movability::Free));
     }
 
     #[test]

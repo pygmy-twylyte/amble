@@ -160,7 +160,7 @@ mod tests {
             name: "Test Item".into(),
             description: "A test item".into(),
             location: Location::Inventory,
-            movability: Movability::Movable,
+            movability: Movability::Free,
             container_state: None,
             contents: HashSet::new(),
             abilities: HashSet::new(),

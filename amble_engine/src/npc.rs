@@ -426,7 +426,7 @@ mod tests {
             symbol: "test_item".into(),
             name: "Test Item".into(),
             description: "A test item".into(),
-            movability: Movability::Movable,
+            movability: Movability::Free,
             location: Location::Nowhere,
             container_state: None,
             contents: HashSet::new(),

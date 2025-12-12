@@ -2717,7 +2717,7 @@ mod tests {
             name: "Item".into(),
             description: "".into(),
             location,
-            movability: Movability::Movable,
+            movability: Movability::Free,
             container_state,
             contents: HashSet::new(),
             abilities: HashSet::new(),
@@ -3146,7 +3146,7 @@ mod tests {
         spawn_item_in_inventory(&mut world, &item_id).unwrap();
         assert_eq!(world.items[&item_id].location, Location::Inventory);
         assert!(world.player.inventory.contains(&item_id));
-        assert!(matches!(world.items[&item_id].movability, Movability::Movable));
+        assert!(matches!(world.items[&item_id].movability, Movability::Free));
     }
 
     #[test]

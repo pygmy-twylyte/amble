@@ -101,7 +101,7 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
             world.turn_count += 1;
             let item_id = item.id();
             let room_id = world.player_room_ref()?.id();
-            if matches!(item.movability, Movability::Movable) {
+            if matches!(item.movability, Movability::Free) {
                 if let Some(dropped) = world.items.get_mut(&item_id) {
                     dropped.set_location_room(room_id);
                     if let Some(room) = world.rooms.get_mut(&room_id) {
@@ -228,7 +228,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                 );
                 return Ok(());
             }
-            if matches!(item.movability, Movability::Movable) {
+            if matches!(item.movability, Movability::Free) {
                 // extract item uuid & original location
                 let loot_id = item.id();
                 let orig_loc = item.location;
@@ -884,7 +884,7 @@ mod tests {
             name: "Apple".into(),
             description: "".into(),
             location: Location::Inventory,
-            movability: Movability::Movable,
+            movability: Movability::Free,
             container_state: None,
             contents: HashSet::new(),
             abilities: HashSet::new(),
@@ -903,7 +903,7 @@ mod tests {
             name: "Rock".into(),
             description: "".into(),
             location: Location::Room(room_id),
-            movability: Movability::Movable,
+            movability: Movability::Free,
             container_state: None,
             contents: HashSet::new(),
             abilities: HashSet::new(),
@@ -922,7 +922,7 @@ mod tests {
             name: "Chest".into(),
             description: "".into(),
             location: Location::Room(room_id),
-            movability: Movability::Movable,
+            movability: Movability::Free,
             container_state: Some(ContainerState::Open),
             contents: HashSet::new(),
             abilities: HashSet::new(),
@@ -937,7 +937,7 @@ mod tests {
             name: "Gem".into(),
             description: "".into(),
             location: Location::Item(chest_id),
-            movability: Movability::Movable,
+            movability: Movability::Free,
             container_state: None,
             contents: HashSet::new(),
             abilities: HashSet::new(),
@@ -990,7 +990,7 @@ mod tests {
             name: "Coin".into(),
             description: "".into(),
             location: Location::Npc(npc_id),
-            movability: Movability::Movable,
+            movability: Movability::Free,
             container_state: None,
             contents: HashSet::new(),
             abilities: HashSet::new(),
