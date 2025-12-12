@@ -1,5 +1,5 @@
 // Amble DSL Grammar
-// Amble version 0.64.0
+// Amble version 0.64.0-pre
 
 COMMENT    = _{ "#" ~ (!NEWLINE ~ ANY)* }
 WHITESPACE = _{ " " | "\t" | NEWLINE | COMMENT }
@@ -61,12 +61,12 @@ keyword = {
   | "refuse"
   | "state"
   | "deny"
-  | "restrict"
   | "barred"
   | "message"
   | "reason"
   | "loop"
   | "consumable"
+  | "movability"
   | "container"
   | "fail"
   | "uses_left"
@@ -218,6 +218,7 @@ do_action        =  {
   | ("reveal" ~ "exit" ~ "from" ~ ident ~ "to" ~ ident ~ "direction" ~ (ident | string))
   | ("push" ~ "player" ~ "to" ~ ident)
   | ("set" ~ "item" ~ "description" ~ ident ~ string)
+  | ("set" ~ "item" ~ "movability" ~ ident ~ movability_opt)
   | ("npc" ~ "random" ~ "dialogue" ~ ident)
   | ("npc" ~ "says" ~ ident ~ string)
   | ("npc" ~ "refuse" ~ "item" ~ ident ~ string)
@@ -229,7 +230,6 @@ do_action        =  {
   | ("heal" ~ "npc" ~ ident ~ number ~ ("for" ~ pos_int ~ "turns")? ~ "cause" ~ string)
   | ("remove" ~ "npc" ~ ident ~ "effect" ~ string)
   | ("deny" ~ "read" ~ string)
-  | ("restrict" ~ "item" ~ ident)
   | ("give" ~ "item" ~ ident ~ "to" ~ "player" ~ "from" ~ "npc" ~ ident)
   | ("set" ~ "barred" ~ "message" ~ "from" ~ ident ~ "to" ~ ident ~ string)
   | ("set" ~ "container" ~ "state" ~ ident ~ ("open" | "closed" | "locked" | "transparentOpen" | "transparentClosed" | "transparentLocked" | "none"))
@@ -238,13 +238,13 @@ do_action        =  {
   | ("modify" ~ "room" ~ ident ~ room_patch_block)
   | ("modify" ~ "npc" ~ ident ~ npc_patch_block)
 }
+movability_opt   =  { "free" | "fixed" ~ string | "restricted" ~ string }
 item_patch_block =  { "{" ~ item_patch_stmt+ ~ "}" }
 item_patch_stmt  = _{
     item_name_patch
   | item_desc_patch
   | item_text_patch
-  | item_portable_patch
-  | item_restricted_patch
+  | item_movability_patch
   | item_container_state_patch
   | item_add_ability
   | item_remove_ability
@@ -253,8 +253,7 @@ item_patch_stmt  = _{
 item_name_patch       = { "name" ~ string }
 item_desc_patch       = { ("description" | "desc") ~ string }
 item_text_patch       = { "text" ~ string }
-item_portable_patch   = { "portable" ~ boolean }
-item_restricted_patch = { "restricted" ~ boolean }
+item_movability_patch = { "movability" ~ movability_opt }
 // turn item into a non-container; requires special handling in case the item isn't empty
 // setting container_state to "off" -> remove_container_state = true in resulting ItemPatch
 item_container_state_patch = { "container" ~ "state" ~ ("off" | "open" | "closed" | "locked" | "transparentOpen" | "transparentClosed" | "transparentLocked") }
@@ -409,10 +408,10 @@ overlay_npc_state_line   = { (ident ~ string) | ("custom" ~ "(" ~ ident ~ ")" ~ 
 // -----------------
 
 item_def             = { "item" ~ ident ~ item_block }
-item_block           = { "{" ~ (item_name | item_desc | item_portable | item_location | item_container_state | item_ability | item_text | item_restricted | item_requires | item_consumable)* ~ "}" }
+item_block           = { "{" ~ (item_name | item_desc | item_movability | item_location | item_container_state | item_ability | item_text | item_requires | item_consumable)* ~ "}" }
 item_name            = { "name" ~ string }
 item_desc            = { ("desc" | "description") ~ string }
-item_portable        = { "portable" ~ boolean }
+item_movability      = { "movability" ~ movability_opt }
 item_location        = { "location" ~ (inventory_loc | room_loc | npc_loc | chest_loc | nowhere_loc) }
 player_kw            = { "player" }
 inventory_loc        = { "inventory" ~ (ident | player_kw) }
@@ -423,7 +422,6 @@ nowhere_loc          = { "nowhere" ~ string }
 item_container_state = { "container" ~ "state" ~ ("open" | "closed" | "locked" | "transparentOpen" | "transparentClosed" | "transparentLocked" | "none") }
 item_ability         = { "ability" ~ ident ~ ident? }
 item_text            = { "text" ~ string }
-item_restricted      = { "restricted" ~ boolean }
 item_requires        = { "requires" ~ ident ~ "to" ~ ident }
 item_consumable      = { "consumable" ~ consumable_block }
 
