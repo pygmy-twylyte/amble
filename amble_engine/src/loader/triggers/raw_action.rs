@@ -454,6 +454,10 @@ pub enum RawTriggerAction {
         item_sym: String,
         text: String,
     },
+    SetItemMovabilty {
+        item_sym: String,
+        movability: Movability,
+    },
     SetNpcState {
         npc_id: String,
         state: NpcState,
@@ -531,6 +535,7 @@ impl RawTriggerAction {
             Self::ReplaceItem { old_sym, new_sym } => cook_replace_item(symbols, old_sym, new_sym),
             Self::ReplaceDropItem { old_sym, new_sym } => cook_replace_drop_item(symbols, old_sym, new_sym),
             Self::SetItemDescription { item_sym, text } => cook_set_item_description(symbols, item_sym, text),
+            Self::SetItemMovabilty { item_sym, movability } => cook_set_item_movability(symbols, item_sym, movability),
             Self::SetBarredMessage {
                 msg,
                 exit_from,
@@ -638,6 +643,16 @@ impl RawTriggerAction {
 /*
  * "Cook" functions below convert RawTriggerActions to "fully cooked" TriggerActions
  */
+fn cook_set_item_movability(symbols: &SymbolTable, item_sym: &str, movability: &Movability) -> Result<TriggerAction> {
+    if let Some(&item_id) = symbols.items.get(item_sym) {
+        Ok(TriggerAction::SetItemMovabliity {
+            item_id,
+            movability: movability.clone(),
+        })
+    } else {
+        bail!("loading TriggerAction::SetItemMovability: symbol {item_sym} not found in table");
+    }
+}
 
 fn cook_modify_item(symbols: &SymbolTable, item_sym: &str, raw_patch: &RawItemPatch) -> Result<TriggerAction> {
     if let Some(&item_id) = symbols.items.get(item_sym) {
