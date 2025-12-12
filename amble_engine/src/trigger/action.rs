@@ -82,7 +82,7 @@ use uuid::Uuid;
 use crate::Item;
 use crate::health::{HealthEffect, LifeState, LivingEntity};
 use crate::helpers::{symbol_from_id, symbol_or_unknown};
-use crate::item::{ContainerState, ItemAbility, ItemHolder};
+use crate::item::{ContainerState, ItemAbility, ItemHolder, Movability};
 use crate::npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState, move_npc};
 use crate::player::{Flag, Player};
 use crate::room::Exit;
@@ -224,12 +224,12 @@ pub enum TriggerAction {
     PushPlayerTo(Uuid),
     /// Resets a sequence flag back to step 0
     ResetFlag(String),
-    /// Makes an item non-transferable (cannot be taken or dropped)
-    RestrictItem(Uuid),
     /// Makes a hidden exit visible and usable
     RevealExit { exit_from: Uuid, exit_to: Uuid, direction: String },
     /// Changes an item's description
     SetItemDescription { item_id: Uuid, text: String },
+    /// Restricts or changes movability of an `Item`
+    SetItemMovabliity { item_id: Uuid, movability: Movability },
     /// Changes an NPC's behavioral state
     SetNPCState { npc_id: Uuid, state: NpcState },
     /// Displays a message to the player
@@ -317,8 +317,8 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, scripted: &Scrip
         DamagePlayerOT, DenyRead, DespawnItem, DespawnNpc, GiveItemToPlayer, HealNpc, HealNpcOT, HealPlayer,
         HealPlayerOT, LockExit, LockItem, ModifyItem, ModifyNpc, ModifyRoom, NpcRefuseItem, NpcSays, NpcSaysRandom,
         PushPlayerTo, RemoveFlag, RemoveNpcEffect, RemovePlayerEffect, ReplaceDropItem, ReplaceItem, ResetFlag,
-        RestrictItem, RevealExit, ScheduleIn, ScheduleInIf, ScheduleOn, ScheduleOnIf, SetBarredMessage,
-        SetContainerState, SetItemDescription, SetNPCState, SetNpcActive, ShowMessage, SpawnItemCurrentRoom,
+        RevealExit, ScheduleIn, ScheduleInIf, ScheduleOn, ScheduleOnIf, SetBarredMessage, SetContainerState,
+        SetItemDescription, SetItemMovabliity, SetNPCState, SetNpcActive, ShowMessage, SpawnItemCurrentRoom,
         SpawnItemInContainer, SpawnItemInInventory, SpawnItemInRoom, SpawnNpcInRoom, SpinnerMessage, UnlockExit,
         UnlockItem,
     };
@@ -389,7 +389,6 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, scripted: &Scrip
         ResetFlag(flag_name) => reset_flag(&mut world.player, flag_name),
         AdvanceFlag(flag_name) => advance_flag(&mut world.player, flag_name),
         SpinnerMessage { spinner } => spinner_message(world, view, spinner, *priority)?,
-        RestrictItem(item_id) => restrict_item(world, item_id)?,
         NpcRefuseItem { npc_id, reason } => npc_refuse_item(world, view, *npc_id, reason, *priority)?,
         NpcSaysRandom { npc_id } => npc_says_random(world, view, npc_id, *priority)?,
         NpcSays { npc_id, quote } => npc_says(world, view, npc_id, quote, *priority)?,
@@ -407,6 +406,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, scripted: &Scrip
             exit_to,
         } => reveal_exit(world, direction, exit_from, exit_to)?,
         SetItemDescription { item_id, text } => set_item_description(world, item_id, text)?,
+        SetItemMovabliity { item_id, movability } => set_item_movability(world, item_id, movability)?,
         SetNPCState { npc_id, state } => set_npc_state(world, npc_id, state)?,
         ShowMessage(text) => show_message_with_priority(view, text, *priority),
         SpawnItemInContainer { item_id, container_id } => {
@@ -485,8 +485,7 @@ pub struct ItemPatch {
     pub name: Option<String>,
     pub desc: Option<String>,
     pub text: Option<String>,
-    pub portable: Option<bool>,
-    pub restricted: Option<bool>,
+    pub movability: Option<Movability>,
     pub container_state: Option<ContainerState>,
     #[serde(default)]
     pub remove_container_state: bool,
@@ -873,12 +872,8 @@ fn apply_item_patch(world: &mut AmbleWorld, item_id: Uuid, patch: &ItemPatch) ->
         patched.text.clone_from(&patch.text);
     }
 
-    if let Some(new_portable) = patch.portable {
-        patched.portable = new_portable;
-    }
-
-    if let Some(new_restricted) = patch.restricted {
-        patched.restricted = new_restricted;
+    if let Some(ref new_mov) = patch.movability {
+        patched.movability.clone_from(new_mov);
     }
 
     if patch.remove_container_state {
@@ -1295,34 +1290,7 @@ fn remove_flag_with_priority(world: &mut AmbleWorld, view: &mut View, flag: &str
         warn!("└─ action: RemoveFlag(\"{flag}\") - flag was not set");
     }
 }
-/// Makes an item non-transferable by marking it as restricted.
-///
-/// Restricted items cannot be taken from their current location or dropped
-/// if they're already in inventory. This is useful for items that should
-/// remain fixed in place once certain conditions are met, or for preventing
-/// players from transferring key items at inappropriate times.
-///
-/// # Parameters
-///
-/// * `world` - Mutable reference to the game world containing the item
-/// * `item_id` - UUID of the item to restrict
-///
-/// # Returns
-///
-/// Returns `Ok(())` if the item was successfully restricted.
-///
-/// # Errors
-///
-/// - If the specified item doesn't exist in the world
-pub fn restrict_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
-    if let Some(item) = world.items.get_mut(item_id) {
-        item.restricted = true;
-        info!("└─ action: RestrictItem({}) \"{}\"", item.symbol(), item.name());
-        Ok(())
-    } else {
-        bail!("action RestrictItem({item_id}): item not found");
-    }
-}
+
 /// Makes an NPC speak a random line of dialogue based on their current mood.
 ///
 /// This action uses the NPC's mood and the world's `NpcIgnore` spinner to
@@ -2107,6 +2075,16 @@ pub fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
     Ok(())
 }
 
+/// Change the movability state of an item.
+pub fn set_item_movability(world: &mut AmbleWorld, item_id: &Uuid, movability: &Movability) -> Result<()> {
+    let item = world
+        .items
+        .get_mut(&item_id)
+        .with_context(|| format!("item id {item_id} not found"))?;
+    item.movability.clone_from(movability);
+    Ok(())
+}
+
 /// Prevents a player from reading an item and displays a custom denial message.
 ///
 /// This action is used to conditionally block reading of items based on
@@ -2739,9 +2717,8 @@ mod tests {
             name: "Item".into(),
             description: "".into(),
             location,
-            portable: true,
+            movability: Movability::Movable,
             container_state,
-            restricted: false,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
@@ -2986,16 +2963,6 @@ mod tests {
     }
 
     #[test]
-    fn restrict_item_sets_restricted_flag() {
-        let (mut world, room_id, _) = build_test_world();
-        let item_id = Uuid::new_v4();
-        let item = make_item(item_id, Location::Room(room_id), None);
-        world.items.insert(item_id, item);
-        restrict_item(&mut world, &item_id).unwrap();
-        assert!(world.items.get(&item_id).unwrap().restricted);
-    }
-
-    #[test]
     fn lock_and_unlock_item_changes_state() {
         let (mut world, room_id, _) = build_test_world();
         let item_id = Uuid::new_v4();
@@ -3040,8 +3007,9 @@ mod tests {
             name: Some("Renamed Widget".to_string()),
             desc: Some("Updated description".to_string()),
             text: Some("new dynamic text".to_string()),
-            portable: Some(false),
-            restricted: Some(true),
+            movability: Some(Movability::Fixed {
+                reason: "It is nailed to the floor.".to_string(),
+            }),
             container_state: Some(ContainerState::Open),
             ..Default::default()
         };
@@ -3052,9 +3020,13 @@ mod tests {
         assert_eq!(updated.name, "Renamed Widget");
         assert_eq!(updated.description, "Updated description");
         assert_eq!(updated.text.as_deref(), Some("new dynamic text"));
-        assert!(!updated.portable);
-        assert!(updated.restricted);
         assert_eq!(updated.container_state, Some(ContainerState::Open));
+        assert_eq!(
+            updated.movability,
+            Movability::Fixed {
+                reason: "It is nailed to the floor.".to_string(),
+            }
+        );
     }
 
     #[test]
@@ -3163,16 +3135,18 @@ mod tests {
     }
 
     #[test]
-    fn spawn_item_in_inventory_adds_to_player() {
+    fn spawn_item_in_inventory_adds_to_player_and_removes_restriction() {
         let (mut world, _, _) = build_test_world();
         let item_id = Uuid::new_v4();
         let mut item = make_item(item_id, Location::Nowhere, None);
-        item.restricted = true;
+        item.movability = Movability::Restricted {
+            reason: "some reason".to_string(),
+        };
         world.items.insert(item_id, item);
         spawn_item_in_inventory(&mut world, &item_id).unwrap();
         assert_eq!(world.items[&item_id].location, Location::Inventory);
         assert!(world.player.inventory.contains(&item_id));
-        assert!(!world.items[&item_id].restricted);
+        assert!(matches!(world.items[&item_id].movability, Movability::Movable));
     }
 
     #[test]
