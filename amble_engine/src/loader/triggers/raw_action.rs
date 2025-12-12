@@ -8,6 +8,7 @@ use serde::Deserialize;
 use std::collections::HashSet;
 
 use super::raw_condition::RawTriggerCondition;
+use crate::item::Movability;
 use crate::loader::items::RawItemAbility;
 use crate::scheduler::{EventCondition, OnFalsePolicy};
 use crate::trigger::{
@@ -42,8 +43,7 @@ pub struct RawItemPatch {
     pub name: Option<String>,
     pub desc: Option<String>,
     pub text: Option<String>,
-    pub portable: Option<bool>,
-    pub restricted: Option<bool>,
+    pub movability: Option<Movability>,
     pub container_state: Option<ContainerState>,
     #[serde(default)]
     pub remove_container_state: bool,
@@ -62,9 +62,8 @@ impl RawItemPatch {
             name: self.name.clone(),
             desc: self.desc.clone(),
             text: self.text.clone(),
-            portable: self.portable,
-            restricted: self.restricted,
             container_state: self.container_state,
+            movability: self.movability.clone(),
             remove_container_state: self.remove_container_state,
             add_abilities: self
                 .add_abilities
@@ -446,9 +445,6 @@ pub enum RawTriggerAction {
     ResetFlag {
         flag: String,
     },
-    RestrictItem {
-        item_id: String,
-    },
     RevealExit {
         exit_from: String,
         exit_to: String,
@@ -584,7 +580,6 @@ impl RawTriggerAction {
                 turns: *turns,
             }),
             Self::RemovePlayerEffect { cause } => Ok(TriggerAction::RemovePlayerEffect { cause: cause.clone() }),
-            Self::RestrictItem { item_id } => cook_restrict_item(symbols, item_id),
             Self::NpcRefuseItem { npc_id, reason } => cook_npc_refuse_item(symbols, npc_id, reason),
             Self::NpcSaysRandom { npc_id } => cook_npc_says_random(symbols, npc_id),
             Self::NpcSays { npc_id, quote } => cook_npc_says(symbols, npc_id, quote),
@@ -847,14 +842,6 @@ fn cook_npc_refuse_item(symbols: &SymbolTable, npc_symbol: &String, reason: &Str
         })
     } else {
         bail!("raw action NpcRefuseItem({npc_symbol}, _): npc not found in symbols");
-    }
-}
-
-fn cook_restrict_item(symbols: &SymbolTable, item_id: &String) -> Result<TriggerAction> {
-    if let Some(item_uuid) = symbols.items.get(item_id) {
-        Ok(TriggerAction::RestrictItem(*item_uuid))
-    } else {
-        bail!("raw action RestrictItem({item_id}): item not found in symbols");
     }
 }
 
