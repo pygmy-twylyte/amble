@@ -511,7 +511,7 @@ pub enum CompileError {
 /// Returns an error if the trigger AST is missing required fields or contains
 /// constructs (such as unsupported condition groups) that cannot be lowered.
 pub fn compile_trigger_to_toml(ast: &TriggerAst) -> Result<String, CompileError> {
-    let doc = compile_triggers_to_doc(&[ast.clone()])?;
+    let doc = compile_triggers_to_doc(std::slice::from_ref(ast))?;
     Ok(doc.to_string())
 }
 
@@ -2094,9 +2094,10 @@ fn action_to_value(stmt: &ActionStmt) -> toml_edit::Value {
         },
     };
     if let Some(priority) = stmt.priority
-        && let Some(tbl) = value.as_inline_table_mut() {
-            tbl.insert("priority", toml_edit::Value::from(priority as i64));
-        }
+        && let Some(tbl) = value.as_inline_table_mut()
+    {
+        tbl.insert("priority", toml_edit::Value::from(priority as i64));
+    }
     value
 }
 
@@ -2215,21 +2216,23 @@ fn npc_patch_to_inline_table(patch: &NpcPatchAst) -> InlineTable {
     if let Some(movement) = &patch.movement {
         let mut mt = InlineTable::new();
         if let Some(route) = &movement.route
-            && !route.is_empty() {
-                let mut arr = Array::default();
-                for room in route {
-                    arr.push(room.clone());
-                }
-                mt.insert("route", toml_edit::Value::from(arr));
+            && !route.is_empty()
+        {
+            let mut arr = Array::default();
+            for room in route {
+                arr.push(room.clone());
             }
+            mt.insert("route", toml_edit::Value::from(arr));
+        }
         if let Some(random_rooms) = &movement.random_rooms
-            && !random_rooms.is_empty() {
-                let mut arr = Array::default();
-                for room in random_rooms {
-                    arr.push(room.clone());
-                }
-                mt.insert("random_rooms", toml_edit::Value::from(arr));
+            && !random_rooms.is_empty()
+        {
+            let mut arr = Array::default();
+            for room in random_rooms {
+                arr.push(room.clone());
             }
+            mt.insert("random_rooms", toml_edit::Value::from(arr));
+        }
         if let Some(timing) = &movement.timing {
             let mut tt = InlineTable::new();
             match timing {

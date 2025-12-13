@@ -718,12 +718,11 @@ fn collect_dsl_files_recursive(dir: &str, out: &mut Vec<String>) {
                 }
                 continue;
             }
-            if let Some(ext) = p.extension().and_then(|e| e.to_str()) {
-                if (ext == "amble" || ext == "able")
+            if let Some(ext) = p.extension().and_then(|e| e.to_str())
+                && (ext == "amble" || ext == "able")
                     && let Some(s) = p.to_str() {
                         out.push(s.to_string());
                     }
-            }
         }
     }
 }
