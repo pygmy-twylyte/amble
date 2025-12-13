@@ -56,8 +56,7 @@ impl Npc {
             let mut rng = rand::rng();
             lines
                 .choose(&mut rng)
-                .unwrap_or(&"Stands mute.".italic().dimmed().to_string())
-                .to_string()
+                .unwrap_or(&"Stands mute.".italic().dimmed().to_string()).clone()
         } else {
             warn!(
                 "Npc {}({}): failed dialogue lookup for mood: {:?}",
@@ -89,7 +88,7 @@ impl Npc {
     }
     /// Obtain one-line description for NPC (by convention, the first line of the `description` field).
     pub fn short_description(&self) -> String {
-        if let Some((short, _rest)) = self.description.split_once("\n") {
+        if let Some((short, _rest)) = self.description.split_once('\n') {
             short.to_string()
         } else {
             // return the whole description if there is only one line
@@ -390,7 +389,7 @@ pub fn move_scheduled(movement: &NpcMovement, current_turn: usize) -> bool {
     }
     // return true or false depending on movement schedule otherwise
     match &movement.timing {
-        MovementTiming::EveryNTurns { turns } => current_turn % turns == 0,
+        MovementTiming::EveryNTurns { turns } => current_turn.is_multiple_of(*turns),
         MovementTiming::OnTurn { turn } => current_turn == *turn,
     }
 }

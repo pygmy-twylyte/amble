@@ -755,12 +755,11 @@ fn apply_npc_patch(world: &mut AmbleWorld, npc_id: Uuid, patch: &NpcPatch) -> Re
         }
     }
 
-    if let Some(movement_patch) = &patch.movement {
-        if movement_patch.has_updates() {
+    if let Some(movement_patch) = &patch.movement
+        && movement_patch.has_updates() {
             let current_turn = world.turn_count;
             apply_npc_movement_patch(current_turn, npc, movement_patch)?;
         }
-    }
 
     Ok(())
 }
@@ -773,22 +772,20 @@ fn apply_npc_movement_patch(current_turn: usize, npc: &mut Npc, patch: &NpcMovem
         );
     }
 
-    if let Some(route) = &patch.route {
-        if route.is_empty() {
+    if let Some(route) = &patch.route
+        && route.is_empty() {
             bail!(
                 "modifyNpc patch for '{}' requires at least one room in a movement route",
                 npc.symbol()
             );
         }
-    }
-    if let Some(random) = &patch.random_rooms {
-        if random.is_empty() {
+    if let Some(random) = &patch.random_rooms
+        && random.is_empty() {
             bail!(
                 "modifyNpc patch for '{}' requires at least one room in a random movement set",
                 npc.symbol()
             );
         }
-    }
 
     let npc_symbol = npc.symbol().to_string();
 
@@ -912,15 +909,14 @@ pub fn spawn_npc_in_room(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, 
         symbol_or_unknown(&world.npcs, npc_id),
         symbol_or_unknown(&world.rooms, room_id)
     );
-    if let Some(npc) = world.npcs.get_mut(&npc_id) {
-        if npc.location.is_not_nowhere() {
+    if let Some(npc) = world.npcs.get_mut(&npc_id)
+        && npc.location.is_not_nowhere() {
             let current_loc = symbol_from_id(&world.rooms, npc.location.room_id()?).unwrap_or("<unknown room>");
             warn!(
                 "spawn called on NPC {} who was already in-game -- MOVING from {current_loc}",
                 npc.symbol(),
             );
         }
-    }
     move_npc(world, view, npc_id, Location::Room(room_id))?;
     Ok(())
 }
@@ -1373,7 +1369,7 @@ pub fn npc_says(
     }
     view.push_with_custom_priority(
         ViewItem::NpcSpeech {
-            speaker: npc.name.to_string(),
+            speaker: npc.name.clone(),
             quote: quote.to_string(),
         },
         priority,
@@ -2008,8 +2004,7 @@ pub fn give_to_player(world: &mut AmbleWorld, npc_id: &Uuid, item_id: &Uuid) -> 
         info!("└─ action: GiveItemToPlayer({}, {})", npc.symbol(), item.symbol());
     } else {
         error!(
-            "item {} not found in NPC {} inventory to give to player",
-            item_id, npc_id
+            "item {item_id} not found in NPC {npc_id} inventory to give to player"
         );
     }
     Ok(())
@@ -2079,7 +2074,7 @@ pub fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
 pub fn set_item_movability(world: &mut AmbleWorld, item_id: &Uuid, movability: &Movability) -> Result<()> {
     let item = world
         .items
-        .get_mut(&item_id)
+        .get_mut(item_id)
         .with_context(|| format!("item id {item_id} not found"))?;
     item.movability.clone_from(movability);
     Ok(())

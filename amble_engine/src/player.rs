@@ -330,7 +330,7 @@ impl Flag {
     /// For "Sequence" this is "`flag_name#N`" where N is the current sequence step number.
     pub fn value(&self) -> String {
         match self {
-            Self::Simple { name, .. } => name.to_string(),
+            Self::Simple { name, .. } => name.clone(),
             Self::Sequence { name, step, .. } => format_sequence_value(name, *step),
         }
     }

@@ -197,9 +197,9 @@ impl RawItem {
 
         let real_item = Item {
             id: item_uuid,
-            symbol: self.id.to_string(),
-            name: self.name.to_string(),
-            description: self.description.to_string(),
+            symbol: self.id.clone(),
+            name: self.name.clone(),
+            description: self.description.clone(),
             location: loc,
             movability: self.movability.clone(),
             container_state: self.container_state,

@@ -323,8 +323,7 @@ pub fn use_item_on_handler(
     if !interaction_fired {
         view.push(ViewItem::ActionFailure(
             world
-                .spin_core(CoreSpinnerType::NoEffect, "That appears to have had no effect.")
-                .to_string(),
+                .spin_core(CoreSpinnerType::NoEffect, "That appears to have had no effect.").clone(),
         ));
         info!(
             "No matching trigger for {interaction:?} {target_name} ({}) with {tool_name} ({})",

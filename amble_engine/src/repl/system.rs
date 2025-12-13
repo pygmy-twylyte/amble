@@ -722,7 +722,7 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> 
                     load_path.display(),
                     world.version
                 );
-                return true;
+                true
             },
             Err(err) => {
                 view.push(ViewItem::ActionFailure(format!(
@@ -734,7 +734,7 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> 
                     "player attempted to load '{gamefile}' from '{}': parse failure ({err})",
                     load_path.display()
                 );
-                return false;
+                false
             },
         },
         Err(err) => {
@@ -756,7 +756,7 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> 
                 load_path.display(),
                 err
             );
-            return false;
+            false
         },
     }
 }
@@ -888,7 +888,7 @@ pub fn theme_handler(view: &mut View, theme_name: &str) -> Result<()> {
                     if t == &current {
                         format!("{t} (current)").status_style().to_string()
                     } else {
-                        t.to_string()
+                        t.clone()
                     }
                 })
                 .collect::<Vec<_>>()

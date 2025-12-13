@@ -249,7 +249,7 @@ impl Item {
     /// Returns the reason an item can't be taken into inventory, if any
     pub fn take_denied_reason(&self) -> Option<String> {
         match &self.movability {
-            Movability::Fixed { reason } | Movability::Restricted { reason } => Some(reason.to_string()),
+            Movability::Fixed { reason } | Movability::Restricted { reason } => Some(reason.clone()),
             Movability::Free => None,
         }
     }

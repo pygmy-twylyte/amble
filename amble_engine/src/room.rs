@@ -174,7 +174,7 @@ impl Room {
     /// Returns an error if any referenced rooms cannot be resolved while showing exits.
     pub fn show(&self, world: &AmbleWorld, view: &mut View, force_mode: Option<ViewMode>) -> Result<()> {
         view.push(ViewItem::RoomDescription {
-            name: self.name.to_string(),
+            name: self.name.clone(),
             description: self.description().to_string(),
             visited: self.visited,
             force_mode,
@@ -241,7 +241,7 @@ impl Room {
                 self.id
             ))?;
             exit_lines.push(ExitLine {
-                direction: direction.to_string(),
+                direction: direction.clone(),
                 destination: target_room.name().to_string(),
                 exit_locked: exit.locked,
                 dest_visited: target_room.visited,

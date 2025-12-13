@@ -158,9 +158,9 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
     });
 
     // if no dialogue was triggered, fire random response according to Npc's mood
-    if !dialogue_fired {
-        if let Some(npc) = world.npcs.get(&sent_id) {
-            if let Some(ignore_spinner) = world
+    if !dialogue_fired
+        && let Some(npc) = world.npcs.get(&sent_id)
+            && let Some(ignore_spinner) = world
                 .spinners
                 .get(&crate::spinners::SpinnerType::Core(CoreSpinnerType::NpcIgnore))
             {
@@ -171,8 +171,6 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
                 });
                 info!("NPC \"{}\" ({}) said \"{}\"", npc.name(), npc.symbol(), dialogue);
             }
-        }
-    }
     world.turn_count += 1;
     Ok(())
 }
@@ -239,7 +237,7 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
                 )));
                 return Ok(());
             }
-            (npc.id(), npc.name.to_string())
+            (npc.id(), npc.name.clone())
         } else {
             view.push(ViewItem::Error(format!(
                 "{} matches an item. Did you mean 'put {} in {}'?",

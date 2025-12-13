@@ -130,13 +130,11 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
         if first == "saves" && words.next().is_none() {
             return Command::ListSaves;
         }
-        if first == "list" {
-            if let Some(second) = words.next() {
-                if second == "saves" && words.next().is_none() {
+        if first == "list"
+            && let Some(second) = words.next()
+                && second == "saves" && words.next().is_none() {
                     return Command::ListSaves;
                 }
-            }
-        }
     }
 
     // parse gameplay commands; fall back to Unknown on parse failure

@@ -120,7 +120,7 @@ impl HealthState {
                         name: display_name.into(),
                         cause: cause.into(),
                         amount: *amount,
-                    })
+                    });
                 },
                 HealthEffect::DamageOverTime { cause, amount, times } => {
                     info!(
@@ -131,7 +131,7 @@ impl HealthState {
                         name: display_name.into(),
                         cause: cause.into(),
                         amount: *amount,
-                    })
+                    });
                 },
                 HealthEffect::HealOverTime { cause, amount, times } => {
                     info!(
@@ -142,7 +142,7 @@ impl HealthState {
                         name: display_name.into(),
                         cause: cause.into(),
                         amount: *amount,
-                    })
+                    });
                 },
             }
             // break out and return if character is dead!
@@ -340,7 +340,7 @@ impl HealthEffect {
                 let hp_left = current_hp.saturating_sub(*amount);
                 let follow_up = if times_left > 0 {
                     Some(Self::DamageOverTime {
-                        cause: cause.to_string(),
+                        cause: cause.clone(),
                         amount: *amount,
                         times: times_left,
                     })
@@ -354,7 +354,7 @@ impl HealthEffect {
                 let healed_hp = cmp::min(current_hp.saturating_add(*amount), max_hp);
                 let follow_up = if times_left > 0 {
                     Some(Self::HealOverTime {
-                        cause: cause.to_string(),
+                        cause: cause.clone(),
                         amount: *amount,
                         times: times_left,
                     })

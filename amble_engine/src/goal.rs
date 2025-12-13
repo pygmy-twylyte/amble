@@ -433,11 +433,10 @@ pub struct Goal {
 impl Goal {
     /// Determines and returns the current '`GoalStatus`' for this goal.
     pub fn status(&self, world: &AmbleWorld) -> GoalStatus {
-        if let Some(fail_condition) = &self.failed_when {
-            if fail_condition.satisfied(world) {
+        if let Some(fail_condition) = &self.failed_when
+            && fail_condition.satisfied(world) {
                 return GoalStatus::Failed;
             }
-        }
 
         if let Some(start_condition) = &self.activate_when {
             if start_condition.satisfied(world) {

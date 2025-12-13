@@ -129,8 +129,8 @@ impl Scheduler {
     ///
     /// Returns `None` when the earliest scheduled event is still in the future.
     pub fn pop_due(&mut self, now: usize) -> Option<ScheduledEvent> {
-        if let Some(Reverse((turn_due, idx))) = self.heap.peek().copied() {
-            if now >= turn_due {
+        if let Some(Reverse((turn_due, idx))) = self.heap.peek().copied()
+            && now >= turn_due {
                 self.heap.pop();
                 // "take" instead of "remove" keeps indices stable for the heap entries
                 // leaves default placeholders
@@ -138,7 +138,6 @@ impl Scheduler {
                 self.compact_if_needed();
                 return Some(event);
             }
-        }
         None
     }
 

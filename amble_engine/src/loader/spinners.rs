@@ -124,7 +124,7 @@ impl SpinnerFile {
             .enumerate()
             .map(|(i, val)| {
                 let width = spin_data.widths.get(i).copied().unwrap_or(1);
-                Wedge::new_weighted(val.to_string(), width)
+                Wedge::new_weighted(val.clone(), width)
             })
             .collect()
     }

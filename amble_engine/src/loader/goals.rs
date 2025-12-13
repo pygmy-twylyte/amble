@@ -44,9 +44,9 @@ impl RawGoal {
         let done_when = self.finished_when.to_goal_condition(symbols)?;
 
         Ok(Goal {
-            id: self.id.to_string(),
-            name: self.name.to_string(),
-            description: self.description.to_string(),
+            id: self.id.clone(),
+            name: self.name.clone(),
+            description: self.description.clone(),
             group: self.group,
             activate_when: act_when,
             finished_when: done_when,
@@ -74,13 +74,13 @@ impl RawGoalCondition {
     /// - on failed symbol lookup
     pub fn to_goal_condition(&self, symbols: &SymbolTable) -> Result<GoalCondition> {
         match self {
-            Self::FlagInProgress { flag } => Ok(GoalCondition::FlagInProgress { flag: flag.to_string() }),
-            Self::FlagComplete { flag } => Ok(GoalCondition::FlagComplete { flag: flag.to_string() }),
+            Self::FlagInProgress { flag } => Ok(GoalCondition::FlagInProgress { flag: flag.clone() }),
+            Self::FlagComplete { flag } => Ok(GoalCondition::FlagComplete { flag: flag.clone() }),
             Self::GoalComplete { goal_id } => Ok(GoalCondition::GoalComplete {
-                goal_id: goal_id.to_string(),
+                goal_id: goal_id.clone(),
             }),
-            Self::HasFlag { flag } => Ok(GoalCondition::HasFlag { flag: flag.to_string() }),
-            Self::MissingFlag { flag } => Ok(GoalCondition::MissingFlag { flag: flag.to_string() }),
+            Self::HasFlag { flag } => Ok(GoalCondition::HasFlag { flag: flag.clone() }),
+            Self::MissingFlag { flag } => Ok(GoalCondition::MissingFlag { flag: flag.clone() }),
             Self::HasItem { item_sym } => {
                 if let Some(uuid) = symbols.items.get(item_sym) {
                     Ok(GoalCondition::HasItem { item_id: *uuid })

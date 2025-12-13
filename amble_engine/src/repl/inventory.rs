@@ -465,7 +465,7 @@ pub(crate) fn validate_and_transfer_from_npc(
         if let Some(entity) = find_world_object(&container.inventory, &world.items, &world.npcs, item_pattern) {
             if let Some(loot) = entity.item() {
                 if let Some(reason) = loot.take_denied_reason() {
-                    view.push(ViewItem::ActionFailure(reason.to_string()));
+                    view.push(ViewItem::ActionFailure(reason.clone()));
                     return Ok(());
                 }
                 (loot.id(), loot.name().to_string())

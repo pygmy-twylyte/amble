@@ -96,7 +96,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             break;
         }
         if let Some(loaded_turn) = dispatch_result.turn {
-            current_turn = loaded_turn
+            current_turn = loaded_turn;
         }
 
         // fire actions that only take place when a game turn is taken
@@ -121,11 +121,10 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             check_npc_movement(world, &mut view)?;
             check_scheduled_events(world, &mut view)?;
             // autosave if appropriate
-            if world.turn_count % AUTOSAVE_TURNS == 0 {
-                if let Err(err) = crate::repl::system::autosave_quiet(world, "autosave") {
+            if world.turn_count.is_multiple_of(AUTOSAVE_TURNS)
+                && let Err(err) = crate::repl::system::autosave_quiet(world, "autosave") {
                     view.push(ViewItem::Error(format!("Autosave failed: {err}")));
                 }
-            }
         }
         // ambient triggers may fire even if turn wasn't advanced
         check_ambient_triggers(world, &mut view)?;
@@ -155,30 +154,30 @@ fn dispatch_command(command: &Command, world: &mut AmbleWorld, mut view: &mut Vi
         turn: None,
     };
     match &command {
-        Touch(thing) => touch_handler(world, &mut view, thing)?,
-        SetViewMode(mode) => set_viewmode_handler(&mut view, *mode),
-        Goals => goals_handler(world, &mut view),
-        Help => help_handler(&mut view),
-        HelpDev => help_handler_dev(&mut view),
+        Touch(thing) => touch_handler(world, view, thing)?,
+        SetViewMode(mode) => set_viewmode_handler(view, *mode),
+        Goals => goals_handler(world, view),
+        Help => help_handler(view),
+        HelpDev => help_handler_dev(view),
         Quit => {
-            if let ReplControl::Quit = quit_handler(world, &mut view)? {
+            if let ReplControl::Quit = quit_handler(world, view)? {
                 dr.control = ReplControl::Quit;
             }
         },
-        Look => look_handler(world, &mut view)?,
-        LookAt(thing) => look_at_handler(world, &mut view, thing)?,
-        GoBack => go_back_handler(world, &mut view)?,
-        MoveTo(direction) => move_to_handler(world, &mut view, direction)?,
-        Take(thing) => take_handler(world, &mut view, thing)?,
-        TakeFrom { item, container } => take_from_handler(world, &mut view, item, container)?,
-        Drop(thing) => drop_handler(world, &mut view, thing)?,
-        PutIn { item, container } => put_in_handler(world, &mut view, item, container)?,
-        Open(thing) => open_handler(world, &mut view, thing)?,
-        Close(thing) => close_handler(world, &mut view, thing)?,
-        LockItem(thing) => lock_handler(world, &mut view, thing)?,
-        UnlockItem(thing) => unlock_handler(world, &mut view, thing)?,
-        Inventory => inv_handler(world, &mut view)?,
-        ListSaves => list_saves_handler(&mut view),
+        Look => look_handler(world, view)?,
+        LookAt(thing) => look_at_handler(world, view, thing)?,
+        GoBack => go_back_handler(world, view)?,
+        MoveTo(direction) => move_to_handler(world, view, direction)?,
+        Take(thing) => take_handler(world, view, thing)?,
+        TakeFrom { item, container } => take_from_handler(world, view, item, container)?,
+        Drop(thing) => drop_handler(world, view, thing)?,
+        PutIn { item, container } => put_in_handler(world, view, item, container)?,
+        Open(thing) => open_handler(world, view, thing)?,
+        Close(thing) => close_handler(world, view, thing)?,
+        LockItem(thing) => lock_handler(world, view, thing)?,
+        UnlockItem(thing) => unlock_handler(world, view, thing)?,
+        Inventory => inv_handler(world, view)?,
+        ListSaves => list_saves_handler(view),
         Unknown => {
             view.push(ViewItem::Error(
                 world
@@ -187,40 +186,40 @@ fn dispatch_command(command: &Command, world: &mut AmbleWorld, mut view: &mut Vi
                     .to_string(),
             ));
         },
-        TalkTo(npc_name) => talk_to_handler(world, &mut view, npc_name)?,
-        GiveToNpc { item, npc } => give_to_npc_handler(world, &mut view, item, npc)?,
-        TurnOn(thing) => turn_on_handler(world, &mut view, thing)?,
-        TurnOff(thing) => turn_off_handler(world, &mut view, thing)?,
-        Read(thing) => read_handler(world, &mut view, thing)?,
+        TalkTo(npc_name) => talk_to_handler(world, view, npc_name)?,
+        GiveToNpc { item, npc } => give_to_npc_handler(world, view, item, npc)?,
+        TurnOn(thing) => turn_on_handler(world, view, thing)?,
+        TurnOff(thing) => turn_off_handler(world, view, thing)?,
+        Read(thing) => read_handler(world, view, thing)?,
         Load(gamefile) => {
-            if !load_handler(world, &mut view, gamefile) {
+            if !load_handler(world, view, gamefile) {
                 view.push(ViewItem::EngineMessage(
                     format!("- error loading world from '{gamefile}' -")
                         .error_style()
                         .to_string(),
-                ))
+                ));
             }
             // re-sync current turn to loaded game
             dr.turn = Some(world.turn_count.saturating_sub(1));
         },
-        Save(gamefile) => save_handler(world, &mut view, gamefile)?,
-        Theme(theme_name) => theme_handler(&mut view, theme_name)?,
+        Save(gamefile) => save_handler(world, view, gamefile)?,
+        Theme(theme_name) => theme_handler(view, theme_name)?,
         UseItemOn { verb, tool, target } => {
-            use_item_on_handler(world, &mut view, *verb, tool, target)?;
+            use_item_on_handler(world, view, *verb, tool, target)?;
         },
-        Ingest { item, mode } => ingest_handler(world, &mut view, item, *mode)?,
+        Ingest { item, mode } => ingest_handler(world, view, item, *mode)?,
         // Commands below only available when crate::DEV_MODE is enabled.
-        SpawnItem(item_symbol) => dev_spawn_item_handler(world, &mut view, item_symbol),
-        Teleport(room_symbol) => dev_teleport_handler(world, &mut view, room_symbol),
-        ListNpcs => dev_list_npcs_handler(world, &mut view),
-        ListFlags => dev_list_flags_handler(world, &mut view),
-        ListSched => dev_list_sched_handler(world, &mut view),
-        SchedCancel(idx) => dev_sched_cancel_handler(world, &mut view, *idx),
-        SchedDelay { idx, turns } => dev_sched_delay_handler(world, &mut view, *idx, *turns),
-        AdvanceSeq(seq_name) => dev_advance_seq_handler(world, &mut view, seq_name),
-        ResetSeq(seq_name) => dev_reset_seq_handler(world, &mut view, seq_name),
-        SetFlag(flag_name) => dev_set_flag_handler(world, &mut view, flag_name),
-        StartSeq { seq_name, end } => dev_start_seq_handler(world, &mut view, seq_name, end),
+        SpawnItem(item_symbol) => dev_spawn_item_handler(world, view, item_symbol),
+        Teleport(room_symbol) => dev_teleport_handler(world, view, room_symbol),
+        ListNpcs => dev_list_npcs_handler(world, view),
+        ListFlags => dev_list_flags_handler(world, view),
+        ListSched => dev_list_sched_handler(world, view),
+        SchedCancel(idx) => dev_sched_cancel_handler(world, view, *idx),
+        SchedDelay { idx, turns } => dev_sched_delay_handler(world, view, *idx, *turns),
+        AdvanceSeq(seq_name) => dev_advance_seq_handler(world, view, seq_name),
+        ResetSeq(seq_name) => dev_reset_seq_handler(world, view, seq_name),
+        SetFlag(flag_name) => dev_set_flag_handler(world, view, flag_name),
+        StartSeq { seq_name, end } => dev_start_seq_handler(world, view, seq_name, end),
     }
     Ok(dr)
 }
@@ -247,7 +246,8 @@ fn build_prompt(world: &mut AmbleWorld) -> String {
         let s = format!(" [{}]", status.status_style());
         status_effects.push_str(&s);
     }
-    let prompt = format!(
+    
+    format!(
         "\n[Turn {} | Health {}/{} | Score: {}{}]>> ",
         world.turn_count,
         world.player.health.current_hp(),
@@ -256,8 +256,7 @@ fn build_prompt(world: &mut AmbleWorld) -> String {
         status_effects
     )
     .prompt_style()
-    .to_string();
-    prompt
+    .to_string()
 }
 
 /// Apply and update health effects for all `LivingEntity` (player and NPCs)
@@ -284,7 +283,7 @@ fn run_health_effects(world: &mut AmbleWorld, view: &mut View) -> (bool, Vec<Tri
         let was_alive = world
             .npcs
             .get(&npc_id)
-            .map_or(false, |npc| matches!(npc.life_state(), LifeState::Alive));
+            .is_some_and(|npc| matches!(npc.life_state(), LifeState::Alive));
         if let Some(npc) = world.npcs.get_mut(&npc_id) {
             let tick = npc.tick_health_effects();
             health_view_items.extend(tick.view_items);
@@ -433,7 +432,7 @@ pub fn check_ambient_triggers(world: &mut AmbleWorld, view: &mut View) -> Result
 
 /// Determine how to proceed when the player dies.
 ///
-/// Returns a ReplControl variant to indicate whether the REPL should continue to run or exit.
+/// Returns a `ReplControl` variant to indicate whether the REPL should continue to run or exit.
 fn handle_player_death(
     world: &mut AmbleWorld,
     view: &mut View,
@@ -549,16 +548,14 @@ pub fn find_world_object<'a, S: BuildHasher>(
 ) -> Option<WorldEntity<'a>> {
     let lc_term = search_term.to_lowercase();
     for uuid in nearby_ids {
-        if let Some(found_item) = world_items.get(uuid) {
-            if found_item.name().to_lowercase().contains(&lc_term) {
+        if let Some(found_item) = world_items.get(uuid)
+            && found_item.name().to_lowercase().contains(&lc_term) {
                 return Some(WorldEntity::Item(found_item));
             }
-        }
-        if let Some(found_npc) = world_npcs.get(uuid) {
-            if found_npc.name().to_lowercase().contains(&lc_term) {
+        if let Some(found_npc) = world_npcs.get(uuid)
+            && found_npc.name().to_lowercase().contains(&lc_term) {
                 return Some(WorldEntity::Npc(found_npc));
             }
-        }
     }
     None
 }

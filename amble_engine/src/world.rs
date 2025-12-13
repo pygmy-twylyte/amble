@@ -185,11 +185,10 @@ fn collect_room_items(
     let room_items = &current_room.contents;
     let mut contained_items = HashSet::new();
     for item_id in room_items {
-        if let Some(item) = world.items.get(item_id) {
-            if should_include_contents(item) {
+        if let Some(item) = world.items.get(item_id)
+            && should_include_contents(item) {
                 contained_items.extend(&item.contents);
             }
-        }
     }
     Ok(room_items.union(&contained_items).copied().collect())
 }
