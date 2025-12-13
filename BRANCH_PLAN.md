@@ -23,3 +23,22 @@ Replace the Item `portable` and `restricted` bools with a single `ItemMovability
 # Content Work
 - [ ] ALL item definitions will have to be updated
 - [ ] Item patches and trigger actions will have to be checked and updated
+
+
+# DSL sketches
+
+For `Item` defs:
+```
+item some_item {
+    ..
+    movability fixed "reason" 
+    or
+    movability restricted "reason"
+    or
+    movability free
+}
+
+trigger "Some Trigger" when always {
+    do set item movability free | fixed "reason" | restricted "reason"
+}
+```
