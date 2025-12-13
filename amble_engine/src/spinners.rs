@@ -89,15 +89,12 @@ impl SpinnerType {
         }
     }
 
-    fn parse_kind<E>(raw: &str) -> Result<Self, E>
-    where
-        E: de::Error,
-    {
+    fn parse_kind(raw: &str) -> SpinnerType {
         let key = raw.strip_prefix("r#").unwrap_or(raw);
         if let Some(core) = CoreSpinnerType::from_toml_key(key) {
-            Ok(SpinnerType::Core(core))
+            SpinnerType::Core(core)
         } else {
-            Ok(SpinnerType::Custom(key.to_string()))
+            SpinnerType::Custom(key.to_string())
         }
     }
 }
@@ -222,7 +219,7 @@ impl<'de> Deserialize<'de> for SpinnerType {
         } else {
             text.strip_prefix("r#").unwrap_or(text).to_string()
         };
-        SpinnerType::parse_kind(&name)
+        Ok(SpinnerType::parse_kind(&name))
     }
 }
 

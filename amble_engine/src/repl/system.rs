@@ -846,6 +846,9 @@ pub fn save_handler(world: &AmbleWorld, view: &mut View, gamefile: &str) -> Resu
 }
 
 /// Silent save used for autosaves; writes the world state without emitting view messages.
+///
+/// # Errors
+/// - propagates any errors from RON serializer or file I/O
 pub fn autosave_quiet(world: &AmbleWorld, gamefile: &str) -> Result<()> {
     let world_ron =
         ron::ser::to_string(world).with_context(|| "error converting AmbleWorld to 'ron' format".to_string())?;

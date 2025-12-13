@@ -217,8 +217,9 @@ impl Room {
                 .filter_map(|npc_id| world.npcs.get(npc_id))
                 .map(|npc| NpcLine {
                     name: match npc.life_state() {
+                        // append "(dead)" to NPC's name if they're dead but still present
                         LifeState::Dead => format!("{} (dead)", npc.name()),
-                        _ => npc.name.clone(),
+                        LifeState::Alive => npc.name.clone(),
                     },
                     description: npc.short_description(),
                 })

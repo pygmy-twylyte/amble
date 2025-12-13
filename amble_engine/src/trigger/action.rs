@@ -756,10 +756,11 @@ fn apply_npc_patch(world: &mut AmbleWorld, npc_id: Uuid, patch: &NpcPatch) -> Re
     }
 
     if let Some(movement_patch) = &patch.movement
-        && movement_patch.has_updates() {
-            let current_turn = world.turn_count;
-            apply_npc_movement_patch(current_turn, npc, movement_patch)?;
-        }
+        && movement_patch.has_updates()
+    {
+        let current_turn = world.turn_count;
+        apply_npc_movement_patch(current_turn, npc, movement_patch)?;
+    }
 
     Ok(())
 }
@@ -773,19 +774,21 @@ fn apply_npc_movement_patch(current_turn: usize, npc: &mut Npc, patch: &NpcMovem
     }
 
     if let Some(route) = &patch.route
-        && route.is_empty() {
-            bail!(
-                "modifyNpc patch for '{}' requires at least one room in a movement route",
-                npc.symbol()
-            );
-        }
+        && route.is_empty()
+    {
+        bail!(
+            "modifyNpc patch for '{}' requires at least one room in a movement route",
+            npc.symbol()
+        );
+    }
     if let Some(random) = &patch.random_rooms
-        && random.is_empty() {
-            bail!(
-                "modifyNpc patch for '{}' requires at least one room in a random movement set",
-                npc.symbol()
-            );
-        }
+        && random.is_empty()
+    {
+        bail!(
+            "modifyNpc patch for '{}' requires at least one room in a random movement set",
+            npc.symbol()
+        );
+    }
 
     let npc_symbol = npc.symbol().to_string();
 
@@ -910,13 +913,14 @@ pub fn spawn_npc_in_room(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, 
         symbol_or_unknown(&world.rooms, room_id)
     );
     if let Some(npc) = world.npcs.get_mut(&npc_id)
-        && npc.location.is_not_nowhere() {
-            let current_loc = symbol_from_id(&world.rooms, npc.location.room_id()?).unwrap_or("<unknown room>");
-            warn!(
-                "spawn called on NPC {} who was already in-game -- MOVING from {current_loc}",
-                npc.symbol(),
-            );
-        }
+        && npc.location.is_not_nowhere()
+    {
+        let current_loc = symbol_from_id(&world.rooms, npc.location.room_id()?).unwrap_or("<unknown room>");
+        warn!(
+            "spawn called on NPC {} who was already in-game -- MOVING from {current_loc}",
+            npc.symbol(),
+        );
+    }
     move_npc(world, view, npc_id, Location::Room(room_id))?;
     Ok(())
 }
@@ -2003,9 +2007,7 @@ pub fn give_to_player(world: &mut AmbleWorld, npc_id: &Uuid, item_id: &Uuid) -> 
         world.player.add_item(*item_id);
         info!("└─ action: GiveItemToPlayer({}, {})", npc.symbol(), item.symbol());
     } else {
-        error!(
-            "item {item_id} not found in NPC {npc_id} inventory to give to player"
-        );
+        error!("item {item_id} not found in NPC {npc_id} inventory to give to player");
     }
     Ok(())
 }
@@ -2071,6 +2073,13 @@ pub fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
 }
 
 /// Change the movability state of an item.
+///
+/// - Movability::Free = free to take / drop / give / etc
+/// - Movability::Restricted {cause} = can't take now, but may be available later
+/// - Movability::Fixed {cause} = item should/can never be moved
+///
+/// # Errors
+/// - if the supplied item id is not found in the world item map
 pub fn set_item_movability(world: &mut AmbleWorld, item_id: &Uuid, movability: &Movability) -> Result<()> {
     let item = world
         .items

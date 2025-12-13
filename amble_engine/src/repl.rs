@@ -146,7 +146,7 @@ struct DispatchResult {
 ///
 /// # Errors
 /// - propagated from any of the underlying command handlers
-fn dispatch_command(command: &Command, world: &mut AmbleWorld, mut view: &mut View) -> Result<DispatchResult> {
+fn dispatch_command(command: &Command, world: &mut AmbleWorld, view: &mut View) -> Result<DispatchResult> {
     #[allow(clippy::enum_glob_use)]
     use Command::*;
     let mut dr = DispatchResult {
