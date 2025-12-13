@@ -180,7 +180,7 @@ impl View {
         let mut bucket: Vec<&ViewEntry> = Vec::new();
         for entry in world_entries {
             let priority = entry.effective_priority();
-            if current_priority.map_or(false, |p| p != priority) {
+            if current_priority.is_some_and(|p| p != priority) {
                 Self::render_world_bucket(&bucket);
                 bucket.clear();
             }
@@ -360,7 +360,7 @@ impl View {
                 println!("{} says:", speaker.npc_style());
                 println!(
                     "{}",
-                    fill(quote.as_str(), indented_block()).to_string().npc_quote_style()
+                    fill(quote.as_str(), indented_block()).clone().npc_quote_style()
                 );
             }
         }
@@ -494,7 +494,7 @@ impl View {
                         println!("{}", name.goal_active_style());
                         println!(
                             "{}",
-                            fill(description, indented_block()).to_string().description_style()
+                            fill(description, indented_block()).clone().description_style()
                         );
                     }
                 }
@@ -785,14 +785,13 @@ impl View {
             if let Some((tagline, rest)) = description.split_once('\n') {
                 println!(
                     "{}",
-                    fill(tagline, indented_block()).to_string().description_style().bold()
+                    fill(tagline, indented_block()).clone().description_style().bold()
                 );
-                println!("{}", fill(rest, indented_block()).to_string().description_style());
+                println!("{}", fill(rest, indented_block()).clone().description_style());
             } else {
                 println!(
                     "{}",
-                    fill(description.as_str(), indented_block())
-                        .to_string()
+                    fill(description.as_str(), indented_block()).clone()
                         .description_style()
                         .bold()
                 );
@@ -828,7 +827,7 @@ impl View {
             println!("{}", name.item_style().underline());
             println!(
                 "{}",
-                fill(description, indented_block()).to_string().description_style()
+                fill(description, indented_block()).clone().description_style()
             );
             println!();
         }
@@ -938,7 +937,7 @@ impl View {
             for ovl in text {
                 let _ = write!(full_ovl, "{ovl} ");
             }
-            println!("{}\n", fill(&full_ovl, normal_block()).to_string().overlay_style());
+            println!("{}\n", fill(&full_ovl, normal_block()).clone().overlay_style());
         }
     }
 
@@ -963,8 +962,7 @@ impl View {
             if display_mode != ViewMode::Brief || !visited {
                 println!(
                     "{}",
-                    fill(description.as_str(), normal_block())
-                        .to_string()
+                    fill(description.as_str(), normal_block()).clone()
                         .description_style()
                 );
 

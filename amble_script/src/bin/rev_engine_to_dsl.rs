@@ -9,12 +9,65 @@
 
 use std::fs;
 
+use amble_script::MovabilityAst;
+
 fn q(s: &str) -> String {
     if s.contains('\n') {
         format!("\"\"\"{s}\"\"\"")
     } else {
         let esc = s.replace('"', "\\\"");
         format!("\"{esc}\"")
+    }
+}
+
+fn movability_from_value(val: Option<&toml::Value>, portable: Option<bool>, restricted: Option<bool>) -> MovabilityAst {
+    if let Some(v) = val {
+        if let Some(s) = v.as_str()
+            && s.eq_ignore_ascii_case("free")
+        {
+            return MovabilityAst::Free;
+        }
+
+        if let Some(tab) = v.as_table() {
+            if let Some(fixed) = tab.get("fixed").and_then(|v| v.as_table())
+                && let Some(reason) = fixed.get("reason").and_then(|v| v.as_str())
+            {
+                return MovabilityAst::Fixed {
+                    reason: reason.to_string(),
+                };
+            }
+
+            if let Some(rest) = tab.get("restricted").and_then(|v| v.as_table())
+                && let Some(reason) = rest.get("reason").and_then(|v| v.as_str())
+            {
+                return MovabilityAst::Restricted {
+                    reason: reason.to_string(),
+                };
+            }
+
+            if tab.get("free").is_some() {
+                return MovabilityAst::Free;
+            }
+        }
+    }
+    if let Some(false) = portable {
+        return MovabilityAst::Fixed {
+            reason: "It won't budge.".into(),
+        };
+    }
+    if let Some(true) = restricted {
+        return MovabilityAst::Restricted {
+            reason: "You can't take that yet.".into(),
+        };
+    }
+    MovabilityAst::Free
+}
+
+fn movability_to_dsl(m: &MovabilityAst) -> String {
+    match m {
+        MovabilityAst::Free => "free".to_string(),
+        MovabilityAst::Fixed { reason } => format!("fixed {}", q(reason)),
+        MovabilityAst::Restricted { reason } => format!("restricted {}", q(reason)),
     }
 }
 
@@ -30,11 +83,13 @@ fn main() {
             let id = it.get("id").and_then(|v| v.as_str()).unwrap_or("");
             let name = it.get("name").and_then(|v| v.as_str()).unwrap_or("");
             let desc = it.get("description").and_then(|v| v.as_str()).unwrap_or("");
-            let portable = it.get("portable").and_then(|v| v.as_bool()).unwrap_or(false);
+            let portable = it.get("portable").and_then(|v| v.as_bool());
+            let restricted = it.get("restricted").and_then(|v| v.as_bool());
+            let movability = movability_from_value(it.get("movability"), portable, restricted);
             out_items.push_str(&format!("item {id} {{\n"));
             out_items.push_str(&format!("  name {}\n", q(name)));
             out_items.push_str(&format!("  desc {}\n", q(desc)));
-            out_items.push_str(&format!("  portable {}\n", if portable { "true" } else { "false" }));
+            out_items.push_str(&format!("  movability {}\n", movability_to_dsl(&movability)));
             if let Some(loc) = it.get("location").and_then(|v| v.as_table()) {
                 if let Some(s) = loc.get("Inventory").and_then(|v| v.as_str()) {
                     out_items.push_str(&format!("  location inventory {s}\n"));
@@ -50,9 +105,6 @@ fn main() {
             }
             if let Some(cs) = it.get("container_state").and_then(|v| v.as_str()) {
                 out_items.push_str(&format!("  container state {cs}\n"));
-            }
-            if let Some(true) = it.get("restricted").and_then(|v| v.as_bool()) {
-                out_items.push_str("  restricted true\n");
             }
             if let Some(text) = it.get("text").and_then(|v| v.as_str()) {
                 out_items.push_str(&format!("  text {}\n", q(text)));
@@ -90,10 +142,10 @@ fn main() {
         use std::collections::BTreeMap;
         let mut by_id: BTreeMap<String, Vec<&toml::value::Table>> = BTreeMap::new();
         for t in arr {
-            if let Some(tab) = t.as_table() {
-                if let Some(id) = tab.get("id").and_then(|v| v.as_str()) {
-                    by_id.entry(id.to_string()).or_default().push(tab);
-                }
+            if let Some(tab) = t.as_table()
+                && let Some(id) = tab.get("id").and_then(|v| v.as_str())
+            {
+                by_id.entry(id.to_string()).or_default().push(tab);
             }
         }
         for (id, tabs) in by_id {
@@ -119,11 +171,12 @@ fn main() {
                 if let Some(s) = tab.get("state").and_then(|v| v.as_str()) {
                     state_inline = Some(s.to_string());
                 }
-                if let Some(stab) = tab.get("state").and_then(|v| v.as_table()) {
-                    if let Some(s) = stab.get("custom").and_then(|v| v.as_str()) {
-                        state_custom = Some(s.to_string());
-                    }
+                if let Some(stab) = tab.get("state").and_then(|v| v.as_table())
+                    && let Some(s) = stab.get("custom").and_then(|v| v.as_str())
+                {
+                    state_custom = Some(s.to_string());
                 }
+
                 if let Some(l) = tab.get("location").and_then(|v| v.as_table()) {
                     if let Some(s) = l.get("Room").and_then(|v| v.as_str()) {
                         loc_room = Some(s.to_string());
@@ -175,11 +228,12 @@ fn main() {
                 if let Some(ti) = mv_timing {
                     out_npcs.push_str(&format!(" timing {ti}"));
                 }
-                if let Some(ac) = mv_active {
-                    if ac {
-                        out_npcs.push_str(" active true");
-                    }
+                if let Some(ac) = mv_active
+                    && ac
+                {
+                    out_npcs.push_str(" active true");
                 }
+
                 out_npcs.push('\n');
             }
             // dialogue buckets

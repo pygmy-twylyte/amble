@@ -130,12 +130,12 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
         if first == "saves" && words.next().is_none() {
             return Command::ListSaves;
         }
-        if first == "list" {
-            if let Some(second) = words.next() {
-                if second == "saves" && words.next().is_none() {
-                    return Command::ListSaves;
-                }
-            }
+        if first == "list"
+            && let Some(second) = words.next()
+            && second == "saves"
+            && words.next().is_none()
+        {
+            return Command::ListSaves;
         }
     }
 
@@ -289,7 +289,7 @@ mod tests {
                 item: "item_name".into(),
                 npc: "npc_name".into(),
             }
-        )
+        );
     }
 
     #[test]
@@ -315,14 +315,14 @@ mod tests {
             "walk through the x",
         ];
         for input in test_inputs {
-            assert_eq!(pc(input), Command::MoveTo("x".into()))
+            assert_eq!(pc(input), Command::MoveTo("x".into()));
         }
     }
 
     #[test]
     fn parse_take_command() {
         let input = "take x";
-        assert_eq!(pc(input), Command::Take("x".into()))
+        assert_eq!(pc(input), Command::Take("x".into()));
     }
 
     #[test]
@@ -340,61 +340,61 @@ mod tests {
                     item: "foo".into(),
                     container: "bar".into()
                 }
-            )
+            );
         }
     }
 
     #[test]
     fn parse_put_in_command() {
         let test_inputs = &["put item in chest", "place item in chest"];
-        test_inputs.iter().for_each(|input| {
+        for input in test_inputs {
             assert_eq!(
                 pc(input),
                 Command::PutIn {
                     item: "item".into(),
                     container: "chest".into()
                 }
-            )
-        })
+            );
+        }
     }
 
     #[test]
     fn parse_open_command() {
-        assert_eq!(pc("open box"), Command::Open("box".into()))
+        assert_eq!(pc("open box"), Command::Open("box".into()));
     }
 
     #[test]
     fn parse_close_command() {
         let inputs = &["close box", "shut box"];
-        inputs
-            .iter()
-            .for_each(|input| assert_eq!(pc(input), Command::Close("box".into())))
+        for input in inputs {
+            assert_eq!(pc(input), Command::Close("box".into()));
+        }
     }
 
     #[test]
     fn parse_lock_command() {
-        assert_eq!(pc("unlock box"), Command::UnlockItem("box".into()))
+        assert_eq!(pc("unlock box"), Command::UnlockItem("box".into()));
     }
 
     #[test]
     fn parse_unlock_command() {
-        assert_eq!(pc("lock box"), Command::LockItem("box".into()))
+        assert_eq!(pc("lock box"), Command::LockItem("box".into()));
     }
 
     #[test]
     fn parse_inventory_command() {
         let inputs = &["inventory", "inv"];
-        inputs
-            .iter()
-            .for_each(|input| assert_eq!(pc(input), Command::Inventory));
+        for input in inputs {
+            assert_eq!(pc(input), Command::Inventory);
+        }
     }
 
     #[test]
     fn parse_list_saves_command() {
         let inputs = &["saves", "list saves"];
-        inputs
-            .iter()
-            .for_each(|input| assert_eq!(pc(input), Command::ListSaves));
+        for input in inputs {
+            assert_eq!(pc(input), Command::ListSaves);
+        }
     }
 
     #[test]
@@ -405,25 +405,25 @@ mod tests {
     #[test]
     fn parse_drop_command() {
         let inputs = &["drop x", "leave x", "put x down"];
-        inputs
-            .iter()
-            .for_each(|input| assert_eq!(pc(input), Command::Drop("x".into())));
+        for input in inputs {
+            assert_eq!(pc(input), Command::Drop("x".into()));
+        }
     }
 
     #[test]
     fn parse_talk_to_command() {
         let inputs = &["talk to npc", "talk with npc", "speak to npc", "speak with npc"];
-        inputs
-            .iter()
-            .for_each(|input| assert_eq!(pc(input), Command::TalkTo("npc".into())));
+        for input in inputs {
+            assert_eq!(pc(input), Command::TalkTo("npc".into()));
+        }
     }
 
     #[test]
     fn parse_turn_on_command() {
         let inputs = &["turn x on", "switch x on", "start x", "trigger x"];
-        inputs
-            .iter()
-            .for_each(|input| assert_eq!(pc(input), Command::TurnOn("x".into())));
+        for input in inputs {
+            assert_eq!(pc(input), Command::TurnOn("x".into()));
+        }
     }
 
     #[test]
@@ -460,6 +460,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn parse_use_item_on_command() {
         let answer_key = &[
             (
@@ -559,7 +560,6 @@ mod tests {
                 },
             ),
         ];
-
         for (input, answer) in answer_key {
             assert_eq!(pc(input), *answer);
         }

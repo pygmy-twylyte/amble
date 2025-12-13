@@ -8,23 +8,22 @@
 item visitor_pass {
     name "Visitor Pass"
     desc "A laminated slip of psychic paper on a lanyard. It reads the mind of whatever is checking it and shows whatever is needed to gain access."
-    portable true
+    movability free
     location nowhere "b_a_receptionist"
 }
 
 item lost_and_found_key {
     name "Lost and Found Key"
     desc "A small brass key on a ring, labeled \"Lost and Found\"."
-    portable true
+    movability restricted "The receptionist won't let you have it... yet."
     location npc b_a_receptionist
-    restricted true
     ability Unlock lost_and_found_box
 }
 
 item security_locker_key {
     name "Brass Key"
     desc "A small, nondescript brass key with what appears to be a small glob of ear wax on the tip. There's a rumpled label attached to the ring with a couple of letters worn off by greasy fingers."
-    portable true
+    movability free
     location room security-station
     text "_OCK _OCK_R"
     ability Read
@@ -34,7 +33,7 @@ item security_locker_key {
 item skeleton_key {
     name "Skeleton Key"
     desc "A mythical object that unlocks absolutely anything. For developer use only! Probably."
-    portable true
+    movability free
     location nowhere "must be spawned using dev_mode command"
     ability Unlock
 }

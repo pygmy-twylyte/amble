@@ -4,7 +4,7 @@
 
 room supply-closet {
     name "Supply Closet"
-    desc "A small closet lit by a bare bulb being repeatedly rammed by a fluttering moth. Crowded shelves offer paper products, bottles of toner, staples, and other office... ... staples."
+    desc "A small closet lit by a bare bulb being repeatedly rammed by a fluttering moth, near a hole where a bit of the ceiling is coming down. Crowded shelves offer paper products, bottles of toner, staples, and other office... ... staples."
     exit south -> b-a-office
 }
 
@@ -15,21 +15,21 @@ room supply-closet {
 item printer_paper {
     name "Copy Paper (Std Letter)"
     desc "A pack of plain white paper, standard letter size."
-    portable true
+    movability free
     location room supply-closet
 }
 
 item staples {
     name "Swingline Staples"
     desc "A box of Swingline paper staples. The name \"Milton\" is written on it in several places."
-    portable true
+    movability free
     location room supply-closet
 }
 
 item paper_clip {
     name "Paper Clip"
     desc "It's... a paper clip. I mean, do you really need a description?"
-    portable true
+    movability free
     location room supply-closet
     ability Attach
     requires attach to attach

@@ -124,7 +124,7 @@ impl SpinnerFile {
             .enumerate()
             .map(|(i, val)| {
                 let width = spin_data.widths.get(i).copied().unwrap_or(1);
-                Wedge::new_weighted(val.to_string(), width)
+                Wedge::new_weighted(val.clone(), width)
             })
             .collect()
     }
@@ -183,7 +183,7 @@ mod tests {
         assert_eq!(spinners.len(), 10);
 
         // All should be core spinners
-        assert!(spinners.keys().all(|k| k.is_core()));
+        assert!(spinners.keys().all(SpinnerType::is_core));
     }
 
     #[test]

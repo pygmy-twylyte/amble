@@ -1,3 +1,7 @@
+# ========================================
+# Main Lobby
+# ========================================
+
 room main-lobby {
     name "Main Lobby"
     desc "The lobby is clinically clean in a way that feels suspicious. A slightly humming vending machine stands beside an empty podium bearing an emblem that reads, in gothic script: 'ALLIED TEMPORARY LIFEFORMS'. A softly glowing sign on the north wall reads 'Elevator Access', while arrows on the east and west walls point toward other destinations with less enthusiasm."
@@ -23,7 +27,7 @@ room main-lobby {
 item dehydrated_water {
     name "Dehydrated Water"
     desc "A packet labeled 'Dehydrated Water - Just Add Water!' The instructions on the back have been crossed out and replaced with 'PARADOX WARNING: Do not attempt to reconstitute.'"
-    portable true
+    movability free
     location chest vending_machine
     ability Drink
     consumable {
@@ -36,7 +40,7 @@ item dehydrated_water {
 item schrodingers_sandwich {
     name "Schrödinger's Sandwich"
     desc "A sandwich in a quantum superposition of both fresh and moldy until observed. The packaging warns: 'Contents may or may not contain nuts, and also definitely contain nuts.'"
-    portable true
+    movability free
     location chest vending_machine
     ability Eat
     consumable {
@@ -53,7 +57,7 @@ item schrodingers_sandwich {
 item fortune_cookies_of_doom {
     name "Fortune Cookies of Doom"
     desc "A pack of three fortune cookies wrapped ominously in black paper with tiny skulls and crossbones on them. You can feel it radiating pessimism through the wrapper. Previous fortunes reportedly included 'Your future is behind you' and 'Dessicant -- DO NOT EAT'"
-    portable true
+    movability free
     location chest vending_machine
     ability Eat
     consumable {
@@ -68,6 +72,7 @@ note "player gets random different fortunes each time from the 'fortunes' spinne
 when eat item fortune_cookies_of_doom {
     do show "You dare to eat a Fortune Cookie of Doom..."
     do award points 1 reason "Ate a Fortune Cookie of Doom"
+    do heal player 1 cause "ate a fortune cookie"
     do spinner message fortunes
 }
 
@@ -165,9 +170,10 @@ spinner fortunes {
 trigger "[Main-Lobby] Security Reminder" only once
 when enter room main-lobby
 {
+    do show """A chime echoes through the lobby. "Candidates: Please do not loiter in the lobby," intones an overhead voice."""
     do schedule in 3 if player in room main-lobby onFalse cancel
     note "lobby loitering reminder" {
-        do show """A chime echoes through the lobby. "Candidates: Please do not loiter in the lobby," intones an overhead voice."""
+        do show """The chime sounds again. "Candidates: We **said** not to loiter in the lobby," says the voice, in more of an annoyed tone."""
         do award points -1 reason "Ignored the lobby loitering reminder"
     }
 }

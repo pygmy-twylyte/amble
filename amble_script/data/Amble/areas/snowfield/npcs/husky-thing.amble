@@ -28,14 +28,16 @@ when use item charred_journal ability read {
     do add flag husky-spawned
 }
 
-trigger "[Husky] Stalk the Candidate" when enter room snowfield {
+trigger "[Husky] Stalk the Candidate"
+when enter room snowfield {
     if has flag husky-spawned {
         # this will emit a warning in the log but moves the npc
         do spawn npc husky_thing into room snowfield
     }
 }
 
-trigger "[Husky] Stalk the Candidate" when enter room snow-camp {
+trigger "[Husky] Stalk the Candidate"
+when enter room snow-camp {
     if has flag husky-spawned {
         # this will emit a warning in the log but moves the npc
         do spawn npc husky_thing into room snow-camp

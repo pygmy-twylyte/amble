@@ -27,21 +27,21 @@ trigger "Create Dev Playground Exit" only once when always {
 item big_red_button {
     name "Big Red Button"
     desc "It's big, it's red, and it's a button! Press or touch it!"
-    portable false
+    movability fixed "It's attached to a floating button box."
     location room dev-room
 }
 
 item big_blue_button {
     name "Big Blue Button"
     desc "It's big, it's blue, and it's a button! Press away!"
-    portable false
+    movability fixed "It's attached to a floating button box."
     location room dev-room
 }
 
 item cheat_button {
     name "Cheat Button!"
     desc "Press this button to move this room to the final objective!"
-    portable false
+    movability fixed "It's attached to a floating button box."
     location room dev-room
 }
 
@@ -95,7 +95,7 @@ when touch item big_blue_button {
 item poison_bottle {
     name "Furniture Poison"
     desc "Guaranteed to kill violent bits of luggage, dead."
-    portable true
+    movability free
     location room dev-room
     ability Drink
     consumable {
@@ -108,7 +108,7 @@ item poison_bottle {
 item antidote {
     name "Health Potion"
     desc "Take in case of poison."
-    portable true
+    movability free
     location room dev-room
     ability Drink
     consumable {

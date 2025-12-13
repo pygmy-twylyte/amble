@@ -20,7 +20,7 @@ room guard-post {
 item am_dollar {
     name "Ankh-Morpork Dollar"
     desc "A tarnished one-dollar coin from the city-state of Ankh-Morpork."
-    portable true
+    movability free
     location room guard-post
 }
 
@@ -31,10 +31,10 @@ item am_dollar {
 trigger "[Guard-Post] Interesting Passers-By" only once
 note "different characters depending on how they got past the fallen_tree"
 when enter room guard-post {
-    if all(chance 85%, has flag burned-fallen-tree) {
+    if all( chance 85%, has flag burned-fallen-tree ) {
         do show r#"Smokey Bear tromps past the guard post, growling "Nobody ever listens!" while glaring right at you."#
     }
-    if all(chance 85%, has flag chopped-fallen-tree) {
+    if all( chance 85%, has flag chopped-fallen-tree ) {
         do show "Paul Bunyan gives you a nod as he lumbers by with Babe the Blue Ox, carrying the remains of the tree you chopped up."
         do add flag saw-paul-bunyan
     }

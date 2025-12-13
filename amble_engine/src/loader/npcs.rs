@@ -88,9 +88,9 @@ impl RawNpc {
                 .characters
                 .get(&self.id)
                 .ok_or_else(|| anyhow!("UUID for ({}) not found in character symbols", self.id))?,
-            symbol: self.id.to_string(),
-            name: self.name.to_string(),
-            description: self.description.to_string(),
+            symbol: self.id.clone(),
+            name: self.name.clone(),
+            description: self.description.clone(),
             location: start_room,
             inventory: HashSet::new(),
             dialogue: processed_dialogue,
@@ -203,7 +203,7 @@ pub fn build_npcs(raw_npcs: &[RawNpc], symbols: &mut SymbolTable) -> Result<Vec<
     // add npcs from npcs.toml to character symbol table
     for rnpc in raw_npcs {
         symbols.characters.insert(
-            rnpc.id.to_string(),
+            rnpc.id.clone(),
             idgen::uuid_from_token(&NAMESPACE_CHARACTER, &rnpc.id),
         );
     }

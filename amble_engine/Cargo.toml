@@ -1,6 +1,6 @@
 [package]
 name = "amble_engine"
-version = "0.63.0"
+version = "0.64.0-pre"
 edition.workspace = true
 license.workspace = true
 homepage.workspace = true
@@ -10,6 +10,7 @@ readme = "docs/README.md"
 description = "Data-first interactive fiction engine and REPL for worlds authored in the Amble DSL."
 keywords = ["interactive-fiction", "text-adventure", "game-engine", "cli", "dsl"]
 categories = ["game-engines", "games", "command-line-utilities"]
+default-run = "amble_engine"
 
 [features]
 default = []

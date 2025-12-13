@@ -47,7 +47,7 @@ use std::collections::HashSet;
 use crate::{
     AmbleWorld, ItemHolder, Location, View, ViewItem, WorldObject,
     helpers::symbol_or_unknown,
-    item::ItemInteractionType,
+    item::{ItemInteractionType, Movability},
     repl::{WorldEntity, entity_not_found, find_world_object},
     spinners::CoreSpinnerType,
     style::GameStyle,
@@ -101,7 +101,7 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
             world.turn_count += 1;
             let item_id = item.id();
             let room_id = world.player_room_ref()?.id();
-            if item.portable {
+            if matches!(item.movability, Movability::Free) {
                 if let Some(dropped) = world.items.get_mut(&item_id) {
                     dropped.set_location_room(room_id);
                     if let Some(room) = world.rooms.get_mut(&room_id) {
@@ -124,8 +124,12 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                 }
             } else {
                 // item not portable
+                let reason = match &item.movability {
+                    Movability::Fixed { reason } | Movability::Restricted { reason } => reason,
+                    Movability::Free => "",
+                };
                 view.push(ViewItem::ActionFailure(format!(
-                    "You can't drop the {}. It's not transferrable.",
+                    "You can't drop the {}. {reason}",
                     item.name().item_style()
                 )));
                 return Ok(());
@@ -224,14 +228,14 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                 );
                 return Ok(());
             }
-            if item.portable && !item.restricted {
+            if matches!(item.movability, Movability::Free) {
                 // extract item uuid & original location
                 let loot_id = item.id();
                 let orig_loc = item.location;
                 // update item location and copy to player inventory
                 if let Some(moved_item) = world.items.get_mut(&loot_id) {
                     moved_item.set_location_inventory();
-                    world.player.inventory.insert(moved_item.id());
+                    world.player.add_item(moved_item.id());
                     view.push(ViewItem::ActionSuccess(format!(
                         "You {take_verb} the {}.",
                         moved_item.name().item_style()
@@ -273,9 +277,14 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                 }
                 check_triggers(world, view, &[TriggerCondition::Take(loot_id)])?;
             } else {
-                let reason = if item.restricted { "restricted" } else { "not portable" };
+                // item is fixed or restricted
+                let reason = match &item.movability {
+                    Movability::Fixed { reason } | Movability::Restricted { reason } => reason,
+                    Movability::Free => "",
+                };
+
                 view.push(ViewItem::ActionFailure(format!(
-                    "You can't {take_verb} the {}. It's {}.\n",
+                    "You can't {take_verb} the {}. {}",
                     item.name().error_style(),
                     reason.italic()
                 )));
@@ -456,7 +465,7 @@ pub(crate) fn validate_and_transfer_from_npc(
         if let Some(entity) = find_world_object(&container.inventory, &world.items, &world.npcs, item_pattern) {
             if let Some(loot) = entity.item() {
                 if let Some(reason) = loot.take_denied_reason() {
-                    view.push(ViewItem::ActionFailure(reason.to_string()));
+                    view.push(ViewItem::ActionFailure(reason.clone()));
                     return Ok(());
                 }
                 (loot.id(), loot.name().to_string())
@@ -847,6 +856,7 @@ mod tests {
         restr_npc_item_id: Uuid,
     }
 
+    #[allow(clippy::too_many_lines)]
     fn build_world() -> TestWorld {
         let mut world = AmbleWorld::new_empty();
 
@@ -856,7 +866,7 @@ mod tests {
             id: room_id,
             symbol: "room".into(),
             name: "Test Room".into(),
-            base_description: "".into(),
+            base_description: String::new(),
             overlays: vec![],
             location: Location::Nowhere,
             visited: false,
@@ -873,11 +883,10 @@ mod tests {
             id: inv_item_id,
             symbol: "apple".into(),
             name: "Apple".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Inventory,
-            portable: true,
+            movability: Movability::Free,
             container_state: None,
-            restricted: false,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
@@ -893,11 +902,10 @@ mod tests {
             id: room_item_id,
             symbol: "rock".into(),
             name: "Rock".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Room(room_id),
-            portable: true,
+            movability: Movability::Free,
             container_state: None,
-            restricted: false,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
@@ -913,11 +921,10 @@ mod tests {
             id: chest_id,
             symbol: "chest".into(),
             name: "Chest".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Room(room_id),
-            portable: true,
+            movability: Movability::Free,
             container_state: Some(ContainerState::Open),
-            restricted: false,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
@@ -929,11 +936,10 @@ mod tests {
             id: gem_id,
             symbol: "gem".into(),
             name: "Gem".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Item(chest_id),
-            portable: true,
+            movability: Movability::Free,
             container_state: None,
-            restricted: false,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
@@ -945,11 +951,12 @@ mod tests {
             id: restricted_chest_item_id,
             symbol: "rci".into(),
             name: "Restricted Chest Item".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Item(chest_id),
-            portable: true,
+            movability: Movability::Restricted {
+                reason: "restricted because... reasons".to_string(),
+            },
             container_state: None,
-            restricted: true,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
@@ -969,7 +976,7 @@ mod tests {
             id: npc_id,
             symbol: "bob".into(),
             name: "Bob".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Room(room_id),
             inventory: HashSet::new(),
             dialogue: HashMap::new(),
@@ -982,11 +989,10 @@ mod tests {
             id: npc_item_id,
             symbol: "coin".into(),
             name: "Coin".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Npc(npc_id),
-            portable: true,
+            movability: Movability::Free,
             container_state: None,
-            restricted: false,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
@@ -998,11 +1004,12 @@ mod tests {
             id: restricted_npc_item_id,
             symbol: "key".into(),
             name: "Restricted NPC Item".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Npc(npc_id),
-            portable: true,
             container_state: None,
-            restricted: true,
+            movability: Movability::Restricted {
+                reason: "reasons".to_string(),
+            },
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
@@ -1193,12 +1200,12 @@ mod tests {
     #[test]
     fn unexpected_entity_does_not_change_world() {
         let mut tw = build_world();
-        let before = tw.world.npcs.get(&tw.npc_id).unwrap().location().clone();
+        let before = *tw.world.npcs.get(&tw.npc_id).unwrap().location();
         {
             let npc_ref = tw.world.npcs.get(&tw.npc_id).unwrap();
             unexpected_entity(WorldEntity::Npc(npc_ref), &mut tw.view, "nope");
         }
-        let after = tw.world.npcs.get(&tw.npc_id).unwrap().location().clone();
+        let after = *tw.world.npcs.get(&tw.npc_id).unwrap().location();
         assert_eq!(before, after);
     }
 }

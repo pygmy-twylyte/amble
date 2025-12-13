@@ -3,14 +3,16 @@
 //! Provides the data structures that track player objectives along with
 //! helpers for determining whether goal conditions are satisfied.
 
+use serde::de::{self, Deserializer, EnumAccess, VariantAccess, Visitor};
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use uuid::Uuid;
 use variantly::Variantly;
 
 use crate::{AmbleWorld, ItemHolder, player::Flag};
 
 /// Groups that goals can be assigned to.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum GoalGroup {
     Required,
@@ -19,7 +21,7 @@ pub enum GoalGroup {
 }
 
 /// Types of conditions that can activate or complete a goal.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum GoalCondition {
     FlagComplete { flag: String },    // for checking if sequence-type flags are at end
@@ -73,13 +75,348 @@ impl GoalCondition {
 }
 
 /// Represents current state of the `Goal`
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, Variantly)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Variantly)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum GoalStatus {
     Inactive,
     Active,
     Complete,
     Failed,
+}
+
+fn deserialize_maybe_value<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    T: Deserialize<'de>,
+    D: Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Maybe<T> {
+        Value(T),
+        Option(Option<T>),
+    }
+
+    match Maybe::deserialize(deserializer)? {
+        Maybe::Value(value) => Ok(Some(value)),
+        Maybe::Option(opt) => Ok(opt),
+    }
+}
+
+#[derive(Debug, Copy, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+enum GoalGroupKind {
+    Required,
+    Optional,
+    StatusEffect,
+}
+
+impl GoalGroupKind {
+    fn from_str(value: &str) -> Option<Self> {
+        let value = value.strip_prefix("r#").unwrap_or(value);
+        match value {
+            v if v.eq_ignore_ascii_case("required") => Some(Self::Required),
+            v if v.eq_ignore_ascii_case("optional") => Some(Self::Optional),
+            v if v.eq_ignore_ascii_case("status-effect") => Some(Self::StatusEffect),
+            _ => None,
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for GoalGroupKind {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct KindVisitor;
+
+        impl<'de> Visitor<'de> for KindVisitor {
+            type Value = GoalGroupKind;
+
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("goal group identifier")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                GoalGroupKind::from_str(value)
+                    .ok_or_else(|| de::Error::unknown_variant(value, &["required", "optional", "status-effect"]))
+            }
+
+            fn visit_borrowed_str<E>(self, value: &'de str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                self.visit_str(value)
+            }
+
+            fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                self.visit_str(&value)
+            }
+
+            fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
+            where
+                A: EnumAccess<'de>,
+            {
+                let (variant, access) = data.variant::<String>()?;
+                access.unit_variant()?;
+                self.visit_str(&variant)
+            }
+        }
+
+        deserializer.deserialize_any(KindVisitor)
+    }
+}
+
+#[derive(Deserialize)]
+struct GoalGroupRepr {
+    #[serde(rename = "type")]
+    kind: GoalGroupKind,
+}
+
+impl<'de> Deserialize<'de> for GoalGroup {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let repr = GoalGroupRepr::deserialize(deserializer)?;
+        Ok(match repr.kind {
+            GoalGroupKind::Required => GoalGroup::Required,
+            GoalGroupKind::Optional => GoalGroup::Optional,
+            GoalGroupKind::StatusEffect => GoalGroup::StatusEffect,
+        })
+    }
+}
+
+#[derive(Debug, Copy, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+enum GoalConditionKind {
+    FlagComplete,
+    FlagInProgress,
+    GoalComplete,
+    HasItem,
+    HasFlag,
+    MissingFlag,
+    ReachedRoom,
+}
+
+impl GoalConditionKind {
+    fn from_str(value: &str) -> Option<Self> {
+        match value {
+            v if v.eq_ignore_ascii_case("flagComplete") => Some(Self::FlagComplete),
+            v if v.eq_ignore_ascii_case("flagInProgress") => Some(Self::FlagInProgress),
+            v if v.eq_ignore_ascii_case("goalComplete") => Some(Self::GoalComplete),
+            v if v.eq_ignore_ascii_case("hasItem") => Some(Self::HasItem),
+            v if v.eq_ignore_ascii_case("hasFlag") => Some(Self::HasFlag),
+            v if v.eq_ignore_ascii_case("missingFlag") => Some(Self::MissingFlag),
+            v if v.eq_ignore_ascii_case("reachedRoom") => Some(Self::ReachedRoom),
+            _ => None,
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for GoalConditionKind {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct KindVisitor;
+
+        impl<'de> Visitor<'de> for KindVisitor {
+            type Value = GoalConditionKind;
+
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("goal condition identifier")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                GoalConditionKind::from_str(value).ok_or_else(|| {
+                    de::Error::unknown_variant(
+                        value,
+                        &[
+                            "flagComplete",
+                            "flagInProgress",
+                            "goalComplete",
+                            "hasItem",
+                            "hasFlag",
+                            "missingFlag",
+                            "reachedRoom",
+                        ],
+                    )
+                })
+            }
+
+            fn visit_borrowed_str<E>(self, value: &'de str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                self.visit_str(value)
+            }
+
+            fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                self.visit_str(&value)
+            }
+
+            fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
+            where
+                A: EnumAccess<'de>,
+            {
+                let (variant, access) = data.variant::<String>()?;
+                access.unit_variant()?;
+                self.visit_str(&variant)
+            }
+        }
+
+        deserializer.deserialize_any(KindVisitor)
+    }
+}
+
+#[derive(Deserialize)]
+struct GoalConditionRepr {
+    #[serde(rename = "type")]
+    kind: GoalConditionKind,
+    #[serde(default, deserialize_with = "deserialize_maybe_value")]
+    flag: Option<String>,
+    #[serde(default, deserialize_with = "deserialize_maybe_value")]
+    goal_id: Option<String>,
+    #[serde(default, deserialize_with = "deserialize_maybe_value")]
+    item_id: Option<Uuid>,
+    #[serde(default, deserialize_with = "deserialize_maybe_value")]
+    room_id: Option<Uuid>,
+}
+
+impl<'de> Deserialize<'de> for GoalCondition {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let repr = GoalConditionRepr::deserialize(deserializer)?;
+        Ok(match repr.kind {
+            GoalConditionKind::FlagComplete => GoalCondition::FlagComplete {
+                flag: repr.flag.ok_or_else(|| de::Error::missing_field("flag"))?,
+            },
+            GoalConditionKind::FlagInProgress => GoalCondition::FlagInProgress {
+                flag: repr.flag.ok_or_else(|| de::Error::missing_field("flag"))?,
+            },
+            GoalConditionKind::GoalComplete => GoalCondition::GoalComplete {
+                goal_id: repr.goal_id.ok_or_else(|| de::Error::missing_field("goal_id"))?,
+            },
+            GoalConditionKind::HasItem => GoalCondition::HasItem {
+                item_id: repr.item_id.ok_or_else(|| de::Error::missing_field("item_id"))?,
+            },
+            GoalConditionKind::HasFlag => GoalCondition::HasFlag {
+                flag: repr.flag.ok_or_else(|| de::Error::missing_field("flag"))?,
+            },
+            GoalConditionKind::MissingFlag => GoalCondition::MissingFlag {
+                flag: repr.flag.ok_or_else(|| de::Error::missing_field("flag"))?,
+            },
+            GoalConditionKind::ReachedRoom => GoalCondition::ReachedRoom {
+                room_id: repr.room_id.ok_or_else(|| de::Error::missing_field("room_id"))?,
+            },
+        })
+    }
+}
+
+#[derive(Debug, Copy, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+enum GoalStatusKind {
+    Inactive,
+    Active,
+    Complete,
+    Failed,
+}
+
+impl GoalStatusKind {
+    fn from_str(value: &str) -> Option<Self> {
+        match value {
+            v if v.eq_ignore_ascii_case("inactive") => Some(Self::Inactive),
+            v if v.eq_ignore_ascii_case("active") => Some(Self::Active),
+            v if v.eq_ignore_ascii_case("complete") => Some(Self::Complete),
+            v if v.eq_ignore_ascii_case("failed") => Some(Self::Failed),
+            _ => None,
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for GoalStatusKind {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct KindVisitor;
+
+        impl<'de> Visitor<'de> for KindVisitor {
+            type Value = GoalStatusKind;
+
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("goal status identifier")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                GoalStatusKind::from_str(value)
+                    .ok_or_else(|| de::Error::unknown_variant(value, &["inactive", "active", "complete", "failed"]))
+            }
+
+            fn visit_borrowed_str<E>(self, value: &'de str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                self.visit_str(value)
+            }
+
+            fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                self.visit_str(&value)
+            }
+
+            fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
+            where
+                A: EnumAccess<'de>,
+            {
+                let (variant, access) = data.variant::<String>()?;
+                access.unit_variant()?;
+                self.visit_str(&variant)
+            }
+        }
+
+        deserializer.deserialize_any(KindVisitor)
+    }
+}
+
+#[derive(Deserialize)]
+struct GoalStatusRepr {
+    #[serde(rename = "type")]
+    kind: GoalStatusKind,
+}
+
+impl<'de> Deserialize<'de> for GoalStatus {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let repr = GoalStatusRepr::deserialize(deserializer)?;
+        Ok(match repr.kind {
+            GoalStatusKind::Inactive => GoalStatus::Inactive,
+            GoalStatusKind::Active => GoalStatus::Active,
+            GoalStatusKind::Complete => GoalStatus::Complete,
+            GoalStatusKind::Failed => GoalStatus::Failed,
+        })
+    }
 }
 
 /// A goal for the player to achieve.
@@ -96,10 +433,10 @@ pub struct Goal {
 impl Goal {
     /// Determines and returns the current '`GoalStatus`' for this goal.
     pub fn status(&self, world: &AmbleWorld) -> GoalStatus {
-        if let Some(fail_condition) = &self.failed_when {
-            if fail_condition.satisfied(world) {
-                return GoalStatus::Failed;
-            }
+        if let Some(fail_condition) = &self.failed_when
+            && fail_condition.satisfied(world)
+        {
+            return GoalStatus::Failed;
         }
 
         if let Some(start_condition) = &self.activate_when {
@@ -124,7 +461,7 @@ impl Goal {
 mod tests {
     use super::*;
     use crate::{
-        item::Item,
+        item::{Item, Movability},
         player::Flag,
         room::Room,
         world::{AmbleWorld, Location},
@@ -160,9 +497,8 @@ mod tests {
             name: "Test Item".into(),
             description: "A test item".into(),
             location: Location::Inventory,
-            portable: true,
+            movability: Movability::Free,
             container_state: None,
-            restricted: false,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
@@ -456,9 +792,9 @@ mod tests {
         let optional = GoalGroup::Optional;
         let status_effect = GoalGroup::StatusEffect;
 
-        assert_eq!(format!("{:?}", required), "Required");
-        assert_eq!(format!("{:?}", optional), "Optional");
-        assert_eq!(format!("{:?}", status_effect), "StatusEffect");
+        assert_eq!(format!("{required:?}"), "Required");
+        assert_eq!(format!("{optional:?}"), "Optional");
+        assert_eq!(format!("{status_effect:?}"), "StatusEffect");
     }
 
     #[test]

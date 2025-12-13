@@ -41,12 +41,10 @@ pub struct Item {
     pub description: String,
     /// The current `Location` of the item.
     pub location: Location,
-    /// False if this item is fixed, meaning its `Location` can never be changed.
-    pub portable: bool,
+    /// Determines whether the item can be moved from its current location.
+    pub movability: Movability,
     /// Some state (open, locked, etc) for the item as a container, or `None` if it is not a container.
     pub container_state: Option<ContainerState>,
-    /// Used to temporarily prevent a portable item from being taken / manipulated.
-    pub restricted: bool,
     /// Set of UUIDs of other items contained by this one.
     pub contents: HashSet<Uuid>,
     /// Set of capabilities [`ItemAbility`] for this item.
@@ -58,6 +56,7 @@ pub struct Item {
     /// Some consumable parameters [`ConsumableOpts`], or None it the item isn't consumable.
     pub consumable: Option<ConsumableOpts>,
 }
+
 impl WorldObject for Item {
     fn id(&self) -> Uuid {
         self.id
@@ -75,6 +74,7 @@ impl WorldObject for Item {
         &self.location
     }
 }
+
 impl ItemHolder for Item {
     fn add_item(&mut self, item_id: Uuid) {
         if self.container_state.is_some() && self.id.ne(&item_id) {
@@ -90,6 +90,7 @@ impl ItemHolder for Item {
         self.contents.contains(&item_id)
     }
 }
+
 impl Item {
     /// Returns true if item is consumable and has been consumed.
     pub fn is_consumed(&self) -> bool {
@@ -124,7 +125,9 @@ impl Item {
         // be able to pick it up again after dropping it)
         // if given back to an NPC or "locked in" to a receiver item,
         // it can be optionally re-restricted using a trigger action
-        self.restricted = false;
+        if matches!(self.movability, Movability::Restricted { .. }) {
+            self.movability = Movability::Free;
+        }
         self.location = Location::Inventory;
     }
     /// Set location to NPC inventory by UUID
@@ -162,7 +165,7 @@ impl Item {
                             .filter_map(|id| world.items.get(id))
                             .map(|i| ContentLine {
                                 item_name: i.name.clone(),
-                                restricted: i.restricted,
+                                restricted: matches!(i.movability, Movability::Restricted { .. }),
                             })
                             .collect(),
                     ));
@@ -196,13 +199,13 @@ impl Item {
     }
 
     /// Determine what ability is required for certain interactions with this item.
-    /// 
+    ///
     /// In `<verb> <target> with <tool>` commands, this returns whatever ability the `<tool>` must have
-    /// in order to successfully `<verb>` the `<target>` (this item). 
-    /// 
-    /// Example -- if this item is `candle`, then: 
-    /// 
-    /// `candle.requires_capability_for(ItemInteractionType::Burn)` 
+    /// in order to successfully `<verb>` the `<target>` (this item).
+    ///
+    /// Example -- if this item is `candle`, then:
+    ///
+    /// `candle.requires_capability_for(ItemInteractionType::Burn)`
     /// might return `Some(ItemAbility::Ignite)`.
     pub fn requires_capability_for(&self, inter: ItemInteractionType) -> Option<ItemAbility> {
         self.interaction_requires.get(&inter).copied()
@@ -245,16 +248,9 @@ impl Item {
 
     /// Returns the reason an item can't be taken into inventory, if any
     pub fn take_denied_reason(&self) -> Option<String> {
-        match (self.portable, self.restricted) {
-            (false, _) => Some(format!(
-                "The {} isn't portable, you can't move it anywhere.",
-                self.name().item_style()
-            )),
-            (_, true) => Some(format!(
-                "You can't take the {} now, but it may become available later.",
-                self.name().item_style()
-            )),
-            _ => None,
+        match &self.movability {
+            Movability::Fixed { reason } | Movability::Restricted { reason } => Some(reason.clone()),
+            Movability::Free => None,
         }
     }
 }
@@ -399,6 +395,7 @@ pub enum ItemInteractionType {
     Turn,
     Unlock,
 }
+
 impl Display for ItemInteractionType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -432,6 +429,20 @@ pub enum ContainerState {
     TransparentLocked,
 }
 
+/// Possible movability states for an `Item`.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub enum Movability {
+    Fixed {
+        reason: String,
+    },
+    Restricted {
+        reason: String,
+    },
+    #[default]
+    Free,
+}
+
 /// Extra options / data for consumable items are represented here.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ConsumableOpts {
@@ -462,9 +473,8 @@ mod tests {
             name: "Test Item".into(),
             description: "A test item".into(),
             location: Location::Nowhere,
-            portable: true,
+            movability: Movability::Free,
             container_state: None,
-            restricted: false,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
@@ -594,10 +604,23 @@ mod tests {
     #[test]
     fn set_location_inventory_updates_location_and_unrestricts() {
         let mut item = create_test_item(Uuid::new_v4());
-        item.restricted = true;
+        item.movability = Movability::Restricted {
+            reason: "You haven't earned it yet.".to_string(),
+        };
         item.set_location_inventory();
         assert_eq!(item.location, Location::Inventory);
-        assert!(!item.restricted);
+        assert!(matches!(item.movability, Movability::Free));
+    }
+
+    #[test]
+    fn set_location_inventory_preserves_fixed_movability() {
+        let mut item = create_test_item(Uuid::new_v4());
+        item.movability = Movability::Fixed {
+            reason: "Bolted down.".to_string(),
+        };
+        item.set_location_inventory();
+        assert_eq!(item.location, Location::Inventory);
+        assert!(matches!(item.movability, Movability::Fixed { .. }));
     }
 
     #[test]
@@ -674,15 +697,17 @@ mod tests {
     }
 
     #[test]
-    fn take_denied_reason_returns_none_for_portable_unrestricted() {
+    fn take_denied_reason_returns_none_for_movable() {
         let item = create_test_item(Uuid::new_v4());
         assert_eq!(item.take_denied_reason(), None);
     }
 
     #[test]
-    fn take_denied_reason_returns_reason_for_non_portable() {
+    fn take_denied_reason_returns_reason_for_fixed() {
         let mut item = create_test_item(Uuid::new_v4());
-        item.portable = false;
+        item.movability = Movability::Fixed {
+            reason: "The item isn't portable.".to_string(),
+        };
         let reason = item.take_denied_reason().unwrap();
         assert!(reason.contains("isn't portable"));
     }
@@ -690,7 +715,9 @@ mod tests {
     #[test]
     fn take_denied_reason_returns_reason_for_restricted() {
         let mut item = create_test_item(Uuid::new_v4());
-        item.restricted = true;
+        item.movability = Movability::Restricted {
+            reason: "You can't take that yet.".to_string(),
+        };
         let reason = item.take_denied_reason().unwrap();
         assert!(reason.contains("can't take"));
     }

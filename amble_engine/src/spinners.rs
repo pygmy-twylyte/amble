@@ -14,7 +14,8 @@
 //! Custom spinners are completely defined by game data.
 //!
 
-use serde::{Deserialize, Serialize};
+use serde::de::{self, Deserializer};
+use serde::{Deserialize, Serialize, Serializer};
 
 /// Core spinner types that are essential for the engine to function.
 /// These have built-in defaults but can be overridden in TOML files.
@@ -45,8 +46,7 @@ pub enum CoreSpinnerType {
 
 /// Represents either a core spinner type or a custom game-specific spinner.
 /// Custom spinners are identified by string keys and defined entirely in TOML.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(untagged)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum SpinnerType {
     /// Core engine spinner with built-in defaults
     Core(CoreSpinnerType),
@@ -85,6 +85,15 @@ impl SpinnerType {
             SpinnerType::Core(core)
         } else {
             // Otherwise treat as custom spinner
+            SpinnerType::Custom(key.to_string())
+        }
+    }
+
+    fn parse_kind(raw: &str) -> SpinnerType {
+        let key = raw.strip_prefix("r#").unwrap_or(raw);
+        if let Some(core) = CoreSpinnerType::from_toml_key(key) {
+            SpinnerType::Core(core)
+        } else {
             SpinnerType::Custom(key.to_string())
         }
     }
@@ -198,6 +207,31 @@ impl From<String> for SpinnerType {
     }
 }
 
+impl<'de> Deserialize<'de> for SpinnerType {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let raw: Box<ron::value::RawValue> = Box::<ron::value::RawValue>::deserialize(deserializer)?;
+        let text = raw.get_ron().trim();
+        let name = if text.starts_with('"') {
+            ron::from_str::<String>(text).map_err(de::Error::custom)?
+        } else {
+            text.strip_prefix("r#").unwrap_or(text).to_string()
+        };
+        Ok(SpinnerType::parse_kind(&name))
+    }
+}
+
+impl Serialize for SpinnerType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.as_toml_key())
+    }
+}
+
 impl From<&str> for SpinnerType {
     fn from(key: &str) -> Self {
         SpinnerType::Custom(key.to_string())
@@ -226,7 +260,7 @@ mod tests {
         for core_type in core_types {
             let key = core_type.as_toml_key();
             let parsed = CoreSpinnerType::from_toml_key(&key);
-            assert_eq!(Some(core_type), parsed, "Failed roundtrip for {:?}", core_type);
+            assert_eq!(Some(core_type), parsed, "Failed roundtrip for {core_type:?}");
         }
     }
 
@@ -269,12 +303,11 @@ mod tests {
             let values = core_type.default_values();
             let widths = core_type.default_widths();
 
-            assert!(!values.is_empty(), "{:?} should have default values", core_type);
+            assert!(!values.is_empty(), "{core_type:?} should have default values");
             assert_eq!(
                 values.len(),
                 widths.len(),
-                "{:?} values and widths should match",
-                core_type
+                "{core_type:?} values and widths should match"
             );
         }
     }

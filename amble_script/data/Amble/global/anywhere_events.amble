@@ -47,7 +47,7 @@ when open item delivery_box {
 item destroyed_box {
     name "Destroyed Shipping Box"
     desc "A pile of packing tape, stickers, and mangled carboard fragments that used to be a shipping box before it fell apart."
-    portable true
+    movability free
     location nowhere "spawns@player when delivery_box opened"
 }
 

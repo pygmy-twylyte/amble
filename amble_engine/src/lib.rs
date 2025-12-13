@@ -21,7 +21,7 @@
 //! **Note: While the engine reads TOML and you can write directly in TOML
 //! (the first 1/3 of the demo game was written that way), it is vastly easier
 //! to use the full capabilities of the engine by creating content using
-//! the ['amble_script'] DSL -- and easier still if you use the Zed editor
+//! the [`amble_script`] DSL -- and easier still if you use the Zed editor
 //! and accompanying Zed Amble extension.
 
 pub const AMBLE_VERSION: &str = env!("CARGO_PKG_VERSION");

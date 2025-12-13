@@ -20,7 +20,7 @@ room med-bay {
 item emh_button {
     name "[E-M-H] Button"
     desc "A large red button mounted to the wall next to the bio-bed, used to summon the Emergency Medical Hologram."
-    portable false
+    movability fixed "It is mounted to a panel on the wall."
     location room med-bay
 }
 
