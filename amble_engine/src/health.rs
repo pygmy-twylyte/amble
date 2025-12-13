@@ -4,6 +4,7 @@
 use std::cmp;
 
 use log::info;
+use serde::de::{self, Deserializer, EnumAccess, VariantAccess, Visitor};
 use serde::{Deserialize, Serialize};
 
 use crate::{ViewItem, WorldObject};
@@ -183,13 +184,128 @@ pub enum LifeState {
 }
 
 /// Types of health effects that can be applied to living game entities.
-#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum HealthEffect {
     InstantDamage { cause: String, amount: u32 },
     InstantHeal { cause: String, amount: u32 },
     DamageOverTime { cause: String, amount: u32, times: u32 },
     HealOverTime { cause: String, amount: u32, times: u32 },
+}
+
+#[derive(Debug, Copy, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+enum HealthEffectKind {
+    InstantDamage,
+    InstantHeal,
+    DamageOverTime,
+    HealOverTime,
+}
+
+impl HealthEffectKind {
+    fn from_str(value: &str) -> Option<Self> {
+        match value {
+            v if v.eq_ignore_ascii_case("instantDamage") => Some(Self::InstantDamage),
+            v if v.eq_ignore_ascii_case("instantHeal") => Some(Self::InstantHeal),
+            v if v.eq_ignore_ascii_case("damageOverTime") => Some(Self::DamageOverTime),
+            v if v.eq_ignore_ascii_case("healOverTime") => Some(Self::HealOverTime),
+            _ => None,
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for HealthEffectKind {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct KindVisitor;
+
+        impl<'de> Visitor<'de> for KindVisitor {
+            type Value = HealthEffectKind;
+
+            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str("health effect type identifier")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                HealthEffectKind::from_str(value).ok_or_else(|| {
+                    de::Error::unknown_variant(
+                        value,
+                        &["instantDamage", "instantHeal", "damageOverTime", "healOverTime"],
+                    )
+                })
+            }
+
+            fn visit_borrowed_str<E>(self, value: &'de str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                self.visit_str(value)
+            }
+
+            fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                self.visit_str(&value)
+            }
+
+            fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
+            where
+                A: EnumAccess<'de>,
+            {
+                let (variant, access) = data.variant::<String>()?;
+                access.unit_variant()?;
+                self.visit_str(&variant)
+            }
+        }
+
+        deserializer.deserialize_any(KindVisitor)
+    }
+}
+
+#[derive(Deserialize)]
+struct HealthEffectRepr {
+    #[serde(rename = "type")]
+    kind: HealthEffectKind,
+    cause: String,
+    #[serde(default)]
+    amount: u32,
+    #[serde(default)]
+    times: u32,
+}
+
+impl<'de> Deserialize<'de> for HealthEffect {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let repr = HealthEffectRepr::deserialize(deserializer)?;
+        Ok(match repr.kind {
+            HealthEffectKind::InstantDamage => HealthEffect::InstantDamage {
+                cause: repr.cause,
+                amount: repr.amount,
+            },
+            HealthEffectKind::InstantHeal => HealthEffect::InstantHeal {
+                cause: repr.cause,
+                amount: repr.amount,
+            },
+            HealthEffectKind::DamageOverTime => HealthEffect::DamageOverTime {
+                cause: repr.cause,
+                amount: repr.amount,
+                times: repr.times,
+            },
+            HealthEffectKind::HealOverTime => HealthEffect::HealOverTime {
+                cause: repr.cause,
+                amount: repr.amount,
+                times: repr.times,
+            },
+        })
+    }
 }
 impl HealthEffect {
     /// Returns `true` if the `cause` matches the supplied string

@@ -14,7 +14,8 @@
 //! Custom spinners are completely defined by game data.
 //!
 
-use serde::{Deserialize, Serialize};
+use serde::de::{self, Deserializer};
+use serde::{Deserialize, Serialize, Serializer};
 
 /// Core spinner types that are essential for the engine to function.
 /// These have built-in defaults but can be overridden in TOML files.
@@ -45,8 +46,7 @@ pub enum CoreSpinnerType {
 
 /// Represents either a core spinner type or a custom game-specific spinner.
 /// Custom spinners are identified by string keys and defined entirely in TOML.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(untagged)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum SpinnerType {
     /// Core engine spinner with built-in defaults
     Core(CoreSpinnerType),
@@ -86,6 +86,18 @@ impl SpinnerType {
         } else {
             // Otherwise treat as custom spinner
             SpinnerType::Custom(key.to_string())
+        }
+    }
+
+    fn parse_kind<E>(raw: &str) -> Result<Self, E>
+    where
+        E: de::Error,
+    {
+        let key = raw.strip_prefix("r#").unwrap_or(raw);
+        if let Some(core) = CoreSpinnerType::from_toml_key(key) {
+            Ok(SpinnerType::Core(core))
+        } else {
+            Ok(SpinnerType::Custom(key.to_string()))
         }
     }
 }
@@ -195,6 +207,31 @@ impl From<CoreSpinnerType> for SpinnerType {
 impl From<String> for SpinnerType {
     fn from(key: String) -> Self {
         SpinnerType::Custom(key)
+    }
+}
+
+impl<'de> Deserialize<'de> for SpinnerType {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let raw: Box<ron::value::RawValue> = Box::<ron::value::RawValue>::deserialize(deserializer)?;
+        let text = raw.get_ron().trim();
+        let name = if text.starts_with('"') {
+            ron::from_str::<String>(text).map_err(de::Error::custom)?
+        } else {
+            text.strip_prefix("r#").unwrap_or(text).to_string()
+        };
+        SpinnerType::parse_kind(&name)
+    }
+}
+
+impl Serialize for SpinnerType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.as_toml_key())
     }
 }
 

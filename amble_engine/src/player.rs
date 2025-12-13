@@ -6,8 +6,11 @@ use crate::health::{HealthEffect, HealthState, LivingEntity};
 use crate::{ItemHolder, Location, WorldObject};
 
 use log::{info, warn};
-use serde::{Deserialize, Serialize};
+use serde::de::{self, Deserializer, EnumAccess, VariantAccess, Visitor};
+use serde::ser::SerializeStruct;
+use serde::{Deserialize, Serialize, Serializer};
 use std::collections::HashSet;
+use std::fmt;
 use uuid::Uuid;
 use variantly::Variantly;
 
@@ -177,23 +180,149 @@ impl LivingEntity for Player {
 }
 
 /// Flags that can be applied to the player
-#[derive(Debug, Clone, Serialize, Deserialize, Variantly)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[derive(Debug, Clone, Variantly)]
 pub enum Flag {
     Simple {
         name: String,
-        #[serde(default)]
         turn_set: usize,
     },
     Sequence {
         name: String,
-        #[serde(default)]
         turn_set: usize,
-        #[serde(default)]
         step: u8,
-        #[serde(default)]
         end: Option<u8>,
     },
+}
+
+#[derive(Debug, Copy, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+enum FlagKind {
+    Simple,
+    Sequence,
+}
+
+impl FlagKind {
+    fn from_str(value: &str) -> Option<Self> {
+        match value {
+            v if v.eq_ignore_ascii_case("simple") => Some(Self::Simple),
+            v if v.eq_ignore_ascii_case("sequence") => Some(Self::Sequence),
+            _ => None,
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for FlagKind {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct FlagKindVisitor;
+
+        impl<'de> Visitor<'de> for FlagKindVisitor {
+            type Value = FlagKind;
+
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("flag type identifier 'simple' or 'sequence'")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                FlagKind::from_str(value).ok_or_else(|| de::Error::unknown_variant(value, &["simple", "sequence"]))
+            }
+
+            fn visit_borrowed_str<E>(self, value: &'de str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                self.visit_str(value)
+            }
+
+            fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                self.visit_str(&value)
+            }
+
+            fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
+            where
+                A: EnumAccess<'de>,
+            {
+                let (variant, access) = data.variant::<String>()?;
+                access.unit_variant()?;
+                self.visit_str(&variant)
+            }
+        }
+
+        deserializer.deserialize_any(FlagKindVisitor)
+    }
+}
+
+impl Serialize for Flag {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Flag::Simple { name, turn_set } => {
+                let mut state = serializer.serialize_struct("Flag", 3)?;
+                state.serialize_field("type", &FlagKind::Simple)?;
+                state.serialize_field("name", name)?;
+                state.serialize_field("turn_set", turn_set)?;
+                state.end()
+            },
+            Flag::Sequence {
+                name,
+                turn_set,
+                step,
+                end,
+            } => {
+                let mut state = serializer.serialize_struct("Flag", 5)?;
+                state.serialize_field("type", &FlagKind::Sequence)?;
+                state.serialize_field("name", name)?;
+                state.serialize_field("turn_set", turn_set)?;
+                state.serialize_field("step", step)?;
+                state.serialize_field("end", end)?;
+                state.end()
+            },
+        }
+    }
+}
+
+#[derive(Deserialize)]
+struct FlagRepr {
+    #[serde(rename = "type")]
+    kind: FlagKind,
+    name: String,
+    #[serde(default)]
+    turn_set: usize,
+    #[serde(default)]
+    step: u8,
+    #[serde(default)]
+    end: Option<u8>,
+}
+
+impl<'de> Deserialize<'de> for Flag {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let repr = FlagRepr::deserialize(deserializer)?;
+        Ok(match repr.kind {
+            FlagKind::Simple => Flag::Simple {
+                name: repr.name,
+                turn_set: repr.turn_set,
+            },
+            FlagKind::Sequence => Flag::Sequence {
+                name: repr.name,
+                turn_set: repr.turn_set,
+                step: repr.step,
+                end: repr.end,
+            },
+        })
+    }
 }
 impl Flag {
     /// Return string value of the flag.

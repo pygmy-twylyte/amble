@@ -5,6 +5,7 @@
 
 use anyhow::{Context, Result, bail};
 use log::{info, warn};
+use serde::de::{self, Deserializer, EnumAccess, VariantAccess, Visitor};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet},
@@ -171,7 +172,7 @@ pub struct NpcMovement {
 }
 
 /// Type and route of NPC movement
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum MovementType {
     Route {
@@ -185,11 +186,199 @@ pub enum MovementType {
 }
 
 /// Defines schedule for NPC movements
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum MovementTiming {
     EveryNTurns { turns: usize },
     OnTurn { turn: usize },
+}
+
+#[derive(Debug, Copy, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+enum MovementTypeKind {
+    Route,
+    RandomSet,
+}
+
+impl MovementTypeKind {
+    fn from_str(value: &str) -> Option<Self> {
+        match value {
+            v if v.eq_ignore_ascii_case("route") => Some(Self::Route),
+            v if v.eq_ignore_ascii_case("randomSet") => Some(Self::RandomSet),
+            _ => None,
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for MovementTypeKind {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct KindVisitor;
+
+        impl<'de> Visitor<'de> for KindVisitor {
+            type Value = MovementTypeKind;
+
+            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str("movement type identifier 'route' or 'randomSet'")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                MovementTypeKind::from_str(value)
+                    .ok_or_else(|| de::Error::unknown_variant(value, &["route", "randomSet"]))
+            }
+
+            fn visit_borrowed_str<E>(self, value: &'de str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                self.visit_str(value)
+            }
+
+            fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                self.visit_str(&value)
+            }
+
+            fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
+            where
+                A: EnumAccess<'de>,
+            {
+                let (variant, access) = data.variant::<String>()?;
+                access.unit_variant()?;
+                self.visit_str(&variant)
+            }
+        }
+
+        deserializer.deserialize_any(KindVisitor)
+    }
+}
+
+#[derive(Deserialize)]
+struct MovementTypeRepr {
+    #[serde(rename = "type")]
+    kind: MovementTypeKind,
+    #[serde(default)]
+    rooms: Vec<Uuid>,
+    #[serde(default)]
+    current_idx: usize,
+    #[serde(default)]
+    loop_route: bool,
+}
+
+impl<'de> Deserialize<'de> for MovementType {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let repr = MovementTypeRepr::deserialize(deserializer)?;
+        match repr.kind {
+            MovementTypeKind::Route => Ok(MovementType::Route {
+                rooms: repr.rooms,
+                current_idx: repr.current_idx,
+                loop_route: repr.loop_route,
+            }),
+            MovementTypeKind::RandomSet => Ok(MovementType::RandomSet {
+                rooms: repr.rooms.into_iter().collect(),
+            }),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+enum MovementTimingKind {
+    EveryNTurns,
+    OnTurn,
+}
+
+impl MovementTimingKind {
+    fn from_str(value: &str) -> Option<Self> {
+        match value {
+            v if v.eq_ignore_ascii_case("everyNTurns") => Some(Self::EveryNTurns),
+            v if v.eq_ignore_ascii_case("onTurn") => Some(Self::OnTurn),
+            _ => None,
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for MovementTimingKind {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct KindVisitor;
+
+        impl<'de> Visitor<'de> for KindVisitor {
+            type Value = MovementTimingKind;
+
+            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str("movement timing identifier 'everyNTurns' or 'onTurn'")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                MovementTimingKind::from_str(value)
+                    .ok_or_else(|| de::Error::unknown_variant(value, &["everyNTurns", "onTurn"]))
+            }
+
+            fn visit_borrowed_str<E>(self, value: &'de str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                self.visit_str(value)
+            }
+
+            fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                self.visit_str(&value)
+            }
+
+            fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
+            where
+                A: EnumAccess<'de>,
+            {
+                let (variant, access) = data.variant::<String>()?;
+                access.unit_variant()?;
+                self.visit_str(&variant)
+            }
+        }
+
+        deserializer.deserialize_any(KindVisitor)
+    }
+}
+
+#[derive(Deserialize)]
+struct MovementTimingRepr {
+    #[serde(rename = "type")]
+    kind: MovementTimingKind,
+    #[serde(default)]
+    turns: usize,
+    #[serde(default)]
+    turn: usize,
+}
+
+impl<'de> Deserialize<'de> for MovementTiming {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let repr = MovementTimingRepr::deserialize(deserializer)?;
+        match repr.kind {
+            MovementTimingKind::EveryNTurns => Ok(MovementTiming::EveryNTurns { turns: repr.turns }),
+            MovementTimingKind::OnTurn => Ok(MovementTiming::OnTurn { turn: repr.turn }),
+        }
+    }
 }
 
 /// Determine whether an NPC should move this turn.
