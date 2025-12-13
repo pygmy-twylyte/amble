@@ -482,12 +482,11 @@ fn run_compile_dir(args: &[String]) {
     };
 
     // Ensure out_dir exists
-    if !Path::new(&out_dir).exists() {
-        if let Err(e) = fs::create_dir_all(&out_dir) {
+    if !Path::new(&out_dir).exists()
+        && let Err(e) = fs::create_dir_all(&out_dir) {
             eprintln!("compile-dir: cannot create out-dir '{out_dir}': {e}");
             process::exit(1);
         }
-    }
     // Write each category; emit empty skeletons when no entries to avoid stale cross-file refs
     let allows = |k: &str| -> bool { only.as_ref().map(|s| s.contains(k)).unwrap_or(true) };
     if allows("triggers") {
@@ -720,11 +719,10 @@ fn collect_dsl_files_recursive(dir: &str, out: &mut Vec<String>) {
                 continue;
             }
             if let Some(ext) = p.extension().and_then(|e| e.to_str()) {
-                if ext == "amble" || ext == "able" {
-                    if let Some(s) = p.to_str() {
+                if (ext == "amble" || ext == "able")
+                    && let Some(s) = p.to_str() {
                         out.push(s.to_string());
                     }
-                }
             }
         }
     }
@@ -1381,8 +1379,8 @@ fn load_flags_from_triggers(doc: &Document) -> HashSet<String> {
 
 fn collect_flags_from_actions(actions: &toml_edit::Array, out: &mut HashSet<String>) {
     for act in actions.iter() {
-        if let Some(at) = act.as_inline_table() {
-            if let Some(ty) = at.get("type").and_then(|v| v.as_str()) {
+        if let Some(at) = act.as_inline_table()
+            && let Some(ty) = at.get("type").and_then(|v| v.as_str()) {
                 match ty {
                     "addFlag" => {
                         if let Some(flag_item) = at.get("flag")
@@ -1401,7 +1399,6 @@ fn collect_flags_from_actions(actions: &toml_edit::Array, out: &mut HashSet<Stri
                     _ => {},
                 }
             }
-        }
     }
 }
 

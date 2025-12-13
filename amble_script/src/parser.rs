@@ -619,8 +619,8 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
                 let mut barred_message: Option<String> = None;
                 let mut required_items: Vec<String> = Vec::new();
                 let mut required_flags: Vec<String> = Vec::new();
-                if let Some(next) = it.next() {
-                    if next.as_rule() == Rule::exit_opts {
+                if let Some(next) = it.next()
+                    && next.as_rule() == Rule::exit_opts {
                         for opt in next.into_inner() {
                             // Simplest detection by textual head, then use children for values
                             let opt_text = opt.as_str().trim();
@@ -671,7 +671,6 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
                             }
                         }
                     }
-                }
                 exits.push((
                     dir,
                     crate::ExitAst {
@@ -1328,14 +1327,13 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                 };
                 // rooms list inside (...)
                 let mut rooms: Vec<String> = Vec::new();
-                if let Some(open) = s.find('(') {
-                    if let Some(close_rel) = s[open + 1..].find(')') {
+                if let Some(open) = s.find('(')
+                    && let Some(close_rel) = s[open + 1..].find(')') {
                         let inner = &s[open + 1..open + 1 + close_rel];
                         for tok in inner.split(',').map(|x| x.trim()).filter(|x| !x.is_empty()) {
                             rooms.push(tok.to_string());
                         }
                     }
-                }
                 let timing = s
                     .find(" timing ")
                     .map(|idx| s[idx + 8..].split_whitespace().next().unwrap_or("").to_string());
@@ -1449,14 +1447,13 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                         mtype = NpcMovementTypeAst::Random;
                     }
                     let mut rooms: Vec<String> = Vec::new();
-                    if let Some(open) = txt.find('(') {
-                        if let Some(close_rel) = txt[open + 1..].find(')') {
+                    if let Some(open) = txt.find('(')
+                        && let Some(close_rel) = txt[open + 1..].find(')') {
                             let inner = &txt[open + 1..open + 1 + close_rel];
                             for tok in inner.split(',').map(|x| x.trim()).filter(|x| !x.is_empty()) {
                                 rooms.push(tok.to_string());
                             }
                         }
-                    }
 
                     let timing = txt
                         .find(" timing ")
@@ -1507,8 +1504,8 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                         let id = parts.next().unwrap_or("").to_string();
                         (id, parts.next().unwrap_or("").to_string())
                     };
-                    if let Some(open_idx) = after_key.find('{') {
-                        if let Some(close_rel) = after_key[open_idx + 1..].rfind('}') {
+                    if let Some(open_idx) = after_key.find('{')
+                        && let Some(close_rel) = after_key[open_idx + 1..].rfind('}') {
                             let mut inner = &after_key[open_idx + 1..open_idx + 1 + close_rel];
                             let mut lines: Vec<String> = Vec::new();
                             loop {
@@ -1538,7 +1535,6 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                                 continue;
                             }
                         }
-                    }
                 }
             },
         }
@@ -2299,8 +2295,8 @@ fn parse_action_core(text: &str) -> Result<ActionAst, AstError> {
         }
         return Err(AstError::Shape("set barred message syntax"));
     }
-    if let Some(rest) = t.strip_prefix("do lock exit from ") {
-        if let Some((from, tail)) = rest.split_once(" direction ") {
+    if let Some(rest) = t.strip_prefix("do lock exit from ")
+        && let Some((from, tail)) = rest.split_once(" direction ") {
             let tail = tail.trim_start();
             let direction = match parse_string_at(tail) {
                 Ok((s, _used)) => s,
@@ -2311,9 +2307,8 @@ fn parse_action_core(text: &str) -> Result<ActionAst, AstError> {
                 direction,
             });
         }
-    }
-    if let Some(rest) = t.strip_prefix("do unlock exit from ") {
-        if let Some((from, tail)) = rest.split_once(" direction ") {
+    if let Some(rest) = t.strip_prefix("do unlock exit from ")
+        && let Some((from, tail)) = rest.split_once(" direction ") {
             let tail = tail.trim_start();
             let direction = match parse_string_at(tail) {
                 Ok((s, _used)) => s,
@@ -2324,7 +2319,6 @@ fn parse_action_core(text: &str) -> Result<ActionAst, AstError> {
                 direction,
             });
         }
-    }
     if let Some(rest) = t.strip_prefix("do give item ") {
         // do give item <item> to player from npc <npc>
         let rest = rest.trim();
@@ -2338,8 +2332,8 @@ fn parse_action_core(text: &str) -> Result<ActionAst, AstError> {
     }
     if let Some(rest) = t.strip_prefix("do reveal exit from ") {
         // format: <from> to <to> direction <dir>
-        if let Some((from, tail)) = rest.split_once(" to ") {
-            if let Some((to, dir_tail)) = tail.split_once(" direction ") {
+        if let Some((from, tail)) = rest.split_once(" to ")
+            && let Some((to, dir_tail)) = tail.split_once(" direction ") {
                 let dir_tail = dir_tail.trim_start();
                 let direction = match parse_string_at(dir_tail) {
                     Ok((s, _used)) => s,
@@ -2351,7 +2345,6 @@ fn parse_action_core(text: &str) -> Result<ActionAst, AstError> {
                     direction,
                 });
             }
-        }
         return Err(AstError::Shape("reveal exit syntax"));
     }
     if let Some(rest) = t.strip_prefix("do push player to ") {

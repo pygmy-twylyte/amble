@@ -2093,11 +2093,10 @@ fn action_to_value(stmt: &ActionStmt) -> toml_edit::Value {
             toml_edit::Value::from(t)
         },
     };
-    if let Some(priority) = stmt.priority {
-        if let Some(tbl) = value.as_inline_table_mut() {
+    if let Some(priority) = stmt.priority
+        && let Some(tbl) = value.as_inline_table_mut() {
             tbl.insert("priority", toml_edit::Value::from(priority as i64));
         }
-    }
     value
 }
 
@@ -2215,24 +2214,22 @@ fn npc_patch_to_inline_table(patch: &NpcPatchAst) -> InlineTable {
     }
     if let Some(movement) = &patch.movement {
         let mut mt = InlineTable::new();
-        if let Some(route) = &movement.route {
-            if !route.is_empty() {
+        if let Some(route) = &movement.route
+            && !route.is_empty() {
                 let mut arr = Array::default();
                 for room in route {
                     arr.push(room.clone());
                 }
                 mt.insert("route", toml_edit::Value::from(arr));
             }
-        }
-        if let Some(random_rooms) = &movement.random_rooms {
-            if !random_rooms.is_empty() {
+        if let Some(random_rooms) = &movement.random_rooms
+            && !random_rooms.is_empty() {
                 let mut arr = Array::default();
                 for room in random_rooms {
                     arr.push(room.clone());
                 }
                 mt.insert("random_rooms", toml_edit::Value::from(arr));
             }
-        }
         if let Some(timing) = &movement.timing {
             let mut tt = InlineTable::new();
             match timing {
