@@ -10,7 +10,7 @@ room east-of-building {
         happy  "Dibbler hums a sales jingle, certain new patrons will arrive."
         bored  "Dibbler kicks at the gravel, lamenting the lack of customers."
     }
-    overlay if (player has item dental_floss) {
+    overlay if ( player has item dental_floss ) {
         text "The weird bush looks oddly bare now, stripped of its floss-like strands."
     }
     exit northwest -> loading-dock
@@ -24,7 +24,7 @@ room east-of-building {
 item weird_bush {
     name "Weird Bush"
     desc "A squat, leafy bush with long, pale strands growing among the branches. The fibers look oddly uniform — almost like... dental floss?"
-    portable false
+    movability fixed "It is firmly rooted into the rocky ground."
     location room east-of-building
     container state open
 }
@@ -32,7 +32,7 @@ item weird_bush {
 item dental_floss {
     name "Dental Floss"
     desc "A long, strong strand of waxed dental floss, harvested from the weird bush. It smells faintly minty, but seems surprisingly durable — maybe even useful for something besides oral hygiene."
-    portable true
+    movability free
     location chest weird_bush
     ability Attach
     requires attach to attach

@@ -6,7 +6,7 @@ fn items_interaction_requires_golden() {
 item gizmo {
   name "Gizmo"
   desc "A handy gizmo."
-  portable true
+  movability free
   location room lab
   requires insulate to handle
   requires Clean to clean

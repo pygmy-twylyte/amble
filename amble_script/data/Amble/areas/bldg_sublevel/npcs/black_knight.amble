@@ -35,7 +35,7 @@ Little is known about the Black Knight, an Arthurian legend, except that he is n
 item dull_longsword {
     name "Dull Longsword"
     desc "The Black Knight's masterfully forged longsword, dulled from years of hacking up those who absolutely *insist* upon passing."
-    portable true
+    movability free
     location npc black_knight
 }
 

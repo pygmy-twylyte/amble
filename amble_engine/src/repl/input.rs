@@ -122,11 +122,10 @@ fn collect_grammar_terms() -> Vec<String> {
     for rule in rules {
         if let Some(sequences) = literal_sequences(&rule.expr) {
             for seq in sequences {
-                if let Some(term) = normalize_sequence(&seq) {
-                    if should_include(&term) {
+                if let Some(term) = normalize_sequence(&seq)
+                    && should_include(&term) {
                         terms.push(term);
                     }
-                }
             }
         }
     }
@@ -368,11 +367,10 @@ impl RustylineInput {
         let history_path = history_file_path();
 
         if let Some(path) = history_path.as_ref() {
-            if let Some(dir) = path.parent() {
-                if let Err(err) = fs::create_dir_all(dir) {
+            if let Some(dir) = path.parent()
+                && let Err(err) = fs::create_dir_all(dir) {
                     warn!("failed to create history directory {}: {}", dir.display(), err);
                 }
-            }
 
             if let Err(err) = editor.load_history(path) {
                 match err {
@@ -396,11 +394,10 @@ impl RustylineInput {
                     if let Err(err) = self.editor.add_history_entry(line.as_str()) {
                         warn!("failed to append to history: {err}");
                     }
-                    if let Some(path) = self.history_path.as_ref() {
-                        if let Err(err) = self.editor.save_history(path) {
+                    if let Some(path) = self.history_path.as_ref()
+                        && let Err(err) = self.editor.save_history(path) {
                             warn!("failed to persist history to {}: {}", path.display(), err);
                         }
-                    }
                 }
                 Ok(InputEvent::Line(line))
             },

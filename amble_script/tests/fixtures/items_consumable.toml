@@ -3,7 +3,7 @@
 id = "energy_bar"
 name = "Energy Bar"
 description = "Restores energy."
-portable = true
+movability = "free"
 location = { Inventory = "player" }
 
 [items.consumable]

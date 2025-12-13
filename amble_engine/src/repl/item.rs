@@ -323,8 +323,7 @@ pub fn use_item_on_handler(
     if !interaction_fired {
         view.push(ViewItem::ActionFailure(
             world
-                .spin_core(CoreSpinnerType::NoEffect, "That appears to have had no effect.")
-                .to_string(),
+                .spin_core(CoreSpinnerType::NoEffect, "That appears to have had no effect.").clone(),
         ));
         info!(
             "No matching trigger for {interaction:?} {target_name} ({}) with {tool_name} ({})",
@@ -1119,7 +1118,7 @@ fn find_valid_key(world_items: &HashMap<Uuid, Item>, maybe_keys: &HashSet<Uuid>,
 mod tests {
     use super::*;
     use crate::{
-        item::{ContainerState, Item, ItemAbility, ItemInteractionType},
+        item::{ContainerState, Item, ItemAbility, ItemInteractionType, Movability},
         room::Room,
         trigger::{ScriptedAction, Trigger, TriggerAction, TriggerCondition},
         world::{AmbleWorld, Location},
@@ -1152,9 +1151,8 @@ mod tests {
             name: "chest".into(),
             description: String::new(),
             location: Location::Room(room_id),
-            portable: true,
             container_state: Some(ContainerState::Locked),
-            restricted: false,
+            movability: Movability::Free,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),
@@ -1174,9 +1172,8 @@ mod tests {
             name: "crowbar".into(),
             description: String::new(),
             location: Location::Inventory,
-            portable: true,
+            movability: Movability::Free,
             container_state: None,
-            restricted: false,
             contents: HashSet::new(),
             abilities: [ItemAbility::Pry].into_iter().collect(),
             interaction_requires: HashMap::new(),
@@ -1193,9 +1190,10 @@ mod tests {
             name: "lamp".into(),
             description: String::new(),
             location: Location::Room(room_id),
-            portable: false,
             container_state: None,
-            restricted: false,
+            movability: Movability::Fixed {
+                reason: "lamp is glued to floor".to_string(),
+            },
             contents: HashSet::new(),
             abilities: [ItemAbility::TurnOn].into_iter().collect(),
             interaction_requires: HashMap::new(),
@@ -1212,9 +1210,8 @@ mod tests {
             name: "key".into(),
             description: String::new(),
             location: Location::Inventory,
-            portable: true,
+            movability: Movability::Free,
             container_state: None,
-            restricted: false,
             contents: HashSet::new(),
             abilities: [ItemAbility::Unlock(Some(container_id))].into_iter().collect(),
             interaction_requires: HashMap::new(),

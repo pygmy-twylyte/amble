@@ -43,8 +43,7 @@ Cut-Me-Own-Throat Dibbler is a persistently struggling entrepreneur with a tray 
 item sausage-inna-bun {
     name "Sausage-Inna-Bun"
     desc r#""Once tasted, never forgotten." An odd-smelling sausage in a long bun, smothered with mustard and fried onions."#
-    portable true
-    restricted true
+    movability restricted "You have to give Dibbler something in exchange for it."
     location npc cmot_dibbler
     ability Eat
     consumable {
@@ -60,7 +59,7 @@ item sausage-inna-bun {
 
 trigger "[CMOT] Buy a Sausage-inna-Bun" only once
 when give item am_dollar to npc cmot_dibbler {
-    do restrict item am_dollar
+    do set item movability am_dollar restricted "Dibbler holds his money VERY tightly."
     do npc says cmot_dibbler "An Ankh-Morpork dollar! Not sure where you found that around here. Sorry, er, I seem to have no change to give ya. Here's my finest, world-famous (and patented) Sausage-Inna-Bun."
     do set npc state cmot_dibbler happy
     do give item sausage-inna-bun to player from npc cmot_dibbler

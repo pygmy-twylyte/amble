@@ -12,15 +12,14 @@
 item keen_longsword {
     name "Keen Longsword"
     desc "The Black Knight's masterfully forged longsword, newly sharpened and eager to return to slicing up passers by."
-    portable true
+    movability restricted "The Black Knight won't fall for you snatching his sword again."
     location nowhere "spawns@player_after_sharpening_dull_longsword"
-    restricted true
 }
 
 item whetstone {
     name "Belgian Coticule Whetstone"
     desc "One of the finest of all natural whetstones, it could sharpen a jellyfish to the point where you could shave with it, though the jellyfish is typically quite annoyed afterward."
-    portable true
+    movability free
     location room snow-camp
     ability Sharpen
 }
@@ -82,7 +81,7 @@ trigger "[Sublevel-1-Entrance] Black Knight Kicks Player After Sword Taken" when
 trigger "[Sublevel-1-Entrance] Sharpened Sword Returned" only once
 when give item keen_longsword to npc black_knight
 {
-    do restrict item keen_longsword
+    do set item movability keen_longsword restricted "The knight won't fall for that again."
     do add flag appeased-black-knight
     do set barred message from sublevel-1-entrance to room-aa-3b "As you near the door, you are overwhelmed by a sense of spinning through an unending series of fictional realities, compelling you to step away."
     do award points 5 reason "Appeased the Black Knight with a sharpened blade"
@@ -96,7 +95,7 @@ when give item keen_longsword to npc black_knight
 
 goal get-past-knight {
     name "Get Past the Black Knight"
-    desc "Find a way to get past the Black Knight to access the rest of the sublevel."
+    desc "Find a way to appease the Black Knight to access the rest of the sublevel."
     group required
     start when goal complete go-to-sublevel
     done when has flag appeased-black-knight

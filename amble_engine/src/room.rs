@@ -174,7 +174,7 @@ impl Room {
     /// Returns an error if any referenced rooms cannot be resolved while showing exits.
     pub fn show(&self, world: &AmbleWorld, view: &mut View, force_mode: Option<ViewMode>) -> Result<()> {
         view.push(ViewItem::RoomDescription {
-            name: self.name.to_string(),
+            name: self.name.clone(),
             description: self.description().to_string(),
             visited: self.visited,
             force_mode,
@@ -217,8 +217,9 @@ impl Room {
                 .filter_map(|npc_id| world.npcs.get(npc_id))
                 .map(|npc| NpcLine {
                     name: match npc.life_state() {
+                        // append "(dead)" to NPC's name if they're dead but still present
                         LifeState::Dead => format!("{} (dead)", npc.name()),
-                        _ => npc.name.clone(),
+                        LifeState::Alive => npc.name.clone(),
                     },
                     description: npc.short_description(),
                 })
@@ -241,7 +242,7 @@ impl Room {
                 self.id
             ))?;
             exit_lines.push(ExitLine {
-                direction: direction.to_string(),
+                direction: direction.clone(),
                 destination: target_room.name().to_string(),
                 exit_locked: exit.locked,
                 dest_visited: target_room.visited,
@@ -296,9 +297,8 @@ mod tests {
             name: "Test Item".into(),
             description: "A test item".into(),
             location: Location::Room(room_id),
-            portable: true,
+            movability: crate::item::Movability::Free,
             container_state: None,
-            restricted: false,
             contents: HashSet::new(),
             abilities: HashSet::new(),
             interaction_requires: HashMap::new(),

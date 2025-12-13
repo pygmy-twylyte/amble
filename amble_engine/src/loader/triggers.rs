@@ -47,7 +47,7 @@ impl RawTrigger {
             actions.push(act.to_action(symbols)?);
         }
         Ok(Trigger {
-            name: self.name.to_string(),
+            name: self.name.clone(),
             conditions,
             actions,
             only_once: self.only_once,

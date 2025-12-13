@@ -9,7 +9,7 @@
 item foamsafe_x17 {
     name "Initech FoamSafe™ X-17"
     desc "A fire extinguisher-like device with the words \"Initech FoamSafe™ X-17\" proudly emblazoned on its side. Its label promises peace of mind in emergencies — though closer inspection suggests otherwise."
-    portable true
+    movability free
     location room aperture-lab
     text """INITECH FOAMSAFE™ MODEL X-17
 
@@ -32,7 +32,7 @@ combustion, flashpoint misalignment, or structural regrets.
 item foam_fire {
     name "Foam Fire"
     desc "A raging patch of fire fueled by accelerant-laced foam. It crackles hungrily."
-    portable false
+    movability fixed "It's flaming, amorphous goo that sticks to everything."
     location nowhere "spawns@aperture-lab when foamsafe misfires"
 }
 

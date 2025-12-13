@@ -58,7 +58,7 @@ fn toml_schedule_in_if_reschedules_then_fires() {
             .all(|entry| !matches!(&entry.view_item, ae::ViewItem::TriggeredEvent(_)))
     );
     // A new event should be queued (original popped, new scheduled)
-    assert!(world.scheduler.heap.len() >= 1);
+    assert!(!world.scheduler.heap.is_empty());
 
     // Now set flag to satisfy condition and process next turn to fire
     world

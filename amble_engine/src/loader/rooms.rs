@@ -101,12 +101,12 @@ impl RawRoom {
             let mut required_items_uuids = HashSet::<Uuid>::new();
             for required in &raw_exit.required_items {
                 let item_uuid = uuid_from_token(&NAMESPACE_ITEM, required);
-                symbols.items.insert(required.to_string(), item_uuid);
+                symbols.items.insert(required.clone(), item_uuid);
                 required_items_uuids.insert(item_uuid);
             }
 
             exit_map.insert(
-                dir.to_string(),
+                dir.clone(),
                 Exit {
                     to: to_uuid,
                     hidden: raw_exit.hidden,
@@ -127,7 +127,7 @@ impl RawRoom {
             let conditions = convert_overlay_conditions(&raw_overlay.conditions, symbols)?;
             overlays.push(RoomOverlay {
                 conditions,
-                text: raw_overlay.text.to_string(),
+                text: raw_overlay.text.clone(),
             });
         }
 
@@ -136,7 +136,7 @@ impl RawRoom {
                 .rooms
                 .get(&self.id)
                 .ok_or_else(|| anyhow!("UUID for {} not found in symbols", self.id))?,
-            symbol: self.id.to_string(),
+            symbol: self.id.clone(),
             name: self.name.clone(),
             base_description: self.base_description.clone(),
             overlays,
@@ -160,9 +160,9 @@ pub fn convert_overlay_conditions(
     let mut conditions = Vec::new();
     for raw_condition in raw_conditions {
         let condition = match raw_condition {
-            RawOverlayCondition::FlagComplete { flag } => OverlayCondition::FlagComplete { flag: flag.to_string() },
-            RawOverlayCondition::FlagSet { flag } => OverlayCondition::FlagSet { flag: flag.to_string() },
-            RawOverlayCondition::FlagUnset { flag } => OverlayCondition::FlagUnset { flag: flag.to_string() },
+            RawOverlayCondition::FlagComplete { flag } => OverlayCondition::FlagComplete { flag: flag.clone() },
+            RawOverlayCondition::FlagSet { flag } => OverlayCondition::FlagSet { flag: flag.clone() },
+            RawOverlayCondition::FlagUnset { flag } => OverlayCondition::FlagUnset { flag: flag.clone() },
             RawOverlayCondition::ItemPresent { item_id } => OverlayCondition::ItemPresent {
                 item_id: register_item(symbols, item_id),
             },

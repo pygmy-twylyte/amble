@@ -14,6 +14,6 @@ room poetry-panic {
 item elevator_keycard {
     name "Proximity Keycard"
     desc "This is either a keycard or a rejected prototype for a business card. It reads: 'Amble Adventures — Internal Use Only — Do Not Duplicate, Think About, or Eat'. It's warm to the touch, and it buzzes slightly."
-    portable true
+    movability free
     location room poetry-panic
 }

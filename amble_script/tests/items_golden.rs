@@ -5,14 +5,14 @@ fn items_basic_golden() {
     let src = r#"item sample_widget {
     name "Sample Widget"
     desc "Prototype component."
-    portable true
+    movability free
     location inventory player
 }
 
 item control_panel {
     name "Control Panel"
     desc "A sealed control panel."
-    portable false
+    movability fixed "It's bolted to the wall."
     container state closed
     location room control-room
     ability TurnOn
@@ -21,7 +21,7 @@ item control_panel {
 item maintenance_key {
     name "Maintenance Key"
     desc "A small bronze key."
-    portable true
+    movability free
     location npc attendant
     ability Unlock cabinet
 }

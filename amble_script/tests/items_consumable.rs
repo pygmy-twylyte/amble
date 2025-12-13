@@ -6,7 +6,7 @@ fn items_consumable_golden() {
 item energy_bar {
   name "Energy Bar"
   desc "Restores energy."
-  portable true
+  movability free
   location inventory player
   consumable {
     uses_left 2

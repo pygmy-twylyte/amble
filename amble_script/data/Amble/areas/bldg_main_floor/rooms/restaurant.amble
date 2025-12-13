@@ -13,7 +13,7 @@ room restaurant {
     exit west -> main-lobby
     exit east -> patio
     exit south -> vip-bathroom {
-        required_items(visitor_pass),
+        required_items( visitor_pass ),
         barred "The door apologizes profusely for refusing to open, explaining that it's forced by programming not to let you in without a visitor's pass."
     }
 }
@@ -24,7 +24,7 @@ room restaurant {
 item reservation_book {
     name "Reservation Book"
     desc "A leather-bound guest book sits at the host stand, its pages flipping themselves when unattended. You spot several reservations, hastily written in wildly different scripts."
-    portable false
+    movability fixed "It's attached to the host stand by a chain."
     location room restaurant
     text """    Zaphod B............................ happy hour
     Marvin (ugh, not again)............. teatime

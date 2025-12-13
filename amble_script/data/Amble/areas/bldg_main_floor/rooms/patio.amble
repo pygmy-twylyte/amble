@@ -35,7 +35,7 @@ trigger "Modify Patio: Sunglasses Off" when drop item peril_sunglasses {
 item un_drink {
     name "Negative Cocktail"
     desc "A crystal glass sits half full of... nothing. And yet, the liquid level keeps rising, as if the drink is slowly returning to the bartender across time. The stir stick spins gently in defiance of gravity and good sense."
-    portable true
+    movability free
     location room patio
     ability Drink
     consumable {
@@ -48,7 +48,7 @@ item un_drink {
 item plaque_3 {
     name "Crystal Plaque"
     desc "An intricate pure clear crystal plaque with an inlaid inscription in obsidian; it must have taken decades to create -- atop an ornately carved pillar that probably took nearly as long to create -- impressing the beholder with the sheer enormity of its message."
-    portable false
+    movability fixed "It's firmly mounted to the marble pillar."
     location room patio
     ability Read
     text "There are, it has been said, two types of people in the world. There are those who, when presented with a glass that is exactly half full, say: this glass is half full. And then there are those who say: this glass is half empty. The world belongs, however, to those who can look at the glass and say: What's up with this glass? Excuse me? Excuse me? This is my glass? I don't think so. My glass was full! And it was a bigger glass! Who's been pinching my beer?  -- Terry Pratchett"

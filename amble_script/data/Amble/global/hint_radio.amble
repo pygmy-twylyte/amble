@@ -24,7 +24,7 @@
 item hint_radio {
     name "HINT Radio (off)"
     desc r#"A black, long-range walkie-talkie style radio transceiver. A label bearing the word "HINTS" is affixed to the side. The transmit button has been removed. The "Power" LED is off."#
-    portable true
+    movability free
     location room guard-post
     ability TurnOn
 }

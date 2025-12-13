@@ -8,6 +8,7 @@ use serde::Deserialize;
 use std::collections::HashSet;
 
 use super::raw_condition::RawTriggerCondition;
+use crate::item::Movability;
 use crate::loader::items::RawItemAbility;
 use crate::scheduler::{EventCondition, OnFalsePolicy};
 use crate::trigger::{
@@ -42,8 +43,7 @@ pub struct RawItemPatch {
     pub name: Option<String>,
     pub desc: Option<String>,
     pub text: Option<String>,
-    pub portable: Option<bool>,
-    pub restricted: Option<bool>,
+    pub movability: Option<Movability>,
     pub container_state: Option<ContainerState>,
     #[serde(default)]
     pub remove_container_state: bool,
@@ -62,9 +62,8 @@ impl RawItemPatch {
             name: self.name.clone(),
             desc: self.desc.clone(),
             text: self.text.clone(),
-            portable: self.portable,
-            restricted: self.restricted,
             container_state: self.container_state,
+            movability: self.movability.clone(),
             remove_container_state: self.remove_container_state,
             add_abilities: self
                 .add_abilities
@@ -216,15 +215,15 @@ impl RawNpcMovementPatch {
             None
         };
 
-        if let Some(route) = &route {
-            if route.is_empty() {
-                bail!("loading TriggerAction:ModifyNpc: movement route must include at least one room");
-            }
+        if let Some(route) = &route
+            && route.is_empty()
+        {
+            bail!("loading TriggerAction:ModifyNpc: movement route must include at least one room");
         }
-        if let Some(random) = &random_rooms {
-            if random.is_empty() {
-                bail!("loading TriggerAction:ModifyNpc: random room set must include at least one room");
-            }
+        if let Some(random) = &random_rooms
+            && random.is_empty()
+        {
+            bail!("loading TriggerAction:ModifyNpc: random room set must include at least one room");
         }
         if route.is_some() && random_rooms.is_some() {
             bail!("loading TriggerAction:ModifyNpc: cannot set both route and random rooms");
@@ -298,6 +297,10 @@ pub struct RawActionStmt {
     pub action: RawTriggerAction,
 }
 impl RawActionStmt {
+    /// Convert a `RawActionStmt` to a `ScriptedAction`
+    ///
+    /// # Errors
+    /// - propagated on symbol lookup failures from the underlying `to_action()` impl
     pub fn to_action(&self, symbols: &SymbolTable) -> Result<ScriptedAction> {
         let cooked = self.action.to_action(symbols)?;
         Ok(ScriptedAction::with_priority(cooked, self.priority))
@@ -446,9 +449,6 @@ pub enum RawTriggerAction {
     ResetFlag {
         flag: String,
     },
-    RestrictItem {
-        item_id: String,
-    },
     RevealExit {
         exit_from: String,
         exit_to: String,
@@ -457,6 +457,10 @@ pub enum RawTriggerAction {
     SetItemDescription {
         item_sym: String,
         text: String,
+    },
+    SetItemMovability {
+        item_sym: String,
+        movability: Movability,
     },
     SetNpcState {
         npc_id: String,
@@ -523,6 +527,7 @@ impl RawTriggerAction {
     ///
     /// # Errors
     /// Returns an error if referenced symbols cannot be resolved or if nested actions fail to convert.
+    #[allow(clippy::too_many_lines)]
     pub fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
             Self::ModifyItem { item_sym, patch } => cook_modify_item(symbols, item_sym, patch),
@@ -535,6 +540,7 @@ impl RawTriggerAction {
             Self::ReplaceItem { old_sym, new_sym } => cook_replace_item(symbols, old_sym, new_sym),
             Self::ReplaceDropItem { old_sym, new_sym } => cook_replace_drop_item(symbols, old_sym, new_sym),
             Self::SetItemDescription { item_sym, text } => cook_set_item_description(symbols, item_sym, text),
+            Self::SetItemMovability { item_sym, movability } => cook_set_item_movability(symbols, item_sym, movability),
             Self::SetBarredMessage {
                 msg,
                 exit_from,
@@ -545,8 +551,8 @@ impl RawTriggerAction {
                 text: text.clone(),
                 width: *width,
             }),
-            Self::ResetFlag { flag } => Ok(TriggerAction::ResetFlag(flag.to_string())),
-            Self::AdvanceFlag { flag } => Ok(TriggerAction::AdvanceFlag(flag.to_string())),
+            Self::ResetFlag { flag } => Ok(TriggerAction::ResetFlag(flag.clone())),
+            Self::AdvanceFlag { flag } => Ok(TriggerAction::AdvanceFlag(flag.clone())),
             Self::SpinnerMessage { spinner } => Ok(TriggerAction::SpinnerMessage {
                 spinner: SpinnerType::from_toml_key(spinner),
             }),
@@ -584,12 +590,11 @@ impl RawTriggerAction {
                 turns: *turns,
             }),
             Self::RemovePlayerEffect { cause } => Ok(TriggerAction::RemovePlayerEffect { cause: cause.clone() }),
-            Self::RestrictItem { item_id } => cook_restrict_item(symbols, item_id),
             Self::NpcRefuseItem { npc_id, reason } => cook_npc_refuse_item(symbols, npc_id, reason),
             Self::NpcSaysRandom { npc_id } => cook_npc_says_random(symbols, npc_id),
             Self::NpcSays { npc_id, quote } => cook_npc_says(symbols, npc_id, quote),
             Self::AddFlag { flag } => Ok(TriggerAction::AddFlag(flag.clone())),
-            Self::RemoveFlag { flag } => Ok(TriggerAction::RemoveFlag(flag.to_string())),
+            Self::RemoveFlag { flag } => Ok(TriggerAction::RemoveFlag(flag.clone())),
             Self::AwardPoints { amount, reason } => Ok(TriggerAction::AwardPoints {
                 amount: *amount,
                 reason: reason.clone(),
@@ -598,7 +603,7 @@ impl RawTriggerAction {
             Self::PushPlayerTo { room_id } => cook_push_player_to(symbols, room_id),
             Self::GiveItemToPlayer { npc_id, item_id } => cook_give_item_to_player(symbols, npc_id, item_id),
             Self::SetNpcState { npc_id, state } => cook_set_npc_state(symbols, npc_id, state.clone()),
-            Self::ShowMessage { text } => Ok(TriggerAction::ShowMessage(text.to_string())),
+            Self::ShowMessage { text } => Ok(TriggerAction::ShowMessage(text.clone())),
             Self::RevealExit {
                 exit_from,
                 exit_to,
@@ -614,7 +619,7 @@ impl RawTriggerAction {
             Self::LockExit { from_room, direction } => cook_lock_exit(symbols, from_room, direction),
             Self::SpawnItemInInventory { item_id } => cook_spawn_item_in_inventory(symbols, item_id),
             Self::UnlockExit { from_room, direction } => cook_unlock_exit(symbols, from_room, direction),
-            Self::DenyRead { reason } => Ok(TriggerAction::DenyRead(reason.to_string())),
+            Self::DenyRead { reason } => Ok(TriggerAction::DenyRead(reason.clone())),
             Self::Conditional { condition, actions } => cook_conditional(symbols, condition, actions),
             Self::ScheduleIn {
                 turns_ahead,
@@ -643,6 +648,16 @@ impl RawTriggerAction {
 /*
  * "Cook" functions below convert RawTriggerActions to "fully cooked" TriggerActions
  */
+fn cook_set_item_movability(symbols: &SymbolTable, item_sym: &str, movability: &Movability) -> Result<TriggerAction> {
+    if let Some(&item_id) = symbols.items.get(item_sym) {
+        Ok(TriggerAction::SetItemMovability {
+            item_id,
+            movability: movability.clone(),
+        })
+    } else {
+        bail!("loading TriggerAction::SetItemMovability: symbol {item_sym} not found in table");
+    }
+}
 
 fn cook_modify_item(symbols: &SymbolTable, item_sym: &str, raw_patch: &RawItemPatch) -> Result<TriggerAction> {
     if let Some(&item_id) = symbols.items.get(item_sym) {
@@ -839,22 +854,14 @@ fn cook_barred_message(symbols: &SymbolTable, msg: &str, exit_from: &str, exit_t
     }
 }
 
-fn cook_npc_refuse_item(symbols: &SymbolTable, npc_symbol: &String, reason: &String) -> Result<TriggerAction> {
+fn cook_npc_refuse_item(symbols: &SymbolTable, npc_symbol: &String, reason: &str) -> Result<TriggerAction> {
     if let Some(npc_id) = symbols.characters.get(npc_symbol) {
         Ok(TriggerAction::NpcRefuseItem {
             npc_id: *npc_id,
-            reason: reason.to_string(),
+            reason: reason.to_owned(),
         })
     } else {
         bail!("raw action NpcRefuseItem({npc_symbol}, _): npc not found in symbols");
-    }
-}
-
-fn cook_restrict_item(symbols: &SymbolTable, item_id: &String) -> Result<TriggerAction> {
-    if let Some(item_uuid) = symbols.items.get(item_id) {
-        Ok(TriggerAction::RestrictItem(*item_uuid))
-    } else {
-        bail!("raw action RestrictItem({item_id}): item not found in symbols");
     }
 }
 
@@ -869,12 +876,12 @@ fn cook_npc_says_random(symbols: &SymbolTable, npc_id: &String) -> Result<Trigge
 fn cook_unlock_exit(
     symbols: &SymbolTable,
     from_room: &String,
-    direction: &String,
+    direction: &str,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(room_uuid) = symbols.rooms.get(from_room) {
         Ok(TriggerAction::UnlockExit {
             from_room: *room_uuid,
-            direction: direction.to_string(),
+            direction: direction.to_owned(),
         })
     } else {
         bail!("raw action UnlockExit({from_room}): token not in symbol table");
@@ -895,11 +902,11 @@ fn cook_spawn_item_in_inventory(
 fn cook_lock_exit(
     symbols: &SymbolTable,
     from_room: &String,
-    direction: &String,
+    direction: &str,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(room_uuid) = symbols.rooms.get(from_room) {
         Ok(TriggerAction::LockExit {
-            direction: direction.to_string(),
+            direction: direction.to_owned(),
             from_room: *room_uuid,
         })
     } else {
@@ -961,13 +968,13 @@ fn cook_reveal_exit(
     symbols: &SymbolTable,
     exit_from: &String,
     exit_to: &String,
-    direction: &String,
+    direction: &str,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(from_id) = symbols.rooms.get(exit_from)
         && let Some(to_id) = symbols.rooms.get(exit_to)
     {
         Ok(TriggerAction::RevealExit {
-            direction: direction.to_string(),
+            direction: direction.to_owned(),
             exit_from: *from_id,
             exit_to: *to_id,
         })
@@ -1038,12 +1045,12 @@ fn cook_spawn_item_current_room(
 fn cook_npc_says(
     symbols: &SymbolTable,
     npc_id: &String,
-    quote: &String,
+    quote: &str,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(npc_uuid) = symbols.characters.get(npc_id) {
         Ok(TriggerAction::NpcSays {
             npc_id: *npc_uuid,
-            quote: quote.to_string(),
+            quote: quote.to_owned(),
         })
     } else {
         bail!("raw action NpcSays({npc_id},_): token not found in symbols")

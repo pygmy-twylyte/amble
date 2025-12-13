@@ -9,16 +9,16 @@ room b-a-office {
         set r#"The "Planning to Plan" whiteboard has parted to reveal a heavy, vault-like door set into the west wall."#
         unset r#"A floor-to-ceiling whiteboard on the west wall boasts an impressive flowchart titled "Planning to Plan"."#
     }
-    overlay if (flag unset got-visitor-pass, player missing item invitation) {
+    overlay if ( flag unset got-visitor-pass, player missing item invitation ) {
         text "A robotic receptionist sits behind a tidy desk adorned with figurines of Portal turrets and companion cubes. She (it?) pointedly ignores you."
     }
-    overlay if (flag unset got-visitor-pass, player has item invitation) {
+    overlay if ( flag unset got-visitor-pass, player has item invitation ) {
         text "The receptionist, sensing something, tries furtively to see what you have in your pack."
     }
-    overlay if (flag set got-visitor-pass) {
+    overlay if ( flag set got-visitor-pass ) {
         text "The receptionist looks up from rearranging her turrets, giving you a subtle wink and a grin."
     }
-    overlay if (flag set lost-and-found-opened) {
+    overlay if ( flag set lost-and-found-opened ) {
         text "The Lost & Found box sits with its lid hanging open, contents plainly visible."
     }
     exit "front door" -> main-lobby
@@ -33,14 +33,14 @@ room b-a-office {
 item peril_sunglasses {
     name "Stylish Sunglasses"
     desc "A pair of stylish black shades that automatically go completely opaque at the first sign of danger. Unfortunately, this includes things like loud noises, sudden movement, or mild existential dread."
-    portable true
+    movability free
     location chest lost_and_found_box
 }
 
 item lost_and_found_box {
     name "Lost & Found Box"
     desc "A sturdy metal lock box with an official-looking sticker reading: 'Lost & Found — Amble Adventures Division' and 'Caution: Contents May Be Fictional'."
-    portable false
+    movability fixed "It is property of Brains Anonymous, and they're quite fond of it."
     location room b-a-office
     container state locked
 }
@@ -48,7 +48,7 @@ item lost_and_found_box {
 item zircon_tweezers {
     name "Zircon-Encrusted Tweezers"
     desc "A heavy-duty pair of tweezers, encrusted in zircon for extra dazzle and especially good for plucking."
-    portable true
+    movability free
     location chest lost_and_found_box
     ability Pluck
 }
@@ -56,7 +56,7 @@ item zircon_tweezers {
 item melted_aa_3b_id {
     name "Section AA-3 Staff ID"
     desc "A facility ID card for sector AA-3. Its weight seems to change as you hold it, as does the temperature. It's not warped or melted exactly -- just *distorted* somehow."
-    portable true
+    movability free
     location chest lost_and_found_box
     text """ RESTRICTED ACCESS PASS
 SECTOR AA-3, HIGH ENERGY
@@ -76,7 +76,7 @@ when open item poetry_performer {
 
 trigger "[Office] Gifted Lost and Found Key" only once
 when enter room b-a-office {
-    if all(has flag got-elevator-keycard, with npc b_a_receptionist) {
+    if all( has flag got-elevator-keycard, with npc b_a_receptionist ) {
         do give item lost_and_found_key to player from npc b_a_receptionist
         do show "Seeing you return with the keycard, the receptionist looks around warily and slips something into your hand, then looks directly at the lost and found box."
         do npc says b_a_receptionist "Finally! A Candidate bright enough to get to that keycard. I guess I lost the pool. Who'd have thought it'd be a primate?"

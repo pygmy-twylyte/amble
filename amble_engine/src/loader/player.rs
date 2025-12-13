@@ -62,9 +62,9 @@ impl RawPlayer {
         };
         let player = Player {
             id,
-            symbol: self.id.to_string(),
-            name: self.name.to_string(),
-            description: self.description.to_string(),
+            symbol: self.id.clone(),
+            name: self.name.clone(),
+            description: self.description.clone(),
             location,
             location_history: Vec::new(),
             inventory: HashSet::<Uuid>::default(),
@@ -92,7 +92,7 @@ pub fn load_player(toml_path: &Path) -> Result<RawPlayer> {
 /// - if symbol lookup fails during conversion of raw player to player instance
 pub fn build_player(raw_player: &RawPlayer, symbols: &mut SymbolTable) -> Result<Player> {
     symbols.characters.insert(
-        raw_player.id.to_string(),
+        raw_player.id.clone(),
         uuid_from_token(&NAMESPACE_CHARACTER, &raw_player.id),
     );
     info!("added player character to symbol table");

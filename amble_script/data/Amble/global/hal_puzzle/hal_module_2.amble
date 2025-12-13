@@ -7,7 +7,7 @@
 item hal_module_2 {
     name "Electronic Module"
     desc "A palm-sized electronic module of some kind with some connectors on one end. It looks like it plugs in to something."
-    portable true
+    movability free
     location chest vending_machine
 }
 
@@ -27,7 +27,7 @@ when talk to npc hal_9000 {
 item hal_module_2_crevice {
     name "Electronic Module (in crevice)"
     desc "A palm-sized electronic module of some kind with some connectors on one end. It looks like it plugs in to something, but it has fallen deep into a narrow crevice between the vending machine and the floor. It looks to be a foot down into the crack, resting on decades of accumulated grit, a few lost coins, and some (possibly sentient) dust bunnies. The gap is too narrow for your hand; you'll need some kind of tool to fish it out."
-    portable true
+    movability free
     location nowhere "spawns in main-lobby when vending machine pried"
     requires pluck to handle
 }
@@ -35,7 +35,7 @@ item hal_module_2_crevice {
 item zircon_tweezers_crevice {
     name "Zircon Encrusted Tweezers (in crevice)"
     desc "A heavy-duty pair of tweezers, encrusted in zircon for extra dazzle and especially good for plucking -- but not for reaching, as you found out when they fell into the crevice of the main lobby floor."
-    portable true
+    movability free
     location nowhere "spawns@main-lobby if tweezers tried to reach HAL module in crevice"
     requires pluck to handle
 }
@@ -43,7 +43,7 @@ item zircon_tweezers_crevice {
 item vending_machine {
     name "Vending Machine"
     desc "A battered vending machine that looks like it's been through several wars and at least one peace treaty negotiation. The glass front is surprisingly intact, though spider-webbed with cracks. Through the transparent but locked panel, you can see various items that definitely weren't approved by any health department. A handwritten sign taped to the front reads: 'OUT OF ORDER - Management suggests violence.'"
-    portable false
+    movability fixed "It's far too heavy to carry."
     location room main-lobby
     container state transparentLocked
     requires pry to open
@@ -77,10 +77,18 @@ note "makes hint available when HAL module trapped in crevice"
 when use item crowbar on item vending_machine interaction open
 {
     do schedule in 2 if any(
-    all(has item hint_radio, has flag hint-radio-on, has flag hal-module-in-crevice),
-    has flag hal-module-2-retrieved
+        all(
+            has item hint_radio,
+            has flag hint-radio-on,
+            has flag hal-module-in-crevice,
+        ),
+        has flag hal-module-2-retrieved,
     ) onFalse retryNextTurn note "fishing line hint available" {
-        if all(has item hint_radio, has flag hint-radio-on, has flag hal-module-in-crevice) {
+        if all(
+            has item hint_radio,
+            has flag hint-radio-on,
+            has flag hal-module-in-crevice,
+        ) {
             do npc says hint_radio_npc "Whoops. That electronic bit fell way down in that crevice. Looks like you'll need something like a fishing line to pull it out. There must be **something** you can use around here."
         }
     }
@@ -128,7 +136,7 @@ trigger "[HAL] HAL/Module #2 Inserted" only once
 when insert item hal_module_2 into item hal_memory_bank {
     do advance flag hal-reboot
     do add flag module-2-inserted
-    do restrict item hal_module_2
+    do set item movability hal_module_2 restricted "It's magnetically locked in place."
     do show "Memory module #2 magnetically locks into place and lights up."
 }
 

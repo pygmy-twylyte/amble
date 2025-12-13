@@ -25,11 +25,9 @@ fn extract_enum_variants(source: &str, enum_name: &str) -> Vec<String> {
                 .next()
                 .or_else(|| line.split('(').next())
                 .map(|s| s.trim().trim_end_matches(','))
-            {
-                if !name.is_empty() {
+                && !name.is_empty() {
                     variants.push(name.to_string());
                 }
-            }
         }
     }
 

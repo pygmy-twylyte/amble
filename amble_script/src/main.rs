@@ -482,12 +482,11 @@ fn run_compile_dir(args: &[String]) {
     };
 
     // Ensure out_dir exists
-    if !Path::new(&out_dir).exists() {
-        if let Err(e) = fs::create_dir_all(&out_dir) {
+    if !Path::new(&out_dir).exists()
+        && let Err(e) = fs::create_dir_all(&out_dir) {
             eprintln!("compile-dir: cannot create out-dir '{out_dir}': {e}");
             process::exit(1);
         }
-    }
     // Write each category; emit empty skeletons when no entries to avoid stale cross-file refs
     let allows = |k: &str| -> bool { only.as_ref().map(|s| s.contains(k)).unwrap_or(true) };
     if allows("triggers") {
@@ -719,13 +718,11 @@ fn collect_dsl_files_recursive(dir: &str, out: &mut Vec<String>) {
                 }
                 continue;
             }
-            if let Some(ext) = p.extension().and_then(|e| e.to_str()) {
-                if ext == "amble" || ext == "able" {
-                    if let Some(s) = p.to_str() {
+            if let Some(ext) = p.extension().and_then(|e| e.to_str())
+                && (ext == "amble" || ext == "able")
+                    && let Some(s) = p.to_str() {
                         out.push(s.to_string());
                     }
-                }
-            }
         }
     }
 }
@@ -1157,7 +1154,7 @@ fn gather_refs_from_action(stmt: &ActionStmt, out: &mut HashMap<&'static str, Ha
         ActionAst::DespawnItem(i)
         | ActionAst::LockItem(i)
         | ActionAst::UnlockItemAction(i)
-        | ActionAst::RestrictItem(i) => {
+        | ActionAst::SetItemMovability { item: i, .. } => {
             out.get_mut("item").unwrap().insert(i.clone());
         },
         ActionAst::PushPlayerTo(r) => {
@@ -1273,17 +1270,18 @@ fn load_world_refs(dir: &str) -> Result<WorldRefs, String> {
 
     fn load_ids(doc: &Document, key: &str, field: &str) -> HashSet<String> {
         let mut set = HashSet::new();
-        if let Some(item) = doc.as_table().get(key) {
-            if let Some(aot) = item.as_array_of_tables() {
-                for t in aot.iter() {
-                    if let Some(v) = t.get(field) {
-                        if let Some(s) = v.as_str() {
-                            set.insert(s.to_string());
-                        }
-                    }
+        if let Some(item) = doc.as_table().get(key)
+            && let Some(aot) = item.as_array_of_tables()
+        {
+            for t in aot.iter() {
+                if let Some(v) = t.get(field)
+                    && let Some(s) = v.as_str()
+                {
+                    set.insert(s.to_string());
                 }
             }
         }
+
         set
     }
 
@@ -1365,30 +1363,30 @@ fn load_world_refs(dir: &str) -> Result<WorldRefs, String> {
 
 fn load_flags_from_triggers(doc: &Document) -> HashSet<String> {
     let mut set = HashSet::new();
-    if let Some(item) = doc.as_table().get("triggers") {
-        if let Some(aot) = item.as_array_of_tables() {
-            for t in aot.iter() {
-                if let Some(actions) = t.get("actions").and_then(|a| a.as_array()) {
-                    collect_flags_from_actions(actions, &mut set);
-                }
+    if let Some(item) = doc.as_table().get("triggers")
+        && let Some(aot) = item.as_array_of_tables()
+    {
+        for t in aot.iter() {
+            if let Some(actions) = t.get("actions").and_then(|a| a.as_array()) {
+                collect_flags_from_actions(actions, &mut set);
             }
         }
     }
+
     set
 }
 
 fn collect_flags_from_actions(actions: &toml_edit::Array, out: &mut HashSet<String>) {
     for act in actions.iter() {
-        if let Some(at) = act.as_inline_table() {
-            if let Some(ty) = at.get("type").and_then(|v| v.as_str()) {
+        if let Some(at) = act.as_inline_table()
+            && let Some(ty) = at.get("type").and_then(|v| v.as_str()) {
                 match ty {
                     "addFlag" => {
-                        if let Some(flag_item) = at.get("flag") {
-                            if let Some(ftab) = flag_item.as_inline_table() {
-                                if let Some(name) = ftab.get("name").and_then(|v| v.as_str()) {
-                                    out.insert(name.to_string());
-                                }
-                            }
+                        if let Some(flag_item) = at.get("flag")
+                            && let Some(ftab) = flag_item.as_inline_table()
+                            && let Some(name) = ftab.get("name").and_then(|v| v.as_str())
+                        {
+                            out.insert(name.to_string());
                         }
                     },
                     // Recurse into scheduled actions
@@ -1400,7 +1398,6 @@ fn collect_flags_from_actions(actions: &toml_edit::Array, out: &mut HashSet<Stri
                     _ => {},
                 }
             }
-        }
     }
 }
 

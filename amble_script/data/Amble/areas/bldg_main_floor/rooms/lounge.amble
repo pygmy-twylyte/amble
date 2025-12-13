@@ -5,7 +5,7 @@ room lounge {
         present "An ornate, brick red rug lies in the center of the room and somehow -- really ties the room together."
         absent "The trap door opened in the floor reveals a ladder down to a hidden room below."
     }
-    overlay if (flag set lab-fire-raging) {
+    overlay if ( flag set lab-fire-raging ) {
         text "Occasional wisps of black smoke rise from the portal room below."
     }
     overlay if flag coffee-brewed {
@@ -31,7 +31,7 @@ room lounge {
 item lebowski_rug {
     name "Ornate Rug"
     desc "It really ties the room together, man."
-    portable true
+    movability free
     location room lounge
     requires ignite to burn
 }
@@ -39,7 +39,7 @@ item lebowski_rug {
 item coffee_machine {
     name "Coffee Machine"
     desc "A sleek black single-serve drip coffee machine, ready to go with fresh grounds."
-    portable false
+    movability fixed "It's tied directly into the water supply pipe."
     location room lounge
     ability TurnOn
 }
@@ -47,7 +47,7 @@ item coffee_machine {
 item hot_coffee {
     name "Hot Coffee"
     desc "A paper cup of piping hot deep black coffee. Smells like a dark french roast."
-    portable true
+    movability free
     location nowhere "spawns@lounge after coffee_machine started"
 }
 
@@ -68,6 +68,7 @@ trigger "[Lounge] Rug Burned Away" only once when act burn on item lebowski_rug 
     do add flag found-portal-room
     do award points 3 reason "Revealed the trapdoor by torching the rug"
     do show "When the acrid smoke clears and your eyes stop burning, you can make out a trap door revealed in the floor where the rug used to be."
+    do add wedge "Security Announcement: Some arsonist burned the rug in the lounge. It no longer ties the room together. This aggression will not stand, man." width 1 spinner ambientInterior
 }
 
 trigger "[Lounge] Brew Coffee" only once

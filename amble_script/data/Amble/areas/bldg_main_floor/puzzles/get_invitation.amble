@@ -5,16 +5,16 @@
 item burnt_invitation {
     name "Charred Paper Bits"
     desc "The charred remains of a sheet of printer paper. A few areas aren't completely black, or vaporized. One bit remains legible."
-    portable true
+    movability free
     location nowhere "spawns@aperture-lab"
     text "--ally invited to com--"
     ability Read
 }
 
 item asbestos_sheet {
-    name "Asbestos Sheets"
-    desc "A pack of sheets of asbestos, about the size of a pack of copy paper."
-    portable true
+    name "Asbestos Sheet"
+    desc "A roughly copy paper-sized sheet of asbestos insulation. Maybe it fell down from the ceiling?"
+    movability free
     location room supply-closet
     text "Manufacturer's Warning: Do Not Breathe While Using This Product!"
     ability Read
@@ -23,7 +23,7 @@ item asbestos_sheet {
 item invitation {
     name "Engraved Invitation"
     desc "A standard letter-size slab of asbestos with ornate and official-looking lettering burned into it. It remains too hot to touch."
-    portable true
+    movability free
     location nowhere "spawns@aperture-lab"
     text """Candidate #2112-42:
 You are cordially invited to complete your evaluation and induction. Please present this invitation at the Amble Adventures office immediately upon arrival."""
@@ -73,7 +73,7 @@ when act handle on item invitation {
     do despawn item invitation
     do spawn item invitation in inventory
     do add flag got-invitation
-    do award points 5 reason "Grabbed the molten invitation with a towel"
+    do award points 5 reason "Insulated the burning invitation with a towel"
     do show "Using your towel as insulation, you're able to wrangle the still-hot invitation into your pack."
 }
 
@@ -81,6 +81,7 @@ trigger "[Aperture-Lab] Drop Invitation Without Insulation"
 when take item invitation {
     do replace drop item invitation with invitation
     do show "You burn your fingers and drop the invitation on the floor. It emits a reddish glow, and shimmers from the radiating heat."
+    do damage player 1 cause "burned by glowing-hot invitation"
 }
 
 # ========================================

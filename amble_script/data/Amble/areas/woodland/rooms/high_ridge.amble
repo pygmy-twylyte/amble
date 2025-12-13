@@ -23,7 +23,7 @@ room high-ridge {
 item scrawled_note {
     name "Scrawled Note"
     desc "A note scrawled all caps and green permanent marker on a sheet of yellow legal paper."
-    portable true
+    movability free
     location room high-ridge
     text """CANDIDATES: PROCEED TO OFFICE TO OBTAIN VISITOR PASS
            * MUST SHOW VALID INVITATION *
@@ -37,7 +37,7 @@ item ephemeral_cake {
     desc "A generous piece of delicious, perfectly iced birthday cake on an embossed paper plate."
     text r#"Embossed around the edge of the plate: "~~~ From GLaDOS and Aperture Science Laboratories ~~~" "#
     location room high-ridge
-    portable true
+    movability free
     ability Eat
     ability Read
     consumable {
@@ -50,7 +50,7 @@ item ephemeral_cake {
 item no_cake {
     name "No Cake"
     desc "You carry an uneasy feeling where a dessert might be. It is the absence of cake, and you just can't seem to get past it."
-    portable true
+    movability free
     location nowhere "spawns when player tries to eat ephemeral_cake"
 }
 

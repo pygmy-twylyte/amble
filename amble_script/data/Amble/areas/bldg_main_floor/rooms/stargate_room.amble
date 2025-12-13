@@ -33,7 +33,7 @@ room stargate-room {
 item woodland_button {
     name "[ Tree ]"
     desc "A tree shaped button on the left of the Stargate control console."
-    portable false
+    movability fixed "It's part of the control console."
     location room stargate-room
 }
 
@@ -68,7 +68,7 @@ when touch item woodland_button {
         }
     }
     if missing flag read-plaque-1 {
-        do show "The tree button is already down as far as it can go; you can't press it."
+        do show "The tree button is already pressed down as far as it can go; you can't activate it."
     }
 }
 
@@ -79,7 +79,7 @@ when touch item woodland_button {
 item snowfield_button {
     name "[ Snowflake ]"
     desc "A snowflake-shaped button ing the middle of the Stargate control console."
-    portable false
+    movability fixed "It's part of the control console."
     location room stargate-room
 }
 
@@ -127,7 +127,7 @@ when touch item snowfield_button {
 item patio_button {
     name "[ Fork ]"
     desc "A fork-shaped button on the right of the Stargate control console."
-    portable false
+    movability fixed "It's part of the control console."
     location room stargate-room
 }
 

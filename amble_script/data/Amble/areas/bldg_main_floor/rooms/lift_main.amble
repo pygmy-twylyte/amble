@@ -18,14 +18,14 @@ room lift-main {
 item aa_3_button_main {
     name "[AA-3] Button (Unlit)"
     desc "The button to send the elevator to sublevel AA-3, currently unlit and disabled."
-    portable false
+    movability fixed "It's part of the elevator control panel."
     location room lift-main
 }
 
 item main_button_main {
     name "[Main] Button"
     desc "The button that sends the elevator to the main floor."
-    portable false
+    movability fixed "It's part of the elevator control panel."
     location room lift-main
 }
 
@@ -34,7 +34,7 @@ item main_button_main {
 # ========================================
 
 trigger "[Lift Main] Pressed AA-3 Button"
-note "aa-3 elevator button controller"
+note "elevator aa_3 button controller"
 when touch item aa_3_button_main {
     if all( has item elevator_keycard, has item visitor_pass ) {
         do push player to lift-sublevel-1
