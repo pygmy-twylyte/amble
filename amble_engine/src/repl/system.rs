@@ -451,150 +451,6 @@ pub fn list_saves_handler(view: &mut View) {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::loader::scoring::{ScoringConfig, ScoringRank};
-
-    #[test]
-    fn help_includes_dev_commands_when_enabled() {
-        if !crate::DEV_MODE {
-            // In non-dev builds, this test is not applicable
-            return;
-        }
-        let mut view = View::new();
-        help_handler(&mut view);
-        // Find Help ViewItem and ensure at least one DEV command is present
-        if let Some(commands) = view.items.iter().find_map(|entry| {
-            if let ViewItem::Help { commands, .. } = &entry.view_item {
-                Some(commands)
-            } else {
-                None
-            }
-        }) {
-            let cmds: Vec<&str> = commands.iter().map(|c| c.command.as_str()).collect();
-            assert!(cmds.iter().any(|c| *c == ":npcs"));
-            assert!(cmds.iter().any(|c| *c == ":flags"));
-            assert!(cmds.iter().any(|c| *c == ":sched"));
-        } else {
-            panic!("Help ViewItem not produced by help_handler");
-        }
-    }
-
-    #[test]
-    fn help_dev_shows_only_dev_commands_when_enabled() {
-        if !crate::DEV_MODE {
-            return;
-        }
-        let mut view = View::new();
-        help_handler_dev(&mut view);
-        if let Some(commands) = view.items.iter().find_map(|entry| {
-            if let ViewItem::Help { commands, .. } = &entry.view_item {
-                Some(commands)
-            } else {
-                None
-            }
-        }) {
-            assert!(!commands.is_empty());
-            assert!(commands.iter().all(|c| c.command.starts_with(':')));
-        } else {
-            panic!(":help dev did not produce a Help ViewItem");
-        }
-    }
-
-    #[test]
-    fn quit_handler_uses_scoring_config() {
-        // Disable colored output for consistent test assertions
-        colored::control::set_override(false);
-
-        // Create a custom scoring config with simple thresholds
-        let custom_scoring = ScoringConfig {
-            ranks: vec![
-                ScoringRank {
-                    threshold: 75.0,
-                    name: "Test Master".to_string(),
-                    description: "You aced the test.".to_string(),
-                },
-                ScoringRank {
-                    threshold: 50.0,
-                    name: "Test Novice".to_string(),
-                    description: "You passed.".to_string(),
-                },
-                ScoringRank {
-                    threshold: 0.0,
-                    name: "Test Failure".to_string(),
-                    description: "Better luck next time.".to_string(),
-                },
-            ],
-            report_title: "Test Scorecard".into(),
-        };
-
-        // Create test world with custom scoring
-        let mut world = AmbleWorld::new_empty();
-        world.scoring = custom_scoring;
-        world.player.score = 60;
-        world.max_score = 100;
-
-        // Call quit handler
-        let mut view = View::new();
-        let result = quit_handler(&world, &mut view);
-
-        // Verify it returns Quit control
-        assert!(matches!(result, Ok(ReplControl::Quit)));
-
-        // Verify the QuitSummary uses the custom scoring config
-        if let Some((rank, notes, score, max_score)) = view.items.iter().find_map(|entry| {
-            if let ViewItem::QuitSummary {
-                rank,
-                notes,
-                score,
-                max_score,
-                ..
-            } = &entry.view_item
-            {
-                Some((rank, notes, score, max_score))
-            } else {
-                None
-            }
-        }) {
-            // 60/100 = 60%, should get "Test Novice" rank
-            assert_eq!(rank, "Test Novice");
-            assert_eq!(notes, "You passed.");
-            assert_eq!(*score, 60);
-            assert_eq!(*max_score, 100);
-        } else {
-            panic!("quit_handler did not produce a QuitSummary ViewItem");
-        }
-    }
-
-    #[test]
-    fn quit_handler_uses_default_scoring_when_not_set() {
-        colored::control::set_override(false);
-
-        let mut world = AmbleWorld::new_empty();
-        world.player.score = 100;
-        world.max_score = 100;
-
-        let mut view = View::new();
-        let result = quit_handler(&world, &mut view);
-
-        assert!(matches!(result, Ok(ReplControl::Quit)));
-
-        // Verify it uses default ranks (100% = "Quantum Overachiever")
-        if let Some(rank) = view.items.iter().find_map(|entry| {
-            if let ViewItem::QuitSummary { rank, .. } = &entry.view_item {
-                Some(rank)
-            } else {
-                None
-            }
-        }) {
-            assert_eq!(rank, "Quantum Overachiever");
-        } else {
-            panic!("quit_handler did not produce a QuitSummary ViewItem");
-        }
-    }
-}
-
 /// Filters the world's goal collection by completion status.
 ///
 /// This utility function extracts goals from the world that match a specific
@@ -913,4 +769,148 @@ pub fn theme_handler(view: &mut View, theme_name: &str) -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::loader::scoring::{ScoringConfig, ScoringRank};
+
+    #[test]
+    fn help_includes_dev_commands_when_enabled() {
+        if !crate::DEV_MODE {
+            // In non-dev builds, this test is not applicable
+            return;
+        }
+        let mut view = View::new();
+        help_handler(&mut view);
+        // Find Help ViewItem and ensure at least one DEV command is present
+        if let Some(commands) = view.items.iter().find_map(|entry| {
+            if let ViewItem::Help { commands, .. } = &entry.view_item {
+                Some(commands)
+            } else {
+                None
+            }
+        }) {
+            let cmds: Vec<&str> = commands.iter().map(|c| c.command.as_str()).collect();
+            assert!(cmds.contains(&":npcs"));
+            assert!(cmds.contains(&":flags"));
+            assert!(cmds.contains(&":sched"));
+        } else {
+            panic!("Help ViewItem not produced by help_handler");
+        }
+    }
+
+    #[test]
+    fn help_dev_shows_only_dev_commands_when_enabled() {
+        if !crate::DEV_MODE {
+            return;
+        }
+        let mut view = View::new();
+        help_handler_dev(&mut view);
+        if let Some(commands) = view.items.iter().find_map(|entry| {
+            if let ViewItem::Help { commands, .. } = &entry.view_item {
+                Some(commands)
+            } else {
+                None
+            }
+        }) {
+            assert!(!commands.is_empty());
+            assert!(commands.iter().all(|c| c.command.starts_with(':')));
+        } else {
+            panic!(":help dev did not produce a Help ViewItem");
+        }
+    }
+
+    #[test]
+    fn quit_handler_uses_scoring_config() {
+        // Disable colored output for consistent test assertions
+        colored::control::set_override(false);
+
+        // Create a custom scoring config with simple thresholds
+        let custom_scoring = ScoringConfig {
+            ranks: vec![
+                ScoringRank {
+                    threshold: 75.0,
+                    name: "Test Master".to_string(),
+                    description: "You aced the test.".to_string(),
+                },
+                ScoringRank {
+                    threshold: 50.0,
+                    name: "Test Novice".to_string(),
+                    description: "You passed.".to_string(),
+                },
+                ScoringRank {
+                    threshold: 0.0,
+                    name: "Test Failure".to_string(),
+                    description: "Better luck next time.".to_string(),
+                },
+            ],
+            report_title: "Test Scorecard".into(),
+        };
+
+        // Create test world with custom scoring
+        let mut world = AmbleWorld::new_empty();
+        world.scoring = custom_scoring;
+        world.player.score = 60;
+        world.max_score = 100;
+
+        // Call quit handler
+        let mut view = View::new();
+        let result = quit_handler(&world, &mut view);
+
+        // Verify it returns Quit control
+        assert!(matches!(result, Ok(ReplControl::Quit)));
+
+        // Verify the QuitSummary uses the custom scoring config
+        if let Some((rank, notes, score, max_score)) = view.items.iter().find_map(|entry| {
+            if let ViewItem::QuitSummary {
+                rank,
+                notes,
+                score,
+                max_score,
+                ..
+            } = &entry.view_item
+            {
+                Some((rank, notes, score, max_score))
+            } else {
+                None
+            }
+        }) {
+            // 60/100 = 60%, should get "Test Novice" rank
+            assert_eq!(rank, "Test Novice");
+            assert_eq!(notes, "You passed.");
+            assert_eq!(*score, 60);
+            assert_eq!(*max_score, 100);
+        } else {
+            panic!("quit_handler did not produce a QuitSummary ViewItem");
+        }
+    }
+
+    #[test]
+    fn quit_handler_uses_default_scoring_when_not_set() {
+        colored::control::set_override(false);
+
+        let mut world = AmbleWorld::new_empty();
+        world.player.score = 100;
+        world.max_score = 100;
+
+        let mut view = View::new();
+        let result = quit_handler(&world, &mut view);
+
+        assert!(matches!(result, Ok(ReplControl::Quit)));
+
+        // Verify it uses default ranks (100% = "Quantum Overachiever")
+        if let Some(rank) = view.items.iter().find_map(|entry| {
+            if let ViewItem::QuitSummary { rank, .. } = &entry.view_item {
+                Some(rank)
+            } else {
+                None
+            }
+        }) {
+            assert_eq!(rank, "Quantum Overachiever");
+        } else {
+            panic!("quit_handler did not produce a QuitSummary ViewItem");
+        }
+    }
 }

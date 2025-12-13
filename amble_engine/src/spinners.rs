@@ -260,7 +260,7 @@ mod tests {
         for core_type in core_types {
             let key = core_type.as_toml_key();
             let parsed = CoreSpinnerType::from_toml_key(&key);
-            assert_eq!(Some(core_type), parsed, "Failed roundtrip for {:?}", core_type);
+            assert_eq!(Some(core_type), parsed, "Failed roundtrip for {core_type:?}");
         }
     }
 
@@ -303,12 +303,11 @@ mod tests {
             let values = core_type.default_values();
             let widths = core_type.default_widths();
 
-            assert!(!values.is_empty(), "{:?} should have default values", core_type);
+            assert!(!values.is_empty(), "{core_type:?} should have default values");
             assert_eq!(
                 values.len(),
                 widths.len(),
-                "{:?} values and widths should match",
-                core_type
+                "{core_type:?} values and widths should match"
             );
         }
     }

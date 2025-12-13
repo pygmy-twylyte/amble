@@ -714,14 +714,14 @@ mod tests {
     #[test]
     fn flag_display_works() {
         let simple = Flag::simple("test_flag", 0);
-        assert_eq!(format!("{}", simple), "test_flag");
+        assert_eq!(format!("{simple}"), "test_flag");
 
         let sequence = Flag::sequence("test_seq", Some(3), 0);
-        assert_eq!(format!("{}", sequence), "test_seq#0");
+        assert_eq!(format!("{sequence}"), "test_seq#0");
 
         let mut advanced = Flag::sequence("advanced", Some(2), 0);
         advanced.advance();
-        assert_eq!(format!("{}", advanced), "advanced#1");
+        assert_eq!(format!("{advanced}"), "advanced#1");
     }
 
     #[test]
@@ -792,8 +792,8 @@ mod tests {
         player.location = Location::Room(rooms[0]);
 
         // Move through all rooms
-        for i in 1..8 {
-            player.move_to_room(rooms[i]);
+        for rm in rooms.iter().take(8).skip(1) {
+            player.move_to_room(*rm);
         }
 
         // Should only keep last 5 rooms in history

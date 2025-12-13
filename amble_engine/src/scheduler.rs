@@ -130,14 +130,15 @@ impl Scheduler {
     /// Returns `None` when the earliest scheduled event is still in the future.
     pub fn pop_due(&mut self, now: usize) -> Option<ScheduledEvent> {
         if let Some(Reverse((turn_due, idx))) = self.heap.peek().copied()
-            && now >= turn_due {
-                self.heap.pop();
-                // "take" instead of "remove" keeps indices stable for the heap entries
-                // leaves default placeholders
-                let event = std::mem::take(&mut self.events[idx]);
-                self.compact_if_needed();
-                return Some(event);
-            }
+            && now >= turn_due
+        {
+            self.heap.pop();
+            // "take" instead of "remove" keeps indices stable for the heap entries
+            // leaves default placeholders
+            let event = std::mem::take(&mut self.events[idx]);
+            self.compact_if_needed();
+            return Some(event);
+        }
         None
     }
 
@@ -246,7 +247,7 @@ mod tests {
 
     fn create_test_actions(count: usize) -> Vec<ScriptedAction> {
         (0..count)
-            .map(|i| ScriptedAction::new(TriggerAction::ShowMessage(format!("Message {}", i))))
+            .map(|i| ScriptedAction::new(TriggerAction::ShowMessage(format!("Message {i}"))))
             .collect()
     }
 
@@ -476,12 +477,12 @@ mod tests {
         let mut scheduler = Scheduler::default();
 
         for i in 1..=6 {
-            scheduler.schedule_on(i, create_test_actions(1), Some(format!("Event {}", i)));
+            scheduler.schedule_on(i, create_test_actions(1), Some(format!("Event {i}")));
         }
 
         for turn in 1..=5 {
             let ev = scheduler.pop_due(turn).unwrap();
-            assert_eq!(ev.note, Some(format!("Event {}", turn)));
+            assert_eq!(ev.note, Some(format!("Event {turn}")));
         }
 
         assert_eq!(scheduler.events.len(), 1);

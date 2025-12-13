@@ -183,7 +183,7 @@ mod tests {
         assert_eq!(spinners.len(), 10);
 
         // All should be core spinners
-        assert!(spinners.keys().all(|k| k.is_core()));
+        assert!(spinners.keys().all(SpinnerType::is_core));
     }
 
     #[test]

@@ -43,6 +43,7 @@ use std::collections::HashSet;
 use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
     helpers::symbol_or_unknown,
+    player,
     spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers},
@@ -276,39 +277,51 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
             )?;
         } else {
             // the Exit is barred due to a missing item or flag
-            if let Some(msg) = &destination_exit.barred_message {
-                view.push(ViewItem::ActionFailure((*msg).denied_style().to_string()));
-            } else {
-                view.push(ViewItem::ActionFailure(format!(
-                    "{}",
-                    "You can't go that way because... \"reasons\"".denied_style()
-                )));
-            }
-            let (dest_name, dest_sym) = world
-                .rooms
-                .get(&destination_exit.to)
-                .map(|rm| (rm.name(), rm.symbol()))
-                .with_context(|| format!("accessing room {}", destination_exit.to))?;
-
-            let unmet_item_list = unmet_items
-                .iter()
-                .map(|&id| symbol_or_unknown(&world.items, *id))
-                .collect::<Vec<String>>()
-                .join(", ");
-
-            let unmet_flag_list = unmet_flags
-                .iter()
-                .map(|&flag| flag.name())
-                .collect::<Vec<&str>>()
-                .join(", ");
-
-            info!(
-                "{} denied access to {dest_name} ({dest_sym}): missing items ({unmet_item_list}) or flags ({unmet_flag_list})",
-                world.player.name(),
-            );
+            handle_barred_exit(world, view, &unmet_flags, &unmet_items, destination_exit)?;
         }
         world.turn_count += 1;
     }
+    Ok(())
+}
+
+/// Report reason for a barred exit to player and log the attempt.
+fn handle_barred_exit(
+    world: &AmbleWorld,
+    view: &mut View,
+    unmet_flags: &HashSet<&player::Flag>,
+    unmet_items: &HashSet<&uuid::Uuid>,
+    destination_exit: &crate::room::Exit,
+) -> Result<()> {
+    // Show player why the exit is barred or a generic reason.
+    if let Some(msg) = &destination_exit.barred_message {
+        view.push(ViewItem::ActionFailure((*msg).denied_style().to_string()));
+    } else {
+        view.push(ViewItem::ActionFailure(format!(
+            "{}",
+            "You can't go that way because... \"reasons\"".denied_style()
+        )));
+    }
+
+    // Log the failed attempt
+    let (dest_name, dest_sym) = world
+        .rooms
+        .get(&destination_exit.to)
+        .map(|rm| (rm.name(), rm.symbol()))
+        .with_context(|| format!("accessing room {}", destination_exit.to))?;
+    let unmet_item_list = unmet_items
+        .iter()
+        .map(|&id| symbol_or_unknown(&world.items, *id))
+        .collect::<Vec<String>>()
+        .join(", ");
+    let unmet_flag_list = unmet_flags
+        .iter()
+        .map(|&flag| flag.name())
+        .collect::<Vec<&str>>()
+        .join(", ");
+    info!(
+        "{} denied access to {dest_name} ({dest_sym}): missing items ({unmet_item_list}) or flags ({unmet_flag_list})",
+        world.player.name(),
+    );
     Ok(())
 }
 
@@ -453,11 +466,11 @@ mod tests {
 
     #[test]
     fn go_back_with_no_history_fails() {
-        let (mut world, _start, _dest, mut view) = build_test_world();
+        let (mut world, start, _dest, mut view) = build_test_world();
 
         assert!(go_back_handler(&mut world, &mut view).is_ok());
         // Should still be in start room since no history
-        assert!(matches!(world.player.location, Location::Room(id) if id == _start));
+        assert!(matches!(world.player.location, Location::Room(id) if id == start));
     }
 
     #[test]
@@ -510,8 +523,8 @@ mod tests {
         for &room_id in &[room3, room4, room5, room6, room7] {
             let room = Room {
                 id: room_id,
-                symbol: format!("room_{}", room_id.to_string()[0..8].to_string()),
-                name: format!("Room {}", room_id.to_string()[0..8].to_string()),
+                symbol: format!("room_{}", &room_id.to_string()[0..8]),
+                name: format!("Room {}", &room_id.to_string()[0..8]),
                 base_description: String::new(),
                 overlays: vec![],
                 location: Location::Nowhere,

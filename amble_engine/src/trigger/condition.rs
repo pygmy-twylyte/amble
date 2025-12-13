@@ -210,7 +210,7 @@ mod tests {
             id,
             symbol: "it".into(),
             name: "Item".into(),
-            description: "".into(),
+            description: String::new(),
             location,
             container_state,
             movability: crate::item::Movability::Free,

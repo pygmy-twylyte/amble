@@ -856,6 +856,7 @@ mod tests {
         restr_npc_item_id: Uuid,
     }
 
+    #[allow(clippy::too_many_lines)]
     fn build_world() -> TestWorld {
         let mut world = AmbleWorld::new_empty();
 
@@ -865,7 +866,7 @@ mod tests {
             id: room_id,
             symbol: "room".into(),
             name: "Test Room".into(),
-            base_description: "".into(),
+            base_description: String::new(),
             overlays: vec![],
             location: Location::Nowhere,
             visited: false,
@@ -882,7 +883,7 @@ mod tests {
             id: inv_item_id,
             symbol: "apple".into(),
             name: "Apple".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Inventory,
             movability: Movability::Free,
             container_state: None,
@@ -901,7 +902,7 @@ mod tests {
             id: room_item_id,
             symbol: "rock".into(),
             name: "Rock".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Room(room_id),
             movability: Movability::Free,
             container_state: None,
@@ -920,7 +921,7 @@ mod tests {
             id: chest_id,
             symbol: "chest".into(),
             name: "Chest".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Room(room_id),
             movability: Movability::Free,
             container_state: Some(ContainerState::Open),
@@ -935,7 +936,7 @@ mod tests {
             id: gem_id,
             symbol: "gem".into(),
             name: "Gem".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Item(chest_id),
             movability: Movability::Free,
             container_state: None,
@@ -950,7 +951,7 @@ mod tests {
             id: restricted_chest_item_id,
             symbol: "rci".into(),
             name: "Restricted Chest Item".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Item(chest_id),
             movability: Movability::Restricted {
                 reason: "restricted because... reasons".to_string(),
@@ -975,7 +976,7 @@ mod tests {
             id: npc_id,
             symbol: "bob".into(),
             name: "Bob".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Room(room_id),
             inventory: HashSet::new(),
             dialogue: HashMap::new(),
@@ -988,7 +989,7 @@ mod tests {
             id: npc_item_id,
             symbol: "coin".into(),
             name: "Coin".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Npc(npc_id),
             movability: Movability::Free,
             container_state: None,
@@ -1003,7 +1004,7 @@ mod tests {
             id: restricted_npc_item_id,
             symbol: "key".into(),
             name: "Restricted NPC Item".into(),
-            description: "".into(),
+            description: String::new(),
             location: Location::Npc(npc_id),
             container_state: None,
             movability: Movability::Restricted {
@@ -1199,12 +1200,12 @@ mod tests {
     #[test]
     fn unexpected_entity_does_not_change_world() {
         let mut tw = build_world();
-        let before = tw.world.npcs.get(&tw.npc_id).unwrap().location().clone();
+        let before = *tw.world.npcs.get(&tw.npc_id).unwrap().location();
         {
             let npc_ref = tw.world.npcs.get(&tw.npc_id).unwrap();
             unexpected_entity(WorldEntity::Npc(npc_ref), &mut tw.view, "nope");
         }
-        let after = tw.world.npcs.get(&tw.npc_id).unwrap().location().clone();
+        let after = *tw.world.npcs.get(&tw.npc_id).unwrap().location();
         assert_eq!(before, after);
     }
 }

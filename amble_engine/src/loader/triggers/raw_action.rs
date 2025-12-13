@@ -527,6 +527,7 @@ impl RawTriggerAction {
     ///
     /// # Errors
     /// Returns an error if referenced symbols cannot be resolved or if nested actions fail to convert.
+    #[allow(clippy::too_many_lines)]
     pub fn to_action(&self, symbols: &SymbolTable) -> Result<TriggerAction> {
         match self {
             Self::ModifyItem { item_sym, patch } => cook_modify_item(symbols, item_sym, patch),

@@ -2513,8 +2513,8 @@ mod tests {
                 location: Location::Nowhere,
                 visited: false,
                 exits: HashMap::from([("north".into(), Exit::new(dest_id))]),
-                contents: Default::default(),
-                npcs: Default::default(),
+                contents: HashSet::default(),
+                npcs: HashSet::default(),
             },
         );
         world.rooms.insert(
@@ -2528,8 +2528,8 @@ mod tests {
                 location: Location::Nowhere,
                 visited: false,
                 exits: HashMap::new(),
-                contents: Default::default(),
-                npcs: Default::default(),
+                contents: HashSet::default(),
+                npcs: HashSet::default(),
             },
         );
         world.rooms.insert(
@@ -2543,8 +2543,8 @@ mod tests {
                 location: Location::Nowhere,
                 visited: false,
                 exits: HashMap::new(),
-                contents: Default::default(),
-                npcs: Default::default(),
+                contents: HashSet::default(),
+                npcs: HashSet::default(),
             },
         );
 
@@ -2567,7 +2567,7 @@ mod tests {
         let room = world.rooms.get(&room_id).expect("room present");
         assert_eq!(room.name, "Ruined Lab");
         assert_eq!(room.base_description, "Destroyed lab");
-        assert!(room.exits.get("north").is_none());
+        assert!(!room.exits.contains_key("north"));
         let exit = room.exits.get("through the vault door").expect("new exit present");
         assert_eq!(exit.to, target_id);
         assert!(exit.locked);
@@ -2592,8 +2592,8 @@ mod tests {
                 location: Location::Nowhere,
                 visited: false,
                 exits: HashMap::new(),
-                contents: Default::default(),
-                npcs: Default::default(),
+                contents: HashSet::default(),
+                npcs: HashSet::default(),
             },
         );
         let missing_exit_target = Uuid::new_v4();
@@ -2680,7 +2680,7 @@ mod tests {
                 assert_eq!(*current_idx, 0);
                 assert!(!loop_route);
             },
-            other => panic!("expected route movement, got {other:?}"),
+            other @ MovementType::RandomSet { .. } => panic!("expected route movement, got {other:?}"),
         }
         assert!(matches!(movement.timing, MovementTiming::EveryNTurns { turns: 5 }));
         assert!(!movement.active);
@@ -2719,7 +2719,7 @@ mod tests {
             id,
             symbol: "it".into(),
             name: "Item".into(),
-            description: "".into(),
+            description: String::new(),
             location,
             movability: Movability::Free,
             container_state,
@@ -2736,7 +2736,7 @@ mod tests {
             id,
             symbol: "n".into(),
             name: "Npc".into(),
-            description: "".into(),
+            description: String::new(),
             location,
             inventory: HashSet::new(),
             dialogue: HashMap::new(),
@@ -3350,7 +3350,7 @@ mod tests {
     #[test]
     fn dispatch_action_conditional_skips_actions_when_condition_false() {
         let (mut world, _, _) = build_test_world();
-        world.player.flags.insert(Flag::simple("hint".into(), world.turn_count));
+        world.player.flags.insert(Flag::simple("hint", world.turn_count));
         let mut view = View::new();
 
         let action = ScriptedAction::new(TriggerAction::Conditional {

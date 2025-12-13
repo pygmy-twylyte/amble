@@ -434,9 +434,10 @@ impl Goal {
     /// Determines and returns the current '`GoalStatus`' for this goal.
     pub fn status(&self, world: &AmbleWorld) -> GoalStatus {
         if let Some(fail_condition) = &self.failed_when
-            && fail_condition.satisfied(world) {
-                return GoalStatus::Failed;
-            }
+            && fail_condition.satisfied(world)
+        {
+            return GoalStatus::Failed;
+        }
 
         if let Some(start_condition) = &self.activate_when {
             if start_condition.satisfied(world) {
@@ -791,9 +792,9 @@ mod tests {
         let optional = GoalGroup::Optional;
         let status_effect = GoalGroup::StatusEffect;
 
-        assert_eq!(format!("{:?}", required), "Required");
-        assert_eq!(format!("{:?}", optional), "Optional");
-        assert_eq!(format!("{:?}", status_effect), "StatusEffect");
+        assert_eq!(format!("{required:?}"), "Required");
+        assert_eq!(format!("{optional:?}"), "Optional");
+        assert_eq!(format!("{status_effect:?}"), "StatusEffect");
     }
 
     #[test]
