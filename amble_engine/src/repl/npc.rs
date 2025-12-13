@@ -55,7 +55,7 @@ use crate::{
     repl::{entity_not_found, find_world_object},
     spinners::CoreSpinnerType,
     style::GameStyle,
-    trigger::{TriggerAction, TriggerCondition, check_triggers, triggers_contain_condition},
+    trigger::{Trigger, TriggerAction, TriggerCondition, check_triggers, triggers_contain_condition},
 };
 
 use anyhow::{Context, Result};
@@ -160,17 +160,17 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
     // if no dialogue was triggered, fire random response according to Npc's mood
     if !dialogue_fired
         && let Some(npc) = world.npcs.get(&sent_id)
-            && let Some(ignore_spinner) = world
-                .spinners
-                .get(&crate::spinners::SpinnerType::Core(CoreSpinnerType::NpcIgnore))
-            {
-                let dialogue = npc.random_dialogue(ignore_spinner);
-                view.push(ViewItem::NpcSpeech {
-                    speaker: npc.name.clone(),
-                    quote: dialogue.clone(),
-                });
-                info!("NPC \"{}\" ({}) said \"{}\"", npc.name(), npc.symbol(), dialogue);
-            }
+        && let Some(ignore_spinner) = world
+            .spinners
+            .get(&crate::spinners::SpinnerType::Core(CoreSpinnerType::NpcIgnore))
+    {
+        let dialogue = npc.random_dialogue(ignore_spinner);
+        view.push(ViewItem::NpcSpeech {
+            speaker: npc.name.clone(),
+            quote: dialogue.clone(),
+        });
+        info!("NPC \"{}\" ({}) said \"{}\"", npc.name(), npc.symbol(), dialogue);
+    }
     world.turn_count += 1;
     Ok(())
 }
@@ -221,13 +221,12 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
 ///
 /// - NPC not found in current room
 /// - Item not found in player inventory
-/// - Item is not portable (cannot be transferred)
+/// - Item is fixed (cannot be transferred)
 /// - World state corruption (UUID lookup failures)
 pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, npc: &str) -> Result<()> {
     // find the target npc in the current room and collect metadata
     let current_room = world.player_room_ref()?;
-    let (npc_id, npc_name) = if let Some(entity) = find_world_object(&current_room.npcs, &world.items, &world.npcs, npc)
-    {
+    let npc_id = if let Some(entity) = find_world_object(&current_room.npcs, &world.items, &world.npcs, npc) {
         if let Some(npc) = entity.npc() {
             if matches!(npc.life_state(), LifeState::Dead) {
                 info!("gift to dead npc {} disallowed", npc.symbol());
@@ -237,7 +236,7 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
                 )));
                 return Ok(());
             }
-            (npc.id(), npc.name.clone())
+            npc.id()
         } else {
             view.push(ViewItem::Error(format!(
                 "{} matches an item. Did you mean 'put {} in {}'?",
@@ -257,106 +256,164 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
         npc.pause_movement(world.turn_count, 4);
     }
 
-    // find the target item in inventory, ensure it's portable, collect metadata
-    let (item_id, item_name) =
-        if let Some(entity) = find_world_object(&world.player.inventory, &world.items, &world.npcs, item) {
-            if let Some(item) = entity.item() {
-                if let Movability::Fixed { reason } = &item.movability {
-                    info!("player tried to move fixed item {} ({})", item.name(), item.symbol());
-                    view.push(ViewItem::ActionFailure(format!(
-                        "Sorry, the {} isn't transferrable. {reason}",
-                        item.name().error_style()
-                    )));
-                    return Ok(());
-                }
-                (item.id(), item.name().to_string())
-            } else {
-                warn!("non-Item entity matching '{item}' found in inventory");
-                view.push(ViewItem::Error(format!(
-                    "{} matched an entity that shouldn't exist in inventory. Let's pretend this never happened.",
-                    item.error_style()
+    // find the target item in inventory, ensure it isn't fixed
+    let item_id = if let Some(entity) = find_world_object(&world.player.inventory, &world.items, &world.npcs, item) {
+        if let Some(item) = entity.item() {
+            if let Movability::Fixed { reason } = &item.movability {
+                info!("player tried to move fixed item {} ({})", item.name(), item.symbol());
+                view.push(ViewItem::ActionFailure(format!(
+                    "Sorry, the {} isn't transferrable. {reason}",
+                    item.name().error_style()
                 )));
                 return Ok(());
             }
+            item.id()
         } else {
-            entity_not_found(world, view, item);
+            warn!("non-Item entity matching '{item}' found in inventory");
+            view.push(ViewItem::Error(format!(
+                "{} matched an entity that shouldn't exist in inventory. Let's pretend this never happened.",
+                item.error_style()
+            )));
             return Ok(());
-        };
+        }
+    } else {
+        entity_not_found(world, view, item);
+        return Ok(());
+    };
 
     let fired_triggers = check_triggers(world, view, &[TriggerCondition::GiveToNpc { item_id, npc_id }])?;
-    let fired = fired_triggers.iter().any(|&trigger| {
+    let gift_response = check_fired_and_refused(&fired_triggers);
+
+    // the trigger fired -- proceed with item transfer if it wasn't a refusal
+    if gift_response.trigger_fired && !gift_response.npc_refused {
+
+        transfer_if_not_despawned(world, npc_id, item_id)?;
+        check_triggers(world, view, &[TriggerCondition::Drop(item_id)])?;
+        show_npc_acceptance(world, view, npc_id, item_id)?;
+    } else {
+        if !gift_response.trigger_fired {
+            // NPCs refuse gift items by default (triggers must be set to accept the gift)
+            // a generic refusal message is given but responses to specific items can be set in triggers
+            show_npc_refusal(world, view, npc_id, item_id)?;
+        }
+    }
+    world.turn_count += 1;
+    Ok(())
+}
+
+/// Displays NPC item refusal to the player and logs it.
+fn show_npc_refusal(world: &AmbleWorld, view: &mut View, npc_id: Uuid, item_id: Uuid) -> Result<()> {
+    let npc = world
+        .npcs
+        .get(&npc_id)
+        .with_context(|| format!("missing npc UUID: {npc_id}"))?;
+    let item = world
+        .items
+        .get(&item_id)
+        .with_context(|| format!("missing item UUID: {item_id}"))?;
+
+    view.push(ViewItem::ActionFailure(format!(
+        "{} has no use for {}, and won't hold it for you.",
+        npc.name(),
+        item.name()
+    )));
+
+    info!(
+        "{} ({}) refused a gift of {} ({})",
+        npc.name(),
+        symbol_or_unknown(&world.npcs, npc_id),
+        item.name(),
+        symbol_or_unknown(&world.items, item_id)
+    );
+    Ok(())
+}
+
+/// Displays NPC item acceptance and logs it.
+/// 
+/// # Errors
+/// - on failed item or NPC retrieval by UUID
+fn show_npc_acceptance(world: &AmbleWorld, view: &mut View, npc_id: Uuid, item_id: Uuid) -> Result<()> {
+    let npc = world
+        .npcs
+        .get(&npc_id)
+        .with_context(|| format!("missing npc UUID: {npc_id}"))?;
+    let item = world
+        .items
+        .get(&item_id)
+        .with_context(|| format!("missing item UUID: {item_id}"))?;
+
+    view.push(ViewItem::ActionSuccess(format!(
+        "{} accepted the {}.",
+        npc.name(),
+        item.name()
+    )));
+
+    info!(
+        "'{}' ({}) accepted '{}' ({}) from '{}'",
+        npc.name(),
+        symbol_or_unknown(&world.npcs, npc_id),
+        item.name(),
+        symbol_or_unknown(&world.items, item_id),
+        world.player.name()
+    );
+    Ok(())
+}
+
+/// Struct to encapsulate whether there was any response to a gift to an NPC, and whether it was a refusal.
+struct GiftResponse {
+    /// True if any triggers fired in response to the attempted gift to NPC
+    trigger_fired: bool,
+    /// True if the NPC refused an attempted gift
+    npc_refused: bool,
+}
+
+/// Checks whether any triggers fired in response to a gift and whether the NPC refused it.
+fn check_fired_and_refused(all_fired: &Vec<&Trigger>) -> GiftResponse {
+    let trigger_fired = all_fired.iter().any(|&trigger| {
         trigger
             .conditions
             .iter()
             .any(|cond| matches!(cond, TriggerCondition::GiveToNpc { .. }))
     });
 
-    let refused = fired_triggers.iter().any(|t| {
+    let npc_refused = all_fired.iter().any(|t| {
         t.actions
             .iter()
             .any(|a| matches!(&a.action, TriggerAction::NpcRefuseItem { .. }))
     });
 
-    // the trigger fired -- proceed with item transfer if it wasn't a refusal
-    if fired && !refused {
-        // The item may be despawned by a fired trigger -- so we skip
-        // the location transfer below if the item is "nowhere" (otherwise the despawned
-        // item winds up in the NPCs inventory anyway.)
-        if world
-            .items
-            .get(&item_id)
-            .with_context(|| format!("looking up item {item_id}"))?
-            .location
-            .is_not_nowhere()
-        {
-            // set new location in NPC on world item
-            world
-                .get_item_mut(item_id)
-                .with_context(|| format!("looking up item {item_id}"))?
-                .set_location_npc(npc_id);
-
-            // add to npc inventory
-            world
-                .npcs
-                .get_mut(&npc_id)
-                .with_context(|| format!("looking up NPC {npc_id}"))?
-                .add_item(item_id);
-
-            // remove from player inventory
-            world.player.remove_item(item_id);
-        }
-        check_triggers(world, view, &[TriggerCondition::Drop(item_id)])?;
-
-        // report and log success
-        view.push(ViewItem::ActionSuccess(format!(
-            "You gave the {} to {}.",
-            item_name.item_style(),
-            npc_name.npc_style()
-        )));
-        info!(
-            "{} gave {} ({}) to {} ({})",
-            world.player.name(),
-            item_name,
-            symbol_or_unknown(&world.items, item_id),
-            npc_name,
-            symbol_or_unknown(&world.npcs, npc_id),
-        );
-    // trigger didn't fire, so NPC refuses the item by default; a specific refusal reason
-    // can be defined for particular items by setting an `NpcRefuseItem` trigger action.
-    } else {
-        if !fired {
-            view.push(ViewItem::ActionFailure(format!(
-                "{} has no use for {}, and won't hold it for you.",
-                npc_name.npc_style(),
-                item_name.item_style()
-            )));
-        }
-        info!(
-            "{npc_name} ({}) refused a gift of {item_name} ({})",
-            symbol_or_unknown(&world.npcs, npc_id),
-            symbol_or_unknown(&world.items, item_id)
-        );
+    GiftResponse {
+        trigger_fired,
+        npc_refused,
     }
-    world.turn_count += 1;
+}
+
+/// Transfers an item from player to NPC if it hasn't been despawned
+fn transfer_if_not_despawned(world: &mut AmbleWorld, npc_id: Uuid, item_id: Uuid) -> Result<()> {
+    // The item may have been despawned by a fired trigger -- so we skip
+    // the location transfer below if the item is found to be `Nowhere`
+    if world
+        .items
+        .get(&item_id)
+        .with_context(|| format!("looking up item {item_id}"))?
+        .location
+        .is_not_nowhere()
+    {
+        // set new location in NPC on world item
+        world
+            .get_item_mut(item_id)
+            .with_context(|| format!("looking up item {item_id}"))?
+            .set_location_npc(npc_id);
+
+        // add to npc inventory
+        world
+            .npcs
+            .get_mut(&npc_id)
+            .with_context(|| format!("looking up NPC {npc_id}"))?
+            .add_item(item_id);
+
+        // remove from player inventory
+        world.player.remove_item(item_id);
+    }
     Ok(())
 }
