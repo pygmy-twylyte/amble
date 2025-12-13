@@ -297,10 +297,10 @@ pub struct RawActionStmt {
     pub action: RawTriggerAction,
 }
 impl RawActionStmt {
-    /// Convert a RawActionStmt to a ScriptedAction
+    /// Convert a `RawActionStmt` to a `ScriptedAction`
     ///
     /// # Errors
-    /// - propagated on symbol lookup failures from the underlying to_action() impl
+    /// - propagated on symbol lookup failures from the underlying `to_action()` impl
     pub fn to_action(&self, symbols: &SymbolTable) -> Result<ScriptedAction> {
         let cooked = self.action.to_action(symbols)?;
         Ok(ScriptedAction::with_priority(cooked, self.priority))
