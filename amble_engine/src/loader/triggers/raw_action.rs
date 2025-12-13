@@ -216,13 +216,15 @@ impl RawNpcMovementPatch {
         };
 
         if let Some(route) = &route
-            && route.is_empty() {
-                bail!("loading TriggerAction:ModifyNpc: movement route must include at least one room");
-            }
+            && route.is_empty()
+        {
+            bail!("loading TriggerAction:ModifyNpc: movement route must include at least one room");
+        }
         if let Some(random) = &random_rooms
-            && random.is_empty() {
-                bail!("loading TriggerAction:ModifyNpc: random room set must include at least one room");
-            }
+            && random.is_empty()
+        {
+            bail!("loading TriggerAction:ModifyNpc: random room set must include at least one room");
+        }
         if route.is_some() && random_rooms.is_some() {
             bail!("loading TriggerAction:ModifyNpc: cannot set both route and random rooms");
         }
@@ -847,11 +849,11 @@ fn cook_barred_message(symbols: &SymbolTable, msg: &str, exit_from: &str, exit_t
     }
 }
 
-fn cook_npc_refuse_item(symbols: &SymbolTable, npc_symbol: &String, reason: &String) -> Result<TriggerAction> {
+fn cook_npc_refuse_item(symbols: &SymbolTable, npc_symbol: &String, reason: &str) -> Result<TriggerAction> {
     if let Some(npc_id) = symbols.characters.get(npc_symbol) {
         Ok(TriggerAction::NpcRefuseItem {
             npc_id: *npc_id,
-            reason: reason.clone(),
+            reason: reason.to_owned(),
         })
     } else {
         bail!("raw action NpcRefuseItem({npc_symbol}, _): npc not found in symbols");
@@ -869,12 +871,12 @@ fn cook_npc_says_random(symbols: &SymbolTable, npc_id: &String) -> Result<Trigge
 fn cook_unlock_exit(
     symbols: &SymbolTable,
     from_room: &String,
-    direction: &String,
+    direction: &str,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(room_uuid) = symbols.rooms.get(from_room) {
         Ok(TriggerAction::UnlockExit {
             from_room: *room_uuid,
-            direction: direction.clone(),
+            direction: direction.to_owned(),
         })
     } else {
         bail!("raw action UnlockExit({from_room}): token not in symbol table");
@@ -895,11 +897,11 @@ fn cook_spawn_item_in_inventory(
 fn cook_lock_exit(
     symbols: &SymbolTable,
     from_room: &String,
-    direction: &String,
+    direction: &str,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(room_uuid) = symbols.rooms.get(from_room) {
         Ok(TriggerAction::LockExit {
-            direction: direction.clone(),
+            direction: direction.to_owned(),
             from_room: *room_uuid,
         })
     } else {
@@ -961,13 +963,13 @@ fn cook_reveal_exit(
     symbols: &SymbolTable,
     exit_from: &String,
     exit_to: &String,
-    direction: &String,
+    direction: &str,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(from_id) = symbols.rooms.get(exit_from)
         && let Some(to_id) = symbols.rooms.get(exit_to)
     {
         Ok(TriggerAction::RevealExit {
-            direction: direction.clone(),
+            direction: direction.to_owned(),
             exit_from: *from_id,
             exit_to: *to_id,
         })
@@ -1038,12 +1040,12 @@ fn cook_spawn_item_current_room(
 fn cook_npc_says(
     symbols: &SymbolTable,
     npc_id: &String,
-    quote: &String,
+    quote: &str,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(npc_uuid) = symbols.characters.get(npc_id) {
         Ok(TriggerAction::NpcSays {
             npc_id: *npc_uuid,
-            quote: quote.clone(),
+            quote: quote.to_owned(),
         })
     } else {
         bail!("raw action NpcSays({npc_id},_): token not found in symbols")

@@ -2074,9 +2074,9 @@ pub fn despawn_item(world: &mut AmbleWorld, item_id: &Uuid) -> Result<()> {
 
 /// Change the movability state of an item.
 ///
-/// - Movability::Free = free to take / drop / give / etc
-/// - Movability::Restricted {cause} = can't take now, but may be available later
-/// - Movability::Fixed {cause} = item should/can never be moved
+/// - `Movability::Free` = free to take / drop / give / etc
+/// - `Movability::Restricted` {cause} = can't take now, but may be available later
+/// - `Movability::Fixed` {cause} = item should/can never be moved
 ///
 /// # Errors
 /// - if the supplied item id is not found in the world item map

@@ -126,7 +126,7 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                 // item not portable
                 let reason = match &item.movability {
                     Movability::Fixed { reason } | Movability::Restricted { reason } => reason,
-                    _ => "",
+                    Movability::Free => "",
                 };
                 view.push(ViewItem::ActionFailure(format!(
                     "You can't drop the {}. {reason}",
@@ -280,7 +280,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                 // item is fixed or restricted
                 let reason = match &item.movability {
                     Movability::Fixed { reason } | Movability::Restricted { reason } => reason,
-                    _ => "",
+                    Movability::Free => "",
                 };
 
                 view.push(ViewItem::ActionFailure(format!(

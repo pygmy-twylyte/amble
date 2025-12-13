@@ -290,12 +290,10 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
         transfer_if_not_despawned(world, npc_id, item_id)?;
         check_triggers(world, view, &[TriggerCondition::Drop(item_id)])?;
         show_npc_acceptance(world, view, npc_id, item_id)?;
-    } else {
-        if !gift_response.trigger_fired {
-            // NPCs refuse gift items by default (triggers must be set to accept the gift)
-            // a generic refusal message is given but responses to specific items can be set in triggers
-            show_npc_refusal(world, view, npc_id, item_id)?;
-        }
+    } else if !gift_response.trigger_fired {
+        // NPCs refuse gift items by default (triggers must be set to accept the gift)
+        // a generic refusal message is given but responses to specific items can be set in triggers
+        show_npc_refusal(world, view, npc_id, item_id)?;
     }
     world.turn_count += 1;
     Ok(())
