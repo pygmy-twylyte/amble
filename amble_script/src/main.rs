@@ -1273,17 +1273,18 @@ fn load_world_refs(dir: &str) -> Result<WorldRefs, String> {
 
     fn load_ids(doc: &Document, key: &str, field: &str) -> HashSet<String> {
         let mut set = HashSet::new();
-        if let Some(item) = doc.as_table().get(key) {
-            if let Some(aot) = item.as_array_of_tables() {
-                for t in aot.iter() {
-                    if let Some(v) = t.get(field) {
-                        if let Some(s) = v.as_str() {
-                            set.insert(s.to_string());
-                        }
-                    }
+        if let Some(item) = doc.as_table().get(key)
+            && let Some(aot) = item.as_array_of_tables()
+        {
+            for t in aot.iter() {
+                if let Some(v) = t.get(field)
+                    && let Some(s) = v.as_str()
+                {
+                    set.insert(s.to_string());
                 }
             }
         }
+
         set
     }
 
@@ -1365,15 +1366,16 @@ fn load_world_refs(dir: &str) -> Result<WorldRefs, String> {
 
 fn load_flags_from_triggers(doc: &Document) -> HashSet<String> {
     let mut set = HashSet::new();
-    if let Some(item) = doc.as_table().get("triggers") {
-        if let Some(aot) = item.as_array_of_tables() {
-            for t in aot.iter() {
-                if let Some(actions) = t.get("actions").and_then(|a| a.as_array()) {
-                    collect_flags_from_actions(actions, &mut set);
-                }
+    if let Some(item) = doc.as_table().get("triggers")
+        && let Some(aot) = item.as_array_of_tables()
+    {
+        for t in aot.iter() {
+            if let Some(actions) = t.get("actions").and_then(|a| a.as_array()) {
+                collect_flags_from_actions(actions, &mut set);
             }
         }
     }
+
     set
 }
 
@@ -1383,12 +1385,11 @@ fn collect_flags_from_actions(actions: &toml_edit::Array, out: &mut HashSet<Stri
             if let Some(ty) = at.get("type").and_then(|v| v.as_str()) {
                 match ty {
                     "addFlag" => {
-                        if let Some(flag_item) = at.get("flag") {
-                            if let Some(ftab) = flag_item.as_inline_table() {
-                                if let Some(name) = ftab.get("name").and_then(|v| v.as_str()) {
-                                    out.insert(name.to_string());
-                                }
-                            }
+                        if let Some(flag_item) = at.get("flag")
+                            && let Some(ftab) = flag_item.as_inline_table()
+                            && let Some(name) = ftab.get("name").and_then(|v| v.as_str())
+                        {
+                            out.insert(name.to_string());
                         }
                     },
                     // Recurse into scheduled actions
