@@ -12,7 +12,7 @@ room snow-camp {
 item charred_journal {
     name "Research Journal"
     desc "A partly burned and soggy research journal marked \"Antarctic Outpost 31\" and \"MacReady\". Only the end of the final entry remains legible."
-    portable true
+    movability free
     location room snow-camp
     text "...got to the dogs first, then the others. Burn it all. Can't let it reach the building..."
     ability Read
@@ -26,14 +26,14 @@ item spent_flamethrower {
   Weyland-Yutani: Thermal Unit / Antarctica Series
  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
-    portable true
+    movability free
     location room snow-camp
 }
 
 item firewood {
     name "Firewood"
     desc "Some split wood and kindling laid for a fire at the center of the camp -- ironically one of the only things in the area that hasn't been burned."
-    portable true
+    movability free
     location room snow-camp
     requires ignite to burn
 }
@@ -41,7 +41,11 @@ item firewood {
 trigger "Firewood HINT"
 note "HINT radio: use firewood in ice-pit for plaque 2"
 when always {
-    if all(has flag hint-radio-on, has flag tried-read-plaque-2, in rooms snow-camp) {
+    if all(
+        has flag hint-radio-on,
+        has flag tried-read-plaque-2,
+        in rooms snow-camp,
+    ) {
         do npc says hint_radio_npc "Looks like the researchers didn't get their fire lit before the dog-Thing got to them. Bad day for them, but maybe good for you. Maybe you can move it down into the ice pit to melt the ice encasing the pillar there."
     }
 }

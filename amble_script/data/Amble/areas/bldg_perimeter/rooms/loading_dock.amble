@@ -23,7 +23,7 @@ item security_locker {
     name "Security Supply Locker"
     desc "A heavy wooden locker marked 'AMBLE SECURITY - Authorized Use Only'. The planks are reinforced, and the it rattles faintly when nudged."
     text "The wood comes from the strong but incredibly flammable magnesium magnolia tree."
-    portable false
+    movability fixed "It's too big and heavy to carry."
     location room loading-dock
     container state locked
     requires cutWood to cut
@@ -34,7 +34,7 @@ item security_locker {
 item crowbar {
     name "Crowbar"
     desc "A sturdy crowbar with the initials 'G.F.' etched near the handle grip. It looks like it could pry open doors or smash obstacles — a proper scientist’s multitool."
-    portable true
+    movability free
     location nowhere "spawns@loading-dock or security_crate depending on access method"
     ability Pry
     ability Smash
@@ -43,7 +43,7 @@ item crowbar {
 item security_log {
     name "Amble Security Log"
     desc "A well-used notebook labeled \"Amble Security Log / Section 42\" and liberally stained with coffee, ale, and mustard."
-    portable true
+    movability free
     location nowhere "may_spawn@security_crate"
     text """March 1, 2025: New coffee machine installed. Emits mild static when brewing.
 March 2, 2025: Security camera in break room rotated 180 degrees overnight. Ed again?
@@ -66,14 +66,14 @@ Stardate 4714.2: Staff experiencing deja vu from alternate realities. Report for
 item burned_security_log {
     name "Amble Security Log"
     desc "This appears to have once been a security event log for the building and dock, but is now better described as a security charcoal briquet."
-    portable true
+    movability free
     location nowhere "may_spawn@security_crate or loading-dock"
 }
 
 item strange_liquid {
     name "Strange Liquid"
     desc "A glass vial, unnaturally cold to the touch, containing a dark liquid that seems to reach for the warmth of your fingers."
-    portable true
+    movability free
     location nowhere "may_spawn@loading-dock or security_crate"
     ability Drink
     consumable {
@@ -86,14 +86,14 @@ item strange_liquid {
 item shattered_vial {
     name "Shattered Vial"
     desc "Some shards of glass that used to be a vial of liquid, but whatever what inside has drained away."
-    portable false
+    movability fixed "The little shards of glass keep breaking into smaller bits when you try to pick them up."
     location nowhere "may_spawn@loading-dock"
 }
 
 item initech_mug {
     name "Initech Anti-Spill Mug"
     desc "A coffee mug bearing the Initech logo with a complex seal on top, requiring the use of both hands and a spotter to drink from it or fill it. There's an inscription on the bottom."
-    portable true
+    movability free
     location nowhere "spawns@loading-dock or security_crate"
     text """To: CMOT, A Kindred Spirit
 From: Your Initech Rep
@@ -104,7 +104,7 @@ From: Your Initech Rep
 item delivery_box {
     name "Special Delivery"
     desc "A cardboard box affixed with several shipping labels and beaten into a barely recognizable shape. It would probably fall apart completely if you tried to open it. One of the stickers reads \"Fragile: Handle with Care!\" and another is addressed to YOU at Amble Adventures headquarters."
-    portable true
+    movability free
     location nowhere "spawns@loading-dock after first leaving"
     container state closed
 }

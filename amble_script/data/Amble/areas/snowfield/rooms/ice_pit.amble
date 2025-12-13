@@ -31,7 +31,7 @@ room ice-pit {
 item plaque_2_frozen {
     name "Frozen Pillar"
     desc "A pillar of... something encased in thick ice, affixed to the frozen floor of the pit. It's a little bigger than the pillar back at the Parish Landing."
-    portable false
+    movability fixed "It is frozen solid to the icy floor, must weigh half a ton, and there's no way to grip it."
     ability Read
     text "<this should never be read -- 'Must Melt to Read' trigger prevents it>"
     location room ice-pit
@@ -40,7 +40,7 @@ item plaque_2_frozen {
 item plaque_2 {
     name "Icy Plaque"
     desc "An ornate plaque, made visible by the melting of its icy encasement. The intricate design and craftsmanship of its sculpted marble pillar impress upon you the great care and effort it took someone to place it here."
-    portable false
+    movability fixed "It's firmly cemented to the sculpted pillar, still partially encased in thick ice."
     location nowhere "spawns in ice-pit when the frozen pillar is melted"
     ability Read
     text r#""The saddest aspect of life right now is that science gathers knowledge faster than society gathers wisdom." -- Isaac Asimov"#
@@ -49,7 +49,7 @@ item plaque_2 {
 item unlit_campfire {
     name "Stacked Firewood"
     desc "An expert fire lay, in log-cabin shape for optimum airflow and kindling in the center, ready to light."
-    portable false
+    movability fixed "Moving it would destroy the perfect arrangement of firewood. How could you?"
     location nowhere "spawns when firewood dropped in ice-pit"
     requires ignite to burn
 }
@@ -57,7 +57,7 @@ item unlit_campfire {
 item campfire {
     name "Campfire"
     desc "A steadily burning campfire next to the pillar at the bottom of the pit."
-    portable false
+    movability fixed "It's on fire. It's right in the name."
     location nowhere "spawns when unlit_campfire is lit"
 }
 
@@ -134,10 +134,20 @@ trigger "Hint: Find Items to Build a Fire" only once
 note "schedule radio hint about building a fire"
 when use item plaque_2_frozen ability read {
     do schedule in 2 if any(
-    all(missing flag campfire-lit, has flag hint-radio-on, has item hint_radio, in rooms ice-pit ),
-    has flag campfire-lit
+        all(
+            missing flag campfire-lit,
+            has flag hint-radio-on,
+            has item hint_radio,
+            in rooms ice-pit,
+        ),
+        has flag campfire-lit,
     ) onFalse retryNextTurn note "radio gives campfire hint" {
-        if all(missing flag campfire-lit, has flag hint-radio-on, has item hint_radio, in rooms ice-pit ) {
+        if all(
+            missing flag campfire-lit,
+            has flag hint-radio-on,
+            has item hint_radio,
+            in rooms ice-pit,
+        ) {
             do npc says hint_radio_npc "To melt that pillar, you'll need to drop some firewood here and light it with something."
         }
     }

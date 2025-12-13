@@ -16,7 +16,7 @@ room observation-room {
 item hal_memory_bank {
     name "H.A.L. Memory Bank"
     desc "A sleek, matte-black monolith of its own, this memory bank houses the core logic center of the HAL-9000 system. Three memory modules must be located and reinserted to complete the reboot sequence. The recessed slots flicker faintly, as if HAL is dreaming electric dreams."
-    portable false
+    movability fixed "It's too heavy to move."
     location room observation-room
     container state open
 }

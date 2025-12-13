@@ -19,7 +19,7 @@ room security-station {
 item evidence_locker_closed {
     name "Evidence Locker"
     desc "A heavy-duty, astrogation-grade steel locker marked 'EVIDENCE'. It is scorched and slightly dented, as if there have been a few attempts to break into it."
-    portable false
+    movability fixed "It's like a safe, rooted firmly into the wall."
     location room security-station
     container state locked
     requires pry to open
@@ -28,7 +28,7 @@ item evidence_locker_closed {
 item evidence_locker_open {
     name "Evidence Locker"
     desc "A heavy-duty, astrogation-grade steel locker marked 'EVIDENCE'. The door is severely bent in one corner and hangs loosely from the bottom hinge."
-    portable false
+    movability fixed "It's still rooted firmly in the wall, despite the sagging door."
     location nowhere "spawns@security-station when locker pried open"
     container state open
 }
@@ -36,7 +36,7 @@ item evidence_locker_open {
 item evidence_log {
     name "Evidence Log"
     desc "A book logging the items taken from perpetrators and placed into the evidence locker. It's smeared with mustard, fingerprints, and something you hope is hair gel."
-    portable true
+    movability free
     location room security-station
     text """Date:   Boxing Day
 Item:   Tool (Weapon?)
@@ -49,7 +49,7 @@ Event:  White male in his 30's found in the monolith room pointing this whirring
 item risk_management_memo {
     name "Risk Management Memo"
     desc "A stern memo to all Amble Adventures staff working in the sublevel / AA-3B area."
-    portable true
+    movability free
     location room security-station
     text r#"From: Amble Adventures, Risk Ignorance Division
 

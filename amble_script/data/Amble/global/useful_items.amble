@@ -12,7 +12,7 @@
 item arson_aid {
     name "Initech Arson-Aid"
     desc "A small personal flamethrower, for use in home and garden -- just not your own, if you know what's good for you. Instructions for use are labeled on the side."
-    portable true
+    movability free
     location room two-sheds
     consumable {
         uses_left 1
@@ -38,7 +38,7 @@ when use item arson_aid ability ignite {
 item melted_arson_aid {
     name "Metallic Blob"
     desc "An irregular blob of metal and melted plastic that used to be an Initech Arson-Aid. Useless now. You can still just read the last step of the instructions on the side."
-    portable true
+    movability free
     location nowhere "spawns wherever the arson-aid is used"
     text "4) Flee."
     ability Read
@@ -51,7 +51,7 @@ item melted_arson_aid {
 item lumberjack_axe {
     name "Lumberjack's Axe"
     desc "A hefty lumberjack's axe. The blade is slightly rusted, but it looks usable."
-    portable true
+    movability free
     location room two-sheds
     ability CutWood
     ability Smash
@@ -64,7 +64,7 @@ item lumberjack_axe {
 item towel {
     name "Towel"
     desc "A plain, white nuclear bath towel with plooksilk stitching, fully charged."
-    portable true
+    movability free
     location nowhere "spawns@player when delivery_box is opened"
     ability Insulate
     ability Clean
@@ -74,7 +74,11 @@ trigger "[Hint] Towel / Plaque-1 Hint" only once when take item towel {
     do add flag got-towel
     do award points 3 reason "Recovered the essential towel every frood should carry"
     do show "NOW you're a frood who really \"knows where his towel is\"!"
-    do schedule in 10 if all(has item towel, missing flag read-plaque-1, has flag tried-read-plaque-1)
+    do schedule in 10 if all(
+        has item towel,
+        missing flag read-plaque-1,
+        has flag tried-read-plaque-1,
+    )
     note "hint: towels can clean things" {
         do show "Towels can be awfully handy for cleaning grimy things. Just sayin'."
     }
@@ -87,7 +91,7 @@ trigger "[Hint] Towel / Plaque-1 Hint" only once when take item towel {
 item lighter {
     name "Butane Lighter"
     desc "An engraved, metallic Zippo-style lighter, worn but functional."
-    portable true
+    movability free
     location room patio
     text "DJVB"
     ability Ignite
@@ -102,7 +106,7 @@ item lighter {
 item empty_lighter {
     name "Butane Lighter (Empty)"
     desc "An engraved, metallic Zippo-style lighter. It was good for a few uses but seems to have run out of fuel."
-    portable true
+    movability free
     location nowhere "spawns@inventory when lighter used up"
     text "DJVB"
     ability Read
@@ -115,7 +119,7 @@ item empty_lighter {
 item sonic_screwdriver {
     name "Sonic Screwdriver"
     desc "A multipurpose marvel of alien engineering, capable of repairing complex machinery, unlocking sealed doors, and occasionally shorting out bureaucracies. Ineffective against wood, emotions, and existential dread."
-    portable true
+    movability free
     location chest evidence_locker_open
     ability Repair
 }
@@ -128,7 +132,7 @@ item sonic_screwdriver {
 item fishing_line {
     name "Makeshift Fishing Line"
     desc "A MacGyver-ed fishing line, with a paper clip hook attached to some dental floss."
-    portable true
+    movability free
     location nowhere "spawns@inventory when items attached"
     ability Pluck
 }

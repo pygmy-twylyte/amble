@@ -8,21 +8,21 @@
 item hal_module_1 {
     name "HAL Memory Module #1"
     desc "The first of HAL’s missing memory modules. It's a small, rectangular prism etched with faint circuitry—and possibly resentment. Warm to the touch, but that might just be your imagination."
-    portable true
+    movability free
     location nowhere "spawns@observation-room after EMH mobilized"
 }
 
 item broken_emitter {
     name "Mobile Emitter (Broken)"
     desc "A palm-sized, silvery device scorched and warped by a violent electromagnetic flare. It may not beyond repair, though a few panels are cracked and the core oscillator is rattling suspiciously. Smells faintly of ozone and regret."
-    portable true
+    movability free
     location nowhere "spawns@lost_and_found_box when mobilize-emh sequence starts"
 }
 
 item working_emitter {
     name "Mobile Emitter (Repaired)"
     desc "Freshly repaired and gleaming with diagnostic confidence, this mobile emitter is once again capable of projecting the Emergency Medical Hologram beyond the confines of Med Bay. It's surprisingly lightweight—and slightly smug about it."
-    portable true
+    movability free
     location nowhere "spawns@inventory after broken_emitter repaired"
 }
 
@@ -33,7 +33,7 @@ item working_emitter {
 trigger "[Med-Bay] Talk to EMH After Finding HAL" only once
 note "quest to mobilize emh starts; ultimate reward is HAL module #1"
 when always {
-    if all(with npc emh, flag in progress hal-reboot) {
+    if all( with npc emh, flag in progress hal-reboot ) {
         do npc says emh "Ah -- I hoped I would catch you. Word is, you've seen HAL, or what remains of him. If you want to get him working again -- and I'm not sure I'd advise it -- I may be able to get one of those memory modules for you."
         do set npc state emh custom:want-emitter
         do spawn item broken_emitter into container lost_and_found_box
@@ -48,7 +48,7 @@ when always {
 
 trigger "[Med-Bay] EMH/Sonic Hint" only once
 when enter room med-bay {
-    if all(has item sonic_screwdriver, has flag mobilize-emh#1) {
+    if all( has item sonic_screwdriver, has flag mobilize-emh#1 ) {
         do npc says emh "Please state the nature of the med... wait -- is that a sonic screwdriver? I bet you could use that to repair my mobile emitter!"
     }
 }
@@ -81,7 +81,7 @@ when act repair on item broken_emitter {
 trigger "[Med-Bay] EMH/Goin' Mobile!"
 note "completes mobilize-emh #3; completes / grants player HAL memory module #1"
 when give item working_emitter to npc emh {
-    do restrict item working_emitter
+    do set item movability working_emitter restricted "The EMH won't be losing sight of it again anytime soon."
     do advance flag mobilize-emh
     do set npc active emh true
     do set npc state emh happy
@@ -97,7 +97,7 @@ trigger "[HAL] HAL/Module #1 Inserted" only once
 when insert item hal_module_1 into item hal_memory_bank {
     do advance flag hal-reboot
     do add flag module-1-inserted
-    do restrict item hal_module_1
+    do set item movability hal_module_1 restricted "It's magnetically locked in place."
     do show "Memory module #1 magnetically locks into place and lights up."
 }
 

@@ -12,7 +12,7 @@
 item vogon_poetry_book {
     name "Longest Poems of the Largest Vogons"
     desc "A bound volume of Vogon poetry, with the usual safety devices and locks removed. Looking inside is likely to cause brain damage and a permanent smell of boiling cauliflower to haunt you, if you're lucky."
-    portable true
+    movability free
     location room vip-bathroom
     text """"Oh freddled gruntbuggly,
 Thy micturations are to me
@@ -37,7 +37,7 @@ why not then? Moose."
 item poetry_performer {
     name "Initech Poetry Performer"
     desc "In lieu of decades-old magazines, the office has installed this poetry recitation device. If poetic material is supplied, it is automatically performed in the whichever voice the listener finds most soul-penetrating (as long as it happens to be Morgan Freeman's)."
-    portable false
+    movability fixed "It weighs about 500 kilograms. Are you hoping for a hernia?"
     location room b-a-office
     container state closed
 }
@@ -45,15 +45,16 @@ item poetry_performer {
 # ========================================
 # Triggers
 # ========================================
-let set keycard_hint_zone = (b-a-office, lift-bank-main)
+let set keycard_hint_zone = ( b-a-office, lift-bank-main )
 trigger "HINT Radio: Vogon Poetry Insertion"
 note "HINT radio -- insert vogon poetry to get into the panic room."
 when always {
-    if all(chance 50%,
-    has item hint_radio,
-    has flag hint-radio-on,
-    has flag got-visitor-pass,
-    in rooms keycard_hint_zone
+    if all(
+        chance 50%,
+        has item hint_radio,
+        has flag hint-radio-on,
+        has flag got-visitor-pass,
+        in rooms keycard_hint_zone,
     )
     {
         do npc says hint_radio_npc "The rumor around here is that the last candidate was vaporized while sealed in the hidden Poetry Panic Room at the office. The Poetry Performer will panic if you try to make it perform some Vogon poetry."

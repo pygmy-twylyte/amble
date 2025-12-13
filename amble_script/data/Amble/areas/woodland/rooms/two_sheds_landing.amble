@@ -7,18 +7,18 @@ room two-sheds-landing {
     name "Jackson's Landing"
     desc "A quiet landing tucked along the slope, with a rusted mailbox labeled 'A. Jackson' standing to one side. A trail sign points east toward something optimistically named \"Two Sheds\". Underneath, someone has scratched in: \"Technically One.\" Rough steps lead down the slope, and continue curving upward."
 
-    overlay if (item present fallen_tree) {
+    overlay if ( item present fallen_tree ) {
         text "A huge tangle of limbs and branches from a fallen tree block the path continuing upward."
     }
-    overlay if (flag set chopped-fallen-tree, flag unset saw-paul-bunyan) {
+    overlay if ( flag set chopped-fallen-tree, flag unset saw-paul-bunyan ) {
         # these would be gone if player sees paul bunyan at guard-post
         text "Cut branches of a fallen tree are piled to the side of the path upward."
     }
-    overlay if (flag set burned-fallen-tree) {
+    overlay if ( flag set burned-fallen-tree ) {
         text "Charred twigs and smoldering ash are all that remain of the fallen tree."
     }
     exit "up the slope" -> guard-post {
-        required_flags(cleared-fallen-tree),
+        required_flags( cleared-fallen-tree ),
         barred "You can't get around the fallen tree. You'll need to find a way to clear it from the path."
     }
     exit "down the steps" -> parish-landing
@@ -32,7 +32,7 @@ room two-sheds-landing {
 item jackson_mailbox {
     name "Mailbox"
     desc "A typical white mailbox with a red flag on a post, situated at the top of a path into the woods to the east."
-    portable false
+    movability fixed "It's screwed to the post, which is buried in a concrete base."
     location room two-sheds-landing
     container state closed
 }
@@ -40,7 +40,7 @@ item jackson_mailbox {
 item aa_shed_notice {
     name "Official Notice"
     desc "An official-looking notice from Amble Adventures HQ."
-    portable true
+    movability free
     location chest jackson_mailbox
     text """                 OFFICIAL NOTICE
 The OverShed™ Division of Amble Adventures has

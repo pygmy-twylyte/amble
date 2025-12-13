@@ -5,8 +5,7 @@
 item hal_module_3 {
     name "Electronic Gizmo"
     desc "A palm-sized electronic gizmo. The connectors on one end and the linear scratches on the casing suggest that it's typically inserted in some kind of socket."
-    portable true
-    restricted true
+    movability restricted "You'll need to trade something of value to Dibbler for it."
     location npc cmot_dibbler
 }
 
@@ -27,6 +26,6 @@ trigger "[HAL] HAL/Module #3 Inserted" only once
 when insert item hal_module_3 into item hal_memory_bank {
     do advance flag hal-reboot
     do add flag module-3-inserted
-    do restrict item hal_module_3
+    do set item movability hal_module_3 restricted "It's magnetically locked in place."
     do show "Memory module #3 magnetically locks into place and lights up."
 }

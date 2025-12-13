@@ -25,7 +25,7 @@ room parish-landing {
 item plaque_1 {
     name "Weathered Plaque"
     desc "A plaque worn nearly smooth by decade upon decade of weather and grime. The intricate masonry of its pillar suggests the utmost importance and profundity of its message."
-    portable false
+    movability fixed "It's firmly affixed to the intricate pillar."
     location room parish-landing
     text """A common mistake that people make when trying to design something completely foolproof is to underestimate the ingenuity of complete fools.
 -- D.A., Head of Architectural Illogistics, Area 42
