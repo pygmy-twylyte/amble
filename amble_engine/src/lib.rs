@@ -43,6 +43,7 @@ pub mod helpers;
 pub mod idgen;
 pub mod item;
 pub mod loader;
+pub mod markup;
 pub mod npc;
 pub mod player;
 pub mod repl;
