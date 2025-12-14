@@ -29,7 +29,7 @@ dependencies = [
 
 [[package]]
 name = "amble_engine"
-version = "0.64.0-pre"
+version = "0.64.0"
 dependencies = [
  "anyhow",
  "colored",
@@ -56,7 +56,7 @@ dependencies = [
 
 [[package]]
 name = "amble_script"
-version = "0.64.0-pre"
+version = "0.64.0"
 dependencies = [
  "pest",
  "pest_derive",

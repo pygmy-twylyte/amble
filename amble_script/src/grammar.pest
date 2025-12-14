@@ -1,5 +1,5 @@
 // Amble DSL Grammar
-// Amble version 0.64.0-pre
+// Amble version 0.64.0
 
 COMMENT    = _{ "#" ~ (!NEWLINE ~ ANY)* }
 WHITESPACE = _{ " " | "\t" | NEWLINE | COMMENT }
