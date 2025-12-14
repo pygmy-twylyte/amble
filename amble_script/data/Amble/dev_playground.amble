@@ -18,11 +18,11 @@ room dev-room {
 # you can also just comment out the trigger below to make the playground inaccessible from
 # the game without deleting the file:
 #
-trigger "Create Dev Playground Exit" only once when always {
-    do modify room high-ridge {
-        add exit "to dev playground" -> dev-room
-    }
-}
+# trigger "Create Dev Playground Exit" only once when always {
+#     do modify room high-ridge {
+#         add exit "to dev playground" -> dev-room
+#     }
+# }
 
 item big_red_button {
     name "Big Red Button"
