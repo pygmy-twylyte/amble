@@ -144,7 +144,7 @@ string = @{ triple_quoted | raw_quoted_h5 | raw_quoted_h4 | raw_quoted_h3 | raw_
 program = { SOI ~ (set_decl | trigger | room_def | item_def | spinner_def | npc_def | goal_def)+ ~ EOI }
 
 set_decl = { "let" ~ "set" ~ ident ~ "=" ~ set_list }
-set_list = { "(" ~ ident ~ ("," ~ ident)* ~ ")" }
+set_list = { "(" ~ ident ~ ("," ~ ident)* ~ (",")? ~ ")" }
 
 only_once_kw = { "only" ~ "once" }
 note_kw      = { "note" ~ string }

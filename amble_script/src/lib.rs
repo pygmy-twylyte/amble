@@ -3185,6 +3185,32 @@ trigger "Ambient: preferred syntax" when always {
         assert!(toml.contains("type = \"spinnerMessage\""));
         assert!(!toml.contains("type = \"ambient\""));
     }
+
+    #[test]
+    fn parse_set_decl_allows_trailing_comma() {
+        let src = r#"
+let set woods = (
+  high-ridge,
+  parish-landing,
+)
+
+trigger "Ambient: trailing set comma" when always {
+  if in rooms woods {
+    do show "Gnats swarm the air."
+  }
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        assert_eq!(ast.conditions.len(), 1);
+        match &ast.conditions[0] {
+            ConditionAst::Any(kids) => {
+                assert_eq!(kids.len(), 2);
+                assert!(matches!(kids[0], ConditionAst::PlayerInRoom(ref r) if r == "high-ridge"));
+                assert!(matches!(kids[1], ConditionAst::PlayerInRoom(ref r) if r == "parish-landing"));
+            },
+            other => panic!("unexpected condition: {:?}", other),
+        }
+    }
     #[test]
     fn parse_and_compile_misc_actions() {
         let src = r#"
