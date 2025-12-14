@@ -77,6 +77,7 @@ impl WorldObject for Item {
 
 impl ItemHolder for Item {
     fn add_item(&mut self, item_id: Uuid) {
+        // ensure this is a container and disallow placing an item inside itself
         if self.container_state.is_some() && self.id.ne(&item_id) {
             self.contents.insert(item_id);
         }
