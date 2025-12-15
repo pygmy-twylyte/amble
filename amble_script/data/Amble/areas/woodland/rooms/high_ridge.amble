@@ -6,12 +6,12 @@ room high-ridge {
     name "High Isolated Ridge"
     # player starts here
     visited true
-    desc "A small, flat ridge in the midst of a steeply sloped wooded area. Probably west of something, depending on how you're oriented. The only egress seems to be a flight of rough stone steps carved into the slope, which curve upward and then disappear into the trees."
+    desc "A small, flat ridge in the midst of a steeply sloped wooded area. Probably west of [[i]]something[[/i]], depending on how you're oriented. The only egress seems to be a flight of rough stone steps carved into the slope, which curve upward and then disappear into the trees."
     overlay if item present scrawled_note {
-        text "A note scrawled in green marker on bright yellow paper is nailed to a tree trunk near the base of the steps."
+        text "A [[item]]note[[/item]] scrawled in green marker on bright yellow paper is nailed to a tree trunk near the base of the steps."
     }
     overlay if item present ephemeral_cake {
-        text "Strangely, a slice of birthday cake on a paper plate sits precariously balanced on top of a thin boulder nearby."
+        text "Strangely, a slice of [[item]]birthday cake[[/item]] on a paper plate sits precariously balanced on top of a thin boulder nearby."
     }
     exit "up the steps" -> parish-landing
 }
@@ -22,20 +22,19 @@ room high-ridge {
 
 item scrawled_note {
     name "Scrawled Note"
-    desc "A note scrawled all caps and green permanent marker on a sheet of yellow legal paper."
+    desc "A note scrawled in [[b]]ALL CAPS[[/b]] and green permanent marker on a sheet of yellow legal paper."
     movability free
     location room high-ridge
-    text """CANDIDATES: PROCEED TO OFFICE TO OBTAIN VISITOR PASS
-           * MUST SHOW VALID INVITATION *
-    """
+    text """[[box]]CANDIDATES: PROCEED TO OFFICE TO OBTAIN VISITOR PASS
+           * MUST SHOW VALID INVITATION *[[/box]]"""
     ability Read
     requires ignite to burn
 }
 
 item ephemeral_cake {
     name "Birthday Cake"
-    desc "A generous piece of delicious, perfectly iced birthday cake on an embossed paper plate."
-    text r#"Embossed around the edge of the plate: "~~~ From GLaDOS and Aperture Science Laboratories ~~~" "#
+    desc "A [[b]][[i]]generous[[/i]][[/b]] piece of delicious, perfectly iced birthday cake on a paper plate [[i]]embossed with a message.[[/i]]"
+    text r#"[[center]]"~~~ From GLaDOS and Aperture Science Laboratories ~~~"[[/center]][[center]][[i]](embossed on the edge of the plate)[[/i]][[/center]]"#
     location room high-ridge
     movability free
     ability Eat
@@ -49,7 +48,7 @@ item ephemeral_cake {
 
 item no_cake {
     name "No Cake"
-    desc "You carry an uneasy feeling where a dessert might be. It is the absence of cake, and you just can't seem to get past it."
+    desc "You carry an uneasy feeling where a dessert might be. It is the [[highlight]]absence[[/highlight]] of cake, and you just can't seem to get past it."
     movability free
     location nowhere "spawns when player tries to eat ephemeral_cake"
 }
@@ -90,7 +89,7 @@ when eat item ephemeral_cake {
 
 goal get-oriented {
     name "What the...?"
-    desc "Look around and read the note to get some idea what you're doing here. Type 'help' for some basic guidance."
+    desc "Look around and read the [[item]]scrawled note[[/item]] at [[room]]High Isolated Ridge[[/room]] to get some idea what you're doing here. Type 'help' for some basic guidance."
     group optional
     done when has flag read-scrawled-note
 }
