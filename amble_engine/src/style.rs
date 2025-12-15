@@ -101,7 +101,7 @@ impl GameStyle for &str {
 
     fn description_style(&self) -> ColoredString {
         let colors = current_theme_colors();
-        self.italic().color(colors.description.to_color())
+        self.color(colors.description.to_color())
     }
 
     fn triggered_style(&self) -> ColoredString {
@@ -170,7 +170,7 @@ impl GameStyle for &str {
 
     fn overlay_style(&self) -> ColoredString {
         let colors = current_theme_colors();
-        self.italic().color(colors.overlay.to_color())
+        self.color(colors.overlay.to_color())
     }
 
     fn section_style(&self) -> ColoredString {

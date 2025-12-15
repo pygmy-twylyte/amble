@@ -12,6 +12,7 @@ use variantly::Variantly;
 use crate::health::HealthState;
 use crate::helpers::plural_s;
 use crate::loader::help::HelpCommand;
+use crate::markup::{StyleKind, StyleMods, WrapMode, render_inline, render_wrapped};
 use crate::npc::NpcState;
 use crate::save_files::{SaveFileEntry, SaveFileStatus, format_modified};
 use crate::style::{GameStyle, indented_block, normal_block};
@@ -358,10 +359,7 @@ impl View {
         for quote in speech_msgs {
             if let ViewItem::NpcSpeech { speaker, quote } = &quote.view_item {
                 println!("{} says:", speaker.npc_style());
-                println!(
-                    "{}",
-                    fill(quote.as_str(), indented_block()).clone().npc_quote_style()
-                );
+                println!("{}", fill(quote.as_str(), indented_block()).clone().npc_quote_style());
             }
         }
 
@@ -494,7 +492,13 @@ impl View {
                         println!("{}", name.goal_active_style());
                         println!(
                             "{}",
-                            fill(description, indented_block()).clone().description_style()
+                            render_wrapped(
+                                description,
+                                self.width,
+                                WrapMode::Indented,
+                                StyleKind::Description,
+                                StyleMods::default(),
+                            )
                         );
                     }
                 }
@@ -744,7 +748,16 @@ impl View {
             && let ViewItem::ItemText(text) = &entry.view_item
         {
             println!("{}:\n", "Upon closer inspection, you see".subheading_style());
-            println!("{}", fill(text, indented_block()).item_text_style());
+            println!(
+                "{}",
+                render_wrapped(
+                    text,
+                    self.width,
+                    WrapMode::Indented,
+                    StyleKind::ItemText,
+                    StyleMods::default(),
+                )
+            );
             println!();
         }
     }
@@ -785,15 +798,40 @@ impl View {
             if let Some((tagline, rest)) = description.split_once('\n') {
                 println!(
                     "{}",
-                    fill(tagline, indented_block()).clone().description_style().bold()
+                    render_wrapped(
+                        tagline,
+                        self.width,
+                        WrapMode::Indented,
+                        StyleKind::Description,
+                        StyleMods {
+                            bold: true,
+                            ..StyleMods::default()
+                        },
+                    )
                 );
-                println!("{}", fill(rest, indented_block()).clone().description_style());
+                println!(
+                    "{}",
+                    render_wrapped(
+                        rest,
+                        self.width,
+                        WrapMode::Indented,
+                        StyleKind::Description,
+                        StyleMods::default(),
+                    )
+                );
             } else {
                 println!(
                     "{}",
-                    fill(description.as_str(), indented_block()).clone()
-                        .description_style()
-                        .bold()
+                    render_wrapped(
+                        description,
+                        self.width,
+                        WrapMode::Indented,
+                        StyleKind::Description,
+                        StyleMods {
+                            bold: true,
+                            ..StyleMods::default()
+                        },
+                    )
                 );
             }
             println!();
@@ -827,7 +865,13 @@ impl View {
             println!("{}", name.item_style().underline());
             println!(
                 "{}",
-                fill(description, indented_block()).clone().description_style()
+                render_wrapped(
+                    description,
+                    self.width,
+                    WrapMode::Indented,
+                    StyleKind::Description,
+                    StyleMods::default(),
+                )
             );
             println!();
         }
@@ -881,7 +925,7 @@ impl View {
                 println!(
                     "    {} - {}",
                     npc_line.name.npc_style(),
-                    npc_line.description.description_style()
+                    render_inline(&npc_line.description, StyleKind::Description, StyleMods::default())
                 );
             }
         }
@@ -937,7 +981,16 @@ impl View {
             for ovl in text {
                 let _ = write!(full_ovl, "{ovl} ");
             }
-            println!("{}\n", fill(&full_ovl, normal_block()).clone().overlay_style());
+            println!(
+                "{}\n",
+                render_wrapped(
+                    &full_ovl,
+                    self.width,
+                    WrapMode::Normal,
+                    StyleKind::Overlay,
+                    StyleMods::default(),
+                )
+            );
         }
     }
 
@@ -962,8 +1015,13 @@ impl View {
             if display_mode != ViewMode::Brief || !visited {
                 println!(
                     "{}",
-                    fill(description.as_str(), normal_block()).clone()
-                        .description_style()
+                    render_wrapped(
+                        description,
+                        self.width,
+                        WrapMode::Normal,
+                        StyleKind::Description,
+                        StyleMods::default(),
+                    )
                 );
 
                 println!();

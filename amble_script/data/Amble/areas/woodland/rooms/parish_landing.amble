@@ -4,14 +4,14 @@
 
 room parish-landing {
     name "Parish Landing"
-    desc "A small plateau carved into the slope, marked by an old wooden sign that reads: 'Pilgrims Welcome – Pancakes Served Daily (Terms and Conditions Apply)'. A faded poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a holy relic.\n\nFrom here, the steps curve gently upward, disappearing into the woodland growth again. A modest trail leads west toward a nearby parish."
+    desc """A small plateau carved into the slope, marked by an old wooden sign that reads:\n[[box:Candidates Welcome]][[b]]Pancakes Served Daily (Terms and Conditions Apply)[[/b]][[/box]]\n\nA faded poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a holy relic.\n\nFrom here, the steps curve gently upward, disappearing into the woodland growth again. A modest trail leads west toward a nearby parish."""
     overlay if flag woodland-gate-open {
         set "The open Stargate shimmers just behind the Saint Alfonzo's sign."
-        unset "A shed-sized metallic ring sits upright behind the St. Alfonzo's sign. Strange symbols are forged around its circumference."
+        unset "A shed-sized metallic ring sits upright behind the St. Alfonzo's sign. [[i]]Strange symbols[[/i]] are forged around its circumference."
     }
     overlay if flag cleaned-plaque-1 {
-        set "You're occasionally distracted by a glint of sunlight reflected from the freshly cleaned plaque on the pillar just inside the treeline."
-        unset "Just beyond the treeline stands an impressive, intricately sculpted pillar bearing a plaque tarnished with age and forest grime."
+        set "You're occasionally distracted by a glint of sunlight reflected from the freshly cleaned [[item]]plaque[[/item]] on the pillar just inside the treeline."
+        unset "Just beyond the treeline stands an impressive, intricately sculpted pillar bearing a [[item]]plaque[[/item]] tarnished with age and forest grime."
     }
     exit "down the steps" -> high-ridge
     exit "westward trail" -> st-alfonzo-parish
@@ -24,12 +24,11 @@ room parish-landing {
 
 item plaque_1 {
     name "Weathered Plaque"
-    desc "A plaque worn nearly smooth by decade upon decade of weather and grime. The intricate masonry of its pillar suggests the utmost importance and profundity of its message."
+    desc "A plaque worn nearly smooth by decade upon decade of weather and grime. [[b]][[i]]The intricate masonry of its pillar suggests the utmost importance and profundity of its message.[[/i]][[/b]]"
     movability fixed "It's firmly affixed to the intricate pillar."
     location room parish-landing
-    text """A common mistake that people make when trying to design something completely foolproof is to underestimate the ingenuity of complete fools.
--- D.A., Head of Architectural Illogistics, Area 42
-"""
+    text """A common mistake that people make when trying to design something completely foolproof is to underestimate the [[u]]ingenuity of complete fools[[/u]].
+    [[center]][[i]]-- D.A., Head of Architectural Illogistics, Area 42[[/i]][[/center]]"""
     ability Read
     requires clean to clean
 }
@@ -68,7 +67,7 @@ when use item plaque_1 ability read {
 
 goal read-plaque-1 {
     name "Read the Plaque"
-    desc "Find a way to clean off the plaque by the Parish Landing, so you can read it."
+    desc "Find a way to clean off the [[item]]plaque[[/item]] by the [[room]]Parish Landing[[/room]], so you can read it."
     group optional
     start when has flag tried-read-plaque-1
     done when has flag read-plaque-1

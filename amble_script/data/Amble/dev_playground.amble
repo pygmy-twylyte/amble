@@ -6,7 +6,9 @@
 
 room dev-room {
     name "TESTING GROUND (DEV ONLY)"
-    desc "This is however you imagine it, but a space for devs to try out new ideas before mixing in to other content."
+    desc """This is however you imagine it, but a [[u]]space for devs[[/u]] to try out new ideas before mixing in to other content.
+
+    [[center]][[box:WARNING]]Beware of [[npc]]The Luggage[[/npc]][[/box]][[/center]]"""
     exit "back to game start" -> high-ridge
 }
 
@@ -18,11 +20,11 @@ room dev-room {
 # you can also just comment out the trigger below to make the playground inaccessible from
 # the game without deleting the file:
 #
-# trigger "Create Dev Playground Exit" only once when always {
-#     do modify room high-ridge {
-#         add exit "to dev playground" -> dev-room
-#     }
-# }
+trigger "Create Dev Playground Exit" only once when always {
+    do modify room high-ridge {
+        add exit "to dev playground" -> dev-room
+    }
+}
 
 item big_red_button {
     name "Big Red Button"
