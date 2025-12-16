@@ -186,9 +186,10 @@ fn collect_room_items(
     let mut contained_items = HashSet::new();
     for item_id in room_items {
         if let Some(item) = world.items.get(item_id)
-            && should_include_contents(item) {
-                contained_items.extend(&item.contents);
-            }
+            && should_include_contents(item)
+        {
+            contained_items.extend(&item.contents);
+        }
     }
     Ok(room_items.union(&contained_items).copied().collect())
 }
@@ -212,10 +213,18 @@ pub fn nearby_reachable_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashS
 /// - if supplied `room_id` is invalid
 pub fn nearby_visible_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashSet<Uuid>> {
     collect_room_items(world, room_id, |item| {
-        item.container_state == Some(ContainerState::Open)
-            || item.container_state == Some(ContainerState::TransparentClosed)
-            || item.container_state == Some(ContainerState::TransparentLocked)
+        item.container_state == Some(ContainerState::Open) || item.is_transparent()
     })
+}
+
+/// Get a list of IDs of all items in the room that are containers.
+///
+/// # Errors
+/// - if supplied `room_id` is invalid
+/// FIXME: COLLECT ROOM ITEMS DOESN'T FILTER ITEMS BASED ON CONTAINER STATE,
+/// SO NON-CONTAINERS WIND UP INCLUDED IN THE SEARCH SCOPE
+pub fn nearby_vessel_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashSet<Uuid>> {
+    collect_room_items(world, room_id, |item| item.container_state.is_some())
 }
 
 #[cfg(test)]
