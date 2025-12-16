@@ -122,9 +122,10 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             check_scheduled_events(world, &mut view)?;
             // autosave if appropriate
             if world.turn_count.is_multiple_of(AUTOSAVE_TURNS)
-                && let Err(err) = crate::repl::system::autosave_quiet(world, "autosave") {
-                    view.push(ViewItem::Error(format!("Autosave failed: {err}")));
-                }
+                && let Err(err) = crate::repl::system::autosave_quiet(world, "autosave")
+            {
+                view.push(ViewItem::Error(format!("Autosave failed: {err}")));
+            }
         }
         // ambient triggers may fire even if turn wasn't advanced
         check_ambient_triggers(world, &mut view)?;
@@ -246,7 +247,7 @@ fn build_prompt(world: &mut AmbleWorld) -> String {
         let s = format!(" [{}]", status.status_style());
         status_effects.push_str(&s);
     }
-    
+
     format!(
         "\n[Turn {} | Health {}/{} | Score: {}{}]>> ",
         world.turn_count,
@@ -549,13 +550,15 @@ pub fn find_world_object<'a, S: BuildHasher>(
     let lc_term = search_term.to_lowercase();
     for uuid in nearby_ids {
         if let Some(found_item) = world_items.get(uuid)
-            && found_item.name().to_lowercase().contains(&lc_term) {
-                return Some(WorldEntity::Item(found_item));
-            }
+            && found_item.name().to_lowercase().contains(&lc_term)
+        {
+            return Some(WorldEntity::Item(found_item));
+        }
         if let Some(found_npc) = world_npcs.get(uuid)
-            && found_npc.name().to_lowercase().contains(&lc_term) {
-                return Some(WorldEntity::Npc(found_npc));
-            }
+            && found_npc.name().to_lowercase().contains(&lc_term)
+        {
+            return Some(WorldEntity::Npc(found_npc));
+        }
     }
     None
 }
@@ -563,8 +566,9 @@ pub fn find_world_object<'a, S: BuildHasher>(
 /// Feedback to player if an entity search comes up empty
 pub fn entity_not_found(world: &AmbleWorld, view: &mut View, search_text: &str) {
     view.push(ViewItem::Error(format!(
-        "\"{}\"? {}",
+        "\"{}\"? {}\n{}",
         search_text.error_style(),
-        world.spin_core(CoreSpinnerType::EntityNotFound, "What's that?")
+        world.spin_core(CoreSpinnerType::EntityNotFound, "What's that?"),
+        "(word not understood in context)".to_string().italic().dimmed()
     )));
 }
