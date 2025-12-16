@@ -50,6 +50,7 @@ use std::collections::{HashMap, HashSet};
 use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
     command::IngestMode,
+    entity_search::{self, SearchError, SearchScope},
     helpers::{plural_s, symbol_or_unknown},
     item::{ContainerState, Item, ItemAbility, ItemInteractionType, consume},
     loader::items::interaction_requirement_met,
@@ -60,7 +61,7 @@ use crate::{
     world::nearby_reachable_items,
 };
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 use colored::Colorize;
 use log::{info, warn};
 use uuid::Uuid;
@@ -323,7 +324,8 @@ pub fn use_item_on_handler(
     if !interaction_fired {
         view.push(ViewItem::ActionFailure(
             world
-                .spin_core(CoreSpinnerType::NoEffect, "That appears to have had no effect.").clone(),
+                .spin_core(CoreSpinnerType::NoEffect, "That appears to have had no effect.")
+                .clone(),
         ));
         info!(
             "No matching trigger for {interaction:?} {target_name} ({}) with {tool_name} ({})",
@@ -361,29 +363,34 @@ fn resolve_use_item_participants<'a>(
     tool_str: &str,
     target_str: &str,
 ) -> Result<Option<(&'a Item, &'a Item)>> {
-    let room_contents = &world.player_room_ref()?.contents;
-    let target_scope: HashSet<_> = room_contents.union(&world.player.inventory).collect();
-    let maybe_target =
-        find_world_object(target_scope, &world.items, &world.npcs, target_str).and_then(super::WorldEntity::item);
-    let maybe_tool = find_world_object(&world.player.inventory, &world.items, &world.npcs, tool_str)
-        .and_then(super::WorldEntity::item);
-
-    let Some(target) = maybe_target else {
-        view.push(ViewItem::ActionFailure(format!(
-            "You don't see any {} nearby.",
-            target_str.error_style()
-        )));
-        return Ok(None);
+    // find an item in inventory matching tool_str
+    let tool_id = match entity_search::find_item_match(world, tool_str, SearchScope::Inventory) {
+        Ok(uuid) => uuid,
+        Err(SearchError::NoMatchingName(tool_pattern)) => {
+            view.push(ViewItem::ActionFailure(format!(
+                "There is no \"{}\" in your inventory.",
+                tool_pattern.error_style()
+            )));
+            return Ok(None);
+        },
+        Err(e) => bail!(e),
     };
-
-    let Some(tool) = maybe_tool else {
-        view.push(ViewItem::ActionFailure(format!(
-            "You don't have any {} in inventory.",
-            tool_str.error_style()
-        )));
-        return Ok(None);
+    // find a reachable item in the room or inventory matching target_str
+    let room_id = world.player_room_ref()?.id();
+    let target_id = match entity_search::find_item_match(world, target_str, SearchScope::TouchableItems(room_id)) {
+        Ok(uuid) => uuid,
+        Err(SearchError::NoMatchingName(target_pattern)) => {
+            view.push(ViewItem::ActionFailure(format!(
+                "There is no \"{}\" in your inventory.",
+                target_pattern.error_style()
+            )));
+            return Ok(None);
+        },
+        Err(e) => bail!(e),
     };
-
+    // return references to the items matched
+    let tool = world.items.get(&tool_id).expect("tool_id already known valid");
+    let target = world.items.get(&target_id).expect("target_id already known valid");
     Ok(Some((target, tool)))
 }
 
@@ -465,57 +472,51 @@ fn dispatch_use_item_triggers(
 /// Returns an error if the player's current room cannot be determined or if trigger execution
 /// fails due to missing world data.
 pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<()> {
-    let current_room = world.player_room_ref()?;
-    let scope = nearby_reachable_items(world, current_room.id)?
-        .union(&world.player.inventory)
-        .copied()
-        .collect::<HashSet<_>>();
-    if let Some(entity) = find_world_object(&scope, &world.items, &world.npcs, item_pattern) {
-        if let Some(item) = entity.item() {
-            if item.abilities.contains(&ItemAbility::TurnOn) {
-                info!("Player switched on {} ({})", item.name(), item.symbol());
-                let sent_id = item.id();
-                let fired_triggers = check_triggers(
-                    world,
-                    view,
-                    &[TriggerCondition::UseItem {
-                        item_id: sent_id,
-                        ability: ItemAbility::TurnOn,
-                    }],
-                )?;
-                let sent_trigger_fired = triggers_contain_condition(&fired_triggers, |cond| match cond {
-                    TriggerCondition::UseItem { item_id, ability } => {
-                        *item_id == sent_id && *ability == ItemAbility::TurnOn
-                    },
-                    _ => false,
-                });
-                if !sent_trigger_fired {
-                    view.push(ViewItem::ActionFailure(format!(
-                        "{}",
-                        "You hear a clicking sound and then... nothing happens.".italic()
-                    )));
-                }
-            } else {
-                info!(
-                    "Player tried to turn on unswitchable item {} ({})",
-                    item.name(),
-                    item.symbol()
-                );
-                view.push(ViewItem::ActionFailure(format!(
-                    "The {} can't be turned on.",
-                    item.name().item_style()
-                )));
-            }
-        } else if let Some(npc) = entity.npc() {
-            info!("Player tried to turn on an NPC {} ({})", npc.name(), npc.symbol());
+    // search player's location for an item with name matching 'pattern'
+    let room_id = world.player_room_ref()?.id();
+    let item_id = match entity_search::find_item_match(world, item_pattern, SearchScope::TouchableItems(room_id)) {
+        Ok(uuid) => uuid,
+        Err(e) => match e {
+            SearchError::NoMatchingName(_) => {
+                entity_not_found(world, view, item_pattern);
+                return Ok(());
+            },
+            _ => bail!(e),
+        },
+    };
+    let item = world.items.get_mut(&item_id).expect("item ID known to be valid here");
+
+    if item.abilities.contains(&ItemAbility::TurnOn) {
+        info!("Player switched on {} ({})", item.name(), item.symbol());
+        let sent_id = item.id();
+        let fired_triggers = check_triggers(
+            world,
+            view,
+            &[TriggerCondition::UseItem {
+                item_id: sent_id,
+                ability: ItemAbility::TurnOn,
+            }],
+        )?;
+        let sent_trigger_fired = triggers_contain_condition(&fired_triggers, |cond| match cond {
+            TriggerCondition::UseItem { item_id, ability } => *item_id == sent_id && *ability == ItemAbility::TurnOn,
+            _ => false,
+        });
+        if !sent_trigger_fired {
             view.push(ViewItem::ActionFailure(format!(
-                "{} is impervious to your attempt at seduction.",
-                npc.name().npc_style()
+                "{}",
+                "You hear a clicking sound and then... nothing happens.".italic()
             )));
         }
     } else {
-        entity_not_found(world, view, item_pattern);
-        return Ok(());
+        info!(
+            "Player tried to turn on unswitchable item {} ({})",
+            item.name(),
+            item.symbol()
+        );
+        view.push(ViewItem::ActionFailure(format!(
+            "The {} can't be turned on.",
+            item.name().item_style()
+        )));
     }
     world.turn_count += 1;
     Ok(())
@@ -555,58 +556,52 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
 /// Returns an error if the player's current room cannot be determined or if trigger execution
 /// fails because required world data is missing.
 pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<()> {
-    let current_room = world.player_room_ref()?;
-    let scope = nearby_reachable_items(world, current_room.id)?
-        .union(&world.player.inventory)
-        .copied()
-        .collect::<HashSet<_>>();
-    if let Some(entity) = find_world_object(&scope, &world.items, &world.npcs, item_pattern) {
-        if let Some(item) = entity.item() {
-            if item.abilities.contains(&ItemAbility::TurnOff) {
-                info!("Player switched off {} ({})", item.name(), item.symbol());
-                let sent_id = item.id();
-                let fired_triggers = check_triggers(
-                    world,
-                    view,
-                    &[TriggerCondition::UseItem {
-                        item_id: sent_id,
-                        ability: ItemAbility::TurnOff,
-                    }],
-                )?;
-                let sent_trigger_fired = triggers_contain_condition(&fired_triggers, |cond| match cond {
-                    TriggerCondition::UseItem { item_id, ability } => {
-                        *item_id == sent_id && *ability == ItemAbility::TurnOff
-                    },
-                    _ => false,
-                });
-                if !sent_trigger_fired {
-                    view.push(ViewItem::ActionFailure(format!(
-                        "{}",
-                        "You hear a clicking sound and then... nothing happens.".italic()
-                    )));
-                }
-            } else {
-                info!(
-                    "Player tried to turn off unswitchable item {} ({})",
-                    item.name(),
-                    item.symbol()
-                );
-                view.push(ViewItem::ActionFailure(format!(
-                    "The {} can't be turned off.",
-                    item.name().item_style()
-                )));
-            }
-        } else if let Some(npc) = entity.npc() {
-            info!("Player tried to turn off an NPC {} ({})", npc.name(), npc.symbol());
+    // search player's location for an item with name matching 'pattern'
+    let room_id = world.player_room_ref()?.id();
+    let item_id = match entity_search::find_item_match(world, item_pattern, SearchScope::TouchableItems(room_id)) {
+        Ok(uuid) => uuid,
+        Err(e) => match e {
+            SearchError::NoMatchingName(_) => {
+                entity_not_found(world, view, item_pattern);
+                return Ok(());
+            },
+            _ => bail!(e),
+        },
+    };
+    let item = world.items.get_mut(&item_id).expect("item ID known to be valid here");
+    if item.abilities.contains(&ItemAbility::TurnOff) {
+        info!("Player switched off {} ({})", item.name(), item.symbol());
+        let sent_id = item.id();
+        let fired_triggers = check_triggers(
+            world,
+            view,
+            &[TriggerCondition::UseItem {
+                item_id: sent_id,
+                ability: ItemAbility::TurnOff,
+            }],
+        )?;
+        let sent_trigger_fired = triggers_contain_condition(&fired_triggers, |cond| match cond {
+            TriggerCondition::UseItem { item_id, ability } => *item_id == sent_id && *ability == ItemAbility::TurnOff,
+            _ => false,
+        });
+        if !sent_trigger_fired {
             view.push(ViewItem::ActionFailure(format!(
-                "{} is already turned off, believe me.",
-                npc.name().npc_style()
+                "{}",
+                "You hear a clicking sound and then... nothing happens.".italic()
             )));
         }
     } else {
-        entity_not_found(world, view, item_pattern);
-        return Ok(());
+        info!(
+            "Player tried to turn off unswitchable item {} ({})",
+            item.name(),
+            item.symbol()
+        );
+        view.push(ViewItem::ActionFailure(format!(
+            "The {} can't be turned off.",
+            item.name().item_style()
+        )));
     }
+
     world.turn_count += 1;
     Ok(())
 }
@@ -651,23 +646,17 @@ pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &
 /// Returns an error if the player's current room cannot be resolved, if the targeted container
 /// cannot be retrieved, or if trigger execution fails due to missing data.
 pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
-    // search player's location for an item matching search
-    let room = world.player_room_ref()?;
-    let search_scope: HashSet<Uuid> = room.contents.union(&world.player.inventory).copied().collect();
-    let container_id = if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, pattern) {
-        if let Some(item) = entity.item() {
-            item.id()
-        } else {
-            warn!("Player attempted to open a non-Item WorldEntity by searching ({pattern})");
-            view.push(ViewItem::Error(format!(
-                "{} isn't an item. You can't open it.",
-                pattern.error_style()
-            )));
-            return Ok(());
-        }
-    } else {
-        entity_not_found(world, view, pattern);
-        return Ok(());
+    // search player's location for an item with name matching 'pattern'
+    let room_id = world.player_room_ref()?.id();
+    let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
+        Ok(uuid) => uuid,
+        Err(e) => match e {
+            SearchError::NoMatchingName(_) => {
+                entity_not_found(world, view, pattern);
+                return Ok(());
+            },
+            _ => bail!(e),
+        },
     };
 
     // either show failure reasons, or set container state to open
@@ -780,25 +769,23 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
 /// Returns an error if the player's current room cannot be resolved or if the targeted container
 /// cannot be retrieved from the world.
 pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
-    let room = world.player_room_ref()?;
-    let search_scope: HashSet<Uuid> = room.contents.union(&world.player.inventory).copied().collect();
-    let (uuid, name) = if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, pattern) {
-        if let Some(item) = entity.item() {
-            (item.id(), item.name().to_string())
-        } else {
-            warn!("Command:Close({pattern}) matched a non-Item WorldEntity");
-            view.push(ViewItem::Error(format!(
-                "You do not see a {} to close.",
-                pattern.error_style()
-            )));
-            return Ok(());
-        }
-    } else {
-        entity_not_found(world, view, pattern);
-        return Ok(());
+    // search player's location for an item with name matching 'pattern'
+    let room_id = world.player_room_ref()?.id();
+    let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
+        Ok(uuid) => uuid,
+        Err(e) => match e {
+            SearchError::NoMatchingName(_) => {
+                entity_not_found(world, view, pattern);
+                return Ok(());
+            },
+            _ => bail!(e),
+        },
     };
 
-    if let Some(target_item) = world.get_item_mut(uuid) {
+    if let Some(target_item) = world.get_item_mut(container_id) {
+        let item_name = target_item.name().to_owned();
+        let item_sym = target_item.symbol().to_owned();
+
         match target_item.container_state {
             None => {
                 view.push(ViewItem::ActionFailure(format!(
@@ -814,21 +801,16 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
             ) => {
                 view.push(ViewItem::ActionSuccess(format!(
                     "The {} is already closed.",
-                    target_item.name().item_style()
+                    item_name.item_style()
                 )));
             },
             Some(ContainerState::Open) => {
                 target_item.container_state = Some(ContainerState::Closed);
                 view.push(ViewItem::ActionSuccess(format!(
                     "You closed the {}.\n",
-                    target_item.name().item_style()
+                    item_name.item_style()
                 )));
-                info!(
-                    "{} closed the {} ({})",
-                    world.player.name(),
-                    name,
-                    symbol_or_unknown(&world.items, uuid)
-                );
+                info!("{} closed the {} ({})", world.player.name(), item_name, item_sym);
             },
             Some(ContainerState::TransparentOpen) => {
                 target_item.container_state = Some(ContainerState::TransparentClosed);
@@ -836,12 +818,7 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
                     "You closed the {}.\n",
                     target_item.name().item_style()
                 )));
-                info!(
-                    "{} closed the {} ({})",
-                    world.player.name(),
-                    name,
-                    symbol_or_unknown(&world.items, uuid)
-                );
+                info!("{} closed the {} ({})", world.player.name(), item_name, item_sym);
             },
         }
     }
@@ -886,62 +863,50 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
 /// Returns an error if the player's current room cannot be determined or if the targeted container
 /// cannot be located within the world state.
 pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
-    let room = world.player_room_ref()?;
-    let (uuid, name) = if let Some(entity) = find_world_object(&room.contents, &world.items, &world.npcs, pattern) {
-        if let Some(item) = entity.item() {
-            (item.id(), item.name().to_string())
-        } else {
-            warn!("Command:Lock({pattern}) matched a non-Item WorldEntity");
-            view.push(ViewItem::Error(format!(
-                "You don't see a {} here to lock.",
-                pattern.error_style()
-            )));
-            return Ok(());
-        }
-    } else {
-        entity_not_found(world, view, pattern);
-        return Ok(());
+    // search player's location for an item with name matching 'pattern'
+    let room_id = world.player_room_ref()?.id();
+    let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
+        Ok(uuid) => uuid,
+        Err(e) => match e {
+            SearchError::NoMatchingName(_) => {
+                entity_not_found(world, view, pattern);
+                return Ok(());
+            },
+            _ => bail!(e),
+        },
     };
 
-    if let Some(target_item) = world.get_item_mut(uuid) {
+    if let Some(target_item) = world.get_item_mut(container_id) {
+        let item_name = target_item.name().to_owned();
+        let item_sym = target_item.symbol().to_owned();
         match target_item.container_state {
             None => {
                 view.push(ViewItem::ActionFailure(format!(
                     "The {} isn't something that can be locked.",
-                    target_item.name().item_style()
+                    item_name.item_style()
                 )));
             },
             Some(ContainerState::Locked | ContainerState::TransparentLocked) => {
                 view.push(ViewItem::ActionSuccess(format!(
                     "The {} is already locked.",
-                    target_item.name().item_style()
+                    item_name.item_style()
                 )));
             },
             Some(ContainerState::Open | ContainerState::Closed) => {
                 target_item.container_state = Some(ContainerState::Locked);
                 view.push(ViewItem::ActionSuccess(format!(
                     "You locked the {}.\n",
-                    target_item.name().item_style()
+                    item_name.item_style()
                 )));
-                info!(
-                    "{} locked the {} ({})",
-                    world.player.name(),
-                    name,
-                    symbol_or_unknown(&world.items, uuid)
-                );
+                info!("{} locked the {} ({})", world.player.name(), item_name, item_sym);
             },
             Some(ContainerState::TransparentOpen | ContainerState::TransparentClosed) => {
                 target_item.container_state = Some(ContainerState::TransparentLocked);
                 view.push(ViewItem::ActionSuccess(format!(
                     "You locked the {}.\n",
-                    target_item.name().item_style()
+                    item_name.item_style()
                 )));
-                info!(
-                    "{} locked the {} ({})",
-                    world.player.name(),
-                    name,
-                    symbol_or_unknown(&world.items, uuid)
-                );
+                info!("{} locked the {} ({})", world.player.name(), item_name, item_sym);
             },
         }
     }
@@ -995,32 +960,29 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
 /// Returns an error if the player's current room cannot be determined, if the targeted container
 /// cannot be resolved from the world state, or if trigger evaluation fails.
 pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
-    let room = world.player_room_ref()?;
-    let (container_id, container_name) =
-        if let Some(entity) = find_world_object(&room.contents, &world.items, &world.npcs, pattern) {
-            if let Some(item) = entity.item() {
-                (item.id(), item.name().to_string())
-            } else {
-                warn!("Command:Unlock({pattern}) matched a non-Item (NPC) WorldEntity");
-                view.push(ViewItem::Error(format!(
-                    "You don't see a {} here to unlock.",
-                    pattern.error_style()
-                )));
+    // search player's location for an item with name matching 'pattern'
+    let room_id = world.player_room_ref()?.id();
+    let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
+        Ok(uuid) => uuid,
+        Err(e) => match e {
+            SearchError::NoMatchingName(_) => {
+                entity_not_found(world, view, pattern);
                 return Ok(());
-            }
-        } else {
-            entity_not_found(world, view, pattern);
-            return Ok(());
-        };
+            },
+            _ => bail!(e),
+        },
+    };
 
     let key_data = find_valid_key(&world.items, &world.player.inventory, container_id);
 
     if let Some(target_item) = world.get_item_mut(container_id) {
+        let item_name = target_item.name().to_owned();
+        let item_sym = target_item.symbol().to_owned();
         match target_item.container_state {
             None => {
                 view.push(ViewItem::ActionFailure(format!(
                     "The {} doesn't have a lock.",
-                    target_item.name().item_style()
+                    item_name.item_style()
                 )));
             },
             Some(
@@ -1031,7 +993,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
             ) => {
                 view.push(ViewItem::ActionSuccess(format!(
                     "The {} is already unlocked.",
-                    target_item.name().item_style()
+                    item_name.item_style()
                 )));
             },
             Some(ContainerState::Locked | ContainerState::TransparentLocked) => {
@@ -1045,14 +1007,14 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
                         };
                     view.push(ViewItem::ActionSuccess(format!(
                         "You unlocked the {} with the {}.\n",
-                        target_item.name().item_style(),
+                        item_name.item_style(),
                         key.name.item_style(),
                     )));
                     info!(
                         "{} unlocked '{}' ({}) using key '{}' ({})",
                         world.player.name(),
-                        container_name,
-                        symbol_or_unknown(&world.items, container_id),
+                        item_name,
+                        item_sym,
                         key.name,
                         key.symbol,
                     );
@@ -1060,7 +1022,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
                 } else {
                     view.push(ViewItem::ActionFailure(format!(
                         "You don't have anything that can unlock the {}.",
-                        target_item.name().item_style()
+                        item_name.item_style()
                     )));
                 }
             },
