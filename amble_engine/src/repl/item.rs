@@ -54,16 +54,15 @@ use crate::{
     helpers::{plural_s, symbol_or_unknown},
     item::{ContainerState, Item, ItemAbility, ItemInteractionType, consume},
     loader::items::interaction_requirement_met,
-    repl::{entity_not_found, find_world_object},
+    repl::entity_not_found,
     spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers, triggers_contain_condition},
-    world::nearby_reachable_items,
 };
 
 use anyhow::{Result, bail};
 use colored::Colorize;
-use log::{info, warn};
+use log::info;
 use uuid::Uuid;
 
 /// Touch or press an `Item`.
@@ -73,43 +72,27 @@ use uuid::Uuid;
 /// referenced during trigger evaluation cannot be found.
 pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) -> Result<()> {
     let room_id = world.player.location.room_id()?;
-    let scope: HashSet<Uuid> = nearby_reachable_items(world, room_id)?
-        .union(&world.player.inventory)
-        .copied()
-        .collect();
-    let (item_id, item_name, item_symbol) =
-        if let Some(entity) = find_world_object(&scope, &world.items, &world.npcs, item_str) {
-            if entity.is_item() {
-                (entity.id(), entity.name().to_string(), entity.symbol().to_string())
-            } else {
-                info!(
-                    "{} touched NPC '{}' ({}) (matched input '{item_str}')",
-                    world.player.name(),
-                    entity.name(),
-                    entity.symbol()
-                );
-                view.push(ViewItem::NpcSpeech {
-                    speaker: entity.name().to_string(),
-                    quote: "Hey - stop touching me!".to_string(),
-                });
-                return Ok(());
-            }
-        } else {
+    let item_id = match entity_search::find_item_match(world, item_str, SearchScope::TouchableItems(room_id)) {
+        Ok(uuid) => uuid,
+        Err(SearchError::NoMatchingName(_)) => {
             entity_not_found(world, view, item_str);
             return Ok(());
-        };
+        },
+        Err(e) => bail!(e),
+    };
 
     let triggers_fired = check_triggers(world, view, &[TriggerCondition::Touch(item_id)])?;
     let sent_trigger_fired = triggers_contain_condition(&triggers_fired, |trig| match trig {
         TriggerCondition::Touch(triggered_item_id) => *triggered_item_id == item_id,
         _ => false,
     });
+    let item = world.items.get(&item_id).expect("item_id should be valid here");
     if !sent_trigger_fired {
         info!(
             "{} touched {} ({})... and nothing happened.",
             world.player.name(),
-            item_name,
-            item_symbol,
+            item.name(),
+            item.symbol(),
         );
         view.push(ViewItem::ActionSuccess(
             world.spin_core(CoreSpinnerType::NoEffect, "That has no discernable effect."),
@@ -126,50 +109,39 @@ pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) ->
 /// resolved, or if trigger evaluation encounters missing world state.
 pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, mode: IngestMode) -> Result<()> {
     let room_id = world.player_room_ref()?.id();
-
-    // find an item matching item_str in nearby room, open containers, and player's inventory
-    let scope: HashSet<Uuid> = nearby_reachable_items(world, room_id)?
-        .union(&world.player.inventory)
-        .copied()
-        .collect();
-    let (item_id, item_name) = if let Some(entity) = find_world_object(&scope, &world.items, &world.npcs, item_str) {
-        if let Some(item) = entity.item() {
-            // found one -- does item have the ability to be ingested this way?
-            let meets_mode = match mode {
-                IngestMode::Eat => item.abilities.contains(&ItemAbility::Eat),
-                IngestMode::Drink => item.abilities.contains(&ItemAbility::Drink),
-                IngestMode::Inhale => item.abilities.contains(&ItemAbility::Inhale),
-            };
-            if meets_mode {
-                // yes, return item uuid
-                (item.id(), item.name().to_string())
-            } else {
-                // no, log and notify player
-                info!(
-                    "{} tried to {mode} an item ({}) which lacks that ability.",
-                    world.player.name(),
-                    item.symbol()
-                );
-                view.push(ViewItem::ActionFailure(format!(
-                    "Despite your best effort, you are unable to {mode} the {}.",
-                    item.name().item_style()
-                )));
-                return Ok(());
-            }
-        } else {
-            // entity matching player input isn't an `Item` at all
-            warn!("Player attempted to ingest a non-Item WorldEntity matching ({item_str})");
-            view.push(ViewItem::Error(format!(
-                "{} isn't an item, so you can't {mode} it.",
-                item_str.error_style()
-            )));
+    let item_id = match entity_search::find_item_match(world, item_str, SearchScope::TouchableItems(room_id)) {
+        Ok(uuid) => uuid,
+        Err(SearchError::NoMatchingName(_)) => {
+            entity_not_found(world, view, item_str);
             return Ok(());
-        }
-    } else {
-        // no entity in search scope matched player input
-        entity_not_found(world, view, item_str);
-        return Ok(());
+        },
+        Err(e) => bail!(e),
     };
+
+    // found one -- does item have the ability to be ingested this way?
+    let item = world
+        .items
+        .get(&item_id)
+        .expect("item_id already known to exist in map here");
+    let (item_name, item_symbol) = (item.name().to_owned(), item.symbol().to_owned());
+    let meets_mode = match mode {
+        IngestMode::Eat => item.abilities.contains(&ItemAbility::Eat),
+        IngestMode::Drink => item.abilities.contains(&ItemAbility::Drink),
+        IngestMode::Inhale => item.abilities.contains(&ItemAbility::Inhale),
+    };
+    if !meets_mode {
+        // no, log and notify player
+        info!(
+            "{} tried to {mode} an item ({}) which lacks that ability.",
+            world.player.name(),
+            item.symbol()
+        );
+        view.push(ViewItem::ActionFailure(format!(
+            "Despite your best effort, you are unable to {mode} the {}.",
+            item.name().item_style()
+        )));
+        return Ok(());
+    }
 
     /* we now have the UUID (item_id) of an item that is available nearby,
     matches player input, and can be ingested in the specified way */
@@ -214,11 +186,7 @@ pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, m
         }
     }
 
-    info!(
-        "{} ingested '{item_name}' ({})",
-        world.player.name(),
-        symbol_or_unknown(&world.items, item_id)
-    );
+    info!("{} ingested '{}' ({})", world.player.name(), item_name, item_symbol);
     world.turn_count += 1;
     Ok(())
 }
@@ -310,8 +278,8 @@ pub fn use_item_on_handler(
         return Ok(());
     }
     // The utilized ItemAbility is needed to send a UseItem TriggerCondition. ItemAbility::Use is
-    // a reasonable default but should never come up, since the presence of this Interaction (which
-    // implies a matching ability which has already been verified by the
+    // a reasonable default but should never come up; the existence of this Interaction
+    // implies a specific matching ability which has already been verified by the
     // interaction_requirement_met(...) call above.
     let used_ability = *target
         .interaction_requires
@@ -381,7 +349,7 @@ fn resolve_use_item_participants<'a>(
         Ok(uuid) => uuid,
         Err(SearchError::NoMatchingName(target_pattern)) => {
             view.push(ViewItem::ActionFailure(format!(
-                "There is no \"{}\" in your inventory.",
+                "You don't see any item matching \"{}\" within reach.",
                 target_pattern.error_style()
             )));
             return Ok(None);
