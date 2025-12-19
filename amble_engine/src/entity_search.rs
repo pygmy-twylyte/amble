@@ -161,3 +161,204 @@ pub fn find_entity_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) 
 
     Err(SearchError::NoMatchingName(pattern.to_string()))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        AmbleWorld, Item, Npc, Room,
+        health::HealthState,
+        item::{ContainerState, Movability},
+        npc::NpcState,
+        world::Location,
+    };
+    use std::collections::{HashMap, HashSet};
+    use uuid::Uuid;
+
+    fn insert_room(world: &mut AmbleWorld, name: &str) -> Uuid {
+        let room_id = Uuid::new_v4();
+        let room = Room {
+            id: room_id,
+            symbol: format!("room_{}", room_id.simple()),
+            name: name.to_string(),
+            base_description: format!("{name} description"),
+            overlays: Vec::new(),
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+        world.rooms.insert(room_id, room);
+        room_id
+    }
+
+    fn insert_item(
+        world: &mut AmbleWorld,
+        name: &str,
+        location: Location,
+        container_state: Option<ContainerState>,
+    ) -> Uuid {
+        let item_id = Uuid::new_v4();
+        let item = Item {
+            id: item_id,
+            symbol: format!("item_{}", item_id.simple()),
+            name: name.to_string(),
+            description: format!("{name} item"),
+            location,
+            movability: Movability::Free,
+            container_state,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+            consumable: None,
+        };
+        world.items.insert(item_id, item);
+        item_id
+    }
+
+    fn insert_npc(world: &mut AmbleWorld, name: &str, location: Location) -> Uuid {
+        let npc_id = Uuid::new_v4();
+        let npc = Npc {
+            id: npc_id,
+            symbol: format!("npc_{}", npc_id.simple()),
+            name: name.to_string(),
+            description: format!("{name} npc"),
+            location,
+            inventory: HashSet::new(),
+            dialogue: HashMap::new(),
+            state: NpcState::Normal,
+            movement: None,
+            health: HealthState::new(),
+        };
+        world.npcs.insert(npc_id, npc);
+        npc_id
+    }
+
+    #[test]
+    fn find_item_match_includes_inventory_items_in_visible_scope() {
+        let mut world = AmbleWorld::new_empty();
+        let room_id = insert_room(&mut world, "Atrium");
+        let coin_id = insert_item(&mut world, "Lucky Coin", Location::Inventory, None);
+        world.player.inventory.insert(coin_id);
+
+        let result = find_item_match(&world, "coin", SearchScope::VisibleItems(room_id)).unwrap();
+        assert_eq!(result, coin_id);
+    }
+
+    #[test]
+    fn find_item_match_returns_nearby_vessels() {
+        let mut world = AmbleWorld::new_empty();
+        let room_id = insert_room(&mut world, "Vault");
+        let chest_id = insert_item(&mut world, "Ancient Chest", Location::Room(room_id), Some(ContainerState::Open));
+        world.rooms.get_mut(&room_id).unwrap().contents.insert(chest_id);
+
+        let result = find_item_match(&world, "chest", SearchScope::NearbyVessels(room_id)).unwrap();
+        assert_eq!(result, chest_id);
+    }
+
+    #[test]
+    fn find_item_match_errors_when_room_missing() {
+        let world = AmbleWorld::new_empty();
+        let room_id = Uuid::new_v4();
+
+        let err = find_item_match(&world, "coin", SearchScope::VisibleItems(room_id)).unwrap_err();
+        match err {
+            SearchError::InvalidRoomId(id) => assert_eq!(id, room_id),
+            other => panic!("unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn find_item_match_rejects_npc_scopes() {
+        let world = AmbleWorld::new_empty();
+        let scope = SearchScope::VisibleNpcs(Uuid::new_v4());
+
+        let err = find_item_match(&world, "coin", scope).unwrap_err();
+        match err {
+            SearchError::InvalidScope(kind, only) => {
+                assert_eq!(kind, "item");
+                assert_eq!(only, "NPC");
+            },
+            other => panic!("unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn find_npc_match_returns_visible_npc() {
+        let mut world = AmbleWorld::new_empty();
+        let room_id = insert_room(&mut world, "Garden");
+        let npc_id = insert_npc(&mut world, "Caretaker", Location::Room(room_id));
+        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
+
+        let result = find_npc_match(&world, "take", SearchScope::VisibleNpcs(room_id)).unwrap();
+        assert_eq!(result, npc_id);
+    }
+
+    #[test]
+    fn find_npc_match_errors_when_room_missing() {
+        let world = AmbleWorld::new_empty();
+        let room_id = Uuid::new_v4();
+
+        let err = find_npc_match(&world, "caretaker", SearchScope::VisibleNpcs(room_id)).unwrap_err();
+        match err {
+            SearchError::InvalidRoomId(id) => assert_eq!(id, room_id),
+            other => panic!("unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn find_npc_match_rejects_item_scopes() {
+        let world = AmbleWorld::new_empty();
+
+        let err = find_npc_match(&world, "caretaker", SearchScope::Inventory).unwrap_err();
+        match err {
+            SearchError::InvalidScope(kind, only) => {
+                assert_eq!(kind, "npc");
+                assert_eq!(only, "item");
+            },
+            other => panic!("unexpected error: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn find_entity_match_prefers_items() {
+        let mut world = AmbleWorld::new_empty();
+        let room_id = insert_room(&mut world, "Vault");
+        let vessel_id = insert_item(&mut world, "Guardian Chest", Location::Room(room_id), Some(ContainerState::Open));
+        world.rooms.get_mut(&room_id).unwrap().contents.insert(vessel_id);
+        let npc_id = insert_npc(&mut world, "Guardian", Location::Room(room_id));
+        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
+
+        let result = find_entity_match(&world, "guardian", SearchScope::NearbyVessels(room_id)).unwrap();
+        assert_eq!(result, vessel_id);
+    }
+
+    #[test]
+    fn find_entity_match_returns_npc_when_no_item_found() {
+        let mut world = AmbleWorld::new_empty();
+        let room_id = insert_room(&mut world, "Library");
+        let npc_id = insert_npc(&mut world, "Archivist", Location::Room(room_id));
+        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
+
+        let result = find_entity_match(&world, "archivist", SearchScope::VisibleNpcs(room_id)).unwrap();
+        assert_eq!(result, npc_id);
+    }
+
+    #[test]
+    fn find_entity_match_returns_no_matching_name_when_none_found() {
+        let mut world = AmbleWorld::new_empty();
+        let room_id = insert_room(&mut world, "Workshop");
+        let vessel_id = insert_item(&mut world, "Toolbox", Location::Room(room_id), Some(ContainerState::Open));
+        world.rooms.get_mut(&room_id).unwrap().contents.insert(vessel_id);
+        let npc_id = insert_npc(&mut world, "Mechanic", Location::Room(room_id));
+        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
+
+        let err = find_entity_match(&world, "lantern", SearchScope::NearbyVessels(room_id)).unwrap_err();
+        match err {
+            SearchError::NoMatchingName(term) => assert_eq!(term, "lantern"),
+            other => panic!("unexpected error: {other:?}"),
+        }
+    }
+}
