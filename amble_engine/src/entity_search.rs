@@ -44,6 +44,8 @@ pub static NO_NPCS: OnceLock<HashMap<Uuid, Npc>> = OnceLock::new();
 /// Represents the scope of a requested search by the caller and includes the location to search.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SearchScope {
+    /// All items and NPCs within the player's sight
+    AllVisible(Uuid),
     /// Items the player can look at.
     VisibleItems(Uuid),
     /// NPCs the player can see.
@@ -79,7 +81,7 @@ pub enum SearchError {
 pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<Uuid, SearchError> {
     // construct a HashSet of item UUIDs in scope for this search
     let haystack: HashSet<_> = match scope {
-        SearchScope::VisibleItems(room_id) => {
+        SearchScope::VisibleItems(room_id) | SearchScope::AllVisible(room_id) => {
             let room_items = nearby_visible_items(world, room_id).map_err(|_| SearchError::InvalidRoomId(room_id))?;
             room_items.union(&world.player.inventory).copied().collect()
         },
@@ -121,8 +123,11 @@ pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> 
     let haystack = match scope {
         // currently there is no distinction between NPCs you can see and those you could touch
         // both scopes kept for now as this may change in the future
-        SearchScope::VisibleNpcs(uuid) | SearchScope::TouchableNpcs(uuid) | SearchScope::NearbyVessels(uuid) => {
-            let room = world.rooms.get(&uuid).ok_or(SearchError::InvalidRoomId(uuid))?;
+        SearchScope::VisibleNpcs(room_id)
+        | SearchScope::TouchableNpcs(room_id)
+        | SearchScope::NearbyVessels(room_id)
+        | SearchScope::AllVisible(room_id) => {
+            let room = world.rooms.get(&room_id).ok_or(SearchError::InvalidRoomId(room_id))?;
             room.npcs.clone()
         },
         SearchScope::VisibleItems(_) | SearchScope::TouchableItems(_) | SearchScope::Inventory => {
@@ -251,7 +256,12 @@ mod tests {
     fn find_item_match_returns_nearby_vessels() {
         let mut world = AmbleWorld::new_empty();
         let room_id = insert_room(&mut world, "Vault");
-        let chest_id = insert_item(&mut world, "Ancient Chest", Location::Room(room_id), Some(ContainerState::Open));
+        let chest_id = insert_item(
+            &mut world,
+            "Ancient Chest",
+            Location::Room(room_id),
+            Some(ContainerState::Open),
+        );
         world.rooms.get_mut(&room_id).unwrap().contents.insert(chest_id);
 
         let result = find_item_match(&world, "chest", SearchScope::NearbyVessels(room_id)).unwrap();
@@ -326,7 +336,12 @@ mod tests {
     fn find_entity_match_prefers_items() {
         let mut world = AmbleWorld::new_empty();
         let room_id = insert_room(&mut world, "Vault");
-        let vessel_id = insert_item(&mut world, "Guardian Chest", Location::Room(room_id), Some(ContainerState::Open));
+        let vessel_id = insert_item(
+            &mut world,
+            "Guardian Chest",
+            Location::Room(room_id),
+            Some(ContainerState::Open),
+        );
         world.rooms.get_mut(&room_id).unwrap().contents.insert(vessel_id);
         let npc_id = insert_npc(&mut world, "Guardian", Location::Room(room_id));
         world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
@@ -350,7 +365,12 @@ mod tests {
     fn find_entity_match_returns_no_matching_name_when_none_found() {
         let mut world = AmbleWorld::new_empty();
         let room_id = insert_room(&mut world, "Workshop");
-        let vessel_id = insert_item(&mut world, "Toolbox", Location::Room(room_id), Some(ContainerState::Open));
+        let vessel_id = insert_item(
+            &mut world,
+            "Toolbox",
+            Location::Room(room_id),
+            Some(ContainerState::Open),
+        );
         world.rooms.get_mut(&room_id).unwrap().contents.insert(vessel_id);
         let npc_id = insert_npc(&mut world, "Mechanic", Location::Room(room_id));
         world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
