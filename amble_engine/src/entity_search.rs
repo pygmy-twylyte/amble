@@ -22,16 +22,24 @@
 //! TODO?: For now, we'll just duplicate search functionality currently existing. Ultimately, the search scopes could
 //! become more task-specific and / or some validation steps may be moved here.
 
-use std::collections::HashSet;
+use std::{
+    collections::{HashMap, HashSet},
+    sync::OnceLock,
+};
 
 use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{
-    AmbleWorld,
+    AmbleWorld, Item, Npc,
     repl::find_world_object,
     world::{nearby_reachable_items, nearby_vessel_items, nearby_visible_items},
 };
+
+/// Empty item map used in NPC-only searches.
+pub static NO_ITEMS: OnceLock<HashMap<Uuid, Item>> = OnceLock::new();
+/// Empty NPC map used in item-only searches.
+pub static NO_NPCS: OnceLock<HashMap<Uuid, Npc>> = OnceLock::new();
 
 /// Represents the scope of a requested search by the caller and includes the location to search.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -63,6 +71,8 @@ pub enum SearchError {
     MatchedNonNpc { input: String, item_name: String },
     #[error("invalid {0} search scope: includes only {1}s")]
     InvalidScope(String, String),
+    #[error("unknown error: {0}")]
+    Unknown(#[from] anyhow::Error),
 }
 
 /// Find an `Item` with name matching `pattern` in the given `SearchScope` and return its id.
@@ -89,7 +99,8 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
     };
 
     // find any world object in scope that matches the input pattern, return error if none found
-    let Some(entity) = find_world_object(&haystack, &world.items, &world.npcs, pattern) else {
+    let no_npcs = NO_NPCS.get_or_init(|| HashMap::new());
+    let Some(entity) = find_world_object(&haystack, &world.items, no_npcs, pattern) else {
         return Err(SearchError::NoMatchingName(pattern.to_string()));
     };
 
@@ -103,4 +114,50 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
 
     // entity is a matching item -- return its UUID
     Ok(entity.id())
+}
+
+/// Find an `Npc` with name matching `pattern` in the specified `SearchScope`.
+pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<Uuid, SearchError> {
+    let haystack = match scope {
+        // currently there is no distinction between NPCs you can see and those you could touch
+        // both scopes kept for now as this may change in the future
+        SearchScope::VisibleNpcs(uuid) | SearchScope::TouchableNpcs(uuid) | SearchScope::NearbyVessels(uuid) => {
+            let room = world.rooms.get(&uuid).ok_or(SearchError::InvalidRoomId(uuid))?;
+            room.npcs.clone()
+        },
+        SearchScope::VisibleItems(_) | SearchScope::TouchableItems(_) | SearchScope::Inventory => {
+            return Err(SearchError::InvalidScope("npc".into(), "item".into()));
+        },
+    };
+
+    let no_items = NO_ITEMS.get_or_init(|| HashMap::new());
+    let Some(entity) = find_world_object(&haystack, no_items, &world.npcs, pattern) else {
+        return Err(SearchError::NoMatchingName(pattern.to_string()));
+    };
+
+    if entity.is_not_npc() {
+        return Err(SearchError::MatchedNonNpc {
+            input: pattern.to_owned(),
+            item_name: entity.name().to_owned(),
+        });
+    }
+
+    Ok(entity.id())
+}
+
+/// Find either an `NPC` or an `Item` with name matching `pattern` within the SearchScope.
+pub fn find_entity_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<Uuid, SearchError> {
+    // return any item matched first -- these will account for most searches
+    let item_match = find_item_match(world, pattern, scope);
+    if item_match.is_ok() {
+        return item_match;
+    }
+
+    // less often looking for an NPC match -- return that now if found
+    let npc_match = find_npc_match(world, pattern, scope);
+    if npc_match.is_ok() {
+        return npc_match;
+    }
+
+    Err(SearchError::NoMatchingName(pattern.to_string()))
 }
