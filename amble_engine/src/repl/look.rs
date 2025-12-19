@@ -37,21 +37,18 @@
 //! - Reading specific items may advance plot or provide crucial information
 //! - Examination may unlock new areas or interactions
 
-use std::collections::HashSet;
-
 use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
+    entity_search::{SearchError, SearchScope, find_entity_match, find_item_match},
     item::ItemAbility,
-    repl::{entity_not_found, find_world_object},
+    repl::entity_not_found,
     style::GameStyle,
     trigger::{TriggerAction, TriggerCondition, check_triggers},
     view::{ContentLine, ViewMode},
-    world::{nearby_reachable_items, nearby_visible_items},
 };
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use log::info;
-use uuid::Uuid;
 
 /// Shows description of surroundings.
 ///
@@ -88,28 +85,28 @@ pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
 /// # Errors
 /// Returns an error if the player's current room or the scoped items cannot be resolved.
 pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
-    let current_room = world.player_room_ref()?;
-    // scope = local items + npcs + player inventory (including items visible in transparent containers)
-    let items_visible = nearby_visible_items(world, current_room.id())?;
-    let search_scope: HashSet<Uuid> = items_visible
-        .union(&current_room.npcs)
-        .copied()
-        .chain(world.player.inventory.iter().copied())
-        .collect();
-    if let Some(entity) = find_world_object(&search_scope, &world.items, &world.npcs, thing) {
-        if let Some(item) = entity.item() {
-            info!("{} looked at {} ({})", world.player.name(), item.name(), item.symbol());
-            item.show(world, view);
-            let _fired = check_triggers(world, view, &[TriggerCondition::LookAt(item.id())]);
-        } else if let Some(npc) = entity.npc() {
-            info!("{} looked at {} ({})", world.player.name(), npc.name(), npc.symbol());
-            npc.show(world, view);
-            let _fired = check_triggers(world, view, &[]);
-        }
-    } else {
-        entity_not_found(world, view, thing);
-        return Ok(());
+    let room_id = world.player_room_ref()?.id();
+    let entity_id = match find_entity_match(world, thing, SearchScope::AllVisible(room_id)) {
+        Ok(uuid) => uuid,
+        Err(SearchError::NoMatchingName(input)) => {
+            entity_not_found(world, view, input.as_str());
+            return Ok(());
+        },
+        Err(e) => bail!(e),
+    };
+
+    if let Some(item) = world.items.get(&entity_id) {
+        info!("{} looked at {} ({})", world.player.name(), item.name(), item.symbol());
+        item.show(world, view);
+        let _fired = check_triggers(world, view, &[TriggerCondition::LookAt(item.id())]);
     }
+
+    if let Some(npc) = world.npcs.get(&entity_id) {
+        info!("{} looked at {} ({})", world.player.name(), npc.name(), npc.symbol());
+        npc.show(world, view);
+        let _fired = check_triggers(world, view, &[]);
+    }
+
     world.turn_count += 1;
     Ok(())
 }
@@ -145,62 +142,60 @@ pub fn inv_handler(world: &AmbleWorld, view: &mut View) -> Result<()> {
 /// Returns an error if the current room cannot be determined, if scoping nearby items fails,
 /// or if trigger evaluation encounters missing world entities.
 pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
-    let current_room = world.player_room_ref()?;
-    // scope search to items in room + inventory
-    let items_in_reach = nearby_reachable_items(world, current_room.id())?;
-    let search_scope: HashSet<Uuid> = items_in_reach.union(&world.player.inventory).copied().collect();
-    // find the item from the search pattern and collect uuid;
-    // log and tell player if there's nothing there to read
-    let found_item_id = if let Some(item) =
-        find_world_object(&search_scope, &world.items, &world.npcs, pattern).and_then(super::WorldEntity::item)
-    {
-        if item.text.is_some() {
-            Some(item.id())
-        } else {
-            view.push(ViewItem::ActionFailure(format!(
-                "You see nothing special about the {}, and nothing legible on it.",
-                item.name().item_style()
-            )));
-            info!(
-                "{} tried to read textless item {} ({})",
-                world.player.name(),
-                item.name(),
-                item.symbol()
-            );
-            None
-        }
-    } else {
-        entity_not_found(world, view, pattern);
-        return Ok(());
+    let room_id = world.player_room_ref()?.id();
+    let item_id = match find_item_match(world, pattern, SearchScope::VisibleItems(room_id)) {
+        Ok(uuid) => uuid,
+        Err(SearchError::NoMatchingName(input)) => {
+            entity_not_found(world, view, input.as_str());
+            return Ok(());
+        },
+        Err(e) => bail!(e),
     };
-    // check triggers for any DenyRead action that may have fired, and show the text if not
-    if let Some(item_id) = found_item_id {
-        let fired = check_triggers(
-            world,
-            view,
-            &[TriggerCondition::UseItem {
-                item_id,
-                ability: ItemAbility::Read,
-            }],
-        )?;
-        let denied = fired.iter().any(|trigger| {
-            trigger
-                .actions
-                .iter()
-                .any(|action| matches!(&action.action, TriggerAction::DenyRead(_)))
-        });
-        if !denied {
-            let item = world
-                .items
-                .get(&item_id)
-                .with_context(|| format!("item_id ({item_id}) not found in world items"))?;
+    let item = world.items.get(&item_id).expect("item_id known to be valid here");
 
-            view.push(ViewItem::ItemText(
-                item.text.clone().unwrap_or_else(|| "(Nothing legible.)".to_string()),
-            ));
-            info!("{} read '{}' ({})", world.player.name(), item.name(), item.symbol());
-        }
+    if item.text.is_none() {
+        view.push(ViewItem::ActionFailure(format!(
+            "You see nothing special about the {}, and nothing legible on it.",
+            item.name().item_style()
+        )));
+        info!(
+            "{} tried to read textless item {} ({})",
+            world.player.name(),
+            item.name(),
+            item.symbol()
+        );
+        return Ok(());
     }
+
+    // check triggers for any DenyRead action that may have fired, and show the text if not
+    let fired = check_triggers(
+        world,
+        view,
+        &[TriggerCondition::UseItem {
+            item_id: item.id(),
+            ability: ItemAbility::Read,
+        }],
+    )?;
+
+    let denied = fired.iter().any(|trigger| {
+        trigger
+            .actions
+            .iter()
+            .any(|action| matches!(&action.action, TriggerAction::DenyRead(_)))
+    });
+
+    if !denied {
+        let item = world
+            .items
+            .get(&item_id)
+            .with_context(|| format!("item_id ({item_id}) not found in world items"))?;
+
+        view.push(ViewItem::ItemText(
+            item.text.clone().unwrap_or_else(|| "(Nothing legible.)".to_string()),
+        ));
+        info!("{} read '{}' ({})", world.player.name(), item.name(), item.symbol());
+    }
+
     world.turn_count += 1;
     Ok(())
 }
