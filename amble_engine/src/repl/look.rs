@@ -39,7 +39,7 @@
 
 use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
-    entity_search::{SearchError, SearchScope, find_entity_match, find_item_match},
+    entity_search::{EntityId, SearchError, SearchScope, find_entity_match, find_item_match},
     item::ItemAbility,
     repl::entity_not_found,
     style::GameStyle,
@@ -87,7 +87,7 @@ pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
 pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     let room_id = world.player_room_ref()?.id();
     let entity_id = match find_entity_match(world, thing, SearchScope::AllVisible(room_id)) {
-        Ok(uuid) => uuid,
+        Ok(id) => id,
         Err(SearchError::NoMatchingName(input)) => {
             entity_not_found(world, view, input.as_str());
             return Ok(());
@@ -95,16 +95,19 @@ pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> 
         Err(e) => bail!(e),
     };
 
-    if let Some(item) = world.items.get(&entity_id) {
-        info!("{} looked at {} ({})", world.player.name(), item.name(), item.symbol());
-        item.show(world, view);
-        let _fired = check_triggers(world, view, &[TriggerCondition::LookAt(item.id())]);
-    }
-
-    if let Some(npc) = world.npcs.get(&entity_id) {
-        info!("{} looked at {} ({})", world.player.name(), npc.name(), npc.symbol());
-        npc.show(world, view);
-        let _fired = check_triggers(world, view, &[]);
+    match entity_id {
+        EntityId::Item(item_id) => {
+            let item = world.items.get(&item_id).expect("known OK from find_entity_match");
+            info!("{} looked at {} ({})", world.player.name(), item.name(), item.symbol());
+            item.show(world, view);
+            let _fired = check_triggers(world, view, &[TriggerCondition::LookAt(item.id())]);
+        },
+        EntityId::Npc(npc_id) => {
+            let npc = world.npcs.get(&npc_id).expect("known OK from find_entity_match");
+            info!("{} looked at {} ({})", world.player.name(), npc.name(), npc.symbol());
+            npc.show(world, view);
+            let _fired = check_triggers(world, view, &[]);
+        },
     }
 
     world.turn_count += 1;
