@@ -46,6 +46,8 @@ pub static NO_NPCS: OnceLock<HashMap<Uuid, Npc>> = OnceLock::new();
 pub enum SearchScope {
     /// All items and NPCs within the player's sight
     AllVisible(Uuid),
+    /// All items and NPCs that the player can touch
+    AllTouchable(Uuid),
     /// Items the player can look at.
     VisibleItems(Uuid),
     /// NPCs the player can see.
@@ -85,7 +87,7 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
             let room_items = nearby_visible_items(world, room_id).map_err(|_| SearchError::InvalidRoomId(room_id))?;
             room_items.union(&world.player.inventory).copied().collect()
         },
-        SearchScope::TouchableItems(room_id) => {
+        SearchScope::TouchableItems(room_id) | SearchScope::AllTouchable(room_id) => {
             let room_items = nearby_reachable_items(world, room_id).map_err(|_| SearchError::InvalidRoomId(room_id))?;
             room_items.union(&world.player.inventory).copied().collect()
         },
@@ -126,7 +128,8 @@ pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> 
         SearchScope::VisibleNpcs(room_id)
         | SearchScope::TouchableNpcs(room_id)
         | SearchScope::NearbyVessels(room_id)
-        | SearchScope::AllVisible(room_id) => {
+        | SearchScope::AllVisible(room_id)
+        | SearchScope::AllTouchable(room_id) => {
             let room = world.rooms.get(&room_id).ok_or(SearchError::InvalidRoomId(room_id))?;
             room.npcs.clone()
         },
@@ -150,18 +153,25 @@ pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> 
     Ok(entity.id())
 }
 
+/// Holds the `Uuid` of different types of `WorldEntity`
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum EntityId {
+    Item(Uuid),
+    Npc(Uuid),
+}
+
 /// Find either an `NPC` or an `Item` with name matching `pattern` within the SearchScope.
-pub fn find_entity_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<Uuid, SearchError> {
+pub fn find_entity_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<EntityId, SearchError> {
     // return any item matched first -- these will account for most searches
     let item_match = find_item_match(world, pattern, scope);
     if item_match.is_ok() {
-        return item_match;
+        return Ok(EntityId::Item(item_match.expect("known Ok()")));
     }
 
     // less often looking for an NPC match -- return that now if found
     let npc_match = find_npc_match(world, pattern, scope);
     if npc_match.is_ok() {
-        return npc_match;
+        return Ok(EntityId::Npc(npc_match.expect("known Ok()")));
     }
 
     Err(SearchError::NoMatchingName(pattern.to_string()))
@@ -347,7 +357,7 @@ mod tests {
         world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
 
         let result = find_entity_match(&world, "guardian", SearchScope::NearbyVessels(room_id)).unwrap();
-        assert_eq!(result, vessel_id);
+        assert_eq!(result, EntityId::Item(vessel_id));
     }
 
     #[test]
@@ -358,7 +368,7 @@ mod tests {
         world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
 
         let result = find_entity_match(&world, "archivist", SearchScope::VisibleNpcs(room_id)).unwrap();
-        assert_eq!(result, npc_id);
+        assert_eq!(result, EntityId::Npc(npc_id));
     }
 
     #[test]
