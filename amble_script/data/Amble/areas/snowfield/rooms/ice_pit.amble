@@ -4,7 +4,7 @@
 
 room ice-pit {
     name "Abysmal Ice Pit"
-    desc "The bottom of a deep, sheer ice shaft seemingly dug for some kind of arctic research -- though you were nowhere near the Arctic Circle, last you checked. You're just able to see in the dim light filtering down from the tiny window to the surface above."
+    desc "The bottom of a deep, sheer ice shaft seemingly dug for some kind of arctic research -- though you were nowhere near the Arctic Circle, last you checked. You're just able to see in the dim light filtering down from the tiny opening to the surface above."
     overlay if flag snowfield-gate-open {
         set "The center of the Stargate shimmers and phases, still connected to the room back at the Aperture Laboratory."
         unset "A dark metallic ring the size of two sheds stands where it appears to have been chiseled from the ice some time ago."
@@ -30,7 +30,7 @@ room ice-pit {
 
 item plaque_2_frozen {
     name "Frozen Pillar"
-    desc "A pillar of... something encased in thick ice, affixed to the frozen floor of the pit. It's a little bigger than the pillar back at the Parish Landing."
+    desc "A pillar of... [[i]]something[[/i]] encased in thick ice, affixed to the frozen floor of the pit. It's a little bigger than the pillar back at the Parish Landing."
     movability fixed "It is frozen solid to the icy floor, must weigh half a ton, and there's no way to grip it."
     ability Read
     text "<this should never be read -- 'Must Melt to Read' trigger prevents it>"

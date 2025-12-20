@@ -9,7 +9,7 @@
 
 item fallen_tree {
     name "Fallen Tree"
-    desc "A huge, fallen oak tree obstructing the path further up the steps. Well, maybe not so much \"fallen\" as ripped from the mountainside and tossed down by whatever left the deep claw marks in the trunk."
+    desc "A huge, fallen oak tree obstructing the path further up the steps. Well, maybe not so much [[i]]\"fallen\"[[/i]] as [[b]]ripped from the mountainside[[/b]] and tossed down by whatever left the deep claw marks in the trunk."
     movability fixed "We're not talking about some little sapling here."
     location room two-sheds-landing
     requires ignite to burn
@@ -53,7 +53,7 @@ trigger "[Two-Sheds-Landing] Burn Tree" only once when act burn on item fallen_t
 
 goal clear-fallen-tree {
     name "Clear the Path"
-    desc "A fallen tree blocks the stairs continuing upward and there's no way around. Find a way to clear it."
+    desc "A fallen tree blocks the stairs continuing upward and there's no way around. There are a couple of different ways you could clear it."
     group required
     start when reached room two-sheds-landing
     done when has flag cleared-fallen-tree
