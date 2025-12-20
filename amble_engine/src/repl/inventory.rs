@@ -46,13 +46,13 @@ use std::collections::HashSet;
 
 use crate::{
     AmbleWorld, ItemHolder, Location, View, ViewItem, WorldObject,
+    entity_search::{EntityId, SearchError, SearchScope, find_entity_match, find_item_match},
     helpers::symbol_or_unknown,
     item::{ItemInteractionType, Movability},
     repl::{WorldEntity, entity_not_found, find_world_object},
     spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers},
-    world::nearby_reachable_items,
 };
 
 use anyhow::{Result, anyhow, bail};
@@ -96,58 +96,54 @@ use uuid::Uuid;
 /// Returns an error if the player's current room cannot be determined, if the item state
 /// cannot be updated due to missing world entries, or if trigger evaluation fails.
 pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
-    if let Some(entity) = find_world_object(&world.player.inventory, &world.items, &world.npcs, thing) {
-        if let Some(item) = entity.item() {
-            world.turn_count += 1;
-            let item_id = item.id();
-            let room_id = world.player_room_ref()?.id();
-            if matches!(item.movability, Movability::Free) {
-                if let Some(dropped) = world.items.get_mut(&item_id) {
-                    dropped.set_location_room(room_id);
-                    if let Some(room) = world.rooms.get_mut(&room_id) {
-                        room.add_item(dropped.id());
-                        info!(
-                            "{} dropped {} ({}) in {} ({})",
-                            world.player.name(),
-                            dropped.name(),
-                            dropped.symbol(),
-                            room.name(),
-                            room.symbol()
-                        );
-                    }
-                    world.player.remove_item(item_id);
-                    view.push(ViewItem::ActionSuccess(format!(
-                        "You dropped the {}.",
-                        dropped.name().item_style()
-                    )));
-                    check_triggers(world, view, &[TriggerCondition::Drop(item_id)])?;
-                }
-            } else {
-                // item not portable
-                let reason = match &item.movability {
-                    Movability::Fixed { reason } | Movability::Restricted { reason } => reason,
-                    Movability::Free => "",
-                };
-                view.push(ViewItem::ActionFailure(format!(
-                    "You can't drop the {}. {reason}",
-                    item.name().item_style()
-                )));
-                return Ok(());
+    let room_id = world.player_room_ref()?.id();
+    let item_id = match find_item_match(world, thing, SearchScope::Inventory) {
+        Ok(item_id) => item_id,
+        Err(SearchError::NoMatchingName(input)) => {
+            entity_not_found(world, view, input.as_str());
+            return Ok(());
+        },
+        Err(e) => bail!(e),
+    };
+    let item = world.items.get_mut(&item_id).expect("item_id already validated");
+
+    world.turn_count += 1;
+    if matches!(item.movability, Movability::Free) {
+        if let Some(dropped) = world.items.get_mut(&item_id) {
+            dropped.set_location_room(room_id);
+            if let Some(room) = world.rooms.get_mut(&room_id) {
+                room.add_item(dropped.id());
+                info!(
+                    "{} dropped {} ({}) in {} ({})",
+                    world.player.name(),
+                    dropped.name(),
+                    dropped.symbol(),
+                    room.name(),
+                    room.symbol()
+                );
             }
-            Ok(())
-        } else {
-            unexpected_entity(
-                entity,
-                view,
-                &format!("{}? That's not a item that one can drop.", thing.error_style()),
-            );
-            Ok(())
+            world.player.remove_item(item_id);
+            view.push(ViewItem::ActionSuccess(format!(
+                "You dropped the {}.",
+                dropped.name().item_style()
+            )));
+            check_triggers(world, view, &[TriggerCondition::Drop(item_id)])?;
         }
     } else {
-        entity_not_found(world, view, thing);
-        Ok(())
+        // item not portable
+        let reason = match &item.movability {
+            Movability::Fixed { reason } | Movability::Restricted { reason } => reason,
+            Movability::Free => "",
+        };
+        view.push(ViewItem::ActionFailure(format!(
+            "You can't drop the {}. {reason}",
+            item.name().item_style()
+        )));
+        return Ok(());
     }
+    Ok(())
 }
+
 /// Picks up an item from the current area and adds it to the player's inventory.
 ///
 /// This command transfers an item from the player's current environment (room or
@@ -194,24 +190,22 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
 pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     let take_verb = world.spin_core(CoreSpinnerType::TakeVerb, "take");
     let room_id = world.player_room_ref()?.id();
-    let scope = nearby_reachable_items(world, room_id)?;
 
-    if let Some(entity) = find_world_object(&scope, &world.items, &world.npcs, thing) {
-        if entity.is_not_item() {
-            unexpected_entity(
-                entity,
-                view,
-                &format!(
-                    "That's not an item. You can't {} it.",
-                    world.spin_core(CoreSpinnerType::TakeVerb, "take")
-                ),
-            );
-        }
-        if let Some(item) = entity.item() {
-            // counts as a turn even if action fails due to game-world reason (restricted, not portable, requires special handling)
+    let entity_id = match find_entity_match(world, thing, SearchScope::AllTouchable(room_id)) {
+        Ok(id) => id,
+        Err(SearchError::NoMatchingName(input)) => {
+            entity_not_found(world, view, input.as_str());
+            return Ok(());
+        },
+        Err(e) => bail!(e),
+    };
+
+    match entity_id {
+        EntityId::Item(item_id) => {
+            let item = world.items.get(&item_id).expect("known OK from entity match");
             world.turn_count += 1;
 
-            // check to make sure special handling isn't necessary
+            // deny and return early if the the item has special handling requirements
             if let Some(ability) = item.requires_capability_for(ItemInteractionType::Handle) {
                 view.push(ViewItem::ActionFailure(format!(
                     "{}",
@@ -228,8 +222,8 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                 );
                 return Ok(());
             }
+
             if matches!(item.movability, Movability::Free) {
-                // extract item uuid & original location
                 let loot_id = item.id();
                 let orig_loc = item.location;
                 // update item location and copy to player inventory
@@ -247,7 +241,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                         moved_item.symbol()
                     );
                 }
-                // remove item from original location
+                // then remove item from its from original location
                 match orig_loc {
                     Location::Item(container_id) => {
                         if let Some(container) = world.items.get_mut(&container_id) {
@@ -295,10 +289,22 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                     item.symbol()
                 );
             }
-        }
-    } else {
-        entity_not_found(world, view, thing);
+        },
+        EntityId::Npc(npc_id) => {
+            let npc = world.npcs.get(&npc_id).expect("known ok from entity match");
+            view.push(ViewItem::ActionFailure(format!(
+                "You can't {take_verb} {}. That would be kidnapping!",
+                npc.name().npc_style()
+            )));
+            info!(
+                "{} tried to take {} ({})",
+                world.player.name(),
+                npc.name(),
+                npc.symbol()
+            );
+        },
     }
+
     Ok(())
 }
 
