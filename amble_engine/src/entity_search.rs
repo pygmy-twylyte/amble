@@ -116,7 +116,7 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
     };
 
     // find any world object in scope that matches the input pattern, return error if none found
-    let no_npcs = NO_NPCS.get_or_init(|| HashMap::new());
+    let no_npcs = NO_NPCS.get_or_init(HashMap::new);
     let Some(entity) = find_world_object(&haystack, &world.items, no_npcs, pattern) else {
         return Err(SearchError::NoMatchingName(pattern.to_string()));
     };
@@ -159,7 +159,7 @@ pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> 
         },
     };
 
-    let no_items = NO_ITEMS.get_or_init(|| HashMap::new());
+    let no_items = NO_ITEMS.get_or_init(HashMap::new);
     let Some(entity) = find_world_object(&haystack, no_items, &world.npcs, pattern) else {
         return Err(SearchError::NoMatchingName(pattern.to_string()));
     };
@@ -181,14 +181,17 @@ pub enum EntityId {
     Npc(Uuid),
 }
 
-/// Find either an `NPC` or an `Item` with name matching `pattern` within the SearchScope.
+/// Find either an `NPC` or an `Item` with name matching `pattern` within the `SearchScope`.
+///
+/// # Panics
+/// - never: the call to `expect` is guarded by an `is_ok()`
+///
+/// # Errors
+/// - `SearchError` variants of any type, if no match is found or if the scope type or supplied UUID are invalid
 pub fn find_entity_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<EntityId, SearchError> {
     // return any item matched first -- these will account for most searches
-    let item_match = find_item_match(world, pattern, scope);
-    if item_match.is_ok() {
-        return Ok(EntityId::Item(item_match.expect("known Ok()")));
-    }
-
+    // no_match and scope errors are ignored on this pass because they may
+    // not be errors when run against the NPCs
     match find_item_match(world, pattern, scope) {
         Ok(item_id) => return Ok(EntityId::Item(item_id)),
         Err(SearchError::NoMatchingName(_) | SearchError::InvalidScope(_, _)) => (),
