@@ -83,10 +83,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             },
         };
 
-        // not sure we need this anymore -- let's try commenting it out
-        // if !input.ends_with('\n') {
-        //     input.push('\n');
-        // }
+        info!("player entered: \"{input}\"");
 
         // parse user input and dispatch an associated `Command`
         let command = parse_command(&input, &mut view);
