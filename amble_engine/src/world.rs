@@ -221,7 +221,6 @@ pub fn nearby_visible_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashSet
 ///
 /// # Errors
 /// - if supplied `room_id` is invalid
-
 pub fn nearby_vessel_items(world: &AmbleWorld, room_id: Uuid) -> Result<HashSet<Uuid>> {
     let current_room = world
         .rooms
