@@ -11,7 +11,7 @@
 //! - visible items and reachable items are two different things (consider an item in a locked transparent container)
 //!
 //! Caller should only need to send:
-//! - an immutable AmbleWorld reference
+//! - an immutable `AmbleWorld` reference
 //! - the search string
 //! - the search scope
 //!
@@ -58,8 +58,10 @@ pub enum SearchScope {
     TouchableNpcs(Uuid),
     /// Nearby container items or NPCs which can potentially offer or accept an item.
     NearbyVessels(Uuid),
-    /// Only items in inventory.
+    /// Only items in player's inventory.
     Inventory,
+    /// Only items in an NPC's inventory.
+    NpcInventory(Uuid),
 }
 
 /// Possible errors / situations causing a failed entity search.
@@ -67,6 +69,8 @@ pub enum SearchScope {
 pub enum SearchError {
     #[error("no entity in scope name matching user input '{0}'")]
     NoMatchingName(String),
+    #[error("no npc found with the supplied UUID {0}")]
+    InvalidNpcId(Uuid),
     #[error("found no room with the supplied UUID ({0})")]
     InvalidRoomId(Uuid),
     #[error("search for an item matching '{input}' found NPC '{npc_name}'")]
@@ -80,6 +84,11 @@ pub enum SearchError {
 }
 
 /// Find an `Item` with name matching `pattern` in the given `SearchScope` and return its id.
+///
+/// # Errors
+/// - if no match found in the specified scope
+/// - if an invalid scope for an item search is specified
+/// - if the supplied room or NPC UUIDs are invalid
 pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<Uuid, SearchError> {
     // construct a HashSet of item UUIDs in scope for this search
     let haystack: HashSet<_> = match scope {
@@ -97,6 +106,10 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
             room_items.union(&current_room.npcs).copied().collect()
         },
         SearchScope::Inventory => world.player.inventory.clone(),
+        SearchScope::NpcInventory(npc_id) => {
+            let npc = world.npcs.get(&npc_id).ok_or(SearchError::InvalidNpcId(npc_id))?;
+            npc.inventory.clone()
+        },
         SearchScope::VisibleNpcs(_) | SearchScope::TouchableNpcs(_) => {
             return Err(SearchError::InvalidScope("item".to_string(), "NPC".to_string()));
         },
@@ -121,6 +134,11 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
 }
 
 /// Find an `Npc` with name matching `pattern` in the specified `SearchScope`.
+///
+/// # Errors
+/// - if no match found in the specified scope
+/// - if an invalid scope for an npc search is specified
+/// - if the supplied room UUID is invalid
 pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<Uuid, SearchError> {
     let haystack = match scope {
         // currently there is no distinction between NPCs you can see and those you could touch
@@ -133,7 +151,10 @@ pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> 
             let room = world.rooms.get(&room_id).ok_or(SearchError::InvalidRoomId(room_id))?;
             room.npcs.clone()
         },
-        SearchScope::VisibleItems(_) | SearchScope::TouchableItems(_) | SearchScope::Inventory => {
+        SearchScope::VisibleItems(_)
+        | SearchScope::TouchableItems(_)
+        | SearchScope::Inventory
+        | SearchScope::NpcInventory(_) => {
             return Err(SearchError::InvalidScope("npc".into(), "item".into()));
         },
     };
@@ -168,13 +189,17 @@ pub fn find_entity_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) 
         return Ok(EntityId::Item(item_match.expect("known Ok()")));
     }
 
-    // less often looking for an NPC match -- return that now if found
-    let npc_match = find_npc_match(world, pattern, scope);
-    if npc_match.is_ok() {
-        return Ok(EntityId::Npc(npc_match.expect("known Ok()")));
+    match find_item_match(world, pattern, scope) {
+        Ok(item_id) => return Ok(EntityId::Item(item_id)),
+        Err(SearchError::NoMatchingName(_) | SearchError::InvalidScope(_, _)) => (),
+        Err(e) => return Err(e),
     }
 
-    Err(SearchError::NoMatchingName(pattern.to_string()))
+    // less often looking for an NPC match -- return that now if found
+    match find_npc_match(world, pattern, scope) {
+        Ok(npc_id) => Ok(EntityId::Npc(npc_id)),
+        Err(e) => Err(e),
+    }
 }
 
 #[cfg(test)]
