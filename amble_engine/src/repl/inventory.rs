@@ -47,7 +47,7 @@ use crate::{
     entity_search::{EntityId, SearchError, SearchScope, find_entity_match, find_item_match},
     helpers::{name_from_id, symbol_or_unknown},
     item::{ItemInteractionType, Movability},
-    repl::{WorldEntity, entity_not_found, find_world_object},
+    repl::{WorldEntity, entity_not_found},
     spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers},
@@ -93,6 +93,9 @@ use uuid::Uuid;
 /// # Errors
 /// Returns an error if the player's current room cannot be determined, if the item state
 /// cannot be updated due to missing world entries, or if trigger evaluation fails.
+///
+/// # Panics
+/// - none (expect is called only after key is already known to exist)
 pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     let room_id = world.player_room_ref()?.id();
     let item_id = match find_item_match(world, thing, SearchScope::Inventory) {
@@ -185,6 +188,9 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
 /// # Errors
 /// Returns an error if the player's current room cannot be resolved, if world entities
 /// referenced during transfer cannot be found, or if trigger evaluation fails.
+///
+/// # Panics
+/// None... the call to expect only happens after the key (`item_id`) is already validated
 pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     let take_verb = world.spin_core(CoreSpinnerType::TakeVerb, "take");
     let room_id = world.player_room_ref()?.id();
@@ -208,7 +214,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                 view.push(ViewItem::ActionFailure(format!(
                     "{}",
                     format!(
-                        "You can't pick it up barehanded. Use something to {} it.",
+                        "You can't handle it - without something to {} it.",
                         ability.to_string().bold()
                     )
                     .denied_style()
@@ -302,7 +308,6 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
             );
         },
     }
-
     Ok(())
 }
 
@@ -561,7 +566,7 @@ pub(crate) fn validate_and_transfer_from_item(
     {
         view.push(ViewItem::ActionFailure(reason));
         return Ok(());
-    };
+    }
 
     // vessel and loot now identified and validated -- execute the transfer
     transfer_to_player(
@@ -701,50 +706,58 @@ pub fn transfer_to_player(
 /// # Errors
 /// Returns an error if the player's room or the target container cannot be resolved,
 /// if world state updates fail due to missing entities, or if trigger evaluation fails.
+///
+/// # Panics
+/// None... expect is called on a HashMap::get where the key is already known to be present
 pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, container: &str) -> Result<()> {
     // get uuid of item and container
-    let (item_id, item_name) =
-        if let Some(entity) = find_world_object(&world.player.inventory, &world.items, &world.npcs, item) {
-            if let Some(item) = entity.item() {
-                if let Some(reason) = item.take_denied_reason() {
-                    view.push(ViewItem::ActionFailure(reason));
-                    world.turn_count += 1;
-                    return Ok(());
-                }
-                (item.id(), item.name().to_string())
-            } else {
-                unexpected_entity(entity, view, &format!("No item in inventory matches \"{item}\"."));
+    let (item_id, item_name) = match find_item_match(world, item, SearchScope::Inventory) {
+        Ok(item_id) => {
+            let item = world.items.get(&item_id).expect("id known valid here");
+            if let Some(reason) = item.take_denied_reason() {
+                view.push(ViewItem::ActionFailure(reason));
+                world.turn_count += 1;
                 return Ok(());
             }
-        } else {
-            entity_not_found(world, view, item);
+            (
+                item_id,
+                name_from_id(&world.items, item_id)
+                    .expect("item_id must be valid")
+                    .to_owned(),
+            )
+        },
+        Err(SearchError::NoMatchingName(input)) => {
+            entity_not_found(world, view, input.as_str());
             return Ok(());
-        };
+        },
+        Err(e) => bail!(e),
+    };
 
-    let room = world.player_room_ref()?;
-    let (vessel_id, vessel_name) =
-        if let Some(entity) = find_world_object(&room.contents, &world.items, &world.npcs, container) {
-            if let Some(vessel) = entity.item() {
-                if let Some(reason) = vessel.access_denied_reason() {
-                    view.push(ViewItem::ActionFailure(format!(
-                        "{reason} You can't put anything in it."
-                    )));
-                    world.turn_count += 1;
-                    return Ok(());
-                }
-                (vessel.id(), vessel.name().to_string())
-            } else {
-                unexpected_entity(
-                    entity,
-                    view,
-                    &format!("You don't see a container matching \"{container}\" here."),
-                );
+    let room_id = world.player_room_ref()?.id();
+    let (vessel_id, vessel_name) = match find_item_match(world, container, SearchScope::NearbyVessels(room_id)) {
+        Ok(vessel_id) => {
+            let vessel = world.items.get(&vessel_id).expect("vessel_id must be valid");
+            if let Some(reason) = vessel.access_denied_reason() {
+                view.push(ViewItem::ActionFailure(format!(
+                    "{reason} You can't put anything in it."
+                )));
+                world.turn_count += 1;
                 return Ok(());
             }
-        } else {
-            entity_not_found(world, view, container);
+
+            (
+                vessel_id,
+                name_from_id(&world.items, vessel_id)
+                    .expect("vessel_id must be valid")
+                    .to_owned(),
+            )
+        },
+        Err(SearchError::NoMatchingName(input)) => {
+            entity_not_found(world, view, input.as_str());
             return Ok(());
-        };
+        },
+        Err(e) => bail!(e),
+    };
 
     // update item location and add to container
     if let Some(moved_item) = world.items.get_mut(&item_id) {
