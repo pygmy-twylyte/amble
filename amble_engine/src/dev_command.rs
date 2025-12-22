@@ -26,7 +26,24 @@ use crate::{
 /// `Some(Command)` if a valid developer command is parsed, `None` otherwise
 pub fn parse_dev_command(input: &str, view: &mut View) -> Option<Command> {
     if input.starts_with(':') {
-        let words: Vec<&str> = input.trim_start_matches(':').split_whitespace().collect();
+        let trimmed = input.trim();
+        if let Some(note_text) = parse_note_command(trimmed) {
+            if !DEV_MODE {
+                view.push(ViewItem::Error(
+                    "Developer commands are disabled in this build."
+                        .error_style()
+                        .to_string(),
+                ));
+                warn!(
+                    "player attempted to use developer command '{:?}' with DEV_MODE = false",
+                    Command::DevNote(note_text)
+                );
+                return None;
+            }
+            return Some(Command::DevNote(note_text));
+        }
+
+        let words: Vec<&str> = trimmed.trim_start_matches(':').split_whitespace().collect();
         let maybe_command = match words.as_slice() {
             ["help", "dev"] => Some(Command::HelpDev),
             ["npcs"] => Some(Command::ListNpcs),
@@ -81,4 +98,14 @@ pub fn parse_dev_command(input: &str, view: &mut View) -> Option<Command> {
     } else {
         None
     }
+}
+
+fn parse_note_command(input: &str) -> Option<String> {
+    let rest = input.strip_prefix(":note")?;
+    if let Some(next) = rest.chars().next()
+        && !next.is_whitespace()
+    {
+        return None;
+    }
+    Some(rest.trim().to_string())
 }

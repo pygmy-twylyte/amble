@@ -73,6 +73,7 @@ pub enum Command {
     AdvanceSeq(String),
     ResetSeq(String),
     SetFlag(String),
+    DevNote(String),
     SpawnItem(String),
     StartSeq {
         // DEV_MODE only

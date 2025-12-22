@@ -217,6 +217,7 @@ fn dispatch_command(command: &Command, world: &mut AmbleWorld, view: &mut View) 
         AdvanceSeq(seq_name) => dev_advance_seq_handler(world, view, seq_name),
         ResetSeq(seq_name) => dev_reset_seq_handler(world, view, seq_name),
         SetFlag(flag_name) => dev_set_flag_handler(world, view, flag_name),
+        DevNote(note) => dev_note_handler(world, view, note),
         StartSeq { seq_name, end } => dev_start_seq_handler(world, view, seq_name, end),
     }
     Ok(dr)
