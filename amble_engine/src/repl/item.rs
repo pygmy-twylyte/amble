@@ -51,7 +51,7 @@ use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
     command::IngestMode,
     entity_search::{self, SearchError, SearchScope},
-    helpers::{plural_s, symbol_or_unknown},
+    helpers::plural_s,
     item::{ContainerState, Item, ItemAbility, ItemInteractionType, consume},
     loader::items::interaction_requirement_met,
     repl::entity_not_found,
