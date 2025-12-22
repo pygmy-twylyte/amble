@@ -48,6 +48,7 @@ use std::collections::HashMap;
 
 use crate::{
     AmbleWorld, ItemHolder, Location, View, ViewItem, WorldObject,
+    entity_search::{self, SearchError, SearchScope},
     health::{LifeState, LivingEntity},
     helpers::symbol_or_unknown,
     item::Movability,
@@ -58,7 +59,7 @@ use crate::{
     trigger::{Trigger, TriggerAction, TriggerCondition, check_triggers, triggers_contain_condition},
 };
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use colored::Colorize;
 use log::{info, warn};
 use uuid::Uuid;
@@ -223,12 +224,19 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
 /// - Item not found in player inventory
 /// - Item is fixed (cannot be transferred)
 /// - World state corruption (UUID lookup failures)
-pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, npc: &str) -> Result<()> {
+pub fn give_to_npc_handler(
+    world: &mut AmbleWorld,
+    view: &mut View,
+    item_pattern: &str,
+    npc_pattern: &str,
+) -> Result<()> {
     // find the target npc in the current room and collect metadata
-    let current_room = world.player_room_ref()?;
-    let npc_id = if let Some(entity) = find_world_object(&current_room.npcs, &world.items, &world.npcs, npc) {
-        if let Some(npc) = entity.npc() {
-            if matches!(npc.life_state(), LifeState::Dead) {
+    let room_id = world.player_room_ref()?.id();
+    let npc_id = match entity_search::find_npc_match(world, npc_pattern, SearchScope::TouchableNpcs(room_id)) {
+        Ok(id) => {
+            if let Some(npc) = world.npcs.get(&id)
+                && npc.life_state() == LifeState::Dead
+            {
                 info!("gift to dead npc {} disallowed", npc.symbol());
                 view.push(ViewItem::ActionFailure(format!(
                     "Sorry -- {} is dead, and cannot accept your gift.",
@@ -236,19 +244,13 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
                 )));
                 return Ok(());
             }
-            npc.id()
-        } else {
-            view.push(ViewItem::Error(format!(
-                "{} matches an item. Did you mean 'put {} in {}'?",
-                npc.error_style(),
-                item.italic(),
-                npc.italic()
-            )));
+            id
+        },
+        Err(SearchError::NoMatchingName(input)) => {
+            entity_not_found(world, view, input.as_str());
             return Ok(());
-        }
-    } else {
-        entity_not_found(world, view, npc);
-        return Ok(());
+        },
+        Err(e) => bail!(e),
     };
 
     // set a movement pause for 4 turns so NPC doesn't run off mid-interaction
@@ -257,8 +259,9 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
     }
 
     // find the target item in inventory, ensure it isn't fixed
-    let item_id = if let Some(entity) = find_world_object(&world.player.inventory, &world.items, &world.npcs, item) {
-        if let Some(item) = entity.item() {
+    let item_id = match entity_search::find_item_match(world, item_pattern, SearchScope::Inventory) {
+        Ok(id) => {
+            let item = world.items.get(&id).expect("validated in find_item_match()");
             if let Movability::Fixed { reason } = &item.movability {
                 info!("player tried to move fixed item {} ({})", item.name(), item.symbol());
                 view.push(ViewItem::ActionFailure(format!(
@@ -267,18 +270,13 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
                 )));
                 return Ok(());
             }
-            item.id()
-        } else {
-            warn!("non-Item entity matching '{item}' found in inventory");
-            view.push(ViewItem::Error(format!(
-                "{} matched an entity that shouldn't exist in inventory. Let's pretend this never happened.",
-                item.error_style()
-            )));
+            id
+        },
+        Err(SearchError::NoMatchingName(input)) => {
+            entity_not_found(world, view, input.as_str());
             return Ok(());
-        }
-    } else {
-        entity_not_found(world, view, item);
-        return Ok(());
+        },
+        Err(e) => bail!(e),
     };
 
     let fired_triggers = check_triggers(world, view, &[TriggerCondition::GiveToNpc { item_id, npc_id }])?;
@@ -286,7 +284,6 @@ pub fn give_to_npc_handler(world: &mut AmbleWorld, view: &mut View, item: &str, 
 
     // the trigger fired -- proceed with item transfer if it wasn't a refusal
     if gift_response.trigger_fired && !gift_response.npc_refused {
-
         transfer_if_not_despawned(world, npc_id, item_id)?;
         check_triggers(world, view, &[TriggerCondition::Drop(item_id)])?;
         show_npc_acceptance(world, view, npc_id, item_id)?;
@@ -327,7 +324,7 @@ fn show_npc_refusal(world: &AmbleWorld, view: &mut View, npc_id: Uuid, item_id: 
 }
 
 /// Displays NPC item acceptance and logs it.
-/// 
+///
 /// # Errors
 /// - on failed item or NPC retrieval by UUID
 fn show_npc_acceptance(world: &AmbleWorld, view: &mut View, npc_id: Uuid, item_id: Uuid) -> Result<()> {
