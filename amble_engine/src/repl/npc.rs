@@ -53,15 +53,15 @@ use crate::{
     helpers::symbol_or_unknown,
     item::Movability,
     npc::Npc,
-    repl::{entity_not_found, find_world_object},
+    repl::entity_not_found,
     spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{Trigger, TriggerAction, TriggerCondition, check_triggers, triggers_contain_condition},
 };
 
 use anyhow::{Context, Result, bail};
-use colored::Colorize;
-use log::{info, warn};
+
+use log::info;
 use uuid::Uuid;
 
 /// Finds an NPC in the specified location by partial name matching.
