@@ -73,10 +73,6 @@ pub enum SearchError {
     InvalidNpcId(Uuid),
     #[error("found no room with the supplied UUID ({0})")]
     InvalidRoomId(Uuid),
-    #[error("search for an item matching '{input}' found NPC '{npc_name}'")]
-    MatchedNonItem { input: String, npc_name: String },
-    #[error("search for an NPC matching '{input}' found item '{item_name}'")]
-    MatchedNonNpc { input: String, item_name: String },
     #[error("invalid {0} search scope: includes only {1}s")]
     InvalidScope(String, String),
     #[error("unknown error: {0}")]
@@ -115,21 +111,12 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
         },
     };
 
-    // find any world object in scope that matches the input pattern, return error if none found
+    // find the first item (no_npcs = empty NPC map) in scope that matches the input pattern, return error if none found
     let no_npcs = NO_NPCS.get_or_init(HashMap::new);
     let Some(entity) = find_world_object(&haystack, &world.items, no_npcs, pattern) else {
         return Err(SearchError::NoMatchingName(pattern.to_string()));
     };
 
-    // if the entity we found isn't an item somehow (though scope rules should prevent this), error
-    if entity.is_not_item() {
-        return Err(SearchError::MatchedNonItem {
-            input: pattern.to_string(),
-            npc_name: entity.name().to_string(),
-        });
-    }
-
-    // entity is a matching item -- return its UUID
     Ok(entity.id())
 }
 
@@ -159,17 +146,11 @@ pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> 
         },
     };
 
+    // find any NPC matching the pattern (items excluded -- empty Item map passed to search)
     let no_items = NO_ITEMS.get_or_init(HashMap::new);
     let Some(entity) = find_world_object(&haystack, no_items, &world.npcs, pattern) else {
         return Err(SearchError::NoMatchingName(pattern.to_string()));
     };
-
-    if entity.is_not_npc() {
-        return Err(SearchError::MatchedNonNpc {
-            input: pattern.to_owned(),
-            item_name: entity.name().to_owned(),
-        });
-    }
 
     Ok(entity.id())
 }
