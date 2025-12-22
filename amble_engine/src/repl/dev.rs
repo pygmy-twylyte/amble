@@ -20,6 +20,9 @@
 //! ## Player Movement
 //! - [`dev_teleport_handler`] - Instantly transport player to any room
 //!
+//! ## Playtest Notes
+//! - [`dev_note_handler`] - Append a playtest note with location metadata
+//!
 //! ## Flag Management
 //! - [`dev_start_seq_handler`] - Create new sequence flags with custom limits
 //! - [`dev_set_flag_handler`] - Add simple boolean flags to player
@@ -33,10 +36,15 @@
 //! during testing sessions.
 
 use std::fmt::Write as _;
+use std::fs::{self, OpenOptions};
+use std::io::Write;
+use std::path::PathBuf;
 
 use log::{info, warn};
+use time::{OffsetDateTime, format_description};
 
 use crate::helpers::symbol_or_unknown;
+use crate::save_files::LOG_DIR;
 use crate::scheduler::{EventCondition, OnFalsePolicy, ScheduledEvent};
 use crate::trigger::TriggerCondition;
 use crate::{
@@ -207,6 +215,99 @@ pub fn dev_set_flag_handler(world: &mut AmbleWorld, view: &mut View, flag_name: 
     view.push(ViewItem::ActionSuccess(format!("Simple flag '{}' set.", flag.value())));
     warn!("DEV_MODE command SetFlag used: '{}' set.", flag.value());
     trigger::add_flag(world, view, &flag);
+}
+
+/// Record a development note to the daily log file (`DEV_MODE` only).
+pub fn dev_note_handler(world: &AmbleWorld, view: &mut View, note: &str) {
+    if let Err(err) = fs::create_dir_all(LOG_DIR) {
+        view.push(ViewItem::ActionFailure(format!(
+            "Unable to create logs directory: {err}"
+        )));
+        warn!("DEV_MODE note failed creating log dir '{LOG_DIR}': {err}");
+        return;
+    }
+
+    let now = OffsetDateTime::now_utc();
+    let log_path = note_log_path(now);
+    let timestamp = format_note_timestamp(now);
+    let note_text = note.trim();
+    let note_text = if note_text.is_empty() { "<empty>" } else { note_text };
+
+    let mut line = String::new();
+    if let Ok(room) = world.player_room_ref() {
+        let _ = write!(
+            &mut line,
+            "{timestamp} [NOTE] turn={} room={} \"{}\" | {note_text}",
+            world.turn_count,
+            room.symbol(),
+            room.name()
+        );
+    } else {
+        let location = describe_note_location(world);
+        let _ = write!(
+            &mut line,
+            "{timestamp} [NOTE] turn={} {location} | {note_text}",
+            world.turn_count
+        );
+    }
+
+    match OpenOptions::new().create(true).append(true).open(&log_path) {
+        Ok(mut file) => {
+            if let Err(err) = writeln!(file, "{line}") {
+                view.push(ViewItem::ActionFailure(format!(
+                    "Failed to write note to {}: {err}",
+                    log_path.display()
+                )));
+                warn!("DEV_MODE note failed writing to {}: {err}", log_path.display());
+                return;
+            }
+        },
+        Err(err) => {
+            view.push(ViewItem::ActionFailure(format!(
+                "Failed to open note log {}: {err}",
+                log_path.display()
+            )));
+            warn!("DEV_MODE note failed opening {}: {err}", log_path.display());
+            return;
+        },
+    }
+
+    view.push(ViewItem::ActionSuccess("Note recorded.".to_string()));
+    warn!("DEV_MODE command used: :note");
+}
+
+fn note_log_path(now: OffsetDateTime) -> PathBuf {
+    let fmt = format_description::parse("[year]-[month]-[day]").expect("valid note date format");
+    let date = now.format(&fmt).unwrap_or_else(|_| "unknown-date".to_string());
+    PathBuf::from(LOG_DIR).join(format!("notes-{date}.log"))
+}
+
+fn format_note_timestamp(now: OffsetDateTime) -> String {
+    let fmt = format_description::parse("[year]-[month]-[day] [hour]:[minute]:[second]Z")
+        .expect("valid note timestamp format");
+    now.format(&fmt).unwrap_or_else(|_| "0000-00-00 00:00:00Z".to_string())
+}
+
+fn describe_note_location(world: &AmbleWorld) -> String {
+    match world.player.location {
+        Location::Room(room_id) => world
+            .rooms
+            .get(&room_id)
+            .map(|room| format!("room={} \"{}\"", room.symbol(), room.name()))
+            .unwrap_or_else(|| format!("room_id={room_id}")),
+        Location::Inventory => "loc=inventory".to_string(),
+        Location::Item(item_id) => world
+            .items
+            .get(&item_id)
+            .map(|item| format!("loc=item:{} \"{}\"", item.symbol(), item.name()))
+            .unwrap_or_else(|| format!("loc=item:{item_id}")),
+        Location::Npc(npc_id) => world
+            .npcs
+            .get(&npc_id)
+            .map(|npc| format!("loc=npc:{} \"{}\"", npc.symbol(), npc.name()))
+            .unwrap_or_else(|| format!("loc=npc:{npc_id}")),
+        Location::Nowhere => "loc=nowhere".to_string(),
+    }
 }
 
 /// Advances a sequence flag to its next step (`DEV_MODE` only).

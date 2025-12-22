@@ -11,6 +11,7 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
 pub const SAVE_DIR: &str = "saved_games";
+pub const LOG_DIR: &str = "logs";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SaveSlot {

@@ -7,6 +7,7 @@
 //! Handles CLI startup, logging configuration, and world loading before
 //! entering the interactive REPL.
 
+use amble_engine::save_files::LOG_DIR;
 use amble_engine::style::GameStyle;
 use amble_engine::theme::init_themes;
 use amble_engine::{AMBLE_VERSION, WorldObject, load_world, run_repl};
@@ -18,7 +19,7 @@ use textwrap::{fill, termwidth};
 
 use std::{
     env,
-    fs::OpenOptions,
+    fs::{self, OpenOptions},
     io::{BufWriter, Write},
     path::PathBuf,
 };
@@ -56,23 +57,38 @@ fn init_logging() -> Result<()> {
                 .map(PathBuf::from)
                 .map_or_else(|| default_log_path().context("determining default log file path"), Ok)?;
 
-            match OpenOptions::new()
-                .create(true)
-                .write(true)
-                .truncate(true)
-                .open(&log_path)
-            {
-                Ok(file) => {
-                    builder.target(env_logger::Target::Pipe(Box::new(BufWriter::new(file))));
-                    builder.write_style(env_logger::WriteStyle::Never);
-                },
-                Err(error) => {
+            let mut ready = true;
+            if let Some(parent) = log_path.parent() {
+                if let Err(error) = fs::create_dir_all(parent) {
                     eprintln!(
-                        "AMBLE_LOG: failed to open log file {} ({error}). Falling back to stderr.",
-                        log_path.display()
+                        "AMBLE_LOG: failed to create log directory {} ({error}). Falling back to stderr.",
+                        parent.display()
                     );
-                    builder.target(env_logger::Target::Stderr);
-                },
+                    ready = false;
+                }
+            }
+
+            if ready {
+                match OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .truncate(true)
+                    .open(&log_path)
+                {
+                    Ok(file) => {
+                        builder.target(env_logger::Target::Pipe(Box::new(BufWriter::new(file))));
+                        builder.write_style(env_logger::WriteStyle::Never);
+                    },
+                    Err(error) => {
+                        eprintln!(
+                            "AMBLE_LOG: failed to open log file {} ({error}). Falling back to stderr.",
+                            log_path.display()
+                        );
+                        builder.target(env_logger::Target::Stderr);
+                    },
+                }
+            } else {
+                builder.target(env_logger::Target::Stderr);
             }
         },
     }
@@ -84,11 +100,9 @@ fn init_logging() -> Result<()> {
     Ok(())
 }
 
-/// Derive a default log file path next to the executable.
+/// Derive a default log file path in the local logs directory.
 fn default_log_path() -> Result<PathBuf> {
-    let mut executable = env::current_exe().context("resolving current executable path")?;
-    executable.set_file_name(format!("amble-{AMBLE_VERSION}.log"));
-    Ok(executable)
+    Ok(PathBuf::from(LOG_DIR).join(format!("amble-{AMBLE_VERSION}.log")))
 }
 
 /// Entry point: loads content, initializes themes, and starts the REPL.
