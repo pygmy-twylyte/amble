@@ -254,10 +254,8 @@ pub fn use_item_on_handler(
     let Some((target, tool)) = resolve_use_item_participants(world, view, tool_str, target_str)? else {
         return Ok(());
     };
-    let target_name = target.name().to_string();
-    let target_id = target.id();
-    let tool_name = tool.name().to_string();
-    let tool_id = tool.id();
+    let (target_id, target_name, target_sym) = (target.id(), target.name().to_owned(), target.symbol().to_owned());
+    let (tool_id, tool_name, tool_sym) = (tool.id(), tool.name().to_string(), tool.symbol().to_owned());
     let tool_is_consumable = tool.consumable.is_some();
 
     // check if these items can interact in this way
@@ -266,14 +264,7 @@ pub fn use_item_on_handler(
             "You can't do that with a {}!",
             tool.name().item_style(),
         )));
-        info!(
-            "Player tried to {:?} {} ({}) with {} ({})",
-            interaction,
-            target.name(),
-            target.symbol(),
-            tool.name(),
-            tool.symbol()
-        );
+        info!("Player tried to {interaction:?} {target_name} ({target_sym}) with {tool_name} ({tool_sym})");
         world.turn_count += 1;
         return Ok(());
     }
@@ -295,11 +286,7 @@ pub fn use_item_on_handler(
                 .spin_core(CoreSpinnerType::NoEffect, "That appears to have had no effect.")
                 .clone(),
         ));
-        info!(
-            "No matching trigger for {interaction:?} {target_name} ({}) with {tool_name} ({})",
-            symbol_or_unknown(&world.items, target_id),
-            symbol_or_unknown(&world.items, tool_id)
-        );
+        info!("No matching trigger for {interaction:?} {target_name} ({target_sym}) with {tool_name} ({tool_sym})");
     }
     // consume 1 use if consumable. Obviously.
     if tool_is_consumable {
