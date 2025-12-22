@@ -23,6 +23,8 @@
 //! Escaping:
 //! - Prefix `[[` or `]]` with a backslash to render it literally: `\\[[` or `\\]]`.
 
+use std::fmt::Write;
+
 use colored::{Color, ColoredString, Colorize};
 use textwrap::{Options, fill, wrap_algorithms::Penalties};
 
@@ -57,6 +59,7 @@ pub enum StyleKind {
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct StyleMods {
     pub bold: bool,
     pub underline: bool,
@@ -458,7 +461,7 @@ fn render_inline_inner(text: &str, base_state: StyleState, allow_block_tags: boo
                             stack.truncate(pos);
                         } else {
                             // Unknown close tag; render literally.
-                            buf.push_str(&format!("[[{tag}]]"));
+                            let _ = write!(buf, "[[{tag}]]");
                         }
                     },
                 }
@@ -582,8 +585,7 @@ fn canonical_inline_tag_name(lower: &str) -> Option<String> {
         "hl" | "highlight" => "highlight".to_string(),
         "err" | "error" => "error".to_string(),
         "color" | "fg" => "color".to_string(),
-        // block tags are handled elsewhere
-        "center" | "box" => return None,
+        // center and box block tags are handled elsewhere
         _ => return None,
     })
 }
@@ -600,9 +602,7 @@ fn canonical_end_tag_name(lower: &str) -> Option<String> {
 
 fn parse_key_value_tag(key: &str, value: &str) -> Option<InlineTag> {
     if key == "color" || key == "fg" {
-        let Some(color) = parse_color(value) else {
-            return None;
-        };
+        let color = parse_color(value)?;
         return Some(InlineTag::Start {
             name: "color".to_string(),
             change: StyleChange::SetFg(color),

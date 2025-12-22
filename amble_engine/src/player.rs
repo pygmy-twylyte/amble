@@ -256,7 +256,7 @@ impl<'de> Deserialize<'de> for FlagKind {
             }
         }
 
-        deserializer.deserialize_any(FlagKindVisitor)
+        deserializer.deserialize_identifier(FlagKindVisitor)
     }
 }
 
@@ -456,6 +456,32 @@ mod tests {
         let item_id = Uuid::new_v4();
         player.inventory.insert(item_id);
         player
+    }
+
+    #[test]
+    fn flag_kind_deserializes_from_ron_identifier() {
+        let kind: FlagKind = ron::from_str("simple").expect("simple should parse");
+        assert_eq!(kind, FlagKind::Simple);
+        let kind: FlagKind = ron::from_str("sequence").expect("sequence should parse");
+        assert_eq!(kind, FlagKind::Sequence);
+    }
+
+    #[test]
+    fn flag_roundtrip_preserves_variant() {
+        let flag = Flag::sequence("test_seq", Some(2), 1);
+        let raw = ron::ser::to_string(&flag).expect("flag should serialize");
+        let decoded: Flag = ron::from_str(&raw).expect("flag should deserialize");
+        assert_eq!(flag.name(), decoded.name());
+        match decoded {
+            Flag::Sequence {
+                step, end, turn_set, ..
+            } => {
+                assert_eq!(step, 0);
+                assert_eq!(end, Some(2));
+                assert_eq!(turn_set, 1);
+            },
+            Flag::Simple { .. } => panic!("Expected sequence flag after roundtrip"),
+        }
     }
 
     #[test]
