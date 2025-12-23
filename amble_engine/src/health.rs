@@ -177,7 +177,7 @@ pub trait LivingEntity: WorldObject {
 }
 
 /// Possible life states for living entities
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum LifeState {
     Alive,
     Dead,

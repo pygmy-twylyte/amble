@@ -37,6 +37,7 @@ pub const DEV_MODE: bool = false;
 pub mod command;
 pub mod data_paths;
 pub mod dev_command;
+pub mod entity_search;
 pub mod goal;
 pub mod health;
 pub mod helpers;

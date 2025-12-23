@@ -265,6 +265,10 @@ pub fn help_handler(view: &mut View) {
                         description: "DEV: List upcoming scheduled events with due turn and notes.".into(),
                     },
                     HelpCommand {
+                        command: ":note <text>".into(),
+                        description: "DEV: Append a note to the daily dev log.".into(),
+                    },
+                    HelpCommand {
                         command: ":teleport <room_symbol>".into(),
                         description: "DEV: Instantly move to a room (alias :port).".into(),
                     },
@@ -339,6 +343,10 @@ pub fn help_handler_dev(view: &mut View) {
                 HelpCommand {
                     command: ":sched".into(),
                     description: "DEV: List upcoming scheduled events with due turn and notes.".into(),
+                },
+                HelpCommand {
+                    command: ":note <text>".into(),
+                    description: "DEV: Append a note to the daily dev log.".into(),
                 },
                 HelpCommand {
                     command: ":teleport <room_symbol>".into(),
