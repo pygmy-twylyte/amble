@@ -8,9 +8,9 @@ room lounge {
     overlay if ( flag set lab-fire-raging ) {
         text "Occasional wisps of black smoke rise from the portal room below."
     }
-    overlay if flag coffee-brewed {
+    overlay if flag coffee-ready {
         set "The coffee machine emits a few satisfied clicks as the rich aroma of fresh coffee fills the lounge."
-        unset "An automatic drip coffee machine stands empty but ready to brew on a small stand in one corner."
+        unset "An automatic drip coffee machine stands ready to brew on a small stand in one corner."
     }
     overlay if npc gonk_droid here {
         normal "The gonk droid mills about by the coffee cart, muttering quiet gonks."
@@ -21,7 +21,7 @@ room lounge {
         happy  "Dibbler cheerfully offers samples to anyone near the sofa."
         bored  "Dibbler stares at the coffee pot, wondering if he can sell the used grounds somehow."
     }
-    exit west -> lift-bank-main
+    exit "lounge door" -> lift-bank-main
 }
 
 # ========================================
@@ -49,11 +49,47 @@ item hot_coffee {
     desc "A paper cup of piping hot deep black coffee. Smells like a dark french roast."
     movability free
     location nowhere "spawns@lounge after coffee_machine started"
+    ability Drink
+    consumable {
+        uses_left 2
+        consume_on ability Drink
+        when_consumed despawn
+    }
+}
+
+item cooled_coffee {
+    name "Cooled Coffee"
+    desc "A paper cup of formerly-hot coffee, cooled down to room temperature now."
+    movability free
+    location nowhere "spawns when hot coffee cools down"
+    ability Drink
+    consumable {
+        uses_left 1
+        consume_on ability Drink
+        when_consumed despawn
+    }
 }
 
 # ========================================
 # Triggers
 # ========================================
+
+trigger "Coffee Cools Down" only once
+when take item hot_coffee {
+    do schedule in 7 note "coffee cooled" {
+        do replace item hot_coffee with cooled_coffee
+    }
+}
+
+trigger "Hot Coffee Healing"
+when drink item hot_coffee {
+    do heal player 5 cause "hot coffee healing"
+}
+
+trigger "Cool Coffee Heals Too (less)"
+when drink item cooled_coffee {
+    do heal player 2 cause "room-temperature coffee"
+}
 
 trigger "[Lounge] Rug Taken / Reveal Trapdoor" only once when take item lebowski_rug {
     do reveal exit from lounge to portal-room direction down
@@ -80,7 +116,7 @@ when use item coffee_machine ability turnOn
         do set item description coffee_machine "A single serve, drip coffee maker. The brew cycle is complete and the grounds have already been used."
         do show "♪ BEEP BEEP BEEP! ♪ The coffee machine chimes cheerfully. The rich aroma of freshly brewed coffee fills the air."
         do spawn item hot_coffee into room lounge
-        do add flag coffee-brewed
+        do add flag coffee-ready
         do award points 2 reason "Brewed a cup of hot coffee"
     }
 }
@@ -88,5 +124,5 @@ when use item coffee_machine ability turnOn
 trigger "[Lounge] Coffee Taken"
 when take item hot_coffee
 {
-    do remove flag coffee-brewed
+    do remove flag coffee-ready
 }
