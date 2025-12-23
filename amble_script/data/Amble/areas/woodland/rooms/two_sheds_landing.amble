@@ -5,7 +5,7 @@
 
 room two-sheds-landing {
     name "Jackson's Landing"
-    desc "A quiet landing tucked along the slope, with a rusted mailbox labeled 'A. Jackson' standing to one side. A trail sign points east toward something optimistically named \"Two Sheds\". Underneath, someone has scratched in: \"Technically One.\" Rough steps lead down the slope, and continue curving upward."
+    desc "A quiet landing tucked along the slope, with a rusted mailbox labeled 'A. Jackson' standing to one side. A trail sign points east toward something optimistically named [[b]]\"Two Sheds\"[[/b]]. Underneath, someone has scratched in: [[i]]\"Technically One.\"[[/i]] Rough steps lead down the slope, and continue curving upward."
 
     overlay if ( item present fallen_tree ) {
         text "A huge tangle of limbs and branches from a fallen tree block the path continuing upward."
@@ -42,11 +42,11 @@ item aa_shed_notice {
     desc "An official-looking notice from Amble Adventures HQ."
     movability free
     location chest jackson_mailbox
-    text """                 OFFICIAL NOTICE
+    text """                 [[red]][[b]][[u]]OFFICIAL NOTICE[[/u]][[/b]][[/red]]
 The OverShed™ Division of Amble Adventures has
 reclassified this dwelling as:
 
->> Shed, Subtype B – Multiversal Crosslink Node <<
+[[box]]Shed, Subtype B – Multiversal Crosslink Node[[/box]]
 
 Report any fictional apparitions or missing time
 to your local Amble Adventures cover-up coordinator.

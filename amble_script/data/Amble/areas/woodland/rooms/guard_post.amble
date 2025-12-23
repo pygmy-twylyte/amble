@@ -4,10 +4,10 @@
 
 room guard-post {
     name "Abandoned Guard Post"
-    desc "A small stone guard post clings to the side of the trail, complete with a creaky wooden chair and a megaphone labeled [[b]]'USE ONLY IF VERY SURE'[[/b]]. A faded official-looking placard reads: [[box:NOTICE]]'Passage beyond this point may lead to anachronism.'[[/box]]\nIt seems no one’s been stationed here in quite some time. The trail continues upward, leading to what appears to be an [[i]]ancient[[/i]] road—and a distinctly non-ancient office park."
+    desc "A small stone guard post clings to the side of the trail, complete with a creaky wooden chair and a megaphone labeled [[red]]'USE ONLY IF VERY SURE'[[/red]]. A faded official-looking placard reads:\n[[box:NOTICE]] Passage beyond this point will have lead to anachronism.[[/box]]\nIt seems no one’s been stationed here in [[i]]quite[[/i]] some time. The trail continues upward, leading to what appears to be an ancient road—and a distinctly non-ancient office park."
     overlay if item am_dollar {
-        present r#"A silver [[item]]coin[[/item]] sits upon a note on the kiosk: "Lunch Money - don't get it from that vendor again!" "#
-        absent r#"A note on the kiosk reads: "Lunch Money - don't get it from that vendor again!" The coin left a neat, circular void in the dust."#
+        present r#"A silver coin sits upon a note on the kiosk: "Lunch Money - [[u]]don't[[/u]] get it from [[i]]that vendor[[/i]] again!" "#
+        absent r#"A note on the kiosk reads: "Lunch Money - [[u]]don't[[/u]] get it from that vendor again!" The coin left a neat, circular void in the dust."#
     }
     exit "up to the road" -> inca-road
     exit "down the steps" -> two-sheds-landing
@@ -18,10 +18,12 @@ room guard-post {
 # ========================================
 
 item am_dollar {
-    name "Ankh-Morpork Dollar"
-    desc "A tarnished one-dollar coin from the city-state of Ankh-Morpork."
+    name "Ankh-Morpork Coin"
+    desc "A tarnished coin from the city-state of Ankh-Morpork."
+    text "Royal Bank of Ankh-Morpork ~ One Dollar (maybe less)"
     movability free
     location room guard-post
+    ability Read
 }
 
 # ========================================
@@ -31,10 +33,15 @@ item am_dollar {
 trigger "[Guard-Post] Interesting Passers-By" only once
 note "different characters depending on how they got past the fallen_tree"
 when enter room guard-post {
-    if all( chance 85%, has flag burned-fallen-tree ) {
+    do schedule in 3 if all( chance 85%, has flag burned-fallen-tree )
+    onFalse cancel
+    note "smokey throws shade" {
         do show r#"Smokey Bear tromps past the guard post, growling "Nobody ever listens!" while glaring right at you."#
     }
-    if all( chance 85%, has flag chopped-fallen-tree ) {
+
+    do schedule in 3 if all( chance 85%, has flag chopped-fallen-tree )
+    onFalse cancel
+    note "bunyan cleans up" {
         do show "Paul Bunyan gives you a nod as he lumbers by with Babe the Blue Ox, carrying the remains of the tree you chopped up."
         do add flag saw-paul-bunyan
     }

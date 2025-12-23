@@ -4,14 +4,14 @@
 
 room two-sheds {
     name "Two Sheds"
-    desc "A modest wooden shed stands alone in the clearing. It appears freshly painted and surprisingly well cared for. A plaque on the door reads:\n\n        'ARTHUR \"TWO SHEDS\" JACKSON\n         Philosopher, Composer, Owner of One Shed'\n\nA second, smaller foundation lies nearby, overgrown with weeds. A broken signpost beside it reads: 'Future Site of Shed #2 – Delayed Indefinitely.' The forest is dark and dense, and the slope falls off sharply beyond the shed."
-    overlay if (item present arson_aid, item present lumberjack_axe) {
+    desc "A modest wooden shed stands alone in the clearing. It appears freshly painted and surprisingly well cared for. A plaque on the door reads:\n[[box]]        ARTHUR \"TWO SHEDS\" JACKSON\n [[i]]Philosopher, Composer, Owner of [[u]]One[[/u]] Shed[[/i]] [[/box]]\nA second, smaller foundation lies nearby, overgrown with weeds. A broken signpost beside it reads: 'Future Site of Shed #2 – Delayed Indefinitely.' The surrounding forest is dark and dense, and the slope falls off sharply beyond the shed."
+    overlay if ( item present arson_aid, item present lumberjack_axe ) {
         text "An abandoned axe and... something like a sawed-off flamethrower are lying partly hidden by the overgrowth."
     }
-    overlay if (item present arson_aid, item absent lumberjack_axe) {
+    overlay if ( item present arson_aid, item absent lumberjack_axe ) {
         text "Something that looks like a sawed-off flamethrower remains partly concealed in the tall grass."
     }
-    overlay if (item absent arson_aid, item present lumberjack_axe) {
+    overlay if ( item absent arson_aid, item present lumberjack_axe ) {
         text "A disused but serviceable axe remains partly concealed in the tall grass."
     }
     exit "trail west" -> two-sheds-landing
