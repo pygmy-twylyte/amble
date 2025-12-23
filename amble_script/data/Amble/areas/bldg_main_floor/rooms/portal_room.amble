@@ -5,15 +5,41 @@
 room portal-room {
     name "Portal Room"
     desc "A bare white room with a white tile floor. A ladder leads back up through the trap door in the ceiling. Three of the four walls are used as whiteboards, littered with obscure diagrams and equations. In the center, a black and white Portal gun is affixed to a pedestal and aimed squarely at the fourth wall."
-    overlay if (flag set portal-gun-powered) {
+    overlay if ( flag set portal-gun-powered ) {
         text "The power indicator on the Portal gun now glows a steady green."
     }
     overlay if flag portal-opened {
         set "There is a sparkling blue portal in the fourth wall, with a view through to a laboratory space beyond."
         unset "A bullseye adorns the fourth, otherwise blank wall. A photo of a watch-sized computer attached to a potato battery is taped in the center, for some reason."
     }
-    overlay if (flag set portal-opened, flag set lab-fire-raging) {
+    overlay if ( flag set portal-opened, flag set lab-fire-raging ) {
         text "Black smoke and the occasional lick of flame pour through the portal from the laboratory inferno on the other side."
     }
     exit "up the ladder" -> lounge
+}
+
+# ========================================
+# HINT Radio Trigger
+# ========================================
+trigger "HINT Radio: Where do I charge this battery?" only once
+when take item empty_battery {
+    do schedule in 2
+    if any(
+        all(
+            has item hint_radio,
+            has flag hint-radio-on,
+            missing flag portal-gun-powered,
+            in rooms portal-room,
+        ),
+        has flag portal-gun-powered,
+    ) onFalse retryNextTurn {
+        if all(
+            has item hint_radio,
+            has flag hint-radio-on,
+            missing flag portal-gun-powered,
+            in rooms portal-room,
+        ) {
+            do npc says hint_radio_npc "Wasn't there a gonk droid clomping about up in the lounge or the lobby? They can power or charge just about anything, from what I hear. Not much for conversation though, the gonks."
+        }
+    }
 }
