@@ -53,10 +53,10 @@ when insert item charged_battery into item portal_gun {
 trigger "[Portal-Room] Gun Fired / Open Portal" only once
 when use item portal_gun ability turnOn {
     if has flag portal-gun-powered {
-        do reveal exit from portal-room to aperture-lab direction portal
+        do reveal exit from portal-room to aperture-lab direction "through the portal"
         do add flag portal-opened
         do award points 5 reason "Opened a portal into Aperture Labs"
-        do show "A loud SQUIP! comes from the gun when you turn it on. The wall in front of it sizzles for a moment, and then a crackling oval blue portal expands on the wall to reveal a laboratory space on the other side."
+        do show "A loud SQUIP! comes from the gun when you turn it on. The wall in front of it sizzles for a moment, and then a crackling oval blue portal expands there to reveal a laboratory space on the other side."
     }
 }
 
