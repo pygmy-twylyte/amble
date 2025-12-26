@@ -2,8 +2,6 @@
 //! This contains the view to the game world / messages.
 //! Rather than printing to the console from each handler, we'll aggregate needed information and messages
 //! to be organized and displayed at the end of the turn.
-use std::fmt::Write;
-
 use colored::Colorize;
 use log::info;
 use textwrap::{fill, termwidth};
@@ -977,20 +975,37 @@ impl View {
             ViewItem::RoomOverlays { .. } => Some(&i.view_item),
             _ => None,
         }) {
-            let mut full_ovl = String::new();
-            for ovl in text {
-                let _ = write!(full_ovl, "{ovl} ");
-            }
-            println!(
-                "{}\n",
-                render_wrapped(
-                    &full_ovl,
-                    self.width,
+            let bullet_prefix = "• ";
+            let indent_prefix = "  ";
+            let wrap_width = self.width.saturating_sub(indent_prefix.len()).max(1);
+
+            for overlay in text {
+                let wrapped = render_wrapped(
+                    overlay,
+                    wrap_width,
                     WrapMode::Normal,
                     StyleKind::Overlay,
                     StyleMods::default(),
-                )
-            );
+                );
+                let mut lines = wrapped.lines();
+                if let Some(first_line) = lines.next() {
+                    if first_line.is_empty() {
+                        println!("{bullet_prefix}");
+                    } else {
+                        println!("{bullet_prefix}{first_line}");
+                    }
+                } else {
+                    println!("{bullet_prefix}");
+                }
+                for line in lines {
+                    if line.is_empty() {
+                        println!("{indent_prefix}");
+                    } else {
+                        println!("{indent_prefix}{line}");
+                    }
+                }
+            }
+            println!();
         }
     }
 
