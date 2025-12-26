@@ -11,19 +11,20 @@ item foamsafe_x17 {
     desc "A fire extinguisher-like device with the words \"Initech FoamSafe™ X-17\" proudly emblazoned on its side. Its label promises peace of mind in emergencies — though closer inspection suggests otherwise."
     movability free
     location room aperture-lab
-    text """INITECH FOAMSAFE™ MODEL X-17
+    text """[[center]][[bright-blue]][[u]]INITECH FOAMSAFE™ MODEL X-17[[/u]][[/bright-blue]][[/center]]
 
-FOR EMERGENCY USE ONLY
+[[b]][[hl]]FOR EMERGENCY USE ONLY[[/hl]][[/b]]
 Contents: Pressurized mineral oil, cedar essence, trace accelerants
 *Note: Foam not included.*
 
-Instructions:
+[[box:Instructions]]
 1. Shake vigorously.
 2. Point away from self (ideally).
 3. Spray liberally and accept the consequences.
+[[/box]]
 
-Warning: Device may not extinguish fires. Initech assumes no liability for secondary
-combustion, flashpoint misalignment, or structural regrets.
+[[hl]]WARNING:[[/hl]] [[i]]Device may not extinguish fires. Initech assumes no liability for secondary
+combustion, flashpoint misalignment, or structural regrets.[[/i]]
 """
     ability Read
     ability Extinguish

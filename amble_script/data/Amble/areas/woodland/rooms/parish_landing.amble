@@ -4,7 +4,7 @@
 
 room parish-landing {
     name "Parish Landing"
-    desc """A small plateau carved into the slope, marked by an old wooden sign that reads:\n[[box:Candidates Welcome]][[b]]Pancakes Served Daily (Terms and Conditions Apply)[[/b]][[/box]]\n\nA faded poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a holy relic.\n\nFrom here, the steps curve gently upward, disappearing into the woodland growth again. A modest trail leads west toward a nearby parish."""
+    desc """A small plateau carved into the slope, marked by an old wooden sign that reads:\n[[box:Candidates Welcome]][[b]]Pancakes Served Daily (Terms and Conditions Apply)[[/b]][[/box]]\nA faded poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a holy relic. From here, the steps curve gently upward, disappearing into the woodland growth again. A modest trail leads west toward a nearby parish."""
     overlay if flag woodland-gate-open {
         set "The open Stargate shimmers just behind the Saint Alfonzo's sign."
         unset "A shed-sized metallic ring sits upright behind the St. Alfonzo's sign. [[i]]Strange symbols[[/i]] are forged around its circumference."

@@ -7,21 +7,19 @@
 
 room stargate-room {
     name "Stargate Room"
-    desc r#"A hangar-size concrete room, connected to the Aperture lab through a huge, round vault door. Little light reaches the darkened corners of the room, but at its center stands a round control console ringed with hieroglyphs, obscure emojis, and diagrams from IKEA assembly manuals. A giant metallic ring festooned with similar symbols stands on end at the end of the room.
-
-    There are three large buttons in the center of the console:"#
+    desc """A hangar-size concrete room, connected to the Aperture lab through a huge, round vault door. Little light reaches the darkened corners of the room, but at its center stands a round control console ringed with hieroglyphs, obscure emojis, and diagrams from IKEA assembly manuals. A giant metallic ring festooned with similar symbols stands on end at the end of the room.\n\nThere are three large buttons in the center of the console:"""
 
     overlay if flag read-plaque-1 {
-        set "- On the left, shaped like a tree, raised."
-        unset "- On the left, shaped like a tree, sunken."
+        set   "On the left, shaped like a tree:        [[green]]RAISED[[/green]]"
+        unset "On the left, shaped like a tree:        [[red]][[dimmed]]sunken[[/dimmed]][[/red]]"
     }
     overlay if flag read-plaque-2 {
-        set "- In the middle, shaped like a snowflake, raised."
-        unset "- In the middle, shaped like a snowflake, sunken."
+        set   "In the middle, shaped like a snowflake: [[green]]RAISED[[/green]]"
+        unset "In the middle, shaped like a snowflake: [[red]][[dimmed]]sunken[[/dimmed]][[/red]]"
     }
     overlay if flag read-plaque-3 {
-        set "- On the right, shaped like a fork, raised."
-        unset "- On the right, shaped like a fork, sunken."
+        set   "On the right, shaped like a fork:       [[green]]RAISED[[/green]]"
+        unset "On the right, shaped like a fork:       [[red]][[dimmed]]sunken[[/dimmed]][[/red]]"
     }
     exit "vault door" -> aperture-lab
 }
