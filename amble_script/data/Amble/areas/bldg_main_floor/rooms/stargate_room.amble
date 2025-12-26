@@ -35,6 +35,22 @@ item woodland_button {
     location room stargate-room
 }
 
+# Here, we use the scheduler to get around a tricky bit. We want to award the player the first time they
+# *successfully* open the gate. Using 'only once when touch...' and then 'if has flag' directly means this
+# trigger could fire when the player first tries to activate this gate but hasn't yet cleared the plaque.
+# The "if" clause would deny the reward and the "only once" would make sure this was never checked again,
+# so the player would never get the reward unless they'd already read the plaque before the first attempt!
+#
+# By using the scheduler this way, we can repeat the "if" check every turn until the plaque has been read,
+# and then give the award.
+trigger "[Stargate] Woodland Gate: Activate" only once
+note "schedule/give point award for first time opening gate"
+when touch item woodland_button {
+    do schedule in 1 if has flag read-plaque-1 onFalse retryNextTurn {
+        do award points 5 reason "Activated the Woodland Gate"
+    }
+}
+
 trigger "[Stargate] Press Woodland Button"
 note "open/move the Stargate connection to Parish Landing (only if plaque-1 read)"
 when touch item woodland_button {
@@ -79,6 +95,14 @@ item snowfield_button {
     desc "A snowflake-shaped button ing the middle of the Stargate control console."
     movability fixed "It's part of the control console."
     location room stargate-room
+}
+
+trigger "[Stargate] Snowfield Gate: Activate" only once
+note "schedule/give point award for first time opening gate"
+when touch item snowfield_button {
+    do schedule in 1 if has flag read-plaque-2 onFalse retryNextTurn {
+        do award points 5 reason "Activated the Snowfield Gate"
+    }
 }
 
 trigger "[Stargate] Press Snowfield Button"
@@ -127,6 +151,14 @@ item patio_button {
     desc "A fork-shaped button on the right of the Stargate control console."
     movability fixed "It's part of the control console."
     location room stargate-room
+}
+
+trigger "[Stargate] Patio Gate: Activate" only once
+note "schedule/give point award for first time opening gate"
+when touch item patio_button {
+    do schedule in 1 if has flag read-plaque-3 onFalse retryNextTurn {
+        do award points 5 reason "Activate the Patio Gate"
+    }
 }
 
 trigger "[Stargate] Press Patio Button"
