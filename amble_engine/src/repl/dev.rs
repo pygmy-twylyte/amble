@@ -283,8 +283,7 @@ fn note_log_path(now: OffsetDateTime) -> PathBuf {
 }
 
 fn format_note_timestamp(now: OffsetDateTime) -> String {
-    let fmt = format_description::parse("[year]-[month]-[day] [hour]:[minute]:[second]Z")
-        .expect("valid note timestamp format");
+    let fmt = format_description::parse("[month]-[day] [hour]:[minute]").expect("valid note timestamp format");
     now.format(&fmt).unwrap_or_else(|_| "0000-00-00 00:00:00Z".to_string())
 }
 
@@ -295,18 +294,7 @@ fn describe_note_location(world: &AmbleWorld) -> String {
             .get(&room_id)
             .map(|room| format!("room={} \"{}\"", room.symbol(), room.name()))
             .unwrap_or_else(|| format!("room_id={room_id}")),
-        Location::Inventory => "loc=inventory".to_string(),
-        Location::Item(item_id) => world
-            .items
-            .get(&item_id)
-            .map(|item| format!("loc=item:{} \"{}\"", item.symbol(), item.name()))
-            .unwrap_or_else(|| format!("loc=item:{item_id}")),
-        Location::Npc(npc_id) => world
-            .npcs
-            .get(&npc_id)
-            .map(|npc| format!("loc=npc:{} \"{}\"", npc.symbol(), npc.name()))
-            .unwrap_or_else(|| format!("loc=npc:{npc_id}")),
-        Location::Nowhere => "loc=nowhere".to_string(),
+        _ => String::from("loc=<unknown>"),
     }
 }
 
