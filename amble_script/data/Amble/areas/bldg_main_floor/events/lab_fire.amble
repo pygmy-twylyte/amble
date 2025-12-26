@@ -30,6 +30,14 @@ combustion, flashpoint misalignment, or structural regrets.[[/i]]
     ability Extinguish
 }
 
+item flaming_invitation {
+    name "Flaming Document"
+    desc "This [[u]]could[[/u]] be your invitation, but it's hard to tell when it's on [[b]][[bright-red]]FIRE![[/bright-red]][[/b]]"
+    # rather than making this fixed, we use a trigger below to give the player a little burn damage and make them drop it immediately
+    movability free
+    location nowhere "spawns in aperture lab with attempt to print on regular paper"
+}
+
 item foam_fire {
     name "Foam Fire"
     desc "A raging patch of fire fueled by accelerant-laced foam. It crackles hungrily."
@@ -40,10 +48,17 @@ item foam_fire {
 # ========================================
 # Triggers
 # ========================================
+trigger "[Aperture-Lab]" when take item flaming_invitation {
+    do replace drop item flaming_invitation with flaming_invitation
+    do show "You burn your hand and drop the burning document on the floor. It looks like it might be an Amble Adventures invitation."
+    do damage player 3 cause "played with fire"
+}
 
-trigger "[Aperture-Lab] FoamSafe Misfire" only once when use item foamsafe_x17 on item burnt_invitation interaction extinguish {
+trigger "[Aperture-Lab] FoamSafe Misfire" only once
+when use item foamsafe_x17 on item flaming_invitation interaction extinguish {
     do despawn item foamsafe_x17
     do show "You spray the foam onto the burning invitation. Instead of dousing the flame, the foam flares up into a spectacular fireball!"
+    do spawn item foam_fire into room aperture-lab
     do add seq flag foam-fire-in-lab limit 3
     do schedule in 2 note "foam fire starts" {
         do show "The foam fire accelerates, as it turns into a hissing, popping ball of goo spitting off little globs of flaming napalm!"
@@ -54,16 +69,23 @@ trigger "[Aperture-Lab] FoamSafe Misfire" only once when use item foamsafe_x17 o
         do advance flag foam-fire-in-lab
         do add flag lab-fire-raging
         do push player to portal-room
+        do modify room aperture-lab {
+            name "Scorched Laboratory"
+            desc "The formerly sparkling white walls of the laboratory are now blackened by smoke and oozing with globs of cooling Initech foam. Most everything appears to be ruined, but [[i]]miraculously[[/i]] it appears that the hospitality printer remains functional, if a little warped by the heat. Across the room, the unscathed vault-like door stands open revealing a larger, dim (and now smoky) hangar beyond, while the open portal leads back to the [[i]]relative[[/i]] safety of the Amble Adventures building."
+        }
     }
     do schedule in 8 note "foam fire out" {
         do show "The alarms stop. The fire in the Aperture lab has been extinguised. Hopefully nobody saw you light it, you monster."
         do advance flag foam-fire-in-lab
         do remove flag lab-fire-raging
+        do despawn item foam_fire
         do award points 5 reason "Waited out the foam fire you caused"
     }
 }
 
-trigger "[Aperture-Lab] Can't Enter While Lab On Fire" when enter room aperture-lab {
+trigger "[Aperture-Lab] Can't Enter While Lab On Fire"
+note "block player from re-entering the aperture-lab while it is on fire"
+when enter room aperture-lab {
     if flag in progress foam-fire-in-lab {
         do show "You try to get back into the lab, but the flames and oily smoke from the foam fire drive you back through the portal within seconds."
         do push player to portal-room
