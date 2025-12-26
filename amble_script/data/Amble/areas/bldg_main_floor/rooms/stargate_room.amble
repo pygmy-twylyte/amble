@@ -54,7 +54,7 @@ when touch item woodland_button {
 trigger "[Stargate] Press Woodland Button"
 note "open/move the Stargate connection to Parish Landing (only if plaque-1 read)"
 when touch item woodland_button {
-    if has flag read-plaque-1 {
+    if all( has flag read-plaque-1, missing flag woodland-gate-open ) {
         do show "With a great whooshing like the flush of a titan's toilet, the Stargate opens a new connection. You hear singing birds and the occasional screech coming through the opening."
         # modify stargate room
         do modify room stargate-room {
@@ -80,6 +80,9 @@ when touch item woodland_button {
         do modify room patio {
             remove exit stargate-room
         }
+    }
+    if all( has flag read-plaque-1, has flag woodland-gate-open ) {
+        do show "The gate to the woodlands is already open."
     }
     if missing flag read-plaque-1 {
         do show "The tree button is already pressed down as far as it can go; you can't activate it."
@@ -108,7 +111,7 @@ when touch item snowfield_button {
 trigger "[Stargate] Press Snowfield Button"
 note "open/move the Stargate connection to Ice Pit (only if plaque 2 read)"
 when touch item snowfield_button {
-    if has flag read-plaque-2 {
+    if all( has flag read-plaque-2, missing flag snowfield-gate-open ) {
         do show "With a great whooshing like the flush of a titan's toilet, the Stargate opens a new connection. You are chilled by the frigid air pouring through the opening."
         # modify stargate room
         do modify room stargate-room {
@@ -137,6 +140,9 @@ when touch item snowfield_button {
             remove exit stargate-room
         }
     }
+    if all( has flag read-plaque-2, has flag snowfield-gate-open ) {
+        do show "The gate to the snowfield is already open."
+    }
     if missing flag read-plaque-2 {
         do show "The snowflake button is sunken; you can't push it down any farther."
     }
@@ -164,8 +170,8 @@ when touch item patio_button {
 trigger "[Stargate] Press Patio Button"
 note "open/move the Stargate connection to the Patio (only if plaque-3 read)"
 when touch item patio_button {
-    if has flag read-plaque-3 {
-        do show "With a great whooshing like the flush of a titan's toilet, the Stargate opens a new connection. You are chilled by the frigid air pouring through the opening."
+    if all( has flag read-plaque-3, missing flag patio-gate-open ) {
+        do show "With a great whooshing like the flush of a titan's toilet, the Stargate opens a new connection. The smells of fresh baked bread and searing beef waft  through the opening."
         # modify stargate room
         do modify room stargate-room {
             desc "A hangar-size concrete room, connected to the Aperture lab through a huge, round vault door. The Stargate is filled with a shimmering energy, from which you hear the sounds of clinking glasses punctuated by explosions. Occasionally, a bird flies out of the gate and circles it, but -- finding nowhere to land -- flies back in."
@@ -191,6 +197,9 @@ when touch item patio_button {
         do modify room patio {
             add exit "through the stargate" -> stargate-room
         }
+    }
+    if all( has flag read-plaque-3, has flag patio-gate-open ) {
+        do show "The gate to the restaurant patio is already open."
     }
     if missing flag read-plaque-3 {
         do show "The fork-shaped button is already pressed down as far as it can go."
