@@ -192,6 +192,5 @@ Generated files include a header comment indicating the source `.amble` and a â€
 
 ## Tips
 
-- `visited` defaults to `false`. Only emit `visited true` when you need a room to start as visited (e.g., the start room).
-- Keep exit requirements bounded; prefer flag gates over open-ended retries for scheduling.
+- `visited` defaults to `false`. Only set `visited = true` if you need a room to start as visited (e.g., the start room). The engine marks rooms as the player explores.
 - Use lint early and often; it will suggest likely IDs when you mistype symbols.
