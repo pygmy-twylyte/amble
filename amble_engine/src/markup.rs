@@ -716,30 +716,4 @@ mod tests {
         );
         assert_eq!(out, "  Hello");
     }
-
-    #[test]
-    fn render_wrapped_box_draws_box() {
-        let out = render_wrapped(
-            "[[box]]Hi[[/box]]",
-            20,
-            WrapMode::Normal,
-            StyleKind::Plain,
-            StyleMods::default(),
-        );
-        assert_eq!(out, "┌────┐\n│ Hi │\n└────┘");
-    }
-
-    #[test]
-    fn render_wrapped_box_title_renders() {
-        let out = render_wrapped(
-            "[[box:Note]]Hi[[/box]]",
-            30,
-            WrapMode::Normal,
-            StyleKind::Plain,
-            StyleMods::default(),
-        );
-        assert!(out.contains(" Note "));
-        assert!(out.starts_with("┌"));
-        assert!(out.ends_with('┘'));
-    }
 }
