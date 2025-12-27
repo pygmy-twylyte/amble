@@ -4,10 +4,10 @@
 
 room b-a-office {
     name "Amble Adventures Main Office"
-    desc "The office of Amble Adventures, a wholly disowned subsidiary of Brains Anonymous™, is a shrine to barely-funded creativity. Faded posters of games that were never released adorn the walls, including one titled 'PONG Construction Set 3000'. A sagging ficus looms in the corner like it’s been through something. An inconspicuous door in the north wall is marked with a \"Supplies\" sign, hanging at a carefree slant. An Initech™ Poetry Performer plays possum in another corner, hoping you don't notice it."
+    desc "The office of [[hl]]Amble Adventures[[/hl]], a wholly [[u]]disowned[[/u]] subsidiary of Brains Anonymous™, is a shrine to barely-funded creativity. Faded posters of games that were never released adorn the walls, including one titled [[b]]'PONG Construction Set 3000'[[/b]]. A sagging ficus looms in the corner like it’s been through something. In the north wall, a closet door is marked with a \"Supplies\" sign, hanging at a carefree slant. An Initech™ Poetry Performer machine plays possum in another corner, hoping you don't notice it."
     overlay if flag panic-room-open {
-        set r#"The "Planning to Plan" whiteboard has parted to reveal a heavy, vault-like door set into the west wall."#
-        unset r#"A floor-to-ceiling whiteboard on the west wall boasts an impressive flowchart titled "Planning to Plan"."#
+        set r#"The [[i]]"Planning to Plan"[[/i]] whiteboard has parted to reveal a heavy, vault-like door set into the west wall."#
+        unset r#"A floor-to-ceiling whiteboard on the west wall boasts an impressive flowchart titled [[i]]"Planning to Plan"[[/i]]."#
     }
     overlay if ( flag unset got-visitor-pass, player missing item invitation ) {
         text "A robotic receptionist sits behind a tidy desk adorned with figurines of Portal turrets and companion cubes. She (it?) pointedly ignores you."
@@ -18,10 +18,11 @@ room b-a-office {
     overlay if ( flag set got-visitor-pass ) {
         text "The receptionist looks up from rearranging her turrets, giving you a subtle wink and a grin."
     }
-    overlay if ( flag set lost-and-found-opened ) {
-        text "The Lost & Found box sits with its lid hanging open, contents plainly visible."
+    overlay if flag lost-and-found-opened ) {
+        set "The Lost & Found box sits with its lid hanging open, contents plainly visible."
+        unset "A sturdy locked box sits behind the desk, marked [[b]]Lost & Found[[/b]]."
     }
-    exit "front door" -> main-lobby
+    exit "lobby door" -> main-lobby
     exit "closet door" -> supply-closet
 }
 

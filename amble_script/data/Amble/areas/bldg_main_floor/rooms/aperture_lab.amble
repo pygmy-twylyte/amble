@@ -4,7 +4,7 @@
 
 room aperture-lab {
     name "Aperture Science Laboratory"
-    desc "The unnaturally white—walls, floor, ceiling, even the air here feels clinical and overexposed. Everything hums at a frequency designed to encourage strict compliance. A single console blinks on a table beside a [[b]]highly[[/b]] over-engineered printer labeled [[blue]][[i]]\"Aperture Science Hospitality Generator.\"[[/i]][[/blue]] Across the room, a vault-like door stands open revealing a dim -- but much larger -- chamber beyond."
+    desc "The unnaturally white walls, floor, ceiling, even the air here feels clinical and overexposed. Everything hums at a frequency designed to encourage strict compliance. A single console blinks on a table beside a [[b]]highly[[/b]] over-engineered printer labeled [[blue]][[i]]\"Aperture Science Hospitality Generator.\"[[/i]][[/blue]] Across the room, a vault-like door stands open revealing a dim -- but much larger -- chamber beyond."
     overlay if ( flag set burned-invitation, flag unset invitation-sans-ignition ) {
         text "A smoky haze and the lingering smell of burned paper permeate the room."
     }
