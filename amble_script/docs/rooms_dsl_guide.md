@@ -143,7 +143,7 @@ text = "On the pedestal sits a tub of margarine."
 
 ### NPC State Block (Sugar)
 
-Author multiple NPC state overlays in one block using the `npc <id> here` form:
+Combine multiple NPC state overlays in one block using the `npc <id> here` form:
 
 ```
 overlay if npc emh here {
