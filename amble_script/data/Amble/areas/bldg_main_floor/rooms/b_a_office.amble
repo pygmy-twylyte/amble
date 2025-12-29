@@ -18,7 +18,7 @@ room b-a-office {
     overlay if ( flag set got-visitor-pass ) {
         text "The receptionist looks up from rearranging her turrets, giving you a subtle wink and a grin."
     }
-    overlay if flag lost-and-found-opened ) {
+    overlay if flag lost-and-found-opened {
         set "The Lost & Found box sits with its lid hanging open, contents plainly visible."
         unset "A sturdy locked box sits behind the desk, marked [[b]]Lost & Found[[/b]]."
     }
