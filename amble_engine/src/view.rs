@@ -277,13 +277,13 @@ impl View {
         for msg in point_msgs {
             if let ViewItem::PointsAwarded { amount, reason } = &msg.view_item {
                 if amount.is_negative() {
-                    let text = format!("{} (-{} point{})", reason, amount.abs(), plural_s(amount.abs())).bright_red();
+                    let text = format!("{} (-{} point{})\n", reason, amount.abs(), plural_s(amount.abs())).bright_red();
                     println!("{:<4}{}", ICON_NEGATIVE.bright_red(), text);
                 } else if *amount > 15 {
-                    let text = format!("{} (+{} point{}!)", reason, amount, plural_s(*amount)).bright_blue();
+                    let text = format!("{} (+{} point{}!)\n", reason, amount, plural_s(*amount)).bright_blue();
                     println!("{:<4}{}", ICON_CELEBRATE.bright_blue(), text);
                 } else {
-                    let text = format!("{} (+{} point{})", reason, amount, plural_s(*amount)).bright_green();
+                    let text = format!("{} (+{} point{})\n", reason, amount, plural_s(*amount)).bright_green();
                     println!("{:<4}{}", ICON_POSITIVE.bright_green(), text);
                 }
             }
