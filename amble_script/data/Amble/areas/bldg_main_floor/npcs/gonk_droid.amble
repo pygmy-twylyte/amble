@@ -55,3 +55,9 @@ trigger "[Gonk Droid] Happy When Family Photo Inspected" only once when look at 
     do award points 2 reason "Admired the gonk droid's family photo"
     do add flag made-gonk-proud
 }
+
+trigger "[Gonk Droid]"
+when give item gonk_family_photo to npc gonk_droid {
+    do priority -20 show "The gonk droid totters in a happy little circle."
+    do priority -10 npc says gonk_droid "Gonk-gonk!"
+}
