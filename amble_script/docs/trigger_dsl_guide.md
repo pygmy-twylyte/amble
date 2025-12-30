@@ -2,13 +2,13 @@
 
 This guide introduces Amble’s trigger DSL for content creators. It explains the main concepts, shows common patterns, and provides copy‑paste examples you can adapt. It aims for a practical middle‑ground: enough detail to be productive without being exhaustive.
 
-The DSL compiles to the engine’s `triggers.toml`. If you can express it here, you can ship it in your game.
+Triggers are really the **heart** of any game made with the Amble engine. They effectively define the rules of how players can interact with any items, npcs, rooms and how the world reacts to the player exploration and actions. 
 
 ## Core Concepts
 
 - Trigger: A named block with a firing event (`when …`), optional gate conditions (`if …`), and a sequence of actions (`do …`).
 - Event vs Conditions:
-  - Event is the thing the player (or world) does that raises the trigger (e.g., `enter room lab`).
+  - Event is the thing the player (or world) does that raises the trigger (e.g., `enter room lab`). (`always` is also an event that will allow Conditions to be checked every turn, regardless of player action.)
   - Conditions are AND/OR logic that must also be true for the trigger to run.
 - Actions: What happens when the trigger fires (e.g., show text, give points, spawn items, schedule future actions).
 - Sets: Reusable named lists for ambient room lists (see “Sets for Ambients”).
@@ -185,7 +185,7 @@ do modify npc guard {
 
 Supported statements mirror their top-level counterparts: you can adjust names/descriptions, toggle `portable`/`restricted`, add or remove abilities, switch container states (use `container state off` to clear), add/remove exits, patch overlays, reconfigure NPC movement (`route (…)`, `random rooms (…)`, `timing every <n> turns`, `timing on turn <n>`, `active true|false`, `loop true|false`), and mutate dialogue banks (`add line "…" to state custom panic`). See the entity-specific guides for the complete statement lists.
 
-**NOTE:** The turn counter is advanced immediately after events are scheduled, so an event scheduled in 1 turn will appear to fire with no delay. Use 2 or more for something to fire after an apparent delay.
+**NOTE:** **The turn counter is advanced immediately after events are scheduled, so an event scheduled in 1 turn will appear to fire with no delay. Use 2 or more for something to fire after an apparent delay.**
 
 ## Sets for Ambients
 
@@ -196,7 +196,7 @@ Sets let you name and reuse room lists in ambient conditions.
 - Use it with `in rooms …`:
   - `if in rooms outside_house` — expands to the full list at compile time
   - You can mix sets and literal rooms: `outside_house,lobby`
-- Currently, sets are scoped to ambient room lists.
+- Currently, sets are scoped to room lists only; considering later support for item and NPC sets..
 
 Example (preferred syntax):
 
@@ -210,7 +210,6 @@ trigger "Outside ambience" when always {
 }
 ```
 
-Legacy: `ambient <spinner> in rooms …` remains supported for backward compatibility, but is redundant with the spinner action and may be deprecated.
 
 ## Patterns and Tips
 

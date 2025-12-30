@@ -1,6 +1,6 @@
 # Amble Script Creator Handbook
 
-This handbook consolidates the practical information required to author Amble content with the `amble_script` DSL. It covers the end-to-end workflow, the CLI tooling, and the syntax for every entity the compiler understands: triggers, rooms, items, NPCs, spinners, and goals. Use it as your primary reference when designing new story content or migrating existing TOML definitions into the DSL.
+This handbook consolidates the practical information required to author Amble content with the `amble_script` DSL. It covers the CLI tooling and the syntax for every entity the compiler understands: triggers, rooms, items, NPCs, spinners, and goals. Use it as your primary reference when designing new story content or migrating existing TOML definitions into the DSL.
 
 If you only need a terse reminder of keywords and shapes, see the accompanying [DSL Cheat Sheet](./dsl_cheat_sheet.md).
 
@@ -170,7 +170,9 @@ trigger "Ambient: creaking beams" when always {
 
 ## Rooms
 
-Rooms provide the backdrop of the world. A room definition names the location, supplies a base description, and enumerates exits and overlays.
+Rooms provide the map or backdrop of the world, and can really be thought of as *areas* . A room definition names the location, supplies a base description, and enumerates exits and overlays.
+
+For details, see the [[rooms_dsl_guide]].
 
 ```amble
 room lab-lobby {

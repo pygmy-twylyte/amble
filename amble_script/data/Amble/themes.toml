@@ -18,7 +18,7 @@ subheading = { r = 255, g = 255, b = 255 }
 
 # Items
 item = { r = 220, g = 180, b = 40 }
-item_text = { r = 40, g = 180, b = 40 }
+item_text = { r = 140, g = 180, b = 40 }
 
 # NPCs
 npc = { r = 50, g = 200, b = 50 }

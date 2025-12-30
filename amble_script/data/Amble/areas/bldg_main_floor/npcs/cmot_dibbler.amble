@@ -68,6 +68,7 @@ when give item am_dollar to npc cmot_dibbler {
 
 trigger "[CMOT] Trade Mug For Gizmo" only once
 when give item initech_mug to npc cmot_dibbler {
+    do set item movability initech_mug restricted "You can't take it back -- Dibbler won't lose sight of his favorite mug again."
     do npc says cmot_dibbler "Whoa! Me favorite mug from the lads down at Initech?! Where did it turn up? Ah -- no matter, really. I still haven't figured out how to open the bloody thing, making it somewhat useless. Here -- seems fitting I give you this useless gizmo as a more-than-fair trade."
     do give item hal_module_3 to player from npc cmot_dibbler
     do award points 5 reason "Traded the Initech mug for HAL's third module"

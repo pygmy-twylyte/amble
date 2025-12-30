@@ -4,7 +4,7 @@
 
 room main-lobby {
     name "Main Lobby"
-    desc "The lobby is clinically clean in a way that feels suspicious. A slightly humming vending machine stands beside an empty podium bearing an emblem that reads, in gothic script: 'ALLIED TEMPORARY LIFEFORMS'. A softly glowing sign on the north wall reads 'Elevator Access', while arrows on the east and west walls point toward other destinations with less enthusiasm."
+    desc "The lobby is clinically clean in a way that feels suspicious. A slightly humming vending machine stands beside an empty podium bearing an emblem that reads, in gothic script: 'ALLIED TEMPORARY LIFEFORMS'. A softly glowing sign over an archway on the north wall reads 'Elevator Access'. To one side, there is floor-to-ceiling frosted glass and a door at the far end etched with [[room]]Amble Adventures - Main Office[[/room]]. Opposite that, the smell of searing beef wafts from a short hallway."
     overlay if npc gonk_droid here {
         normal "A gonk droid stands idle in the corner, muttering to itself and tottering in circles."
         happy  "The gonk droid gonks a happy tune in the corner, charging the battery you gave it."
@@ -14,10 +14,10 @@ room main-lobby {
         happy  "Dibbler grins broadly, offering a complimentary bite."
         bored  "Dibbler mutters about slow lobby sales."
     }
-    exit north -> lift-bank-main
-    exit south -> front-entrance
-    exit east -> restaurant
-    exit west -> b-a-office
+    exit "elevator access" -> lift-bank-main
+    exit "outside" -> front-entrance
+    exit "hallway" -> restaurant
+    exit "office" -> b-a-office
 }
 
 # ========================================

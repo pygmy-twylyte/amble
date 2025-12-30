@@ -2,6 +2,7 @@
 target/
 **/*.rs.bk
 *.log
+*.obsidian
 Cargo.lock
 **/*.bkp
 
@@ -12,6 +13,8 @@ Cargo.lock
 
 # Ignore saved game files
 saved_games/
+# Ignore log files
+logs/
 node_modules/
 debug_*.js
 test_*.js

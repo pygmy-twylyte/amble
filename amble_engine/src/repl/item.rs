@@ -48,7 +48,7 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::{
-    AmbleWorld, View, ViewItem, WorldObject,
+    AmbleWorld, View, WorldObject,
     command::IngestMode,
     entity_search::{self, SearchError, SearchScope},
     helpers::plural_s,
@@ -58,6 +58,7 @@ use crate::{
     spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers, triggers_contain_condition},
+    view::ViewItem,
 };
 
 use anyhow::{Result, bail};

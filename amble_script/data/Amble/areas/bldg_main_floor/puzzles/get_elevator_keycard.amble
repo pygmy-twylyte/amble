@@ -45,19 +45,28 @@ item poetry_performer {
 # ========================================
 # Triggers
 # ========================================
-let set keycard_hint_zone = ( b-a-office, lift-bank-main )
-trigger "HINT Radio: Vogon Poetry Insertion"
-note "HINT radio -- insert vogon poetry to get into the panic room."
-when always {
-    if all(
-        chance 50%,
-        has item hint_radio,
-        has flag hint-radio-on,
-        has flag got-visitor-pass,
-        in rooms keycard_hint_zone,
-    )
-    {
-        do npc says hint_radio_npc "The rumor around here is that the last candidate was vaporized while sealed in the hidden Poetry Panic Room at the office. The Poetry Performer will panic if you try to make it perform some Vogon poetry."
+
+let set keycard_hint_zone = ( b-a-office, vip-bathroom )
+trigger "[HINT Radio] Find/Insert Vogon Poetry" only once
+when give item invitation to npc b_a_receptionist {
+    do schedule in 2 if any(
+        all(
+            has item hint_radio,
+            has flag hint-radio-on,
+            missing flag panic-room-open,
+            in rooms keycard_hint_zone,
+        ),
+        has flag panic-room-open,
+    ) onFalse retryNextTurn note "poetry performer radio hint" {
+        if all(
+            has item hint_radio,
+            has flag hint-radio-on,
+            missing flag panic-room-open,
+            in rooms keycard_hint_zone,
+        )
+        {
+            do npc says hint_radio_npc "The rumor around here is that the last candidate was vaporized while sealed in the hidden Poetry Panic Room at the office, and they had the sole remaining elevator keycard with them. The Poetry Performer will panic if you try to make it perform some Vogon poetry. I'm sure you see where this is going."
+        }
     }
 }
 

@@ -3,27 +3,17 @@
 # ========================================
 
 # This file serves as a place to try new features or ideas without disturbing the main game source.
+# Previous version included a trigger that would create an exit here from the start room after the 2nd
+# turn... but that was a pain to remember to disable for play builds. Then an epiphany: when dev_mode
+# feature is enabled, one can just teleport to this room -- so there need not be a way to access
+# it from the main game map at all.
 
 room dev-room {
-    name "TESTING GROUND (DEV ONLY)"
-    desc """This is however you imagine it, but a [[u]]space for devs[[/u]] to try out new ideas before mixing in to other content.
+    name "The Construct"
+    desc """Like in the Matrix, this is the Construct -- an empty, bare white room with white walls. It is here for the [[b]]Architect[[/b]] ([[i]]that's you![[/i]]) to experiment with things before putting them in play in the rest of the AmbleWorld.
 
     [[center]][[box:WARNING]]Beware of [[npc]]The Luggage[[/npc]][[/box]][[/center]]"""
     exit "back to game start" -> high-ridge
-}
-
-# this should allow us to create an exit from the start room (high-ridge) to the
-# playground at game start (after 1 turn taken) so we don't have to put one in the actual
-# start room file (so this file can simply be removed to cleanly get rid of playground
-# items)
-#
-# you can also just comment out the trigger below to make the playground inaccessible from
-# the game without deleting the file:
-#
-trigger "Create Dev Playground Exit" only once when always {
-    do modify room high-ridge {
-        add exit "to dev playground" -> dev-room
-    }
 }
 
 item big_red_button {
