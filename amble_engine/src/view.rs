@@ -3,16 +3,12 @@
 //! Rather than printing to the console from each handler, we'll aggregate needed information and messages
 //! to be organized and displayed at the end of the turn.
 use colored::Colorize;
-use log::info;
 use textwrap::{fill, termwidth};
-use variantly::Variantly;
 
-use crate::health::HealthState;
 use crate::helpers::plural_s;
-use crate::loader::help::HelpCommand;
 use crate::markup::{StyleKind, StyleMods, WrapMode, render_inline, render_wrapped};
 use crate::npc::NpcState;
-use crate::save_files::{SaveFileEntry, SaveFileStatus, format_modified};
+use crate::save_files::{SaveFileStatus, format_modified};
 use crate::style::{GameStyle, indented_block, normal_block};
 
 pub mod view_item;
