@@ -75,7 +75,7 @@ when use item foamsafe_x17 on item flaming_invitation interaction extinguish {
         }
     }
     do schedule in 8 note "foam fire out" {
-        do show "The alarms stop. The fire in the Aperture lab has been extinguised. Hopefully nobody saw you light it, you monster."
+        do show "The alarms stop. The fire in the Aperture lab has been extinguished. Hopefully nobody saw you light it, you monster."
         do advance flag foam-fire-in-lab
         do remove flag lab-fire-raging
         do despawn item foam_fire

@@ -15,6 +15,9 @@ use crate::npc::NpcState;
 use crate::save_files::{SaveFileEntry, SaveFileStatus, format_modified};
 use crate::style::{GameStyle, indented_block, normal_block};
 
+pub mod view_item;
+pub use view_item::ViewItem;
+
 const ICON_SUCCESS: &str = "\u{2611}"; // ✔
 const ICON_FAILURE: &str = "\u{274C}"; // ✖
 const ICON_ERROR: &str = "⚠︎"; // U+26A0 U+FE0E
@@ -584,14 +587,15 @@ impl View {
     fn inventory(&mut self) {
         if let Some(entry) = self
             .items
-            .iter()
+            .iter_mut()
             .find(|i| matches!(i.view_item, ViewItem::Inventory(..)))
-            && let ViewItem::Inventory(item_lines) = &entry.view_item
+            && let ViewItem::Inventory(item_lines) = &mut entry.view_item
         {
             println!("{}:", "Inventory".subheading_style());
             if item_lines.is_empty() {
                 println!("   {}", "You have... nothing at all.".italic().dimmed());
             } else {
+                item_lines.sort();
                 for line in item_lines {
                     println!("   {}", line.item_name.item_style());
                 }
@@ -930,11 +934,12 @@ impl View {
     }
 
     fn room_exit_list(&mut self) {
-        if let Some(ViewItem::RoomExits(exit_lines)) = self.items.iter().find_map(|i| match i.view_item {
-            ViewItem::RoomExits(_) => Some(&i.view_item),
+        if let Some(ViewItem::RoomExits(exit_lines)) = self.items.iter_mut().find_map(|i| match i.view_item {
+            ViewItem::RoomExits(_) => Some(&mut i.view_item),
             _ => None,
         }) {
             println!("{}:", "Exits".subheading_style());
+            exit_lines.sort();
             for exit in exit_lines {
                 print!("    > ");
                 match (exit.dest_visited, exit.exit_locked) {
@@ -957,11 +962,12 @@ impl View {
     }
 
     fn room_item_list(&mut self) {
-        if let Some(ViewItem::RoomItems(names)) = self.items.iter().find_map(|i| match i.view_item {
-            ViewItem::RoomItems(_) => Some(&i.view_item),
+        if let Some(ViewItem::RoomItems(names)) = self.items.iter_mut().find_map(|i| match i.view_item {
+            ViewItem::RoomItems(_) => Some(&mut i.view_item),
             _ => None,
         }) {
             println!("{}:", "Items".subheading_style());
+            names.sort();
             for name in names {
                 println!("    * {}", name.item_style());
             }
@@ -1100,178 +1106,6 @@ impl ViewEntry {
     }
 }
 
-/// `ViewItems` are each of the various types of information / messages that may be displayed to the player.
-#[derive(Debug, Clone, PartialEq, Eq, Variantly)]
-pub enum ViewItem {
-    ActionFailure(String),
-    ActionSuccess(String),
-    ActiveGoal {
-        name: String,
-        description: String,
-    },
-    AmbientEvent(String),
-    CharacterHarmed {
-        name: String,
-        cause: String,
-        amount: u32,
-    },
-    CharacterHealed {
-        name: String,
-        cause: String,
-        amount: u32,
-    },
-    CharacterDeath {
-        name: String,
-        cause: Option<String>,
-        is_player: bool,
-    },
-    CompleteGoal {
-        name: String,
-        description: String,
-    },
-    EngineMessage(String),
-    Error(String),
-    GameLoaded {
-        save_slot: String,
-        save_file: String,
-    },
-    GameSaved {
-        save_slot: String,
-        save_file: String,
-    },
-    SavedGamesList {
-        directory: String,
-        entries: Vec<SaveFileEntry>,
-    },
-    Help {
-        basic_text: String,
-        commands: Vec<HelpCommand>,
-    },
-    Inventory(Vec<ContentLine>),
-    ItemConsumableStatus(String),
-    ItemContents(Vec<ContentLine>),
-    ItemDescription {
-        name: String,
-        description: String,
-    },
-    ItemText(String),
-    NpcDescription {
-        name: String,
-        description: String,
-        health: HealthState,
-        state: NpcState,
-    },
-    NpcInventory(Vec<ContentLine>),
-    NpcSpeech {
-        speaker: String,
-        quote: String,
-    },
-    NpcEntered {
-        npc_name: String,
-        spin_msg: String,
-    },
-    NpcLeft {
-        npc_name: String,
-        spin_msg: String,
-    },
-    PointsAwarded {
-        amount: isize,
-        reason: String,
-    },
-    QuitSummary {
-        title: String,
-        rank: String,
-        notes: String,
-        score: usize,
-        max_score: usize,
-        visited: usize,
-        max_visited: usize,
-    },
-    RoomDescription {
-        name: String,
-        description: String,
-        visited: bool,
-        force_mode: Option<ViewMode>,
-    },
-    RoomExits(Vec<ExitLine>),
-    RoomItems(Vec<String>),
-    RoomNpcs(Vec<NpcLine>),
-    RoomOverlays {
-        text: Vec<String>,
-        force_mode: Option<ViewMode>,
-    },
-    StatusChange {
-        action: StatusAction,
-        status: String,
-    },
-    TransitionMessage(String),
-    TriggeredEvent(String),
-}
-impl ViewItem {
-    /// Classify a view item into a top-level output section.
-    pub fn section(&self) -> Section {
-        match self {
-            ViewItem::RoomDescription { .. }
-            | ViewItem::RoomOverlays { .. }
-            | ViewItem::RoomItems(_)
-            | ViewItem::RoomExits(_)
-            | ViewItem::RoomNpcs(_) => Section::Environment,
-            ViewItem::ActionSuccess(_)
-            | ViewItem::ActionFailure(_)
-            | ViewItem::Error(_)
-            | ViewItem::ItemDescription { .. }
-            | ViewItem::ItemText(_)
-            | ViewItem::ItemConsumableStatus(_)
-            | ViewItem::ItemContents(_)
-            | ViewItem::NpcDescription { .. }
-            | ViewItem::NpcInventory(_)
-            | ViewItem::Inventory(_)
-            | ViewItem::ActiveGoal { .. }
-            | ViewItem::CompleteGoal { .. } => Section::DirectResult,
-            ViewItem::CharacterHarmed { .. }
-            | ViewItem::CharacterDeath { .. }
-            | ViewItem::CharacterHealed { .. }
-            | ViewItem::NpcSpeech { .. }
-            | ViewItem::NpcEntered { .. }
-            | ViewItem::NpcLeft { .. }
-            | ViewItem::TriggeredEvent(_)
-            | ViewItem::PointsAwarded { .. }
-            | ViewItem::StatusChange { .. } => Section::WorldResponse,
-            ViewItem::AmbientEvent(_) => Section::Ambient,
-            ViewItem::QuitSummary { .. }
-            | ViewItem::EngineMessage(_)
-            | ViewItem::Help { .. }
-            | ViewItem::GameLoaded { .. }
-            | ViewItem::GameSaved { .. }
-            | ViewItem::SavedGamesList { .. } => Section::System,
-            ViewItem::TransitionMessage(_) => Section::Transition,
-        }
-    }
-
-    pub fn default_priority(&self) -> isize {
-        match &self {
-            ViewItem::TriggeredEvent(_) => -30,
-            ViewItem::CharacterHarmed { .. } => -20,
-            ViewItem::CharacterHealed { .. } => -10,
-            ViewItem::NpcEntered { .. } => 5,
-            ViewItem::NpcSpeech { .. } => 10,
-            ViewItem::NpcLeft { .. } => 15,
-            ViewItem::CharacterDeath { .. } => 100,
-            _ => 0,
-        }
-    }
-
-    /// Extract NPC name from NPC transit items.
-    pub fn npc_name(&self) -> &str {
-        match self {
-            ViewItem::NpcEntered { npc_name, .. } | ViewItem::NpcLeft { npc_name, .. } => npc_name,
-            _ => {
-                info!("Called npc_name on ViewItem that doesn't have npc_name field");
-                ""
-            },
-        }
-    }
-}
 /// Indicates whether a status effect is being applied or removed.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum StatusAction {
@@ -1280,14 +1114,14 @@ pub enum StatusAction {
 }
 
 /// Row data for listing container contents.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ContentLine {
     pub item_name: String,
     pub restricted: bool,
 }
 
 /// Row data for the exit listing portion of the view.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 pub struct ExitLine {
     pub direction: String,
     pub destination: String,

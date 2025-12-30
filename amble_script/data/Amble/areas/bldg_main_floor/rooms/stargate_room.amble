@@ -112,7 +112,7 @@ trigger "[Stargate] Press Snowfield Button"
 note "open/move the Stargate connection to Ice Pit (only if plaque 2 read)"
 when touch item snowfield_button {
     if all( has flag read-plaque-2, missing flag snowfield-gate-open ) {
-        do show "With a great whooshing like the flush of a titan's toilet, the Stargate opens a new connection. You are chilled by the frigid air pouring through the opening."
+        do show "With a great whooshing like the flush of a titan's toilet, the Stargate opens a new connection. Suddenly, you can see your breath -- condensed by the frigid air pouring through the opening."
         # modify stargate room
         do modify room stargate-room {
             desc "A chilly, hangar-size concrete room, connected to the Aperture lab through a huge, round vault door. The Stargate is filled with a shimmering energy, from which you hear howling wind. Occasionally, another unearthly howl (Zomby Woof?) joins in."
@@ -174,7 +174,7 @@ when touch item patio_button {
         do show "With a great whooshing like the flush of a titan's toilet, the Stargate opens a new connection. The smells of fresh baked bread and searing beef waft  through the opening."
         # modify stargate room
         do modify room stargate-room {
-            desc "A hangar-size concrete room, connected to the Aperture lab through a huge, round vault door. The Stargate is filled with a shimmering energy, from which you hear the sounds of clinking glasses punctuated by explosions. Occasionally, a bird flies out of the gate and circles it, but -- finding nowhere to land -- flies back in."
+            desc "A hangar-size concrete room, connected to the Aperture lab through a round vault door. The Stargate in the center is filled with a shimmering energy, from which you hear the sounds of clinking glasses punctuated by explosions. Occasionally, you catch a whiff of fresh baked bread in the air."
             # add exit to parish-landing and remove either of the others if previously opened
             add exit "through the stargate" -> patio
             remove exit ice-pit
