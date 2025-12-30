@@ -227,7 +227,7 @@ pub fn dev_note_handler(world: &AmbleWorld, view: &mut View, note: &str) {
         return;
     }
 
-    let now = OffsetDateTime::now_utc();
+    let now = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
     let log_path = note_log_path(now);
     let timestamp = format_note_timestamp(now);
     let note_text = note.trim();
@@ -237,7 +237,7 @@ pub fn dev_note_handler(world: &AmbleWorld, view: &mut View, note: &str) {
     if let Ok(room) = world.player_room_ref() {
         let _ = write!(
             &mut line,
-            "{timestamp} [NOTE] turn={} room={} \"{}\" | {note_text}",
+            "- [ ] {timestamp} turn={} room={} \"{}\" | {note_text}",
             world.turn_count,
             room.symbol(),
             room.name()
@@ -246,13 +246,25 @@ pub fn dev_note_handler(world: &AmbleWorld, view: &mut View, note: &str) {
         let location = describe_note_location(world);
         let _ = write!(
             &mut line,
-            "{timestamp} [NOTE] turn={} {location} | {note_text}",
+            "- [ ] {timestamp} turn={} {location} | {note_text}",
             world.turn_count
         );
     }
 
+    let is_new_file = !log_path.exists();
     match OpenOptions::new().create(true).append(true).open(&log_path) {
         Ok(mut file) => {
+            if is_new_file {
+                let heading = format_note_heading(now);
+                if let Err(err) = writeln!(file, "# Notes for {heading}\n") {
+                    view.push(ViewItem::ActionFailure(format!(
+                        "Failed to write note header to {}: {err}",
+                        log_path.display()
+                    )));
+                    warn!("DEV_MODE note failed writing header to {}: {err}", log_path.display());
+                    return;
+                }
+            }
             if let Err(err) = writeln!(file, "{line}") {
                 view.push(ViewItem::ActionFailure(format!(
                     "Failed to write note to {}: {err}",
@@ -279,13 +291,18 @@ pub fn dev_note_handler(world: &AmbleWorld, view: &mut View, note: &str) {
 fn note_log_path(now: OffsetDateTime) -> PathBuf {
     let fmt = format_description::parse("[year]-[month]-[day]").expect("valid note date format");
     let date = now.format(&fmt).unwrap_or_else(|_| "unknown-date".to_string());
-    PathBuf::from(LOG_DIR).join(format!("notes-{date}.log"))
+    PathBuf::from(LOG_DIR).join(format!("notes-{date}.md"))
 }
 
 fn format_note_timestamp(now: OffsetDateTime) -> String {
-    let fmt = format_description::parse("[year]-[month]-[day] [hour]:[minute]:[second]Z")
-        .expect("valid note timestamp format");
-    now.format(&fmt).unwrap_or_else(|_| "0000-00-00 00:00:00Z".to_string())
+    let fmt = format_description::parse("[hour]:[minute]").expect("valid note timestamp format");
+    now.format(&fmt).unwrap_or_else(|_| "00:00".to_string())
+}
+
+fn format_note_heading(now: OffsetDateTime) -> String {
+    let fmt = format_description::parse("[weekday repr:long], [month repr:long] [day padding:none], [year]")
+        .expect("valid note heading format");
+    now.format(&fmt).unwrap_or_else(|_| "Unknown Date".to_string())
 }
 
 fn describe_note_location(world: &AmbleWorld) -> String {
@@ -295,18 +312,7 @@ fn describe_note_location(world: &AmbleWorld) -> String {
             .get(&room_id)
             .map(|room| format!("room={} \"{}\"", room.symbol(), room.name()))
             .unwrap_or_else(|| format!("room_id={room_id}")),
-        Location::Inventory => "loc=inventory".to_string(),
-        Location::Item(item_id) => world
-            .items
-            .get(&item_id)
-            .map(|item| format!("loc=item:{} \"{}\"", item.symbol(), item.name()))
-            .unwrap_or_else(|| format!("loc=item:{item_id}")),
-        Location::Npc(npc_id) => world
-            .npcs
-            .get(&npc_id)
-            .map(|npc| format!("loc=npc:{} \"{}\"", npc.symbol(), npc.name()))
-            .unwrap_or_else(|| format!("loc=npc:{npc_id}")),
-        Location::Nowhere => "loc=nowhere".to_string(),
+        _ => String::from("loc=<unknown>"),
     }
 }
 

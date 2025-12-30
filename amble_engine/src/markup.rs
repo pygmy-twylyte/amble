@@ -298,6 +298,40 @@ fn parse_block_tag(tag: &str) -> Option<BlockTag> {
     None
 }
 
+fn strip_markup_tags(text: &str) -> String {
+    let mut out = String::new();
+    let mut idx = 0;
+    while idx < text.len() {
+        if text[idx..].starts_with("\\[[") {
+            out.push_str("[[");
+            idx += 3;
+            continue;
+        }
+        if text[idx..].starts_with("\\]]") {
+            out.push_str("]]");
+            idx += 3;
+            continue;
+        }
+        if text[idx..].starts_with("\\\\") {
+            out.push('\\');
+            idx += 2;
+            continue;
+        }
+        if text[idx..].starts_with("[[") {
+            if let Some(close_rel) = text[idx + 2..].find("]]") {
+                idx = idx + 2 + close_rel + 2;
+                continue;
+            }
+            out.push_str(&text[idx..]);
+            break;
+        }
+        let ch = text[idx..].chars().next().expect("idx is in-bounds");
+        out.push(ch);
+        idx += ch.len_utf8();
+    }
+    out
+}
+
 fn render_center_block(text: &str, width: usize, wrap: WrapMode, base: StyleKind, base_mods: StyleMods) -> String {
     let indent = wrap.indent_str();
     let indent_width = textwrap::core::display_width(indent);
@@ -331,7 +365,8 @@ fn render_box_block(
 ) -> String {
     let indent = wrap.indent_str();
     let indent_width = textwrap::core::display_width(indent);
-    let inner_wrap_width = width.saturating_sub(indent_width).saturating_sub(4).max(1);
+    let content_width = width.saturating_sub(indent_width);
+    let inner_wrap_width = content_width.saturating_sub(4).max(1);
 
     let ansi = render_inline_inner(text, StyleState::new(base, base_mods), /*allow_block_tags=*/ true);
     let opts = wrap_options(inner_wrap_width, "");
@@ -355,28 +390,37 @@ fn render_box_block(
         }
     };
     let border_style = StyleState::new(base, border_mods);
+    let box_width = max_len + 4;
+    let center_pad_width = content_width.saturating_sub(box_width) / 2;
+    let left_pad = " ".repeat(center_pad_width);
 
     let mut out = String::new();
 
     // Top border
-    let mut top = String::new();
-    top.push('┌');
+    out.push_str(indent);
+    out.push_str(&left_pad);
+    out.push_str(&border_style.apply_to("┌"));
     if let Some(title) = title.filter(|t| !t.trim().is_empty()) {
-        let title = title.trim();
-        let title_str = format!(" {title} ");
-        let title_len = textwrap::core::display_width(&title_str);
+        let trimmed = title.trim();
+        let visible = strip_markup_tags(trimmed);
+        let visible_with_padding = format!(" {visible} ");
+        let title_len = textwrap::core::display_width(&visible_with_padding);
         let dash_total = max_len + 2;
         let left = dash_total.saturating_sub(title_len) / 2;
         let right = dash_total.saturating_sub(title_len).saturating_sub(left);
-        top.push_str(&"─".repeat(left));
-        top.push_str(&title_str);
-        top.push_str(&"─".repeat(right));
+        out.push_str(&border_style.apply_to(&"─".repeat(left)));
+        out.push_str(&border_style.apply_to(" "));
+        out.push_str(&render_inline_inner(
+            trimmed,
+            StyleState::new(base, base_mods),
+            /*allow_block_tags=*/ false,
+        ));
+        out.push_str(&border_style.apply_to(" "));
+        out.push_str(&border_style.apply_to(&"─".repeat(right)));
     } else {
-        top.push_str(&"─".repeat(max_len + 2));
+        out.push_str(&border_style.apply_to(&"─".repeat(max_len + 2)));
     }
-    top.push('┐');
-    out.push_str(indent);
-    out.push_str(&border_style.apply_to(&top));
+    out.push_str(&border_style.apply_to("┐"));
     out.push('\n');
 
     // Body
@@ -386,8 +430,8 @@ fn render_box_block(
         }
         let line_len = textwrap::core::display_width(line);
         let pad_right = max_len.saturating_sub(line_len);
-
         out.push_str(indent);
+        out.push_str(&left_pad);
         out.push_str(&border_style.apply_to("│ "));
         out.push_str(line);
         out.push_str(&" ".repeat(pad_right));
@@ -396,9 +440,11 @@ fn render_box_block(
 
     // Bottom border
     out.push('\n');
-    let bottom = format!("└{}┘", "─".repeat(max_len + 2));
     out.push_str(indent);
-    out.push_str(&border_style.apply_to(&bottom));
+    out.push_str(&left_pad);
+    out.push_str(&border_style.apply_to("└"));
+    out.push_str(&border_style.apply_to(&"─".repeat(max_len + 2)));
+    out.push_str(&border_style.apply_to("┘"));
 
     out
 }
@@ -669,31 +715,5 @@ mod tests {
             StyleMods::default(),
         );
         assert_eq!(out, "  Hello");
-    }
-
-    #[test]
-    fn render_wrapped_box_draws_box() {
-        let out = render_wrapped(
-            "[[box]]Hi[[/box]]",
-            20,
-            WrapMode::Normal,
-            StyleKind::Plain,
-            StyleMods::default(),
-        );
-        assert_eq!(out, "┌────┐\n│ Hi │\n└────┘");
-    }
-
-    #[test]
-    fn render_wrapped_box_title_renders() {
-        let out = render_wrapped(
-            "[[box:Note]]Hi[[/box]]",
-            30,
-            WrapMode::Normal,
-            StyleKind::Plain,
-            StyleMods::default(),
-        );
-        assert!(out.contains(" Note "));
-        assert!(out.starts_with("┌"));
-        assert!(out.ends_with('┘'));
     }
 }

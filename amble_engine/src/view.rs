@@ -2,20 +2,17 @@
 //! This contains the view to the game world / messages.
 //! Rather than printing to the console from each handler, we'll aggregate needed information and messages
 //! to be organized and displayed at the end of the turn.
-use std::fmt::Write;
-
 use colored::Colorize;
-use log::info;
 use textwrap::{fill, termwidth};
-use variantly::Variantly;
 
-use crate::health::HealthState;
 use crate::helpers::plural_s;
-use crate::loader::help::HelpCommand;
 use crate::markup::{StyleKind, StyleMods, WrapMode, render_inline, render_wrapped};
 use crate::npc::NpcState;
-use crate::save_files::{SaveFileEntry, SaveFileStatus, format_modified};
+use crate::save_files::{SaveFileStatus, format_modified};
 use crate::style::{GameStyle, indented_block, normal_block};
+
+pub mod view_item;
+pub use view_item::ViewItem;
 
 const ICON_SUCCESS: &str = "\u{2611}"; // ✔
 const ICON_FAILURE: &str = "\u{274C}"; // ✖
@@ -279,13 +276,13 @@ impl View {
         for msg in point_msgs {
             if let ViewItem::PointsAwarded { amount, reason } = &msg.view_item {
                 if amount.is_negative() {
-                    let text = format!("{} (-{} point{})", reason, amount.abs(), plural_s(amount.abs())).bright_red();
+                    let text = format!("{} (-{} point{})\n", reason, amount.abs(), plural_s(amount.abs())).bright_red();
                     println!("{:<4}{}", ICON_NEGATIVE.bright_red(), text);
                 } else if *amount > 15 {
-                    let text = format!("{} (+{} point{}!)", reason, amount, plural_s(*amount)).bright_blue();
+                    let text = format!("{} (+{} point{}!)\n", reason, amount, plural_s(*amount)).bright_blue();
                     println!("{:<4}{}", ICON_CELEBRATE.bright_blue(), text);
                 } else {
-                    let text = format!("{} (+{} point{})", reason, amount, plural_s(*amount)).bright_green();
+                    let text = format!("{} (+{} point{})\n", reason, amount, plural_s(*amount)).bright_green();
                     println!("{:<4}{}", ICON_POSITIVE.bright_green(), text);
                 }
             }
@@ -586,14 +583,15 @@ impl View {
     fn inventory(&mut self) {
         if let Some(entry) = self
             .items
-            .iter()
+            .iter_mut()
             .find(|i| matches!(i.view_item, ViewItem::Inventory(..)))
-            && let ViewItem::Inventory(item_lines) = &entry.view_item
+            && let ViewItem::Inventory(item_lines) = &mut entry.view_item
         {
             println!("{}:", "Inventory".subheading_style());
             if item_lines.is_empty() {
                 println!("   {}", "You have... nothing at all.".italic().dimmed());
             } else {
+                item_lines.sort();
                 for line in item_lines {
                     println!("   {}", line.item_name.item_style());
                 }
@@ -932,11 +930,12 @@ impl View {
     }
 
     fn room_exit_list(&mut self) {
-        if let Some(ViewItem::RoomExits(exit_lines)) = self.items.iter().find_map(|i| match i.view_item {
-            ViewItem::RoomExits(_) => Some(&i.view_item),
+        if let Some(ViewItem::RoomExits(exit_lines)) = self.items.iter_mut().find_map(|i| match i.view_item {
+            ViewItem::RoomExits(_) => Some(&mut i.view_item),
             _ => None,
         }) {
             println!("{}:", "Exits".subheading_style());
+            exit_lines.sort();
             for exit in exit_lines {
                 print!("    > ");
                 match (exit.dest_visited, exit.exit_locked) {
@@ -959,11 +958,12 @@ impl View {
     }
 
     fn room_item_list(&mut self) {
-        if let Some(ViewItem::RoomItems(names)) = self.items.iter().find_map(|i| match i.view_item {
-            ViewItem::RoomItems(_) => Some(&i.view_item),
+        if let Some(ViewItem::RoomItems(names)) = self.items.iter_mut().find_map(|i| match i.view_item {
+            ViewItem::RoomItems(_) => Some(&mut i.view_item),
             _ => None,
         }) {
             println!("{}:", "Items".subheading_style());
+            names.sort();
             for name in names {
                 println!("    * {}", name.item_style());
             }
@@ -977,20 +977,37 @@ impl View {
             ViewItem::RoomOverlays { .. } => Some(&i.view_item),
             _ => None,
         }) {
-            let mut full_ovl = String::new();
-            for ovl in text {
-                let _ = write!(full_ovl, "{ovl} ");
-            }
-            println!(
-                "{}\n",
-                render_wrapped(
-                    &full_ovl,
-                    self.width,
+            let bullet_prefix = "• ";
+            let indent_prefix = "  ";
+            let wrap_width = self.width.saturating_sub(indent_prefix.len()).max(1);
+
+            for overlay in text {
+                let wrapped = render_wrapped(
+                    overlay,
+                    wrap_width,
                     WrapMode::Normal,
                     StyleKind::Overlay,
                     StyleMods::default(),
-                )
-            );
+                );
+                let mut lines = wrapped.lines();
+                if let Some(first_line) = lines.next() {
+                    if first_line.is_empty() {
+                        println!("{bullet_prefix}");
+                    } else {
+                        println!("{bullet_prefix}{first_line}");
+                    }
+                } else {
+                    println!("{bullet_prefix}");
+                }
+                for line in lines {
+                    if line.is_empty() {
+                        println!("{indent_prefix}");
+                    } else {
+                        println!("{indent_prefix}{line}");
+                    }
+                }
+            }
+            println!();
         }
     }
 
@@ -1085,178 +1102,6 @@ impl ViewEntry {
     }
 }
 
-/// `ViewItems` are each of the various types of information / messages that may be displayed to the player.
-#[derive(Debug, Clone, PartialEq, Eq, Variantly)]
-pub enum ViewItem {
-    ActionFailure(String),
-    ActionSuccess(String),
-    ActiveGoal {
-        name: String,
-        description: String,
-    },
-    AmbientEvent(String),
-    CharacterHarmed {
-        name: String,
-        cause: String,
-        amount: u32,
-    },
-    CharacterHealed {
-        name: String,
-        cause: String,
-        amount: u32,
-    },
-    CharacterDeath {
-        name: String,
-        cause: Option<String>,
-        is_player: bool,
-    },
-    CompleteGoal {
-        name: String,
-        description: String,
-    },
-    EngineMessage(String),
-    Error(String),
-    GameLoaded {
-        save_slot: String,
-        save_file: String,
-    },
-    GameSaved {
-        save_slot: String,
-        save_file: String,
-    },
-    SavedGamesList {
-        directory: String,
-        entries: Vec<SaveFileEntry>,
-    },
-    Help {
-        basic_text: String,
-        commands: Vec<HelpCommand>,
-    },
-    Inventory(Vec<ContentLine>),
-    ItemConsumableStatus(String),
-    ItemContents(Vec<ContentLine>),
-    ItemDescription {
-        name: String,
-        description: String,
-    },
-    ItemText(String),
-    NpcDescription {
-        name: String,
-        description: String,
-        health: HealthState,
-        state: NpcState,
-    },
-    NpcInventory(Vec<ContentLine>),
-    NpcSpeech {
-        speaker: String,
-        quote: String,
-    },
-    NpcEntered {
-        npc_name: String,
-        spin_msg: String,
-    },
-    NpcLeft {
-        npc_name: String,
-        spin_msg: String,
-    },
-    PointsAwarded {
-        amount: isize,
-        reason: String,
-    },
-    QuitSummary {
-        title: String,
-        rank: String,
-        notes: String,
-        score: usize,
-        max_score: usize,
-        visited: usize,
-        max_visited: usize,
-    },
-    RoomDescription {
-        name: String,
-        description: String,
-        visited: bool,
-        force_mode: Option<ViewMode>,
-    },
-    RoomExits(Vec<ExitLine>),
-    RoomItems(Vec<String>),
-    RoomNpcs(Vec<NpcLine>),
-    RoomOverlays {
-        text: Vec<String>,
-        force_mode: Option<ViewMode>,
-    },
-    StatusChange {
-        action: StatusAction,
-        status: String,
-    },
-    TransitionMessage(String),
-    TriggeredEvent(String),
-}
-impl ViewItem {
-    /// Classify a view item into a top-level output section.
-    pub fn section(&self) -> Section {
-        match self {
-            ViewItem::RoomDescription { .. }
-            | ViewItem::RoomOverlays { .. }
-            | ViewItem::RoomItems(_)
-            | ViewItem::RoomExits(_)
-            | ViewItem::RoomNpcs(_) => Section::Environment,
-            ViewItem::ActionSuccess(_)
-            | ViewItem::ActionFailure(_)
-            | ViewItem::Error(_)
-            | ViewItem::ItemDescription { .. }
-            | ViewItem::ItemText(_)
-            | ViewItem::ItemConsumableStatus(_)
-            | ViewItem::ItemContents(_)
-            | ViewItem::NpcDescription { .. }
-            | ViewItem::NpcInventory(_)
-            | ViewItem::Inventory(_)
-            | ViewItem::ActiveGoal { .. }
-            | ViewItem::CompleteGoal { .. } => Section::DirectResult,
-            ViewItem::CharacterHarmed { .. }
-            | ViewItem::CharacterDeath { .. }
-            | ViewItem::CharacterHealed { .. }
-            | ViewItem::NpcSpeech { .. }
-            | ViewItem::NpcEntered { .. }
-            | ViewItem::NpcLeft { .. }
-            | ViewItem::TriggeredEvent(_)
-            | ViewItem::PointsAwarded { .. }
-            | ViewItem::StatusChange { .. } => Section::WorldResponse,
-            ViewItem::AmbientEvent(_) => Section::Ambient,
-            ViewItem::QuitSummary { .. }
-            | ViewItem::EngineMessage(_)
-            | ViewItem::Help { .. }
-            | ViewItem::GameLoaded { .. }
-            | ViewItem::GameSaved { .. }
-            | ViewItem::SavedGamesList { .. } => Section::System,
-            ViewItem::TransitionMessage(_) => Section::Transition,
-        }
-    }
-
-    pub fn default_priority(&self) -> isize {
-        match &self {
-            ViewItem::TriggeredEvent(_) => -30,
-            ViewItem::CharacterHarmed { .. } => -20,
-            ViewItem::CharacterHealed { .. } => -10,
-            ViewItem::NpcEntered { .. } => 5,
-            ViewItem::NpcSpeech { .. } => 10,
-            ViewItem::NpcLeft { .. } => 15,
-            ViewItem::CharacterDeath { .. } => 100,
-            _ => 0,
-        }
-    }
-
-    /// Extract NPC name from NPC transit items.
-    pub fn npc_name(&self) -> &str {
-        match self {
-            ViewItem::NpcEntered { npc_name, .. } | ViewItem::NpcLeft { npc_name, .. } => npc_name,
-            _ => {
-                info!("Called npc_name on ViewItem that doesn't have npc_name field");
-                ""
-            },
-        }
-    }
-}
 /// Indicates whether a status effect is being applied or removed.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum StatusAction {
@@ -1265,14 +1110,14 @@ pub enum StatusAction {
 }
 
 /// Row data for listing container contents.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ContentLine {
     pub item_name: String,
     pub restricted: bool,
 }
 
 /// Row data for the exit listing portion of the view.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 pub struct ExitLine {
     pub direction: String,
     pub destination: String,

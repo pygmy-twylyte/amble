@@ -2,6 +2,18 @@
 //!
 //! Provides the data structures that track player objectives along with
 //! helpers for determining whether goal conditions are satisfied.
+//!
+//! `Goal`s are stateless -- goal completions are not marked or stored -- just
+//! three conditions upon creation:
+//!
+//! - when it becomes active / potentially achievable
+//! - when it is considered complete
+//! - when it is failed (active but can never be completed)
+//!
+//! Goals are only evaluated if/when the player issues a "goals" command.
+//! When they do, each defined goal's conditions are checked and it is assigned
+//! a `GoalStatus`, which is then used to filter/style goals and their descriptions
+//! for display.
 
 use serde::de::{self, Deserializer, EnumAccess, VariantAccess, Visitor};
 use serde::{Deserialize, Serialize};

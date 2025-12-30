@@ -159,7 +159,7 @@ when use item plaque_2_frozen ability read {
 # ========================================
 
 goal start-melting-plaque-2 {
-    name "Start a Fire"
+    name "Melt the Ice Pillar"
     desc "The plaque on the pillar in the snowfield pit is encased in a thick sheet of ice. If you want to read it, you'll have to melt it somehow."
     group optional
     start when has flag tried-read-plaque-2
