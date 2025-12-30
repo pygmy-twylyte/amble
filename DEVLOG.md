@@ -10,7 +10,16 @@ For the *few* of you out there lurking and watching the my pet project so far, i
 So, I intend to keep an informal log here, going forward. With the exception of this intro, newest entries will be at the top.
 
 ---
-12-28-2022
+12-29-2025
+
+I merged the content update branch (that also had a few minor engine tweaks and refactors and docstring updates). There's still about half the demo game for me to play through including a bunch of puzzle content that will likely need tuning up, but I wanted to get this `DEVLOG` into `main`, so I went ahead with a merge.
+
+###### Thinking 0.65.0?
+
+Probably soon. With the markup module, entity search and some other refactoring we can already call this a minor version -- but I'd like to refresh the rest of the demo content before a new release. 
+
+---
+12-28-2025
 
 - started this DEVLOG
 - caught up on content tweaks "todo" notes I made with the new :note system. Nothing fancy, mostly fixing some inconsistencies with descriptions after state changes in the world. 

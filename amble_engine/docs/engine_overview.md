@@ -46,14 +46,14 @@ Understanding this order is critical when writing triggers or scheduled actions,
 
 ## 3. Command Handling Pipeline
 
-- **Parser** (`command.rs`) converts tokenised input into strongly typed `Command` variants.
+- **Parser** (`command.rs`) converts tokenized input into strongly typed `Command` variants.
 - **Handlers** (modules under `repl/`) mutate `AmbleWorld` and populate the `View`:
   - `movement.rs` – room transitions, go back, map checks.
   - `item.rs` – take/drop/use logic, container interactions.
   - `npc.rs` – dialogue and trade, integrates with triggers.
   - `system.rs` – help, inventory, goals, theme switching.
   - `dev.rs` – developer-only commands (see §6).
-- **Trigger entry points** – most handlers call `trigger::check_triggers` or use helper functions (e.g., `trigger::spawn_item_in_inventory`) to ensure world logic runs via the same pipeline as DSL-authored behaviour.
+- **Trigger entry points** – most handlers call `trigger::check_triggers` or use helper functions (e.g., `trigger::spawn_item_in_inventory`) to ensure world logic runs via the same pipeline as DSL-authored behavior.
 
 Each handler receives `(&mut AmbleWorld, &mut View)` so state changes and UI output stay co-located and testable.
 
@@ -66,7 +66,7 @@ Each handler receives `(&mut AmbleWorld, &mut View)` so state changes and UI out
   - Condition lists (`all`/`any` flattened at load time).
   - Action lists (`show_message`, `spawn_item`, `schedule_in`, etc.).
 - **`trigger::check_triggers`** – accepts a slice of `TriggerCondition`s to evaluate after handlers mutate state. Returns the list of fired triggers so the caller can provide fallback messaging if nothing responded.
-- **Scheduler** (`scheduler.rs`) – stores `ScheduledEvent`s in turn order. `OnFalsePolicy` determines behaviour when conditions fail:
+- **Scheduler** (`scheduler.rs`) – stores `ScheduledEvent`s in turn order. `OnFalsePolicy` determines behavior when conditions fail:
   - `Cancel` – drop event.
   - `RetryAfter { turns }` – enqueue a clone offset by N turns (original slot becomes a tombstone).
   - `RetryNextTurn` – convenience for `RetryAfter { turns: 1 }`.
@@ -76,7 +76,7 @@ Each handler receives `(&mut AmbleWorld, &mut View)` so state changes and UI out
 
 ## 5. World State Anatomy (`AmbleWorld`)
 
-Located in `world.rs`, `AmbleWorld` centralises mutable state:
+Located in `world.rs`, `AmbleWorld` centralizes mutable state:
 
 - **Player** (`player.rs`) – inventory, current location, flag set, previously visited rooms.
 - **Rooms/Items/NPCs** – lookups by UUID, plus symbol maps for fast conversion from DSL tokens.
