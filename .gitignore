@@ -5,6 +5,9 @@ target/
 Cargo.lock
 **/*.bkp
 
+*.obsidian
+logs/
+
 # VSCode and Zed config (if applicable)
 .vscode/
 !.zed/snippets/
