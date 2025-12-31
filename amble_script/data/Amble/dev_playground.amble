@@ -63,7 +63,7 @@ npc the_luggage {
 trigger "Big Red Button Pushed"
 note "test for the touch item command/event -- works!"
 when touch item big_red_button {
-    do show "Always never press the big red button! Now look what you've done!"
+    do show "Always [[red]]never[[/red]] press the big red button! [[i]]Now look what you've done![[/i]]"
     do spawn npc the_luggage into room dev-room
 }
 
