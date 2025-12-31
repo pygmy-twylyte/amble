@@ -1113,7 +1113,7 @@ pub fn npc_refuse_item(
     npc_says(world, view, &npc_id, reason, priority)?;
 
     view.push_with_custom_priority(
-        ViewItem::TriggeredEvent(format!("{} returns it to you.", npc.name().npc_style())),
+        ViewItem::TriggeredEvent(format!("[[npc]]{}[[/npc]] returns it to you.", npc.name())),
         priority,
     );
     info!("└─ action: NpcRefuseItem({}, \"{reason}\"", npc.name());
@@ -1798,10 +1798,7 @@ pub fn show_message(view: &mut View, text: &String) {
 }
 
 fn show_message_with_priority(view: &mut View, text: &String, priority: Option<isize>) {
-    view.push_with_custom_priority(
-        ViewItem::TriggeredEvent(format!("{}", text.triggered_style())),
-        priority,
-    );
+    view.push_with_custom_priority(ViewItem::TriggeredEvent(text.to_string()), priority);
     info!(
         "└─ action: ShowMessage(\"{}...\")",
         &text[..std::cmp::min(text.len(), 50)]

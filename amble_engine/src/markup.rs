@@ -13,7 +13,7 @@
 //! - `[[i]]` / `[[/i]]` (italic)
 //! - `[[dim]]` / `[[/dim]]` (dim)
 //! - Color tags like `[[red]]...[[/red]]` and `[[color=red]]...[[/color]]`
-//! - Theme tags like `[[item]]`, `[[npc]]`, `[[room]]`, `[[highlight]]`
+//! - Theme tags like `[[item]]`, `[[npc]]`, `[[room]]`, `[[highlight]]`, `[[triggered]]`
 //!
 //! Block tags (only recognized by [`render_wrapped`]):
 //! - `[[center]]...[[/center]]` centers the wrapped lines
@@ -56,6 +56,7 @@ pub enum StyleKind {
     Room,
     Highlight,
     Error,
+    Triggered,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -98,6 +99,7 @@ impl StyleState {
             StyleKind::Room => text.room_style(),
             StyleKind::Highlight => text.highlight(),
             StyleKind::Error => text.error_style(),
+            StyleKind::Triggered => text.triggered_style(),
         };
 
         if let Some(fg) = self.fg {
@@ -613,6 +615,7 @@ fn parse_inline_tag(tag: &str) -> Option<InlineTag> {
         "room" => StyleChange::SetKind(StyleKind::Room),
         "highlight" => StyleChange::SetKind(StyleKind::Highlight),
         "error" => StyleChange::SetKind(StyleKind::Error),
+        "triggered" => StyleChange::SetKind(StyleKind::Triggered),
         _ => return None,
     };
 
@@ -630,6 +633,7 @@ fn canonical_inline_tag_name(lower: &str) -> Option<String> {
         "room" => "room".to_string(),
         "hl" | "highlight" => "highlight".to_string(),
         "err" | "error" => "error".to_string(),
+        "triggered" | "trig" => "triggered".to_string(),
         "color" | "fg" => "color".to_string(),
         // center and box block tags are handled elsewhere
         _ => return None,
