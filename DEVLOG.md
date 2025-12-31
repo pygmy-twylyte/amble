@@ -10,6 +10,20 @@ For the *few* of you out there lurking and watching the my pet project so far, i
 So, I intend to keep an informal log here, going forward. With the exception of this intro, newest entries will be at the top.
 
 ---
+12-30-2025
+
+**Amble's Birthday!**
+I got curious and looked back to figure out when exactly I started working on Amble. The conversation with ChatGPT about "type driven development" that led to me starting work on the engine was on **July 25, 2025**.  
+
+**Amble work today**
+Today... after doing a *tiny* bit of work on another project (medicalc) I came back to Amble and refactored the View module heavily, adding the ability to use markup in the triggered `do show` messages now. Already merged.
+
+**Looking Forward a Bit**
+After asking GPT when we had that conversation, "we" chatted a bit more about where Amble is and next steps. I think the next Big Thing™ is going to be an overhaul / recreation of NPC dialogue, so that actual (scripted) conversations are possible. 
+
+The other couple of ideas I had (macros / meta-programming for the DSL, and DSL-definable item abilities and interactions) are a bust, I think. The first would be high effort with low impact. The second would have really high impact, but is nearly impossible to implement with a parser engine. The DSL would have to be able to teach new verbs to the parser, how to translate that to a Command variant, and then the DSL would have to have some way to tell the engine how to process and display results from it... and that point, the DSL would be getting complicated enough that they might as well just learn Rust and add it to the engine!
+
+---
 12-29-2025
 
 I merged the content update branch (that also had a few minor engine tweaks and refactors and docstring updates). There's still about half the demo game for me to play through including a bunch of puzzle content that will likely need tuning up, but I wanted to get this `DEVLOG` into `main`, so I went ahead with a merge.
