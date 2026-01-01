@@ -315,6 +315,24 @@ pub fn consume(world: &mut AmbleWorld, item_id: &Uuid, ability: ItemAbility) -> 
     Ok(Some(uses_left))
 }
 
+/// Modes of using ingestible items.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum IngestMode {
+    Eat,
+    Drink,
+    Inhale,
+}
+impl Display for IngestMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            IngestMode::Eat => write!(f, "eat"),
+            IngestMode::Drink => write!(f, "drink"),
+            IngestMode::Inhale => write!(f, "inhale"),
+        }
+    }
+}
+
 /// Methods common to things that can hold items.
 pub trait ItemHolder {
     /// Insert an item into the holder's contents.
