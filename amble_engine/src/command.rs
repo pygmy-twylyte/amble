@@ -162,20 +162,20 @@ fn build_command_from_pair(command_pair: Pair<'_, Rule>) -> Command {
             Command::PutIn { item, container }
         },
         // twt = "target with tool"
-        Rule::attach_twt => twt_command(ItemInteractionType::Attach, command_pair),
-        Rule::break_twt => twt_command(ItemInteractionType::Break, command_pair),
-        Rule::burn_twt => twt_command(ItemInteractionType::Burn, command_pair),
-        Rule::extinguish_twt => twt_command(ItemInteractionType::Extinguish, command_pair),
-        Rule::clean_twt => twt_command(ItemInteractionType::Clean, command_pair),
-        Rule::cover_twt => twt_command(ItemInteractionType::Cover, command_pair),
-        Rule::cut_twt => twt_command(ItemInteractionType::Cut, command_pair),
-        Rule::handle_twt => twt_command(ItemInteractionType::Handle, command_pair),
-        Rule::move_twt => twt_command(ItemInteractionType::Move, command_pair),
-        Rule::open_twt => twt_command(ItemInteractionType::Open, command_pair),
-        Rule::repair_twt => twt_command(ItemInteractionType::Repair, command_pair),
-        Rule::sharpen_twt => twt_command(ItemInteractionType::Sharpen, command_pair),
-        Rule::turn_twt => twt_command(ItemInteractionType::Turn, command_pair),
-        Rule::unlock_twt => twt_command(ItemInteractionType::Unlock, command_pair),
+        Rule::attach_twt => verb_target_with_tool(ItemInteractionType::Attach, command_pair),
+        Rule::break_twt => verb_target_with_tool(ItemInteractionType::Break, command_pair),
+        Rule::burn_twt => verb_target_with_tool(ItemInteractionType::Burn, command_pair),
+        Rule::extinguish_twt => verb_target_with_tool(ItemInteractionType::Extinguish, command_pair),
+        Rule::clean_twt => verb_target_with_tool(ItemInteractionType::Clean, command_pair),
+        Rule::cover_twt => verb_target_with_tool(ItemInteractionType::Cover, command_pair),
+        Rule::cut_twt => verb_target_with_tool(ItemInteractionType::Cut, command_pair),
+        Rule::handle_twt => verb_target_with_tool(ItemInteractionType::Handle, command_pair),
+        Rule::move_twt => verb_target_with_tool(ItemInteractionType::Move, command_pair),
+        Rule::open_twt => verb_target_with_tool(ItemInteractionType::Open, command_pair),
+        Rule::repair_twt => verb_target_with_tool(ItemInteractionType::Repair, command_pair),
+        Rule::sharpen_twt => verb_target_with_tool(ItemInteractionType::Sharpen, command_pair),
+        Rule::turn_twt => verb_target_with_tool(ItemInteractionType::Turn, command_pair),
+        Rule::unlock_twt => verb_target_with_tool(ItemInteractionType::Unlock, command_pair),
         _ => unreachable!(),
     }
 }
@@ -219,7 +219,7 @@ fn inner_string_duo(pair: Pair<Rule>) -> (String, String) {
 
 /// Build a `UseItemOn` command for interaction rules that follow
 /// "verb target with tool" (e.g. "light fuse with candle") grammar.
-fn twt_command(verb: ItemInteractionType, pair: Pair<Rule>) -> Command {
+fn verb_target_with_tool(verb: ItemInteractionType, pair: Pair<Rule>) -> Command {
     let (target, tool) = inner_string_duo(pair);
     Command::UseItemOn { verb, tool, target }
 }
