@@ -15,8 +15,8 @@ use crate::{
 /// Parse developer-only commands if '`DEV_MODE`' is true.
 ///
 /// Developer commands are prefixed with ':' and are only available when
-/// the `DEV_MODE` constant is set to true. These commands provide debugging
-/// and testing functionality not intended for normal gameplay.
+/// the engine is built with the "dev-mode" feature enabled. These commands
+/// provide debugging and testing functionality not intended for normal gameplay.
 ///
 /// # Arguments
 /// * `input` - The raw command input from the user
