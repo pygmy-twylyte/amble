@@ -154,48 +154,58 @@ impl Item {
             )));
         }
 
-        // push container contents to View or report why inaccessible
+        // handle container / contained item display
         if self.container_state.is_some() {
             if self.is_accessible() || self.is_transparent() {
-                if self.contents.is_empty() {
-                    view.push(ViewItem::ItemContents(Vec::new()));
-                } else {
-                    view.push(ViewItem::ItemContents(
-                        self.contents
-                            .iter()
-                            .filter_map(|id| world.items.get(id))
-                            .map(|i| ContentLine {
-                                item_name: i.name.clone(),
-                                restricted: matches!(i.movability, Movability::Restricted { .. }),
-                            })
-                            .collect(),
-                    ));
-                }
-
-                // For transparent containers, add a note that items can't be taken
+                self.show_contents(world, view);
                 if self.is_transparent() {
-                    let action = if self
-                        .container_state
-                        .is_some_and(|cs| cs.is_locked() || cs.is_transparent_locked())
-                    {
-                        "unlock".bold().red()
-                    } else {
-                        "open".bold().green()
-                    };
-                    view.push(ViewItem::ActionFailure(format!(
-                        "You can see inside, but you must {action} it to access the contents."
-                    )));
+                    self.show_transparency_note(view);
                 }
             } else {
-                let action = if self.container_state.is_some_and(|cs| cs.is_locked()) {
-                    "unlock".bold().red()
-                } else {
-                    "open".bold().green()
-                };
-                view.push(ViewItem::ActionFailure(format!(
-                    "You must {action} it to see what's inside."
-                )));
+                self.show_contents_obscured(view);
             }
+        }
+    }
+
+    fn show_contents_obscured(&self, view: &mut View) {
+        let action = if self.container_state.is_some_and(|cs| cs.is_locked()) {
+            "unlock".bold().red()
+        } else {
+            "open".bold().green()
+        };
+        view.push(ViewItem::ActionFailure(format!(
+            "You must {action} it to see what's inside."
+        )));
+    }
+
+    fn show_transparency_note(&self, view: &mut View) {
+        let action = if self
+            .container_state
+            .is_some_and(|cs| cs.is_locked() || cs.is_transparent_locked())
+        {
+            "unlock".bold().red()
+        } else {
+            "open".bold().green()
+        };
+        view.push(ViewItem::ActionFailure(format!(
+            "You can see inside, but you must {action} it to access the contents."
+        )));
+    }
+
+    fn show_contents(&self, world: &AmbleWorld, view: &mut View) {
+        if self.contents.is_empty() {
+            view.push(ViewItem::ItemContents(Vec::new()));
+        } else {
+            view.push(ViewItem::ItemContents(
+                self.contents
+                    .iter()
+                    .filter_map(|id| world.items.get(id))
+                    .map(|i| ContentLine {
+                        item_name: i.name.clone(),
+                        restricted: matches!(i.movability, Movability::Restricted { .. }),
+                    })
+                    .collect(),
+            ));
         }
     }
 

@@ -91,24 +91,17 @@ impl HealthState {
 
     /// Iterate through pending health effects, applying each one.
     pub fn apply_effects(&mut self, display_name: &str) -> HealthTickResult {
-        // runny tally of character's hp as effects are processed
-        let mut running_hp = self.current_hp;
-        // list of decremented versions of over-time effects to retain for next turn
-        let mut ongoing_fx = Vec::new();
-        // an effect after processing -- None if one-off or expired, Some decremented version otherwise
-        let mut updated_fx: Option<HealthEffect>;
-        // collection of items to be pushed to the View by the caller
-        let mut view_items = Vec::new();
+        let mut hp_tally = self.current_hp;
+        let mut unexpired_effects = Vec::new();
+        let mut health_messages = Vec::new();
         let mut death_cause: Option<String> = None;
+
         for fx in &self.effects {
-            // apply the effect, keeping a running tally of the character's HP
-            // and updating over-time effects (tick down)
-            (running_hp, updated_fx) = fx.apply(running_hp, self.max_hp);
             // log and display each effect
             match &fx {
                 HealthEffect::InstantDamage { cause, amount } => {
                     info!("{display_name} damaged by '{cause}' (-{amount} hp)");
-                    view_items.push(ViewItem::CharacterHarmed {
+                    health_messages.push(ViewItem::CharacterHarmed {
                         name: display_name.into(),
                         cause: cause.into(),
                         amount: *amount,
@@ -116,7 +109,7 @@ impl HealthState {
                 },
                 HealthEffect::InstantHeal { cause, amount } => {
                     info!("{display_name} healed by '{cause}' (+{amount} hp)");
-                    view_items.push(ViewItem::CharacterHealed {
+                    health_messages.push(ViewItem::CharacterHealed {
                         name: display_name.into(),
                         cause: cause.into(),
                         amount: *amount,
@@ -127,7 +120,7 @@ impl HealthState {
                         "{display_name} damaged by '{cause}' d.o.t. (-{amount} hp, {} left)",
                         times - 1
                     );
-                    view_items.push(ViewItem::CharacterHarmed {
+                    health_messages.push(ViewItem::CharacterHarmed {
                         name: display_name.into(),
                         cause: cause.into(),
                         amount: *amount,
@@ -138,41 +131,76 @@ impl HealthState {
                         "{display_name} healed by '{cause}' h.o.t. (-{amount} hp, {} left)",
                         times - 1
                     );
-                    view_items.push(ViewItem::CharacterHealed {
+                    health_messages.push(ViewItem::CharacterHealed {
                         name: display_name.into(),
                         cause: cause.into(),
                         amount: *amount,
                     });
                 },
             }
+            let effect_outcome = fx.apply(hp_tally, self.max_hp);
+            hp_tally = effect_outcome.remaining_hp;
             // break out and return if character is dead!
-            if running_hp == 0 {
+            if effect_outcome.remaining_hp == 0 {
                 self.current_hp = 0;
                 death_cause = Some(fx.cause_string());
                 break;
             }
-            if let Some(contd_fx) = updated_fx {
-                ongoing_fx.push(contd_fx);
+            if let Some(effect) = effect_outcome.residual_effect {
+                unexpired_effects.push(effect);
             }
         }
-        self.current_hp = running_hp;
-        self.effects = ongoing_fx;
+        self.current_hp = hp_tally;
+        self.effects = unexpired_effects;
         HealthTickResult {
-            view_items,
+            view_items: health_messages,
             death_cause,
         }
     }
 }
 
-/// Abilities common to game entities that are alive
+/// Holds the result of one 'tick' of a particular health effect.
+pub struct EffectResult {
+    remaining_hp: u32,
+    residual_effect: Option<HealthEffect>,
+}
+impl From<(u32, Option<HealthEffect>)> for EffectResult {
+    fn from(value: (u32, Option<HealthEffect>)) -> Self {
+        EffectResult {
+            remaining_hp: value.0,
+            residual_effect: value.1,
+        }
+    }
+}
+
+/// Functionality common to all game entities that are alive
 pub trait LivingEntity: WorldObject {
+    /// The amount of health this entity has when fully healed.
     fn max_hp(&self) -> u32;
+
+    /// The current level of this entity's health.
     fn current_hp(&self) -> u32;
+
+    /// Reduce this entity's health by `amount`.
     fn damage(&mut self, amount: u32);
+
+    /// Increase this entity's health by `amount` (up to defined maximum)
     fn heal(&mut self, amount: u32);
+
+    /// Determine the life status of this entity.
+    ///
+    /// For now, the means `Alive` or `Dead` but could later include other
+    /// variants like "Revived" or "Stasis" or "Undead".
     fn life_state(&self) -> LifeState;
+
+    /// Add a health effect to start processing on the next turn.
     fn add_health_effect(&mut self, effect: HealthEffect);
+
+    /// Remove a pending health effect from the queue.
     fn remove_health_effect(&mut self, cause: &str) -> Option<HealthEffect>;
+
+    /// Apply and update queued health effects when advancing a turn.
+    #[must_use] /* life or death notifications may be returned! */
     fn tick_health_effects(&mut self) -> HealthTickResult;
 }
 
@@ -307,6 +335,7 @@ impl<'de> Deserialize<'de> for HealthEffect {
         })
     }
 }
+
 impl HealthEffect {
     /// Returns `true` if the `cause` matches the supplied string
     pub fn cause_matches(&self, pattern: &str) -> bool {
@@ -318,6 +347,7 @@ impl HealthEffect {
         }
     }
 
+    /// Returns a string describing what caused the health change (e.g. "drank potion", "played with fire")
     pub fn cause_string(&self) -> String {
         match &self {
             Self::DamageOverTime { cause, .. }
@@ -326,15 +356,16 @@ impl HealthEffect {
             | Self::InstantHeal { cause, .. } => cause.clone(),
         }
     }
+
     /// Applies this effect to the supplied `HealthState`
     ///
     /// The current and max hp are passed in. The result is a tuple containing updated hp
     /// after processing the effect, and an optional follow up effect (if any) for
     /// over-time effects.
-    pub fn apply(&self, current_hp: u32, max_hp: u32) -> (u32, Option<HealthEffect>) {
+    pub fn apply(&self, current_hp: u32, max_hp: u32) -> EffectResult {
         match self {
-            Self::InstantDamage { amount, .. } => (current_hp.saturating_sub(*amount), None),
-            Self::InstantHeal { amount, .. } => (cmp::min(max_hp, current_hp.saturating_add(*amount)), None),
+            Self::InstantDamage { amount, .. } => (current_hp.saturating_sub(*amount), None).into(),
+            Self::InstantHeal { amount, .. } => (cmp::min(max_hp, current_hp.saturating_add(*amount)), None).into(),
             Self::DamageOverTime { cause, amount, times } => {
                 let times_left: u32 = times.saturating_sub(1);
                 let hp_left = current_hp.saturating_sub(*amount);
@@ -347,7 +378,7 @@ impl HealthEffect {
                 } else {
                     None
                 };
-                (hp_left, follow_up)
+                (hp_left, follow_up).into()
             },
             Self::HealOverTime { cause, amount, times } => {
                 let times_left: u32 = times.saturating_sub(1);
@@ -361,7 +392,7 @@ impl HealthEffect {
                 } else {
                     None
                 };
-                (healed_hp, follow_up)
+                (healed_hp, follow_up).into()
             },
         }
     }
@@ -389,9 +420,9 @@ mod tests {
             amount: 5,
         };
 
-        let (hp, follow_up) = effect.apply(8, 10);
-        assert_eq!(hp, 10);
-        assert!(follow_up.is_none());
+        let outcome = effect.apply(8, 10);
+        assert_eq!(outcome.remaining_hp, 10);
+        assert!(outcome.residual_effect.is_none());
     }
 
     #[test]
