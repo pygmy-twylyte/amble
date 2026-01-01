@@ -11,8 +11,7 @@ use uuid::Uuid;
 
 use crate::{
     AmbleWorld, ItemHolder, Location,
-    command::IngestMode,
-    item::{ItemAbility, ItemInteractionType},
+    item::{IngestMode, ItemAbility, ItemInteractionType},
     npc::NpcState,
     player::Flag,
     spinners::SpinnerType,

@@ -9,8 +9,7 @@ use anyhow::{Context, Ok, Result, bail};
 use serde::Deserialize;
 
 use crate::{
-    command::IngestMode,
-    item::{ItemAbility, ItemInteractionType},
+    item::{IngestMode, ItemAbility, ItemInteractionType},
     loader::SymbolTable,
     npc::NpcState,
     spinners::SpinnerType,
