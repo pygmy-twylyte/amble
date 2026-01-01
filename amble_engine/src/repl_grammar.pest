@@ -9,7 +9,7 @@ save_name = @{ ASCII_ALPHANUMERIC ~ ("_" | "-" | "." | ASCII_ALPHANUMERIC)* }
 word      = @{ (ASCII_ALPHANUMERIC | "-" | "_" | "'")+ }
 phrase    = @{ word ~ (WHITESPACE+ ~ !prep ~ !manner_prep ~ word)* }
 
-command = _{ verb_do_io | verb_obj | simple }
+command = _{ list_saves | verb_do_io | verb_obj | simple }
 
 artic       = _{ "the" | "an" | "a" }
 prep        = _{ "at" | "into" | "on" | "off" | "in" | "to" | "from" | "down" }
