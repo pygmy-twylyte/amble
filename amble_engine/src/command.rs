@@ -3,16 +3,13 @@
 //! Defines the command vocabulary understood by the REPL, including
 //! parsing helpers that convert raw input into strongly typed commands.
 
-use std::fmt::Display;
-
 use pest::{Parser, iterators::Pair};
 use pest_derive::Parser;
-use serde::{Deserialize, Serialize};
 use variantly::Variantly;
 
 use crate::{
     dev_command::parse_dev_command,
-    item::ItemInteractionType,
+    item::{IngestMode, ItemInteractionType},
     view::{View, ViewMode},
 };
 
@@ -89,69 +86,30 @@ pub enum Command {
     },
 }
 
-/// Modes of using ingestible items.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum IngestMode {
-    Eat,
-    Drink,
-    Inhale,
-}
-impl Display for IngestMode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            IngestMode::Eat => write!(f, "eat"),
-            IngestMode::Drink => write!(f, "drink"),
-            IngestMode::Inhale => write!(f, "inhale"),
-        }
-    }
-}
-
-/// PEG parser generated from `repl_grammar.pest`.
+/// PEG parser for player input, generated from [`repl_grammar.pest`].
 #[derive(Parser)]
 #[grammar = "repl_grammar.pest"]
 pub struct CommandParser;
 
-/// Parses an input string and returns a corresponding `Command` if recognized.
+/// Parses an input string and returns a corresponding `Command`.
 ///
 /// The parser is case-insensitive; the input is converted to lowercase before
-/// being tokenized and matched against known commands.
+/// being tokenized and matched against grammar rules. If no valid command can
+/// be determined, returns `Command::Unknown`
 pub fn parse_command(input: &str, view: &mut View) -> Command {
-    // normalize user input to lowercase so commands are case-insensitive
     let lc_input = input.to_lowercase();
-
-    // check for and parse developer commands if available (feature dev_mode enabled)
+    // isolated handling for `dev-mode` commands
     if let Some(command) = parse_dev_command(input, view) {
         return command;
     }
+    let Some(command_pair) = parse_pair_from_input(lc_input.as_str()) else {
+        return Command::Unknown;
+    };
+    build_command_from_pair(command_pair)
+}
 
-    let trimmed = lc_input.trim();
-    let mut words = trimmed.split_whitespace();
-    if let Some(first) = words.next() {
-        if first == "saves" && words.next().is_none() {
-            return Command::ListSaves;
-        }
-        if first == "list"
-            && let Some(second) = words.next()
-            && second == "saves"
-            && words.next().is_none()
-        {
-            return Command::ListSaves;
-        }
-    }
-
-    // parse gameplay commands; fall back to Unknown on parse failure
-    let Ok(mut pairs) = CommandParser::parse(Rule::repl_input, &lc_input) else {
-        return Command::Unknown;
-    };
-    let Some(repl_input_pair) = pairs.next() else {
-        return Command::Unknown;
-    };
-    let mut inner = repl_input_pair.into_inner();
-    let Some(command) = inner.next() else {
-        return Command::Unknown;
-    };
-    match command.as_rule() {
+fn build_command_from_pair(command_pair: Pair<'_, Rule>) -> Command {
+    match command_pair.as_rule() {
         Rule::EOI => Command::Unknown,
         Rule::inventory => Command::Inventory,
         Rule::list_saves => Command::ListSaves,
@@ -163,67 +121,83 @@ pub fn parse_command(input: &str, view: &mut View) -> Command {
         Rule::vm_clear => Command::SetViewMode(ViewMode::ClearVerbose),
         Rule::vm_verbose => Command::SetViewMode(ViewMode::Verbose),
         Rule::vm_brief => Command::SetViewMode(ViewMode::Brief),
-        Rule::look_at => Command::LookAt(inner_string(command)),
-        Rule::load => Command::Load(inner_string(command)),
-        Rule::save => Command::Save(inner_string(command)),
-        Rule::take => Command::Take(inner_string(command)),
-        Rule::drop => Command::Drop(inner_string(command)),
-        Rule::talk_to => Command::TalkTo(inner_string(command)),
-        Rule::turn_on => Command::TurnOn(inner_string(command)),
-        Rule::turn_off => Command::TurnOff(inner_string(command)),
-        Rule::theme => Command::Theme(inner_string(command)),
-        Rule::open => Command::Open(inner_string(command)),
-        Rule::close => Command::Close(inner_string(command)),
-        Rule::lock => Command::LockItem(inner_string(command)),
-        Rule::unlock => Command::UnlockItem(inner_string(command)),
-        Rule::move_to => Command::MoveTo(inner_string(command)),
-        Rule::read => Command::Read(inner_string(command)),
-        Rule::touch => Command::Touch(inner_string(command)),
+        Rule::look_at => Command::LookAt(inner_string(command_pair)),
+        Rule::load => Command::Load(inner_string(command_pair)),
+        Rule::save => Command::Save(inner_string(command_pair)),
+        Rule::take => Command::Take(inner_string(command_pair)),
+        Rule::drop => Command::Drop(inner_string(command_pair)),
+        Rule::talk_to => Command::TalkTo(inner_string(command_pair)),
+        Rule::turn_on => Command::TurnOn(inner_string(command_pair)),
+        Rule::turn_off => Command::TurnOff(inner_string(command_pair)),
+        Rule::theme => Command::Theme(inner_string(command_pair)),
+        Rule::open => Command::Open(inner_string(command_pair)),
+        Rule::close => Command::Close(inner_string(command_pair)),
+        Rule::lock => Command::LockItem(inner_string(command_pair)),
+        Rule::unlock => Command::UnlockItem(inner_string(command_pair)),
+        Rule::move_to => Command::MoveTo(inner_string(command_pair)),
+        Rule::read => Command::Read(inner_string(command_pair)),
+        Rule::touch => Command::Touch(inner_string(command_pair)),
         Rule::eat => Command::Ingest {
-            item: inner_string(command),
+            item: inner_string(command_pair),
             mode: IngestMode::Eat,
         },
         Rule::drink => Command::Ingest {
-            item: inner_string(command),
+            item: inner_string(command_pair),
             mode: IngestMode::Drink,
         },
         Rule::inhale => Command::Ingest {
-            item: inner_string(command),
+            item: inner_string(command_pair),
             mode: IngestMode::Inhale,
         },
         Rule::give_to_npc => {
-            let (item, npc) = inner_string_duo(command);
+            let (item, npc) = inner_string_duo(command_pair);
             Command::GiveToNpc { item, npc }
         },
         Rule::take_from => {
-            let (item, container) = inner_string_duo(command);
+            let (item, container) = inner_string_duo(command_pair);
             Command::TakeFrom { item, container }
         },
         Rule::put_in => {
-            let (item, container) = inner_string_duo(command);
+            let (item, container) = inner_string_duo(command_pair);
             Command::PutIn { item, container }
         },
         // twt = "target with tool"
-        Rule::attach_twt => twt_command(ItemInteractionType::Attach, command),
-        Rule::break_twt => twt_command(ItemInteractionType::Break, command),
-        Rule::burn_twt => twt_command(ItemInteractionType::Burn, command),
-        Rule::extinguish_twt => twt_command(ItemInteractionType::Extinguish, command),
-        Rule::clean_twt => twt_command(ItemInteractionType::Clean, command),
-        Rule::cover_twt => twt_command(ItemInteractionType::Cover, command),
-        Rule::cut_twt => twt_command(ItemInteractionType::Cut, command),
-        Rule::handle_twt => twt_command(ItemInteractionType::Handle, command),
-        Rule::move_twt => twt_command(ItemInteractionType::Move, command),
-        Rule::open_twt => twt_command(ItemInteractionType::Open, command),
-        Rule::repair_twt => twt_command(ItemInteractionType::Repair, command),
-        Rule::sharpen_twt => twt_command(ItemInteractionType::Sharpen, command),
-        Rule::turn_twt => twt_command(ItemInteractionType::Turn, command),
-        Rule::unlock_twt => twt_command(ItemInteractionType::Unlock, command),
+        Rule::attach_twt => twt_command(ItemInteractionType::Attach, command_pair),
+        Rule::break_twt => twt_command(ItemInteractionType::Break, command_pair),
+        Rule::burn_twt => twt_command(ItemInteractionType::Burn, command_pair),
+        Rule::extinguish_twt => twt_command(ItemInteractionType::Extinguish, command_pair),
+        Rule::clean_twt => twt_command(ItemInteractionType::Clean, command_pair),
+        Rule::cover_twt => twt_command(ItemInteractionType::Cover, command_pair),
+        Rule::cut_twt => twt_command(ItemInteractionType::Cut, command_pair),
+        Rule::handle_twt => twt_command(ItemInteractionType::Handle, command_pair),
+        Rule::move_twt => twt_command(ItemInteractionType::Move, command_pair),
+        Rule::open_twt => twt_command(ItemInteractionType::Open, command_pair),
+        Rule::repair_twt => twt_command(ItemInteractionType::Repair, command_pair),
+        Rule::sharpen_twt => twt_command(ItemInteractionType::Sharpen, command_pair),
+        Rule::turn_twt => twt_command(ItemInteractionType::Turn, command_pair),
+        Rule::unlock_twt => twt_command(ItemInteractionType::Unlock, command_pair),
         _ => unreachable!(),
     }
 }
 
+/// Takes user input and returns a parsed command (as a Pest `Pair`) that matches any
+/// defined `Rule`, otherwise `None`.
+fn parse_pair_from_input(input_text: &str) -> Option<Pair<'_, Rule>> {
+    let Ok(mut pairs) = CommandParser::parse(Rule::repl_input, input_text) else {
+        return None;
+    };
+    let Some(repl_input_pair) = pairs.next() else {
+        return None;
+    };
+    let mut inner = repl_input_pair.into_inner();
+    let Some(command) = inner.next() else {
+        return None;
+    };
+    Some(command)
+}
+
 /// Extract a single string argument from a parsed rule.
-pub fn inner_string(pair: Pair<Rule>) -> String {
+fn inner_string(pair: Pair<Rule>) -> String {
     if let Some(inner) = pair.into_inner().next() {
         inner.as_str().to_string()
     } else {
@@ -232,7 +206,7 @@ pub fn inner_string(pair: Pair<Rule>) -> String {
 }
 
 /// Extract two string arguments from a parsed rule.
-pub fn inner_string_duo(pair: Pair<Rule>) -> (String, String) {
+fn inner_string_duo(pair: Pair<Rule>) -> (String, String) {
     let mut inner = pair.into_inner();
     if let Some(first) = inner.next()
         && let Some(second) = inner.next()
@@ -245,7 +219,7 @@ pub fn inner_string_duo(pair: Pair<Rule>) -> (String, String) {
 
 /// Build a `UseItemOn` command for interaction rules that follow
 /// "verb target with tool" (e.g. "light fuse with candle") grammar.
-pub fn twt_command(verb: ItemInteractionType, pair: Pair<Rule>) -> Command {
+fn twt_command(verb: ItemInteractionType, pair: Pair<Rule>) -> Command {
     let (target, tool) = inner_string_duo(pair);
     Command::UseItemOn { verb, tool, target }
 }
