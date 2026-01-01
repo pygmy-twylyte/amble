@@ -98,10 +98,10 @@ pub fn parse_program_full(source: &str) -> Result<ProgramAstBundle, AstError> {
             _ => {},
         }
     }
-    let mut out = Vec::new();
+    let mut triggers = Vec::new();
     for trig in trigger_pairs {
         let mut ts = parse_trigger_pair(trig, source, &smap, &sets)?;
-        out.append(&mut ts);
+        triggers.append(&mut ts);
     }
     let mut rooms = Vec::new();
     for rp in room_pairs {
@@ -128,7 +128,7 @@ pub fn parse_program_full(source: &str) -> Result<ProgramAstBundle, AstError> {
         let g = parse_goal_pair(gp, source)?;
         goals.push(g);
     }
-    Ok((out, rooms, items, spinners, npcs, goals))
+    Ok((triggers, rooms, items, spinners, npcs, goals))
 }
 
 fn parse_trigger_pair(
@@ -620,57 +620,57 @@ fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<R
                 let mut required_items: Vec<String> = Vec::new();
                 let mut required_flags: Vec<String> = Vec::new();
                 if let Some(next) = it.next()
-                    && next.as_rule() == Rule::exit_opts {
-                        for opt in next.into_inner() {
-                            // Simplest detection by textual head, then use children for values
-                            let opt_text = opt.as_str().trim();
-                            if opt_text == "hidden" {
-                                hidden = true;
-                                continue;
-                            }
-                            if opt_text == "locked" {
-                                locked = true;
-                                continue;
-                            }
+                    && next.as_rule() == Rule::exit_opts
+                {
+                    for opt in next.into_inner() {
+                        // Simplest detection by textual head, then use children for values
+                        let opt_text = opt.as_str().trim();
+                        if opt_text == "hidden" {
+                            hidden = true;
+                            continue;
+                        }
+                        if opt_text == "locked" {
+                            locked = true;
+                            continue;
+                        }
 
-                            // pull children
-                            let children: Vec<_> = opt.clone().into_inner().collect();
-                            // barred <string>
-                            if let Some(s) = children.iter().find(|p| p.as_rule() == Rule::string) {
-                                barred_message = Some(unquote(s.as_str()));
-                                continue;
+                        // pull children
+                        let children: Vec<_> = opt.clone().into_inner().collect();
+                        // barred <string>
+                        if let Some(s) = children.iter().find(|p| p.as_rule() == Rule::string) {
+                            barred_message = Some(unquote(s.as_str()));
+                            continue;
+                        }
+                        // required_items(...): list of idents only
+                        if children.iter().all(|p| p.as_rule() == Rule::ident) && opt_text.starts_with("required_items")
+                        {
+                            for idp in children {
+                                required_items.push(idp.as_str().to_string());
                             }
-                            // required_items(...): list of idents only
-                            if children.iter().all(|p| p.as_rule() == Rule::ident)
-                                && opt_text.starts_with("required_items")
-                            {
-                                for idp in children {
-                                    required_items.push(idp.as_str().to_string());
+                            continue;
+                        }
+                        // required_flags(...): list of idents or flag_req; we normalize to base name
+                        if opt_text.starts_with("required_flags") {
+                            for frp in opt.into_inner() {
+                                match frp.as_rule() {
+                                    Rule::ident => {
+                                        required_flags.push(frp.as_str().to_string());
+                                    },
+                                    Rule::flag_req => {
+                                        // Extract ident child and keep only base name (ignore step/end since equality is by name)
+                                        let mut itf = frp.into_inner();
+                                        let ident =
+                                            itf.next().ok_or(AstError::Shape("flag ident"))?.as_str().to_string();
+                                        let base = ident.split('#').next().unwrap_or(&ident).to_string();
+                                        required_flags.push(base);
+                                    },
+                                    _ => {},
                                 }
-                                continue;
                             }
-                            // required_flags(...): list of idents or flag_req; we normalize to base name
-                            if opt_text.starts_with("required_flags") {
-                                for frp in opt.into_inner() {
-                                    match frp.as_rule() {
-                                        Rule::ident => {
-                                            required_flags.push(frp.as_str().to_string());
-                                        },
-                                        Rule::flag_req => {
-                                            // Extract ident child and keep only base name (ignore step/end since equality is by name)
-                                            let mut itf = frp.into_inner();
-                                            let ident =
-                                                itf.next().ok_or(AstError::Shape("flag ident"))?.as_str().to_string();
-                                            let base = ident.split('#').next().unwrap_or(&ident).to_string();
-                                            required_flags.push(base);
-                                        },
-                                        _ => {},
-                                    }
-                                }
-                                continue;
-                            }
+                            continue;
                         }
                     }
+                }
                 exits.push((
                     dir,
                     crate::ExitAst {
@@ -1328,12 +1328,13 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                 // rooms list inside (...)
                 let mut rooms: Vec<String> = Vec::new();
                 if let Some(open) = s.find('(')
-                    && let Some(close_rel) = s[open + 1..].find(')') {
-                        let inner = &s[open + 1..open + 1 + close_rel];
-                        for tok in inner.split(',').map(|x| x.trim()).filter(|x| !x.is_empty()) {
-                            rooms.push(tok.to_string());
-                        }
+                    && let Some(close_rel) = s[open + 1..].find(')')
+                {
+                    let inner = &s[open + 1..open + 1 + close_rel];
+                    for tok in inner.split(',').map(|x| x.trim()).filter(|x| !x.is_empty()) {
+                        rooms.push(tok.to_string());
                     }
+                }
                 let timing = s
                     .find(" timing ")
                     .map(|idx| s[idx + 8..].split_whitespace().next().unwrap_or("").to_string());
@@ -1448,12 +1449,13 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                     }
                     let mut rooms: Vec<String> = Vec::new();
                     if let Some(open) = txt.find('(')
-                        && let Some(close_rel) = txt[open + 1..].find(')') {
-                            let inner = &txt[open + 1..open + 1 + close_rel];
-                            for tok in inner.split(',').map(|x| x.trim()).filter(|x| !x.is_empty()) {
-                                rooms.push(tok.to_string());
-                            }
+                        && let Some(close_rel) = txt[open + 1..].find(')')
+                    {
+                        let inner = &txt[open + 1..open + 1 + close_rel];
+                        for tok in inner.split(',').map(|x| x.trim()).filter(|x| !x.is_empty()) {
+                            rooms.push(tok.to_string());
                         }
+                    }
 
                     let timing = txt
                         .find(" timing ")
@@ -1505,36 +1507,37 @@ fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<Npc
                         (id, parts.next().unwrap_or("").to_string())
                     };
                     if let Some(open_idx) = after_key.find('{')
-                        && let Some(close_rel) = after_key[open_idx + 1..].rfind('}') {
-                            let mut inner = &after_key[open_idx + 1..open_idx + 1 + close_rel];
-                            let mut lines: Vec<String> = Vec::new();
-                            loop {
-                                inner = inner.trim_start();
-                                if inner.is_empty() {
+                        && let Some(close_rel) = after_key[open_idx + 1..].rfind('}')
+                    {
+                        let mut inner = &after_key[open_idx + 1..open_idx + 1 + close_rel];
+                        let mut lines: Vec<String> = Vec::new();
+                        loop {
+                            inner = inner.trim_start();
+                            if inner.is_empty() {
+                                break;
+                            }
+                            if inner.starts_with('"') || inner.starts_with('r') || inner.starts_with('\'') {
+                                if let Ok((val, used)) = parse_string_at(inner) {
+                                    lines.push(val);
+                                    inner = &inner[used..];
+                                    continue;
+                                } else {
                                     break;
                                 }
-                                if inner.starts_with('"') || inner.starts_with('r') || inner.starts_with('\'') {
-                                    if let Ok((val, used)) = parse_string_at(inner) {
-                                        lines.push(val);
-                                        inner = &inner[used..];
-                                        continue;
-                                    } else {
-                                        break;
-                                    }
+                            } else {
+                                // consume until next quote or end
+                                if let Some(pos) = inner.find('"') {
+                                    inner = &inner[pos..];
                                 } else {
-                                    // consume until next quote or end
-                                    if let Some(pos) = inner.find('"') {
-                                        inner = &inner[pos..];
-                                    } else {
-                                        break;
-                                    }
+                                    break;
                                 }
                             }
-                            if !lines.is_empty() {
-                                dialogue.push((key, lines));
-                                continue;
-                            }
                         }
+                        if !lines.is_empty() {
+                            dialogue.push((key, lines));
+                            continue;
+                        }
+                    }
                 }
             },
         }
@@ -2296,29 +2299,31 @@ fn parse_action_core(text: &str) -> Result<ActionAst, AstError> {
         return Err(AstError::Shape("set barred message syntax"));
     }
     if let Some(rest) = t.strip_prefix("do lock exit from ")
-        && let Some((from, tail)) = rest.split_once(" direction ") {
-            let tail = tail.trim_start();
-            let direction = match parse_string_at(tail) {
-                Ok((s, _used)) => s,
-                Err(_) => tail.trim().to_string(),
-            };
-            return Ok(ActionAst::LockExit {
-                from_room: from.trim().to_string(),
-                direction,
-            });
-        }
+        && let Some((from, tail)) = rest.split_once(" direction ")
+    {
+        let tail = tail.trim_start();
+        let direction = match parse_string_at(tail) {
+            Ok((s, _used)) => s,
+            Err(_) => tail.trim().to_string(),
+        };
+        return Ok(ActionAst::LockExit {
+            from_room: from.trim().to_string(),
+            direction,
+        });
+    }
     if let Some(rest) = t.strip_prefix("do unlock exit from ")
-        && let Some((from, tail)) = rest.split_once(" direction ") {
-            let tail = tail.trim_start();
-            let direction = match parse_string_at(tail) {
-                Ok((s, _used)) => s,
-                Err(_) => tail.trim().to_string(),
-            };
-            return Ok(ActionAst::UnlockExit {
-                from_room: from.trim().to_string(),
-                direction,
-            });
-        }
+        && let Some((from, tail)) = rest.split_once(" direction ")
+    {
+        let tail = tail.trim_start();
+        let direction = match parse_string_at(tail) {
+            Ok((s, _used)) => s,
+            Err(_) => tail.trim().to_string(),
+        };
+        return Ok(ActionAst::UnlockExit {
+            from_room: from.trim().to_string(),
+            direction,
+        });
+    }
     if let Some(rest) = t.strip_prefix("do give item ") {
         // do give item <item> to player from npc <npc>
         let rest = rest.trim();
@@ -2333,18 +2338,19 @@ fn parse_action_core(text: &str) -> Result<ActionAst, AstError> {
     if let Some(rest) = t.strip_prefix("do reveal exit from ") {
         // format: <from> to <to> direction <dir>
         if let Some((from, tail)) = rest.split_once(" to ")
-            && let Some((to, dir_tail)) = tail.split_once(" direction ") {
-                let dir_tail = dir_tail.trim_start();
-                let direction = match parse_string_at(dir_tail) {
-                    Ok((s, _used)) => s,
-                    Err(_) => dir_tail.trim().to_string(),
-                };
-                return Ok(ActionAst::RevealExit {
-                    exit_from: from.trim().to_string(),
-                    exit_to: to.trim().to_string(),
-                    direction,
-                });
-            }
+            && let Some((to, dir_tail)) = tail.split_once(" direction ")
+        {
+            let dir_tail = dir_tail.trim_start();
+            let direction = match parse_string_at(dir_tail) {
+                Ok((s, _used)) => s,
+                Err(_) => dir_tail.trim().to_string(),
+            };
+            return Ok(ActionAst::RevealExit {
+                exit_from: from.trim().to_string(),
+                exit_to: to.trim().to_string(),
+                direction,
+            });
+        }
         return Err(AstError::Shape("reveal exit syntax"));
     }
     if let Some(rest) = t.strip_prefix("do push player to ") {
