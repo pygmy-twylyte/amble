@@ -10,6 +10,15 @@ For the *few* of you out there lurking and watching the my pet project so far, i
 So, I intend to keep an informal log here, going forward. With the exception of this intro, newest entries will be at the top.
 
 ---
+12-31-2025
+
+I've done some recent reading about refactoring and code readability. When I go back to look at some of the code both the engine and the script compiler, there are abundant "code smells". I spent some time doing some of the simpler types of refactors today -- renaming variables, extracting complicted logic into functions, using guard clauses to reduce indentation hell. I'm really surprised and pleased at how much more readable and maintainable these simple chnages can make the code. 
+
+Didn't get anything done on updating content.
+
+Also sad to say I had to lean on Codex to get some semblance of a refactor going for amble_script. It was a giant mess that had come to the point where I had no idea how it worked in many areas. I'm hoping the simple changes Codex made (mostly separating things into modules and extracting functions) will make it easier for me to get back on top of that part of Amble. If I'm ever to tackle macros (even compiler-defined ones), I'll need a much more solid understanding before I can insert that logic.
+
+---
 12-30-2025
 
 **Amble's Birthday!**
