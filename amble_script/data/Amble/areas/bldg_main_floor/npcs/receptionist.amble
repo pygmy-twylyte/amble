@@ -11,7 +11,7 @@ Demerzel is a positronic android, and has been continuously online for thousands
     max_hp 20
     state normal
     dialogue bored {
-        "Good job getting the keycard. Many of our previous applicants have died in the attempt. Very promising! The evaluator will be pleased. Strong lateral thinking and slight psychosis are essential for such a dangerous position, as I'm sure you are aware."
+        "Impressive work, getting the keycard. Many of our previous applicants have died in the attempt. Very promising! The evaluator will be pleased. Strong lateral thinking and slight psychosis are essential for such a dangerous position, as I'm sure you are aware."
         "You can now use the elevator to find room AA-3B for the next stage of your initiation."
     }
     dialogue happy {
@@ -68,7 +68,7 @@ when enter room b-a-office {
         has flag read-vogon-poetry,
         has flag status:nauseated,
     ) {
-        do npc says emh "You look ill. You didn't read that poetry book, did you? That won't look good on your evaluation. The Emergency Medical Hologram on level AA-3 may be able to help."
+        do npc says b_a_receptionist "You look ill. You didn't read that poetry book, did you? That won't look good on your evaluation. The Emergency Medical Hologram on level AA-3 may be able to help."
     }
 }
 
