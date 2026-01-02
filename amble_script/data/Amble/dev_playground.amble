@@ -128,3 +128,19 @@ trigger "[DEV] Luggage Dies" when npc the_luggage dies {
         desc "The magnificent magical Luggage lies dead, lid ajar, tongue lolling and cut by the razor-sharp teeth lining the lid."
     }
 }
+
+item tiny_note {
+    name "Tiny Note"
+    desc "A tiny note written on a bit of confetto."
+    movability free
+    ability Read
+    text "If you can read this you are too close."
+    location room dev-room
+}
+
+trigger "Note too tiny"
+when use item tiny_note ability read {
+    if missing item magnifying_glass {
+        do deny read "The print is too small for you to read unmagnified."
+    }
+}

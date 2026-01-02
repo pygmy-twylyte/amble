@@ -41,7 +41,7 @@ item plaque_1 {
 trigger "[Parish-Landing] Plaque 1 Too Grimy to Read"
 when use item plaque_1 ability read {
     if missing flag cleaned-plaque-1 {
-        do deny read "The plaque is too grimy to make out the words. You'll need to find a way to clean it off."
+        do deny read "The plaque is too grimy and worn to make out the words. You'll need to find a way to clean it off."
         do add flag tried-read-plaque-1
     }
 }
