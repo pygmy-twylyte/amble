@@ -56,8 +56,9 @@ pub(super) fn triggered_event(entries: &[&ViewEntry]) {
         _ => None,
     });
     for text in trig_messages {
+        let text = format!("{:<4}{text}", ICON_TRIGGER.trig_icon_style());
         let rendered = render_wrapped(
-            text,
+            text.as_str(),
             termwidth(),
             WrapMode::Normal,
             StyleKind::Triggered,
@@ -66,20 +67,8 @@ pub(super) fn triggered_event(entries: &[&ViewEntry]) {
                 ..StyleMods::default()
             },
         );
-        let prefix = format!("{:<4}", ICON_TRIGGER.trig_icon_style());
-        let mut lines = rendered.lines();
-        let mut formatted = String::new();
-        if let Some(first) = lines.next() {
-            formatted.push_str(&prefix);
-            formatted.push_str(first);
-            for line in lines {
-                formatted.push('\n');
-                formatted.push_str(line);
-            }
-        } else {
-            formatted.push_str(&prefix);
-        }
-        println!("{formatted}");
+
+        println!("{rendered}");
         println!();
     }
 }
