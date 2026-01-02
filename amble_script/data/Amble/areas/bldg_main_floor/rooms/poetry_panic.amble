@@ -4,8 +4,8 @@
 
 room poetry-panic {
     name "Bad Poetry Panic Room"
-    desc "A concrete and titanium vacuum-sealed room equipped with noise generators, active voice-cancelling harmonics and Cone of Silence technology. A seal by the door proudly boasts that the chamber is almost completely Vogon poetry-proof."
-    exit east -> b-a-office
+    desc "A concrete and titanium vacuum-sealed room equipped with noise generators, active voice-cancelling harmonics and Cone of Silence™ technology. A seal by the door proudly boasts that the chamber is [[i]][[b]]almost[[/b]][[/i]] completely Vogon poetry-proof."
+    exit "Amble office" -> b-a-office
 }
 
 # ========================================
