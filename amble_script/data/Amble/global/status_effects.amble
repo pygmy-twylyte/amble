@@ -23,7 +23,7 @@ spinner nauseated {
 }
 
 trigger "[Status] Nauseated" when always {
-    if all(has flag status:nauseated, chance 50%) {
+    if all( has flag status:nauseated, chance 50% ) {
         do spinner message nauseated
     }
 }
@@ -32,6 +32,7 @@ trigger "[Status] Read Vogon Poetry > Persistent Nausea" when use item vogon_poe
     do show "You nearly get through the first poem when the vomiting begins..."
     do add flag read-vogon-poetry
     do add flag status:nauseated
+    do damage player 2 cause "read the Vogon poetry"
     do award points -1 reason "Voluntarily read Vogon poetry"
 }
 
