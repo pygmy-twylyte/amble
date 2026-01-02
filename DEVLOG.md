@@ -10,6 +10,13 @@ For the *few* of you out there lurking and watching the my pet project so far, i
 So, I intend to keep an informal log here, going forward. With the exception of this intro, newest entries will be at the top.
 
 ---
+1-1-2026
+
+Feeling uninspired today. Looked at code to refactor -- meh. Thought about starting a dialogue feature upgrade. Meh again. I even went and looked at a couple of my other repos -- meh.
+
+So, I went through some previous notes I made about content adjustments for the demo game and implemented them. I guess that's it for today.
+
+---
 12-31-2025
 
 I've done some recent reading about refactoring and code readability. When I go back to look at some of the code both the engine and the script compiler, there are abundant "code smells". I spent some time doing some of the simpler types of refactors today -- renaming variables, extracting complicted logic into functions, using guard clauses to reduce indentation hell. I'm really surprised and pleased at how much more readable and maintainable these simple chnages can make the code. 
