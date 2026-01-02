@@ -105,7 +105,7 @@ impl View {
         }
         // Fourth Section: Messages not related to last command / action (ambients, goals, etc.)
         if !ambient.is_empty() {
-            println!("{:.>width$}\n", "situation".section_style(), width = self.width);
+            println!("{:.>width$}\n", "surroundings".section_style(), width = self.width);
             self.ambience();
         }
         // Second Section: Immediate/ direct results of player command
@@ -115,7 +115,7 @@ impl View {
         }
         // Third Section: Triggered World / NPC reaction to Command
         if !world.is_empty() {
-            println!("{:.>width$}\n", "responses".section_style(), width = self.width);
+            println!("{:.>width$}\n", "reactions".section_style(), width = self.width);
             self.world_reaction();
         }
         // Fifth Section: System Commands (load/save, help, quit etc)
