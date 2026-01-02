@@ -33,9 +33,11 @@ room b-a-office {
 
 item peril_sunglasses {
     name "Stylish Sunglasses"
-    desc "A pair of stylish black shades that automatically go completely opaque at the first sign of danger. Unfortunately, this includes things like loud noises, sudden movement, or mild existential dread."
+    desc "A pair of stylish black shades that automatically go [[u]]completely opaque[[/u]] at the first sign of danger. Unfortunately, this may include things like loud noises, sudden movement, or mild existential dread."
     movability free
     location chest lost_and_found_box
+    ability Read
+    text "[[b]]z. beeblebrox[[/b]] - [[i]]etched on one arm[[/i]]"
 }
 
 item lost_and_found_box {
@@ -79,9 +81,9 @@ trigger "[Office] Gifted Lost and Found Key" only once
 when enter room b-a-office {
     if all( has flag got-elevator-keycard, with npc b_a_receptionist ) {
         do give item lost_and_found_key to player from npc b_a_receptionist
-        do show "Seeing you return with the keycard, the receptionist looks around warily and slips something into your hand, then looks directly at the lost and found box."
-        do npc says b_a_receptionist "Finally! A Candidate bright enough to get to that keycard. I guess I lost the pool. Who'd have thought it'd be a primate?"
-        do npc says b_a_receptionist "(*whispers*) Use this before you head down to AA-3B."
+        do priority -40 show "Seeing you return with the keycard, the receptionist looks around warily and slips something into your hand, then looks directly at the lost and found box."
+        do priority -50 npc says b_a_receptionist "Finally! A Candidate bright enough to get to that keycard. I guess I lost the pool. Who'd have thought it'd be a primate?"
+        do priority -30 npc says b_a_receptionist "(*whispers*) Use this before you head down to AA-3B."
     }
 }
 
