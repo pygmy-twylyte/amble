@@ -247,7 +247,7 @@ fn build_prompt(world: &mut AmbleWorld) -> String {
     }
 
     format!(
-        "\n[Turn {} | Health {}/{} | Score: {}{}]>> ",
+        "\n[Turn {} | Health {}/{} | Score: {}{}]\n→ ",
         world.turn_count,
         world.player.health.current_hp(),
         world.player.health.max_hp(),
