@@ -23,8 +23,8 @@ fn test_goal_condition_flag() {
 
 #[test]
 fn test_idgen_uuid_deterministic() {
-    let u1 = idgen::uuid_from_token(&idgen::NAMESPACE_ROOM, "test");
-    let u2 = idgen::uuid_from_token(&idgen::NAMESPACE_ROOM, "test");
+    let u1 = idgen::uuid_from_token(idgen::NAMESPACE_ROOM, "test");
+    let u2 = idgen::uuid_from_token(idgen::NAMESPACE_ROOM, "test");
     assert_eq!(u1, u2);
 }
 
@@ -32,7 +32,7 @@ fn test_idgen_uuid_deterministic() {
 fn test_item_accessible() {
     use ae::item::{ContainerState, Item};
     let item = Item {
-        id: uuid::Uuid::new_v4(),
+        id: ae::idgen::new_id(),
         symbol: "i".into(),
         name: "Box".into(),
         description: String::new(),
@@ -54,17 +54,6 @@ fn test_lib_version() {
 }
 
 #[test]
-fn test_resolve_location_inventory() {
-    let symbols = loader::SymbolTable::default();
-    let mut table = std::collections::HashMap::new();
-    table.insert("Inventory".to_string(), String::new());
-    assert!(matches!(
-        loader::resolve_location(&table, &symbols).unwrap(),
-        world::Location::Inventory
-    ));
-}
-
-#[test]
 fn test_npc_state_keys() {
     use ae::npc::NpcState;
     let custom = NpcState::from_key("custom:foo");
@@ -82,9 +71,9 @@ fn test_player_flag_sequence() {
 #[test]
 fn test_find_world_object() {
     use std::collections::HashMap;
-    let id = uuid::Uuid::new_v4();
+    let id = ae::idgen::new_id();
     let item = ae::item::Item {
-        id,
+        id: id.clone(),
         symbol: "i".into(),
         name: "Foo".into(),
         description: String::new(),
@@ -98,7 +87,7 @@ fn test_find_world_object() {
         consumable: None,
     };
     let mut items = HashMap::new();
-    items.insert(id, item);
+    items.insert(id.clone(), item);
     let npcs = HashMap::new();
     let res = ae::repl::find_world_object(std::iter::once(&id), &items, &npcs, "foo");
     assert!(res.is_some());
@@ -114,7 +103,8 @@ fn test_room_overlay_applies_flag() {
         conditions: vec![OverlayCondition::FlagSet { flag: "x".into() }],
         text: String::new(),
     };
-    assert!(overlay.applies(uuid::Uuid::new_v4(), &world));
+    let room_id = ae::idgen::new_id();
+    assert!(overlay.applies(&room_id, &world));
 }
 
 #[test]
@@ -150,27 +140,30 @@ fn test_world_new_empty_version() {
 
 #[test]
 fn test_loader_goals_to_goal() {
-    use ae::loader::goals::{RawGoal, RawGoalCondition};
-    let symbols = loader::SymbolTable::default();
+    use amble_data::{GoalCondition, GoalDef, GoalGroup, WorldDef};
     let goal_id = "g".to_string();
-    let raw = RawGoal {
-        id: goal_id.clone(),
-        name: "name".into(),
-        description: String::new(),
-        group: ae::goal::GoalGroup::Required,
-        activate_when: None,
-        finished_when: RawGoalCondition::HasFlag { flag: "f".into() },
-        failed_when: None,
+    let def = WorldDef {
+        goals: vec![GoalDef {
+            id: goal_id.clone(),
+            name: "name".into(),
+            description: String::new(),
+            group: GoalGroup::Required,
+            activate_when: None,
+            finished_when: GoalCondition::HasFlag { flag: "f".into() },
+            failed_when: None,
+        }],
+        ..WorldDef::default()
     };
-    let goal = raw.to_goal(&symbols).unwrap();
-    assert_eq!(goal.id, goal_id);
+    let world = ae::loader::worlddef::build_world_from_def(&def).unwrap();
+    assert_eq!(world.goals.len(), 1);
+    assert_eq!(world.goals[0].id, goal_id);
 }
 
 #[test]
 fn test_interaction_requirement_met() {
     use ae::item::{Item, ItemAbility, ItemInteractionType};
     let tool = Item {
-        id: uuid::Uuid::new_v4(),
+        id: ae::idgen::new_id(),
         symbol: "t".into(),
         name: "tool".into(),
         description: String::new(),
@@ -184,7 +177,7 @@ fn test_interaction_requirement_met() {
         consumable: None,
     };
     let target = Item {
-        id: uuid::Uuid::new_v4(),
+        id: ae::idgen::new_id(),
         symbol: "x".into(),
         name: "target".into(),
         description: String::new(),
@@ -197,7 +190,7 @@ fn test_interaction_requirement_met() {
         text: None,
         consumable: None,
     };
-    assert!(ae::loader::items::interaction_requirement_met(
+    assert!(ae::item::interaction_requirement_met(
         ItemInteractionType::Clean,
         &target,
         &tool
@@ -205,79 +198,161 @@ fn test_interaction_requirement_met() {
 }
 
 #[test]
-fn test_raw_npc_to_npc() {
-    use ae::loader::npcs::RawNpc;
-    use std::collections::{HashMap, HashSet};
-    let mut symbols = loader::SymbolTable::default();
-    ae::loader::rooms::register_npc(&mut symbols, "npc");
-    let raw = RawNpc {
-        id: "npc".into(),
-        name: "Npc".into(),
-        description: String::new(),
-        location: HashMap::from([("Nowhere".to_string(), "".to_string())]),
-        inventory: HashSet::new(),
-        dialogue: HashMap::new(),
-        state: ae::npc::NpcState::Normal,
-        movement: None,
-        max_hp: 10,
+fn test_worlddef_npc_to_world() {
+    use amble_data::{LocationRef, NpcDef, NpcState, RoomDef, WorldDef};
+    let def = WorldDef {
+        rooms: vec![RoomDef {
+            id: "room".into(),
+            name: "Room".into(),
+            desc: String::new(),
+            visited: false,
+            exits: Vec::new(),
+            overlays: Vec::new(),
+        }],
+        npcs: vec![NpcDef {
+            id: "npc".into(),
+            name: "Npc".into(),
+            desc: String::new(),
+            max_hp: 10,
+            location: LocationRef::Room("room".into()),
+            state: NpcState::Normal,
+            dialogue: Default::default(),
+            movement: None,
+        }],
+        ..WorldDef::default()
     };
-
-    let npc = raw.to_npc(&symbols).unwrap();
+    let mut world = ae::loader::worlddef::build_world_from_def(&def).unwrap();
+    ae::loader::placement::place_npcs(&mut world).unwrap();
+    let npc = world.npcs.get("npc").unwrap();
     assert_eq!(npc.name, "Npc");
+    let room = world.rooms.get("room").unwrap();
+    assert!(room.npcs.contains("npc"));
 }
 
 #[test]
-fn test_raw_player_to_player() {
-    use ae::loader::player::{RawPlayer, build_player};
-    use std::collections::{HashMap, HashSet};
-    let mut symbols = loader::SymbolTable::default();
-    let raw = RawPlayer {
-        id: "player".into(),
+fn test_worlddef_trigger_combines_event_and_conditions() {
+    use ae::scheduler::EventCondition;
+    use ae::trigger::TriggerCondition;
+    use amble_data::{ConditionDef, ConditionExpr, EventDef, RoomDef, TriggerDef, WorldDef};
+
+    let def = WorldDef {
+        rooms: vec![RoomDef {
+            id: "room".into(),
+            name: "Room".into(),
+            desc: String::new(),
+            visited: false,
+            exits: Vec::new(),
+            overlays: Vec::new(),
+        }],
+        triggers: vec![TriggerDef {
+            name: "t".into(),
+            note: None,
+            only_once: false,
+            event: EventDef::EnterRoom { room: "room".into() },
+            conditions: ConditionExpr::Pred(ConditionDef::HasFlag { flag: "f".into() }),
+            actions: Vec::new(),
+        }],
+        ..WorldDef::default()
+    };
+
+    let world = ae::loader::worlddef::build_world_from_def(&def).unwrap();
+    let trigger = &world.triggers[0];
+
+    match &trigger.conditions {
+        EventCondition::All(list) => {
+            assert_eq!(list.len(), 2);
+            assert!(list.iter().any(|cond| matches!(
+                cond,
+                EventCondition::Trigger(TriggerCondition::Enter(id)) if id == "room"
+            )));
+            assert!(list.iter().any(|cond| matches!(
+                cond,
+                EventCondition::Trigger(TriggerCondition::HasFlag(flag)) if flag == "f"
+            )));
+        },
+        _ => panic!("expected EventCondition::All"),
+    }
+}
+
+#[test]
+fn test_worlddef_any_condition_supports_ambient_without_rooms() {
+    use ae::scheduler::EventCondition;
+    use ae::spinners::SpinnerType;
+    use ae::trigger::TriggerCondition;
+    use amble_data::{ConditionDef, ConditionExpr, EventDef, TriggerDef, WorldDef};
+
+    let def = WorldDef {
+        triggers: vec![TriggerDef {
+            name: "t".into(),
+            note: None,
+            only_once: false,
+            event: EventDef::Always,
+            conditions: ConditionExpr::Any(vec![
+                ConditionExpr::Pred(ConditionDef::Ambient {
+                    spinner: "murmur".into(),
+                    rooms: None,
+                }),
+                ConditionExpr::Pred(ConditionDef::HasFlag { flag: "f".into() }),
+            ]),
+            actions: Vec::new(),
+        }],
+        ..WorldDef::default()
+    };
+
+    let world = ae::loader::worlddef::build_world_from_def(&def).unwrap();
+    let trigger = &world.triggers[0];
+
+    match &trigger.conditions {
+        EventCondition::Any(list) => {
+            assert_eq!(list.len(), 2);
+
+            let mut found_flag = false;
+            let mut found_ambient = false;
+
+            for cond in list {
+                match cond {
+                    EventCondition::Trigger(TriggerCondition::HasFlag(flag)) => {
+                        if flag == "f" {
+                            found_flag = true;
+                        }
+                    },
+                    EventCondition::Trigger(TriggerCondition::Ambient { room_ids, spinner }) => {
+                        if room_ids.is_empty() && matches!(spinner, SpinnerType::Custom(key) if key == "murmur") {
+                            found_ambient = true;
+                        }
+                    },
+                    _ => {},
+                }
+            }
+
+            assert!(found_flag);
+            assert!(found_ambient);
+        },
+        _ => panic!("expected EventCondition::Any"),
+    }
+}
+
+#[test]
+fn test_player_def_to_player() {
+    use ae::loader::player::build_player;
+    use amble_data::PlayerDef;
+    let def = PlayerDef {
         name: "P".into(),
         description: String::new(),
-        location: {
-            let mut m = HashMap::new();
-            m.insert("Inventory".into(), String::new());
-            m
-        },
-        inventory: HashMap::new(),
-        flags: HashSet::new(),
-        score: 0,
+        start_room: "room".into(),
         max_hp: 10,
     };
-    let player = build_player(&raw, &mut symbols).unwrap();
+    let player = build_player(&def).unwrap();
     assert_eq!(player.name, "P");
     assert_eq!(player.max_hp(), 10);
     assert_eq!(player.current_hp(), 10);
 }
 
 #[test]
-fn test_register_item() {
-    let mut symbols = loader::SymbolTable::default();
-    let id = ae::loader::rooms::register_item(&mut symbols, "item");
-    let again = ae::loader::rooms::register_item(&mut symbols, "item");
-    assert_eq!(id, again);
-}
-
-#[test]
-fn test_spinner_file_to_map() {
-    use ae::loader::spinners::{RawSpinnerData, SpinnerFile};
-    use ae::spinners::{CoreSpinnerType, SpinnerType};
-    let file = SpinnerFile {
-        entries: vec![RawSpinnerData {
-            spinner_type_key: "movement".into(),
-            values: vec!["go".into()],
-            widths: vec![1],
-        }],
-    };
-    let map = file.to_spinner_map();
+fn test_create_default_spinners() {
+    use ae::spinners::{CoreSpinnerType, SpinnerType, create_default_spinners};
+    let map = create_default_spinners();
     assert!(map.contains_key(&SpinnerType::Core(CoreSpinnerType::Movement)));
-}
-
-#[test]
-fn test_build_triggers_empty() {
-    let triggers = ae::loader::triggers::build_triggers(&[], &loader::SymbolTable::default()).unwrap();
-    assert!(triggers.is_empty());
 }
 
 #[test]
@@ -292,10 +367,10 @@ fn test_move_to_handler_simple() {
     use ae::room::{Exit, Room};
     use std::collections::{HashMap, HashSet};
     let mut world = world::AmbleWorld::new_empty();
-    let r1 = uuid::Uuid::new_v4();
-    let r2 = uuid::Uuid::new_v4();
+    let r1 = ae::idgen::new_id();
+    let r2 = ae::idgen::new_id();
     let mut room1 = Room {
-        id: r1,
+        id: r1.clone(),
         symbol: "r1".into(),
         name: "R1".into(),
         base_description: String::new(),
@@ -309,7 +384,7 @@ fn test_move_to_handler_simple() {
     room1.exits.insert(
         "north".into(),
         Exit {
-            to: r2,
+            to: r2.clone(),
             hidden: false,
             locked: false,
             required_flags: HashSet::new(),
@@ -318,7 +393,7 @@ fn test_move_to_handler_simple() {
         },
     );
     let room2 = Room {
-        id: r2,
+        id: r2.clone(),
         symbol: "r2".into(),
         name: "R2".into(),
         base_description: String::new(),
@@ -329,9 +404,9 @@ fn test_move_to_handler_simple() {
         contents: HashSet::new(),
         npcs: HashSet::new(),
     };
-    world.rooms.insert(r1, room1);
-    world.rooms.insert(r2, room2);
-    world.player.location = world::Location::Room(r1);
+    world.rooms.insert(r1.clone(), room1);
+    world.rooms.insert(r2.clone(), room2);
+    world.player.location = world::Location::Room(r1.clone());
     let mut view = View::new();
     assert!(ae::repl::movement::move_to_handler(&mut world, &mut view, "north").is_ok());
     assert!(matches!(world.player.location, world::Location::Room(id) if id == r2));
@@ -371,10 +446,10 @@ fn test_check_npc_movement() {
     use std::collections::{HashMap, HashSet};
     let mut world = world::AmbleWorld::new_empty();
     let mut view = View::new();
-    let r1 = uuid::Uuid::new_v4();
-    let r2 = uuid::Uuid::new_v4();
+    let r1 = ae::idgen::new_id();
+    let r2 = ae::idgen::new_id();
     let room1 = Room {
-        id: r1,
+        id: r1.clone(),
         symbol: "r1".into(),
         name: "R1".into(),
         base_description: String::new(),
@@ -386,7 +461,7 @@ fn test_check_npc_movement() {
         npcs: HashSet::new(),
     };
     let room2 = Room {
-        id: r2,
+        id: r2.clone(),
         symbol: "r2".into(),
         name: "R2".into(),
         base_description: String::new(),
@@ -397,22 +472,22 @@ fn test_check_npc_movement() {
         contents: HashSet::new(),
         npcs: HashSet::new(),
     };
-    world.rooms.insert(r1, room1);
-    world.rooms.insert(r2, room2);
-    let npc_id = uuid::Uuid::new_v4();
+    world.rooms.insert(r1.clone(), room1);
+    world.rooms.insert(r2.clone(), room2);
+    let npc_id = ae::idgen::new_id();
     let npc = Npc {
-        id: npc_id,
+        id: npc_id.clone(),
         symbol: "npc".into(),
         name: "NPC".into(),
         description: String::new(),
-        location: world::Location::Room(r1),
+        location: world::Location::Room(r1.clone()),
         inventory: HashSet::new(),
         dialogue: HashMap::new(),
         state: npc::NpcState::Normal,
         health: HealthState::new_at_max(10),
         movement: Some(NpcMovement {
             movement_type: MovementType::Route {
-                rooms: vec![r1, r2],
+                rooms: vec![r1.clone(), r2.clone()],
                 current_idx: 0,
                 loop_route: false,
             },
@@ -422,24 +497,25 @@ fn test_check_npc_movement() {
             paused_until: None,
         }),
     };
-    world.npcs.insert(npc_id, npc);
-    world.player.location = world::Location::Room(r1);
+    world.npcs.insert(npc_id.clone(), npc);
+    world.player.location = world::Location::Room(r1.clone());
     world.turn_count = 1;
     ae::repl::check_npc_movement(&mut world, &mut view).unwrap();
     let npc = world.npcs.get(&npc_id).unwrap();
-    assert!(matches!(npc.location, world::Location::Room(id) if id == r2));
+    assert!(matches!(&npc.location, world::Location::Room(id) if *id == r2));
 }
 
 #[test]
 fn test_check_ambient_triggers() {
+    use ae::scheduler::EventCondition;
     use ae::spinners::SpinnerType;
     use ae::trigger::{Trigger, TriggerCondition};
     use gametools::{Spinner, Wedge};
     let mut world = world::AmbleWorld::new_empty();
     let mut view = View::new();
-    let r1 = uuid::Uuid::new_v4();
+    let r1 = ae::idgen::new_id();
     let room1 = room::Room {
-        id: r1,
+        id: r1.clone(),
         symbol: "r1".into(),
         name: "R1".into(),
         base_description: String::new(),
@@ -450,17 +526,17 @@ fn test_check_ambient_triggers() {
         contents: std::collections::HashSet::new(),
         npcs: std::collections::HashSet::new(),
     };
-    world.rooms.insert(r1, room1);
-    world.player.location = world::Location::Room(r1);
+    world.rooms.insert(r1.clone(), room1);
+    world.player.location = world::Location::Room(r1.clone());
     let spinner_type = SpinnerType::Custom("test_spinner".to_string());
     let spinner = Spinner::new(vec![Wedge::new("test message".to_string())]);
     world.spinners.insert(spinner_type.clone(), spinner);
     let trigger = Trigger {
         name: "ambient".into(),
-        conditions: vec![TriggerCondition::Ambient {
-            room_ids: [r1].into_iter().collect(),
+        conditions: EventCondition::Trigger(TriggerCondition::Ambient {
+            room_ids: [r1.clone()].into_iter().collect(),
             spinner: spinner_type,
-        }],
+        }),
         actions: vec![],
         only_once: false,
         fired: false,

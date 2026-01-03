@@ -24,7 +24,7 @@ cargo xtask package full --format zip
 # Perform the full release workflow (bump versions, publish, package)
 cargo xtask release --version 0.63.0
 
-# Recompile DSL content and lint it against the generated TOML
+# Recompile DSL content and lint it against the generated world data
 cargo xtask content refresh --deny-missing
 ```
 
@@ -55,7 +55,7 @@ Subcommands:
 ### `package engine`
 Creates a distribution containing:
 - `bin/amble_engine` (or `.exe` on Windows) built with the requested profile/target.
-- `amble_engine/data/` TOML files (current compiled world data).
+- `amble_engine/data/` world data (`world.ron`) plus configuration TOMLs (themes/help).
 
 ### `package full`
 Includes everything from `package engine` plus:
@@ -79,14 +79,14 @@ The command ensures binaries exist before packaging, so it will trigger fresh bu
 
 ## `content refresh`
 
-Regenerates TOML data from `.amble` sources and lints the results. This is the fastest way to ensure content changes compile cleanly before committing.
+Regenerates `world.ron` data from `.amble` sources and lints the results. This is the fastest way to ensure content changes compile cleanly before committing.
 
 Options:
 
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--source <dir>` | `amble_script/data/Amble` | Root of `.amble` files to compile. |
-| `--out-dir <dir>` | `amble_engine/data` | Destination for compiled TOML. The command creates the directory if missing. |
+| `--out-dir <dir>` | `amble_engine/data` | Destination for compiled world data (`world.ron`). The command creates the directory if missing. |
 | `--deny-missing` | off | When set, `amble_script lint` fails if referenced symbols are missing (excellent for CI). |
 
 The task runs two steps in sequence:

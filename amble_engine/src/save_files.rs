@@ -173,11 +173,11 @@ fn entry_for_slot(slot: SaveSlot) -> SaveFileEntry {
 
 /// Render the player's current location into a human-readable label.
 fn describe_location(world: &AmbleWorld) -> Option<String> {
-    match world.player.location {
-        Location::Room(room_id) => world.rooms.get(&room_id).map(|room| room.name.clone()),
+    match &world.player.location {
+        Location::Room(room_id) => world.rooms.get(room_id).map(|room| room.name.clone()),
         Location::Inventory => Some("Inventory".to_string()),
-        Location::Item(item_id) => world.items.get(&item_id).map(|item| format!("Inside {}", item.name())),
-        Location::Npc(npc_id) => world.npcs.get(&npc_id).map(|npc| format!("With {}", npc.name())),
+        Location::Item(item_id) => world.items.get(item_id).map(|item| format!("Inside {}", item.name())),
+        Location::Npc(npc_id) => world.npcs.get(npc_id).map(|npc| format!("With {}", npc.name())),
         Location::Nowhere => None,
     }
 }
@@ -235,7 +235,6 @@ mod tests {
     use anyhow::Result;
     use std::collections::{HashMap, HashSet};
     use tempfile::tempdir;
-    use uuid::Uuid;
 
     #[test]
     fn collect_save_slots_handles_missing_directory() -> Result<()> {
@@ -266,9 +265,9 @@ mod tests {
         let dir = tempdir()?;
         let path = dir.path();
 
-        let room_id = Uuid::new_v4();
+        let room_id = crate::idgen::new_id();
         let room = Room {
-            id: room_id,
+            id: room_id.clone(),
             symbol: "room_symbol".into(),
             name: "Test Room".into(),
             base_description: "Desc".into(),
@@ -284,8 +283,8 @@ mod tests {
         world.player.name = "Tester".into();
         world.player.score = 42;
         world.turn_count = 7;
-        world.player.location = Location::Room(room_id);
-        world.rooms.insert(room_id, room);
+        world.player.location = Location::Room(room_id.clone());
+        world.rooms.insert(room_id.clone(), room);
 
         let ron = ron::ser::to_string(&world)?;
         fs::write(path.join("alpha-amble-0.60.0.ron"), ron)?;

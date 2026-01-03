@@ -7,7 +7,7 @@ homepage.workspace = true
 repository.workspace = true
 documentation.workspace = true
 readme = "README.md"
-description = "Authoring-focused DSL, parser, and compiler that produces Amble engine TOML data."
+description = "Authoring-focused DSL, parser, and compiler that produces Amble engine WorldDef data."
 keywords = ["dsl", "parser", "compiler", "interactive-fiction", "cli"]
 categories = ["compilers", "parsing", "command-line-utilities"]
 
@@ -20,8 +20,8 @@ name = "amble_script"
 path = "src/main.rs"
 
 [dependencies]
+amble_data = { path = "../amble_data" }
 pest = "2"
 pest_derive = "2"
+ron = "0.10.1"
 thiserror = "1"
-toml_edit = "0.21"
-toml = "0.8"

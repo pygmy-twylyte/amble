@@ -15,10 +15,10 @@
 //! a `GoalStatus`, which is then used to filter/style goals and their descriptions
 //! for display.
 
+use crate::Id;
 use serde::de::{self, Deserializer, EnumAccess, VariantAccess, Visitor};
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use uuid::Uuid;
 use variantly::Variantly;
 
 use crate::{AmbleWorld, ItemHolder, player::Flag};
@@ -39,10 +39,10 @@ pub enum GoalCondition {
     FlagComplete { flag: String },    // for checking if sequence-type flags are at end
     FlagInProgress { flag: String },  // check if a sequence flag not yet at end
     GoalComplete { goal_id: String }, // for activating a goal after another is done
-    HasItem { item_id: Uuid },
+    HasItem { item_id: Id },
     HasFlag { flag: String },
     MissingFlag { flag: String },
-    ReachedRoom { room_id: Uuid },
+    ReachedRoom { room_id: Id },
 }
 impl GoalCondition {
     /// Returns true if the condition has been satisfied.
@@ -53,7 +53,7 @@ impl GoalCondition {
         let flag_is_set = |flag_str: &str| world.player.flags.iter().any(|f| f.value() == *flag_str);
 
         match self {
-            Self::HasItem { item_id } => world.player.contains_item(*item_id),
+            Self::HasItem { item_id } => world.player.contains_item(item_id.clone()),
             Self::HasFlag { flag } => flag_is_set(flag),
             Self::MissingFlag { flag } => !flag_is_set(flag),
             Self::ReachedRoom { room_id } => {
@@ -302,9 +302,9 @@ struct GoalConditionRepr {
     #[serde(default, deserialize_with = "deserialize_maybe_value")]
     goal_id: Option<String>,
     #[serde(default, deserialize_with = "deserialize_maybe_value")]
-    item_id: Option<Uuid>,
+    item_id: Option<Id>,
     #[serde(default, deserialize_with = "deserialize_maybe_value")]
-    room_id: Option<Uuid>,
+    room_id: Option<Id>,
 }
 
 impl<'de> Deserialize<'de> for GoalCondition {
@@ -479,15 +479,14 @@ mod tests {
         world::{AmbleWorld, Location},
     };
     use std::collections::{HashMap, HashSet};
-    use uuid::Uuid;
 
     fn create_test_world() -> AmbleWorld {
         let mut world = AmbleWorld::new_empty();
 
         // Add test room
-        let room_id = Uuid::new_v4();
+        let room_id = crate::idgen::new_id();
         let mut room = Room {
-            id: room_id,
+            id: room_id.clone(),
             symbol: "test_room".into(),
             name: "Test Room".into(),
             base_description: "A test room".into(),
@@ -499,12 +498,12 @@ mod tests {
             npcs: HashSet::new(),
         };
         room.visited = true;
-        world.rooms.insert(room_id, room);
+        world.rooms.insert(room_id.clone(), room);
 
         // Add test item
-        let item_id = Uuid::new_v4();
+        let item_id = crate::idgen::new_id();
         let item = Item {
-            id: item_id,
+            id: item_id.clone(),
             symbol: "test_item".into(),
             name: "Test Item".into(),
             description: "A test item".into(),
@@ -517,8 +516,8 @@ mod tests {
             text: None,
             consumable: None,
         };
-        world.items.insert(item_id, item);
-        world.player.inventory.insert(item_id);
+        world.items.insert(item_id.clone(), item);
+        world.player.inventory.insert(item_id.clone());
 
         // Add test flags
         world.player.flags.insert(Flag::simple("test_flag", world.turn_count));
@@ -620,13 +619,13 @@ mod tests {
     #[test]
     fn goal_condition_has_item_works() {
         let world = create_test_world();
-        let item_id = world.player.inventory.iter().next().copied().unwrap();
+        let item_id = world.player.inventory.iter().next().cloned().unwrap();
 
         let condition = GoalCondition::HasItem { item_id };
         assert!(condition.satisfied(&world));
 
         let condition = GoalCondition::HasItem {
-            item_id: Uuid::new_v4(),
+            item_id: crate::idgen::new_id(),
         };
         assert!(!condition.satisfied(&world));
     }
@@ -664,13 +663,13 @@ mod tests {
     #[test]
     fn goal_condition_reached_room_works() {
         let world = create_test_world();
-        let room_id = world.rooms.keys().next().copied().unwrap();
+        let room_id = world.rooms.keys().next().cloned().unwrap();
 
         let condition = GoalCondition::ReachedRoom { room_id };
         assert!(condition.satisfied(&world));
 
         let condition = GoalCondition::ReachedRoom {
-            room_id: Uuid::new_v4(),
+            room_id: crate::idgen::new_id(),
         };
         assert!(!condition.satisfied(&world));
     }

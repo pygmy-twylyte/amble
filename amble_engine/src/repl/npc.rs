@@ -61,8 +61,8 @@ use crate::{
 
 use anyhow::{Context, Result, bail};
 
+use crate::Id;
 use log::info;
-use uuid::Uuid;
 
 /// Finds an NPC in the specified location by partial name matching.
 ///
@@ -84,7 +84,7 @@ use uuid::Uuid;
 /// - Uses case-insensitive matching for user convenience
 /// - Returns the first NPC whose name contains the query string
 /// - Only searches NPCs actually present in the specified location
-fn select_npc<'a>(location: &Location, world_npcs: &'a HashMap<Uuid, Npc>, query: &str) -> Option<&'a Npc> {
+fn select_npc<'a>(location: &Location, world_npcs: &'a HashMap<Id, Npc>, query: &str) -> Option<&'a Npc> {
     let npcs_in_room = world_npcs
         .values()
         .filter(|npc| npc.location() == location)
@@ -152,9 +152,9 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
     }
 
     // check for any condition-specific dialogue
-    let fired_triggers = check_triggers(world, view, &[TriggerCondition::TalkToNpc(sent_id)])?;
+    let fired_triggers = check_triggers(world, view, &[TriggerCondition::TalkToNpc(sent_id.clone())])?;
     let dialogue_fired = triggers_contain_condition(&fired_triggers, |cond| match cond {
-        TriggerCondition::TalkToNpc(npc_id) => sent_id == *npc_id,
+        TriggerCondition::TalkToNpc(npc_id) => sent_id == npc_id.as_str(),
         _ => false,
     });
 
@@ -223,7 +223,7 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
 /// - NPC not found in current room
 /// - Item not found in player inventory
 /// - Item is fixed (cannot be transferred)
-/// - World state corruption (UUID lookup failures)
+/// - World state corruption (id lookup failures)
 pub fn give_to_npc_handler(
     world: &mut AmbleWorld,
     view: &mut View,
@@ -279,33 +279,40 @@ pub fn give_to_npc_handler(
         Err(e) => bail!(e),
     };
 
-    let fired_triggers = check_triggers(world, view, &[TriggerCondition::GiveToNpc { item_id, npc_id }])?;
+    let fired_triggers = check_triggers(
+        world,
+        view,
+        &[TriggerCondition::GiveToNpc {
+            item_id: item_id.clone(),
+            npc_id: npc_id.clone(),
+        }],
+    )?;
     let gift_response = check_fired_and_refused(&fired_triggers);
 
     // the trigger fired -- proceed with item transfer if it wasn't a refusal
     if gift_response.trigger_fired && !gift_response.npc_refused {
-        transfer_if_not_despawned(world, npc_id, item_id)?;
-        check_triggers(world, view, &[TriggerCondition::Drop(item_id)])?;
-        show_npc_acceptance(world, view, npc_id, item_id)?;
+        transfer_if_not_despawned(world, npc_id.clone(), item_id.clone())?;
+        check_triggers(world, view, &[TriggerCondition::Drop(item_id.clone())])?;
+        show_npc_acceptance(world, view, npc_id.clone(), item_id.clone())?;
     } else if !gift_response.trigger_fired {
         // NPCs refuse gift items by default (triggers must be set to accept the gift)
         // a generic refusal message is given but responses to specific items can be set in triggers
-        show_npc_refusal(world, view, npc_id, item_id)?;
+        show_npc_refusal(world, view, npc_id.clone(), item_id.clone())?;
     }
     world.turn_count += 1;
     Ok(())
 }
 
 /// Displays NPC item refusal to the player and logs it.
-fn show_npc_refusal(world: &AmbleWorld, view: &mut View, npc_id: Uuid, item_id: Uuid) -> Result<()> {
+fn show_npc_refusal(world: &AmbleWorld, view: &mut View, npc_id: Id, item_id: Id) -> Result<()> {
     let npc = world
         .npcs
         .get(&npc_id)
-        .with_context(|| format!("missing npc UUID: {npc_id}"))?;
+        .with_context(|| format!("missing npc id: {npc_id}"))?;
     let item = world
         .items
         .get(&item_id)
-        .with_context(|| format!("missing item UUID: {item_id}"))?;
+        .with_context(|| format!("missing item id: {item_id}"))?;
 
     view.push(ViewItem::ActionFailure(format!(
         "{} has no use for {}, and won't hold it for you.",
@@ -326,16 +333,16 @@ fn show_npc_refusal(world: &AmbleWorld, view: &mut View, npc_id: Uuid, item_id: 
 /// Displays NPC item acceptance and logs it.
 ///
 /// # Errors
-/// - on failed item or NPC retrieval by UUID
-fn show_npc_acceptance(world: &AmbleWorld, view: &mut View, npc_id: Uuid, item_id: Uuid) -> Result<()> {
+/// - on failed item or NPC retrieval by id
+fn show_npc_acceptance(world: &AmbleWorld, view: &mut View, npc_id: Id, item_id: Id) -> Result<()> {
     let npc = world
         .npcs
         .get(&npc_id)
-        .with_context(|| format!("missing npc UUID: {npc_id}"))?;
+        .with_context(|| format!("missing npc id: {npc_id}"))?;
     let item = world
         .items
         .get(&item_id)
-        .with_context(|| format!("missing item UUID: {item_id}"))?;
+        .with_context(|| format!("missing item id: {item_id}"))?;
 
     view.push(ViewItem::ActionSuccess(format!(
         "{} accepted the {}.",
@@ -367,8 +374,7 @@ fn check_fired_and_refused(all_fired: &Vec<&Trigger>) -> GiftResponse {
     let trigger_fired = all_fired.iter().any(|&trigger| {
         trigger
             .conditions
-            .iter()
-            .any(|cond| matches!(cond, TriggerCondition::GiveToNpc { .. }))
+            .any_trigger(|cond| matches!(cond, TriggerCondition::GiveToNpc { .. }))
     });
 
     let npc_refused = all_fired.iter().any(|t| {
@@ -384,7 +390,7 @@ fn check_fired_and_refused(all_fired: &Vec<&Trigger>) -> GiftResponse {
 }
 
 /// Transfers an item from player to NPC if it hasn't been despawned
-fn transfer_if_not_despawned(world: &mut AmbleWorld, npc_id: Uuid, item_id: Uuid) -> Result<()> {
+fn transfer_if_not_despawned(world: &mut AmbleWorld, npc_id: Id, item_id: Id) -> Result<()> {
     // The item may have been despawned by a fired trigger -- so we skip
     // the location transfer below if the item is found to be `Nowhere`
     if world
@@ -396,16 +402,16 @@ fn transfer_if_not_despawned(world: &mut AmbleWorld, npc_id: Uuid, item_id: Uuid
     {
         // set new location in NPC on world item
         world
-            .get_item_mut(item_id)
+            .get_item_mut(item_id.clone())
             .with_context(|| format!("looking up item {item_id}"))?
-            .set_location_npc(npc_id);
+            .set_location_npc(npc_id.clone());
 
         // add to npc inventory
         world
             .npcs
             .get_mut(&npc_id)
             .with_context(|| format!("looking up NPC {npc_id}"))?
-            .add_item(item_id);
+            .add_item(item_id.clone());
 
         // remove from player inventory
         world.player.remove_item(item_id);

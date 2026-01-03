@@ -12,6 +12,7 @@ pub use condition::*;
 use crate::{AmbleWorld, View};
 use anyhow::Result;
 
+use crate::scheduler::EventCondition;
 use log::info;
 use serde::{Deserialize, Serialize};
 
@@ -19,7 +20,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trigger {
     pub name: String,
-    pub conditions: Vec<TriggerCondition>,
+    pub conditions: EventCondition,
     pub actions: Vec<ScriptedAction>,
     pub only_once: bool,
     pub fired: bool,
@@ -31,7 +32,7 @@ pub fn triggers_contain_condition<F>(list: &[&Trigger], matcher: F) -> bool
 where
     F: Fn(&TriggerCondition) -> bool,
 {
-    list.iter().any(|t| t.conditions.iter().any(&matcher))
+    list.iter().any(|t| t.conditions.any_trigger(|c| matcher(c)))
 }
 
 /// Evaluate triggers against recent events, execute matching actions, and return the fired set.
@@ -41,7 +42,7 @@ where
 /// has its actions dispatched in order, respecting the `only_once` flag.
 ///
 /// # Errors
-/// - Propagates failures from action dispatch such as missing UUID references.
+/// - Propagates failures from action dispatch such as missing id references.
 pub fn check_triggers<'a>(
     world: &'a mut AmbleWorld,
     view: &mut View,
@@ -54,10 +55,10 @@ pub fn check_triggers<'a>(
         .enumerate()
         .filter(|(_, t)| !t.only_once || !t.fired)
         .filter(|(_, t)| {
-            t.conditions
-                .iter()
-                .all(|c| c.matches_event_in(events) || c.is_ongoing(world))
+            !t.conditions
+                .any_trigger(|c| matches!(c, TriggerCondition::Ambient { .. }))
         })
+        .filter(|(_, t)| t.conditions.eval_with_events(world, events))
         .map(|(i, _)| i)
         .collect();
 
@@ -82,20 +83,20 @@ pub fn check_triggers<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Id;
     use crate::{
         room::Room,
         world::{AmbleWorld, Location},
     };
     use std::collections::{HashMap, HashSet};
-    use uuid::Uuid;
 
-    fn build_test_world() -> (AmbleWorld, Uuid, Uuid) {
+    fn build_test_world() -> (AmbleWorld, Id, Id) {
         let mut world = AmbleWorld::new_empty();
-        let room1_id = Uuid::new_v4();
-        let room2_id = Uuid::new_v4();
+        let room1_id = crate::idgen::new_id();
+        let room2_id = crate::idgen::new_id();
 
         let room1 = Room {
-            id: room1_id,
+            id: room1_id.clone(),
             symbol: "r1".into(),
             name: "Room1".into(),
             base_description: "Room1".into(),
@@ -107,7 +108,7 @@ mod tests {
             npcs: HashSet::new(),
         };
         let room2 = Room {
-            id: room2_id,
+            id: room2_id.clone(),
             symbol: "r2".into(),
             name: "Room2".into(),
             base_description: "Room2".into(),
@@ -118,9 +119,9 @@ mod tests {
             contents: HashSet::new(),
             npcs: HashSet::new(),
         };
-        world.rooms.insert(room1_id, room1);
-        world.rooms.insert(room2_id, room2);
-        world.player.location = Location::Room(room1_id);
+        world.rooms.insert(room1_id.clone(), room1);
+        world.rooms.insert(room2_id.clone(), room2);
+        world.player.location = Location::Room(room1_id.clone());
         (world, room1_id, room2_id)
     }
 
@@ -130,13 +131,13 @@ mod tests {
         let mut view = View::new();
         let trigger = Trigger {
             name: "move".into(),
-            conditions: vec![TriggerCondition::Enter(start_id)],
-            actions: vec![ScriptedAction::new(TriggerAction::PushPlayerTo(dest_id))],
+            conditions: EventCondition::Trigger(TriggerCondition::Enter(start_id.clone())),
+            actions: vec![ScriptedAction::new(TriggerAction::PushPlayerTo(dest_id.clone()))],
             only_once: true,
             fired: false,
         };
         world.triggers.push(trigger);
-        let events = vec![TriggerCondition::Enter(start_id)];
+        let events = vec![TriggerCondition::Enter(start_id.clone())];
         let fired = check_triggers(&mut world, &mut view, &events).expect("check_triggers failed");
         assert_eq!(fired.len(), 1);
         assert!(triggers_contain_condition(
@@ -153,14 +154,14 @@ mod tests {
         let (mut world, room1_id, room2_id) = build_test_world();
         let trigger1 = Trigger {
             name: "t1".into(),
-            conditions: vec![TriggerCondition::Enter(room1_id)],
+            conditions: EventCondition::Trigger(TriggerCondition::Enter(room1_id.clone())),
             actions: vec![],
             only_once: false,
             fired: false,
         };
         let trigger2 = Trigger {
             name: "t2".into(),
-            conditions: vec![TriggerCondition::Enter(room2_id)],
+            conditions: EventCondition::Trigger(TriggerCondition::Enter(room2_id.clone())),
             actions: vec![],
             only_once: false,
             fired: false,
@@ -174,7 +175,7 @@ mod tests {
         ));
         assert!(!triggers_contain_condition(
             &refs,
-            |c| matches!(c, TriggerCondition::Enter(id) if *id == Uuid::new_v4())
+            |c| matches!(c, TriggerCondition::Enter(id) if *id == crate::idgen::new_id())
         ));
     }
 }

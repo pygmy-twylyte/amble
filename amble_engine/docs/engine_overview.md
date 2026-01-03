@@ -79,7 +79,7 @@ Each handler receives `(&mut AmbleWorld, &mut View)` so state changes and UI out
 Located in `world.rs`, `AmbleWorld` centralizes mutable state:
 
 - **Player** (`player.rs`) – inventory, current location, flag set, previously visited rooms.
-- **Rooms/Items/NPCs** – lookups by UUID, plus symbol maps for fast conversion from DSL tokens.
+- **Rooms/Items/NPCs** – lookups by string ids (symbols), so DSL tokens map directly to runtime ids.
 - **Goals** (`goal.rs`) – active and completed objective tracking.
 - **Scheduler** – queued events and ambient timers.
 - **History** – movement trail used for `go back`.

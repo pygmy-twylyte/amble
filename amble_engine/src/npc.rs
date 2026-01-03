@@ -16,7 +16,7 @@ use colored::Colorize;
 use gametools::Spinner;
 use rand::{prelude::IndexedRandom, seq::IteratorRandom};
 
-use uuid::Uuid;
+use crate::Id;
 
 use crate::{
     ItemHolder, Location, View, ViewItem, WorldObject,
@@ -31,12 +31,12 @@ use crate::{
 /// A non-playable character.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Npc {
-    pub id: Uuid,
+    pub id: Id,
     pub symbol: String,
     pub name: String,
     pub description: String,
     pub location: Location,
-    pub inventory: HashSet<Uuid>,
+    pub inventory: HashSet<Id>,
     pub dialogue: HashMap<NpcState, Vec<String>>,
     pub state: NpcState,
     pub movement: Option<NpcMovement>,
@@ -56,7 +56,8 @@ impl Npc {
             let mut rng = rand::rng();
             lines
                 .choose(&mut rng)
-                .unwrap_or(&"Stands mute.".italic().dimmed().to_string()).clone()
+                .unwrap_or(&"Stands mute.".italic().dimmed().to_string())
+                .clone()
         } else {
             warn!(
                 "Npc {}({}): failed dialogue lookup for mood: {:?}",
@@ -97,8 +98,8 @@ impl Npc {
     }
 }
 impl WorldObject for Npc {
-    fn id(&self) -> Uuid {
-        self.id
+    fn id(&self) -> Id {
+        self.id.clone()
     }
     fn symbol(&self) -> &str {
         &self.symbol
@@ -114,15 +115,15 @@ impl WorldObject for Npc {
     }
 }
 impl ItemHolder for Npc {
-    fn add_item(&mut self, item_id: Uuid) {
+    fn add_item(&mut self, item_id: Id) {
         self.inventory.insert(item_id);
     }
 
-    fn remove_item(&mut self, item_id: Uuid) {
+    fn remove_item(&mut self, item_id: Id) {
         self.inventory.remove(&item_id);
     }
 
-    fn contains_item(&self, item_id: Uuid) -> bool {
+    fn contains_item(&self, item_id: Id) -> bool {
         self.inventory.contains(&item_id)
     }
 }
@@ -175,12 +176,12 @@ pub struct NpcMovement {
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum MovementType {
     Route {
-        rooms: Vec<Uuid>,
+        rooms: Vec<Id>,
         current_idx: usize,
         loop_route: bool,
     },
     RandomSet {
-        rooms: HashSet<Uuid>,
+        rooms: HashSet<Id>,
     },
 }
 
@@ -264,7 +265,7 @@ struct MovementTypeRepr {
     #[serde(rename = "type")]
     kind: MovementTypeKind,
     #[serde(default)]
-    rooms: Vec<Uuid>,
+    rooms: Vec<Id>,
     #[serde(default)]
     current_idx: usize,
     #[serde(default)]
@@ -410,7 +411,7 @@ pub fn calculate_next_location(movement: &mut NpcMovement) -> Option<Location> {
             };
             if let Some(room_id) = rooms.get(next_idx) {
                 *current_idx = next_idx;
-                Some(Location::Room(*room_id))
+                Some(Location::Room(room_id.clone()))
             } else {
                 None
             }
@@ -418,14 +419,14 @@ pub fn calculate_next_location(movement: &mut NpcMovement) -> Option<Location> {
         RandomSet { rooms } => rooms
             .iter()
             .choose(&mut rand::rng())
-            .map(|room_id| Location::Room(*room_id)),
+            .map(|room_id| Location::Room(room_id.clone())),
     }
 }
 
 /// Moves an NPC to a new `Location`.
 /// # Errors
 /// - if '`move_to`' is a location other than a 'Room' or 'Nowhere'
-pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: Location) -> Result<()> {
+pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Id, move_to: Location) -> Result<()> {
     // update location in NPC instance
     let npc = world
         .npcs
@@ -439,23 +440,23 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
     info!(
         "moving NPC '{}' from [{}] to [{}]",
         npc.symbol,
-        match npc.location {
-            Location::Room(uuid) => symbol_or_unknown(&world.rooms, uuid),
+        match &npc.location {
+            Location::Room(room_id) => symbol_or_unknown(&world.rooms, room_id),
             _ => "<nowhere>".to_string(),
         },
-        match move_to {
-            Location::Room(uuid) => symbol_or_unknown(&world.rooms, uuid),
+        match &move_to {
+            Location::Room(room_id) => symbol_or_unknown(&world.rooms, room_id),
             _ => "<nowhere>".to_string(),
         }
     );
 
     // get source and destination ids, or None where not a room
     let from_room_id = match &npc.location {
-        Location::Room(uuid) => Some(*uuid),
+        Location::Room(room_id) => Some(room_id.clone()),
         _ => None,
     };
     let to_room_id = match &move_to {
-        Location::Room(uuid) => Some(*uuid),
+        Location::Room(room_id) => Some(room_id.clone()),
         _ => None,
     };
 
@@ -500,7 +501,7 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Uuid, move_to: 
                 world.player.name()
             );
         }
-        world.rooms.get_mut(&uuid).map(|room| room.npcs.insert(npc_id));
+        world.rooms.get_mut(&uuid).map(|room| room.npcs.insert(npc_id.clone()));
     }
 
     // finally update NPC instance's location field
@@ -583,7 +584,6 @@ mod tests {
         world::{AmbleWorld, Location},
     };
     use std::collections::{HashMap, HashSet};
-    use uuid::Uuid;
 
     fn create_test_npc() -> Npc {
         let mut dialogue = HashMap::new();
@@ -592,7 +592,7 @@ mod tests {
         dialogue.insert(NpcState::Mad, vec!["Go away!".into(), "I'm not talking to you!".into()]);
 
         Npc {
-            id: Uuid::new_v4(),
+            id: crate::idgen::new_id(),
             symbol: "test_npc".into(),
             name: "Test NPC".into(),
             description: "A test NPC".into(),
@@ -608,9 +608,9 @@ mod tests {
     fn create_test_world() -> AmbleWorld {
         let mut world = AmbleWorld::new_empty();
 
-        let item_id = Uuid::new_v4();
+        let item_id = crate::idgen::new_id();
         let item = Item {
-            id: item_id,
+            id: item_id.clone(),
             symbol: "test_item".into(),
             name: "Test Item".into(),
             description: "A test item".into(),
@@ -623,7 +623,7 @@ mod tests {
             text: None,
             consumable: None,
         };
-        world.items.insert(item_id, item);
+        world.items.insert(item_id.clone(), item);
 
         world
     }
@@ -705,7 +705,7 @@ mod tests {
     fn npc_show_displays_description_and_inventory() {
         let world = create_test_world();
         let mut view = View::new();
-        let item_id = *world.items.keys().next().unwrap();
+        let item_id = world.items.keys().next().unwrap().clone();
 
         let mut npc = create_test_npc();
         npc.inventory.insert(item_id);
@@ -787,30 +787,30 @@ mod tests {
     #[test]
     fn item_holder_add_item_works() {
         let mut npc = create_test_npc();
-        let item_id = Uuid::new_v4();
+        let item_id = crate::idgen::new_id();
 
-        npc.add_item(item_id);
+        npc.add_item(item_id.clone());
         assert!(npc.inventory.contains(&item_id));
     }
 
     #[test]
     fn item_holder_remove_item_works() {
         let mut npc = create_test_npc();
-        let item_id = Uuid::new_v4();
-        npc.inventory.insert(item_id);
+        let item_id = crate::idgen::new_id();
+        npc.inventory.insert(item_id.clone());
 
-        npc.remove_item(item_id);
+        npc.remove_item(item_id.clone());
         assert!(!npc.inventory.contains(&item_id));
     }
 
     #[test]
     fn item_holder_contains_item_works() {
         let mut npc = create_test_npc();
-        let item_id = Uuid::new_v4();
-        npc.inventory.insert(item_id);
+        let item_id = crate::idgen::new_id();
+        npc.inventory.insert(item_id.clone());
 
         assert!(npc.contains_item(item_id));
-        assert!(!npc.contains_item(Uuid::new_v4()));
+        assert!(!npc.contains_item(crate::idgen::new_id()));
     }
 
     #[test]
@@ -846,11 +846,11 @@ mod tests {
         let mut view = View::new();
 
         // Create two rooms
-        let player_room_id = Uuid::new_v4();
-        let other_room_id = Uuid::new_v4();
+        let player_room_id = crate::idgen::new_id();
+        let other_room_id = crate::idgen::new_id();
 
         let player_room = Room {
-            id: player_room_id,
+            id: player_room_id.clone(),
             symbol: "player_room".into(),
             name: "Player Room".into(),
             base_description: "The player's room".into(),
@@ -863,7 +863,7 @@ mod tests {
         };
 
         let other_room = Room {
-            id: other_room_id,
+            id: other_room_id.clone(),
             symbol: "other_room".into(),
             name: "Other Room".into(),
             base_description: "Another room".into(),
@@ -875,18 +875,23 @@ mod tests {
             npcs: HashSet::new(),
         };
 
-        world.rooms.insert(player_room_id, player_room);
-        world.rooms.insert(other_room_id, other_room);
+        world.rooms.insert(player_room_id.clone(), player_room);
+        world.rooms.insert(other_room_id.clone(), other_room);
 
         // Create NPC and set player location
-        let npc_id = Uuid::new_v4();
+        let npc_id = crate::idgen::new_id();
         let npc = create_test_npc();
-        world.npcs.insert(npc_id, npc);
-        world.player.location = Location::Room(player_room_id);
+        world.npcs.insert(npc_id.clone(), npc);
+        world.player.location = Location::Room(player_room_id.clone());
 
         // Move NPC from player's room to another room (should create NpcLeft)
-        world.npcs.get_mut(&npc_id).unwrap().location = Location::Room(player_room_id);
-        let _ = move_npc(&mut world, &mut view, npc_id, Location::Room(other_room_id));
+        world.npcs.get_mut(&npc_id).unwrap().location = Location::Room(player_room_id.clone());
+        let _ = move_npc(
+            &mut world,
+            &mut view,
+            npc_id.clone(),
+            Location::Room(other_room_id.clone()),
+        );
 
         // Check that NpcLeft ViewItem was created
         let left_items: Vec<_> = view
@@ -904,7 +909,12 @@ mod tests {
         view.items.clear();
 
         // Move NPC from another room to player's room (should create NpcEntered)
-        let _ = move_npc(&mut world, &mut view, npc_id, Location::Room(player_room_id));
+        let _ = move_npc(
+            &mut world,
+            &mut view,
+            npc_id.clone(),
+            Location::Room(player_room_id.clone()),
+        );
 
         // Check that NpcEntered ViewItem was created
         let entered_items: Vec<_> = view
@@ -928,11 +938,11 @@ mod tests {
         let mut view = View::new();
 
         // Create rooms and NPC
-        let player_room_id = Uuid::new_v4();
-        let other_room_id = Uuid::new_v4();
+        let player_room_id = crate::idgen::new_id();
+        let other_room_id = crate::idgen::new_id();
 
         let player_room = Room {
-            id: player_room_id,
+            id: player_room_id.clone(),
             symbol: "player_room".into(),
             name: "Player Room".into(),
             base_description: "The player's room".into(),
@@ -945,7 +955,7 @@ mod tests {
         };
 
         let other_room = Room {
-            id: other_room_id,
+            id: other_room_id.clone(),
             symbol: "other_room".into(),
             name: "Other Room".into(),
             base_description: "Another room".into(),
@@ -957,18 +967,23 @@ mod tests {
             npcs: HashSet::new(),
         };
 
-        world.rooms.insert(player_room_id, player_room);
-        world.rooms.insert(other_room_id, other_room);
+        world.rooms.insert(player_room_id.clone(), player_room);
+        world.rooms.insert(other_room_id.clone(), other_room);
 
-        let npc_id = Uuid::new_v4();
+        let npc_id = crate::idgen::new_id();
         let npc = create_test_npc();
-        world.npcs.insert(npc_id, npc);
-        world.player.location = Location::Room(player_room_id);
+        world.npcs.insert(npc_id.clone(), npc);
+        world.player.location = Location::Room(player_room_id.clone());
 
         // Simulate NPC entering, speaking, then leaving
         // First: NPC enters player's room
-        world.npcs.get_mut(&npc_id).unwrap().location = Location::Room(other_room_id);
-        let _ = move_npc(&mut world, &mut view, npc_id, Location::Room(player_room_id));
+        world.npcs.get_mut(&npc_id).unwrap().location = Location::Room(other_room_id.clone());
+        let _ = move_npc(
+            &mut world,
+            &mut view,
+            npc_id.clone(),
+            Location::Room(player_room_id.clone()),
+        );
 
         // Add some speech
         view.push(ViewItem::NpcSpeech {
@@ -977,7 +992,12 @@ mod tests {
         });
 
         // Then: NPC leaves player's room
-        let _ = move_npc(&mut world, &mut view, npc_id, Location::Room(other_room_id));
+        let _ = move_npc(
+            &mut world,
+            &mut view,
+            npc_id.clone(),
+            Location::Room(other_room_id.clone()),
+        );
 
         // Verify we have all three event types
         assert_eq!(

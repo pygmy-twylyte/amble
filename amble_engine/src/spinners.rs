@@ -8,17 +8,20 @@
 //!
 //! The engine now supports two types of spinners:
 //! - **Core spinners** (`CoreSpinnerType`) are essential for engine operation
-//! - **Custom spinners** are defined per-game in TOML data files
+//! - **Custom spinners** are defined per-game in `WorldDef` data
 //!
-//! Core spinners have built-in defaults but can be overridden in TOML files.
+//! Core spinners have built-in defaults but can be overridden in world data.
 //! Custom spinners are completely defined by game data.
 //!
 
 use serde::de::{self, Deserializer};
 use serde::{Deserialize, Serialize, Serializer};
+use std::collections::HashMap;
+
+use gametools::{Spinner, Wedge};
 
 /// Core spinner types that are essential for the engine to function.
-/// These have built-in defaults but can be overridden in TOML files.
+/// These have built-in defaults but can be overridden in world data.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum CoreSpinnerType {
@@ -45,7 +48,7 @@ pub enum CoreSpinnerType {
 }
 
 /// Represents either a core spinner type or a custom game-specific spinner.
-/// Custom spinners are identified by string keys and defined entirely in TOML.
+/// Custom spinners are identified by string keys and defined entirely in world data.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum SpinnerType {
     /// Core engine spinner with built-in defaults
@@ -70,7 +73,7 @@ impl SpinnerType {
         matches!(self, SpinnerType::Custom(_))
     }
 
-    /// Get the string representation used in TOML files
+    /// Get the string representation used in serialized world data (legacy name).
     pub fn as_toml_key(&self) -> String {
         match self {
             SpinnerType::Core(core) => core.as_toml_key(),
@@ -78,7 +81,7 @@ impl SpinnerType {
         }
     }
 
-    /// Parse a spinner type from a TOML key string
+    /// Parse a spinner type from a serialized spinner key string.
     pub fn from_toml_key(key: &str) -> Self {
         // Try to parse as core spinner first
         if let Some(core) = CoreSpinnerType::from_toml_key(key) {
@@ -100,7 +103,7 @@ impl SpinnerType {
 }
 
 impl CoreSpinnerType {
-    /// Get the string representation used in TOML files
+    /// Get the string representation used in serialized world data (legacy name).
     pub fn as_toml_key(&self) -> String {
         match self {
             CoreSpinnerType::EntityNotFound => "entityNotFound".to_string(),
@@ -116,7 +119,7 @@ impl CoreSpinnerType {
         }
     }
 
-    /// Parse a core spinner type from a TOML key string
+    /// Parse a core spinner type from a serialized spinner key string.
     pub fn from_toml_key(key: &str) -> Option<Self> {
         match key {
             "entityNotFound" => Some(CoreSpinnerType::EntityNotFound),
@@ -192,6 +195,38 @@ impl CoreSpinnerType {
         let count = self.default_values().len();
         vec![1; count] // Equal weight for all default values
     }
+}
+
+/// Create a spinner map with only the core defaults.
+pub fn create_default_spinners() -> HashMap<SpinnerType, Spinner<String>> {
+    let core_types = [
+        CoreSpinnerType::EntityNotFound,
+        CoreSpinnerType::DestinationUnknown,
+        CoreSpinnerType::Movement,
+        CoreSpinnerType::NoEffect,
+        CoreSpinnerType::NpcIgnore,
+        CoreSpinnerType::TakeVerb,
+        CoreSpinnerType::UnrecognizedCommand,
+        CoreSpinnerType::QuitMsg,
+        CoreSpinnerType::NpcEntered,
+        CoreSpinnerType::NpcLeft,
+    ];
+
+    let mut spinners = HashMap::new();
+    for core_type in core_types {
+        let values = core_type.default_values();
+        let widths = core_type.default_widths();
+
+        let wedges: Vec<Wedge<String>> = values
+            .iter()
+            .zip(widths.iter())
+            .map(|(val, &width)| Wedge::new_weighted((*val).to_string(), width))
+            .collect();
+
+        spinners.insert(SpinnerType::Core(core_type), Spinner::new(wedges));
+    }
+
+    spinners
 }
 
 // Convenience From implementations for easier migration

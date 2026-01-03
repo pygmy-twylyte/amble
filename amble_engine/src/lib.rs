@@ -15,16 +15,16 @@
 //! - **Goal tracking**: Quest and objective management
 //! - **Rich text output**: Styled terminal output with multiple view modes
 //!
-//! The engine is designed to be data-driven, loading all game content
-//! from TOML configuration files rather than requiring code changes.
+//! The engine is designed to be data-driven, loading world content from a
+//! compiled `WorldDef` (`world.ron`) rather than requiring code changes.
 //!
-//! **Note: While the engine reads TOML and you can write directly in TOML
-//! (the first 1/3 of the demo game was written that way), it is vastly easier
-//! to use the full capabilities of the engine by creating content using
-//! the [`amble_script`] DSL -- and easier still if you use the Zed editor
-//! and accompanying Zed Amble extension.
+//! **Note:** The engine still reads some TOML for configuration (themes, scoring,
+//! and help commands), but gameplay content should be authored in the
+//! [`amble_script`] DSL and compiled to `world.ron`.
 
 pub const AMBLE_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+pub type Id = String;
 
 // DEV_MODE is enabled or disabled through this const throughout
 #[cfg(feature = "dev-mode")]

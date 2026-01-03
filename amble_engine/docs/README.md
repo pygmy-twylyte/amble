@@ -13,7 +13,7 @@ I wanted to learn Rust and thought an 80s‑style parser adventure (think Zork) 
 
 ## What It Is Now
 
-Amble is a data‑first engine that loads worlds from TOML, plus a DSL and compiler that make worldbuilding fast and readable. The repo includes developer tools and a fully playable demo you can run immediately.
+Amble is a data‑first engine that loads worlds from compiled `WorldDef` data (`world.ron`), plus a DSL and compiler that make worldbuilding fast and readable. The repo includes developer tools and a fully playable demo you can run immediately.
 
 ## DSL Spotlight
 
@@ -40,15 +40,15 @@ The Amble DSL is designed to read like plain English while staying precise and c
 
 ### Author New Content
 1. Explore the DSL guides in `amble_script/docs/`—start with `dsl_creator_handbook.md`.
-2. Compile the sample DSL to TOML:
+2. Compile the sample DSL to `world.ron`:
    `cargo run -p amble_script -- compile-dir amble_script/data/Amble --out-dir amble_engine/data`
 3. Launch the engine to test your changes:
    `cargo run -p amble_engine`
 4. Iterate with `amble_script lint …` to catch missing references early.
 
 ## Crates in this Repository
-- `amble_engine` - loads game data either from TOML files or a saved state (in RON format) and runs the game
-- `amble_script` - an intuitive, English-like language (DSL) for defining the game world, which is compiled into the TOML used by `amble_engine`
+- `amble_engine` - loads world data from `world.ron` (plus TOML configs for themes/help) or a saved state, then runs the game
+- `amble_script` - an intuitive, English-like language (DSL) for defining the game world, which compiles into `WorldDef` (RON) used by `amble_engine`
 - [`xtask`](../xtask/README.md) - automation helpers for builds, packaging, and the content pipeline
 
 ## Optional (but nice!) External Repositories for Developers
@@ -57,7 +57,7 @@ The Amble DSL is designed to read like plain English while staying precise and c
 
 ## Engine Features
 
-- Data-first design so stories live entirely in .amble -> TOML data, not code
+- Data-first design so stories live entirely in `.amble` -> `world.ron` (WorldDef) data, not code
 - Rooms with conditional description overlays that can adapt to world state and connections that can be conditional, hidden, locked, or remapped entirely during play
 - Items support a variety of capabilities (like "ignite" or "smash" or "turn on") and interactions, and can be consumable; items can also be containers and nested to an arbitrary depth.
 - NPCs supported with dialogue, trade options (via triggers), moods/states, and movement on either predetermined routes or randomly through a defined area
@@ -65,7 +65,7 @@ The Amble DSL is designed to read like plain English while staying precise and c
 - Configurable point scoring system
 - Customizable status effects
 - In-game help system for players with built-in help for commands but customizable general help text.
-- 2-stage loader that verifies and cross-references all symbols during world building
+- WorldDef validation plus a placement pass that seeds initial room/NPC/item locations
 - Thorough logging of game and engine events enabled throughout
 - REPL-style parser with natural language verbs, synonyms, and DEV tools
 - Powerful trigger/scheduler system for conditional, delayed, or repeating events

@@ -1,13 +1,13 @@
 # NPCs DSL Guide
 
-This guide covers the NPC portion of the `amble_script` DSL and how it maps to the engine’s `npcs.toml`. Non-player characters can be static flavour, mobile actors that roam rooms, or storytellers with branching dialogue.
+This guide covers the NPC portion of the `amble_script` DSL and how it maps into the engine’s `WorldDef` (`world.ron`). Non-player characters can be static flavour, mobile actors that roam rooms, or storytellers with branching dialogue.
 
 Highlights:
 - Required fields: `name`, `desc`, `max_hp`, and `location`.
 - Optional initial `state` (`normal` by default) or `state custom <id>` for bespoke variants.
 - Movement controls: `movement route rooms (…)` or `movement random rooms (…)` with optional `timing`, `active`, and `loop` modifiers.
 - Dialogue banks keyed by state (`dialogue normal { … }`, `dialogue custom panic { … }`).
-- Compiles to the same TOML the engine reads, including source annotations for easy debugging.
+- Compiles into `WorldDef` data the engine reads.
 
 ## Minimal NPC
 
@@ -20,20 +20,7 @@ npc receptionist {
 }
 ```
 
-Emits:
-
-```toml
-[[npcs]]
-# npc receptionist (source line N)
-id = "receptionist"
-name = "Receptionist"
-description = "Focused on a flickering terminal."
-max_hp = 10
-location = { Room = "lab-lobby" }
-state = "normal"
-```
-
-If no explicit state is provided, the compiler emits `state = "normal"`.
+This produces an `NpcDef` with the corresponding `id`, `name`, `desc`, `max_hp`, `location`, and `state` fields. If no explicit state is provided, the compiler emits `state = normal`.
 
 ## Locations
 
@@ -96,10 +83,23 @@ dialogue custom emergency {
 ## Library Usage
 
 ```rust
-use amble_script::{parse_npcs, compile_npcs_to_toml};
+use amble_script::{GameAst, PlayerAst, parse_npcs, worlddef_from_asts};
+use ron::ser::PrettyConfig;
 let src = std::fs::read_to_string("npcs.amble")?;
 let npcs = parse_npcs(&src)?;
-let toml = compile_npcs_to_toml(&npcs)?;
+let game = GameAst {
+    title: "Demo".into(),
+    intro: "Intro".into(),
+    player: PlayerAst {
+        name: "The Candidate".into(),
+        description: "An adventurer.".into(),
+        max_hp: 20,
+        start_room: "foyer".into(),
+    },
+    scoring: None,
+};
+let worlddef = worlddef_from_asts(Some(&game), &[], &[], &[], &[], &npcs, &[])?;
+let ron = ron::ser::to_string_pretty(&worlddef, PrettyConfig::default())?;
 ```
 
-The resulting TOML mirrors `amble_engine/data/npcs.toml`, complete with provenance comments for troubleshooting.
+The resulting `ron` string can be written to `world.ron` for engine loading.

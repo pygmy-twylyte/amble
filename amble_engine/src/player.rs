@@ -5,13 +5,13 @@
 use crate::health::{HealthEffect, HealthState, LivingEntity};
 use crate::{ItemHolder, Location, WorldObject};
 
+use crate::Id;
 use log::{info, warn};
 use serde::de::{self, Deserializer, EnumAccess, VariantAccess, Visitor};
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize, Serializer};
 use std::collections::HashSet;
 use std::fmt;
-use uuid::Uuid;
 use variantly::Variantly;
 
 /// The player-controlled character.
@@ -19,13 +19,13 @@ use variantly::Variantly;
 /// This struct tracks the player's state, such as inventory, score and flags.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Player {
-    pub id: Uuid,
+    pub id: Id,
     pub symbol: String,
     pub name: String,
     pub description: String,
     pub location: Location,
-    pub location_history: Vec<Uuid>,
-    pub inventory: HashSet<Uuid>,
+    pub location_history: Vec<Id>,
+    pub inventory: HashSet<Id>,
     pub flags: HashSet<Flag>,
     pub score: usize,
     pub health: HealthState,
@@ -72,9 +72,9 @@ impl Player {
 
     /// Adds current location to history and updates to new location.
     /// Maintains a maximum of 5 previous locations.
-    pub fn move_to_room(&mut self, new_room_id: Uuid) {
-        if let Location::Room(current_room) = self.location {
-            self.location_history.push(current_room);
+    pub fn move_to_room(&mut self, new_room_id: Id) {
+        if let Location::Room(current_room) = &self.location {
+            self.location_history.push(current_room.clone());
             // Keep only the last 5 locations
             if self.location_history.len() > 5 {
                 self.location_history.remove(0);
@@ -84,15 +84,15 @@ impl Player {
     }
 
     /// Returns the most recent room in history, if any.
-    pub fn previous_room(&self) -> Option<Uuid> {
-        self.location_history.last().copied()
+    pub fn previous_room(&self) -> Option<Id> {
+        self.location_history.last().cloned()
     }
 
     /// Moves back to the previous room, removing it from history.
     /// Returns the room ID moved to, or None if no history exists.
-    pub fn go_back(&mut self) -> Option<Uuid> {
+    pub fn go_back(&mut self) -> Option<Id> {
         if let Some(previous_room) = self.location_history.pop() {
-            self.location = Location::Room(previous_room);
+            self.location = Location::Room(previous_room.clone());
             Some(previous_room)
         } else {
             None
@@ -102,13 +102,13 @@ impl Player {
 impl Default for Player {
     fn default() -> Player {
         Self {
-            id: Uuid::new_v4(),
+            id: "player".to_string(),
             symbol: "the_candidate".into(),
             name: "The Candidate".into(),
             description: "default".into(),
             location: Location::default(),
             location_history: Vec::new(),
-            inventory: HashSet::<Uuid>::default(),
+            inventory: HashSet::<Id>::default(),
             flags: HashSet::<Flag>::default(),
             score: 1,
             health: HealthState::default(),
@@ -116,8 +116,8 @@ impl Default for Player {
     }
 }
 impl WorldObject for Player {
-    fn id(&self) -> Uuid {
-        self.id
+    fn id(&self) -> Id {
+        self.id.clone()
     }
     fn symbol(&self) -> &str {
         &self.symbol
@@ -133,15 +133,15 @@ impl WorldObject for Player {
     }
 }
 impl ItemHolder for Player {
-    fn add_item(&mut self, item_id: Uuid) {
+    fn add_item(&mut self, item_id: Id) {
         self.inventory.insert(item_id);
     }
 
-    fn remove_item(&mut self, item_id: Uuid) {
+    fn remove_item(&mut self, item_id: Id) {
         self.inventory.remove(&item_id);
     }
 
-    fn contains_item(&self, item_id: Uuid) -> bool {
+    fn contains_item(&self, item_id: Id) -> bool {
         self.inventory.contains(&item_id)
     }
 }
@@ -446,14 +446,14 @@ pub fn format_sequence_value(name: &str, step: u8) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Id;
     use std::collections::HashSet;
-    use uuid::Uuid;
 
     fn create_test_player() -> Player {
         let mut player = Player::default();
         player.flags.insert(Flag::simple("test_flag", 0));
         player.flags.insert(Flag::sequence("test_seq", Some(3), 0));
-        let item_id = Uuid::new_v4();
+        let item_id = crate::idgen::new_id();
         player.inventory.insert(item_id);
         player
     }
@@ -592,28 +592,28 @@ mod tests {
     #[test]
     fn item_holder_add_item_works() {
         let mut player = Player::default();
-        let item_id = Uuid::new_v4();
+        let item_id = crate::idgen::new_id();
 
-        player.add_item(item_id);
+        player.add_item(item_id.clone());
         assert!(player.inventory.contains(&item_id));
     }
 
     #[test]
     fn item_holder_remove_item_works() {
         let mut player = create_test_player();
-        let item_id = *player.inventory.iter().next().unwrap();
+        let item_id = player.inventory.iter().next().unwrap().clone();
 
-        player.remove_item(item_id);
+        player.remove_item(item_id.clone());
         assert!(!player.inventory.contains(&item_id));
     }
 
     #[test]
     fn item_holder_contains_item_works() {
         let player = create_test_player();
-        let item_id = *player.inventory.iter().next().unwrap();
+        let item_id = player.inventory.iter().next().unwrap().clone();
 
-        assert!(player.contains_item(item_id));
-        assert!(!player.contains_item(Uuid::new_v4()));
+        assert!(player.contains_item(item_id.clone()));
+        assert!(!player.contains_item(crate::idgen::new_id()));
     }
 
     #[test]
@@ -790,20 +790,20 @@ mod tests {
     fn move_to_room_updates_location_and_history() {
         use crate::Location;
         let mut player = Player::default();
-        let room1 = Uuid::new_v4();
-        let room2 = Uuid::new_v4();
-        let room3 = Uuid::new_v4();
+        let room1 = crate::idgen::new_id();
+        let room2 = crate::idgen::new_id();
+        let room3 = crate::idgen::new_id();
 
         // Start with player in room1
-        player.location = Location::Room(room1);
+        player.location = Location::Room(room1.clone());
 
         // Move to room2
-        player.move_to_room(room2);
-        assert_eq!(player.location, Location::Room(room2));
-        assert_eq!(player.location_history, vec![room1]);
+        player.move_to_room(room2.clone());
+        assert_eq!(player.location, Location::Room(room2.clone()));
+        assert_eq!(player.location_history, vec![room1.clone()]);
 
         // Move to room3
-        player.move_to_room(room3);
+        player.move_to_room(room3.clone());
         assert_eq!(player.location, Location::Room(room3));
         assert_eq!(player.location_history, vec![room1, room2]);
     }
@@ -812,14 +812,14 @@ mod tests {
     fn move_to_room_limits_history_size() {
         use crate::Location;
         let mut player = Player::default();
-        let rooms: Vec<Uuid> = (0..8).map(|_| Uuid::new_v4()).collect();
+        let rooms: Vec<Id> = (0..8).map(|_| crate::idgen::new_id()).collect();
 
         // Start in room 0
-        player.location = Location::Room(rooms[0]);
+        player.location = Location::Room(rooms[0].clone());
 
         // Move through all rooms
         for rm in rooms.iter().take(8).skip(1) {
-            player.move_to_room(*rm);
+            player.move_to_room(rm.clone());
         }
 
         // Should only keep last 5 rooms in history
@@ -831,14 +831,14 @@ mod tests {
     fn previous_room_returns_last_room() {
         use crate::Location;
         let mut player = Player::default();
-        let room1 = Uuid::new_v4();
-        let room2 = Uuid::new_v4();
+        let room1 = crate::idgen::new_id();
+        let room2 = crate::idgen::new_id();
 
         // No history initially
         assert_eq!(player.previous_room(), None);
 
         // After one move
-        player.location = Location::Room(room1);
+        player.location = Location::Room(room1.clone());
         player.move_to_room(room2);
         assert_eq!(player.previous_room(), Some(room1));
     }
@@ -847,23 +847,23 @@ mod tests {
     fn go_back_returns_to_previous_room() {
         use crate::Location;
         let mut player = Player::default();
-        let room1 = Uuid::new_v4();
-        let room2 = Uuid::new_v4();
-        let room3 = Uuid::new_v4();
+        let room1 = crate::idgen::new_id();
+        let room2 = crate::idgen::new_id();
+        let room3 = crate::idgen::new_id();
 
         // Set up history: room1 -> room2 -> room3
-        player.location = Location::Room(room1);
-        player.move_to_room(room2);
+        player.location = Location::Room(room1.clone());
+        player.move_to_room(room2.clone());
         player.move_to_room(room3);
 
         // Go back to room2
-        assert_eq!(player.go_back(), Some(room2));
-        assert_eq!(player.location, Location::Room(room2));
-        assert_eq!(player.location_history, vec![room1]);
+        assert_eq!(player.go_back(), Some(room2.clone()));
+        assert_eq!(player.location, Location::Room(room2.clone()));
+        assert_eq!(player.location_history, vec![room1.clone()]);
 
         // Go back to room1
-        assert_eq!(player.go_back(), Some(room1));
-        assert_eq!(player.location, Location::Room(room1));
+        assert_eq!(player.go_back(), Some(room1.clone()));
+        assert_eq!(player.location, Location::Room(room1.clone()));
         assert_eq!(player.location_history.len(), 0);
 
         // No more history

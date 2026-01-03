@@ -7,22 +7,28 @@
 use std::collections::HashMap;
 use std::hash::BuildHasher;
 
+use crate::Id;
 use crate::world::WorldObject;
 use crate::{Item, Npc, Room};
-use uuid::Uuid;
 
-/// Generic: Returns the TOML symbol for a given object's uuid.
-pub fn symbol_from_id<T: WorldObject, S: BuildHasher>(map: &HashMap<Uuid, T, S>, id: Uuid) -> Option<&str> {
-    map.get(&id).map(super::world::WorldObject::symbol)
+/// Generic: Returns the symbol for a given object's id.
+pub fn symbol_from_id<'a, T: WorldObject, S: BuildHasher>(
+    map: &'a HashMap<Id, T, S>,
+    id: impl AsRef<str>,
+) -> Option<&'a str> {
+    map.get(id.as_ref()).map(super::world::WorldObject::symbol)
 }
 
-/// Generic: Returns the display name for a given object's uuid.
-pub fn name_from_id<T: WorldObject, S: BuildHasher>(map: &HashMap<Uuid, T, S>, id: Uuid) -> Option<&str> {
-    map.get(&id).map(super::world::WorldObject::name)
+/// Generic: Returns the display name for a given object's id.
+pub fn name_from_id<'a, T: WorldObject, S: BuildHasher>(
+    map: &'a HashMap<Id, T, S>,
+    id: impl AsRef<str>,
+) -> Option<&'a str> {
+    map.get(id.as_ref()).map(super::world::WorldObject::name)
 }
 
 /// Convenience: Returns the symbol or a standard fallback string.
-pub fn symbol_or_unknown<T: WorldObject, S: BuildHasher>(map: &HashMap<Uuid, T, S>, id: Uuid) -> String {
+pub fn symbol_or_unknown<T: WorldObject, S: BuildHasher>(map: &HashMap<Id, T, S>, id: impl AsRef<str>) -> String {
     symbol_from_id(map, id).unwrap_or("<not_found>").to_string()
 }
 
@@ -36,17 +42,26 @@ pub fn pluralize(word: &str, count: isize) -> String {
     format!("{}{}", word, plural_s(count))
 }
 
-/// Returns the TOML symbol for a given room's uuid.
-pub fn room_symbol_from_id<S: BuildHasher>(rooms: &HashMap<Uuid, Room, S>, room_id: Uuid) -> Option<&str> {
+/// Returns the symbol for a given room's id.
+pub fn room_symbol_from_id<'a, S: BuildHasher>(
+    rooms: &'a HashMap<Id, Room, S>,
+    room_id: impl AsRef<str>,
+) -> Option<&'a str> {
     symbol_from_id(rooms, room_id)
 }
 
-/// Returns the TOML symbol for a given item's uuid.
-pub fn item_symbol_from_id<S: BuildHasher>(items: &HashMap<Uuid, Item, S>, item_id: Uuid) -> Option<&str> {
+/// Returns the symbol for a given item's id.
+pub fn item_symbol_from_id<'a, S: BuildHasher>(
+    items: &'a HashMap<Id, Item, S>,
+    item_id: impl AsRef<str>,
+) -> Option<&'a str> {
     symbol_from_id(items, item_id)
 }
 
-/// Returns the TOML symbol for a given character's uuid.
-pub fn npc_symbol_from_id<S: BuildHasher>(npcs: &HashMap<Uuid, Npc, S>, npc_id: Uuid) -> Option<&str> {
+/// Returns the symbol for a given character's id.
+pub fn npc_symbol_from_id<'a, S: BuildHasher>(
+    npcs: &'a HashMap<Id, Npc, S>,
+    npc_id: impl AsRef<str>,
+) -> Option<&'a str> {
     symbol_from_id(npcs, npc_id)
 }

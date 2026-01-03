@@ -1,0 +1,31 @@
+# Game-wide configuration and metadata.
+
+game {
+  title "AMBLE: An Absurd Adventure"
+  intro """
+You find yourself standing on a rocky outcrop of a ridge high in the mountains -- maybe the Andes? Emerging from a daze, you realize you were brought here and dropped off by some sort of flying vehicle. When it flew off, it didn't make a sound. Did it have a motor, or was it something different?
+
+Your head gradually begins to clear, and you start to take stock of your surroundings...
+
+(type "help" for basic instructions)
+"""
+  player {
+    name "The Candidate"
+    desc "a seasoned adventurer with a faint memory of a promised cake that has gone unfulfilled."
+    max_hp 20
+    start room high-ridge
+  }
+  scoring {
+    report_title "Candidate Evaluation Report"
+    rank 99.0 "Quantum Overachiever" "You saw the multiverse, understood it, then filed a bug report."
+    rank 90.0 "Senior Field Operative" "A nearly flawless run. Someone give this candidate a promotion."
+    rank 75.0 "Licensed Reality Bender" "Impressive grasp of nonlinear environments and cake-based paradoxes."
+    rank 60.0 "Rogue Intern, Level II" "You got the job done, and only melted one small pocket universe."
+    rank 45.0 "Unpaid Research Assistant" "Solid effort. Some concepts may have slipped through dimensional cracks."
+    rank 30.0 "Junior Sandwich Technician" "Good instincts, questionable execution. Especially with condiments."
+    rank 15.0 "Volunteer Tour Guide" "You wandered. You looked at stuff. It was something."
+    rank 5.0 "Mailbox Stuffing Trainee" "You opened a box, tripped on a rug, and called it a day."
+    rank 1.0 "Accidental Hire" "We're not sure how you got in. Please return your lanyard."
+    rank 0.0 "Amnesiac Test Subject" "Did you... play? Were you even awake?"
+  }
+}

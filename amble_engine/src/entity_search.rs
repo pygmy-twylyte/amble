@@ -16,7 +16,7 @@
 //! - the search scope
 //!
 //! Also, callers will generally need in return:
-//! - the Uuid of the found entity, OR
+//! - the Id of the found entity, OR
 //! - the reason that an entity's ID is not being returned (`SearchError`)
 //!
 //! TODO?: For now, we'll just duplicate search functionality currently existing. Ultimately, the search scopes could
@@ -27,8 +27,8 @@ use std::{
     sync::OnceLock,
 };
 
+use crate::Id;
 use thiserror::Error;
-use uuid::Uuid;
 
 use crate::{
     AmbleWorld, Item, Npc,
@@ -37,31 +37,31 @@ use crate::{
 };
 
 /// Empty item map used in NPC-only searches.
-pub static NO_ITEMS: OnceLock<HashMap<Uuid, Item>> = OnceLock::new();
+pub static NO_ITEMS: OnceLock<HashMap<Id, Item>> = OnceLock::new();
 /// Empty NPC map used in item-only searches.
-pub static NO_NPCS: OnceLock<HashMap<Uuid, Npc>> = OnceLock::new();
+pub static NO_NPCS: OnceLock<HashMap<Id, Npc>> = OnceLock::new();
 
 /// Represents the scope of a requested search by the caller and includes the location to search.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SearchScope {
     /// All items and NPCs within the player's sight
-    AllVisible(Uuid),
+    AllVisible(Id),
     /// All items and NPCs that the player can touch
-    AllTouchable(Uuid),
+    AllTouchable(Id),
     /// Items the player can look at.
-    VisibleItems(Uuid),
+    VisibleItems(Id),
     /// NPCs the player can see.
-    VisibleNpcs(Uuid),
+    VisibleNpcs(Id),
     /// Items the player can touch (but not necessarily move) in room or inventory
-    TouchableItems(Uuid),
+    TouchableItems(Id),
     /// NPCs the player can touch.
-    TouchableNpcs(Uuid),
+    TouchableNpcs(Id),
     /// Nearby container items or NPCs which can potentially offer or accept an item.
-    NearbyVessels(Uuid),
+    NearbyVessels(Id),
     /// Only items in player's inventory.
     Inventory,
     /// Only items in an NPC's inventory.
-    NpcInventory(Uuid),
+    NpcInventory(Id),
 }
 
 /// Possible errors / situations causing a failed entity search.
@@ -69,10 +69,10 @@ pub enum SearchScope {
 pub enum SearchError {
     #[error("no entity in scope name matching user input '{0}'")]
     NoMatchingName(String),
-    #[error("no npc found with the supplied UUID {0}")]
-    InvalidNpcId(Uuid),
-    #[error("found no room with the supplied UUID ({0})")]
-    InvalidRoomId(Uuid),
+    #[error("no npc found with the supplied id {0}")]
+    InvalidNpcId(Id),
+    #[error("found no room with the supplied id ({0})")]
+    InvalidRoomId(Id),
     #[error("invalid {0} search scope: includes only {1}s")]
     InvalidScope(String, String),
     #[error("unknown error: {0}")]
@@ -84,22 +84,25 @@ pub enum SearchError {
 /// # Errors
 /// - if no match found in the specified scope
 /// - if an invalid scope for an item search is specified
-/// - if the supplied room or NPC UUIDs are invalid
-pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<Uuid, SearchError> {
-    // construct a HashSet of item UUIDs in scope for this search
+/// - if the supplied room or NPC ids are invalid
+pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<Id, SearchError> {
+    // construct a HashSet of item ids in scope for this search
     let haystack: HashSet<_> = match scope {
         SearchScope::VisibleItems(room_id) | SearchScope::AllVisible(room_id) => {
-            let room_items = nearby_visible_items(world, room_id).map_err(|_| SearchError::InvalidRoomId(room_id))?;
-            room_items.union(&world.player.inventory).copied().collect()
+            let room_items =
+                nearby_visible_items(world, room_id.clone()).map_err(|_| SearchError::InvalidRoomId(room_id))?;
+            room_items.union(&world.player.inventory).cloned().collect()
         },
         SearchScope::TouchableItems(room_id) | SearchScope::AllTouchable(room_id) => {
-            let room_items = nearby_reachable_items(world, room_id).map_err(|_| SearchError::InvalidRoomId(room_id))?;
-            room_items.union(&world.player.inventory).copied().collect()
+            let room_items =
+                nearby_reachable_items(world, room_id.clone()).map_err(|_| SearchError::InvalidRoomId(room_id))?;
+            room_items.union(&world.player.inventory).cloned().collect()
         },
         SearchScope::NearbyVessels(room_id) => {
-            let room_items = nearby_vessel_items(world, room_id).map_err(|_| SearchError::InvalidRoomId(room_id))?;
+            let room_items =
+                nearby_vessel_items(world, room_id.clone()).map_err(|_| SearchError::InvalidRoomId(room_id.clone()))?;
             let current_room = world.rooms.get(&room_id).ok_or(SearchError::InvalidRoomId(room_id))?;
-            room_items.union(&current_room.npcs).copied().collect()
+            room_items.union(&current_room.npcs).cloned().collect()
         },
         SearchScope::Inventory => world.player.inventory.clone(),
         SearchScope::NpcInventory(npc_id) => {
@@ -125,8 +128,8 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
 /// # Errors
 /// - if no match found in the specified scope
 /// - if an invalid scope for an npc search is specified
-/// - if the supplied room UUID is invalid
-pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<Uuid, SearchError> {
+/// - if the supplied room id is invalid
+pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<Id, SearchError> {
     let haystack = match scope {
         // currently there is no distinction between NPCs you can see and those you could touch
         // both scopes kept for now as this may change in the future
@@ -155,11 +158,11 @@ pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> 
     Ok(entity.id())
 }
 
-/// Holds the `Uuid` of different types of `WorldEntity`
-#[derive(Debug, Clone, Copy, PartialEq)]
+/// Holds the `Id` of different types of `WorldEntity`
+#[derive(Debug, Clone, PartialEq)]
 pub enum EntityId {
-    Item(Uuid),
-    Npc(Uuid),
+    Item(Id),
+    Npc(Id),
 }
 
 /// Find either an `NPC` or an `Item` with name matching `pattern` within the `SearchScope`.
@@ -168,12 +171,12 @@ pub enum EntityId {
 /// - never: the call to `expect` is guarded by an `is_ok()`
 ///
 /// # Errors
-/// - `SearchError` variants of any type, if no match is found or if the scope type or supplied UUID are invalid
+/// - `SearchError` variants of any type, if no match is found or if the scope type or supplied ids are invalid
 pub fn find_entity_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<EntityId, SearchError> {
     // return any item matched first -- these will account for most searches
     // no_match and scope errors are ignored on this pass because they may
     // not be errors when run against the NPCs
-    match find_item_match(world, pattern, scope) {
+    match find_item_match(world, pattern, scope.clone()) {
         Ok(item_id) => return Ok(EntityId::Item(item_id)),
         Err(SearchError::NoMatchingName(_) | SearchError::InvalidScope(_, _)) => (),
         Err(e) => return Err(e),
@@ -189,6 +192,7 @@ pub fn find_entity_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Id;
     use crate::{
         AmbleWorld, Item, Npc, Room,
         health::HealthState,
@@ -197,13 +201,12 @@ mod tests {
         world::Location,
     };
     use std::collections::{HashMap, HashSet};
-    use uuid::Uuid;
 
-    fn insert_room(world: &mut AmbleWorld, name: &str) -> Uuid {
-        let room_id = Uuid::new_v4();
+    fn insert_room(world: &mut AmbleWorld, name: &str) -> Id {
+        let room_id = crate::idgen::new_id();
         let room = Room {
-            id: room_id,
-            symbol: format!("room_{}", room_id.simple()),
+            id: room_id.clone(),
+            symbol: format!("room_{}", room_id),
             name: name.to_string(),
             base_description: format!("{name} description"),
             overlays: Vec::new(),
@@ -213,7 +216,7 @@ mod tests {
             contents: HashSet::new(),
             npcs: HashSet::new(),
         };
-        world.rooms.insert(room_id, room);
+        world.rooms.insert(room_id.clone(), room);
         room_id
     }
 
@@ -222,11 +225,11 @@ mod tests {
         name: &str,
         location: Location,
         container_state: Option<ContainerState>,
-    ) -> Uuid {
-        let item_id = Uuid::new_v4();
+    ) -> Id {
+        let item_id = crate::idgen::new_id();
         let item = Item {
-            id: item_id,
-            symbol: format!("item_{}", item_id.simple()),
+            id: item_id.clone(),
+            symbol: format!("item_{}", item_id),
             name: name.to_string(),
             description: format!("{name} item"),
             location,
@@ -238,15 +241,15 @@ mod tests {
             text: None,
             consumable: None,
         };
-        world.items.insert(item_id, item);
+        world.items.insert(item_id.clone(), item);
         item_id
     }
 
-    fn insert_npc(world: &mut AmbleWorld, name: &str, location: Location) -> Uuid {
-        let npc_id = Uuid::new_v4();
+    fn insert_npc(world: &mut AmbleWorld, name: &str, location: Location) -> Id {
+        let npc_id = crate::idgen::new_id();
         let npc = Npc {
-            id: npc_id,
-            symbol: format!("npc_{}", npc_id.simple()),
+            id: npc_id.clone(),
+            symbol: format!("npc_{}", npc_id),
             name: name.to_string(),
             description: format!("{name} npc"),
             location,
@@ -256,7 +259,7 @@ mod tests {
             movement: None,
             health: HealthState::new(),
         };
-        world.npcs.insert(npc_id, npc);
+        world.npcs.insert(npc_id.clone(), npc);
         npc_id
     }
 
@@ -265,7 +268,7 @@ mod tests {
         let mut world = AmbleWorld::new_empty();
         let room_id = insert_room(&mut world, "Atrium");
         let coin_id = insert_item(&mut world, "Lucky Coin", Location::Inventory, None);
-        world.player.inventory.insert(coin_id);
+        world.player.inventory.insert(coin_id.clone());
 
         let result = find_item_match(&world, "coin", SearchScope::VisibleItems(room_id)).unwrap();
         assert_eq!(result, coin_id);
@@ -278,10 +281,10 @@ mod tests {
         let chest_id = insert_item(
             &mut world,
             "Ancient Chest",
-            Location::Room(room_id),
+            Location::Room(room_id.clone()),
             Some(ContainerState::Open),
         );
-        world.rooms.get_mut(&room_id).unwrap().contents.insert(chest_id);
+        world.rooms.get_mut(&room_id).unwrap().contents.insert(chest_id.clone());
 
         let result = find_item_match(&world, "chest", SearchScope::NearbyVessels(room_id)).unwrap();
         assert_eq!(result, chest_id);
@@ -290,9 +293,9 @@ mod tests {
     #[test]
     fn find_item_match_errors_when_room_missing() {
         let world = AmbleWorld::new_empty();
-        let room_id = Uuid::new_v4();
+        let room_id = crate::idgen::new_id();
 
-        let err = find_item_match(&world, "coin", SearchScope::VisibleItems(room_id)).unwrap_err();
+        let err = find_item_match(&world, "coin", SearchScope::VisibleItems(room_id.clone())).unwrap_err();
         match err {
             SearchError::InvalidRoomId(id) => assert_eq!(id, room_id),
             other => panic!("unexpected error: {other:?}"),
@@ -302,7 +305,7 @@ mod tests {
     #[test]
     fn find_item_match_rejects_npc_scopes() {
         let world = AmbleWorld::new_empty();
-        let scope = SearchScope::VisibleNpcs(Uuid::new_v4());
+        let scope = SearchScope::VisibleNpcs(crate::idgen::new_id());
 
         let err = find_item_match(&world, "coin", scope).unwrap_err();
         match err {
@@ -318,8 +321,8 @@ mod tests {
     fn find_npc_match_returns_visible_npc() {
         let mut world = AmbleWorld::new_empty();
         let room_id = insert_room(&mut world, "Garden");
-        let npc_id = insert_npc(&mut world, "Caretaker", Location::Room(room_id));
-        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
+        let npc_id = insert_npc(&mut world, "Caretaker", Location::Room(room_id.clone()));
+        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id.clone());
 
         let result = find_npc_match(&world, "take", SearchScope::VisibleNpcs(room_id)).unwrap();
         assert_eq!(result, npc_id);
@@ -328,9 +331,9 @@ mod tests {
     #[test]
     fn find_npc_match_errors_when_room_missing() {
         let world = AmbleWorld::new_empty();
-        let room_id = Uuid::new_v4();
+        let room_id = crate::idgen::new_id();
 
-        let err = find_npc_match(&world, "caretaker", SearchScope::VisibleNpcs(room_id)).unwrap_err();
+        let err = find_npc_match(&world, "caretaker", SearchScope::VisibleNpcs(room_id.clone())).unwrap_err();
         match err {
             SearchError::InvalidRoomId(id) => assert_eq!(id, room_id),
             other => panic!("unexpected error: {other:?}"),
@@ -358,12 +361,17 @@ mod tests {
         let vessel_id = insert_item(
             &mut world,
             "Guardian Chest",
-            Location::Room(room_id),
+            Location::Room(room_id.clone()),
             Some(ContainerState::Open),
         );
-        world.rooms.get_mut(&room_id).unwrap().contents.insert(vessel_id);
-        let npc_id = insert_npc(&mut world, "Guardian", Location::Room(room_id));
-        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
+        world
+            .rooms
+            .get_mut(&room_id)
+            .unwrap()
+            .contents
+            .insert(vessel_id.clone());
+        let npc_id = insert_npc(&mut world, "Guardian", Location::Room(room_id.clone()));
+        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id.clone());
 
         let result = find_entity_match(&world, "guardian", SearchScope::NearbyVessels(room_id)).unwrap();
         assert_eq!(result, EntityId::Item(vessel_id));
@@ -373,8 +381,8 @@ mod tests {
     fn find_entity_match_returns_npc_when_no_item_found() {
         let mut world = AmbleWorld::new_empty();
         let room_id = insert_room(&mut world, "Library");
-        let npc_id = insert_npc(&mut world, "Archivist", Location::Room(room_id));
-        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
+        let npc_id = insert_npc(&mut world, "Archivist", Location::Room(room_id.clone()));
+        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id.clone());
 
         let result = find_entity_match(&world, "archivist", SearchScope::VisibleNpcs(room_id)).unwrap();
         assert_eq!(result, EntityId::Npc(npc_id));
@@ -387,12 +395,17 @@ mod tests {
         let vessel_id = insert_item(
             &mut world,
             "Toolbox",
-            Location::Room(room_id),
+            Location::Room(room_id.clone()),
             Some(ContainerState::Open),
         );
-        world.rooms.get_mut(&room_id).unwrap().contents.insert(vessel_id);
-        let npc_id = insert_npc(&mut world, "Mechanic", Location::Room(room_id));
-        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
+        world
+            .rooms
+            .get_mut(&room_id)
+            .unwrap()
+            .contents
+            .insert(vessel_id.clone());
+        let npc_id = insert_npc(&mut world, "Mechanic", Location::Room(room_id.clone()));
+        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id.clone());
 
         let err = find_entity_match(&world, "lantern", SearchScope::NearbyVessels(room_id)).unwrap_err();
         match err {

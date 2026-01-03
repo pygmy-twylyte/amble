@@ -33,11 +33,11 @@ use crate::trigger::{TriggerCondition, check_triggers, dispatch_action};
 use crate::world::AmbleWorld;
 use crate::{Item, View, ViewItem, WorldObject};
 
+use crate::Id;
 use anyhow::Result;
 use colored::Colorize;
 use std::collections::HashMap;
 use std::hash::BuildHasher;
-use uuid::Uuid;
 use variantly::Variantly;
 
 use input::{InputEvent, InputManager};
@@ -277,7 +277,7 @@ fn run_health_effects(world: &mut AmbleWorld, view: &mut View) -> (bool, Vec<Tri
         });
     }
 
-    let npc_ids: Vec<Uuid> = world.npcs.keys().copied().collect();
+    let npc_ids: Vec<Id> = world.npcs.keys().cloned().collect();
     for npc_id in npc_ids {
         let was_alive = world
             .npcs
@@ -360,7 +360,7 @@ pub fn check_scheduled_events(world: &mut AmbleWorld, view: &mut View) -> Result
 ///
 pub fn check_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let current_turn = world.turn_count;
-    let npc_ids: Vec<Uuid> = world.npcs.keys().copied().collect();
+    let npc_ids: Vec<Id> = world.npcs.keys().cloned().collect();
 
     for npc_id in npc_ids {
         if let Some(npc) = world.npcs.get_mut(&npc_id)
@@ -405,24 +405,44 @@ pub fn check_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()>
 /// - on failed lookup of player's location
 pub fn check_ambient_triggers(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let current_room_id = world.player_room_ref()?.id();
-    for trigger in &mut world.triggers {
-        // if trigger was a one-off and already fired, skip it
-        if trigger.fired && trigger.only_once {
+    let trigger_count = world.triggers.len();
+    for idx in 0..trigger_count {
+        let should_check = {
+            let trigger = &world.triggers[idx];
+            if trigger.fired && trigger.only_once {
+                false
+            } else if !trigger
+                .conditions
+                .any_trigger(|c| matches!(c, TriggerCondition::Ambient { .. }))
+            {
+                false
+            } else {
+                trigger.conditions.eval_ambient(world)
+            }
+        };
+
+        if !should_check {
             continue;
         }
-        // if trigger has a Chance condition and it returns false, skip it
-        if !chance_check(&trigger.conditions) {
-            continue;
-        }
-        // push ViewItems for any ambient events that fire at this location
-        for cond in &trigger.conditions {
-            if let TriggerCondition::Ambient { room_ids, spinner } = cond {
-                // empty = applies globally
-                if room_ids.is_empty() || room_ids.contains(&current_room_id) {
-                    let message = world.spinners.get(spinner).and_then(Spinner::spin).unwrap_or_default();
-                    trigger.fired = true;
-                    view.push(ViewItem::AmbientEvent(format!("{}", message.ambient_trig_style())));
+
+        let mut fired = false;
+        {
+            let trigger = &world.triggers[idx];
+            trigger.conditions.for_each_trigger(|cond| {
+                if let TriggerCondition::Ambient { room_ids, spinner } = cond {
+                    if room_ids.is_empty() || room_ids.contains(&current_room_id) {
+                        let message = world.spinners.get(spinner).and_then(Spinner::spin).unwrap_or_default();
+                        if !message.is_empty() {
+                            view.push(ViewItem::AmbientEvent(format!("{}", message.ambient_trig_style())));
+                        }
+                        fired = true;
+                    }
                 }
+            });
+        }
+        if fired {
+            if let Some(trigger) = world.triggers.get_mut(idx) {
+                trigger.fired = true;
             }
         }
     }
@@ -501,12 +521,6 @@ fn handle_player_death(
 
 /// Returns true if there is no `Chance` within `conditions`, or if the `Chance` "roll" returns true.
 /// Returns false only if there is a `Chance` condition present *and* it "rolls" false.
-fn chance_check(conditions: &[TriggerCondition]) -> bool {
-    conditions
-        .iter()
-        .all(super::trigger::condition::TriggerCondition::chance_value)
-}
-
 /// Encapsulates references to different types of `WorldObjects` to allow search across different types.
 #[derive(Debug, Variantly, Clone, Copy)]
 pub enum WorldEntity<'a> {
@@ -521,8 +535,8 @@ impl WorldEntity<'_> {
             WorldEntity::Npc(npc) => npc.name(),
         }
     }
-    /// Get the UUID of the entity
-    pub fn id(&self) -> Uuid {
+    /// Get the id of the entity
+    pub fn id(&self) -> Id {
         match self {
             WorldEntity::Item(item) => item.id(),
             WorldEntity::Npc(npc) => npc.id(),
@@ -540,9 +554,9 @@ impl WorldEntity<'_> {
 /// Searches a list of `WorldEntities`' uuids to find a `WorldObject` with a matching name.
 /// Returns Some(&'a `WorldEntity`) or None.
 pub fn find_world_object<'a, S: BuildHasher>(
-    nearby_ids: impl IntoIterator<Item = &'a Uuid>,
-    world_items: &'a HashMap<Uuid, Item, S>,
-    world_npcs: &'a HashMap<Uuid, Npc, S>,
+    nearby_ids: impl IntoIterator<Item = &'a Id>,
+    world_items: &'a HashMap<Id, Item, S>,
+    world_npcs: &'a HashMap<Id, Npc, S>,
     search_term: &str,
 ) -> Option<WorldEntity<'a>> {
     let lc_term = search_term.to_lowercase();
