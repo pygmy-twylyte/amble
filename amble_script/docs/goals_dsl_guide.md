@@ -58,11 +58,22 @@ goal stabilize-reactor {
 ## Library Usage
 
 ```rust
-use amble_script::{parse_goals, worlddef_from_asts};
+use amble_script::{GameAst, PlayerAst, parse_goals, worlddef_from_asts};
 use ron::ser::PrettyConfig;
 let src = std::fs::read_to_string("goals.amble")?;
 let goals = parse_goals(&src)?;
-let worlddef = worlddef_from_asts(&[], &[], &[], &[], &[], &goals)?;
+let game = GameAst {
+    title: "Demo".into(),
+    intro: "Intro".into(),
+    player: PlayerAst {
+        name: "The Candidate".into(),
+        description: "An adventurer.".into(),
+        max_hp: 20,
+        start_room: "foyer".into(),
+    },
+    scoring: None,
+};
+let worlddef = worlddef_from_asts(Some(&game), &[], &[], &[], &[], &[], &goals)?;
 let ron = ron::ser::to_string_pretty(&worlddef, PrettyConfig::default())?;
 ```
 

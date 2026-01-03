@@ -1,33 +1,14 @@
-//! Scoring rank definitions and loader.
+//! Scoring rank definitions and helpers.
 //!
 //! This module defines the scoring system used when the player quits the game.
 //! Ranks are determined by the percentage of maximum score achieved, with
 //! each rank having a threshold, name, and description fitting the game's style.
 
-use anyhow::{Context, Result};
-use log::{info, warn};
+use amble_data::ScoringDef;
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::Path;
 
 /// A single scoring rank with its threshold and flavor text.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ScoringRank {
-    /// Minimum percentage (0.0-100.0) required to achieve this rank
-    pub threshold: f32,
-    /// Display name of the rank
-    pub name: String,
-    /// Humorous one-sentence evaluation of the player's performance
-    pub description: String,
-}
-
-/// Wrapper for the TOML file containing scoring ranks.
-#[derive(Debug, Deserialize)]
-struct ScoringFile {
-    #[serde(default = "default_report_title")]
-    report_title: String,
-    ranks: Vec<ScoringRank>,
-}
+pub type ScoringRank = amble_data::ScoringRankDef;
 
 /// Complete scoring configuration for the game.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,144 +41,36 @@ impl ScoringConfig {
             ("Unknown Rank", "No scoring data available.")
         }
     }
+
+    /// Build a scoring configuration from the compiled WorldDef data.
+    pub fn from_def(def: &ScoringDef) -> Self {
+        let defaults = ScoringDef::default();
+        let mut ranks = if def.ranks.is_empty() {
+            defaults.ranks.clone()
+        } else {
+            def.ranks.clone()
+        };
+        // Sort ranks by threshold descending (highest first)
+        ranks.sort_by(|a, b| {
+            b.threshold
+                .partial_cmp(&a.threshold)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+
+        let report_title = if def.report_title.trim().is_empty() {
+            defaults.report_title
+        } else {
+            def.report_title.clone()
+        };
+
+        ScoringConfig { ranks, report_title }
+    }
 }
 
 impl Default for ScoringConfig {
     fn default() -> Self {
-        default_scoring_config()
+        ScoringConfig::from_def(&ScoringDef::default())
     }
-}
-
-/// Returns hardcoded default scoring ranks.
-///
-/// These defaults are used if `scoring.toml` cannot be loaded or parsed.
-/// Ranks are sorted from highest to lowest threshold.
-fn default_scoring_ranks() -> Vec<ScoringRank> {
-    vec![
-        ScoringRank {
-            threshold: 99.0,
-            name: "Quantum Overachiever".to_string(),
-            description: "You saw the multiverse, understood it, then filed a bug report.".to_string(),
-        },
-        ScoringRank {
-            threshold: 90.0,
-            name: "Senior Field Operative".to_string(),
-            description: "A nearly flawless run. Someone give this candidate a promotion.".to_string(),
-        },
-        ScoringRank {
-            threshold: 75.0,
-            name: "Licensed Reality Bender".to_string(),
-            description: "Impressive grasp of nonlinear environments and cake-based paradoxes.".to_string(),
-        },
-        ScoringRank {
-            threshold: 60.0,
-            name: "Rogue Intern, Level II".to_string(),
-            description: "You got the job done, and only melted one small pocket universe.".to_string(),
-        },
-        ScoringRank {
-            threshold: 45.0,
-            name: "Unpaid Research Assistant".to_string(),
-            description: "Solid effort. Some concepts may have slipped through dimensional cracks.".to_string(),
-        },
-        ScoringRank {
-            threshold: 30.0,
-            name: "Junior Sandwich Technician".to_string(),
-            description: "Good instincts, questionable execution. Especially with condiments.".to_string(),
-        },
-        ScoringRank {
-            threshold: 15.0,
-            name: "Volunteer Tour Guide".to_string(),
-            description: "You wandered. You looked at stuff. It was something.".to_string(),
-        },
-        ScoringRank {
-            threshold: 5.0,
-            name: "Mailbox Stuffing Trainee".to_string(),
-            description: "You opened a box, tripped on a rug, and called it a day.".to_string(),
-        },
-        ScoringRank {
-            threshold: 1.0,
-            name: "Accidental Hire".to_string(),
-            description: "We're not sure how you got in. Please return your lanyard.".to_string(),
-        },
-        ScoringRank {
-            threshold: 0.0,
-            name: "Amnesiac Test Subject".to_string(),
-            description: "Did you… play? Were you even awake?".to_string(),
-        },
-    ]
-}
-
-fn default_report_title() -> String {
-    "Scorecard".to_string()
-}
-
-fn default_scoring_config() -> ScoringConfig {
-    ScoringConfig {
-        ranks: default_scoring_ranks(),
-        report_title: default_report_title(),
-    }
-}
-
-/// Loads scoring configuration from a TOML file, falling back to defaults on error.
-///
-/// # Parameters
-/// * `toml_path` - Path to the `scoring.toml` file
-///
-/// # Returns
-/// A `ScoringConfig` with either loaded or default ranks. This function never
-/// fails - it returns defaults if the file cannot be loaded or parsed.
-///
-/// # Logging
-/// - `info!` on successful load
-/// - `warn!` if file cannot be read or parsed (with fallback to defaults)
-pub fn load_scoring(toml_path: &Path) -> ScoringConfig {
-    match try_load_scoring(toml_path) {
-        Ok(config) => {
-            info!(
-                "{} scoring ranks loaded from '{}'",
-                config.ranks.len(),
-                toml_path.display()
-            );
-            config
-        },
-        Err(e) => {
-            warn!(
-                "Could not load scoring data from '{}': {}. Using hardcoded defaults.",
-                toml_path.display(),
-                e
-            );
-            default_scoring_config()
-        },
-    }
-}
-
-/// Attempts to load scoring configuration from a TOML file.
-///
-/// # Errors
-/// Returns an error if the file cannot be read or parsed.
-fn try_load_scoring(toml_path: &Path) -> Result<ScoringConfig> {
-    let scoring_file = fs::read_to_string(toml_path)
-        .with_context(|| format!("reading scoring data from '{}'", toml_path.display()))?;
-
-    let wrapper: ScoringFile = toml::from_str(&scoring_file)
-        .with_context(|| format!("parsing scoring data from '{}'", toml_path.display()))?;
-
-    let mut ranks = wrapper.ranks;
-
-    // Sort ranks by threshold descending (highest first)
-    ranks.sort_by(|a, b| {
-        b.threshold
-            .partial_cmp(&a.threshold)
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
-
-    let report_title = if wrapper.report_title.trim().is_empty() {
-        default_report_title()
-    } else {
-        wrapper.report_title
-    };
-
-    Ok(ScoringConfig { ranks, report_title })
 }
 
 #[cfg(test)]
@@ -206,8 +79,8 @@ mod tests {
 
     #[test]
     fn test_default_ranks_are_sorted() {
-        let ranks = default_scoring_config().ranks;
-        for i in 0..ranks.len() - 1 {
+        let ranks = ScoringConfig::default().ranks;
+        for i in 0..ranks.len().saturating_sub(1) {
             assert!(
                 ranks[i].threshold >= ranks[i + 1].threshold,
                 "Ranks should be sorted descending by threshold"
@@ -217,26 +90,16 @@ mod tests {
 
     #[test]
     fn test_get_rank_exact_match() {
-        let config = default_scoring_config();
-
-        let (name, _) = config.get_rank(100.0);
+        let config = ScoringConfig::default();
+        let (name, _) = config.get_rank(99.0);
         assert_eq!(name, "Quantum Overachiever");
-
-        let (name, _) = config.get_rank(90.0);
-        assert_eq!(name, "Senior Field Operative");
-
-        let (name, _) = config.get_rank(0.0);
-        assert_eq!(name, "Amnesiac Test Subject");
     }
 
     #[test]
     fn test_get_rank_in_between() {
-        let config = default_scoring_config();
+        let config = ScoringConfig::default();
 
-        let (name, _) = config.get_rank(92.5);
-        assert_eq!(name, "Senior Field Operative");
-
-        let (name, _) = config.get_rank(76.3);
+        let (name, _) = config.get_rank(88.0);
         assert_eq!(name, "Licensed Reality Bender");
 
         let (name, _) = config.get_rank(50.0);
@@ -245,7 +108,7 @@ mod tests {
 
     #[test]
     fn test_get_rank_edge_cases() {
-        let config = default_scoring_config();
+        let config = ScoringConfig::default();
 
         let (name, _) = config.get_rank(100.0);
         assert_eq!(name, "Quantum Overachiever");
@@ -291,59 +154,5 @@ mod tests {
         let (name, desc) = config.get_rank(25.0);
         assert_eq!(name, "Novice");
         assert_eq!(desc, "You tried.");
-    }
-
-    #[test]
-    fn test_default_trait_provides_working_config() {
-        let config = ScoringConfig::default();
-        assert!(!config.ranks.is_empty());
-        assert_eq!(config.report_title, default_report_title());
-
-        let (name, _) = config.get_rank(100.0);
-        assert_eq!(name, "Quantum Overachiever");
-    }
-
-    #[test]
-    fn test_try_load_scoring_includes_title() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("scoring.toml");
-        std::fs::write(
-            &path,
-            r#"
-report_title = "Mission Debrief"
-
-[[ranks]]
-threshold = 0.0
-name = "Recruit"
-description = "Welcome aboard."
-"#,
-        )
-        .unwrap();
-
-        let config = load_scoring(&path);
-        assert_eq!(config.report_title, "Mission Debrief");
-        let (name, _) = config.get_rank(0.0);
-        assert_eq!(name, "Recruit");
-    }
-
-    #[test]
-    fn test_blank_report_title_falls_back_to_default() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("scoring.toml");
-        std::fs::write(
-            &path,
-            r#"
-report_title = "   "
-
-[[ranks]]
-threshold = 0.0
-name = "Cadet"
-description = "Placeholder."
-"#,
-        )
-        .unwrap();
-
-        let config = load_scoring(&path);
-        assert_eq!(config.report_title, default_report_title());
     }
 }

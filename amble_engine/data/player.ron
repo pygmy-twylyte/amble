@@ -1,7 +1,0 @@
-(
-    id: "player",
-    name: "The Candidate",
-    description: "a seasoned adventurer with a faint memory of a promised cake that has gone unfulfilled.",
-    location: Room("high-ridge"),
-    max_hp: 20,
-)

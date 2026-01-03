@@ -608,7 +608,7 @@ fn package_impl(workspace: &Workspace, options: &PackageOptions, kind: PackageKi
             .with_context(|| format!("failed to copy {}", script_path.display()))?;
     }
 
-    // Copy compiled world data (`world.ron` plus config TOMLs).
+    // Copy compiled world data (`world.ron` plus config TOMLs for themes/help).
     let data_src = workspace.root.join("amble_engine/data");
     let data_dst = staging_dir.join("data");
     copy_dir_recursive(&data_src, &data_dst)

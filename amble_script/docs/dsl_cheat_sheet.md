@@ -14,6 +14,28 @@ Keep this quick reference open while authoring `.amble` files. It summarizes the
 
 ---
 
+## Game Config
+
+```amble
+game {
+  title "Game Title"
+  intro "Intro text..."
+  player {
+    name "Player Name"
+    desc "Player description."
+    max_hp 20
+    start room starting-room
+  }
+  scoring {
+    report_title "Scorecard"
+    rank 100.0 "Top Rank" "Perfect run."
+    rank 0.0 "Novice" "Keep going."
+  }
+}
+```
+
+---
+
 ## Trigger Essentials
 
 ```amble

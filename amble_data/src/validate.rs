@@ -32,9 +32,30 @@ impl std::error::Error for ValidationError {}
 /// Validate cross-references and basic invariants in a WorldDef.
 ///
 /// ```
-/// use amble_data::{WorldDef, validate_world};
+/// use amble_data::{GameDef, PlayerDef, RoomDef, ScoringDef, WorldDef, validate_world};
 ///
-/// let world = WorldDef::default();
+/// let world = WorldDef {
+///     game: GameDef {
+///         title: "Demo".into(),
+///         intro: "Intro".into(),
+///         player: PlayerDef {
+///             name: "Player".into(),
+///             description: "A hero".into(),
+///             start_room: "start".into(),
+///             max_hp: 10,
+///         },
+///         scoring: ScoringDef::default(),
+///     },
+///     rooms: vec![RoomDef {
+///         id: "start".into(),
+///         name: "Start".into(),
+///         desc: "A room.".into(),
+///         visited: false,
+///         exits: Vec::new(),
+///         overlays: Vec::new(),
+///     }],
+///     ..WorldDef::default()
+/// };
 /// assert!(validate_world(&world).is_empty());
 /// ```
 pub fn validate_world(world: &WorldDef) -> Vec<ValidationError> {
@@ -80,6 +101,37 @@ pub fn validate_world(world: &WorldDef) -> Vec<ValidationError> {
         spinners: &spinners,
         goals: &goals,
     };
+
+    if world.game.player.start_room.trim().is_empty() {
+        errors.push(ValidationError::InvalidValue {
+            context: "game player start room missing".to_string(),
+        });
+    } else {
+        check_ref(
+            "room",
+            &world.game.player.start_room,
+            ids.rooms,
+            "game player start room".to_string(),
+            &mut errors,
+        );
+    }
+
+    if world.game.scoring.ranks.is_empty() {
+        errors.push(ValidationError::InvalidValue {
+            context: "scoring ranks empty".to_string(),
+        });
+    }
+
+    for rank in &world.game.scoring.ranks {
+        if !(0.0..=100.0).contains(&rank.threshold) {
+            errors.push(ValidationError::InvalidValue {
+                context: format!(
+                    "scoring rank '{}' threshold out of range ({})",
+                    rank.name, rank.threshold
+                ),
+            });
+        }
+    }
 
     for room in &world.rooms {
         for exit in &room.exits {
@@ -198,6 +250,24 @@ mod tests {
         }
     }
 
+    fn base_world() -> WorldDef {
+        WorldDef {
+            game: GameDef {
+                title: "Demo".into(),
+                intro: "Intro".into(),
+                player: PlayerDef {
+                    name: "Player".into(),
+                    description: "A hero".into(),
+                    start_room: "start".into(),
+                    max_hp: 10,
+                },
+                scoring: ScoringDef::default(),
+            },
+            rooms: vec![room("start")],
+            ..WorldDef::default()
+        }
+    }
+
     fn item_in_room(id: &str, room_id: &str) -> ItemDef {
         ItemDef {
             id: id.to_string(),
@@ -226,10 +296,8 @@ mod tests {
 
     #[test]
     fn duplicate_ids_are_reported() {
-        let world = WorldDef {
-            rooms: vec![room("same"), room("same")],
-            ..WorldDef::default()
-        };
+        let mut world = base_world();
+        world.rooms = vec![room("same"), room("same")];
 
         let errors = validate_world(&world);
         assert!(
@@ -241,10 +309,8 @@ mod tests {
 
     #[test]
     fn missing_references_are_reported() {
-        let world = WorldDef {
-            items: vec![item_in_room("lantern", "missing_room")],
-            ..WorldDef::default()
-        };
+        let mut world = base_world();
+        world.items = vec![item_in_room("lantern", "missing_room")];
 
         let errors = validate_world(&world);
         assert!(errors.iter().any(|err| matches!(err, ValidationError::MissingReference { kind, id, .. } if *kind == "room" && id == "missing_room")));
@@ -252,13 +318,11 @@ mod tests {
 
     #[test]
     fn invalid_chance_percent_is_reported() {
-        let world = WorldDef {
-            triggers: vec![trigger_with_condition(
-                "chance",
-                ConditionExpr::Pred(ConditionDef::ChancePercent { percent: 0.0 }),
-            )],
-            ..WorldDef::default()
-        };
+        let mut world = base_world();
+        world.triggers = vec![trigger_with_condition(
+            "chance",
+            ConditionExpr::Pred(ConditionDef::ChancePercent { percent: 0.0 }),
+        )];
 
         let errors = validate_world(&world);
         assert!(

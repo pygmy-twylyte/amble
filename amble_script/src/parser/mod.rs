@@ -12,6 +12,7 @@ use crate::{GoalAst, ItemAst, NpcAst, RoomAst, SpinnerAst, TriggerAst};
 
 mod actions;
 mod conditions;
+mod game;
 mod goal;
 mod helpers;
 mod item;
@@ -25,6 +26,7 @@ use actions::{parse_modify_item_action, parse_modify_npc_action, parse_modify_ro
 #[cfg(test)]
 use helpers::parse_string;
 
+use game::parse_game_pair;
 use goal::parse_goal_pair;
 use helpers::SourceMap;
 use item::parse_item_pair;
@@ -62,7 +64,7 @@ pub fn parse_trigger(source: &str) -> Result<TriggerAst, AstError> {
 /// # Errors
 /// Returns an error if the source cannot be parsed.
 pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
-    let (triggers, ..) = parse_program_full(source)?;
+    let (_, triggers, ..) = parse_program_full(source)?;
     Ok(triggers)
 }
 
@@ -76,6 +78,7 @@ pub fn parse_program_full(source: &str) -> Result<ProgramAstBundle, AstError> {
     let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
     let smap = SourceMap::new(source);
     let mut sets: HashMap<String, Vec<String>> = HashMap::new();
+    let mut game_pair = None;
     let mut trigger_pairs = Vec::new();
     let mut room_pairs = Vec::new();
     let mut item_pairs = Vec::new();
@@ -95,6 +98,12 @@ pub fn parse_program_full(source: &str) -> Result<ProgramAstBundle, AstError> {
                     }
                 }
                 sets.insert(name, vals);
+            },
+            Rule::game_def => {
+                if game_pair.is_some() {
+                    return Err(AstError::Shape("multiple game blocks"));
+                }
+                game_pair = Some(item);
             },
             Rule::trigger => {
                 trigger_pairs.push(item);
@@ -147,7 +156,12 @@ pub fn parse_program_full(source: &str) -> Result<ProgramAstBundle, AstError> {
         let g = parse_goal_pair(gp, source)?;
         goals.push(g);
     }
-    Ok((triggers, rooms, items, spinners, npcs, goals))
+    let game = if let Some(gp) = game_pair {
+        Some(parse_game_pair(gp, source)?)
+    } else {
+        None
+    };
+    Ok((game, triggers, rooms, items, spinners, npcs, goals))
 }
 
 /// Parse only rooms from a source (helper/testing).
@@ -156,7 +170,7 @@ pub fn parse_program_full(source: &str) -> Result<ProgramAstBundle, AstError> {
 /// # Errors
 /// Returns an error if the source cannot be parsed into rooms.
 pub fn parse_rooms(source: &str) -> Result<Vec<RoomAst>, AstError> {
-    let (_, rooms, _, _, _, _) = parse_program_full(source)?;
+    let (_, _, rooms, _, _, _, _) = parse_program_full(source)?;
     Ok(rooms)
 }
 
@@ -166,7 +180,7 @@ pub fn parse_rooms(source: &str) -> Result<Vec<RoomAst>, AstError> {
 /// # Errors
 /// Returns an error if the source cannot be parsed into items.
 pub fn parse_items(source: &str) -> Result<Vec<ItemAst>, AstError> {
-    let (_, _, items, _, _, _) = parse_program_full(source)?;
+    let (_, _, _, items, _, _, _) = parse_program_full(source)?;
     Ok(items)
 }
 
@@ -176,7 +190,7 @@ pub fn parse_items(source: &str) -> Result<Vec<ItemAst>, AstError> {
 /// # Errors
 /// Returns an error if the source cannot be parsed into spinners.
 pub fn parse_spinners(source: &str) -> Result<Vec<SpinnerAst>, AstError> {
-    let (_, _, _, spinners, _, _) = parse_program_full(source)?;
+    let (_, _, _, _, spinners, _, _) = parse_program_full(source)?;
     Ok(spinners)
 }
 
@@ -186,7 +200,7 @@ pub fn parse_spinners(source: &str) -> Result<Vec<SpinnerAst>, AstError> {
 /// # Errors
 /// Returns an error if the source cannot be parsed into NPCs.
 pub fn parse_npcs(source: &str) -> Result<Vec<NpcAst>, AstError> {
-    let (_, _, _, _, npcs, _) = parse_program_full(source)?;
+    let (_, _, _, _, _, npcs, _) = parse_program_full(source)?;
     Ok(npcs)
 }
 
@@ -195,12 +209,13 @@ pub fn parse_npcs(source: &str) -> Result<Vec<NpcAst>, AstError> {
 /// # Errors
 /// Returns an error if the source cannot be parsed into goals.
 pub fn parse_goals(source: &str) -> Result<Vec<GoalAst>, AstError> {
-    let (_, _, _, _, _, goals) = parse_program_full(source)?;
+    let (_, _, _, _, _, _, goals) = parse_program_full(source)?;
     Ok(goals)
 }
 
 /// Composite AST collections returned by [`parse_program_full`].
 pub type ProgramAstBundle = (
+    Option<crate::GameAst>,
     Vec<TriggerAst>,
     Vec<RoomAst>,
     Vec<ItemAst>,
@@ -212,6 +227,32 @@ pub type ProgramAstBundle = (
 mod tests {
     use super::*;
     use crate::{ActionAst, ContainerStateAst, MovabilityAst, NpcStateValue, NpcTimingPatchAst};
+
+    #[test]
+    fn game_block_parses() {
+        let src = r#"
+game {
+  title "Demo"
+  intro "Intro"
+  player {
+    name "The Candidate"
+    desc "A test player."
+    max_hp 20
+    start room foyer
+  }
+  scoring {
+    rank 0.0 "Rookie" "Keep going."
+  }
+}
+"#;
+        let (game, ..) = parse_program_full(src).expect("valid game block");
+        let game = game.expect("game block parsed");
+        assert_eq!(game.title, "Demo");
+        assert_eq!(game.player.start_room, "foyer");
+        let scoring = game.scoring.expect("scoring parsed");
+        assert_eq!(scoring.ranks.len(), 1);
+        assert_eq!(scoring.ranks[0].threshold, 0.0);
+    }
 
     #[test]
     fn braces_in_strings_dont_break_body_scan() {

@@ -101,11 +101,22 @@ The compiler emits these into `ItemDef.consumable` with the correct structure ex
 ## Library Usage
 
 ```
-use amble_script::{parse_items, worlddef_from_asts};
+use amble_script::{GameAst, PlayerAst, parse_items, worlddef_from_asts};
 use ron::ser::PrettyConfig;
 let src = std::fs::read_to_string("items.amble")?;
 let items = parse_items(&src)?;
-let worlddef = worlddef_from_asts(&[], &[], &items, &[], &[], &[])?;
+let game = GameAst {
+    title: "Demo".into(),
+    intro: "Intro".into(),
+    player: PlayerAst {
+        name: "The Candidate".into(),
+        description: "An adventurer.".into(),
+        max_hp: 20,
+        start_room: "foyer".into(),
+    },
+    scoring: None,
+};
+let worlddef = worlddef_from_asts(Some(&game), &[], &[], &items, &[], &[], &[])?;
 let ron = ron::ser::to_string_pretty(&worlddef, PrettyConfig::default())?;
 ```
 

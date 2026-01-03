@@ -25,6 +25,8 @@ use crate::item::{
     ConsumableOpts, ConsumeType, ContainerState, IngestMode as EngineIngestMode, Item, ItemAbility,
     ItemInteractionType, Movability,
 };
+use crate::loader::player::build_player;
+use crate::loader::scoring::ScoringConfig;
 use crate::npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState};
 use crate::player::Flag;
 use crate::room::{Exit, OverlayCondition, Room, RoomOverlay};
@@ -40,11 +42,16 @@ pub fn load_worlddef(path: &Path) -> Result<WorldDef> {
     ron::from_str(&text).with_context(|| format!("parsing worlddef RON from '{}'", path.display()))
 }
 
-/// Convert a `WorldDef` into a populated `AmbleWorld` (player/scoring loaded separately).
+/// Convert a `WorldDef` into a populated `AmbleWorld`.
 ///
 /// Item/NPC placements are applied later by the placement stage.
 pub fn build_world_from_def(def: &WorldDef) -> Result<AmbleWorld> {
     let mut world = AmbleWorld::new_empty();
+
+    world.game_title = def.game.title.clone();
+    world.intro_text = def.game.intro.clone();
+    world.scoring = ScoringConfig::from_def(&def.game.scoring);
+    world.player = build_player(&def.game.player)?;
 
     world.spinners = build_spinners(&def.spinners);
 

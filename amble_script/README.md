@@ -5,7 +5,7 @@
 ## Highlights
 
 - Pest grammar designed to read like natural narrative prose while staying precise.
-- Compiler emits `WorldDef` (RON) for rooms, items, triggers, spinners, NPCs, and goals.
+- Compiler emits `WorldDef` (RON) for game config, rooms, items, triggers, spinners, NPCs, and goals.
 - Linter catches unresolved references, type mismatches, and missing assets early.
 - CLI supports compiling single files, entire directories, or lint-only passes.
 

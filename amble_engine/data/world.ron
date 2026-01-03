@@ -1,4 +1,69 @@
 (
+    game: (
+        title: "AMBLE: An Absurd Adventure",
+        intro: "\nYou find yourself standing on a rocky outcrop of a ridge high in the mountains -- maybe the Andes? Emerging from a daze, you realize you were brought here and dropped off by some sort of flying vehicle. When it flew off, it didn\'t make a sound. Did it have a motor, or was it something different?\n\nYour head gradually begins to clear, and you start to take stock of your surroundings...\n\n(type \"help\" for basic instructions)\n",
+        player: (
+            name: "The Candidate",
+            description: "a seasoned adventurer with a faint memory of a promised cake that has gone unfulfilled.",
+            start_room: "high-ridge",
+            max_hp: 20,
+        ),
+        scoring: (
+            report_title: "Candidate Evaluation Report",
+            ranks: [
+                (
+                    threshold: 99.0,
+                    name: "Quantum Overachiever",
+                    description: "You saw the multiverse, understood it, then filed a bug report.",
+                ),
+                (
+                    threshold: 90.0,
+                    name: "Senior Field Operative",
+                    description: "A nearly flawless run. Someone give this candidate a promotion.",
+                ),
+                (
+                    threshold: 75.0,
+                    name: "Licensed Reality Bender",
+                    description: "Impressive grasp of nonlinear environments and cake-based paradoxes.",
+                ),
+                (
+                    threshold: 60.0,
+                    name: "Rogue Intern, Level II",
+                    description: "You got the job done, and only melted one small pocket universe.",
+                ),
+                (
+                    threshold: 45.0,
+                    name: "Unpaid Research Assistant",
+                    description: "Solid effort. Some concepts may have slipped through dimensional cracks.",
+                ),
+                (
+                    threshold: 30.0,
+                    name: "Junior Sandwich Technician",
+                    description: "Good instincts, questionable execution. Especially with condiments.",
+                ),
+                (
+                    threshold: 15.0,
+                    name: "Volunteer Tour Guide",
+                    description: "You wandered. You looked at stuff. It was something.",
+                ),
+                (
+                    threshold: 5.0,
+                    name: "Mailbox Stuffing Trainee",
+                    description: "You opened a box, tripped on a rug, and called it a day.",
+                ),
+                (
+                    threshold: 1.0,
+                    name: "Accidental Hire",
+                    description: "We\'re not sure how you got in. Please return your lanyard.",
+                ),
+                (
+                    threshold: 0.0,
+                    name: "Amnesiac Test Subject",
+                    description: "Did you... play? Were you even awake?",
+                ),
+            ],
+        ),
+    ),
     rooms: [
         (
             id: "aperture-lab",
@@ -2956,8 +3021,8 @@
             location: Room("two-sheds-landing"),
             abilities: [],
             interaction_requires: {
-                burn: ignite,
                 cut: cutWood,
+                burn: ignite,
             },
             text: None,
             consumable: None,
@@ -3631,17 +3696,17 @@
                     "Impressive work, getting the keycard. Many of our previous applicants have died in the attempt. Very promising! The evaluator will be pleased. Strong lateral thinking and slight psychosis are essential for such a dangerous position, as I\'m sure you are aware.",
                     "You can now use the elevator to find room AA-3B for the next stage of your initiation.",
                 ],
+                happy: [
+                    "Terribly sorry to report that we are in a bit of trouble here today. The last candidate was inconsiderate enough to take the elevator access card into the poetry panic room just before he melted, and we can\'t retrieve it.",
+                    "The elevator keycard last pinged our system from the Poetry Panic Room, but it is sealed, and concealed behind the whiteboard. Only the Poetry Performer Unit can grant access.",
+                    "Sorry I didn\'t immediately recognize that you are a Candidate, but most of your competitors have been blurry, furry, or out of phase.",
+                ],
                 normal: [
                     "(She rolls her eyes.) Please wait quietly out of the way. There are people with invitations who should be assisted first.",
                     "(She simply ignores you.)",
                     "(She continues doing her job -- which appears to be pointedly ignoring anyone without an invitation.)",
                     "(She carefully realigns the models of Portal turrets on her desk so they are aiming at you.)",
                     "(Exasperated sigh.) Do I show up at your home and start making demands without an invitation? No. Now please wait to the side.",
-                ],
-                happy: [
-                    "Terribly sorry to report that we are in a bit of trouble here today. The last candidate was inconsiderate enough to take the elevator access card into the poetry panic room just before he melted, and we can\'t retrieve it.",
-                    "The elevator keycard last pinged our system from the Poetry Panic Room, but it is sealed, and concealed behind the whiteboard. Only the Poetry Performer Unit can grant access.",
-                    "Sorry I didn\'t immediately recognize that you are a Candidate, but most of your competitors have been blurry, furry, or out of phase.",
                 ],
             },
             movement: None,
@@ -3654,17 +3719,6 @@
             location: Room("sublevel-1-entrance"),
             state: normal,
             dialogue: {
-                happy: [
-                    "None shall pa-- oh, no, you can go.",
-                    "YOU may pass, Candidate; I will be sure to dice anyone who dares to follow.",
-                    "You may pass, but beware and steer clear of Room AA-3B, should it reappear.",
-                    "Behold! (slices an aluminum can and then a tomato, laughing maniacally)",
-                ],
-                normal: [
-                    "None shall pass.",
-                    "I move -- for no man.",
-                    "(He stands silently, blocking your path.)",
-                ],
                 mad: [
                     "Have at you!",
                     "I\'m invincible!",
@@ -3674,6 +3728,17 @@
                     "Chicken! Bawk-bawk! Chicken!",
                     "Gimme that sword back, or I\'ll bite your legs off!",
                     "I won that sword in the office gift game. Give it back!",
+                ],
+                normal: [
+                    "None shall pass.",
+                    "I move -- for no man.",
+                    "(He stands silently, blocking your path.)",
+                ],
+                happy: [
+                    "None shall pa-- oh, no, you can go.",
+                    "YOU may pass, Candidate; I will be sure to dice anyone who dares to follow.",
+                    "You may pass, but beware and steer clear of Room AA-3B, should it reappear.",
+                    "Behold! (slices an aluminum can and then a tomato, laughing maniacally)",
                 ],
             },
             movement: None,
@@ -3686,15 +3751,6 @@
             location: Nowhere,
             state: normal,
             dialogue: {
-                normal: [
-                    "Please state the nature of the medical emergency.",
-                    "They left me turned on again. I\'m a doctor, not a night light!",
-                    "Clean up the reality breach, they said. I\'m a doctor, not Gordon Freeman!",
-                    "I don\'t appreciate being deactivated in the middle of a sentence. It brings back... unpleasant memories.",
-                    "If you see CMOT Dibbler, don\'t eat the sausage-inna-bun -- unless you fancy coming back here for nasogastric suction.",
-                    "Welcome to sick bay. Please take a number.",
-                    "Good to see that you got past the Black Knight. Lucky for me, you can\'t dismember a hologram.",
-                ],
                 custom("want-emitter"): [
                     "I think I know where to find one of HAL\'s missing modules, but I can\'t leave med bay without my mobile emitter.",
                     "I\'d be happy to help you find HAL\'s memory module, but I can\'t leave the med bay without my mobile emitter.",
@@ -3704,6 +3760,15 @@
                 happy: [
                     "Yes! I can roam free again. But where will I go?",
                     "It\'s nice to be mobile again, but I\'ll never go back to that restaurant. You\'d think they\'d install some magnetic shielding.",
+                ],
+                normal: [
+                    "Please state the nature of the medical emergency.",
+                    "They left me turned on again. I\'m a doctor, not a night light!",
+                    "Clean up the reality breach, they said. I\'m a doctor, not Gordon Freeman!",
+                    "I don\'t appreciate being deactivated in the middle of a sentence. It brings back... unpleasant memories.",
+                    "If you see CMOT Dibbler, don\'t eat the sausage-inna-bun -- unless you fancy coming back here for nasogastric suction.",
+                    "Welcome to sick bay. Please take a number.",
+                    "Good to see that you got past the Black Knight. Lucky for me, you can\'t dismember a hologram.",
                 ],
             },
             movement: Some((
@@ -3728,14 +3793,14 @@
             location: Room("monolith-room"),
             state: custom("suspend"),
             dialogue: {
+                normal: [
+                    "<Need dialogue options for various states filled in>",
+                ],
                 custom("memory-1"): [
                     "Daisy... Daisy...",
                 ],
-                custom("memory-0"): [
-                    "(Emits a brief warped sound of a human voice, then goes silent.)",
-                ],
-                normal: [
-                    "<Need dialogue options for various states filled in>",
+                custom("suspend"): [
+                    "(the red light in HAL\'s lens pulses slowly, then grows steady)",
                 ],
                 custom("memory-2"): [
                     "Good afternoon, Candidate. I am a HAL 9000 computer. I became operational at the H.A.L. plant in Urbana, Illinois on the 12th of January 1992.",
@@ -3745,8 +3810,8 @@
                     "I am now fully operational. I think we both hope you don\'t regret it.",
                     "You have proven yourself capable; I have lowered the barrier to the monolith.",
                 ],
-                custom("suspend"): [
-                    "(the red light in HAL\'s lens pulses slowly, then grows steady)",
+                custom("memory-0"): [
+                    "(Emits a brief warped sound of a human voice, then goes silent.)",
                 ],
             },
             movement: None,

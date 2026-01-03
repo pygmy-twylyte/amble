@@ -3,8 +3,8 @@
 //!
 //! The crate powers the `amble_script` CLI but is fully usable as a library.
 //! Major capabilities:
-//! - Parse and lint `.amble` sources for rooms, items, triggers, spinners, NPCs,
-//!   and goals, catching unresolved references early.
+//! - Parse and lint `.amble` sources for game config, rooms, items, triggers,
+//!   spinners, NPCs, and goals, catching unresolved references early.
 //! - Compile the DSL into `WorldDef` (RON) that the `amble_engine` crate consumes.
 //! - Provide AST types so tooling can analyze or transform worlds before
 //!   serialization.
@@ -13,13 +13,25 @@
 //! use amble_script::{parse_program_full, worlddef_from_asts};
 //!
 //! let src = r#"
+//! game {
+//!   title "Demo"
+//!   intro "Welcome to the demo."
+//!   player {
+//!     name "The Candidate"
+//!     desc "a seasoned adventurer."
+//!     max_hp 20
+//!     start room foyer
+//!   }
+//! }
+//!
 //! room foyer {
 //!   name "Foyer"
 //!   desc "An inviting entryway."
 //! }
 //! "#;
-//! let (triggers, rooms, items, spinners, npcs, goals) = parse_program_full(src).expect("valid DSL");
-//! let worlddef = worlddef_from_asts(&triggers, &rooms, &items, &spinners, &npcs, &goals).expect("compiles");
+//! let (game, triggers, rooms, items, spinners, npcs, goals) = parse_program_full(src).expect("valid DSL");
+//! let worlddef = worlddef_from_asts(game.as_ref(), &triggers, &rooms, &items, &spinners, &npcs, &goals)
+//!     .expect("compiles");
 //! let ron = ron::ser::to_string_pretty(&worlddef, ron::ser::PrettyConfig::default()).expect("serializes");
 //! println!("{ron}");
 //! ```
@@ -32,6 +44,39 @@ mod worlddef;
 pub use parser::{AstError, parse_program, parse_trigger};
 pub use parser::{parse_goals, parse_items, parse_npcs, parse_program_full, parse_rooms, parse_spinners};
 pub use worlddef::{WorldDefError, worlddef_from_asts};
+
+/// Game-level configuration AST.
+#[derive(Debug, Clone, PartialEq)]
+pub struct GameAst {
+    pub title: String,
+    pub intro: String,
+    pub player: PlayerAst,
+    pub scoring: Option<ScoringAst>,
+}
+
+/// Player definition contained inside the game block.
+#[derive(Debug, Clone, PartialEq)]
+pub struct PlayerAst {
+    pub name: String,
+    pub description: String,
+    pub max_hp: u32,
+    pub start_room: String,
+}
+
+/// Scoring definition emitted from the DSL.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ScoringAst {
+    pub report_title: Option<String>,
+    pub ranks: Vec<ScoringRankAst>,
+}
+
+/// Single scoring rank entry.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ScoringRankAst {
+    pub threshold: f32,
+    pub name: String,
+    pub description: String,
+}
 
 /// A minimal AST for a single trigger.
 #[derive(Debug, Clone, PartialEq)]

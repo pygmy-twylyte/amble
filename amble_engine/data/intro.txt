@@ -1,7 +1,0 @@
-AMBLE: An Absurd Adventure
-###
-You find yourself standing on a rocky outcrop of a ridge high in the mountains -- maybe the Andes? Emerging from a daze, you realize you were brought here and dropped off by some sort of flying vehicle. When it flew off, it didn't make a sound. Did it have a motor, or was it something different?
-
-Your head gradually begins to clear, and you start to take stock of your surroundings...
-
-(type "help" for basic instructions)

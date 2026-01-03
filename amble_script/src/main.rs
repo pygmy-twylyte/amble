@@ -5,7 +5,7 @@
 
 use std::{env, fs, process};
 
-use amble_script::{ActionAst, ActionStmt, ConditionAst, GoalCondAst, parse_program_full, worlddef_from_asts};
+use amble_script::{ActionAst, ActionStmt, ConditionAst, GameAst, GoalCondAst, parse_program_full, worlddef_from_asts};
 use ron::ser::PrettyConfig;
 use std::collections::{HashMap, HashSet};
 
@@ -99,14 +99,15 @@ fn run_compile(args: &[String]) {
         eprintln!("error: unable to read '{path}': {e}");
         process::exit(1);
     });
-    let (triggers, rooms, items, spinners, npcs, goals) = parse_program_full(&src).unwrap_or_else(|e| {
+    let (game, triggers, rooms, items, spinners, npcs, goals) = parse_program_full(&src).unwrap_or_else(|e| {
         eprintln!("parse error: {e}");
         process::exit(1);
     });
-    let worlddef = worlddef_from_asts(&triggers, &rooms, &items, &spinners, &npcs, &goals).unwrap_or_else(|e| {
-        eprintln!("worlddef error: {e}");
-        process::exit(1);
-    });
+    let worlddef = worlddef_from_asts(game.as_ref(), &triggers, &rooms, &items, &spinners, &npcs, &goals)
+        .unwrap_or_else(|e| {
+            eprintln!("worlddef error: {e}");
+            process::exit(1);
+        });
     let pretty = PrettyConfig::default();
     let text = ron::ser::to_string_pretty(&worlddef, pretty).unwrap_or_else(|e| {
         eprintln!("worlddef serialization error: {e}");
@@ -193,6 +194,7 @@ fn run_compile_dir(args: &[String]) {
     }
     files.sort();
 
+    let mut game: Option<GameAst> = None;
     let mut trigs = Vec::new();
     let mut rooms = Vec::new();
     let mut items = Vec::new();
@@ -216,7 +218,15 @@ fn run_compile_dir(args: &[String]) {
             },
         };
         match parse_program_full(&src) {
-            Ok((t, r, it, sp, n, g)) => {
+            Ok((gdef, t, r, it, sp, n, g)) => {
+                if let Some(next_game) = gdef {
+                    if game.is_some() {
+                        eprintln!("compile-dir: multiple game blocks found (in '{f}')");
+                        had_error = true;
+                        continue;
+                    }
+                    game = Some(next_game);
+                }
                 trigs.extend(t);
                 rooms.extend(r);
                 items.extend(it);
@@ -251,10 +261,11 @@ fn run_compile_dir(args: &[String]) {
         eprintln!("compile-dir: aborting due to previous errors");
         process::exit(1);
     }
-    let worlddef = worlddef_from_asts(&trigs, &rooms, &items, &spinners, &npcs, &goals).unwrap_or_else(|e| {
-        eprintln!("compile-dir worlddef error: {e}");
-        process::exit(1);
-    });
+    let worlddef =
+        worlddef_from_asts(game.as_ref(), &trigs, &rooms, &items, &spinners, &npcs, &goals).unwrap_or_else(|e| {
+            eprintln!("compile-dir worlddef error: {e}");
+            process::exit(1);
+        });
     let pretty = PrettyConfig::default();
     let text = ron::ser::to_string_pretty(&worlddef, pretty).unwrap_or_else(|e| {
         eprintln!("compile-dir worlddef serialization error: {e}");
@@ -376,7 +387,7 @@ fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
             return 0;
         },
     };
-    let (asts, rooms_asts, item_asts, spinner_asts, npc_asts, goal_asts) = match parse_program_full(&src) {
+    let (_game, asts, rooms_asts, item_asts, spinner_asts, npc_asts, goal_asts) = match parse_program_full(&src) {
         Ok(v) => v,
         Err(e) => {
             eprintln!("lint: parse error in '{path}': {e}");

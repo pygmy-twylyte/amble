@@ -2,18 +2,20 @@ use std::collections::HashMap;
 
 use amble_data::{
     ActionDef, ActionKind, ConditionDef, ConditionExpr, ConsumableDef, ConsumeTypeDef, ContainerState, EventDef,
-    ExitDef, FlagDef, GoalCondition, GoalDef, GoalGroup, IngestMode, ItemAbility, ItemDef, ItemInteractionType,
-    ItemPatchDef, LocationRef, Movability, NpcDef, NpcDialoguePatchDef, NpcMovementDef, NpcMovementPatchDef,
-    NpcMovementTiming, NpcMovementType, NpcPatchDef, NpcState, NpcTimingPatchDef, OnFalsePolicy, OverlayCondDef,
-    OverlayDef, RoomDef, RoomExitPatchDef, RoomPatchDef, SpinnerDef, SpinnerWedgeDef, TriggerDef, WorldDef,
+    ExitDef, FlagDef, GameDef, GoalCondition, GoalDef, GoalGroup, IngestMode, ItemAbility, ItemDef,
+    ItemInteractionType, ItemPatchDef, LocationRef, Movability, NpcDef, NpcDialoguePatchDef, NpcMovementDef,
+    NpcMovementPatchDef, NpcMovementTiming, NpcMovementType, NpcPatchDef, NpcState, NpcTimingPatchDef, OnFalsePolicy,
+    OverlayCondDef, OverlayDef, PlayerDef, RoomDef, RoomExitPatchDef, RoomPatchDef, ScoringDef, ScoringRankDef,
+    SpinnerDef, SpinnerWedgeDef, TriggerDef, WorldDef,
 };
 use thiserror::Error;
 
 use crate::{
-    ActionAst, ActionStmt, ConditionAst, ConsumableAst, ConsumableWhenAst, ContainerStateAst, GoalAst, GoalCondAst,
-    GoalGroupAst, IngestModeAst, ItemAbilityAst, ItemAst, ItemLocationAst, MovabilityAst, NpcAst, NpcLocationAst,
-    NpcMovementAst, NpcMovementTypeAst, NpcPatchAst, NpcStateValue, NpcTimingPatchAst, OnFalseAst, OverlayAst,
-    OverlayCondAst, RoomAst, RoomExitPatchAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
+    ActionAst, ActionStmt, ConditionAst, ConsumableAst, ConsumableWhenAst, ContainerStateAst, GameAst, GoalAst,
+    GoalCondAst, GoalGroupAst, IngestModeAst, ItemAbilityAst, ItemAst, ItemLocationAst, MovabilityAst, NpcAst,
+    NpcLocationAst, NpcMovementAst, NpcMovementTypeAst, NpcPatchAst, NpcStateValue, NpcTimingPatchAst, OnFalseAst,
+    OverlayAst, OverlayCondAst, PlayerAst, RoomAst, RoomExitPatchAst, ScoringAst, ScoringRankAst, SpinnerAst,
+    SpinnerWedgeAst, TriggerAst,
 };
 
 /// Errors emitted while lowering AST data into the WorldDef model.
@@ -29,6 +31,8 @@ pub enum WorldDefError {
     InvalidNpcMovementTiming { value: String },
     #[error("invalid container state '{value}'")]
     InvalidContainerState { value: String },
+    #[error("missing game block")]
+    MissingGame,
     #[error("unsupported {kind}: {value}")]
     UnsupportedAst { kind: &'static str, value: String },
 }
@@ -40,7 +44,9 @@ pub enum WorldDefError {
 ///
 /// # Errors
 /// - Returns `WorldDefError` for unsupported or invalid AST values.
+/// - Returns `WorldDefError::MissingGame` when no game block is provided.
 pub fn worlddef_from_asts(
+    game: Option<&GameAst>,
     triggers: &[TriggerAst],
     rooms: &[RoomAst],
     items: &[ItemAst],
@@ -48,6 +54,8 @@ pub fn worlddef_from_asts(
     npcs: &[NpcAst],
     goals: &[GoalAst],
 ) -> Result<WorldDef, WorldDefError> {
+    let game = game.ok_or(WorldDefError::MissingGame)?;
+    let game = game_to_def(game)?;
     let rooms = rooms.iter().map(room_to_def).collect::<Result<Vec<_>, _>>()?;
     let items = items.iter().map(item_to_def).collect::<Result<Vec<_>, _>>()?;
     let spinners = spinners.iter().map(spinner_to_def).collect::<Result<Vec<_>, _>>()?;
@@ -56,6 +64,7 @@ pub fn worlddef_from_asts(
     let triggers = triggers.iter().map(trigger_to_def).collect::<Result<Vec<_>, _>>()?;
 
     Ok(WorldDef {
+        game,
         rooms,
         items,
         npcs,
@@ -63,6 +72,44 @@ pub fn worlddef_from_asts(
         triggers,
         goals,
     })
+}
+
+fn game_to_def(game: &GameAst) -> Result<GameDef, WorldDefError> {
+    let player = player_to_def(&game.player);
+    let scoring = game.scoring.as_ref().map(scoring_to_def).transpose()?;
+    Ok(GameDef {
+        title: game.title.clone(),
+        intro: game.intro.clone(),
+        player,
+        scoring: scoring.unwrap_or_default(),
+    })
+}
+
+fn player_to_def(player: &PlayerAst) -> PlayerDef {
+    PlayerDef {
+        name: player.name.clone(),
+        description: player.description.clone(),
+        start_room: player.start_room.clone(),
+        max_hp: player.max_hp,
+    }
+}
+
+fn scoring_to_def(scoring: &ScoringAst) -> Result<ScoringDef, WorldDefError> {
+    Ok(ScoringDef {
+        report_title: scoring
+            .report_title
+            .clone()
+            .unwrap_or_else(|| ScoringDef::default().report_title),
+        ranks: scoring.ranks.iter().map(scoring_rank_to_def).collect::<Vec<_>>(),
+    })
+}
+
+fn scoring_rank_to_def(rank: &ScoringRankAst) -> ScoringRankDef {
+    ScoringRankDef {
+        threshold: rank.threshold,
+        name: rank.name.clone(),
+        description: rank.description.clone(),
+    }
 }
 
 fn room_to_def(room: &RoomAst) -> Result<RoomDef, WorldDefError> {

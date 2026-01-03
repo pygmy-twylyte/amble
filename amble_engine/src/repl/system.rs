@@ -157,10 +157,9 @@ pub fn set_viewmode_handler(view: &mut View, mode: ViewMode) {
 /// # Performance Rankings
 ///
 /// Players receive rank titles based on their completion percentage, with
-/// rankings defined in `scoring.toml` (or hardcoded defaults if the file
-/// cannot be loaded). Each rank has a threshold percentage, a title, and
-/// a personalized evaluation message reflecting the player's exploration
-/// and puzzle-solving success.
+/// rankings defined in the compiled world data (`world.ron`). Each rank has
+/// a threshold percentage, a title, and a personalized evaluation message
+/// reflecting the player's exploration and puzzle-solving success.
 ///
 /// # Errors
 /// This handler never produces an error; it always returns `Ok(ReplControl::Quit)`.

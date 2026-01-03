@@ -88,6 +88,10 @@ pub struct AmbleWorld {
     pub goals: Vec<Goal>,
     /// Configuration for final scoring report when player quits the game
     pub scoring: ScoringConfig,
+    /// Game title displayed at startup.
+    pub game_title: String,
+    /// Introductory text displayed after the title.
+    pub intro_text: String,
     /// The Amble engine version for the current build
     pub version: String,
     /// Number of turns taken so far
@@ -109,6 +113,8 @@ impl AmbleWorld {
             max_score: 0,
             goals: Vec::new(),
             scoring: ScoringConfig::default(),
+            game_title: String::new(),
+            intro_text: String::new(),
             version: AMBLE_VERSION.to_string(),
             turn_count: 0,
             scheduler: Scheduler::default(),

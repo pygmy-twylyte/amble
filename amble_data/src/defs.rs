@@ -7,6 +7,7 @@ pub type Id = String;
 /// Top-level compiled world data loaded by the engine.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct WorldDef {
+    pub game: GameDef,
     #[serde(default)]
     pub rooms: Vec<RoomDef>,
     #[serde(default)]
@@ -19,6 +20,73 @@ pub struct WorldDef {
     pub triggers: Vec<TriggerDef>,
     #[serde(default)]
     pub goals: Vec<GoalDef>,
+}
+
+/// Game-level metadata and startup configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GameDef {
+    pub title: String,
+    pub intro: String,
+    pub player: PlayerDef,
+    #[serde(default)]
+    pub scoring: ScoringDef,
+}
+
+impl Default for GameDef {
+    fn default() -> Self {
+        Self {
+            title: String::new(),
+            intro: String::new(),
+            player: PlayerDef::default(),
+            scoring: ScoringDef::default(),
+        }
+    }
+}
+
+/// Player definition emitted from DSL configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlayerDef {
+    pub name: String,
+    pub description: String,
+    pub start_room: Id,
+    pub max_hp: u32,
+}
+
+impl Default for PlayerDef {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            description: String::new(),
+            start_room: String::new(),
+            max_hp: 1,
+        }
+    }
+}
+
+/// Scoring configuration emitted from the DSL.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScoringDef {
+    #[serde(default = "default_report_title")]
+    pub report_title: String,
+    #[serde(default = "default_scoring_ranks")]
+    pub ranks: Vec<ScoringRankDef>,
+}
+
+impl Default for ScoringDef {
+    fn default() -> Self {
+        Self {
+            report_title: default_report_title(),
+            ranks: default_scoring_ranks(),
+        }
+    }
+}
+
+/// Single scoring rank entry.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScoringRankDef {
+    pub threshold: f32,
+    pub name: String,
+    pub description: String,
 }
 
 /// Room definition used by the engine at load time.
@@ -94,6 +162,65 @@ pub struct SpinnerWedgeDef {
 
 fn default_wedge_width() -> usize {
     1
+}
+
+fn default_report_title() -> String {
+    "Scorecard".to_string()
+}
+
+fn default_scoring_ranks() -> Vec<ScoringRankDef> {
+    vec![
+        ScoringRankDef {
+            threshold: 99.0,
+            name: "Quantum Overachiever".to_string(),
+            description: "You saw the multiverse, understood it, then filed a bug report.".to_string(),
+        },
+        ScoringRankDef {
+            threshold: 90.0,
+            name: "Senior Field Operative".to_string(),
+            description: "A nearly flawless run. Someone give this candidate a promotion.".to_string(),
+        },
+        ScoringRankDef {
+            threshold: 75.0,
+            name: "Licensed Reality Bender".to_string(),
+            description: "Impressive grasp of nonlinear environments and cake-based paradoxes.".to_string(),
+        },
+        ScoringRankDef {
+            threshold: 60.0,
+            name: "Rogue Intern, Level II".to_string(),
+            description: "You got the job done, and only melted one small pocket universe.".to_string(),
+        },
+        ScoringRankDef {
+            threshold: 45.0,
+            name: "Unpaid Research Assistant".to_string(),
+            description: "Solid effort. Some concepts may have slipped through dimensional cracks.".to_string(),
+        },
+        ScoringRankDef {
+            threshold: 30.0,
+            name: "Junior Sandwich Technician".to_string(),
+            description: "Good instincts, questionable execution. Especially with condiments.".to_string(),
+        },
+        ScoringRankDef {
+            threshold: 15.0,
+            name: "Volunteer Tour Guide".to_string(),
+            description: "You wandered. You looked at stuff. It was something.".to_string(),
+        },
+        ScoringRankDef {
+            threshold: 5.0,
+            name: "Mailbox Stuffing Trainee".to_string(),
+            description: "You opened a box, tripped on a rug, and called it a day.".to_string(),
+        },
+        ScoringRankDef {
+            threshold: 1.0,
+            name: "Accidental Hire".to_string(),
+            description: "We're not sure how you got in. Please return your lanyard.".to_string(),
+        },
+        ScoringRankDef {
+            threshold: 0.0,
+            name: "Amnesiac Test Subject".to_string(),
+            description: "Did you… play? Were you even awake?".to_string(),
+        },
+    ]
 }
 
 /// Item definition used by the engine at load time.

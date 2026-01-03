@@ -83,11 +83,22 @@ dialogue custom emergency {
 ## Library Usage
 
 ```rust
-use amble_script::{parse_npcs, worlddef_from_asts};
+use amble_script::{GameAst, PlayerAst, parse_npcs, worlddef_from_asts};
 use ron::ser::PrettyConfig;
 let src = std::fs::read_to_string("npcs.amble")?;
 let npcs = parse_npcs(&src)?;
-let worlddef = worlddef_from_asts(&[], &[], &[], &[], &npcs, &[])?;
+let game = GameAst {
+    title: "Demo".into(),
+    intro: "Intro".into(),
+    player: PlayerAst {
+        name: "The Candidate".into(),
+        description: "An adventurer.".into(),
+        max_hp: 20,
+        start_room: "foyer".into(),
+    },
+    scoring: None,
+};
+let worlddef = worlddef_from_asts(Some(&game), &[], &[], &[], &[], &npcs, &[])?;
 let ron = ron::ser::to_string_pretty(&worlddef, PrettyConfig::default())?;
 ```
 

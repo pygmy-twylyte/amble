@@ -40,11 +40,22 @@ The engine rolls a weighted random selection whenever the spinner is triggered. 
 ## Library Usage
 
 ```rust
-use amble_script::{parse_spinners, worlddef_from_asts};
+use amble_script::{GameAst, PlayerAst, parse_spinners, worlddef_from_asts};
 use ron::ser::PrettyConfig;
 let src = std::fs::read_to_string("spinners.amble")?;
 let spinners = parse_spinners(&src)?;
-let worlddef = worlddef_from_asts(&[], &[], &[], &spinners, &[], &[])?;
+let game = GameAst {
+    title: "Demo".into(),
+    intro: "Intro".into(),
+    player: PlayerAst {
+        name: "The Candidate".into(),
+        description: "An adventurer.".into(),
+        max_hp: 20,
+        start_room: "foyer".into(),
+    },
+    scoring: None,
+};
+let worlddef = worlddef_from_asts(Some(&game), &[], &[], &[], &spinners, &[], &[])?;
 let ron = ron::ser::to_string_pretty(&worlddef, PrettyConfig::default())?;
 ```
 

@@ -334,15 +334,13 @@ fn test_worlddef_any_condition_supports_ambient_without_rooms() {
 
 #[test]
 fn test_player_def_to_player() {
-    use ae::loader::player::{PlayerDef, build_player};
+    use ae::loader::player::build_player;
+    use amble_data::PlayerDef;
     let def = PlayerDef {
-        id: "player".into(),
         name: "P".into(),
         description: String::new(),
-        location: world::Location::Inventory,
+        start_room: "room".into(),
         max_hp: 10,
-        flags: Vec::new(),
-        score: 0,
     };
     let player = build_player(&def).unwrap();
     assert_eq!(player.name, "P");

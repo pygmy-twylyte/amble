@@ -72,6 +72,30 @@ __Note: Because the linter uses `world.ron` in the engine's data directory as a 
 
 ---
 
+## Game Configuration
+
+Include exactly one `game` block across your DSL sources. It defines the title shown at startup, the intro text, the player character, and optional scoring ranks. This replaces `player.ron`, `intro.txt`, and `scoring.toml`.
+
+```amble
+game {
+  title "AMBLE: An Absurd Adventure"
+  intro "Welcome to the demo."
+  player {
+    name "The Candidate"
+    desc "a seasoned adventurer with a faint memory of cake."
+    max_hp 20
+    start room high-ridge
+  }
+  scoring {
+    report_title "Candidate Evaluation Report"
+    rank 99.0 "Quantum Overachiever" "You saw the multiverse, understood it, then filed a bug report."
+    rank 0.0 "Amnesiac Test Subject" "Did you... play? Were you even awake?"
+  }
+}
+```
+
+---
+
 ## Triggers
 
 Triggers drive the bulk of interactive logic. They listen for a game event or particular game state, optionally gate on additional conditions, and execute one or more actions.
