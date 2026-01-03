@@ -72,8 +72,6 @@ dependencies = [
  "pest_derive",
  "ron",
  "thiserror 1.0.69",
- "toml",
- "toml_edit 0.21.1",
 ]
 
 [[package]]
