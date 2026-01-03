@@ -7,8 +7,9 @@ use std::{env, fs, process};
 
 use amble_script::{
     ActionAst, ActionStmt, ConditionAst, GoalCondAst, compile_goals_to_toml, compile_npcs_to_toml,
-    compile_rooms_to_toml, compile_spinners_to_toml, compile_triggers_to_toml, parse_program_full,
+    compile_rooms_to_toml, compile_spinners_to_toml, compile_triggers_to_toml, parse_program_full, worlddef_from_asts,
 };
+use ron::ser::PrettyConfig;
 use std::collections::{HashMap, HashSet};
 use toml_edit::Document;
 
@@ -32,7 +33,7 @@ fn main() {
         },
         _ => {
             eprintln!(
-                "Usage:\n  amble_script compile <file.amble> [--out-triggers <triggers.toml>] [--out-rooms <rooms.toml>] [--out-items <items.toml>] [--out-spinners <spinners.toml>] [--out-npcs <npcs.toml>] [--out-goals <goals.toml>]\n  amble_script compile-dir <src_dir> --out-dir <engine_data_dir> [--only triggers,rooms,items,spinners,npcs,goals]\n  amble_script lint <file.amble|dir> [--data-dir <dir>] [--deny-missing]\n\nNotes:\n- compile-dir overwrites each category file; when a category has no entries, an empty skeleton is written (e.g., 'triggers = []').\n- Use --only to restrict which category files are written; excluded categories are left untouched."
+                "Usage:\n  amble_script compile <file.amble> [--out-triggers <triggers.toml>] [--out-rooms <rooms.toml>] [--out-items <items.toml>] [--out-spinners <spinners.toml>] [--out-npcs <npcs.toml>] [--out-goals <goals.toml>] [--out-world <world.ron>]\n  amble_script compile-dir <src_dir> --out-dir <engine_data_dir> [--only triggers,rooms,items,spinners,npcs,goals] [--out-world <world.ron>]\n  amble_script lint <file.amble|dir> [--data-dir <dir>] [--deny-missing]\n\nNotes:\n- compile-dir overwrites each category file; when a category has no entries, an empty skeleton is written (e.g., 'triggers = []').\n- Use --only to restrict which category files are written; excluded categories are left untouched."
             );
             process::exit(2);
         },
@@ -59,6 +60,7 @@ fn run_compile(args: &[String]) {
     let mut out_items: Option<String> = None; // items
     let mut out_npcs: Option<String> = None; // npcs
     let mut out_goals: Option<String> = None; // goals
+    let mut out_world: Option<String> = None; // worlddef
     let mut i = 0;
     while i < args.len() {
         if args[i] == "--out" {
@@ -125,13 +127,24 @@ fn run_compile(args: &[String]) {
             i += 2;
             continue;
         }
+        if args[i] == "--out-world" {
+            if i + 1 >= args.len() {
+                eprintln!("--out-world requires a filepath");
+                process::exit(2);
+            }
+            out_world = Some(args[i + 1].clone());
+            i += 2;
+            continue;
+        }
         if path.is_none() {
             path = Some(args[i].clone());
         }
         i += 1;
     }
     if path.is_none() {
-        eprintln!("Usage: amble_script compile <file.amble> [--out <out.toml>]");
+        eprintln!(
+            "Usage: amble_script compile <file.amble> [--out-triggers <triggers.toml>] [--out-rooms <rooms.toml>] [--out-items <items.toml>] [--out-spinners <spinners.toml>] [--out-npcs <npcs.toml>] [--out-goals <goals.toml>] [--out-world <world.ron>]"
+        );
         process::exit(2);
     }
     let path = path.unwrap();
@@ -143,6 +156,20 @@ fn run_compile(args: &[String]) {
         eprintln!("parse error: {e}");
         process::exit(1);
     });
+    let worlddef_ron = if out_world.is_some() {
+        let worlddef = worlddef_from_asts(&triggers, &rooms, &items, &spinners, &npcs, &goals).unwrap_or_else(|e| {
+            eprintln!("worlddef error: {e}");
+            process::exit(1);
+        });
+        let pretty = PrettyConfig::default();
+        let text = ron::ser::to_string_pretty(&worlddef, pretty).unwrap_or_else(|e| {
+            eprintln!("worlddef serialization error: {e}");
+            process::exit(1);
+        });
+        Some(text)
+    } else {
+        None
+    };
     for t in &triggers {
         if t.actions.is_empty() {
             eprintln!("warning: trigger '{}' has no actions (empty block?)", t.name);
@@ -347,12 +374,19 @@ fn run_compile(args: &[String]) {
             },
         }
     }
+    if let (Some(out), Some(text)) = (out_world.as_ref(), worlddef_ron.as_ref()) {
+        if let Err(e) = fs::write(out, text) {
+            eprintln!("error: writing '{out}': {e}");
+            process::exit(1);
+        }
+    }
 }
 
 fn run_compile_dir(args: &[String]) {
     use std::path::Path;
     let mut src_dir: Option<String> = None;
     let mut out_dir: Option<String> = None;
+    let mut out_world: Option<String> = None;
     let mut only: Option<std::collections::HashSet<String>> = None;
     let mut verbose = false;
     let mut i = 0;
@@ -379,6 +413,14 @@ fn run_compile_dir(args: &[String]) {
                 only = Some(list);
                 i += 2;
             },
+            "--out-world" => {
+                if i + 1 >= args.len() {
+                    eprintln!("--out-world requires a filepath");
+                    process::exit(2);
+                }
+                out_world = Some(args[i + 1].clone());
+                i += 2;
+            },
             "--verbose" | "-v" => {
                 verbose = true;
                 i += 1;
@@ -393,7 +435,7 @@ fn run_compile_dir(args: &[String]) {
     }
     if src_dir.is_none() || out_dir.is_none() {
         eprintln!(
-            "Usage: amble_script compile-dir <src_dir> --out-dir <engine_data_dir> [--only triggers,rooms,items,spinners,npcs,goals]\n\nNote: Writes empty skeleton TOMLs for categories with no entries unless filtered by --only."
+            "Usage: amble_script compile-dir <src_dir> --out-dir <engine_data_dir> [--only triggers,rooms,items,spinners,npcs,goals] [--out-world <world.ron>]\n\nNote: Writes empty skeleton TOMLs for categories with no entries unless filtered by --only."
         );
         process::exit(2);
     }
@@ -471,6 +513,20 @@ fn run_compile_dir(args: &[String]) {
         eprintln!("compile-dir: aborting due to previous errors");
         process::exit(1);
     }
+    let worlddef_ron = if out_world.is_some() {
+        let worlddef = worlddef_from_asts(&trigs, &rooms, &items, &spinners, &npcs, &goals).unwrap_or_else(|e| {
+            eprintln!("compile-dir worlddef error: {e}");
+            process::exit(1);
+        });
+        let pretty = PrettyConfig::default();
+        let text = ron::ser::to_string_pretty(&worlddef, pretty).unwrap_or_else(|e| {
+            eprintln!("compile-dir worlddef serialization error: {e}");
+            process::exit(1);
+        });
+        Some(text)
+    } else {
+        None
+    };
     let header = |_kind: &str, src_desc: &str, body: &str| -> String {
         format!(
             "# Generated by amble_script from {} ({} files)\n# Do not edit: this file is compiled from DSL.\n# Source Hash (fnv64): {:016x}\n\n{}",
@@ -483,10 +539,11 @@ fn run_compile_dir(args: &[String]) {
 
     // Ensure out_dir exists
     if !Path::new(&out_dir).exists()
-        && let Err(e) = fs::create_dir_all(&out_dir) {
-            eprintln!("compile-dir: cannot create out-dir '{out_dir}': {e}");
-            process::exit(1);
-        }
+        && let Err(e) = fs::create_dir_all(&out_dir)
+    {
+        eprintln!("compile-dir: cannot create out-dir '{out_dir}': {e}");
+        process::exit(1);
+    }
     // Write each category; emit empty skeletons when no entries to avoid stale cross-file refs
     let allows = |k: &str| -> bool { only.as_ref().map(|s| s.contains(k)).unwrap_or(true) };
     if allows("triggers") {
@@ -633,6 +690,12 @@ fn run_compile_dir(args: &[String]) {
             });
         }
     }
+    if let (Some(out), Some(text)) = (out_world.as_ref(), worlddef_ron.as_ref()) {
+        if let Err(e) = fs::write(out, text) {
+            eprintln!("write '{out}': {e}");
+            process::exit(1);
+        }
+    }
     if verbose {
         eprintln!(
             "Summary: triggers={total_t}, rooms={total_r}, items={total_i}, spinners={total_sp}, npcs={total_n}, goals={total_g}"
@@ -720,9 +783,10 @@ fn collect_dsl_files_recursive(dir: &str, out: &mut Vec<String>) {
             }
             if let Some(ext) = p.extension().and_then(|e| e.to_str())
                 && (ext == "amble" || ext == "able")
-                    && let Some(s) = p.to_str() {
-                        out.push(s.to_string());
-                    }
+                && let Some(s) = p.to_str()
+            {
+                out.push(s.to_string());
+            }
         }
     }
 }
@@ -1379,25 +1443,26 @@ fn load_flags_from_triggers(doc: &Document) -> HashSet<String> {
 fn collect_flags_from_actions(actions: &toml_edit::Array, out: &mut HashSet<String>) {
     for act in actions.iter() {
         if let Some(at) = act.as_inline_table()
-            && let Some(ty) = at.get("type").and_then(|v| v.as_str()) {
-                match ty {
-                    "addFlag" => {
-                        if let Some(flag_item) = at.get("flag")
-                            && let Some(ftab) = flag_item.as_inline_table()
-                            && let Some(name) = ftab.get("name").and_then(|v| v.as_str())
-                        {
-                            out.insert(name.to_string());
-                        }
-                    },
-                    // Recurse into scheduled actions
-                    "scheduleIn" | "scheduleOn" | "scheduleInIf" | "scheduleOnIf" => {
-                        if let Some(sub) = at.get("actions").and_then(|a| a.as_array()) {
-                            collect_flags_from_actions(sub, out);
-                        }
-                    },
-                    _ => {},
-                }
+            && let Some(ty) = at.get("type").and_then(|v| v.as_str())
+        {
+            match ty {
+                "addFlag" => {
+                    if let Some(flag_item) = at.get("flag")
+                        && let Some(ftab) = flag_item.as_inline_table()
+                        && let Some(name) = ftab.get("name").and_then(|v| v.as_str())
+                    {
+                        out.insert(name.to_string());
+                    }
+                },
+                // Recurse into scheduled actions
+                "scheduleIn" | "scheduleOn" | "scheduleInIf" | "scheduleOnIf" => {
+                    if let Some(sub) = at.get("actions").and_then(|a| a.as_array()) {
+                        collect_flags_from_actions(sub, out);
+                    }
+                },
+                _ => {},
             }
+        }
     }
 }
 

@@ -27,8 +27,10 @@
 //! the repository.
 
 mod parser;
+mod worlddef;
 pub use parser::{AstError, parse_program, parse_trigger};
 pub use parser::{parse_goals, parse_items, parse_npcs, parse_program_full, parse_rooms, parse_spinners};
+pub use worlddef::{WorldDefError, worlddef_from_asts};
 
 use thiserror::Error;
 use toml_edit::{Array, ArrayOfTables, Document, InlineTable, Item, Table, value};

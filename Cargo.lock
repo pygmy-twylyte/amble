@@ -67,8 +67,10 @@ dependencies = [
 name = "amble_script"
 version = "0.64.0"
 dependencies = [
+ "amble_data",
  "pest",
  "pest_derive",
+ "ron",
  "thiserror 1.0.69",
  "toml",
  "toml_edit 0.21.1",
