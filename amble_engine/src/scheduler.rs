@@ -226,12 +226,77 @@ pub enum EventCondition {
 }
 
 impl EventCondition {
+    /// Evaluate the condition against the current world state and any recent events.
+    pub fn eval_with_events(&self, world: &crate::world::AmbleWorld, events: &[TriggerCondition]) -> bool {
+        match self {
+            EventCondition::Trigger(tc) => tc.matches_event_in(events) || tc.is_ongoing(world),
+            EventCondition::All(conds) => conds.iter().all(|c| c.eval_with_events(world, events)),
+            EventCondition::Any(conds) => conds.iter().any(|c| c.eval_with_events(world, events)),
+        }
+    }
+
     /// Evaluate the condition against the current world state.
     pub fn eval(&self, world: &crate::world::AmbleWorld) -> bool {
+        self.eval_with_events(world, &[])
+    }
+
+    /// Evaluate the condition while treating ambient predicates as room-based checks.
+    pub fn eval_ambient(&self, world: &crate::world::AmbleWorld) -> bool {
         match self {
-            EventCondition::Trigger(tc) => tc.is_ongoing(world),
-            EventCondition::All(conds) => conds.iter().all(|c| c.eval(world)),
-            EventCondition::Any(conds) => conds.iter().any(|c| c.eval(world)),
+            EventCondition::Trigger(tc) => match tc {
+                TriggerCondition::Ambient { room_ids, .. } => world
+                    .player
+                    .location
+                    .room_id()
+                    .is_ok_and(|room_id| room_ids.is_empty() || room_ids.contains(&room_id)),
+                _ => tc.is_ongoing(world),
+            },
+            EventCondition::All(conds) => conds.iter().all(|c| c.eval_ambient(world)),
+            EventCondition::Any(conds) => conds.iter().any(|c| c.eval_ambient(world)),
+        }
+    }
+
+    /// Returns true if any nested trigger condition satisfies the matcher.
+    pub fn any_trigger<F>(&self, matcher: F) -> bool
+    where
+        F: FnMut(&TriggerCondition) -> bool,
+    {
+        let mut matcher = matcher;
+        self.any_trigger_inner(&mut matcher)
+    }
+
+    /// Apply a visitor closure to every nested trigger condition.
+    pub fn for_each_trigger<F>(&self, visitor: F)
+    where
+        F: FnMut(&TriggerCondition),
+    {
+        let mut visitor = visitor;
+        self.for_each_trigger_inner(&mut visitor);
+    }
+
+    fn any_trigger_inner<F>(&self, matcher: &mut F) -> bool
+    where
+        F: FnMut(&TriggerCondition) -> bool,
+    {
+        match self {
+            EventCondition::Trigger(tc) => matcher(tc),
+            EventCondition::All(conds) | EventCondition::Any(conds) => {
+                conds.iter().any(|c| c.any_trigger_inner(matcher))
+            },
+        }
+    }
+
+    fn for_each_trigger_inner<F>(&self, visitor: &mut F)
+    where
+        F: FnMut(&TriggerCondition),
+    {
+        match self {
+            EventCondition::Trigger(tc) => visitor(tc),
+            EventCondition::All(conds) | EventCondition::Any(conds) => {
+                for cond in conds {
+                    cond.for_each_trigger_inner(visitor);
+                }
+            },
         }
     }
 }

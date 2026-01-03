@@ -16,6 +16,7 @@ use anyhow::{Context, Result};
 use log::info;
 use serde::Deserialize;
 
+use crate::scheduler::EventCondition;
 use crate::trigger::Trigger;
 
 use super::SymbolTable;
@@ -41,14 +42,14 @@ impl RawTrigger {
         let mut conditions = Vec::new();
         let mut actions = Vec::new();
         for cond in &self.conditions {
-            conditions.push(cond.to_condition(symbols)?);
+            conditions.push(EventCondition::Trigger(cond.to_condition(symbols)?));
         }
         for act in &self.actions {
             actions.push(act.to_action(symbols)?);
         }
         Ok(Trigger {
             name: self.name.clone(),
-            conditions,
+            conditions: EventCondition::All(conditions),
             actions,
             only_once: self.only_once,
             fired: false,

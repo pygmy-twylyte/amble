@@ -374,8 +374,7 @@ fn check_fired_and_refused(all_fired: &Vec<&Trigger>) -> GiftResponse {
     let trigger_fired = all_fired.iter().any(|&trigger| {
         trigger
             .conditions
-            .iter()
-            .any(|cond| matches!(cond, TriggerCondition::GiveToNpc { .. }))
+            .any_trigger(|cond| matches!(cond, TriggerCondition::GiveToNpc { .. }))
     });
 
     let npc_refused = all_fired.iter().any(|t| {

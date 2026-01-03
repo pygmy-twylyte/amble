@@ -12,6 +12,7 @@ pub use condition::*;
 use crate::{AmbleWorld, View};
 use anyhow::Result;
 
+use crate::scheduler::EventCondition;
 use log::info;
 use serde::{Deserialize, Serialize};
 
@@ -19,7 +20,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trigger {
     pub name: String,
-    pub conditions: Vec<TriggerCondition>,
+    pub conditions: EventCondition,
     pub actions: Vec<ScriptedAction>,
     pub only_once: bool,
     pub fired: bool,
@@ -31,7 +32,7 @@ pub fn triggers_contain_condition<F>(list: &[&Trigger], matcher: F) -> bool
 where
     F: Fn(&TriggerCondition) -> bool,
 {
-    list.iter().any(|t| t.conditions.iter().any(&matcher))
+    list.iter().any(|t| t.conditions.any_trigger(|c| matcher(c)))
 }
 
 /// Evaluate triggers against recent events, execute matching actions, and return the fired set.
@@ -54,10 +55,10 @@ pub fn check_triggers<'a>(
         .enumerate()
         .filter(|(_, t)| !t.only_once || !t.fired)
         .filter(|(_, t)| {
-            t.conditions
-                .iter()
-                .all(|c| c.matches_event_in(events) || c.is_ongoing(world))
+            !t.conditions
+                .any_trigger(|c| matches!(c, TriggerCondition::Ambient { .. }))
         })
+        .filter(|(_, t)| t.conditions.eval_with_events(world, events))
         .map(|(i, _)| i)
         .collect();
 
@@ -130,7 +131,7 @@ mod tests {
         let mut view = View::new();
         let trigger = Trigger {
             name: "move".into(),
-            conditions: vec![TriggerCondition::Enter(start_id.clone())],
+            conditions: EventCondition::Trigger(TriggerCondition::Enter(start_id.clone())),
             actions: vec![ScriptedAction::new(TriggerAction::PushPlayerTo(dest_id.clone()))],
             only_once: true,
             fired: false,
@@ -153,14 +154,14 @@ mod tests {
         let (mut world, room1_id, room2_id) = build_test_world();
         let trigger1 = Trigger {
             name: "t1".into(),
-            conditions: vec![TriggerCondition::Enter(room1_id.clone())],
+            conditions: EventCondition::Trigger(TriggerCondition::Enter(room1_id.clone())),
             actions: vec![],
             only_once: false,
             fired: false,
         };
         let trigger2 = Trigger {
             name: "t2".into(),
-            conditions: vec![TriggerCondition::Enter(room2_id.clone())],
+            conditions: EventCondition::Trigger(TriggerCondition::Enter(room2_id.clone())),
             actions: vec![],
             only_once: false,
             fired: false,

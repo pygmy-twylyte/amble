@@ -1053,6 +1053,7 @@ mod tests {
     use crate::{
         item::{ContainerState, Item, ItemAbility, ItemInteractionType, Movability},
         room::Room,
+        scheduler::EventCondition,
         trigger::{ScriptedAction, Trigger, TriggerAction, TriggerCondition},
         world::{AmbleWorld, Location},
     };
@@ -1167,11 +1168,11 @@ mod tests {
         let (mut world, mut view, container_id, tool_id, _, _) = build_world();
         world.triggers.push(Trigger {
             name: "open".into(),
-            conditions: vec![TriggerCondition::UseItemOnItem {
+            conditions: EventCondition::Trigger(TriggerCondition::UseItemOnItem {
                 interaction: ItemInteractionType::Open,
                 target_id: container_id.clone(),
                 tool_id: tool_id.clone(),
-            }],
+            }),
             actions: vec![ScriptedAction::new(TriggerAction::UnlockItem(container_id.clone()))],
             only_once: false,
             fired: false,
@@ -1193,11 +1194,11 @@ mod tests {
         world.items.get_mut(&tool_id).unwrap().abilities.clear();
         world.triggers.push(Trigger {
             name: "open".into(),
-            conditions: vec![TriggerCondition::UseItemOnItem {
+            conditions: EventCondition::Trigger(TriggerCondition::UseItemOnItem {
                 interaction: ItemInteractionType::Open,
                 target_id: container_id.clone(),
                 tool_id: tool_id.clone(),
-            }],
+            }),
             actions: vec![ScriptedAction::new(TriggerAction::UnlockItem(container_id.clone()))],
             only_once: false,
             fired: false,
@@ -1214,10 +1215,10 @@ mod tests {
         let (mut world, mut view, container_id, _, lamp_id, _) = build_world();
         world.triggers.push(Trigger {
             name: "light".into(),
-            conditions: vec![TriggerCondition::UseItem {
+            conditions: EventCondition::Trigger(TriggerCondition::UseItem {
                 item_id: lamp_id.clone(),
                 ability: ItemAbility::TurnOn,
-            }],
+            }),
             actions: vec![ScriptedAction::new(TriggerAction::UnlockItem(container_id.clone()))],
             only_once: false,
             fired: false,

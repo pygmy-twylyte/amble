@@ -433,6 +433,7 @@ fn test_check_npc_movement() {
 
 #[test]
 fn test_check_ambient_triggers() {
+    use ae::scheduler::EventCondition;
     use ae::spinners::SpinnerType;
     use ae::trigger::{Trigger, TriggerCondition};
     use gametools::{Spinner, Wedge};
@@ -458,10 +459,10 @@ fn test_check_ambient_triggers() {
     world.spinners.insert(spinner_type.clone(), spinner);
     let trigger = Trigger {
         name: "ambient".into(),
-        conditions: vec![TriggerCondition::Ambient {
+        conditions: EventCondition::Trigger(TriggerCondition::Ambient {
             room_ids: [r1.clone()].into_iter().collect(),
             spinner: spinner_type,
-        }],
+        }),
         actions: vec![],
         only_once: false,
         fired: false,
