@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/// Stable identifier used across WorldDef references.
 pub type Id = String;
 
+/// Top-level compiled world data loaded by the engine.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct WorldDef {
     #[serde(default)]
@@ -19,6 +21,7 @@ pub struct WorldDef {
     pub goals: Vec<GoalDef>,
 }
 
+/// Room definition used by the engine at load time.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoomDef {
     pub id: Id,
@@ -32,6 +35,7 @@ pub struct RoomDef {
     pub overlays: Vec<OverlayDef>,
 }
 
+/// Exit metadata for room navigation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExitDef {
     pub direction: String,
@@ -47,6 +51,7 @@ pub struct ExitDef {
     pub barred_message: Option<String>,
 }
 
+/// A room overlay with optional conditions and text.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OverlayDef {
     #[serde(default)]
@@ -54,6 +59,7 @@ pub struct OverlayDef {
     pub text: String,
 }
 
+/// Conditions that gate a room overlay.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum OverlayCondDef {
@@ -70,6 +76,7 @@ pub enum OverlayCondDef {
     ItemInRoom { item: Id, room: Id },
 }
 
+/// Spinner definition for ambient or random text.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SpinnerDef {
     pub id: Id,
@@ -77,6 +84,7 @@ pub struct SpinnerDef {
     pub wedges: Vec<SpinnerWedgeDef>,
 }
 
+/// Weighted spinner entry text.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SpinnerWedgeDef {
     pub text: String,
@@ -88,6 +96,7 @@ fn default_wedge_width() -> usize {
     1
 }
 
+/// Item definition used by the engine at load time.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemDef {
     pub id: Id,
@@ -105,6 +114,7 @@ pub struct ItemDef {
     pub consumable: Option<ConsumableDef>,
 }
 
+/// Authoring-time reference to an object's starting location.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum LocationRef {
     Inventory,
@@ -114,6 +124,7 @@ pub enum LocationRef {
     Npc(Id),
 }
 
+/// Consumable item metadata.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConsumableDef {
     pub uses_left: usize,
@@ -122,6 +133,7 @@ pub struct ConsumableDef {
     pub when_consumed: ConsumeTypeDef,
 }
 
+/// How consumables behave when used.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ConsumeTypeDef {
@@ -130,6 +142,7 @@ pub enum ConsumeTypeDef {
     ReplaceCurrentRoom { replacement: Id },
 }
 
+/// NPC definition used by the engine at load time.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NpcDef {
     pub id: Id,
@@ -143,6 +156,7 @@ pub struct NpcDef {
     pub movement: Option<NpcMovementDef>,
 }
 
+/// NPC movement configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NpcMovementDef {
     pub movement_type: NpcMovementType,
@@ -167,6 +181,7 @@ pub enum NpcMovementTiming {
     OnTurn { turn: usize },
 }
 
+/// Trigger definition with event, conditions, and actions.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TriggerDef {
     pub name: String,
@@ -180,6 +195,7 @@ pub struct TriggerDef {
     pub actions: Vec<ActionDef>,
 }
 
+/// Trigger event type.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum EventDef {
@@ -246,6 +262,7 @@ pub enum EventDef {
     },
 }
 
+/// Boolean expression tree used by triggers and conditions.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ConditionExpr {
     All(Vec<ConditionExpr>),
@@ -259,6 +276,7 @@ impl Default for ConditionExpr {
     }
 }
 
+/// Leaf predicates used by ConditionExpr.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ConditionDef {
@@ -278,6 +296,7 @@ pub enum ConditionDef {
     Ambient { spinner: Id, rooms: Option<Vec<Id>> },
 }
 
+/// Action entry with optional scheduling priority.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ActionDef {
     pub action: ActionKind,
@@ -285,6 +304,7 @@ pub struct ActionDef {
     pub priority: Option<isize>,
 }
 
+/// Actions executed by triggers or schedules.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ActionKind {
@@ -593,6 +613,7 @@ pub enum OnFalsePolicy {
     RetryNextTurn,
 }
 
+/// Goal definition for player progress tracking.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GoalDef {
     pub id: String,
@@ -688,6 +709,7 @@ pub enum ContainerState {
     TransparentLocked,
 }
 
+/// Movability constraints for items.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub enum Movability {

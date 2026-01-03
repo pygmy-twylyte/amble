@@ -3,6 +3,7 @@ use std::fmt;
 
 use crate::*;
 
+/// Validation error for malformed or missing references in a WorldDef.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ValidationError {
     DuplicateId { kind: &'static str, id: String },
@@ -28,6 +29,14 @@ impl fmt::Display for ValidationError {
 
 impl std::error::Error for ValidationError {}
 
+/// Validate cross-references and basic invariants in a WorldDef.
+///
+/// ```
+/// use amble_data::{WorldDef, validate_world};
+///
+/// let world = WorldDef::default();
+/// assert!(validate_world(&world).is_empty());
+/// ```
 pub fn validate_world(world: &WorldDef) -> Vec<ValidationError> {
     let mut errors = Vec::new();
 
@@ -63,6 +72,7 @@ pub fn validate_world(world: &WorldDef) -> Vec<ValidationError> {
         &mut errors,
     );
 
+    // Store ID sets once so we can check cross-references cheaply.
     let ids = IdSets {
         rooms: &rooms,
         items: &items,
@@ -169,6 +179,94 @@ pub fn validate_world(world: &WorldDef) -> Vec<ValidationError> {
     }
 
     errors
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+
+    use super::*;
+
+    fn room(id: &str) -> RoomDef {
+        RoomDef {
+            id: id.to_string(),
+            name: format!("Room {id}"),
+            desc: "Test room".into(),
+            visited: false,
+            exits: Vec::new(),
+            overlays: Vec::new(),
+        }
+    }
+
+    fn item_in_room(id: &str, room_id: &str) -> ItemDef {
+        ItemDef {
+            id: id.to_string(),
+            name: format!("Item {id}"),
+            desc: "Test item".into(),
+            movability: Movability::Free,
+            container_state: None,
+            location: LocationRef::Room(room_id.to_string()),
+            abilities: Vec::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+            consumable: None,
+        }
+    }
+
+    fn trigger_with_condition(name: &str, condition: ConditionExpr) -> TriggerDef {
+        TriggerDef {
+            name: name.to_string(),
+            note: None,
+            only_once: false,
+            event: EventDef::Always,
+            conditions: condition,
+            actions: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn duplicate_ids_are_reported() {
+        let world = WorldDef {
+            rooms: vec![room("same"), room("same")],
+            ..WorldDef::default()
+        };
+
+        let errors = validate_world(&world);
+        assert!(
+            errors
+                .iter()
+                .any(|err| matches!(err, ValidationError::DuplicateId { kind, id } if *kind == "room" && id == "same"))
+        );
+    }
+
+    #[test]
+    fn missing_references_are_reported() {
+        let world = WorldDef {
+            items: vec![item_in_room("lantern", "missing_room")],
+            ..WorldDef::default()
+        };
+
+        let errors = validate_world(&world);
+        assert!(errors.iter().any(|err| matches!(err, ValidationError::MissingReference { kind, id, .. } if *kind == "room" && id == "missing_room")));
+    }
+
+    #[test]
+    fn invalid_chance_percent_is_reported() {
+        let world = WorldDef {
+            triggers: vec![trigger_with_condition(
+                "chance",
+                ConditionExpr::Pred(ConditionDef::ChancePercent { percent: 0.0 }),
+            )],
+            ..WorldDef::default()
+        };
+
+        let errors = validate_world(&world);
+        assert!(
+            errors
+                .iter()
+                .any(|err| matches!(err, ValidationError::InvalidValue { .. }))
+        );
+    }
 }
 
 struct IdSets<'a> {
