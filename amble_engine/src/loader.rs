@@ -72,6 +72,7 @@ pub fn load_world() -> Result<AmbleWorld> {
     Ok(world)
 }
 
+/// Validate the compiled WorldDef and return a single aggregated error.
 fn validate_worlddef(def: &WorldDef) -> Result<()> {
     let errors = amble_data::validate_world(def);
     if errors.is_empty() {

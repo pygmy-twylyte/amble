@@ -41,6 +41,8 @@ pub fn load_worlddef(path: &Path) -> Result<WorldDef> {
 }
 
 /// Convert a `WorldDef` into a populated `AmbleWorld` (player/scoring loaded separately).
+///
+/// Item/NPC placements are applied later by the placement stage.
 pub fn build_world_from_def(def: &WorldDef) -> Result<AmbleWorld> {
     let mut world = AmbleWorld::new_empty();
 
@@ -242,6 +244,7 @@ fn npc_movement_from_def(def: &NpcMovementDef) -> Result<NpcMovement> {
 fn trigger_from_def(def: &TriggerDef) -> Result<Trigger> {
     let event_condition = event_condition_from_def(&def.event);
     let mut conditions = condition_expr_from_def(&def.conditions);
+    // Combine the instantaneous event with the authored condition tree so both must hold.
     if let Some(event_tc) = event_condition {
         conditions = EventCondition::All(vec![EventCondition::Trigger(event_tc), conditions]);
     }
@@ -641,6 +644,7 @@ fn condition_from_def(def: &ConditionDef) -> TriggerCondition {
             TriggerCondition::Chance { one_in }
         },
         ConditionDef::Ambient { spinner, rooms } => TriggerCondition::Ambient {
+            // Empty room set means the ambient spinner applies in any room.
             room_ids: rooms
                 .as_ref()
                 .map(|list| list.iter().cloned().collect())

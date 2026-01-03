@@ -71,6 +71,8 @@ pub fn place_items(world: &mut AmbleWorld) -> Result<()> {
 
 /// Place NPCs in their starting rooms.
 ///
+/// Only `Location::Room` and `Location::Nowhere` are valid for NPCs.
+///
 /// # Errors
 /// - on invalid placement locations
 pub fn place_npcs(world: &mut AmbleWorld) -> Result<()> {
@@ -109,11 +111,13 @@ pub fn place_npcs(world: &mut AmbleWorld) -> Result<()> {
 mod tests {
     use std::collections::{HashMap, HashSet};
 
+    use crate::health::HealthState;
     use crate::item::{ContainerState, Item, Movability};
+    use crate::npc::{Npc, NpcState};
     use crate::world::Location;
     use crate::{AmbleWorld, Room, idgen};
 
-    use super::place_items;
+    use super::{place_items, place_npcs};
 
     #[test]
     fn test_transparent_container_loading() {
@@ -174,5 +178,153 @@ mod tests {
         let container = world.items.get(&container_id).unwrap();
         assert!(container.contents.contains(&item_id));
         assert_eq!(container.container_state, Some(ContainerState::TransparentLocked));
+    }
+
+    #[test]
+    fn test_place_items_nested_containers() {
+        let mut world = AmbleWorld::new_empty();
+
+        let room_id = "room".to_string();
+        let room = Room {
+            id: room_id.clone(),
+            symbol: "room".into(),
+            name: "Room".into(),
+            base_description: "Room".into(),
+            overlays: Vec::new(),
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
+        };
+        world.rooms.insert(room_id.clone(), room);
+
+        let outer_id = "outer".to_string();
+        let inner_id = "inner".to_string();
+        let item_id = "item".to_string();
+
+        let outer = Item {
+            id: outer_id.clone(),
+            symbol: "outer".into(),
+            name: "Outer".into(),
+            description: "Outer container".into(),
+            location: Location::Room(room_id.clone()),
+            movability: Movability::Free,
+            container_state: Some(ContainerState::Closed),
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            consumable: None,
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+
+        let inner = Item {
+            id: inner_id.clone(),
+            symbol: "inner".into(),
+            name: "Inner".into(),
+            description: "Inner container".into(),
+            location: Location::Item(outer_id.clone()),
+            movability: Movability::Free,
+            container_state: Some(ContainerState::Closed),
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            consumable: None,
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+
+        let item = Item {
+            id: item_id.clone(),
+            symbol: "item".into(),
+            name: "Item".into(),
+            description: "Nested item".into(),
+            location: Location::Item(inner_id.clone()),
+            movability: Movability::Free,
+            container_state: None,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            consumable: None,
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+
+        world.items.insert(outer_id.clone(), outer);
+        world.items.insert(inner_id.clone(), inner);
+        world.items.insert(item_id.clone(), item);
+
+        place_items(&mut world).unwrap();
+
+        let room = world.rooms.get(&room_id).unwrap();
+        assert!(room.contents.contains(&outer_id));
+
+        let outer = world.items.get(&outer_id).unwrap();
+        assert!(outer.contents.contains(&inner_id));
+
+        let inner = world.items.get(&inner_id).unwrap();
+        assert!(inner.contents.contains(&item_id));
+    }
+
+    #[test]
+    fn test_place_items_adds_to_npc_inventory() {
+        let mut world = AmbleWorld::new_empty();
+
+        let npc_id = "npc".to_string();
+        let npc = Npc {
+            id: npc_id.clone(),
+            symbol: "npc".into(),
+            name: "Npc".into(),
+            description: "Npc".into(),
+            location: Location::Nowhere,
+            inventory: HashSet::new(),
+            dialogue: HashMap::new(),
+            state: NpcState::Normal,
+            movement: None,
+            health: HealthState::new_at_max(10),
+        };
+        world.npcs.insert(npc_id.clone(), npc);
+
+        let item_id = "token".to_string();
+        let item = Item {
+            id: item_id.clone(),
+            symbol: "token".into(),
+            name: "Token".into(),
+            description: "Npc token".into(),
+            location: Location::Npc(npc_id.clone()),
+            movability: Movability::Free,
+            container_state: None,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            consumable: None,
+            interaction_requires: HashMap::new(),
+            text: None,
+        };
+        world.items.insert(item_id.clone(), item);
+
+        place_items(&mut world).unwrap();
+
+        let npc = world.npcs.get(&npc_id).unwrap();
+        assert!(npc.inventory.contains(&item_id));
+    }
+
+    #[test]
+    fn test_place_npcs_rejects_invalid_location() {
+        let mut world = AmbleWorld::new_empty();
+
+        let npc_id = "npc".to_string();
+        let npc = Npc {
+            id: npc_id.clone(),
+            symbol: "npc".into(),
+            name: "Npc".into(),
+            description: "Npc".into(),
+            location: Location::Item("box".into()),
+            inventory: HashSet::new(),
+            dialogue: HashMap::new(),
+            state: NpcState::Normal,
+            movement: None,
+            health: HealthState::new_at_max(10),
+        };
+        world.npcs.insert(npc_id, npc);
+
+        assert!(place_npcs(&mut world).is_err());
     }
 }

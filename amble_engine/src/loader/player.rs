@@ -14,6 +14,7 @@ use crate::health::HealthState;
 use crate::player::{Flag, Player};
 use crate::world::Location;
 
+/// Serialized player definition loaded from `player.ron`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerDef {
     pub id: String,

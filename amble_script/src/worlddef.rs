@@ -16,6 +16,7 @@ use crate::{
     OverlayCondAst, RoomAst, RoomExitPatchAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
 };
 
+/// Errors emitted while lowering AST data into the WorldDef model.
 #[derive(Debug, Error)]
 pub enum WorldDefError {
     #[error("unknown item ability '{value}'")]
@@ -32,6 +33,13 @@ pub enum WorldDefError {
     UnsupportedAst { kind: &'static str, value: String },
 }
 
+/// Convert parsed AST collections into a serialized `WorldDef`.
+///
+/// This performs structural mapping only; cross-reference validation is
+/// handled separately via `amble_data::validate_world`.
+///
+/// # Errors
+/// - Returns `WorldDefError` for unsupported or invalid AST values.
 pub fn worlddef_from_asts(
     triggers: &[TriggerAst],
     rooms: &[RoomAst],

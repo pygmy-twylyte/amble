@@ -167,6 +167,7 @@ pub struct NpcMovementDef {
     pub loop_route: Option<bool>,
 }
 
+/// Selects how an NPC chooses its next room.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum NpcMovementType {
@@ -174,6 +175,7 @@ pub enum NpcMovementType {
     RandomSet,
 }
 
+/// Timing rules for NPC movement.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum NpcMovementTiming {
@@ -523,6 +525,7 @@ pub enum ActionKind {
     },
 }
 
+/// Flag definition used by authoring and trigger actions.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum FlagDef {
@@ -530,6 +533,7 @@ pub enum FlagDef {
     Sequence { name: String, end: Option<u8> },
 }
 
+/// Patch data applied to an item at runtime.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ItemPatchDef {
     pub name: Option<String>,
@@ -545,6 +549,7 @@ pub struct ItemPatchDef {
     pub remove_abilities: Vec<ItemAbility>,
 }
 
+/// Patch data applied to a room at runtime.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct RoomPatchDef {
     pub name: Option<String>,
@@ -555,6 +560,7 @@ pub struct RoomPatchDef {
     pub add_exits: Vec<RoomExitPatchDef>,
 }
 
+/// Exit data used by room patching.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RoomExitPatchDef {
     pub direction: String,
@@ -570,12 +576,14 @@ pub struct RoomExitPatchDef {
     pub barred_message: Option<String>,
 }
 
+/// Single dialogue line to add to an NPC.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NpcDialoguePatchDef {
     pub state: NpcState,
     pub line: String,
 }
 
+/// Timing change for NPC movement patches.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum NpcTimingPatchDef {
@@ -583,6 +591,7 @@ pub enum NpcTimingPatchDef {
     OnTurn { turn: usize },
 }
 
+/// Patch data applied to NPC movement.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct NpcMovementPatchDef {
     pub route: Option<Vec<Id>>,
@@ -592,6 +601,7 @@ pub struct NpcMovementPatchDef {
     pub loop_route: Option<bool>,
 }
 
+/// Patch data applied to an NPC at runtime.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct NpcPatchDef {
     pub name: Option<String>,
@@ -602,6 +612,7 @@ pub struct NpcPatchDef {
     pub movement: Option<NpcMovementPatchDef>,
 }
 
+/// Policy for scheduled actions when a condition evaluates false.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "camelCase")]
 pub enum OnFalsePolicy {
@@ -625,6 +636,7 @@ pub struct GoalDef {
     pub failed_when: Option<GoalCondition>,
 }
 
+/// Groups goals for display and tracking purposes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum GoalGroup {
@@ -633,6 +645,7 @@ pub enum GoalGroup {
     StatusEffect,
 }
 
+/// Predicate used for goal activation/completion.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum GoalCondition {
@@ -645,6 +658,7 @@ pub enum GoalCondition {
     ReachedRoom { room: Id },
 }
 
+/// Ingest action mode for consumables.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum IngestMode {
@@ -653,6 +667,7 @@ pub enum IngestMode {
     Inhale,
 }
 
+/// Ability tags used to gate item interactions.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ItemAbility {
@@ -679,6 +694,7 @@ pub enum ItemAbility {
     Use,
 }
 
+/// Interaction verbs used when applying one item to another.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ItemInteractionType {
@@ -698,6 +714,7 @@ pub enum ItemInteractionType {
     Unlock,
 }
 
+/// Container visibility and lock state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ContainerState {
@@ -723,6 +740,7 @@ pub enum Movability {
     Free,
 }
 
+/// NPC mood/state tags used for dialogue and conditions.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum NpcState {

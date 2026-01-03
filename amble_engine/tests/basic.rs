@@ -230,6 +230,109 @@ fn test_worlddef_npc_to_world() {
 }
 
 #[test]
+fn test_worlddef_trigger_combines_event_and_conditions() {
+    use ae::scheduler::EventCondition;
+    use ae::trigger::TriggerCondition;
+    use amble_data::{ConditionDef, ConditionExpr, EventDef, RoomDef, TriggerDef, WorldDef};
+
+    let def = WorldDef {
+        rooms: vec![RoomDef {
+            id: "room".into(),
+            name: "Room".into(),
+            desc: String::new(),
+            visited: false,
+            exits: Vec::new(),
+            overlays: Vec::new(),
+        }],
+        triggers: vec![TriggerDef {
+            name: "t".into(),
+            note: None,
+            only_once: false,
+            event: EventDef::EnterRoom { room: "room".into() },
+            conditions: ConditionExpr::Pred(ConditionDef::HasFlag { flag: "f".into() }),
+            actions: Vec::new(),
+        }],
+        ..WorldDef::default()
+    };
+
+    let world = ae::loader::worlddef::build_world_from_def(&def).unwrap();
+    let trigger = &world.triggers[0];
+
+    match &trigger.conditions {
+        EventCondition::All(list) => {
+            assert_eq!(list.len(), 2);
+            assert!(list.iter().any(|cond| matches!(
+                cond,
+                EventCondition::Trigger(TriggerCondition::Enter(id)) if id == "room"
+            )));
+            assert!(list.iter().any(|cond| matches!(
+                cond,
+                EventCondition::Trigger(TriggerCondition::HasFlag(flag)) if flag == "f"
+            )));
+        },
+        _ => panic!("expected EventCondition::All"),
+    }
+}
+
+#[test]
+fn test_worlddef_any_condition_supports_ambient_without_rooms() {
+    use ae::scheduler::EventCondition;
+    use ae::spinners::SpinnerType;
+    use ae::trigger::TriggerCondition;
+    use amble_data::{ConditionDef, ConditionExpr, EventDef, TriggerDef, WorldDef};
+
+    let def = WorldDef {
+        triggers: vec![TriggerDef {
+            name: "t".into(),
+            note: None,
+            only_once: false,
+            event: EventDef::Always,
+            conditions: ConditionExpr::Any(vec![
+                ConditionExpr::Pred(ConditionDef::Ambient {
+                    spinner: "murmur".into(),
+                    rooms: None,
+                }),
+                ConditionExpr::Pred(ConditionDef::HasFlag { flag: "f".into() }),
+            ]),
+            actions: Vec::new(),
+        }],
+        ..WorldDef::default()
+    };
+
+    let world = ae::loader::worlddef::build_world_from_def(&def).unwrap();
+    let trigger = &world.triggers[0];
+
+    match &trigger.conditions {
+        EventCondition::Any(list) => {
+            assert_eq!(list.len(), 2);
+
+            let mut found_flag = false;
+            let mut found_ambient = false;
+
+            for cond in list {
+                match cond {
+                    EventCondition::Trigger(TriggerCondition::HasFlag(flag)) => {
+                        if flag == "f" {
+                            found_flag = true;
+                        }
+                    },
+                    EventCondition::Trigger(TriggerCondition::Ambient { room_ids, spinner }) => {
+                        if room_ids.is_empty() && matches!(spinner, SpinnerType::Custom(key) if key == "murmur") {
+                            found_ambient = true;
+                        }
+                    },
+                    _ => {},
+                }
+            }
+
+            assert!(found_flag);
+            assert!(found_ambient);
+        },
+        _ => panic!("expected EventCondition::Any"),
+    }
+}
+
+#[test]
 fn test_player_def_to_player() {
     use ae::loader::player::{PlayerDef, build_player};
     let def = PlayerDef {
