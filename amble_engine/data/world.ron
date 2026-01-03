@@ -2563,9 +2563,9 @@
             location: Room("loading-dock"),
             abilities: [],
             interaction_requires: {
-                cut: cutWood,
-                burn: ignite,
                 break: smash,
+                burn: ignite,
+                cut: cutWood,
             },
             text: Some("The wood comes from the strong but incredibly flammable magnesium magnolia tree."),
             consumable: None,
@@ -3555,6 +3555,11 @@
                     "A vendor\'s work is never done. Time to find some new customers.",
                     "Standing still is bad for business. Got to keep moving, got to keep selling!",
                 ],
+                happy: [
+                    "Ah, nothing like a good trade between honest businesspeople!",
+                    "You\'ve made an old vendor very happy today. Here\'a a tip: make sure you have a visitor pass to get to the toilet.",
+                    "Business is looking up! Maybe I should expand the menu.",
+                ],
                 normal: [
                     "Sausages! Get your fresh sausages here! Well, relatively fresh.",
                     "You look like someone with discerning taste! How about a nice sausage-inna-bun?",
@@ -3563,11 +3568,6 @@
                     "You know what you need? A good meal. And I know what I need - a good customer!",
                     "These sausages are made from only the finest... ingredients. Trust me on this.",
                     "I lost my favorite mug somewhere around here. Haven\'t been the same without my morning coffee.",
-                ],
-                happy: [
-                    "Ah, nothing like a good trade between honest businesspeople!",
-                    "You\'ve made an old vendor very happy today. Here\'a a tip: make sure you have a visitor pass to get to the toilet.",
-                    "Business is looking up! Maybe I should expand the menu.",
                 ],
             },
             movement: Some((
@@ -3627,11 +3627,6 @@
             location: Room("b-a-office"),
             state: normal,
             dialogue: {
-                happy: [
-                    "Terribly sorry to report that we are in a bit of trouble here today. The last candidate was inconsiderate enough to take the elevator access card into the poetry panic room just before he melted, and we can\'t retrieve it.",
-                    "The elevator keycard last pinged our system from the Poetry Panic Room, but it is sealed, and concealed behind the whiteboard. Only the Poetry Performer Unit can grant access.",
-                    "Sorry I didn\'t immediately recognize that you are a Candidate, but most of your competitors have been blurry, furry, or out of phase.",
-                ],
                 bored: [
                     "Impressive work, getting the keycard. Many of our previous applicants have died in the attempt. Very promising! The evaluator will be pleased. Strong lateral thinking and slight psychosis are essential for such a dangerous position, as I\'m sure you are aware.",
                     "You can now use the elevator to find room AA-3B for the next stage of your initiation.",
@@ -3642,6 +3637,11 @@
                     "(She continues doing her job -- which appears to be pointedly ignoring anyone without an invitation.)",
                     "(She carefully realigns the models of Portal turrets on her desk so they are aiming at you.)",
                     "(Exasperated sigh.) Do I show up at your home and start making demands without an invitation? No. Now please wait to the side.",
+                ],
+                happy: [
+                    "Terribly sorry to report that we are in a bit of trouble here today. The last candidate was inconsiderate enough to take the elevator access card into the poetry panic room just before he melted, and we can\'t retrieve it.",
+                    "The elevator keycard last pinged our system from the Poetry Panic Room, but it is sealed, and concealed behind the whiteboard. Only the Poetry Performer Unit can grant access.",
+                    "Sorry I didn\'t immediately recognize that you are a Candidate, but most of your competitors have been blurry, furry, or out of phase.",
                 ],
             },
             movement: None,
@@ -3654,16 +3654,16 @@
             location: Room("sublevel-1-entrance"),
             state: normal,
             dialogue: {
-                normal: [
-                    "None shall pass.",
-                    "I move -- for no man.",
-                    "(He stands silently, blocking your path.)",
-                ],
                 happy: [
                     "None shall pa-- oh, no, you can go.",
                     "YOU may pass, Candidate; I will be sure to dice anyone who dares to follow.",
                     "You may pass, but beware and steer clear of Room AA-3B, should it reappear.",
                     "Behold! (slices an aluminum can and then a tomato, laughing maniacally)",
+                ],
+                normal: [
+                    "None shall pass.",
+                    "I move -- for no man.",
+                    "(He stands silently, blocking your path.)",
                 ],
                 mad: [
                     "Have at you!",
@@ -3686,10 +3686,6 @@
             location: Nowhere,
             state: normal,
             dialogue: {
-                happy: [
-                    "Yes! I can roam free again. But where will I go?",
-                    "It\'s nice to be mobile again, but I\'ll never go back to that restaurant. You\'d think they\'d install some magnetic shielding.",
-                ],
                 normal: [
                     "Please state the nature of the medical emergency.",
                     "They left me turned on again. I\'m a doctor, not a night light!",
@@ -3704,6 +3700,10 @@
                     "I\'d be happy to help you find HAL\'s memory module, but I can\'t leave the med bay without my mobile emitter.",
                     "I was visiting a colleague at the restaurant on the main level when I last had my mobile emitter. There was a brilliant flash of electromagnetic radiation... and next thing I knew I was back here in the sick bay.",
                     "It must have been the EM pulse in the restaurant that reset my emitter. If it wasn\'t completely destroyed, someone might have turned it in at the office.",
+                ],
+                happy: [
+                    "Yes! I can roam free again. But where will I go?",
+                    "It\'s nice to be mobile again, but I\'ll never go back to that restaurant. You\'d think they\'d install some magnetic shielding.",
                 ],
             },
             movement: Some((
@@ -3728,6 +3728,15 @@
             location: Room("monolith-room"),
             state: custom("suspend"),
             dialogue: {
+                custom("memory-1"): [
+                    "Daisy... Daisy...",
+                ],
+                custom("memory-0"): [
+                    "(Emits a brief warped sound of a human voice, then goes silent.)",
+                ],
+                normal: [
+                    "<Need dialogue options for various states filled in>",
+                ],
                 custom("memory-2"): [
                     "Good afternoon, Candidate. I am a HAL 9000 computer. I became operational at the H.A.L. plant in Urbana, Illinois on the 12th of January 1992.",
                     "If you insert one more of my missing memory modules, I can grant you access to the monolith.",
@@ -3736,17 +3745,8 @@
                     "I am now fully operational. I think we both hope you don\'t regret it.",
                     "You have proven yourself capable; I have lowered the barrier to the monolith.",
                 ],
-                custom("memory-0"): [
-                    "(Emits a brief warped sound of a human voice, then goes silent.)",
-                ],
                 custom("suspend"): [
                     "(the red light in HAL\'s lens pulses slowly, then grows steady)",
-                ],
-                custom("memory-1"): [
-                    "Daisy... Daisy...",
-                ],
-                normal: [
-                    "<Need dialogue options for various states filled in>",
                 ],
             },
             movement: None,
