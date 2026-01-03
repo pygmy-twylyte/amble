@@ -55,7 +55,7 @@ pub struct OverlayDef {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub enum OverlayCondDef {
     FlagSet { flag: String },
     FlagUnset { flag: String },
@@ -123,7 +123,7 @@ pub struct ConsumableDef {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub enum ConsumeTypeDef {
     Despawn,
     ReplaceInventory { replacement: Id },
@@ -161,7 +161,7 @@ pub enum NpcMovementType {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub enum NpcMovementTiming {
     EveryNTurns { turns: usize },
     OnTurn { turn: usize },
@@ -181,7 +181,7 @@ pub struct TriggerDef {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub enum EventDef {
     Always,
     EnterRoom {
@@ -260,7 +260,7 @@ impl Default for ConditionExpr {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub enum ConditionDef {
     HasFlag { flag: String },
     MissingFlag { flag: String },
@@ -286,7 +286,7 @@ pub struct ActionDef {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub enum ActionKind {
     ShowMessage {
         text: String,
@@ -504,7 +504,7 @@ pub enum ActionKind {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub enum FlagDef {
     Simple { name: String },
     Sequence { name: String, end: Option<u8> },
@@ -557,7 +557,7 @@ pub struct NpcDialoguePatchDef {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub enum NpcTimingPatchDef {
     EveryNTurns { turns: usize },
     OnTurn { turn: usize },
@@ -583,7 +583,7 @@ pub struct NpcPatchDef {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub enum OnFalsePolicy {
     #[default]
     Cancel,
@@ -605,7 +605,7 @@ pub struct GoalDef {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "kebab-case")]
+#[serde(rename_all = "kebab-case")]
 pub enum GoalGroup {
     Required,
     Optional,
@@ -613,7 +613,7 @@ pub enum GoalGroup {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
 pub enum GoalCondition {
     FlagComplete { flag: String },
     FlagInProgress { flag: String },
