@@ -21,6 +21,7 @@ use crate::loader::scoring::load_scoring;
 use crate::loader::spinners::load_spinners;
 use crate::loader::triggers::load_raw_triggers;
 
+use crate::Id;
 use crate::data_paths::data_path;
 use crate::trigger::TriggerAction;
 use crate::{AmbleWorld, Location, WorldObject};
@@ -33,18 +34,17 @@ use rooms::build_rooms;
 use std::collections::HashMap;
 use std::hash::BuildHasher;
 use triggers::build_triggers;
-use uuid::Uuid;
 
 /// Lookup table to find the uuid for a given token
 #[derive(Default, Debug)]
 pub struct SymbolTable {
-    pub(crate) rooms: HashMap<String, Uuid>,
-    pub(crate) items: HashMap<String, Uuid>,
-    pub(crate) characters: HashMap<String, Uuid>,
+    pub(crate) rooms: HashMap<String, Id>,
+    pub(crate) items: HashMap<String, Id>,
+    pub(crate) characters: HashMap<String, Id>,
 }
 
 /// Resolve a token from a TOML location table against the symbol cache.
-fn map_resolver<S, H>(table: &HashMap<String, String, S>, map: &HashMap<String, Uuid, H>, key: &str) -> Result<Uuid>
+fn map_resolver<S, H>(table: &HashMap<String, String, S>, map: &HashMap<String, Id, H>, key: &str) -> Result<Id>
 where
     S: BuildHasher,
     H: BuildHasher,
@@ -55,7 +55,7 @@ where
             .get(key)
             .with_context(|| format!("{key_lc}_resolver called without a '{key}' in location table"))?,
     ) {
-        Ok(*uuid)
+        Ok(uuid.clone())
     } else {
         bail!("{key_lc}_resolver: {key} symbol from TOML location table [{table:?}] not found in symbol table")
     }

@@ -60,10 +60,10 @@ use crate::{
     view::ViewItem,
 };
 
+use crate::Id;
 use anyhow::{Result, bail};
 use colored::Colorize;
 use log::info;
-use uuid::Uuid;
 
 /// Touch or press an `Item`.
 ///
@@ -81,9 +81,9 @@ pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) ->
         Err(e) => bail!(e),
     };
 
-    let triggers_fired = check_triggers(world, view, &[TriggerCondition::Touch(item_id)])?;
+    let triggers_fired = check_triggers(world, view, &[TriggerCondition::Touch(item_id.clone())])?;
     let sent_trigger_fired = triggers_contain_condition(&triggers_fired, |trig| match trig {
-        TriggerCondition::Touch(triggered_item_id) => *triggered_item_id == item_id,
+        TriggerCondition::Touch(triggered_item_id) => triggered_item_id == &item_id,
         _ => false,
     });
     let item = world.items.get(&item_id).expect("item_id should be valid here");
@@ -147,11 +147,18 @@ pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, m
     matches player input, and can be ingested in the specified way */
 
     // Check triggers for any specific reaction / feedback to this ingestion
-    let sent_id = item_id;
+    let sent_id = item_id.clone();
     let sent_mode = mode;
-    let fired_triggers = check_triggers(world, view, &[TriggerCondition::Ingest { item_id, mode }])?;
+    let fired_triggers = check_triggers(
+        world,
+        view,
+        &[TriggerCondition::Ingest {
+            item_id: item_id.clone(),
+            mode,
+        }],
+    )?;
     let sent_trigger_fired = triggers_contain_condition(&fired_triggers, |cond| match cond {
-        TriggerCondition::Ingest { item_id, mode } => *item_id == sent_id && *mode == sent_mode,
+        TriggerCondition::Ingest { item_id, mode } => item_id == &sent_id && *mode == sent_mode,
         _ => false,
     });
 
@@ -272,12 +279,20 @@ pub fn use_item_on_handler(
     // a reasonable default but should never come up; the existence of this Interaction
     // implies a specific matching ability which has already been verified by the
     // interaction_requirement_met(...) call above.
-    let used_ability = *target
+    let used_ability = target
         .interaction_requires
         .get(&interaction)
-        .unwrap_or(&ItemAbility::Use);
+        .unwrap_or(&ItemAbility::Use)
+        .clone();
 
-    let interaction_fired = dispatch_use_item_triggers(world, view, interaction, target_id, tool_id, used_ability)?;
+    let interaction_fired = dispatch_use_item_triggers(
+        world,
+        view,
+        interaction,
+        target_id.clone(),
+        tool_id.clone(),
+        used_ability.clone(),
+    )?;
 
     // Nope, no triggered reaction to these conditions
     if !interaction_fired {
@@ -355,8 +370,8 @@ fn dispatch_use_item_triggers(
     world: &mut AmbleWorld,
     view: &mut View,
     interaction: ItemInteractionType,
-    target_id: Uuid,
-    tool_id: Uuid,
+    target_id: Id,
+    tool_id: Id,
     used_ability: ItemAbility,
 ) -> Result<bool> {
     let fired = check_triggers(
@@ -365,16 +380,16 @@ fn dispatch_use_item_triggers(
         &[
             TriggerCondition::UseItemOnItem {
                 interaction,
-                target_id,
-                tool_id,
+                target_id: target_id.clone(),
+                tool_id: tool_id.clone(),
             },
             TriggerCondition::ActOnItem {
                 action: interaction,
-                target_id,
+                target_id: target_id.clone(),
             },
             TriggerCondition::UseItem {
-                item_id: tool_id,
-                ability: used_ability,
+                item_id: tool_id.clone(),
+                ability: used_ability.clone(),
             },
         ],
     )?;
@@ -383,13 +398,13 @@ fn dispatch_use_item_triggers(
         TriggerCondition::ActOnItem {
             action,
             target_id: fired_target,
-        } => *action == interaction && *fired_target == target_id,
-        TriggerCondition::UseItem { ability, .. } => *ability == used_ability,
+        } => *action == interaction && fired_target == &target_id,
+        TriggerCondition::UseItem { ability, .. } => ability == &used_ability,
         TriggerCondition::UseItemOnItem {
             interaction: fired_interaction,
             target_id: fired_target,
             tool_id: fired_tool,
-        } => *fired_interaction == interaction && *fired_target == target_id && *fired_tool == tool_id,
+        } => *fired_interaction == interaction && fired_target == &target_id && fired_tool == &tool_id,
         _ => false,
     }))
 }
@@ -448,12 +463,12 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
             world,
             view,
             &[TriggerCondition::UseItem {
-                item_id: sent_id,
+                item_id: sent_id.clone(),
                 ability: ItemAbility::TurnOn,
             }],
         )?;
         let sent_trigger_fired = triggers_contain_condition(&fired_triggers, |cond| match cond {
-            TriggerCondition::UseItem { item_id, ability } => *item_id == sent_id && *ability == ItemAbility::TurnOn,
+            TriggerCondition::UseItem { item_id, ability } => item_id == &sent_id && ability == &ItemAbility::TurnOn,
             _ => false,
         });
         if !sent_trigger_fired {
@@ -531,12 +546,12 @@ pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &
             world,
             view,
             &[TriggerCondition::UseItem {
-                item_id: sent_id,
+                item_id: sent_id.clone(),
                 ability: ItemAbility::TurnOff,
             }],
         )?;
         let sent_trigger_fired = triggers_contain_condition(&fired_triggers, |cond| match cond {
-            TriggerCondition::UseItem { item_id, ability } => *item_id == sent_id && *ability == ItemAbility::TurnOff,
+            TriggerCondition::UseItem { item_id, ability } => item_id == &sent_id && ability == &ItemAbility::TurnOff,
             _ => false,
         });
         if !sent_trigger_fired {
@@ -616,7 +631,7 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
 
     // either show failure reasons, or set container state to open
     let mut container_opened = false;
-    if let Some(target_item) = world.get_item_mut(container_id) {
+    if let Some(target_item) = world.get_item_mut(container_id.clone()) {
         match target_item.container_state {
             None => {
                 view.push(ViewItem::ActionFailure(format!(
@@ -680,7 +695,7 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
             ViewItem::ActionSuccess(format!("You opened the {}.\n", opened.name().item_style())),
             -100,
         );
-        check_triggers(world, view, &[TriggerCondition::Open(container_id)])?;
+        check_triggers(world, view, &[TriggerCondition::Open(container_id.clone())])?;
     }
 
     world.turn_count += 1;
@@ -928,9 +943,9 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
         },
     };
 
-    let key_data = find_valid_key(&world.items, &world.player.inventory, container_id);
+    let key_data = find_valid_key(&world.items, &world.player.inventory, container_id.clone());
 
-    if let Some(target_item) = world.get_item_mut(container_id) {
+    if let Some(target_item) = world.get_item_mut(container_id.clone()) {
         let item_name = target_item.name().to_owned();
         let item_sym = target_item.symbol().to_owned();
         match target_item.container_state {
@@ -973,7 +988,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
                         key.name,
                         key.symbol,
                     );
-                    check_triggers(world, view, &[TriggerCondition::Unlock(container_id)])?;
+                    check_triggers(world, view, &[TriggerCondition::Unlock(container_id.clone())])?;
                 } else {
                     view.push(ViewItem::ActionFailure(format!(
                         "You don't have anything that can unlock the {}.",
@@ -990,7 +1005,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
 // Key metadata.
 #[derive(Debug, Clone, PartialEq)]
 struct KeyData {
-    id: Uuid,
+    id: Id,
     name: String,
     symbol: String,
     skeleton: bool,
@@ -1000,15 +1015,15 @@ struct KeyData {
 ///
 /// If a specific key *and* a "skeleton" key are present, the data for the specific key is
 /// returned.
-fn find_valid_key(world_items: &HashMap<Uuid, Item>, maybe_keys: &HashSet<Uuid>, container: Uuid) -> Option<KeyData> {
+fn find_valid_key(world_items: &HashMap<Id, Item>, maybe_keys: &HashSet<Id>, container: Id) -> Option<KeyData> {
     // find and return a specific key
     let specific = maybe_keys
         .iter()
         .filter_map(|uuid| world_items.get(uuid))
-        .find(|item| item.abilities.contains(&ItemAbility::Unlock(Some(container))));
+        .find(|item| item.abilities.contains(&ItemAbility::Unlock(Some(container.clone()))));
     if let Some(key) = specific {
         return Some(KeyData {
-            id: key.id,
+            id: key.id.clone(),
             name: key.name.clone(),
             symbol: key.symbol.clone(),
             skeleton: false,
@@ -1021,7 +1036,7 @@ fn find_valid_key(world_items: &HashMap<Uuid, Item>, maybe_keys: &HashSet<Uuid>,
         .find(|item| item.abilities.contains(&ItemAbility::Unlock(None)));
     if let Some(key) = skeleton {
         return Some(KeyData {
-            id: key.id,
+            id: key.id.clone(),
             name: key.name.clone(),
             symbol: key.symbol.clone(),
             skeleton: true,
@@ -1034,6 +1049,7 @@ fn find_valid_key(world_items: &HashMap<Uuid, Item>, maybe_keys: &HashSet<Uuid>,
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Id;
     use crate::{
         item::{ContainerState, Item, ItemAbility, ItemInteractionType, Movability},
         room::Room,
@@ -1041,13 +1057,12 @@ mod tests {
         world::{AmbleWorld, Location},
     };
     use std::collections::{HashMap, HashSet};
-    use uuid::Uuid;
 
-    fn build_world() -> (AmbleWorld, View, Uuid, Uuid, Uuid, Uuid) {
+    fn build_world() -> (AmbleWorld, View, Id, Id, Id, Id) {
         let mut world = AmbleWorld::new_empty();
-        let room_id = Uuid::new_v4();
+        let room_id = crate::idgen::new_id();
         let room = Room {
-            id: room_id,
+            id: room_id.clone(),
             symbol: "r".into(),
             name: "Room".into(),
             base_description: String::new(),
@@ -1058,16 +1073,16 @@ mod tests {
             contents: HashSet::new(),
             npcs: HashSet::new(),
         };
-        world.rooms.insert(room_id, room);
-        world.player.location = Location::Room(room_id);
+        world.rooms.insert(room_id.clone(), room);
+        world.player.location = Location::Room(room_id.clone());
 
-        let container_id = Uuid::new_v4();
+        let container_id = crate::idgen::new_id();
         let mut container = Item {
-            id: container_id,
+            id: container_id.clone(),
             symbol: "c".into(),
             name: "chest".into(),
             description: String::new(),
-            location: Location::Room(room_id),
+            location: Location::Room(room_id.clone()),
             container_state: Some(ContainerState::Locked),
             movability: Movability::Free,
             contents: HashSet::new(),
@@ -1079,12 +1094,17 @@ mod tests {
         container
             .interaction_requires
             .insert(ItemInteractionType::Open, ItemAbility::Pry);
-        world.rooms.get_mut(&room_id).unwrap().contents.insert(container_id);
-        world.items.insert(container_id, container);
+        world
+            .rooms
+            .get_mut(&room_id)
+            .unwrap()
+            .contents
+            .insert(container_id.clone());
+        world.items.insert(container_id.clone(), container);
 
-        let tool_id = Uuid::new_v4();
+        let tool_id = crate::idgen::new_id();
         let tool = Item {
-            id: tool_id,
+            id: tool_id.clone(),
             symbol: "t".into(),
             name: "crowbar".into(),
             description: String::new(),
@@ -1097,16 +1117,16 @@ mod tests {
             text: None,
             consumable: None,
         };
-        world.player.inventory.insert(tool_id);
-        world.items.insert(tool_id, tool);
+        world.player.inventory.insert(tool_id.clone());
+        world.items.insert(tool_id.clone(), tool);
 
-        let lamp_id = Uuid::new_v4();
+        let lamp_id = crate::idgen::new_id();
         let lamp = Item {
-            id: lamp_id,
+            id: lamp_id.clone(),
             symbol: "l".into(),
             name: "lamp".into(),
             description: String::new(),
-            location: Location::Room(room_id),
+            location: Location::Room(room_id.clone()),
             container_state: None,
             movability: Movability::Fixed {
                 reason: "lamp is glued to floor".to_string(),
@@ -1117,12 +1137,12 @@ mod tests {
             text: None,
             consumable: None,
         };
-        world.rooms.get_mut(&room_id).unwrap().contents.insert(lamp_id);
-        world.items.insert(lamp_id, lamp);
+        world.rooms.get_mut(&room_id).unwrap().contents.insert(lamp_id.clone());
+        world.items.insert(lamp_id.clone(), lamp);
 
-        let key_id = Uuid::new_v4();
+        let key_id = crate::idgen::new_id();
         let key = Item {
-            id: key_id,
+            id: key_id.clone(),
             symbol: "k".into(),
             name: "key".into(),
             description: String::new(),
@@ -1130,13 +1150,13 @@ mod tests {
             movability: Movability::Free,
             container_state: None,
             contents: HashSet::new(),
-            abilities: [ItemAbility::Unlock(Some(container_id))].into_iter().collect(),
+            abilities: [ItemAbility::Unlock(Some(container_id.clone()))].into_iter().collect(),
             interaction_requires: HashMap::new(),
             text: None,
             consumable: None,
         };
-        world.player.inventory.insert(key_id);
-        world.items.insert(key_id, key);
+        world.player.inventory.insert(key_id.clone());
+        world.items.insert(key_id.clone(), key);
         let view = View::new();
 
         (world, view, container_id, tool_id, lamp_id, key_id)
@@ -1149,10 +1169,10 @@ mod tests {
             name: "open".into(),
             conditions: vec![TriggerCondition::UseItemOnItem {
                 interaction: ItemInteractionType::Open,
-                target_id: container_id,
-                tool_id,
+                target_id: container_id.clone(),
+                tool_id: tool_id.clone(),
             }],
-            actions: vec![ScriptedAction::new(TriggerAction::UnlockItem(container_id))],
+            actions: vec![ScriptedAction::new(TriggerAction::UnlockItem(container_id.clone()))],
             only_once: false,
             fired: false,
         });
@@ -1175,10 +1195,10 @@ mod tests {
             name: "open".into(),
             conditions: vec![TriggerCondition::UseItemOnItem {
                 interaction: ItemInteractionType::Open,
-                target_id: container_id,
-                tool_id,
+                target_id: container_id.clone(),
+                tool_id: tool_id.clone(),
             }],
-            actions: vec![ScriptedAction::new(TriggerAction::UnlockItem(container_id))],
+            actions: vec![ScriptedAction::new(TriggerAction::UnlockItem(container_id.clone()))],
             only_once: false,
             fired: false,
         });
@@ -1195,10 +1215,10 @@ mod tests {
         world.triggers.push(Trigger {
             name: "light".into(),
             conditions: vec![TriggerCondition::UseItem {
-                item_id: lamp_id,
+                item_id: lamp_id.clone(),
                 ability: ItemAbility::TurnOn,
             }],
-            actions: vec![ScriptedAction::new(TriggerAction::UnlockItem(container_id))],
+            actions: vec![ScriptedAction::new(TriggerAction::UnlockItem(container_id.clone()))],
             only_once: false,
             fired: false,
         });

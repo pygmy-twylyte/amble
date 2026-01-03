@@ -40,6 +40,7 @@
 
 use std::collections::HashSet;
 
+use crate::Id;
 use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
     helpers::symbol_or_unknown,
@@ -91,7 +92,7 @@ pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     })?;
 
     if let Some(previous_room_id) = world.player.go_back() {
-        world.player_path.push(previous_room_id);
+        world.player_path.push(previous_room_id.clone());
 
         let travel_message = world.spin_core(CoreSpinnerType::Movement, "You retrace your steps...");
 
@@ -236,11 +237,11 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
         if unmet_flags.is_empty() && unmet_items.is_empty() {
             // we've met all of the requirements to move now
             // update player's location using the new history-tracking method
-            let destination_id = destination_exit.to;
+            let destination_id = destination_exit.to.clone();
             // add to player's short history (5 max) for go_back command
-            world.player.move_to_room(destination_id);
+            world.player.move_to_room(destination_id.clone());
             // add to complete player path history
-            world.player_path.push(destination_id);
+            world.player_path.push(destination_id.clone());
 
             let new_room = world
                 .rooms
@@ -289,7 +290,7 @@ fn handle_barred_exit(
     world: &AmbleWorld,
     view: &mut View,
     unmet_flags: &HashSet<&player::Flag>,
-    unmet_items: &HashSet<&uuid::Uuid>,
+    unmet_items: &HashSet<&Id>,
     destination_exit: &crate::room::Exit,
 ) -> Result<()> {
     // Show player why the exit is barred or a generic reason.
@@ -310,7 +311,7 @@ fn handle_barred_exit(
         .with_context(|| format!("accessing room {}", destination_exit.to))?;
     let unmet_item_list = unmet_items
         .iter()
-        .map(|&id| symbol_or_unknown(&world.items, *id))
+        .map(|id| symbol_or_unknown(&world.items, id.as_str()))
         .collect::<Vec<String>>()
         .join(", ");
     let unmet_flag_list = unmet_flags
@@ -328,19 +329,19 @@ fn handle_barred_exit(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Id;
     use crate::player::Flag;
     use crate::room::{Exit, Room};
     use crate::world::{AmbleWorld, Location};
     use std::collections::{HashMap, HashSet};
-    use uuid::Uuid;
 
-    fn build_test_world() -> (AmbleWorld, Uuid, Uuid, View) {
+    fn build_test_world() -> (AmbleWorld, Id, Id, View) {
         let view = View::new();
         let mut world = AmbleWorld::new_empty();
-        let start = Uuid::new_v4();
-        let dest = Uuid::new_v4();
+        let start = crate::idgen::new_id();
+        let dest = crate::idgen::new_id();
         let mut start_room = Room {
-            id: start,
+            id: start.clone(),
             symbol: "start".into(),
             name: "Start".into(),
             base_description: String::new(),
@@ -351,9 +352,9 @@ mod tests {
             contents: HashSet::new(),
             npcs: HashSet::new(),
         };
-        start_room.exits.insert("north".into(), Exit::new(dest));
+        start_room.exits.insert("north".into(), Exit::new(dest.clone()));
         let dest_room = Room {
-            id: dest,
+            id: dest.clone(),
             symbol: "dest".into(),
             name: "Dest".into(),
             base_description: String::new(),
@@ -364,9 +365,9 @@ mod tests {
             contents: HashSet::new(),
             npcs: HashSet::new(),
         };
-        world.rooms.insert(start, start_room);
-        world.rooms.insert(dest, dest_room);
-        world.player.location = Location::Room(start);
+        world.rooms.insert(start.clone(), start_room);
+        world.rooms.insert(dest.clone(), dest_room);
+        world.player.location = Location::Room(start.clone());
         (world, start, dest, view)
     }
 
@@ -385,7 +386,7 @@ mod tests {
         }
         let initial = world.player.score;
         assert!(move_to_handler(&mut world, &mut view, "north").is_ok());
-        assert!(matches!(world.player.location, Location::Room(id) if id == dest));
+        assert!(matches!(&world.player.location, Location::Room(id) if id == &dest));
         assert_eq!(world.player.score, initial + 1);
         assert!(world.rooms.get(&dest).unwrap().visited);
     }
@@ -403,7 +404,7 @@ mod tests {
             .locked = true;
         let initial = world.player.score;
         assert!(move_to_handler(&mut world, &mut view, "north").is_ok());
-        assert!(matches!(world.player.location, Location::Room(id) if id == start));
+        assert!(matches!(&world.player.location, Location::Room(id) if id == &start));
         assert_eq!(world.player.score, initial);
         assert!(!world.rooms.get(&dest).unwrap().visited);
     }
@@ -411,7 +412,7 @@ mod tests {
     #[test]
     fn move_requires_item() {
         let (mut world, start, dest, mut view) = build_test_world();
-        let item_id = Uuid::new_v4();
+        let item_id = crate::idgen::new_id();
         world
             .rooms
             .get_mut(&start)
@@ -420,18 +421,18 @@ mod tests {
             .get_mut("north")
             .unwrap()
             .required_items
-            .insert(item_id);
+            .insert(item_id.clone());
 
         let initial = world.player.score;
         assert!(move_to_handler(&mut world, &mut view, "north").is_ok());
-        assert!(matches!(world.player.location, Location::Room(id) if id == start));
+        assert!(matches!(&world.player.location, Location::Room(id) if id == &start));
         assert_eq!(world.player.score, initial);
         assert!(!world.rooms.get(&dest).unwrap().visited);
 
-        world.player.inventory.insert(item_id);
+        world.player.inventory.insert(item_id.clone());
         let initial = world.player.score;
         assert!(move_to_handler(&mut world, &mut view, "north").is_ok());
-        assert!(matches!(world.player.location, Location::Room(id) if id == dest));
+        assert!(matches!(&world.player.location, Location::Room(id) if id == &dest));
         assert_eq!(world.player.score, initial + 1);
         assert!(world.rooms.get(&dest).unwrap().visited);
     }
@@ -452,14 +453,14 @@ mod tests {
 
         let initial = world.player.score;
         assert!(move_to_handler(&mut world, &mut view, "north").is_ok());
-        assert!(matches!(world.player.location, Location::Room(id) if id == start));
+        assert!(matches!(&world.player.location, Location::Room(id) if id == &start));
         assert_eq!(world.player.score, initial);
         assert!(!world.rooms.get(&dest).unwrap().visited);
 
         world.player.flags.insert(flag);
         let initial = world.player.score;
         assert!(move_to_handler(&mut world, &mut view, "north").is_ok());
-        assert!(matches!(world.player.location, Location::Room(id) if id == dest));
+        assert!(matches!(&world.player.location, Location::Room(id) if id == &dest));
         assert_eq!(world.player.score, initial + 1);
         assert!(world.rooms.get(&dest).unwrap().visited);
     }
@@ -470,7 +471,7 @@ mod tests {
 
         assert!(go_back_handler(&mut world, &mut view).is_ok());
         // Should still be in start room since no history
-        assert!(matches!(world.player.location, Location::Room(id) if id == start));
+        assert!(matches!(&world.player.location, Location::Room(id) if id == &start));
     }
 
     #[test]
@@ -479,13 +480,13 @@ mod tests {
 
         // Move to destination first to create history
         assert!(move_to_handler(&mut world, &mut view, "north").is_ok());
-        assert!(matches!(world.player.location, Location::Room(id) if id == dest));
+        assert!(matches!(&world.player.location, Location::Room(id) if id == &dest));
         assert_eq!(world.player.location_history.len(), 1);
         assert_eq!(world.player.location_history[0], start);
 
         // Now go back
         assert!(go_back_handler(&mut world, &mut view).is_ok());
-        assert!(matches!(world.player.location, Location::Room(id) if id == start));
+        assert!(matches!(&world.player.location, Location::Room(id) if id == &start));
         assert_eq!(world.player.location_history.len(), 0);
     }
 
@@ -514,17 +515,19 @@ mod tests {
         let (mut world, start, dest, _view) = build_test_world();
 
         // Create additional rooms for testing history limit
-        let room3 = Uuid::new_v4();
-        let room4 = Uuid::new_v4();
-        let room5 = Uuid::new_v4();
-        let room6 = Uuid::new_v4();
-        let room7 = Uuid::new_v4();
+        let room3 = crate::idgen::new_id();
+        let room4 = crate::idgen::new_id();
+        let room5 = crate::idgen::new_id();
+        let room6 = crate::idgen::new_id();
+        let room7 = crate::idgen::new_id();
 
-        for &room_id in &[room3, room4, room5, room6, room7] {
+        for room_id in [&room3, &room4, &room5, &room6, &room7] {
+            let room_id = room_id.clone();
+            let short_id = room_id.as_str().get(0..8).unwrap_or(room_id.as_str());
             let room = Room {
-                id: room_id,
-                symbol: format!("room_{}", &room_id.to_string()[0..8]),
-                name: format!("Room {}", &room_id.to_string()[0..8]),
+                id: room_id.clone(),
+                symbol: format!("room_{short_id}"),
+                name: format!("Room {short_id}"),
                 base_description: String::new(),
                 overlays: vec![],
                 location: Location::Nowhere,
@@ -537,12 +540,12 @@ mod tests {
         }
 
         // Simulate moving through 6 rooms (should only keep last 5 in history)
-        world.player.move_to_room(dest);
-        world.player.move_to_room(room3);
-        world.player.move_to_room(room4);
-        world.player.move_to_room(room5);
-        world.player.move_to_room(room6);
-        world.player.move_to_room(room7);
+        world.player.move_to_room(dest.clone());
+        world.player.move_to_room(room3.clone());
+        world.player.move_to_room(room4.clone());
+        world.player.move_to_room(room5.clone());
+        world.player.move_to_room(room6.clone());
+        world.player.move_to_room(room7.clone());
 
         // History should be limited to 5 items
         assert_eq!(world.player.location_history.len(), 5);
@@ -555,9 +558,9 @@ mod tests {
         let (mut world, start, dest, mut view) = build_test_world();
 
         // Add a third room for more complex history
-        let room3 = Uuid::new_v4();
+        let room3 = crate::idgen::new_id();
         let room3_obj = Room {
-            id: room3,
+            id: room3.clone(),
             symbol: "room3".into(),
             name: "Room3".into(),
             base_description: String::new(),
@@ -573,27 +576,27 @@ mod tests {
             .get_mut(&dest)
             .unwrap()
             .exits
-            .insert("east".into(), Exit::new(room3));
-        world.rooms.insert(room3, room3_obj);
+            .insert("east".into(), Exit::new(room3.clone()));
+        world.rooms.insert(room3.clone(), room3_obj);
 
         // Move start -> dest -> room3
         assert!(move_to_handler(&mut world, &mut view, "north").is_ok());
         assert!(move_to_handler(&mut world, &mut view, "east").is_ok());
-        assert!(matches!(world.player.location, Location::Room(id) if id == room3));
-        assert_eq!(world.player.location_history, vec![start, dest]);
+        assert!(matches!(&world.player.location, Location::Room(id) if id == &room3));
+        assert_eq!(world.player.location_history, vec![start.clone(), dest.clone()]);
 
         // Go back to dest
         assert!(go_back_handler(&mut world, &mut view).is_ok());
-        assert!(matches!(world.player.location, Location::Room(id) if id == dest));
-        assert_eq!(world.player.location_history, vec![start]);
+        assert!(matches!(&world.player.location, Location::Room(id) if id == &dest));
+        assert_eq!(world.player.location_history, vec![start.clone()]);
 
         // Go back to start
         assert!(go_back_handler(&mut world, &mut view).is_ok());
-        assert!(matches!(world.player.location, Location::Room(id) if id == start));
+        assert!(matches!(&world.player.location, Location::Room(id) if id == &start));
         assert_eq!(world.player.location_history.len(), 0);
 
         // Try to go back again - should fail gracefully
         assert!(go_back_handler(&mut world, &mut view).is_ok());
-        assert!(matches!(world.player.location, Location::Room(id) if id == start));
+        assert!(matches!(&world.player.location, Location::Room(id) if id == &start));
     }
 }

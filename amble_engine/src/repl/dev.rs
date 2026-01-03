@@ -306,10 +306,10 @@ fn format_note_heading(now: OffsetDateTime) -> String {
 }
 
 fn describe_note_location(world: &AmbleWorld) -> String {
-    match world.player.location {
+    match &world.player.location {
         Location::Room(room_id) => world
             .rooms
-            .get(&room_id)
+            .get(room_id)
             .map(|room| format!("room={} \"{}\"", room.symbol(), room.name()))
             .unwrap_or_else(|| format!("room_id={room_id}")),
         _ => String::from("loc=<unknown>"),
@@ -430,7 +430,7 @@ pub fn dev_list_npcs_handler(world: &mut AmbleWorld, view: &mut View) {
         .values()
         .map(|npc| {
             let loc = match npc.location() {
-                Location::Room(uuid) => symbol_or_unknown(&world.rooms, *uuid),
+                Location::Room(uuid) => symbol_or_unknown(&world.rooms, uuid),
                 Location::Nowhere => "<nowhere>".to_string(),
                 other => format!("<{other:?}>"),
             };
@@ -553,60 +553,60 @@ fn summarize_event_condition(world: &AmbleWorld, ec: &EventCondition) -> String 
 fn summarize_trigger_condition(world: &AmbleWorld, tc: &TriggerCondition) -> String {
     match tc {
         TriggerCondition::Touch(item) => {
-            format!("touch:{}", symbol_or_unknown(&world.items, *item))
+            format!("touch:{}", symbol_or_unknown(&world.items, item))
         },
         TriggerCondition::Ingest { item_id, mode } => {
-            format!("ingest:{}:{mode}", symbol_or_unknown(&world.items, *item_id))
+            format!("ingest:{}:{mode}", symbol_or_unknown(&world.items, item_id))
         },
         TriggerCondition::HasFlag(f) => format!("hasFlag:{f}"),
         TriggerCondition::MissingFlag(f) => format!("missingFlag:{f}"),
         TriggerCondition::FlagInProgress(f) => format!("flagInProgress:{f}"),
         TriggerCondition::FlagComplete(f) => format!("flagComplete:{f}"),
-        TriggerCondition::HasItem(item) => format!("hasItem:{}", symbol_or_unknown(&world.items, *item)),
-        TriggerCondition::MissingItem(item) => format!("missingItem:{}", symbol_or_unknown(&world.items, *item)),
-        TriggerCondition::InRoom(room) => format!("inRoom:{}", symbol_or_unknown(&world.rooms, *room)),
-        TriggerCondition::Enter(room) => format!("enter:{}", symbol_or_unknown(&world.rooms, *room)),
-        TriggerCondition::Leave(room) => format!("leave:{}", symbol_or_unknown(&world.rooms, *room)),
-        TriggerCondition::HasVisited(room) => format!("visited:{}", symbol_or_unknown(&world.rooms, *room)),
-        TriggerCondition::WithNpc(npc) => format!("withNpc:{}", symbol_or_unknown(&world.npcs, *npc)),
+        TriggerCondition::HasItem(item) => format!("hasItem:{}", symbol_or_unknown(&world.items, item)),
+        TriggerCondition::MissingItem(item) => format!("missingItem:{}", symbol_or_unknown(&world.items, item)),
+        TriggerCondition::InRoom(room) => format!("inRoom:{}", symbol_or_unknown(&world.rooms, room)),
+        TriggerCondition::Enter(room) => format!("enter:{}", symbol_or_unknown(&world.rooms, room)),
+        TriggerCondition::Leave(room) => format!("leave:{}", symbol_or_unknown(&world.rooms, room)),
+        TriggerCondition::HasVisited(room) => format!("visited:{}", symbol_or_unknown(&world.rooms, room)),
+        TriggerCondition::WithNpc(npc) => format!("withNpc:{}", symbol_or_unknown(&world.npcs, npc)),
         TriggerCondition::NpcInState { npc_id, mood } => format!(
             "npcState:{}:{}",
-            symbol_or_unknown(&world.npcs, *npc_id),
+            symbol_or_unknown(&world.npcs, npc_id),
             format!("{mood:?}").to_lowercase()
         ),
         TriggerCondition::NpcHasItem { npc_id, item_id } => format!(
             "npcHasItem:{}:{}",
-            symbol_or_unknown(&world.npcs, *npc_id),
-            symbol_or_unknown(&world.items, *item_id)
+            symbol_or_unknown(&world.npcs, npc_id),
+            symbol_or_unknown(&world.items, item_id)
         ),
         TriggerCondition::GiveToNpc { item_id, npc_id } => format!(
             "giveToNpc:{}->{}",
-            symbol_or_unknown(&world.items, *item_id),
-            symbol_or_unknown(&world.npcs, *npc_id)
+            symbol_or_unknown(&world.items, item_id),
+            symbol_or_unknown(&world.npcs, npc_id)
         ),
-        TriggerCondition::LookAt(item) => format!("lookAt:{}", symbol_or_unknown(&world.items, *item)),
-        TriggerCondition::Open(item) => format!("open:{}", symbol_or_unknown(&world.items, *item)),
-        TriggerCondition::Unlock(item) => format!("unlock:{}", symbol_or_unknown(&world.items, *item)),
-        TriggerCondition::Drop(item) => format!("drop:{}", symbol_or_unknown(&world.items, *item)),
-        TriggerCondition::Take(item) => format!("take:{}", symbol_or_unknown(&world.items, *item)),
+        TriggerCondition::LookAt(item) => format!("lookAt:{}", symbol_or_unknown(&world.items, item)),
+        TriggerCondition::Open(item) => format!("open:{}", symbol_or_unknown(&world.items, item)),
+        TriggerCondition::Unlock(item) => format!("unlock:{}", symbol_or_unknown(&world.items, item)),
+        TriggerCondition::Drop(item) => format!("drop:{}", symbol_or_unknown(&world.items, item)),
+        TriggerCondition::Take(item) => format!("take:{}", symbol_or_unknown(&world.items, item)),
         TriggerCondition::TakeFromNpc { item_id, npc_id } => format!(
             "takeFromNpc:{}<-{}",
-            symbol_or_unknown(&world.items, *item_id),
-            symbol_or_unknown(&world.npcs, *npc_id)
+            symbol_or_unknown(&world.items, item_id),
+            symbol_or_unknown(&world.npcs, npc_id)
         ),
         TriggerCondition::Insert { item, container } => format!(
             "putIn:{}->{}",
-            symbol_or_unknown(&world.items, *item),
-            symbol_or_unknown(&world.items, *container)
+            symbol_or_unknown(&world.items, item),
+            symbol_or_unknown(&world.items, container)
         ),
         TriggerCondition::ContainerHasItem { container_id, item_id } => format!(
             "containerHas:{}:{}",
-            symbol_or_unknown(&world.items, *container_id),
-            symbol_or_unknown(&world.items, *item_id)
+            symbol_or_unknown(&world.items, container_id),
+            symbol_or_unknown(&world.items, item_id)
         ),
         TriggerCondition::UseItem { item_id, ability } => format!(
             "useItem:{}:{}",
-            symbol_or_unknown(&world.items, *item_id),
+            symbol_or_unknown(&world.items, item_id),
             format!("{ability:?}").to_lowercase()
         ),
         TriggerCondition::UseItemOnItem {
@@ -615,16 +615,16 @@ fn summarize_trigger_condition(world: &AmbleWorld, tc: &TriggerCondition) -> Str
             tool_id,
         } => format!(
             "useItemOn:{}->{}:{}",
-            symbol_or_unknown(&world.items, *tool_id),
-            symbol_or_unknown(&world.items, *target_id),
+            symbol_or_unknown(&world.items, tool_id),
+            symbol_or_unknown(&world.items, target_id),
             format!("{interaction:?}").to_lowercase()
         ),
         TriggerCondition::PlayerDeath => "playerDeath".to_string(),
-        TriggerCondition::NpcDeath(npc_id) => format!("npcDeath:{}", symbol_or_unknown(&world.npcs, *npc_id)),
-        TriggerCondition::TalkToNpc(npc) => format!("talkToNpc:{}", symbol_or_unknown(&world.npcs, *npc)),
+        TriggerCondition::NpcDeath(npc_id) => format!("npcDeath:{}", symbol_or_unknown(&world.npcs, npc_id)),
+        TriggerCondition::TalkToNpc(npc) => format!("talkToNpc:{}", symbol_or_unknown(&world.npcs, npc)),
         TriggerCondition::ActOnItem { target_id, action } => format!(
             "actOnItem:{}:{}",
-            symbol_or_unknown(&world.items, *target_id),
+            symbol_or_unknown(&world.items, target_id),
             format!("{action:?}").to_lowercase()
         ),
         TriggerCondition::Ambient { spinner, .. } => format!("ambient:{}", spinner.as_toml_key()),
@@ -825,16 +825,15 @@ mod tests {
         use crate::npc::Npc;
         use crate::room::Room;
         use std::collections::{HashMap, HashSet};
-        use uuid::Uuid;
 
         let mut world = AmbleWorld::new_empty();
         let mut view = View::new();
         // room
-        let room_id = Uuid::new_v4();
+        let room_id = crate::idgen::new_id();
         world.rooms.insert(
-            room_id,
+            room_id.clone(),
             Room {
-                id: room_id,
+                id: room_id.clone(),
                 symbol: "test_room".into(),
                 name: "Test Room".into(),
                 base_description: String::new(),
@@ -847,19 +846,20 @@ mod tests {
             },
         );
         // npc
+        let npc_id = crate::idgen::new_id();
         let npc = Npc {
-            id: Uuid::new_v4(),
+            id: npc_id.clone(),
             symbol: "npc_sym".into(),
             name: "Zed".into(),
             description: String::new(),
-            location: Location::Room(room_id),
+            location: Location::Room(room_id.clone()),
             inventory: HashSet::new(),
             dialogue: HashMap::new(),
             state: crate::npc::NpcState::Normal,
             movement: None,
             health: HealthState::new_at_max(10),
         };
-        world.npcs.insert(npc.id, npc);
+        world.npcs.insert(npc_id, npc);
 
         dev_list_npcs_handler(&mut world, &mut view);
         let combined = view

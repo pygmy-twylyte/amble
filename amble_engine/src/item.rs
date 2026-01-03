@@ -9,13 +9,13 @@ use crate::{Location, View, ViewItem, WorldObject, style::GameStyle, view::Conte
 use anyhow::{Context, Result};
 use colored::Colorize;
 
+use crate::Id;
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet},
     fmt::Display,
 };
-use uuid::Uuid;
 use variantly::Variantly;
 
 /// Anything in '`AmbleWorld`' that can be inspected or manipulated apart from NPCs.
@@ -32,7 +32,7 @@ use variantly::Variantly;
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Item {
     /// The UUID of this item.
-    pub id: Uuid,
+    pub id: Id,
     /// The symbol used to refer to this item in the TOML data.
     pub symbol: String,
     /// The display name of the item.
@@ -46,7 +46,7 @@ pub struct Item {
     /// Some state (open, locked, etc) for the item as a container, or `None` if it is not a container.
     pub container_state: Option<ContainerState>,
     /// Set of UUIDs of other items contained by this one.
-    pub contents: HashSet<Uuid>,
+    pub contents: HashSet<Id>,
     /// Set of capabilities [`ItemAbility`] for this item.
     pub abilities: HashSet<ItemAbility>,
     /// Relates interactions to abilities. (Ex: to perform the "burn" interaction targeting this item, the other item must have the "ignite" capability.)
@@ -58,8 +58,8 @@ pub struct Item {
 }
 
 impl WorldObject for Item {
-    fn id(&self) -> Uuid {
-        self.id
+    fn id(&self) -> Id {
+        self.id.clone()
     }
     fn symbol(&self) -> &str {
         &self.symbol
@@ -76,18 +76,18 @@ impl WorldObject for Item {
 }
 
 impl ItemHolder for Item {
-    fn add_item(&mut self, item_id: Uuid) {
+    fn add_item(&mut self, item_id: Id) {
         // ensure this is a container and disallow placing an item inside itself
         if self.container_state.is_some() && self.id.ne(&item_id) {
             self.contents.insert(item_id);
         }
     }
-    fn remove_item(&mut self, item_id: Uuid) {
+    fn remove_item(&mut self, item_id: Id) {
         if self.container_state.is_some() {
             self.contents.remove(&item_id);
         }
     }
-    fn contains_item(&self, item_id: Uuid) -> bool {
+    fn contains_item(&self, item_id: Id) -> bool {
         self.contents.contains(&item_id)
     }
 }
@@ -113,11 +113,11 @@ impl Item {
             .is_some_and(|cs| cs.is_transparent_closed() || cs.is_transparent_locked() || cs.is_transparent_open())
     }
     /// Set location to a `Room` by UUID
-    pub fn set_location_room(&mut self, room_id: Uuid) {
+    pub fn set_location_room(&mut self, room_id: Id) {
         self.location = Location::Room(room_id);
     }
     /// Set location to inside another container `Item` by UUID
-    pub fn set_location_item(&mut self, container_id: Uuid) {
+    pub fn set_location_item(&mut self, container_id: Id) {
         self.location = Location::Item(container_id);
     }
     /// Set location to player inventory
@@ -132,7 +132,7 @@ impl Item {
         self.location = Location::Inventory;
     }
     /// Set location to NPC inventory by UUID
-    pub fn set_location_npc(&mut self, npc_id: Uuid) {
+    pub fn set_location_npc(&mut self, npc_id: Id) {
         self.location = Location::Npc(npc_id);
     }
     /// Show item description (and any contents if a container and open).
@@ -219,7 +219,7 @@ impl Item {
     /// `candle.requires_capability_for(ItemInteractionType::Burn)`
     /// might return `Some(ItemAbility::Ignite)`.
     pub fn requires_capability_for(&self, inter: ItemInteractionType) -> Option<ItemAbility> {
-        self.interaction_requires.get(&inter).copied()
+        self.interaction_requires.get(&inter).cloned()
     }
 
     /// Returns the reason the item can't be accessed (as a container), if any
@@ -281,13 +281,13 @@ impl Item {
 /// # Errors
 /// * Returns error if the item UUID is not found in world.items
 /// * Context will include the item UUID that failed lookup
-pub fn consume(world: &mut AmbleWorld, item_id: &Uuid, ability: ItemAbility) -> Result<Option<usize>> {
+pub fn consume(world: &mut AmbleWorld, item_id: &Id, ability: ItemAbility) -> Result<Option<usize>> {
     let item = world
         .items
         .get_mut(item_id)
         .with_context(|| format!("failed lookup trying to consume() item '{item_id}'"))?;
 
-    let item_id = item.id;
+    let item_id = item.id.clone();
     let item_sym = item.symbol.clone();
 
     // if consumable, decrement and set to # of remaining uses
@@ -297,7 +297,7 @@ pub fn consume(world: &mut AmbleWorld, item_id: &Uuid, ability: ItemAbility) -> 
         if opts.consume_on.contains(&ability) && opts.uses_left > 0 {
             opts.uses_left -= 1;
         }
-        (opts.uses_left, opts.when_consumed)
+        (opts.uses_left, opts.when_consumed.clone())
     } else {
         return Ok(None);
     };
@@ -346,15 +346,15 @@ impl Display for IngestMode {
 /// Methods common to things that can hold items.
 pub trait ItemHolder {
     /// Insert an item into the holder's contents.
-    fn add_item(&mut self, item_id: Uuid);
+    fn add_item(&mut self, item_id: Id);
     /// Remove an item from the holder's contents.
-    fn remove_item(&mut self, item_id: Uuid);
+    fn remove_item(&mut self, item_id: Id);
     /// Return `true` when the holder already contains the given item.
-    fn contains_item(&self, item_id: Uuid) -> bool;
+    fn contains_item(&self, item_id: Id) -> bool;
 }
 
 /// Things an item can do.
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub enum ItemAbility {
     Attach,
@@ -376,7 +376,7 @@ pub enum ItemAbility {
     Smash,
     TurnOn,
     TurnOff,
-    Unlock(Option<Uuid>),
+    Unlock(Option<Id>),
     Use,
 }
 impl Display for ItemAbility {
@@ -483,21 +483,21 @@ pub struct ConsumableOpts {
 }
 
 /// Types of things that can happen when an item has been consumed.
-#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ConsumeType {
     Despawn,
-    ReplaceInventory { replacement: Uuid },   // put replacement in inventory
-    ReplaceCurrentRoom { replacement: Uuid }, // put replacement in current room
+    ReplaceInventory { replacement: Id },   // put replacement in inventory
+    ReplaceCurrentRoom { replacement: Id }, // put replacement in current room
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Id;
     use crate::world::{AmbleWorld, Location};
     use std::collections::{HashMap, HashSet};
-    use uuid::Uuid;
 
-    fn create_test_item(id: Uuid) -> Item {
+    fn create_test_item(id: Id) -> Item {
         Item {
             id,
             symbol: "test_item".into(),
@@ -517,22 +517,22 @@ mod tests {
     fn create_test_world() -> AmbleWorld {
         let mut world = AmbleWorld::new_empty();
 
-        let item_id = Uuid::new_v4();
-        let item = create_test_item(item_id);
-        world.items.insert(item_id, item);
+        let item_id = crate::idgen::new_id();
+        let item = create_test_item(item_id.clone());
+        world.items.insert(item_id.clone(), item);
 
         world
     }
 
     #[test]
     fn item_is_consumed_returns_false_for_non_consumable() {
-        let item = create_test_item(Uuid::new_v4());
+        let item = create_test_item(crate::idgen::new_id());
         assert!(!item.is_consumed());
     }
 
     #[test]
     fn item_is_consumed_returns_false_for_unconsumed_consumable() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.consumable = Some(ConsumableOpts {
             uses_left: 3,
             consume_on: HashSet::new(),
@@ -543,7 +543,7 @@ mod tests {
 
     #[test]
     fn item_is_consumed_returns_true_for_consumed_consumable() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.consumable = Some(ConsumableOpts {
             uses_left: 0,
             consume_on: HashSet::new(),
@@ -554,48 +554,48 @@ mod tests {
 
     #[test]
     fn item_is_accessible_returns_false_for_non_container() {
-        let item = create_test_item(Uuid::new_v4());
+        let item = create_test_item(crate::idgen::new_id());
         assert!(!item.is_accessible());
     }
 
     #[test]
     fn item_is_accessible_returns_true_for_open_container() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.container_state = Some(ContainerState::Open);
         assert!(item.is_accessible());
     }
 
     #[test]
     fn item_is_accessible_returns_false_for_closed_container() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.container_state = Some(ContainerState::Closed);
         assert!(!item.is_accessible());
     }
 
     #[test]
     fn item_is_accessible_returns_false_for_locked_container() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.container_state = Some(ContainerState::Locked);
         assert!(!item.is_accessible());
     }
 
     #[test]
     fn item_is_accessible_returns_false_for_transparent_closed_container() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.container_state = Some(ContainerState::TransparentClosed);
         assert!(!item.is_accessible());
     }
 
     #[test]
     fn item_is_accessible_returns_false_for_transparent_locked_container() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.container_state = Some(ContainerState::TransparentLocked);
         assert!(!item.is_accessible());
     }
 
     #[test]
     fn item_is_transparent_returns_true_for_transparent_containers() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
 
         item.container_state = Some(ContainerState::TransparentClosed);
         assert!(item.is_transparent());
@@ -618,23 +618,23 @@ mod tests {
 
     #[test]
     fn set_location_room_updates_location() {
-        let mut item = create_test_item(Uuid::new_v4());
-        let room_id = Uuid::new_v4();
-        item.set_location_room(room_id);
+        let mut item = create_test_item(crate::idgen::new_id());
+        let room_id = crate::idgen::new_id();
+        item.set_location_room(room_id.clone());
         assert_eq!(item.location, Location::Room(room_id));
     }
 
     #[test]
     fn set_location_item_updates_location() {
-        let mut item = create_test_item(Uuid::new_v4());
-        let container_id = Uuid::new_v4();
-        item.set_location_item(container_id);
+        let mut item = create_test_item(crate::idgen::new_id());
+        let container_id = crate::idgen::new_id();
+        item.set_location_item(container_id.clone());
         assert_eq!(item.location, Location::Item(container_id));
     }
 
     #[test]
     fn set_location_inventory_updates_location_and_unrestricts() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.movability = Movability::Restricted {
             reason: "You haven't earned it yet.".to_string(),
         };
@@ -645,7 +645,7 @@ mod tests {
 
     #[test]
     fn set_location_inventory_preserves_fixed_movability() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.movability = Movability::Fixed {
             reason: "Bolted down.".to_string(),
         };
@@ -656,21 +656,21 @@ mod tests {
 
     #[test]
     fn set_location_npc_updates_location() {
-        let mut item = create_test_item(Uuid::new_v4());
-        let npc_id = Uuid::new_v4();
-        item.set_location_npc(npc_id);
+        let mut item = create_test_item(crate::idgen::new_id());
+        let npc_id = crate::idgen::new_id();
+        item.set_location_npc(npc_id.clone());
         assert_eq!(item.location, Location::Npc(npc_id));
     }
 
     #[test]
     fn requires_capability_for_returns_none_for_no_requirement() {
-        let item = create_test_item(Uuid::new_v4());
+        let item = create_test_item(crate::idgen::new_id());
         assert_eq!(item.requires_capability_for(ItemInteractionType::Break), None);
     }
 
     #[test]
     fn requires_capability_for_returns_ability_when_required() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.interaction_requires
             .insert(ItemInteractionType::Break, ItemAbility::Smash);
         assert_eq!(
@@ -681,14 +681,14 @@ mod tests {
 
     #[test]
     fn access_denied_reason_returns_none_for_open_container() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.container_state = Some(ContainerState::Open);
         assert_eq!(item.access_denied_reason(), None);
     }
 
     #[test]
     fn access_denied_reason_returns_reason_for_closed_container() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.container_state = Some(ContainerState::Closed);
         let reason = item.access_denied_reason().unwrap();
         assert!(reason.contains("closed"));
@@ -696,7 +696,7 @@ mod tests {
 
     #[test]
     fn access_denied_reason_returns_reason_for_locked_container() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.container_state = Some(ContainerState::Locked);
         let reason = item.access_denied_reason().unwrap();
         assert!(reason.contains("locked"));
@@ -704,7 +704,7 @@ mod tests {
 
     #[test]
     fn access_denied_reason_returns_reason_for_transparent_closed_container() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.container_state = Some(ContainerState::TransparentClosed);
         let reason = item.access_denied_reason().unwrap();
         assert!(reason.contains("closed"));
@@ -713,7 +713,7 @@ mod tests {
 
     #[test]
     fn access_denied_reason_returns_reason_for_transparent_locked_container() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.container_state = Some(ContainerState::TransparentLocked);
         let reason = item.access_denied_reason().unwrap();
         assert!(reason.contains("locked"));
@@ -722,20 +722,20 @@ mod tests {
 
     #[test]
     fn access_denied_reason_returns_reason_for_non_container() {
-        let item = create_test_item(Uuid::new_v4());
+        let item = create_test_item(crate::idgen::new_id());
         let reason = item.access_denied_reason().unwrap();
         assert!(reason.contains("isn't a container"));
     }
 
     #[test]
     fn take_denied_reason_returns_none_for_movable() {
-        let item = create_test_item(Uuid::new_v4());
+        let item = create_test_item(crate::idgen::new_id());
         assert_eq!(item.take_denied_reason(), None);
     }
 
     #[test]
     fn take_denied_reason_returns_reason_for_fixed() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.movability = Movability::Fixed {
             reason: "The item isn't portable.".to_string(),
         };
@@ -745,7 +745,7 @@ mod tests {
 
     #[test]
     fn take_denied_reason_returns_reason_for_restricted() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.movability = Movability::Restricted {
             reason: "You can't take that yet.".to_string(),
         };
@@ -755,58 +755,58 @@ mod tests {
 
     #[test]
     fn item_holder_add_item_works() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.container_state = Some(ContainerState::Open);
-        let item_to_add = Uuid::new_v4();
+        let item_to_add = crate::idgen::new_id();
 
-        item.add_item(item_to_add);
+        item.add_item(item_to_add.clone());
         assert!(item.contents.contains(&item_to_add));
     }
 
     #[test]
     fn item_holder_add_item_ignores_self_reference() {
-        let item_id = Uuid::new_v4();
-        let mut item = create_test_item(item_id);
+        let item_id = crate::idgen::new_id();
+        let mut item = create_test_item(item_id.clone());
         item.container_state = Some(ContainerState::Open);
 
-        item.add_item(item_id);
+        item.add_item(item_id.clone());
         assert!(!item.contents.contains(&item_id));
     }
 
     #[test]
     fn item_holder_add_item_ignores_non_container() {
-        let mut item = create_test_item(Uuid::new_v4());
-        let item_to_add = Uuid::new_v4();
+        let mut item = create_test_item(crate::idgen::new_id());
+        let item_to_add = crate::idgen::new_id();
 
-        item.add_item(item_to_add);
+        item.add_item(item_to_add.clone());
         assert!(!item.contents.contains(&item_to_add));
     }
 
     #[test]
     fn item_holder_remove_item_works() {
-        let mut item = create_test_item(Uuid::new_v4());
+        let mut item = create_test_item(crate::idgen::new_id());
         item.container_state = Some(ContainerState::Open);
-        let item_to_remove = Uuid::new_v4();
-        item.contents.insert(item_to_remove);
+        let item_to_remove = crate::idgen::new_id();
+        item.contents.insert(item_to_remove.clone());
 
-        item.remove_item(item_to_remove);
+        item.remove_item(item_to_remove.clone());
         assert!(!item.contents.contains(&item_to_remove));
     }
 
     #[test]
     fn item_holder_contains_item_works() {
-        let mut item = create_test_item(Uuid::new_v4());
-        let contained_item = Uuid::new_v4();
-        item.contents.insert(contained_item);
+        let mut item = create_test_item(crate::idgen::new_id());
+        let contained_item = crate::idgen::new_id();
+        item.contents.insert(contained_item.clone());
 
         assert!(item.contains_item(contained_item));
-        assert!(!item.contains_item(Uuid::new_v4()));
+        assert!(!item.contains_item(crate::idgen::new_id()));
     }
 
     #[test]
     fn consume_returns_none_for_non_consumable() {
         let mut world = create_test_world();
-        let item_id = *world.items.keys().next().unwrap();
+        let item_id = world.items.keys().next().unwrap().clone();
 
         let result = consume(&mut world, &item_id, ItemAbility::Use).unwrap();
         assert_eq!(result, None);
@@ -815,7 +815,7 @@ mod tests {
     #[test]
     fn consume_decrements_uses_for_correct_ability() {
         let mut world = create_test_world();
-        let item_id = *world.items.keys().next().unwrap();
+        let item_id = world.items.keys().next().unwrap().clone();
 
         let mut consume_on = HashSet::new();
         consume_on.insert(ItemAbility::Ignite);
@@ -834,7 +834,7 @@ mod tests {
     #[test]
     fn consume_does_not_decrement_for_wrong_ability() {
         let mut world = create_test_world();
-        let item_id = *world.items.keys().next().unwrap();
+        let item_id = world.items.keys().next().unwrap().clone();
 
         let mut consume_on = HashSet::new();
         consume_on.insert(ItemAbility::Ignite);
@@ -880,7 +880,7 @@ mod tests {
 
     #[test]
     fn world_object_trait_works() {
-        let item = create_test_item(Uuid::new_v4());
+        let item = create_test_item(crate::idgen::new_id());
         assert_eq!(item.id(), item.id);
         assert_eq!(item.symbol(), "test_item");
         assert_eq!(item.name(), "Test Item");

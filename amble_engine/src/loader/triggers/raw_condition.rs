@@ -114,7 +114,7 @@ impl RawTriggerCondition {
 
 fn cook_touch_item(symbols: &SymbolTable, item_sym: &str) -> Result<TriggerCondition> {
     if let Some(item_id) = symbols.items.get(item_sym) {
-        Ok(TriggerCondition::Touch(*item_id))
+        Ok(TriggerCondition::Touch(item_id.clone()))
     } else {
         bail!("converting raw condition Touch: item symbol '{item_sym}' not found")
     }
@@ -123,7 +123,7 @@ fn cook_touch_item(symbols: &SymbolTable, item_sym: &str) -> Result<TriggerCondi
 fn cook_ingest(symbols: &SymbolTable, item_sym: &str, mode: IngestMode) -> Result<TriggerCondition> {
     if let Some(item_id) = symbols.items.get(item_sym) {
         Ok(TriggerCondition::Ingest {
-            item_id: *item_id,
+            item_id: item_id.clone(),
             mode,
         })
     } else {
@@ -134,7 +134,7 @@ fn cook_ingest(symbols: &SymbolTable, item_sym: &str, mode: IngestMode) -> Resul
 fn cook_act_on_item(symbols: &SymbolTable, item_id: &str, action: ItemInteractionType) -> Result<TriggerCondition> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
         Ok(TriggerCondition::ActOnItem {
-            target_id: *item_uuid,
+            target_id: item_uuid.clone(),
             action,
         })
     } else {
@@ -144,7 +144,7 @@ fn cook_act_on_item(symbols: &SymbolTable, item_id: &str, action: ItemInteractio
 
 fn cook_talk_to_npc(symbols: &SymbolTable, npc_symbol: &str) -> Result<TriggerCondition> {
     if let Some(npc_uuid) = symbols.characters.get(npc_symbol) {
-        Ok(TriggerCondition::TalkToNpc(*npc_uuid))
+        Ok(TriggerCondition::TalkToNpc(npc_uuid.clone()))
     } else {
         bail!("converting raw condition TalkToNpc: npc symbol '{npc_symbol}' not found")
     }
@@ -158,7 +158,7 @@ fn cook_ambient(symbols: &SymbolTable, room_symbols: Option<&Vec<String>>, spinn
                 .rooms
                 .get(sym)
                 .with_context(|| format!("converting raw condition Ambient: room symbol '{sym}' not found"))?;
-            room_ids.insert(*uuid);
+            room_ids.insert(uuid.clone());
         }
     }
     Ok(TriggerCondition::Ambient {
@@ -178,8 +178,8 @@ fn cook_use_item_on_item(
     {
         Ok(TriggerCondition::UseItemOnItem {
             interaction,
-            target_id: *target_uuid,
-            tool_id: *tool_uuid,
+            target_id: target_uuid.clone(),
+            tool_id: tool_uuid.clone(),
         })
     } else {
         bail!("raw condition UseItemOnItem(_, {target_id}, {tool_id}): token not in symbols")
@@ -189,7 +189,7 @@ fn cook_use_item_on_item(
 fn cook_npc_in_state(symbols: &SymbolTable, npc_id: &String, mood: NpcState) -> Result<TriggerCondition> {
     if let Some(npc_uuid) = symbols.characters.get(npc_id) {
         Ok(TriggerCondition::NpcInState {
-            npc_id: *npc_uuid,
+            npc_id: npc_uuid.clone(),
             mood,
         })
     } else {
@@ -199,7 +199,7 @@ fn cook_npc_in_state(symbols: &SymbolTable, npc_id: &String, mood: NpcState) -> 
 
 fn cook_npc_death(symbols: &SymbolTable, npc_id: &str) -> Result<TriggerCondition> {
     if let Some(npc_uuid) = symbols.characters.get(npc_id) {
-        Ok(TriggerCondition::NpcDeath(*npc_uuid))
+        Ok(TriggerCondition::NpcDeath(npc_uuid.clone()))
     } else {
         bail!("raw condition NpcDeath({npc_id}): token not in symbols");
     }
@@ -210,8 +210,8 @@ fn cook_npc_has_item(symbols: &SymbolTable, npc_id: &String, item_id: &String) -
         && let Some(item_uuid) = symbols.items.get(item_id)
     {
         Ok(TriggerCondition::NpcHasItem {
-            npc_id: *npc_uuid,
-            item_id: *item_uuid,
+            npc_id: npc_uuid.clone(),
+            item_id: item_uuid.clone(),
         })
     } else {
         bail!("raw condition NpcHasItem({npc_id},{item_id}): token not in symbols");
@@ -220,7 +220,7 @@ fn cook_npc_has_item(symbols: &SymbolTable, npc_id: &String, item_id: &String) -
 
 fn cook_in_room(symbols: &SymbolTable, room_id: &String) -> Result<TriggerCondition> {
     if let Some(room_uuid) = symbols.rooms.get(room_id) {
-        Ok(TriggerCondition::InRoom(*room_uuid))
+        Ok(TriggerCondition::InRoom(room_uuid.clone()))
     } else {
         bail!("raw condition InRoom({room_id}): token not in symbols");
     }
@@ -228,7 +228,7 @@ fn cook_in_room(symbols: &SymbolTable, room_id: &String) -> Result<TriggerCondit
 
 fn cook_has_visited(symbols: &SymbolTable, room_id: &String) -> Result<TriggerCondition> {
     if let Some(room_uuid) = symbols.rooms.get(room_id) {
-        Ok(TriggerCondition::HasVisited(*room_uuid))
+        Ok(TriggerCondition::HasVisited(room_uuid.clone()))
     } else {
         bail!("raw condition HasVisited({room_id}): token not in symbols");
     }
@@ -236,7 +236,7 @@ fn cook_has_visited(symbols: &SymbolTable, room_id: &String) -> Result<TriggerCo
 
 fn cook_with_npc(symbols: &SymbolTable, npc_id: &String) -> Result<TriggerCondition> {
     if let Some(npc_uuid) = symbols.characters.get(npc_id) {
-        Ok(TriggerCondition::WithNpc(*npc_uuid))
+        Ok(TriggerCondition::WithNpc(npc_uuid.clone()))
     } else {
         bail!("raw condition WithNpc({npc_id}): token not in symbols");
     }
@@ -244,7 +244,7 @@ fn cook_with_npc(symbols: &SymbolTable, npc_id: &String) -> Result<TriggerCondit
 
 fn cook_missing_item(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
-        Ok(TriggerCondition::MissingItem(*item_uuid))
+        Ok(TriggerCondition::MissingItem(item_uuid.clone()))
     } else {
         bail!("raw condition MissingItem({item_id}): token not in symbols");
     }
@@ -252,7 +252,7 @@ fn cook_missing_item(symbols: &SymbolTable, item_id: &String) -> Result<TriggerC
 
 fn cook_has_item(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
-        Ok(TriggerCondition::HasItem(*item_uuid))
+        Ok(TriggerCondition::HasItem(item_uuid.clone()))
     } else {
         bail!("raw condition HasItem({item_id}): token not in symbols");
     }
@@ -260,7 +260,7 @@ fn cook_has_item(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondi
 
 fn cook_open(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
-        Ok(TriggerCondition::Open(*item_uuid))
+        Ok(TriggerCondition::Open(item_uuid.clone()))
     } else {
         bail!("raw condition Open({item_id}): token not in symbols");
     }
@@ -268,7 +268,7 @@ fn cook_open(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition
 
 fn cook_unlock(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
-        Ok(TriggerCondition::Unlock(*item_uuid))
+        Ok(TriggerCondition::Unlock(item_uuid.clone()))
     } else {
         bail!("raw condition Unlock({item_id}): token not in symbols");
     }
@@ -279,8 +279,8 @@ fn cook_insert(symbols: &SymbolTable, item_id: &String, container_id: &String) -
         && let Some(container_uuid) = symbols.items.get(container_id)
     {
         Ok(TriggerCondition::Insert {
-            item: *item_uuid,
-            container: *container_uuid,
+            item: item_uuid.clone(),
+            container: container_uuid.clone(),
         })
     } else {
         bail!("raw condition Insert({item_id}, {container_id}): token not in symbols");
@@ -289,7 +289,7 @@ fn cook_insert(symbols: &SymbolTable, item_id: &String, container_id: &String) -
 
 fn cook_drop(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
-        Ok(TriggerCondition::Drop(*item_uuid))
+        Ok(TriggerCondition::Drop(item_uuid.clone()))
     } else {
         bail!("raw condition Drop({item_id}): token not in symbols");
     }
@@ -297,7 +297,7 @@ fn cook_drop(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition
 
 fn cook_leave(symbols: &SymbolTable, room_id: &String) -> Result<TriggerCondition> {
     if let Some(room_uuid) = symbols.rooms.get(room_id) {
-        Ok(TriggerCondition::Leave(*room_uuid))
+        Ok(TriggerCondition::Leave(room_uuid.clone()))
     } else {
         bail!("raw condition Leave({room_id}): token not in symbols");
     }
@@ -305,7 +305,7 @@ fn cook_leave(symbols: &SymbolTable, room_id: &String) -> Result<TriggerConditio
 
 fn cook_look_at(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
-        Ok(TriggerCondition::LookAt(*item_uuid))
+        Ok(TriggerCondition::LookAt(item_uuid.clone()))
     } else {
         bail!("raw condition LookAt({item_id}): token not in symbols");
     }
@@ -316,8 +316,8 @@ fn cook_give_to_npc(symbols: &SymbolTable, item_id: &String, npc_id: &String) ->
         && let Some(npc_uuid) = symbols.characters.get(npc_id)
     {
         Ok(TriggerCondition::GiveToNpc {
-            item_id: *item_uuid,
-            npc_id: *npc_uuid,
+            item_id: item_uuid.clone(),
+            npc_id: npc_uuid.clone(),
         })
     } else {
         bail!("raw condition GiveToNpc({item_id},{npc_id}): token not in symbols");
@@ -326,7 +326,7 @@ fn cook_give_to_npc(symbols: &SymbolTable, item_id: &String, npc_id: &String) ->
 
 fn cook_enter(symbols: &SymbolTable, room_id: &String) -> Result<TriggerCondition> {
     if let Some(room_uuid) = symbols.rooms.get(room_id) {
-        Ok(TriggerCondition::Enter(*room_uuid))
+        Ok(TriggerCondition::Enter(room_uuid.clone()))
     } else {
         bail!("raw condition Enter({room_id}): token not in symbols");
     }
@@ -334,7 +334,7 @@ fn cook_enter(symbols: &SymbolTable, room_id: &String) -> Result<TriggerConditio
 
 fn cook_take(symbols: &SymbolTable, item_id: &String) -> Result<TriggerCondition> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
-        Ok(TriggerCondition::Take(*item_uuid))
+        Ok(TriggerCondition::Take(item_uuid.clone()))
     } else {
         bail!("raw condition Take({item_id}): token not in symbols");
     }
@@ -345,8 +345,8 @@ fn cook_take_from_npc(symbols: &SymbolTable, item_id: &String, npc_id: &String) 
         && let Some(npc_uuid) = symbols.characters.get(npc_id)
     {
         Ok(TriggerCondition::TakeFromNpc {
-            item_id: *item_uuid,
-            npc_id: *npc_uuid,
+            item_id: item_uuid.clone(),
+            npc_id: npc_uuid.clone(),
         })
     } else {
         bail!("raw condition TakeFromNpc({item_id}, {npc_id}): token not in symbols")
@@ -356,8 +356,8 @@ fn cook_take_from_npc(symbols: &SymbolTable, item_id: &String, npc_id: &String) 
 fn cook_use_item(symbols: &SymbolTable, item_id: &String, ability: &ItemAbility) -> Result<TriggerCondition> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
         Ok(TriggerCondition::UseItem {
-            item_id: *item_uuid,
-            ability: *ability,
+            item_id: item_uuid.clone(),
+            ability: ability.clone(),
         })
     } else {
         bail!("raw condition UseItem({item_id}, {ability}): token not in symbols");
@@ -369,8 +369,8 @@ fn cook_container_has_item(symbols: &SymbolTable, container_id: &String, item_id
         && let Some(container_uuid) = symbols.items.get(container_id)
     {
         Ok(TriggerCondition::ContainerHasItem {
-            container_id: *container_uuid,
-            item_id: *item_uuid,
+            container_id: container_uuid.clone(),
+            item_id: item_uuid.clone(),
         })
     } else {
         bail!("raw condition ContainerHasItem({container_id},{item_id}): item token not in symbols");

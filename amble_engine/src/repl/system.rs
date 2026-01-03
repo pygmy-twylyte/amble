@@ -169,7 +169,7 @@ pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> 
     let path: Vec<_> = world
         .player_path
         .iter()
-        .map(|uuid| symbol_or_unknown(&world.rooms, *uuid))
+        .map(|uuid| symbol_or_unknown(&world.rooms, uuid))
         .collect();
     let path_str = path.join(" > ");
     info!("$$ PATH ({} moves): {path_str}", path.len().saturating_sub(1));

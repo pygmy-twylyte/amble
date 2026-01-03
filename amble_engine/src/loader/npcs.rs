@@ -9,10 +9,10 @@ use std::{
     path::Path,
 };
 
+use crate::Id;
 use anyhow::{Context, Result, anyhow, bail};
 use log::info;
 use serde::Deserialize;
-use uuid::Uuid;
 
 use crate::{
     Location, WorldObject,
@@ -84,9 +84,10 @@ impl RawNpc {
         };
 
         Ok(Npc {
-            id: *symbols
+            id: symbols
                 .characters
                 .get(&self.id)
+                .cloned()
                 .ok_or_else(|| anyhow!("UUID for ({}) not found in character symbols", self.id))?,
             symbol: self.id.clone(),
             name: self.name.clone(),
@@ -114,7 +115,7 @@ impl RawNpcMovement {
                         .rooms
                         .get(room_symbol)
                         .ok_or_else(|| anyhow!("Room symbol '{}' not found in symbols", room_symbol))?;
-                    room_uuids.push(*room_uuid);
+                    room_uuids.push(room_uuid.clone());
                 }
                 MovementType::Route {
                     rooms: room_uuids,
@@ -129,7 +130,7 @@ impl RawNpcMovement {
                         .rooms
                         .get(room_symbol)
                         .ok_or_else(|| anyhow!("Room symbol '{}' not found in symbols", room_symbol))?;
-                    room_uuids.insert(*room_uuid);
+                    room_uuids.insert(room_uuid.clone());
                 }
                 MovementType::RandomSet { rooms: room_uuids }
             },
@@ -202,10 +203,9 @@ pub fn build_npcs(raw_npcs: &[RawNpc], symbols: &mut SymbolTable) -> Result<Vec<
 
     // add npcs from npcs.toml to character symbol table
     for rnpc in raw_npcs {
-        symbols.characters.insert(
-            rnpc.id.clone(),
-            idgen::uuid_from_token(&NAMESPACE_CHARACTER, &rnpc.id),
-        );
+        symbols
+            .characters
+            .insert(rnpc.id.clone(), idgen::uuid_from_token(&NAMESPACE_CHARACTER, &rnpc.id));
     }
 
     // make sure each pre-registered NPC exists in loaded data and UUID is correct
@@ -230,11 +230,11 @@ pub fn build_npcs(raw_npcs: &[RawNpc], symbols: &mut SymbolTable) -> Result<Vec<
 /// - on invalid placement location
 pub fn place_npcs(world: &mut AmbleWorld) -> Result<()> {
     // create job list of placements (NPC id , room id) and count unspawned for logging
-    let mut placements: Vec<(Uuid, Uuid)> = Vec::new();
+    let mut placements: Vec<(Id, Id)> = Vec::new();
     let mut unspawned = 0;
     for npc in world.npcs.values() {
-        match npc.location {
-            Location::Room(uuid) => placements.push((npc.id, uuid)),
+        match &npc.location {
+            Location::Room(room_id) => placements.push((npc.id.clone(), room_id.clone())),
             Location::Nowhere => unspawned += 1,
             _ => {
                 return Err(anyhow!(
@@ -252,7 +252,7 @@ pub fn place_npcs(world: &mut AmbleWorld) -> Result<()> {
             .rooms
             .get_mut(room_id)
             .with_context(|| format!("looking up {room_id} to place {npc_id}"))?;
-        room.npcs.insert(*npc_id);
+        room.npcs.insert(npc_id.clone());
     }
     info!("{} NPCs placed into their starting rooms", placements.len());
     info!("{unspawned} NPCs remain unspawned (Location::Nowhere)");

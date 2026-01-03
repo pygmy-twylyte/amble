@@ -9,11 +9,11 @@ use std::{
     path::Path,
 };
 
+use crate::Id;
 use anyhow::{Context, Result, anyhow, bail};
 use log::info;
 use serde::Deserialize;
 use toml;
-use uuid::Uuid;
 
 use crate::{
     ItemHolder, Location,
@@ -78,7 +78,7 @@ impl RawItemAbility {
                     .items
                     .get(sym)
                     .with_context(|| format!("raw item ability Unlock({sym}): target not found in symbol table"))?;
-                ItemAbility::Unlock(Some(*target))
+                ItemAbility::Unlock(Some(target.clone()))
             },
             Self::Unlock(None) => ItemAbility::Unlock(None),
             Self::Use => ItemAbility::Use,
@@ -115,7 +115,7 @@ impl RawConsumeType {
                     .get(replacement)
                     .with_context(|| format!("looking up item symbol '{replacement}'"))?;
                 Ok(ConsumeType::ReplaceInventory {
-                    replacement: *replacement_uuid,
+                    replacement: replacement_uuid.clone(),
                 })
             },
             Self::ReplaceCurrentRoom { replacement } => {
@@ -124,7 +124,7 @@ impl RawConsumeType {
                     .get(replacement)
                     .with_context(|| format!("looking up item symbol '{replacement}'"))?;
                 Ok(ConsumeType::ReplaceCurrentRoom {
-                    replacement: *replacement_uuid,
+                    replacement: replacement_uuid.clone(),
                 })
             },
         }
@@ -150,7 +150,7 @@ pub struct RawItem {
     pub container_state: Option<ContainerState>,
     pub location: HashMap<String, String>,
     #[serde(default)]
-    pub contents: HashSet<Uuid>,
+    pub contents: HashSet<Id>,
     #[serde(default)]
     pub abilities: HashSet<RawItemAbility>,
     #[serde(default)]
@@ -167,7 +167,7 @@ impl RawItem {
     pub fn to_item(&self, symbols: &SymbolTable) -> Result<Item> {
         let loc = resolve_location(&self.location, symbols)?;
         let item_uuid = match symbols.items.get(&self.id) {
-            Some(id) => *id,
+            Some(id) => id.clone(),
             None => {
                 return Err(anyhow!("item {} ({}) not found in symbol table", self.id, self.name));
             },
@@ -203,7 +203,7 @@ impl RawItem {
             location: loc,
             movability: self.movability.clone(),
             container_state: self.container_state,
-            contents: HashSet::<Uuid>::default(),
+            contents: HashSet::<Id>::default(),
             abilities,
             interaction_requires: self.interaction_requires.clone(),
             text: self.text.clone(),
@@ -286,17 +286,17 @@ pub fn build_items(raw_items: &[RawItem], symbols: &mut SymbolTable) -> Result<V
 pub fn place_items(world: &mut AmbleWorld) -> Result<()> {
     // build lists of placements for items
     info!("building item location lists for placement stage");
-    let mut room_placements: Vec<(Uuid, Uuid)> = Vec::new();
-    let mut chest_placements: Vec<(Uuid, Uuid)> = Vec::new();
-    let mut npc_placements: Vec<(Uuid, Uuid)> = Vec::new();
-    let mut inventory: Vec<Uuid> = Vec::new();
+    let mut room_placements: Vec<(Id, Id)> = Vec::new();
+    let mut chest_placements: Vec<(Id, Id)> = Vec::new();
+    let mut npc_placements: Vec<(Id, Id)> = Vec::new();
+    let mut inventory: Vec<Id> = Vec::new();
     let mut unspawned = 0;
     for item in world.items.values() {
-        match item.location {
-            Location::Room(room_id) => room_placements.push((room_id, item.id)),
-            Location::Item(chest_id) => chest_placements.push((chest_id, item.id)),
-            Location::Npc(npc_id) => npc_placements.push((npc_id, item.id)),
-            Location::Inventory => inventory.push(item.id),
+        match &item.location {
+            Location::Room(room_id) => room_placements.push((room_id.clone(), item.id.clone())),
+            Location::Item(chest_id) => chest_placements.push((chest_id.clone(), item.id.clone())),
+            Location::Npc(npc_id) => npc_placements.push((npc_id.clone(), item.id.clone())),
+            Location::Inventory => inventory.push(item.id.clone()),
             Location::Nowhere => unspawned += 1,
         }
     }
@@ -348,9 +348,9 @@ mod tests {
         let mut world = AmbleWorld::new_empty();
 
         // Create a room
-        let room_id = Uuid::new_v4();
+        let room_id = crate::idgen::new_id();
         let room = crate::Room {
-            id: room_id,
+            id: room_id.clone(),
             symbol: "test_room".into(),
             name: "Test Room".into(),
             base_description: "A test room".into(),
@@ -361,16 +361,16 @@ mod tests {
             contents: HashSet::new(),
             npcs: HashSet::new(),
         };
-        world.rooms.insert(room_id, room);
+        world.rooms.insert(room_id.clone(), room);
 
         // Create a transparent locked container
-        let container_id = Uuid::new_v4();
+        let container_id = crate::idgen::new_id();
         let container = Item {
-            id: container_id,
+            id: container_id.clone(),
             symbol: "test_container".into(),
             name: "Test Container".into(),
             description: "A test container".into(),
-            location: Location::Room(room_id),
+            location: Location::Room(room_id.clone()),
             movability: Movability::Free,
             container_state: Some(ContainerState::TransparentLocked),
             contents: HashSet::new(),
@@ -381,13 +381,13 @@ mod tests {
         };
 
         // Create an item to place in the container
-        let item_id = Uuid::new_v4();
+        let item_id = crate::idgen::new_id();
         let item = Item {
-            id: item_id,
+            id: item_id.clone(),
             symbol: "test_item".into(),
             name: "Test Item".into(),
             description: "A test item".into(),
-            location: Location::Item(container_id),
+            location: Location::Item(container_id.clone()),
             container_state: None,
             movability: Movability::Free,
             contents: HashSet::new(),
@@ -398,8 +398,8 @@ mod tests {
         };
 
         // Add items to world
-        world.items.insert(container_id, container);
-        world.items.insert(item_id, item);
+        world.items.insert(container_id.clone(), container);
+        world.items.insert(item_id.clone(), item);
 
         // Run place_items
         place_items(&mut world).unwrap();

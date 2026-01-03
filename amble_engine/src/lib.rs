@@ -26,6 +26,8 @@
 
 pub const AMBLE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+pub type Id = String;
+
 // DEV_MODE is enabled or disabled through this const throughout
 #[cfg(feature = "dev-mode")]
 pub const DEV_MODE: bool = true;

@@ -83,14 +83,14 @@ impl RawGoalCondition {
             Self::MissingFlag { flag } => Ok(GoalCondition::MissingFlag { flag: flag.clone() }),
             Self::HasItem { item_sym } => {
                 if let Some(uuid) = symbols.items.get(item_sym) {
-                    Ok(GoalCondition::HasItem { item_id: *uuid })
+                    Ok(GoalCondition::HasItem { item_id: uuid.clone() })
                 } else {
                     bail!("converting RawGoalCondition::HasItem({item_sym}): symbol not found");
                 }
             },
             Self::ReachedRoom { room_sym } => {
                 if let Some(uuid) = symbols.rooms.get(room_sym) {
-                    Ok(GoalCondition::ReachedRoom { room_id: *uuid })
+                    Ok(GoalCondition::ReachedRoom { room_id: uuid.clone() })
                 } else {
                     bail!("converting RawGoalCondition::ReachedRoom({room_sym}): symbol not found");
                 }

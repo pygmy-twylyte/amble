@@ -17,7 +17,7 @@ use crate::{
 };
 
 pub(super) fn points_awarded(entries: &[&ViewEntry]) {
-    let point_msgs = entries.iter().copied().filter(|i| i.view_item.is_points_awarded());
+    let point_msgs = entries.iter().cloned().filter(|i| i.view_item.is_points_awarded());
     for msg in point_msgs {
         if let ViewItem::PointsAwarded { amount, reason } = &msg.view_item {
             if amount.is_negative() {

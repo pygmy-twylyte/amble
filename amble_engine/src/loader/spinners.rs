@@ -123,7 +123,7 @@ impl SpinnerFile {
             .iter()
             .enumerate()
             .map(|(i, val)| {
-                let width = spin_data.widths.get(i).copied().unwrap_or(1);
+                let width = spin_data.widths.get(i).cloned().unwrap_or(1);
                 Wedge::new_weighted(val.clone(), width)
             })
             .collect()

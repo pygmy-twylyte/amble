@@ -53,10 +53,10 @@ use crate::{
     trigger::{TriggerCondition, check_triggers},
 };
 
+use crate::Id;
 use anyhow::{Result, anyhow, bail};
 use colored::Colorize;
 use log::{error, info, warn};
-use uuid::Uuid;
 
 /// Removes an item from the player's inventory and places it in the current room.
 ///
@@ -111,7 +111,7 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
     world.turn_count += 1;
     if matches!(item.movability, Movability::Free) {
         if let Some(dropped) = world.items.get_mut(&item_id) {
-            dropped.set_location_room(room_id);
+            dropped.set_location_room(room_id.clone());
             if let Some(room) = world.rooms.get_mut(&room_id) {
                 room.add_item(dropped.id());
                 info!(
@@ -123,12 +123,12 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                     room.symbol()
                 );
             }
-            world.player.remove_item(item_id);
+            world.player.remove_item(item_id.clone());
             view.push(ViewItem::ActionSuccess(format!(
                 "You dropped the {}.",
                 dropped.name().item_style()
             )));
-            check_triggers(world, view, &[TriggerCondition::Drop(item_id)])?;
+            check_triggers(world, view, &[TriggerCondition::Drop(item_id.clone())])?;
         }
     } else {
         // item is immovable
@@ -230,7 +230,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
 
             if matches!(item.movability, Movability::Free) {
                 let loot_id = item.id();
-                let orig_loc = item.location;
+                let orig_loc = item.location.clone();
                 // update item location and copy to player inventory
                 if let Some(moved_item) = world.items.get_mut(&loot_id) {
                     moved_item.set_location_inventory();
@@ -250,23 +250,23 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                 match orig_loc {
                     Location::Item(container_id) => {
                         if let Some(container) = world.items.get_mut(&container_id) {
-                            container.remove_item(loot_id);
+                            container.remove_item(loot_id.clone());
                         } else {
                             bail!(
                                 "container ({}) not found during Take({})",
                                 symbol_or_unknown(&world.items, container_id),
-                                symbol_or_unknown(&world.items, loot_id)
+                                symbol_or_unknown(&world.items, &loot_id)
                             );
                         }
                     },
                     Location::Room(room_id) => {
                         if let Some(room) = world.rooms.get_mut(&room_id) {
-                            room.remove_item(loot_id);
+                            room.remove_item(loot_id.clone());
                         } else {
                             bail!(
                                 "room ({}) not found during Take({})",
                                 symbol_or_unknown(&world.rooms, room_id),
-                                symbol_or_unknown(&world.items, loot_id)
+                                symbol_or_unknown(&world.items, &loot_id)
                             );
                         }
                     },
@@ -274,7 +274,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                         warn!("'take' matched an item at {orig_loc:?}: shouldn't be in scope");
                     },
                 }
-                check_triggers(world, view, &[TriggerCondition::Take(loot_id)])?;
+                check_triggers(world, view, &[TriggerCondition::Take(loot_id.clone())])?;
             } else {
                 // item is fixed or restricted
                 let reason = match &item.movability {
@@ -454,7 +454,7 @@ pub(crate) fn validate_and_transfer_from_npc(
     world: &mut AmbleWorld,
     view: &mut View,
     item_pattern: &str,
-    npc_id: Uuid,
+    npc_id: Id,
 ) -> Result<(), anyhow::Error> {
     let npc = world
         .npcs
@@ -462,7 +462,7 @@ pub(crate) fn validate_and_transfer_from_npc(
         .ok_or(anyhow!("container {} lookup failed", npc_id))?;
     let npc_name = npc.name().to_owned();
 
-    let (loot_id, loot_name) = match find_item_match(world, item_pattern, SearchScope::NpcInventory(npc_id)) {
+    let (loot_id, loot_name) = match find_item_match(world, item_pattern, SearchScope::NpcInventory(npc_id.clone())) {
         Ok(loot_id) => {
             let loot = world.items.get(&loot_id).expect("loot_id already validated");
             if let Some(reason) = loot.take_denied_reason() {
@@ -486,9 +486,9 @@ pub(crate) fn validate_and_transfer_from_npc(
         world,
         view,
         VesselType::Npc,
-        npc_id,
+        npc_id.clone(),
         npc_name.as_str(),
-        loot_id,
+        loot_id.clone(),
         &loot_name,
     );
     // both generic `take` and `take_from_npc` events fire
@@ -496,10 +496,10 @@ pub(crate) fn validate_and_transfer_from_npc(
         world,
         view,
         &[
-            TriggerCondition::Take(loot_id),
+            TriggerCondition::Take(loot_id.clone()),
             TriggerCondition::TakeFromNpc {
-                item_id: loot_id,
-                npc_id,
+                item_id: loot_id.clone(),
+                npc_id: npc_id.clone(),
             },
         ],
     )?;
@@ -540,16 +540,19 @@ pub(crate) fn validate_and_transfer_from_item(
     world: &mut AmbleWorld,
     view: &mut View,
     item_pattern: &str,
-    vessel_id: Uuid,
+    vessel_id: Id,
 ) -> Result<(), anyhow::Error> {
     // look up vessel name for tranfer call
-    let vessel_name = name_from_id(&world.items, vessel_id)
+    let vessel_name = name_from_id(&world.items, &vessel_id)
         .expect("vessel validated by take_from (caller)")
         .to_owned();
     // match the item_pattern (input loot name) to an available item in the room
     let room_id = world.player_room_ref()?.id();
     let (loot_id, loot_name) = match find_item_match(world, item_pattern, SearchScope::TouchableItems(room_id)) {
-        Ok(id) => (id, world.items.get(&id).expect("id must be present").name().to_owned()),
+        Ok(id) => {
+            let name = world.items.get(&id).expect("id must be present").name().to_owned();
+            (id, name)
+        },
         Err(SearchError::NoMatchingName(input)) => {
             view.push(ViewItem::ActionFailure(format!(
                 "You don't see any \"{}\" in the {} to take.",
@@ -576,10 +579,10 @@ pub(crate) fn validate_and_transfer_from_item(
         VesselType::Item,
         vessel_id,
         vessel_name.as_str(),
-        loot_id,
+        loot_id.clone(),
         loot_name.as_str(),
     );
-    check_triggers(world, view, &[TriggerCondition::Take(loot_id)])?;
+    check_triggers(world, view, &[TriggerCondition::Take(loot_id.clone())])?;
     Ok(())
 }
 
@@ -617,34 +620,34 @@ pub fn transfer_to_player(
     world: &mut AmbleWorld,
     view: &mut View,
     vessel_type: VesselType,
-    vessel_id: Uuid,
+    vessel_id: Id,
     vessel_name: &str,
-    loot_id: Uuid,
+    loot_id: Id,
     loot_name: &str,
 ) {
     // Change item location to inventory
-    if let Some(moving_item) = world.get_item_mut(loot_id) {
+    if let Some(moving_item) = world.get_item_mut(loot_id.clone()) {
         moving_item.set_location_inventory();
     }
 
     // Remove item id from vessel
     match vessel_type {
         VesselType::Item => {
-            if let Some(vessel) = world.get_item_mut(vessel_id) {
-                vessel.remove_item(loot_id);
+            if let Some(vessel) = world.get_item_mut(vessel_id.clone()) {
+                vessel.remove_item(loot_id.clone());
             }
         },
         VesselType::Npc => {
             if let Some(vessel) = world.npcs.get_mut(&vessel_id) {
                 // set a movement pause after taking something from NPC
                 vessel.pause_movement(world.turn_count, 4);
-                vessel.remove_item(loot_id);
+                vessel.remove_item(loot_id.clone());
             }
         },
     }
 
     // Add item to player inventory
-    world.player.add_item(loot_id);
+    world.player.add_item(loot_id.clone());
 
     // Report and log success
     let take_verb = world.spin_core(CoreSpinnerType::TakeVerb, "take");
@@ -656,11 +659,11 @@ pub fn transfer_to_player(
         "{} took {} ({}) from {} ({})",
         world.player.name(),
         loot_name,
-        symbol_or_unknown(&world.items, loot_id),
+        symbol_or_unknown(&world.items, &loot_id),
         vessel_name,
         match vessel_type {
-            VesselType::Item => symbol_or_unknown(&world.items, vessel_id),
-            VesselType::Npc => symbol_or_unknown(&world.npcs, vessel_id),
+            VesselType::Item => symbol_or_unknown(&world.items, &vessel_id),
+            VesselType::Npc => symbol_or_unknown(&world.npcs, &vessel_id),
         }
     );
 }
@@ -720,12 +723,10 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
                 world.turn_count += 1;
                 return Ok(());
             }
-            (
-                item_id,
-                name_from_id(&world.items, item_id)
-                    .expect("item_id must be valid")
-                    .to_owned(),
-            )
+            let name = name_from_id(&world.items, &item_id)
+                .expect("item_id must be valid")
+                .to_owned();
+            (item_id, name)
         },
         Err(SearchError::NoMatchingName(input)) => {
             entity_not_found(world, view, input.as_str());
@@ -746,12 +747,10 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
                 return Ok(());
             }
 
-            (
-                vessel_id,
-                name_from_id(&world.items, vessel_id)
-                    .expect("vessel_id must be valid")
-                    .to_owned(),
-            )
+            let name = name_from_id(&world.items, &vessel_id)
+                .expect("vessel_id must be valid")
+                .to_owned();
+            (vessel_id, name)
         },
         Err(SearchError::NoMatchingName(input)) => {
             entity_not_found(world, view, input.as_str());
@@ -762,10 +761,10 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
 
     // update item location and add to container
     if let Some(moved_item) = world.items.get_mut(&item_id) {
-        moved_item.set_location_item(vessel_id);
+        moved_item.set_location_item(vessel_id.clone());
     }
     if let Some(vessel) = world.items.get_mut(&vessel_id) {
-        vessel.add_item(item_id);
+        vessel.add_item(item_id.clone());
     }
     // remove item from inventory
     world.player.inventory.remove(&item_id);
@@ -779,9 +778,9 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
         "{} put {} ({}) into {} ({})",
         world.player.name(),
         item_name,
-        symbol_or_unknown(&world.items, item_id),
+        symbol_or_unknown(&world.items, &item_id),
         vessel_name,
-        symbol_or_unknown(&world.items, vessel_id)
+        symbol_or_unknown(&world.items, &vessel_id)
     );
 
     check_triggers(
@@ -789,10 +788,10 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
         view,
         &[
             TriggerCondition::Insert {
-                item: item_id,
-                container: vessel_id,
+                item: item_id.clone(),
+                container: vessel_id.clone(),
             },
-            TriggerCondition::Drop(item_id),
+            TriggerCondition::Drop(item_id.clone()),
         ],
     )?;
     world.turn_count += 1;
@@ -835,6 +834,7 @@ pub fn unexpected_entity(entity: WorldEntity, view: &mut View, denial_msg: &str)
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Id;
     use crate::{
         ItemHolder,
         health::HealthState,
@@ -843,20 +843,19 @@ mod tests {
         room::Room,
     };
     use std::collections::{HashMap, HashSet};
-    use uuid::Uuid;
 
     struct TestWorld {
         world: AmbleWorld,
         view: View,
-        room_id: Uuid,
-        inv_item_id: Uuid,
-        room_item_id: Uuid,
-        chest_id: Uuid,
-        gem_id: Uuid,
-        npc_id: Uuid,
-        npc_item_id: Uuid,
-        restr_chest_item_id: Uuid,
-        restr_npc_item_id: Uuid,
+        room_id: Id,
+        inv_item_id: Id,
+        room_item_id: Id,
+        chest_id: Id,
+        gem_id: Id,
+        npc_id: Id,
+        npc_item_id: Id,
+        restr_chest_item_id: Id,
+        restr_npc_item_id: Id,
     }
 
     #[allow(clippy::too_many_lines)]
@@ -864,9 +863,9 @@ mod tests {
         let mut world = AmbleWorld::new_empty();
 
         // set up room
-        let room_id = Uuid::new_v4();
+        let room_id = crate::idgen::new_id();
         let room = Room {
-            id: room_id,
+            id: room_id.clone(),
             symbol: "room".into(),
             name: "Test Room".into(),
             base_description: String::new(),
@@ -877,13 +876,13 @@ mod tests {
             contents: HashSet::new(),
             npcs: HashSet::new(),
         };
-        world.rooms.insert(room_id, room);
-        world.player.location = Location::Room(room_id);
+        world.rooms.insert(room_id.clone(), room);
+        world.player.location = Location::Room(room_id.clone());
 
         // item in inventory
-        let inv_item_id = Uuid::new_v4();
+        let inv_item_id = crate::idgen::new_id();
         let inv_item = Item {
-            id: inv_item_id,
+            id: inv_item_id.clone(),
             symbol: "apple".into(),
             name: "Apple".into(),
             description: String::new(),
@@ -896,17 +895,17 @@ mod tests {
             text: None,
             consumable: None,
         };
-        world.items.insert(inv_item_id, inv_item);
-        world.player.inventory.insert(inv_item_id);
+        world.items.insert(inv_item_id.clone(), inv_item);
+        world.player.inventory.insert(inv_item_id.clone());
 
         // item in room
-        let room_item_id = Uuid::new_v4();
+        let room_item_id = crate::idgen::new_id();
         let room_item = Item {
-            id: room_item_id,
+            id: room_item_id.clone(),
             symbol: "rock".into(),
             name: "Rock".into(),
             description: String::new(),
-            location: Location::Room(room_id),
+            location: Location::Room(room_id.clone()),
             movability: Movability::Free,
             container_state: None,
             contents: HashSet::new(),
@@ -915,17 +914,17 @@ mod tests {
             text: None,
             consumable: None,
         };
-        world.items.insert(room_item_id, room_item);
-        world.rooms.get_mut(&room_id).unwrap().add_item(room_item_id);
+        world.items.insert(room_item_id.clone(), room_item);
+        world.rooms.get_mut(&room_id).unwrap().add_item(room_item_id.clone());
 
         // container item with loot
-        let chest_id = Uuid::new_v4();
+        let chest_id = crate::idgen::new_id();
         let mut chest = Item {
-            id: chest_id,
+            id: chest_id.clone(),
             symbol: "chest".into(),
             name: "Chest".into(),
             description: String::new(),
-            location: Location::Room(room_id),
+            location: Location::Room(room_id.clone()),
             movability: Movability::Free,
             container_state: Some(ContainerState::Open),
             contents: HashSet::new(),
@@ -934,13 +933,13 @@ mod tests {
             text: None,
             consumable: None,
         };
-        let gem_id = Uuid::new_v4();
+        let gem_id = crate::idgen::new_id();
         let gem = Item {
-            id: gem_id,
+            id: gem_id.clone(),
             symbol: "gem".into(),
             name: "Gem".into(),
             description: String::new(),
-            location: Location::Item(chest_id),
+            location: Location::Item(chest_id.clone()),
             movability: Movability::Free,
             container_state: None,
             contents: HashSet::new(),
@@ -949,13 +948,13 @@ mod tests {
             text: None,
             consumable: None,
         };
-        let restricted_chest_item_id = Uuid::new_v4();
+        let restricted_chest_item_id = crate::idgen::new_id();
         let restricted_chest_item = Item {
-            id: restricted_chest_item_id,
+            id: restricted_chest_item_id.clone(),
             symbol: "rci".into(),
             name: "Restricted Chest Item".into(),
             description: String::new(),
-            location: Location::Item(chest_id),
+            location: Location::Item(chest_id.clone()),
             movability: Movability::Restricted {
                 reason: "restricted because... reasons".to_string(),
             },
@@ -966,34 +965,36 @@ mod tests {
             text: None,
             consumable: None,
         };
-        chest.add_item(gem_id);
-        chest.add_item(restricted_chest_item_id);
-        world.items.insert(gem_id, gem);
-        world.items.insert(chest_id, chest);
-        world.items.insert(restricted_chest_item_id, restricted_chest_item);
-        world.rooms.get_mut(&room_id).unwrap().add_item(chest_id);
+        chest.add_item(gem_id.clone());
+        chest.add_item(restricted_chest_item_id.clone());
+        world.items.insert(gem_id.clone(), gem);
+        world.items.insert(chest_id.clone(), chest);
+        world
+            .items
+            .insert(restricted_chest_item_id.clone(), restricted_chest_item);
+        world.rooms.get_mut(&room_id).unwrap().add_item(chest_id.clone());
 
         // npc with item
-        let npc_id = Uuid::new_v4();
+        let npc_id = crate::idgen::new_id();
         let mut npc = Npc {
-            id: npc_id,
+            id: npc_id.clone(),
             symbol: "bob".into(),
             name: "Bob".into(),
             description: String::new(),
-            location: Location::Room(room_id),
+            location: Location::Room(room_id.clone()),
             inventory: HashSet::new(),
             dialogue: HashMap::new(),
             state: NpcState::Normal,
             movement: None,
             health: HealthState::new_at_max(10),
         };
-        let npc_item_id = Uuid::new_v4();
+        let npc_item_id = crate::idgen::new_id();
         let npc_item = Item {
-            id: npc_item_id,
+            id: npc_item_id.clone(),
             symbol: "coin".into(),
             name: "Coin".into(),
             description: String::new(),
-            location: Location::Npc(npc_id),
+            location: Location::Npc(npc_id.clone()),
             movability: Movability::Free,
             container_state: None,
             contents: HashSet::new(),
@@ -1002,13 +1003,13 @@ mod tests {
             text: None,
             consumable: None,
         };
-        let restricted_npc_item_id = Uuid::new_v4();
+        let restricted_npc_item_id = crate::idgen::new_id();
         let restricted_npc_item = Item {
-            id: restricted_npc_item_id,
+            id: restricted_npc_item_id.clone(),
             symbol: "key".into(),
             name: "Restricted NPC Item".into(),
             description: String::new(),
-            location: Location::Npc(npc_id),
+            location: Location::Npc(npc_id.clone()),
             container_state: None,
             movability: Movability::Restricted {
                 reason: "reasons".to_string(),
@@ -1019,13 +1020,13 @@ mod tests {
             text: None,
             consumable: None,
         };
-        npc.add_item(npc_item_id);
-        npc.add_item(restricted_npc_item_id);
-        world.items.insert(npc_item_id, npc_item);
-        world.items.insert(restricted_npc_item_id, restricted_npc_item);
+        npc.add_item(npc_item_id.clone());
+        npc.add_item(restricted_npc_item_id.clone());
+        world.items.insert(npc_item_id.clone(), npc_item);
+        world.items.insert(restricted_npc_item_id.clone(), restricted_npc_item);
 
-        world.npcs.insert(npc_id, npc);
-        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
+        world.npcs.insert(npc_id.clone(), npc);
+        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id.clone());
         let view = View::new();
 
         TestWorld {
@@ -1118,9 +1119,9 @@ mod tests {
     #[test]
     fn validate_and_transfer_from_item_moves_loot() {
         let mut tw = build_world();
-        let chest_id = tw.chest_id;
-        let gem_id = tw.gem_id;
-        validate_and_transfer_from_item(&mut tw.world, &mut tw.view, "gem", chest_id).unwrap();
+        let chest_id = tw.chest_id.clone();
+        let gem_id = tw.gem_id.clone();
+        validate_and_transfer_from_item(&mut tw.world, &mut tw.view, "gem", chest_id.clone()).unwrap();
         assert!(tw.world.player.inventory.contains(&gem_id));
         assert!(!tw.world.items.get(&chest_id).unwrap().contents.contains(&gem_id));
         assert_eq!(tw.world.items.get(&gem_id).unwrap().location(), &Location::Inventory);
@@ -1129,9 +1130,9 @@ mod tests {
     #[test]
     fn validate_and_transfer_from_npc_moves_loot() {
         let mut tw = build_world();
-        let npc_id = tw.npc_id;
-        let coin_id = tw.npc_item_id;
-        validate_and_transfer_from_npc(&mut tw.world, &mut tw.view, "coin", npc_id).unwrap();
+        let npc_id = tw.npc_id.clone();
+        let coin_id = tw.npc_item_id.clone();
+        validate_and_transfer_from_npc(&mut tw.world, &mut tw.view, "coin", npc_id.clone()).unwrap();
         assert!(tw.world.player.inventory.contains(&coin_id));
         assert!(!tw.world.npcs.get(&npc_id).unwrap().inventory.contains(&coin_id));
         assert_eq!(tw.world.items.get(&coin_id).unwrap().location(), &Location::Inventory);
@@ -1140,75 +1141,67 @@ mod tests {
     #[test]
     fn transfer_to_player_updates_world_from_item() {
         let mut tw = build_world();
+        let chest_id = tw.chest_id.clone();
+        let gem_id = tw.gem_id.clone();
         transfer_to_player(
             &mut tw.world,
             &mut tw.view,
             VesselType::Item,
-            tw.chest_id,
+            chest_id.clone(),
             "Chest",
-            tw.gem_id,
+            gem_id.clone(),
             "Gem",
         );
-        assert!(tw.world.player.inventory.contains(&tw.gem_id));
-        assert_eq!(tw.world.items.get(&tw.gem_id).unwrap().location(), &Location::Inventory);
-        assert!(!tw.world.items.get(&tw.chest_id).unwrap().contents.contains(&tw.gem_id));
+        assert!(tw.world.player.inventory.contains(&gem_id));
+        assert_eq!(tw.world.items.get(&gem_id).unwrap().location(), &Location::Inventory);
+        assert!(!tw.world.items.get(&chest_id).unwrap().contents.contains(&gem_id));
     }
 
     #[test]
     fn transfer_to_player_updates_world_from_npc() {
         let mut tw = build_world();
+        let npc_id = tw.npc_id.clone();
+        let npc_item_id = tw.npc_item_id.clone();
         transfer_to_player(
             &mut tw.world,
             &mut tw.view,
             VesselType::Npc,
-            tw.npc_id,
+            npc_id.clone(),
             "Bob",
-            tw.npc_item_id,
+            npc_item_id.clone(),
             "Coin",
         );
-        assert!(tw.world.player.inventory.contains(&tw.npc_item_id));
+        assert!(tw.world.player.inventory.contains(&npc_item_id));
         assert_eq!(
-            tw.world.items.get(&tw.npc_item_id).unwrap().location(),
+            tw.world.items.get(&npc_item_id).unwrap().location(),
             &Location::Inventory
         );
-        assert!(
-            !tw.world
-                .npcs
-                .get(&tw.npc_id)
-                .unwrap()
-                .inventory
-                .contains(&tw.npc_item_id)
-        );
+        assert!(!tw.world.npcs.get(&npc_id).unwrap().inventory.contains(&npc_item_id));
     }
 
     #[test]
     fn put_in_handler_moves_item_into_container() {
         let mut tw = build_world();
+        let inv_item_id = tw.inv_item_id.clone();
+        let chest_id = tw.chest_id.clone();
         put_in_handler(&mut tw.world, &mut tw.view, "apple", "chest").unwrap();
-        assert!(!tw.world.player.inventory.contains(&tw.inv_item_id));
-        assert!(
-            tw.world
-                .items
-                .get(&tw.chest_id)
-                .unwrap()
-                .contents
-                .contains(&tw.inv_item_id)
-        );
+        assert!(!tw.world.player.inventory.contains(&inv_item_id));
+        assert!(tw.world.items.get(&chest_id).unwrap().contents.contains(&inv_item_id));
         assert_eq!(
-            tw.world.items.get(&tw.inv_item_id).unwrap().location(),
-            &Location::Item(tw.chest_id)
+            tw.world.items.get(&inv_item_id).unwrap().location(),
+            &Location::Item(chest_id)
         );
     }
 
     #[test]
     fn unexpected_entity_does_not_change_world() {
         let mut tw = build_world();
-        let before = *tw.world.npcs.get(&tw.npc_id).unwrap().location();
+        let before = tw.world.npcs.get(&tw.npc_id).unwrap().location().clone();
         {
             let npc_ref = tw.world.npcs.get(&tw.npc_id).unwrap();
             unexpected_entity(WorldEntity::Npc(npc_ref), &mut tw.view, "nope");
         }
-        let after = *tw.world.npcs.get(&tw.npc_id).unwrap().location();
+        let after = tw.world.npcs.get(&tw.npc_id).unwrap().location().clone();
         assert_eq!(before, after);
     }
 }

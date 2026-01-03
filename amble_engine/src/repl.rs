@@ -37,7 +37,7 @@ use anyhow::Result;
 use colored::Colorize;
 use std::collections::HashMap;
 use std::hash::BuildHasher;
-use uuid::Uuid;
+use crate::Id;
 use variantly::Variantly;
 
 use input::{InputEvent, InputManager};
@@ -277,7 +277,7 @@ fn run_health_effects(world: &mut AmbleWorld, view: &mut View) -> (bool, Vec<Tri
         });
     }
 
-    let npc_ids: Vec<Uuid> = world.npcs.keys().copied().collect();
+    let npc_ids: Vec<Id> = world.npcs.keys().cloned().collect();
     for npc_id in npc_ids {
         let was_alive = world
             .npcs
@@ -360,7 +360,7 @@ pub fn check_scheduled_events(world: &mut AmbleWorld, view: &mut View) -> Result
 ///
 pub fn check_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let current_turn = world.turn_count;
-    let npc_ids: Vec<Uuid> = world.npcs.keys().copied().collect();
+    let npc_ids: Vec<Id> = world.npcs.keys().cloned().collect();
 
     for npc_id in npc_ids {
         if let Some(npc) = world.npcs.get_mut(&npc_id)
@@ -522,7 +522,7 @@ impl WorldEntity<'_> {
         }
     }
     /// Get the UUID of the entity
-    pub fn id(&self) -> Uuid {
+    pub fn id(&self) -> Id {
         match self {
             WorldEntity::Item(item) => item.id(),
             WorldEntity::Npc(npc) => npc.id(),
@@ -540,9 +540,9 @@ impl WorldEntity<'_> {
 /// Searches a list of `WorldEntities`' uuids to find a `WorldObject` with a matching name.
 /// Returns Some(&'a `WorldEntity`) or None.
 pub fn find_world_object<'a, S: BuildHasher>(
-    nearby_ids: impl IntoIterator<Item = &'a Uuid>,
-    world_items: &'a HashMap<Uuid, Item, S>,
-    world_npcs: &'a HashMap<Uuid, Npc, S>,
+    nearby_ids: impl IntoIterator<Item = &'a Id>,
+    world_items: &'a HashMap<Id, Item, S>,
+    world_npcs: &'a HashMap<Id, Npc, S>,
     search_term: &str,
 ) -> Option<WorldEntity<'a>> {
     let lc_term = search_term.to_lowercase();

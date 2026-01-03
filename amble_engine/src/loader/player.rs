@@ -9,10 +9,10 @@ use std::{
     path::Path,
 };
 
+use crate::Id;
 use anyhow::{Context, Result, anyhow};
 use log::info;
 use serde::Deserialize;
-use uuid::Uuid;
 
 use crate::{
     health::HealthState,
@@ -55,7 +55,7 @@ impl RawPlayer {
     pub fn to_player(&self, symbols: &SymbolTable) -> Result<Player> {
         let location = resolve_location(&self.location, symbols)?;
         let id = match symbols.characters.get(&self.id) {
-            Some(id) => *id,
+            Some(id) => id.clone(),
             None => {
                 return Err(anyhow!("UUID for player ({}) not found in symbol table", self.id));
             },
@@ -67,7 +67,7 @@ impl RawPlayer {
             description: self.description.clone(),
             location,
             location_history: Vec::new(),
-            inventory: HashSet::<Uuid>::default(),
+            inventory: HashSet::<Id>::default(),
             flags: HashSet::<Flag>::default(),
             score: self.score,
             health: HealthState::new_at_max(self.max_hp),

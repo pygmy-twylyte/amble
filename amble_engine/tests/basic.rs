@@ -23,8 +23,8 @@ fn test_goal_condition_flag() {
 
 #[test]
 fn test_idgen_uuid_deterministic() {
-    let u1 = idgen::uuid_from_token(&idgen::NAMESPACE_ROOM, "test");
-    let u2 = idgen::uuid_from_token(&idgen::NAMESPACE_ROOM, "test");
+    let u1 = idgen::uuid_from_token(idgen::NAMESPACE_ROOM, "test");
+    let u2 = idgen::uuid_from_token(idgen::NAMESPACE_ROOM, "test");
     assert_eq!(u1, u2);
 }
 
@@ -32,7 +32,7 @@ fn test_idgen_uuid_deterministic() {
 fn test_item_accessible() {
     use ae::item::{ContainerState, Item};
     let item = Item {
-        id: uuid::Uuid::new_v4(),
+        id: ae::idgen::new_id(),
         symbol: "i".into(),
         name: "Box".into(),
         description: String::new(),
@@ -82,9 +82,9 @@ fn test_player_flag_sequence() {
 #[test]
 fn test_find_world_object() {
     use std::collections::HashMap;
-    let id = uuid::Uuid::new_v4();
+    let id = ae::idgen::new_id();
     let item = ae::item::Item {
-        id,
+        id: id.clone(),
         symbol: "i".into(),
         name: "Foo".into(),
         description: String::new(),
@@ -98,7 +98,7 @@ fn test_find_world_object() {
         consumable: None,
     };
     let mut items = HashMap::new();
-    items.insert(id, item);
+    items.insert(id.clone(), item);
     let npcs = HashMap::new();
     let res = ae::repl::find_world_object(std::iter::once(&id), &items, &npcs, "foo");
     assert!(res.is_some());
@@ -114,7 +114,8 @@ fn test_room_overlay_applies_flag() {
         conditions: vec![OverlayCondition::FlagSet { flag: "x".into() }],
         text: String::new(),
     };
-    assert!(overlay.applies(uuid::Uuid::new_v4(), &world));
+    let room_id = ae::idgen::new_id();
+    assert!(overlay.applies(&room_id, &world));
 }
 
 #[test]
@@ -170,7 +171,7 @@ fn test_loader_goals_to_goal() {
 fn test_interaction_requirement_met() {
     use ae::item::{Item, ItemAbility, ItemInteractionType};
     let tool = Item {
-        id: uuid::Uuid::new_v4(),
+        id: ae::idgen::new_id(),
         symbol: "t".into(),
         name: "tool".into(),
         description: String::new(),
@@ -184,7 +185,7 @@ fn test_interaction_requirement_met() {
         consumable: None,
     };
     let target = Item {
-        id: uuid::Uuid::new_v4(),
+        id: ae::idgen::new_id(),
         symbol: "x".into(),
         name: "target".into(),
         description: String::new(),
@@ -292,10 +293,10 @@ fn test_move_to_handler_simple() {
     use ae::room::{Exit, Room};
     use std::collections::{HashMap, HashSet};
     let mut world = world::AmbleWorld::new_empty();
-    let r1 = uuid::Uuid::new_v4();
-    let r2 = uuid::Uuid::new_v4();
+    let r1 = ae::idgen::new_id();
+    let r2 = ae::idgen::new_id();
     let mut room1 = Room {
-        id: r1,
+        id: r1.clone(),
         symbol: "r1".into(),
         name: "R1".into(),
         base_description: String::new(),
@@ -309,7 +310,7 @@ fn test_move_to_handler_simple() {
     room1.exits.insert(
         "north".into(),
         Exit {
-            to: r2,
+            to: r2.clone(),
             hidden: false,
             locked: false,
             required_flags: HashSet::new(),
@@ -318,7 +319,7 @@ fn test_move_to_handler_simple() {
         },
     );
     let room2 = Room {
-        id: r2,
+        id: r2.clone(),
         symbol: "r2".into(),
         name: "R2".into(),
         base_description: String::new(),
@@ -329,9 +330,9 @@ fn test_move_to_handler_simple() {
         contents: HashSet::new(),
         npcs: HashSet::new(),
     };
-    world.rooms.insert(r1, room1);
-    world.rooms.insert(r2, room2);
-    world.player.location = world::Location::Room(r1);
+    world.rooms.insert(r1.clone(), room1);
+    world.rooms.insert(r2.clone(), room2);
+    world.player.location = world::Location::Room(r1.clone());
     let mut view = View::new();
     assert!(ae::repl::movement::move_to_handler(&mut world, &mut view, "north").is_ok());
     assert!(matches!(world.player.location, world::Location::Room(id) if id == r2));
@@ -371,10 +372,10 @@ fn test_check_npc_movement() {
     use std::collections::{HashMap, HashSet};
     let mut world = world::AmbleWorld::new_empty();
     let mut view = View::new();
-    let r1 = uuid::Uuid::new_v4();
-    let r2 = uuid::Uuid::new_v4();
+    let r1 = ae::idgen::new_id();
+    let r2 = ae::idgen::new_id();
     let room1 = Room {
-        id: r1,
+        id: r1.clone(),
         symbol: "r1".into(),
         name: "R1".into(),
         base_description: String::new(),
@@ -386,7 +387,7 @@ fn test_check_npc_movement() {
         npcs: HashSet::new(),
     };
     let room2 = Room {
-        id: r2,
+        id: r2.clone(),
         symbol: "r2".into(),
         name: "R2".into(),
         base_description: String::new(),
@@ -397,22 +398,22 @@ fn test_check_npc_movement() {
         contents: HashSet::new(),
         npcs: HashSet::new(),
     };
-    world.rooms.insert(r1, room1);
-    world.rooms.insert(r2, room2);
-    let npc_id = uuid::Uuid::new_v4();
+    world.rooms.insert(r1.clone(), room1);
+    world.rooms.insert(r2.clone(), room2);
+    let npc_id = ae::idgen::new_id();
     let npc = Npc {
-        id: npc_id,
+        id: npc_id.clone(),
         symbol: "npc".into(),
         name: "NPC".into(),
         description: String::new(),
-        location: world::Location::Room(r1),
+        location: world::Location::Room(r1.clone()),
         inventory: HashSet::new(),
         dialogue: HashMap::new(),
         state: npc::NpcState::Normal,
         health: HealthState::new_at_max(10),
         movement: Some(NpcMovement {
             movement_type: MovementType::Route {
-                rooms: vec![r1, r2],
+                rooms: vec![r1.clone(), r2.clone()],
                 current_idx: 0,
                 loop_route: false,
             },
@@ -422,12 +423,12 @@ fn test_check_npc_movement() {
             paused_until: None,
         }),
     };
-    world.npcs.insert(npc_id, npc);
-    world.player.location = world::Location::Room(r1);
+    world.npcs.insert(npc_id.clone(), npc);
+    world.player.location = world::Location::Room(r1.clone());
     world.turn_count = 1;
     ae::repl::check_npc_movement(&mut world, &mut view).unwrap();
     let npc = world.npcs.get(&npc_id).unwrap();
-    assert!(matches!(npc.location, world::Location::Room(id) if id == r2));
+    assert!(matches!(&npc.location, world::Location::Room(id) if *id == r2));
 }
 
 #[test]
@@ -437,9 +438,9 @@ fn test_check_ambient_triggers() {
     use gametools::{Spinner, Wedge};
     let mut world = world::AmbleWorld::new_empty();
     let mut view = View::new();
-    let r1 = uuid::Uuid::new_v4();
+    let r1 = ae::idgen::new_id();
     let room1 = room::Room {
-        id: r1,
+        id: r1.clone(),
         symbol: "r1".into(),
         name: "R1".into(),
         base_description: String::new(),
@@ -450,15 +451,15 @@ fn test_check_ambient_triggers() {
         contents: std::collections::HashSet::new(),
         npcs: std::collections::HashSet::new(),
     };
-    world.rooms.insert(r1, room1);
-    world.player.location = world::Location::Room(r1);
+    world.rooms.insert(r1.clone(), room1);
+    world.player.location = world::Location::Room(r1.clone());
     let spinner_type = SpinnerType::Custom("test_spinner".to_string());
     let spinner = Spinner::new(vec![Wedge::new("test message".to_string())]);
     world.spinners.insert(spinner_type.clone(), spinner);
     let trigger = Trigger {
         name: "ambient".into(),
         conditions: vec![TriggerCondition::Ambient {
-            room_ids: [r1].into_iter().collect(),
+            room_ids: [r1.clone()].into_iter().collect(),
             spinner: spinner_type,
         }],
         actions: vec![],

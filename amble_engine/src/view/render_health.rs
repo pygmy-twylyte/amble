@@ -18,7 +18,7 @@ use crate::{
 pub(super) fn status_change(entries: &[&ViewEntry]) {
     let status_msgs: Vec<_> = entries
         .iter()
-        .copied()
+        .cloned()
         .filter(|entry| entry.view_item.is_status_change())
         .collect();
     for msg in &status_msgs {

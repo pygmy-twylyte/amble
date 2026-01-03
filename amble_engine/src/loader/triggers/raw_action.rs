@@ -113,7 +113,7 @@ impl RawRoomPatch {
         let mut remove_exits = Vec::new();
         for dest_sym in &self.remove_exits {
             if let Some(room_id) = symbols.rooms.get(dest_sym) {
-                remove_exits.push(*room_id);
+                remove_exits.push(room_id.clone());
             } else {
                 bail!("loading TriggerAction:ModifyRoom: remove exit room symbol ({dest_sym}) not in table");
             }
@@ -122,7 +122,7 @@ impl RawRoomPatch {
         let mut add_exits = Vec::new();
         for raw in &self.add_exits {
             let to_id = if let Some(id) = symbols.rooms.get(&raw.to) {
-                *id
+                id.clone()
             } else {
                 bail!(
                     "loading TriggerAction:ModifyRoom: add exit destination room symbol ({}) not in table",
@@ -133,7 +133,7 @@ impl RawRoomPatch {
             let mut required_items = HashSet::new();
             for item_sym in &raw.required_items {
                 if let Some(item_id) = symbols.items.get(item_sym) {
-                    required_items.insert(*item_id);
+                    required_items.insert(item_id.clone());
                 } else {
                     bail!("loading TriggerAction:ModifyRoom: required item symbol ({item_sym}) not in table");
                 }
@@ -191,7 +191,7 @@ impl RawNpcMovementPatch {
             let mut resolved = Vec::new();
             for room_sym in route_syms {
                 if let Some(room_id) = symbols.rooms.get(room_sym) {
-                    resolved.push(*room_id);
+                    resolved.push(room_id.clone());
                 } else {
                     bail!("loading TriggerAction:ModifyNpc: route room symbol ({room_sym}) not in table");
                 }
@@ -205,7 +205,7 @@ impl RawNpcMovementPatch {
             let mut resolved = HashSet::new();
             for room_sym in random_syms {
                 if let Some(room_id) = symbols.rooms.get(room_sym) {
-                    resolved.insert(*room_id);
+                    resolved.insert(room_id.clone());
                 } else {
                     bail!("loading TriggerAction:ModifyNpc: random room symbol ({room_sym}) not in table");
                 }
@@ -649,7 +649,7 @@ impl RawTriggerAction {
  * "Cook" functions below convert RawTriggerActions to "fully cooked" TriggerActions
  */
 fn cook_set_item_movability(symbols: &SymbolTable, item_sym: &str, movability: &Movability) -> Result<TriggerAction> {
-    if let Some(&item_id) = symbols.items.get(item_sym) {
+    if let Some(item_id) = symbols.items.get(item_sym).cloned() {
         Ok(TriggerAction::SetItemMovability {
             item_id,
             movability: movability.clone(),
@@ -660,7 +660,7 @@ fn cook_set_item_movability(symbols: &SymbolTable, item_sym: &str, movability: &
 }
 
 fn cook_modify_item(symbols: &SymbolTable, item_sym: &str, raw_patch: &RawItemPatch) -> Result<TriggerAction> {
-    if let Some(&item_id) = symbols.items.get(item_sym) {
+    if let Some(item_id) = symbols.items.get(item_sym).cloned() {
         Ok(TriggerAction::ModifyItem {
             item_id,
             patch: raw_patch.to_patch(symbols)?,
@@ -673,7 +673,7 @@ fn cook_modify_item(symbols: &SymbolTable, item_sym: &str, raw_patch: &RawItemPa
 fn cook_modify_room(symbols: &SymbolTable, room_sym: &str, patch: &RawRoomPatch) -> Result<TriggerAction> {
     if let Some(room_id) = symbols.rooms.get(room_sym) {
         Ok(TriggerAction::ModifyRoom {
-            room_id: *room_id,
+            room_id: room_id.clone(),
             patch: patch.to_patch(symbols)?,
         })
     } else {
@@ -684,7 +684,7 @@ fn cook_modify_room(symbols: &SymbolTable, room_sym: &str, patch: &RawRoomPatch)
 fn cook_modify_npc(symbols: &SymbolTable, npc_sym: &str, patch: &RawNpcPatch) -> Result<TriggerAction> {
     if let Some(npc_id) = symbols.characters.get(npc_sym) {
         Ok(TriggerAction::ModifyNpc {
-            npc_id: *npc_id,
+            npc_id: npc_id.clone(),
             patch: patch.to_patch(symbols)?,
         })
     } else {
@@ -693,8 +693,8 @@ fn cook_modify_npc(symbols: &SymbolTable, npc_sym: &str, patch: &RawNpcPatch) ->
 }
 
 fn cook_spawn_npc_into_room(symbols: &SymbolTable, npc_sym: &str, room_sym: &str) -> Result<TriggerAction> {
-    if let Some(&npc_id) = symbols.characters.get(npc_sym)
-        && let Some(&room_id) = symbols.rooms.get(room_sym)
+    if let Some(npc_id) = symbols.characters.get(npc_sym).cloned()
+        && let Some(room_id) = symbols.rooms.get(room_sym).cloned()
     {
         Ok(TriggerAction::SpawnNpcInRoom { npc_id, room_id })
     } else {
@@ -703,7 +703,7 @@ fn cook_spawn_npc_into_room(symbols: &SymbolTable, npc_sym: &str, room_sym: &str
 }
 
 fn cook_despawn_npc(symbols: &SymbolTable, npc_sym: &str) -> Result<TriggerAction> {
-    if let Some(&npc_id) = symbols.characters.get(npc_sym) {
+    if let Some(npc_id) = symbols.characters.get(npc_sym).cloned() {
         Ok(TriggerAction::DespawnNpc { npc_id })
     } else {
         bail!("loading DespawnNpc action: npc ({npc_sym}) not found in symbol table");
@@ -711,7 +711,7 @@ fn cook_despawn_npc(symbols: &SymbolTable, npc_sym: &str) -> Result<TriggerActio
 }
 
 fn cook_set_npc_active(symbols: &SymbolTable, npc_sym: &str, active: bool) -> Result<TriggerAction> {
-    if let Some(&npc_id) = symbols.characters.get(npc_sym) {
+    if let Some(npc_id) = symbols.characters.get(npc_sym).cloned() {
         Ok(TriggerAction::SetNpcActive { npc_id, active })
     } else {
         bail!("npc symbol '{npc_sym}' not found when loading raw SetNpcActive trigger action");
@@ -719,7 +719,7 @@ fn cook_set_npc_active(symbols: &SymbolTable, npc_sym: &str, active: bool) -> Re
 }
 
 fn cook_damage_npc(symbols: &SymbolTable, npc_sym: &str, cause: &str, amount: u32) -> Result<TriggerAction> {
-    if let Some(&npc_id) = symbols.characters.get(npc_sym) {
+    if let Some(npc_id) = symbols.characters.get(npc_sym).cloned() {
         Ok(TriggerAction::DamageNpc {
             npc_id,
             cause: cause.to_string(),
@@ -737,7 +737,7 @@ fn cook_damage_npc_ot(
     amount: u32,
     turns: u32,
 ) -> Result<TriggerAction> {
-    if let Some(&npc_id) = symbols.characters.get(npc_sym) {
+    if let Some(npc_id) = symbols.characters.get(npc_sym).cloned() {
         Ok(TriggerAction::DamageNpcOT {
             npc_id,
             cause: cause.to_string(),
@@ -750,7 +750,7 @@ fn cook_damage_npc_ot(
 }
 
 fn cook_heal_npc(symbols: &SymbolTable, npc_sym: &str, cause: &str, amount: u32) -> Result<TriggerAction> {
-    if let Some(&npc_id) = symbols.characters.get(npc_sym) {
+    if let Some(npc_id) = symbols.characters.get(npc_sym).cloned() {
         Ok(TriggerAction::HealNpc {
             npc_id,
             cause: cause.to_string(),
@@ -768,7 +768,7 @@ fn cook_heal_npc_ot(
     amount: u32,
     turns: u32,
 ) -> Result<TriggerAction> {
-    if let Some(&npc_id) = symbols.characters.get(npc_sym) {
+    if let Some(npc_id) = symbols.characters.get(npc_sym).cloned() {
         Ok(TriggerAction::HealNpcOT {
             npc_id,
             cause: cause.to_string(),
@@ -781,7 +781,7 @@ fn cook_heal_npc_ot(
 }
 
 fn cook_remove_npc_effect(symbols: &SymbolTable, npc_sym: &str, cause: &str) -> Result<TriggerAction> {
-    if let Some(&npc_id) = symbols.characters.get(npc_sym) {
+    if let Some(npc_id) = symbols.characters.get(npc_sym).cloned() {
         Ok(TriggerAction::RemoveNpcEffect {
             npc_id,
             cause: cause.to_string(),
@@ -796,7 +796,7 @@ fn cook_set_container_state(
     item_sym: &str,
     state: Option<ContainerState>,
 ) -> Result<TriggerAction> {
-    if let Some(&item_id) = symbols.items.get(item_sym) {
+    if let Some(item_id) = symbols.items.get(item_sym).cloned() {
         Ok(TriggerAction::SetContainerState { item_id, state })
     } else {
         bail!("item symbol '{item_sym}' not found when loading raw SetContainerState trigger action");
@@ -808,8 +808,8 @@ fn cook_replace_item(symbols: &SymbolTable, old_sym: &str, new_sym: &str) -> Res
         && let Some(new_id) = symbols.items.get(new_sym)
     {
         Ok(TriggerAction::ReplaceItem {
-            old_id: *old_id,
-            new_id: *new_id,
+            old_id: old_id.clone(),
+            new_id: new_id.clone(),
         })
     } else {
         bail!("item symbol '{old_sym}' or '{new_sym}' not found when loading raw ReplaceItem trigger action");
@@ -821,8 +821,8 @@ fn cook_replace_drop_item(symbols: &SymbolTable, old_sym: &str, new_sym: &str) -
         && let Some(new_uuid) = symbols.items.get(new_sym)
     {
         Ok(TriggerAction::ReplaceDropItem {
-            old_id: *old_uuid,
-            new_id: *new_uuid,
+            old_id: old_uuid.clone(),
+            new_id: new_uuid.clone(),
         })
     } else {
         bail!("item symbol '{old_sym}' or '{new_sym}' not found when loading raw ReplaceDropItem trigger action");
@@ -832,7 +832,7 @@ fn cook_replace_drop_item(symbols: &SymbolTable, old_sym: &str, new_sym: &str) -
 fn cook_set_item_description(symbols: &SymbolTable, item_sym: &str, text: &str) -> Result<TriggerAction> {
     if let Some(item_id) = symbols.items.get(item_sym) {
         Ok(TriggerAction::SetItemDescription {
-            item_id: *item_id,
+            item_id: item_id.clone(),
             text: text.to_string(),
         })
     } else {
@@ -845,8 +845,8 @@ fn cook_barred_message(symbols: &SymbolTable, msg: &str, exit_from: &str, exit_t
         && let Some(to_id) = symbols.rooms.get(exit_to)
     {
         Ok(TriggerAction::SetBarredMessage {
-            exit_from: *from_id,
-            exit_to: *to_id,
+            exit_from: from_id.clone(),
+            exit_to: to_id.clone(),
             msg: msg.to_string(),
         })
     } else {
@@ -857,7 +857,7 @@ fn cook_barred_message(symbols: &SymbolTable, msg: &str, exit_from: &str, exit_t
 fn cook_npc_refuse_item(symbols: &SymbolTable, npc_symbol: &String, reason: &str) -> Result<TriggerAction> {
     if let Some(npc_id) = symbols.characters.get(npc_symbol) {
         Ok(TriggerAction::NpcRefuseItem {
-            npc_id: *npc_id,
+            npc_id: npc_id.clone(),
             reason: reason.to_owned(),
         })
     } else {
@@ -867,7 +867,9 @@ fn cook_npc_refuse_item(symbols: &SymbolTable, npc_symbol: &String, reason: &str
 
 fn cook_npc_says_random(symbols: &SymbolTable, npc_id: &String) -> Result<TriggerAction> {
     if let Some(npc_uuid) = symbols.characters.get(npc_id) {
-        Ok(TriggerAction::NpcSaysRandom { npc_id: *npc_uuid })
+        Ok(TriggerAction::NpcSaysRandom {
+            npc_id: npc_uuid.clone(),
+        })
     } else {
         bail!("raw action NpcSaysRandom({npc_id}): token not in symbol table");
     }
@@ -880,7 +882,7 @@ fn cook_unlock_exit(
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(room_uuid) = symbols.rooms.get(from_room) {
         Ok(TriggerAction::UnlockExit {
-            from_room: *room_uuid,
+            from_room: room_uuid.clone(),
             direction: direction.to_owned(),
         })
     } else {
@@ -893,7 +895,7 @@ fn cook_spawn_item_in_inventory(
     item_id: &String,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
-        Ok(TriggerAction::SpawnItemInInventory(*item_uuid))
+        Ok(TriggerAction::SpawnItemInInventory(item_uuid.clone()))
     } else {
         bail!("raw action SpawnItemInInventory({item_id}): token not in symbol table");
     }
@@ -907,7 +909,7 @@ fn cook_lock_exit(
     if let Some(room_uuid) = symbols.rooms.get(from_room) {
         Ok(TriggerAction::LockExit {
             direction: direction.to_owned(),
-            from_room: *room_uuid,
+            from_room: room_uuid.clone(),
         })
     } else {
         bail!("raw action LockExit({from_room}): token not in symbol table");
@@ -916,7 +918,7 @@ fn cook_lock_exit(
 
 fn cook_lock_item(symbols: &SymbolTable, item_id: &String) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
-        Ok(TriggerAction::LockItem(*item_uuid))
+        Ok(TriggerAction::LockItem(item_uuid.clone()))
     } else {
         bail!("raw action LockItem({item_id}): token not in symbol table");
     }
@@ -924,7 +926,9 @@ fn cook_lock_item(symbols: &SymbolTable, item_id: &String) -> std::result::Resul
 
 fn cook_despawn_item(symbols: &SymbolTable, item_id: &String) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
-        Ok(TriggerAction::DespawnItem { item_id: *item_uuid })
+        Ok(TriggerAction::DespawnItem {
+            item_id: item_uuid.clone(),
+        })
     } else {
         bail!("raw action DespawnItem({item_id}): token not in symbol table");
     }
@@ -939,8 +943,8 @@ fn cook_spawn_item_in_container(
         && let Some(room_uuid) = symbols.items.get(container_id)
     {
         Ok(TriggerAction::SpawnItemInContainer {
-            item_id: *item_uuid,
-            container_id: *room_uuid,
+            item_id: item_uuid.clone(),
+            container_id: room_uuid.clone(),
         })
     } else {
         bail!("raw action SpawnItemInContainer({item_id},{container_id}): token not in symbol table");
@@ -956,8 +960,8 @@ fn cook_spawn_item_in_room(
         && let Some(room_uuid) = symbols.rooms.get(room_id)
     {
         Ok(TriggerAction::SpawnItemInRoom {
-            item_id: *item_uuid,
-            room_id: *room_uuid,
+            item_id: item_uuid.clone(),
+            room_id: room_uuid.clone(),
         })
     } else {
         bail!("raw action SpawnItemInRoom({item_id},{room_id}): token not in symbol table");
@@ -975,8 +979,8 @@ fn cook_reveal_exit(
     {
         Ok(TriggerAction::RevealExit {
             direction: direction.to_owned(),
-            exit_from: *from_id,
-            exit_to: *to_id,
+            exit_from: from_id.clone(),
+            exit_to: to_id.clone(),
         })
     } else {
         bail!("raw action RevealExit({exit_from}, {exit_to}): token not in symbols");
@@ -985,7 +989,7 @@ fn cook_reveal_exit(
 
 fn cook_unlock_item(symbols: &SymbolTable, target: &String) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(target_id) = symbols.items.get(target) {
-        Ok(TriggerAction::UnlockItem(*target_id))
+        Ok(TriggerAction::UnlockItem(target_id.clone()))
     } else {
         bail!("raw action UnlockItem({target}): token not found in symbols");
     }
@@ -998,7 +1002,7 @@ fn cook_set_npc_state(
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(npc_uuid) = symbols.characters.get(npc_id) {
         Ok(TriggerAction::SetNPCState {
-            npc_id: *npc_uuid,
+            npc_id: npc_uuid.clone(),
             state,
         })
     } else {
@@ -1015,8 +1019,8 @@ fn cook_give_item_to_player(
         && let Some(item_uuid) = symbols.items.get(item_id)
     {
         Ok(TriggerAction::GiveItemToPlayer {
-            npc_id: *npc_uuid,
-            item_id: *item_uuid,
+            npc_id: npc_uuid.clone(),
+            item_id: item_uuid.clone(),
         })
     } else {
         bail!("raw action GiveItemToPlayer({npc_id},{item_id}): token not found in symbols");
@@ -1025,7 +1029,7 @@ fn cook_give_item_to_player(
 
 fn cook_push_player_to(symbols: &SymbolTable, room_id: &String) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(room_uuid) = symbols.rooms.get(room_id) {
-        Ok(TriggerAction::PushPlayerTo(*room_uuid))
+        Ok(TriggerAction::PushPlayerTo(room_uuid.clone()))
     } else {
         bail!("raw action PushPlayerTo({room_id}): token not found in symbols");
     }
@@ -1036,7 +1040,7 @@ fn cook_spawn_item_current_room(
     item_id: &String,
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(item_uuid) = symbols.items.get(item_id) {
-        Ok(TriggerAction::SpawnItemCurrentRoom(*item_uuid))
+        Ok(TriggerAction::SpawnItemCurrentRoom(item_uuid.clone()))
     } else {
         bail!("raw action SpawnItemCurrentRoom({item_id}): token not found in symbols");
     }
@@ -1049,7 +1053,7 @@ fn cook_npc_says(
 ) -> std::result::Result<TriggerAction, anyhow::Error> {
     if let Some(npc_uuid) = symbols.characters.get(npc_id) {
         Ok(TriggerAction::NpcSays {
-            npc_id: *npc_uuid,
+            npc_id: npc_uuid.clone(),
             quote: quote.to_owned(),
         })
     } else {

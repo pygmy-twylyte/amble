@@ -113,13 +113,13 @@ pub(super) fn npc_events_sorted(entries: &[&ViewEntry]) {
     // Collect all NPC-related events
     let mut npc_enters: Vec<_> = entries
         .iter()
-        .copied()
+        .cloned()
         .filter(|i| i.view_item.is_npc_entered())
         .collect();
-    let mut npc_leaves: Vec<_> = entries.iter().copied().filter(|i| i.view_item.is_npc_left()).collect();
+    let mut npc_leaves: Vec<_> = entries.iter().cloned().filter(|i| i.view_item.is_npc_left()).collect();
     let speech_msgs: Vec<_> = entries
         .iter()
-        .copied()
+        .cloned()
         .filter(|i| i.view_item.is_npc_speech())
         .collect();
 
