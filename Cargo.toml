@@ -1,5 +1,5 @@
 [workspace]
-members = ["amble_engine", "amble_script", "xtask"]
+members = ["amble_data", "amble_engine", "amble_script", "xtask"]
 resolver = "3"
 
 [workspace.package]
