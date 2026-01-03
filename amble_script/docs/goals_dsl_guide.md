@@ -1,13 +1,13 @@
 # Goals DSL Guide
 
-Goals communicate progress and objectives to the player. This guide explains the goal syntax in the `amble_script` DSL and how it compiles into `goals.toml`.
+Goals communicate progress and objectives to the player. This guide explains the goal syntax in the `amble_script` DSL and how it compiles into `WorldDef` (`world.ron`).
 
 Highlights:
 - Required fields: `name`, `desc`, `group`, and `complete when …`.
 - Optional `activate when …` gates when the goal becomes visible/active.
 - Optional `fail when …` marks failure states.
 - Conditions can reference flags, items, rooms, other goals, and sequence progress.
-- Output matches the engine’s goal schema with source comments for traceability.
+- Output matches the engine’s goal schema for traceability.
 
 ## Minimal Goal
 
@@ -20,17 +20,7 @@ goal get-out {
 }
 ```
 
-Emits:
-
-```toml
-[[goals]]
-# goal get-out (source line N)
-id = "get-out"
-name = "Escape the Facility"
-description = "Find a path to the surface."
-group = "required"
-complete_when = { type = "reachedRoom", room = "surface" }
-```
+This produces a `GoalDef` with the corresponding `id`, `name`, `desc`, `group`, and condition fields.
 
 ## Groups
 
@@ -68,10 +58,12 @@ goal stabilize-reactor {
 ## Library Usage
 
 ```rust
-use amble_script::{parse_goals, compile_goals_to_toml};
+use amble_script::{parse_goals, worlddef_from_asts};
+use ron::ser::PrettyConfig;
 let src = std::fs::read_to_string("goals.amble")?;
 let goals = parse_goals(&src)?;
-let toml = compile_goals_to_toml(&goals)?;
+let worlddef = worlddef_from_asts(&[], &[], &[], &[], &[], &goals)?;
+let ron = ron::ser::to_string_pretty(&worlddef, PrettyConfig::default())?;
 ```
 
-The generated string matches `amble_engine/data/goals.toml` so it can be copied directly into the engine’s data directory.
+The generated `ron` string can be written to `world.ron` for engine loading.

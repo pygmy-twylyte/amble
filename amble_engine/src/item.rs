@@ -21,7 +21,7 @@ use variantly::Variantly;
 /// Anything in '`AmbleWorld`' that can be inspected or manipulated apart from NPCs.
 ///
 /// Some 'Items' can also act as containers for other items, if '`container_state`' is 'Some(_)'.
-/// 'symbol' is the string used to represent the item in the the TOML files.
+/// 'symbol' is the string used to represent the item in world data.
 /// Items that aren't 'portable' are fixed and can't be moved at all.
 /// Items that are 'restricted' can't be *taken* by the player in current game state, but may become available.
 /// 'abilities' are special things you can do with this item (e.g. read, smash, ignite, clean)
@@ -31,9 +31,9 @@ use variantly::Variantly;
 /// 'consumable' makes an item consumable if present, with various consumable types defined in `ConsumableOpts`
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Item {
-    /// The UUID of this item.
+    /// The stable id of this item.
     pub id: Id,
-    /// The symbol used to refer to this item in the TOML data.
+    /// The symbol used to refer to this item in world data.
     pub symbol: String,
     /// The display name of the item.
     pub name: String,
@@ -45,7 +45,7 @@ pub struct Item {
     pub movability: Movability,
     /// Some state (open, locked, etc) for the item as a container, or `None` if it is not a container.
     pub container_state: Option<ContainerState>,
-    /// Set of UUIDs of other items contained by this one.
+    /// Set of ids of other items contained by this one.
     pub contents: HashSet<Id>,
     /// Set of capabilities [`ItemAbility`] for this item.
     pub abilities: HashSet<ItemAbility>,
@@ -112,11 +112,11 @@ impl Item {
         self.container_state
             .is_some_and(|cs| cs.is_transparent_closed() || cs.is_transparent_locked() || cs.is_transparent_open())
     }
-    /// Set location to a `Room` by UUID
+    /// Set location to a `Room` by id.
     pub fn set_location_room(&mut self, room_id: Id) {
         self.location = Location::Room(room_id);
     }
-    /// Set location to inside another container `Item` by UUID
+    /// Set location to inside another container `Item` by id.
     pub fn set_location_item(&mut self, container_id: Id) {
         self.location = Location::Item(container_id);
     }
@@ -131,7 +131,7 @@ impl Item {
         }
         self.location = Location::Inventory;
     }
-    /// Set location to NPC inventory by UUID
+    /// Set location to NPC inventory by id.
     pub fn set_location_npc(&mut self, npc_id: Id) {
         self.location = Location::Npc(npc_id);
     }
@@ -270,7 +270,7 @@ impl Item {
 ///
 /// # Arguments
 /// * `world` - Mutable reference to the game world
-/// * `item_id` - UUID of the item to consume
+/// * `item_id` - id of the item to consume
 /// * `ability` - The ability that triggered the consumption (e.g. `ItemAbility::Ignite`)
 ///
 /// # Returns
@@ -279,8 +279,8 @@ impl Item {
 /// * `Err(_)` - Item lookup failed
 ///
 /// # Errors
-/// * Returns error if the item UUID is not found in world.items
-/// * Context will include the item UUID that failed lookup
+/// * Returns error if the item id is not found in world.items
+/// * Context will include the item id that failed lookup
 pub fn consume(world: &mut AmbleWorld, item_id: &Id, ability: ItemAbility) -> Result<Option<usize>> {
     let item = world
         .items
@@ -323,6 +323,15 @@ pub fn consume(world: &mut AmbleWorld, item_id: &Id, ability: ItemAbility) -> Re
     }
     info!("used ({ability}) ability of consumable item '{item_sym}': {uses_left} uses left");
     Ok(Some(uses_left))
+}
+
+/// Determine whether a tool item satisfies requirements for an interaction on a target item.
+pub fn interaction_requirement_met(interaction: ItemInteractionType, target: &Item, tool: &Item) -> bool {
+    if let Some(requirement) = target.interaction_requires.get(&interaction) {
+        tool.abilities.contains(requirement)
+    } else {
+        true
+    }
 }
 
 /// Modes of using ingestible items.

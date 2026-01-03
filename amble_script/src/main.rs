@@ -5,13 +5,9 @@
 
 use std::{env, fs, process};
 
-use amble_script::{
-    ActionAst, ActionStmt, ConditionAst, GoalCondAst, compile_goals_to_toml, compile_npcs_to_toml,
-    compile_rooms_to_toml, compile_spinners_to_toml, compile_triggers_to_toml, parse_program_full, worlddef_from_asts,
-};
+use amble_script::{ActionAst, ActionStmt, ConditionAst, GoalCondAst, parse_program_full, worlddef_from_asts};
 use ron::ser::PrettyConfig;
 use std::collections::{HashMap, HashSet};
-use toml_edit::Document;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -33,7 +29,7 @@ fn main() {
         },
         _ => {
             eprintln!(
-                "Usage:\n  amble_script compile <file.amble> [--out-triggers <triggers.toml>] [--out-rooms <rooms.toml>] [--out-items <items.toml>] [--out-spinners <spinners.toml>] [--out-npcs <npcs.toml>] [--out-goals <goals.toml>] [--out-world <world.ron>]\n  amble_script compile-dir <src_dir> --out-dir <engine_data_dir> [--only triggers,rooms,items,spinners,npcs,goals] [--out-world <world.ron>]\n  amble_script lint <file.amble|dir> [--data-dir <dir>] [--deny-missing]\n\nNotes:\n- compile-dir overwrites each category file; when a category has no entries, an empty skeleton is written (e.g., 'triggers = []').\n- Use --only to restrict which category files are written; excluded categories are left untouched."
+                "Usage:\n  amble_script compile <file.amble> [--out-world <world.ron>]\n  amble_script compile-dir <src_dir> --out-dir <engine_data_dir> [--out-world <world.ron>]\n  amble_script lint <file.amble|dir> [--data-dir <dir>] [--deny-missing]\n\nNotes:\n- compile-dir writes world.ron to the output directory by default."
             );
             process::exit(2);
         },
@@ -54,97 +50,48 @@ fn main() {
 fn run_compile(args: &[String]) {
     use std::process;
     let mut path: Option<String> = None;
-    let mut out_path: Option<String> = None; // triggers
-    let mut out_rooms: Option<String> = None; // rooms
-    let mut out_spinners: Option<String> = None; // spinners
-    let mut out_items: Option<String> = None; // items
-    let mut out_npcs: Option<String> = None; // npcs
-    let mut out_goals: Option<String> = None; // goals
-    let mut out_world: Option<String> = None; // worlddef
+    let mut out_world: Option<String> = None;
     let mut i = 0;
     while i < args.len() {
-        if args[i] == "--out" {
-            if i + 1 >= args.len() {
-                eprintln!("--out requires a filepath");
+        match args[i].as_str() {
+            "--out" => {
+                if i + 1 >= args.len() {
+                    eprintln!("--out requires a filepath");
+                    process::exit(2);
+                }
+                out_world = Some(args[i + 1].clone());
+                eprintln!("warning: --out is deprecated; use --out-world instead");
+                i += 2;
+            },
+            "--out-world" => {
+                if i + 1 >= args.len() {
+                    eprintln!("--out-world requires a filepath");
+                    process::exit(2);
+                }
+                out_world = Some(args[i + 1].clone());
+                i += 2;
+            },
+            flag if flag.starts_with("--out-") => {
+                eprintln!("unsupported flag '{flag}': TOML outputs have been removed");
                 process::exit(2);
-            }
-            out_path = Some(args[i + 1].clone());
-            eprintln!("warning: --out is deprecated; use --out-triggers instead");
-            i += 2;
-            continue;
-        }
-        if args[i] == "--out-triggers" {
-            if i + 1 >= args.len() {
-                eprintln!("--out-triggers requires a filepath");
+            },
+            flag if flag.starts_with("--") => {
+                eprintln!("unknown flag: {flag}");
                 process::exit(2);
-            }
-            out_path = Some(args[i + 1].clone());
-            i += 2;
-            continue;
+            },
+            s => {
+                if path.is_none() {
+                    path = Some(s.to_string());
+                } else {
+                    eprintln!("unexpected argument: {s}");
+                    process::exit(2);
+                }
+                i += 1;
+            },
         }
-        if args[i] == "--out-rooms" {
-            if i + 1 >= args.len() {
-                eprintln!("--out-rooms requires a filepath");
-                process::exit(2);
-            }
-            out_rooms = Some(args[i + 1].clone());
-            i += 2;
-            continue;
-        }
-        if args[i] == "--out-spinners" {
-            if i + 1 >= args.len() {
-                eprintln!("--out-spinners requires a filepath");
-                process::exit(2);
-            }
-            out_spinners = Some(args[i + 1].clone());
-            i += 2;
-            continue;
-        }
-        if args[i] == "--out-items" {
-            if i + 1 >= args.len() {
-                eprintln!("--out-items requires a filepath");
-                process::exit(2);
-            }
-            out_items = Some(args[i + 1].clone());
-            i += 2;
-            continue;
-        }
-        if args[i] == "--out-npcs" {
-            if i + 1 >= args.len() {
-                eprintln!("--out-npcs requires a filepath");
-                process::exit(2);
-            }
-            out_npcs = Some(args[i + 1].clone());
-            i += 2;
-            continue;
-        }
-        if args[i] == "--out-goals" {
-            if i + 1 >= args.len() {
-                eprintln!("--out-goals requires a filepath");
-                process::exit(2);
-            }
-            out_goals = Some(args[i + 1].clone());
-            i += 2;
-            continue;
-        }
-        if args[i] == "--out-world" {
-            if i + 1 >= args.len() {
-                eprintln!("--out-world requires a filepath");
-                process::exit(2);
-            }
-            out_world = Some(args[i + 1].clone());
-            i += 2;
-            continue;
-        }
-        if path.is_none() {
-            path = Some(args[i].clone());
-        }
-        i += 1;
     }
     if path.is_none() {
-        eprintln!(
-            "Usage: amble_script compile <file.amble> [--out-triggers <triggers.toml>] [--out-rooms <rooms.toml>] [--out-items <items.toml>] [--out-spinners <spinners.toml>] [--out-npcs <npcs.toml>] [--out-goals <goals.toml>] [--out-world <world.ron>]"
-        );
+        eprintln!("Usage: amble_script compile <file.amble> [--out-world <world.ron>]");
         process::exit(2);
     }
     let path = path.unwrap();
@@ -156,238 +103,36 @@ fn run_compile(args: &[String]) {
         eprintln!("parse error: {e}");
         process::exit(1);
     });
-    let worlddef_ron = if out_world.is_some() {
-        let worlddef = worlddef_from_asts(&triggers, &rooms, &items, &spinners, &npcs, &goals).unwrap_or_else(|e| {
-            eprintln!("worlddef error: {e}");
-            process::exit(1);
-        });
-        let pretty = PrettyConfig::default();
-        let text = ron::ser::to_string_pretty(&worlddef, pretty).unwrap_or_else(|e| {
-            eprintln!("worlddef serialization error: {e}");
-            process::exit(1);
-        });
-        Some(text)
-    } else {
-        None
-    };
+    let worlddef = worlddef_from_asts(&triggers, &rooms, &items, &spinners, &npcs, &goals).unwrap_or_else(|e| {
+        eprintln!("worlddef error: {e}");
+        process::exit(1);
+    });
+    let pretty = PrettyConfig::default();
+    let text = ron::ser::to_string_pretty(&worlddef, pretty).unwrap_or_else(|e| {
+        eprintln!("worlddef serialization error: {e}");
+        process::exit(1);
+    });
     for t in &triggers {
         if t.actions.is_empty() {
             eprintln!("warning: trigger '{}' has no actions (empty block?)", t.name);
         }
     }
-    // Emit triggers
-    if !triggers.is_empty() {
-        match compile_triggers_to_toml(&triggers) {
-            Ok(toml) => {
-                let header = format!(
-                    "# Generated by amble_script from {}\n# Do not edit: this file is compiled from DSL.\n# Source Hash (fnv64): {:016x}\n\n",
-                    &path,
-                    fnv64(&src)
-                );
-                let toml = format!("{header}{toml}");
-                if let Some(out) = out_path.clone() {
-                    if let Err(e) = fs::write(&out, &toml) {
-                        eprintln!("error: writing '{out}': {e}");
-                        process::exit(1);
-                    }
-                } else if rooms.is_empty()
-                    && spinners.is_empty()
-                    && items.is_empty()
-                    && npcs.is_empty()
-                    && goals.is_empty()
-                {
-                    // Preserve old behavior: print to stdout if only triggers are present
-                    println!("{toml}");
-                }
-            },
-            Err(e) => {
-                eprintln!("compile error: {e}");
-                process::exit(1);
-            },
-        }
-    }
-    // Emit items
-    if !items.is_empty() {
-        match amble_script::compile_items_to_toml(&items) {
-            Ok(toml) => {
-                let header = format!(
-                    "# Generated by amble_script from {}\n# Do not edit: this file is compiled from DSL.\n# Source Hash (fnv64): {:016x}\n\n",
-                    &path,
-                    fnv64(&src)
-                );
-                let toml = format!("{header}{toml}");
-                if let Some(out) = out_items.clone() {
-                    if let Err(e) = fs::write(&out, &toml) {
-                        eprintln!("error: writing '{out}': {e}");
-                        process::exit(1);
-                    }
-                } else if triggers.is_empty()
-                    && rooms.is_empty()
-                    && spinners.is_empty()
-                    && npcs.is_empty()
-                    && goals.is_empty()
-                    && out_path.is_none()
-                    && out_rooms.is_none()
-                    && out_spinners.is_none()
-                {
-                    // If only items present and no other outputs, print to stdout
-                    println!("{toml}");
-                }
-            },
-            Err(e) => {
-                eprintln!("compile error (items): {e}");
-                process::exit(1);
-            },
-        }
-    }
-    // Emit rooms (Step 2 minimal emission)
-    if !rooms.is_empty() {
-        match compile_rooms_to_toml(&rooms) {
-            Ok(toml) => {
-                let header = format!(
-                    "# Generated by amble_script from {}\n# Do not edit: this file is compiled from DSL.\n# Source Hash (fnv64): {:016x}\n\n",
-                    &path,
-                    fnv64(&src)
-                );
-                let toml = format!("{header}{toml}");
-                if let Some(out) = out_rooms.clone() {
-                    if let Err(e) = fs::write(&out, &toml) {
-                        eprintln!("error: writing '{out}': {e}");
-                        process::exit(1);
-                    }
-                } else if triggers.is_empty()
-                    && items.is_empty()
-                    && spinners.is_empty()
-                    && npcs.is_empty()
-                    && goals.is_empty()
-                    && out_path.is_none()
-                {
-                    // If only rooms present and no triggers output path, print rooms to stdout
-                    println!("{toml}");
-                }
-            },
-            Err(e) => {
-                eprintln!("compile error (rooms): {e}");
-                process::exit(1);
-            },
-        }
-    }
-    // Emit spinners
-    if !spinners.is_empty() {
-        match compile_spinners_to_toml(&spinners) {
-            Ok(toml) => {
-                let header = format!(
-                    "# Generated by amble_script from {}\n# Do not edit: this file is compiled from DSL.\n# Source Hash (fnv64): {:016x}\n\n",
-                    &path,
-                    fnv64(&src)
-                );
-                let toml = format!("{header}{toml}");
-                if let Some(out) = out_spinners.as_ref() {
-                    if let Err(e) = fs::write(out, &toml) {
-                        eprintln!("error: writing '{out}': {e}");
-                        process::exit(1);
-                    }
-                } else if triggers.is_empty()
-                    && rooms.is_empty()
-                    && items.is_empty()
-                    && npcs.is_empty()
-                    && goals.is_empty()
-                    && out_path.is_none()
-                    && out_rooms.is_none()
-                {
-                    // If only spinners present and no other outputs, print to stdout
-                    println!("{toml}");
-                }
-            },
-            Err(e) => {
-                eprintln!("compile error (spinners): {e}");
-                process::exit(1);
-            },
-        }
-    }
-    // Emit NPCs
-    if !npcs.is_empty() {
-        match compile_npcs_to_toml(&npcs) {
-            Ok(toml) => {
-                let header = format!(
-                    "# Generated by amble_script from {}\n# Do not edit: this file is compiled from DSL.\n# Source Hash (fnv64): {:016x}\n\n",
-                    &path,
-                    fnv64(&src)
-                );
-                let toml = format!("{header}{toml}");
-                if let Some(out) = out_npcs.clone() {
-                    if let Err(e) = fs::write(&out, &toml) {
-                        eprintln!("error: writing '{out}': {e}");
-                        process::exit(1);
-                    }
-                } else if triggers.is_empty()
-                    && rooms.is_empty()
-                    && spinners.is_empty()
-                    && items.is_empty()
-                    && goals.is_empty()
-                    && out_path.is_none()
-                    && out_rooms.is_none()
-                    && out_items.is_none()
-                {
-                    // If only npcs present and no other outputs, print to stdout
-                    println!("{toml}");
-                }
-            },
-            Err(e) => {
-                eprintln!("compile error (npcs): {e}");
-                process::exit(1);
-            },
-        }
-    }
-    // Emit goals
-    if !goals.is_empty() {
-        match compile_goals_to_toml(&goals) {
-            Ok(toml) => {
-                let header = format!(
-                    "# Generated by amble_script from {}\n# Do not edit: this file is compiled from DSL.\n# Source Hash (fnv64): {:016x}\n\n",
-                    &path,
-                    fnv64(&src)
-                );
-                let toml = format!("{header}{toml}");
-                if let Some(out) = out_goals.clone() {
-                    if let Err(e) = fs::write(&out, &toml) {
-                        eprintln!("error: writing '{out}': {e}");
-                        process::exit(1);
-                    }
-                } else if triggers.is_empty()
-                    && rooms.is_empty()
-                    && spinners.is_empty()
-                    && items.is_empty()
-                    && npcs.is_empty()
-                    && out_path.is_none()
-                    && out_rooms.is_none()
-                    && out_spinners.is_none()
-                    && out_items.is_none()
-                    && out_npcs.is_none()
-                {
-                    println!("{toml}");
-                }
-            },
-            Err(e) => {
-                eprintln!("compile error (goals): {e}");
-                process::exit(1);
-            },
-        }
-    }
-    if let (Some(out), Some(text)) = (out_world.as_ref(), worlddef_ron.as_ref()) {
+    if let Some(out) = out_world.as_ref() {
         if let Err(e) = fs::write(out, text) {
             eprintln!("error: writing '{out}': {e}");
             process::exit(1);
         }
+    } else {
+        print!("{text}");
     }
 }
 
 fn run_compile_dir(args: &[String]) {
     use std::path::Path;
+    use std::process;
     let mut src_dir: Option<String> = None;
     let mut out_dir: Option<String> = None;
     let mut out_world: Option<String> = None;
-    let mut only: Option<std::collections::HashSet<String>> = None;
     let mut verbose = false;
     let mut i = 0;
     while i < args.len() {
@@ -400,19 +145,6 @@ fn run_compile_dir(args: &[String]) {
                 out_dir = Some(args[i + 1].clone());
                 i += 2;
             },
-            "--only" => {
-                if i + 1 >= args.len() {
-                    eprintln!("--only requires a comma-separated list: triggers,rooms,items,spinners,npcs,goals");
-                    process::exit(2);
-                }
-                let list = args[i + 1]
-                    .split(',')
-                    .map(|s| s.trim().to_string())
-                    .filter(|s| !s.is_empty())
-                    .collect();
-                only = Some(list);
-                i += 2;
-            },
             "--out-world" => {
                 if i + 1 >= args.len() {
                     eprintln!("--out-world requires a filepath");
@@ -421,13 +153,24 @@ fn run_compile_dir(args: &[String]) {
                 out_world = Some(args[i + 1].clone());
                 i += 2;
             },
+            "--only" => {
+                eprintln!("--only is no longer supported; TOML outputs have been removed");
+                process::exit(2);
+            },
             "--verbose" | "-v" => {
                 verbose = true;
                 i += 1;
             },
+            flag if flag.starts_with("--") => {
+                eprintln!("unknown flag: {flag}");
+                process::exit(2);
+            },
             s => {
                 if src_dir.is_none() {
                     src_dir = Some(s.to_string());
+                } else {
+                    eprintln!("unexpected argument: {s}");
+                    process::exit(2);
                 }
                 i += 1;
             },
@@ -435,7 +178,7 @@ fn run_compile_dir(args: &[String]) {
     }
     if src_dir.is_none() || out_dir.is_none() {
         eprintln!(
-            "Usage: amble_script compile-dir <src_dir> --out-dir <engine_data_dir> [--only triggers,rooms,items,spinners,npcs,goals] [--out-world <world.ron>]\n\nNote: Writes empty skeleton TOMLs for categories with no entries unless filtered by --only."
+            "Usage: amble_script compile-dir <src_dir> --out-dir <engine_data_dir> [--out-world <world.ron>]\n\nNote: Writes world.ron to the output directory by default."
         );
         process::exit(2);
     }
@@ -448,16 +191,14 @@ fn run_compile_dir(args: &[String]) {
         eprintln!("compile-dir: no .amble/.able files in '{}'", &src_dir);
         process::exit(1);
     }
-    // Aggregate ASTs
+    files.sort();
+
     let mut trigs = Vec::new();
     let mut rooms = Vec::new();
     let mut items = Vec::new();
     let mut spinners = Vec::new();
     let mut npcs = Vec::new();
     let mut goals = Vec::new();
-    // Build combined source hash (fnv64) using file path + content for determinism
-    let mut concat = String::new();
-    files.sort();
     let mut total_t = 0usize;
     let mut total_r = 0usize;
     let mut total_i = 0usize;
@@ -474,9 +215,6 @@ fn run_compile_dir(args: &[String]) {
                 continue;
             },
         };
-        concat.push_str(f);
-        concat.push('\n');
-        concat.push_str(&src);
         match parse_program_full(&src) {
             Ok((t, r, it, sp, n, g)) => {
                 trigs.extend(t);
@@ -513,188 +251,27 @@ fn run_compile_dir(args: &[String]) {
         eprintln!("compile-dir: aborting due to previous errors");
         process::exit(1);
     }
-    let worlddef_ron = if out_world.is_some() {
-        let worlddef = worlddef_from_asts(&trigs, &rooms, &items, &spinners, &npcs, &goals).unwrap_or_else(|e| {
-            eprintln!("compile-dir worlddef error: {e}");
-            process::exit(1);
-        });
-        let pretty = PrettyConfig::default();
-        let text = ron::ser::to_string_pretty(&worlddef, pretty).unwrap_or_else(|e| {
-            eprintln!("compile-dir worlddef serialization error: {e}");
-            process::exit(1);
-        });
-        Some(text)
-    } else {
-        None
-    };
-    let header = |_kind: &str, src_desc: &str, body: &str| -> String {
-        format!(
-            "# Generated by amble_script from {} ({} files)\n# Do not edit: this file is compiled from DSL.\n# Source Hash (fnv64): {:016x}\n\n{}",
-            src_desc,
-            files.len(),
-            fnv64(&concat),
-            body
-        )
-    };
+    let worlddef = worlddef_from_asts(&trigs, &rooms, &items, &spinners, &npcs, &goals).unwrap_or_else(|e| {
+        eprintln!("compile-dir worlddef error: {e}");
+        process::exit(1);
+    });
+    let pretty = PrettyConfig::default();
+    let text = ron::ser::to_string_pretty(&worlddef, pretty).unwrap_or_else(|e| {
+        eprintln!("compile-dir worlddef serialization error: {e}");
+        process::exit(1);
+    });
 
-    // Ensure out_dir exists
     if !Path::new(&out_dir).exists()
         && let Err(e) = fs::create_dir_all(&out_dir)
     {
         eprintln!("compile-dir: cannot create out-dir '{out_dir}': {e}");
         process::exit(1);
     }
-    // Write each category; emit empty skeletons when no entries to avoid stale cross-file refs
-    let allows = |k: &str| -> bool { only.as_ref().map(|s| s.contains(k)).unwrap_or(true) };
-    if allows("triggers") {
-        let p = format!("{out_dir}/triggers.toml");
-        if !trigs.is_empty() {
-            match compile_triggers_to_toml(&trigs) {
-                Ok(t) => {
-                    let text = header("triggers", &src_dir, &t);
-                    fs::write(&p, text).unwrap_or_else(|e| {
-                        eprintln!("write '{p}': {e}");
-                        process::exit(1);
-                    });
-                },
-                Err(e) => {
-                    eprintln!("compile-dir error (triggers): {e}");
-                    process::exit(1);
-                },
-            }
-        } else {
-            let text = header("triggers", &src_dir, "triggers = []\n");
-            fs::write(&p, text).unwrap_or_else(|e| {
-                eprintln!("write '{p}': {e}");
-                process::exit(1);
-            });
-        }
-    }
-    if allows("rooms") {
-        let p = format!("{out_dir}/rooms.toml");
-        if !rooms.is_empty() {
-            match compile_rooms_to_toml(&rooms) {
-                Ok(t) => {
-                    let text = header("rooms", &src_dir, &t);
-                    fs::write(&p, text).unwrap_or_else(|e| {
-                        eprintln!("write '{p}': {e}");
-                        process::exit(1);
-                    });
-                },
-                Err(e) => {
-                    eprintln!("compile-dir error (rooms): {e}");
-                    process::exit(1);
-                },
-            }
-        } else {
-            let text = header("rooms", &src_dir, "rooms = []\n");
-            fs::write(&p, text).unwrap_or_else(|e| {
-                eprintln!("write '{p}': {e}");
-                process::exit(1);
-            });
-        }
-    }
-    if allows("items") {
-        let p = format!("{out_dir}/items.toml");
-        if !items.is_empty() {
-            match amble_script::compile_items_to_toml(&items) {
-                Ok(t) => {
-                    let text = header("items", &src_dir, &t);
-                    fs::write(&p, text).unwrap_or_else(|e| {
-                        eprintln!("write '{p}': {e}");
-                        process::exit(1);
-                    });
-                },
-                Err(e) => {
-                    eprintln!("compile-dir error (items): {e}");
-                    process::exit(1);
-                },
-            }
-        } else {
-            let text = header("items", &src_dir, "items = []\n");
-            fs::write(&p, text).unwrap_or_else(|e| {
-                eprintln!("write '{p}': {e}");
-                process::exit(1);
-            });
-        }
-    }
-    if allows("spinners") {
-        let p = format!("{out_dir}/spinners.toml");
-        if !spinners.is_empty() {
-            match compile_spinners_to_toml(&spinners) {
-                Ok(t) => {
-                    let text = header("spinners", &src_dir, &t);
-                    fs::write(&p, text).unwrap_or_else(|e| {
-                        eprintln!("write '{p}': {e}");
-                        process::exit(1);
-                    });
-                },
-                Err(e) => {
-                    eprintln!("compile-dir error (spinners): {e}");
-                    process::exit(1);
-                },
-            }
-        } else {
-            let text = header("spinners", &src_dir, "spinners = []\n");
-            fs::write(&p, text).unwrap_or_else(|e| {
-                eprintln!("write '{p}': {e}");
-                process::exit(1);
-            });
-        }
-    }
-    if allows("npcs") {
-        let p = format!("{out_dir}/npcs.toml");
-        if !npcs.is_empty() {
-            match compile_npcs_to_toml(&npcs) {
-                Ok(t) => {
-                    let text = header("npcs", &src_dir, &t);
-                    fs::write(&p, text).unwrap_or_else(|e| {
-                        eprintln!("write '{p}': {e}");
-                        process::exit(1);
-                    });
-                },
-                Err(e) => {
-                    eprintln!("compile-dir error (npcs): {e}");
-                    process::exit(1);
-                },
-            }
-        } else {
-            let text = header("npcs", &src_dir, "npcs = []\n");
-            fs::write(&p, text).unwrap_or_else(|e| {
-                eprintln!("write '{p}': {e}");
-                process::exit(1);
-            });
-        }
-    }
-    if allows("goals") {
-        let p = format!("{out_dir}/goals.toml");
-        if !goals.is_empty() {
-            match compile_goals_to_toml(&goals) {
-                Ok(t) => {
-                    let text = header("goals", &src_dir, &t);
-                    fs::write(&p, text).unwrap_or_else(|e| {
-                        eprintln!("write '{p}': {e}");
-                        process::exit(1);
-                    });
-                },
-                Err(e) => {
-                    eprintln!("compile-dir error (goals): {e}");
-                    process::exit(1);
-                },
-            }
-        } else {
-            let text = header("goals", &src_dir, "goals = []\n");
-            fs::write(&p, text).unwrap_or_else(|e| {
-                eprintln!("write '{p}': {e}");
-                process::exit(1);
-            });
-        }
-    }
-    if let (Some(out), Some(text)) = (out_world.as_ref(), worlddef_ron.as_ref()) {
-        if let Err(e) = fs::write(out, text) {
-            eprintln!("write '{out}': {e}");
-            process::exit(1);
-        }
+
+    let out_path = out_world.unwrap_or_else(|| format!("{out_dir}/world.ron"));
+    if let Err(e) = fs::write(&out_path, text) {
+        eprintln!("write '{out_path}': {e}");
+        process::exit(1);
     }
     if verbose {
         eprintln!(
@@ -1325,229 +902,61 @@ struct WorldRefs {
 }
 
 fn load_world_refs(dir: &str) -> Result<WorldRefs, String> {
-    let mut items = HashSet::new();
-    let mut rooms = HashSet::new();
-    let mut npcs = HashSet::new();
-    let mut spinners = HashSet::new();
-    let mut flags = HashSet::new();
-    let mut goals = HashSet::new();
-
-    fn load_ids(doc: &Document, key: &str, field: &str) -> HashSet<String> {
-        let mut set = HashSet::new();
-        if let Some(item) = doc.as_table().get(key)
-            && let Some(aot) = item.as_array_of_tables()
-        {
-            for t in aot.iter() {
-                if let Some(v) = t.get(field)
-                    && let Some(s) = v.as_str()
-                {
-                    set.insert(s.to_string());
-                }
-            }
-        }
-
-        set
-    }
-
-    let items_path = format!("{dir}/items.toml");
-    let rooms_path = format!("{dir}/rooms.toml");
-    let npcs_path = format!("{dir}/npcs.toml");
-    let spinners_path = format!("{dir}/spinners.toml");
-    let goals_path = format!("{dir}/goals.toml");
-    let triggers_path = format!("{dir}/triggers.toml");
-
-    let read = |p: &str| -> Result<Document, String> {
-        let s = fs::read_to_string(p).map_err(|e| format!("{e}"))?;
-        s.parse::<Document>().map_err(|e| format!("{e}"))
+    let mut world = WorldRefs {
+        items: HashSet::new(),
+        rooms: HashSet::new(),
+        npcs: HashSet::new(),
+        spinners: HashSet::new(),
+        flags: HashSet::new(),
+        goals: HashSet::new(),
     };
 
-    if let Ok(doc) = read(&items_path) {
-        items = load_ids(&doc, "items", "id");
-    }
-    if let Ok(doc) = read(&rooms_path) {
-        if let Ok(raw) = fs::read_to_string(&rooms_path) {
-            warn_if_stale_generated(&raw, dir, "rooms");
-        }
-        rooms = load_ids(&doc, "rooms", "id");
-    }
-    if let Ok(doc) = read(&npcs_path) {
-        npcs = load_ids(&doc, "npcs", "id");
-    }
-    if let Ok(doc) = read(&spinners_path) {
-        spinners = load_ids(&doc, "spinners", "spinnerType");
-    }
-    if let Ok(doc) = read(&goals_path) {
-        goals = load_ids(&doc, "goals", "id");
-    }
-    if let Ok(doc) = read(&triggers_path) {
-        if let Ok(raw) = fs::read_to_string(&triggers_path) {
-            // Try to extract source path + hash; if stale, prefer registry from DSL
-            if let Some((src_path, want_hash)) = parse_generated_header(&raw) {
-                let src_abs = if std::path::Path::new(&src_path).is_absolute() {
-                    src_path.clone()
-                } else {
-                    let base = std::path::Path::new(dir)
-                        .parent()
-                        .and_then(|p| p.parent())
-                        .unwrap_or(std::path::Path::new("."));
-                    base.join(&src_path).to_string_lossy().to_string()
-                };
-                if let Ok(src_text) = fs::read_to_string(&src_abs) {
-                    let have = format!("{:016x}", fnv64(&src_text));
-                    if have != want_hash {
-                        eprintln!(
-                            "lint: warning: triggers.toml hash mismatch vs '{src_abs}'; TOML may be stale (expected {have}, found {want_hash})"
-                        );
-                        flags = flags_from_triggers_dsl(&src_text);
-                    } else {
-                        flags = load_flags_from_triggers(&doc);
-                    }
-                } else {
-                    // Fall back to TOML if source not found
-                    flags = load_flags_from_triggers(&doc);
-                }
-            } else {
-                // No header; fall back to TOML
-                flags = load_flags_from_triggers(&doc);
-            }
-        } else {
-            flags = load_flags_from_triggers(&doc);
-        }
+    let world_path = format!("{dir}/world.ron");
+    let raw = match fs::read_to_string(&world_path) {
+        Ok(text) => text,
+        Err(_) => return Ok(world),
+    };
+    let def: amble_data::WorldDef = match ron::from_str(&raw) {
+        Ok(def) => def,
+        Err(err) => {
+            eprintln!("lint: warning: failed to parse world.ron: {err}");
+            return Ok(world);
+        },
+    };
+
+    world.items = def.items.iter().map(|item| item.id.clone()).collect();
+    world.rooms = def.rooms.iter().map(|room| room.id.clone()).collect();
+    world.npcs = def.npcs.iter().map(|npc| npc.id.clone()).collect();
+    world.spinners = def.spinners.iter().map(|spinner| spinner.id.clone()).collect();
+    world.goals = def.goals.iter().map(|goal| goal.id.clone()).collect();
+    for trigger in &def.triggers {
+        collect_flags_from_action_defs(&trigger.actions, &mut world.flags);
     }
 
-    Ok(WorldRefs {
-        items,
-        rooms,
-        npcs,
-        spinners,
-        flags,
-        goals,
-    })
+    Ok(world)
 }
 
-fn load_flags_from_triggers(doc: &Document) -> HashSet<String> {
-    let mut set = HashSet::new();
-    if let Some(item) = doc.as_table().get("triggers")
-        && let Some(aot) = item.as_array_of_tables()
-    {
-        for t in aot.iter() {
-            if let Some(actions) = t.get("actions").and_then(|a| a.as_array()) {
-                collect_flags_from_actions(actions, &mut set);
-            }
-        }
-    }
-
-    set
-}
-
-fn collect_flags_from_actions(actions: &toml_edit::Array, out: &mut HashSet<String>) {
-    for act in actions.iter() {
-        if let Some(at) = act.as_inline_table()
-            && let Some(ty) = at.get("type").and_then(|v| v.as_str())
-        {
-            match ty {
-                "addFlag" => {
-                    if let Some(flag_item) = at.get("flag")
-                        && let Some(ftab) = flag_item.as_inline_table()
-                        && let Some(name) = ftab.get("name").and_then(|v| v.as_str())
-                    {
-                        out.insert(name.to_string());
-                    }
-                },
-                // Recurse into scheduled actions
-                "scheduleIn" | "scheduleOn" | "scheduleInIf" | "scheduleOnIf" => {
-                    if let Some(sub) = at.get("actions").and_then(|a| a.as_array()) {
-                        collect_flags_from_actions(sub, out);
-                    }
-                },
-                _ => {},
-            }
-        }
-    }
-}
-
-fn warn_if_stale_generated(toml_text: &str, data_dir: &str, kind: &str) {
-    // Expect header like:
-    // # Generated by amble_script from <path>
-    // # Do not edit...
-    // # Source Hash (fnv64): <hex>
-    if let Some((path, hh)) = parse_generated_header(toml_text) {
-        // Resolve relative to repo root; allow both absolute and relative
-        let src = if std::path::Path::new(&path).is_absolute() {
-            path
-        } else {
-            // data_dir is usually amble_engine/data; go up two to repo root
-            let base = std::path::Path::new(data_dir)
-                .parent()
-                .and_then(|p| p.parent())
-                .unwrap_or(std::path::Path::new("."));
-            base.join(path).to_string_lossy().to_string()
-        };
-        if let Ok(s) = fs::read_to_string(&src) {
-            let h = format!("{:016x}", fnv64(&s));
-            if h != hh {
-                eprintln!(
-                    "lint: warning: {kind}.toml hash mismatch vs '{src}'; TOML may be stale (expected {h}, found {hh})"
-                );
-            }
-        }
-    }
-}
-
-fn parse_generated_header(toml_text: &str) -> Option<(String, String)> {
-    let mut src_path: Option<String> = None;
-    let mut hash_hex: Option<String> = None;
-    for line in toml_text.lines().take(4) {
-        if let Some(rest) = line.strip_prefix("# Generated by amble_script from ") {
-            src_path = Some(rest.trim().to_string());
-        }
-        if let Some(rest) = line.strip_prefix("# Source Hash (fnv64): ") {
-            hash_hex = Some(rest.trim().to_string());
-        }
-    }
-    match (src_path, hash_hex) {
-        (Some(p), Some(h)) => Some((p, h)),
-        _ => None,
-    }
-}
-
-fn fnv64(s: &str) -> u64 {
-    const FNV_OFFSET: u64 = 0xcbf29ce484222325;
-    const FNV_PRIME: u64 = 0x00000100000001B3;
-    let mut hash = FNV_OFFSET;
-    for &b in s.as_bytes() {
-        hash ^= b as u64;
-        hash = hash.wrapping_mul(FNV_PRIME);
-    }
-    hash
-}
-
-fn flags_from_triggers_dsl(src: &str) -> HashSet<String> {
-    let mut out = HashSet::new();
-    if let Ok((trigs, _rooms, _items, _spinners, _npcs, _goals)) = parse_program_full(src) {
-        for t in trigs {
-            collect_flags_from_actions_ast(&t.actions, &mut out);
-        }
-    }
-    out
-}
-
-fn collect_flags_from_actions_ast(actions: &[ActionStmt], out: &mut HashSet<String>) {
-    for stmt in actions {
-        match &stmt.action {
-            ActionAst::AddFlag(name) => {
-                out.insert(name.clone());
+fn collect_flags_from_action_defs(actions: &[amble_data::ActionDef], out: &mut HashSet<String>) {
+    for action in actions {
+        match &action.action {
+            amble_data::ActionKind::AddFlag { flag } => {
+                out.insert(flag_name(flag));
             },
-            ActionAst::AddSeqFlag { name, .. } => {
-                out.insert(name.clone());
-            },
-            ActionAst::ScheduleIn { actions, .. }
-            | ActionAst::ScheduleOn { actions, .. }
-            | ActionAst::ScheduleInIf { actions, .. }
-            | ActionAst::ScheduleOnIf { actions, .. } => {
-                collect_flags_from_actions_ast(actions, out);
+            amble_data::ActionKind::Conditional { actions, .. }
+            | amble_data::ActionKind::ScheduleIn { actions, .. }
+            | amble_data::ActionKind::ScheduleOn { actions, .. }
+            | amble_data::ActionKind::ScheduleInIf { actions, .. }
+            | amble_data::ActionKind::ScheduleOnIf { actions, .. } => {
+                collect_flags_from_action_defs(actions, out);
             },
             _ => {},
         }
+    }
+}
+
+fn flag_name(flag: &amble_data::FlagDef) -> String {
+    match flag {
+        amble_data::FlagDef::Simple { name } => name.clone(),
+        amble_data::FlagDef::Sequence { name, .. } => name.clone(),
     }
 }

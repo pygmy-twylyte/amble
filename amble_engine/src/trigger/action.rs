@@ -47,7 +47,7 @@
 //! # Usage Pattern
 //!
 //! Actions are typically not called directly. Instead, they are:
-//! 1. Defined in TOML configuration files as part of trigger definitions
+//! 1. Defined in compiled world data (`world.ron`) as part of trigger definitions
 //! 2. Deserialized into [`TriggerAction`] enum variants
 //! 3. Executed by [`dispatch_action`] when trigger conditions are met
 //!
@@ -55,7 +55,7 @@
 //!
 //! Most action functions return `Result<()>` and can fail if:
 //! - Required world objects (items, rooms, NPCs) don't exist
-//! - Invalid UUIDs are provided
+//! - Invalid ids are provided
 //! - World state is inconsistent
 //!
 //! Errors are typically logged and may be displayed to the player depending
@@ -1049,8 +1049,8 @@ pub fn set_item_description(world: &mut AmbleWorld, item_id: &Id, text: &str) ->
 /// # Parameters
 ///
 /// * `world` - Mutable reference to the game world
-/// * `exit_from` - UUID of the room containing the exit
-/// * `exit_to` - UUID of the destination room (used to identify the specific exit)
+/// * `exit_from` - id of the room containing the exit
+/// * `exit_to` - id of the destination room (used to identify the specific exit)
 /// * `msg` - The custom message to display when the exit is blocked
 ///
 /// # Returns
@@ -1294,7 +1294,7 @@ fn remove_flag_with_priority(world: &mut AmbleWorld, view: &mut View, flag: &str
 ///
 /// * `world` - Reference to the game world containing the NPC and spinners
 /// * `view` - Mutable reference to the player's view for displaying the dialogue
-/// * `npc_id` - UUID of the NPC who should speak
+/// * `npc_id` - id of the NPC who should speak
 ///
 /// # Returns
 ///
@@ -1339,7 +1339,7 @@ pub fn npc_says_random(world: &AmbleWorld, view: &mut View, npc_id: &Id, priorit
 ///
 /// * `world` - Reference to the game world containing the NPC
 /// * `view` - Mutable reference to the player's view for displaying the dialogue
-/// * `npc_id` - UUID of the NPC who should speak
+/// * `npc_id` - id of the NPC who should speak
 /// * `quote` - The exact text the NPC should say
 ///
 /// # Returns
@@ -1453,7 +1453,7 @@ fn add_flag_with_priority(world: &mut AmbleWorld, view: &mut View, flag: &Flag, 
 /// # Parameters
 ///
 /// * `world` - Mutable reference to the game world containing the rooms
-/// * `from_room` - UUID of the room containing the exit to lock
+/// * `from_room` - id of the room containing the exit to lock
 /// * `direction` - Direction name of the exit to lock (e.g., "north", "up")
 ///
 /// # Returns
@@ -1490,7 +1490,7 @@ pub fn lock_exit(world: &mut AmbleWorld, from_room: &Id, direction: &String) -> 
 /// # Parameters
 ///
 /// * `world` - Mutable reference to the game world containing the rooms
-/// * `from_room` - UUID of the room containing the exit to unlock
+/// * `from_room` - id of the room containing the exit to unlock
 /// * `direction` - Direction name of the exit to unlock (e.g., "north", "up")
 ///
 /// # Returns
@@ -1553,8 +1553,8 @@ pub fn unlock_item(world: &mut AmbleWorld, item_id: &Id) -> Result<()> {
 /// # Parameters
 ///
 /// * `world` - Mutable reference to the game world
-/// * `item_id` - UUID of the item to spawn
-/// * `room_id` - UUID of the room where the item should appear
+/// * `item_id` - id of the item to spawn
+/// * `room_id` - id of the room where the item should appear
 ///
 /// # Returns
 ///
@@ -1610,7 +1610,7 @@ pub fn spawn_item_in_specific_room(world: &mut AmbleWorld, item_id: &Id, room_id
 /// # Parameters
 ///
 /// * `world` - Mutable reference to the game world
-/// * `item_id` - UUID of the item to spawn
+/// * `item_id` - id of the item to spawn
 ///
 /// # Returns
 ///
@@ -1670,7 +1670,7 @@ pub fn spawn_item_in_current_room(world: &mut AmbleWorld, item_id: &Id) -> Resul
 /// # Parameters
 ///
 /// * `world` - Mutable reference to the game world
-/// * `item_id` - UUID of the item to spawn in inventory
+/// * `item_id` - id of the item to spawn in inventory
 ///
 /// # Returns
 ///
@@ -1717,8 +1717,8 @@ pub fn spawn_item_in_inventory(world: &mut AmbleWorld, item_id: &Id) -> Result<(
 /// # Parameters
 ///
 /// * `world` - Mutable reference to the game world
-/// * `item_id` - UUID of the item to spawn inside the container
-/// * `container_id` - UUID of the container item that will hold the new item
+/// * `item_id` - id of the item to spawn inside the container
+/// * `container_id` - id of the container item that will hold the new item
 ///
 /// # Returns
 ///
@@ -1801,7 +1801,7 @@ fn show_message_with_priority(view: &mut View, text: &String, priority: Option<i
 /// # Parameters
 ///
 /// * `world` - Mutable reference to the game world containing the NPC
-/// * `npc_id` - UUID of the NPC whose state should be changed
+/// * `npc_id` - id of the NPC whose state should be changed
 /// * `state` - The new state to assign to the NPC
 ///
 /// # Returns
@@ -1839,8 +1839,8 @@ pub fn set_npc_state(world: &mut AmbleWorld, npc_id: &Id, state: &NpcState) -> R
 ///
 /// * `world` - Mutable reference to the game world containing the rooms
 /// * `direction` - Direction name for the exit (e.g., "north", "secret passage")
-/// * `exit_from` - UUID of the room where the exit should appear
-/// * `exit_to` - UUID of the destination room the exit leads to
+/// * `exit_from` - id of the room where the exit should appear
+/// * `exit_to` - id of the destination room the exit leads to
 ///
 /// # Returns
 ///
@@ -1881,7 +1881,7 @@ pub fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &Id, e
 /// # Parameters
 ///
 /// * `world` - Mutable reference to the game world containing the player and rooms
-/// * `room_id` - UUID of the destination room
+/// * `room_id` - id of the destination room
 ///
 /// # Returns
 ///
@@ -1918,7 +1918,7 @@ pub fn push_player(world: &mut AmbleWorld, room_id: &Id) -> Result<()> {
 /// # Parameters
 ///
 /// * `world` - Mutable reference to the game world containing the item
-/// * `item_id` - UUID of the container item to lock
+/// * `item_id` - id of the container item to lock
 ///
 /// # Returns
 ///
@@ -1961,8 +1961,8 @@ pub fn lock_item(world: &mut AmbleWorld, item_id: &Id) -> Result<()> {
 /// # Parameters
 ///
 /// * `world` - Mutable reference to the game world
-/// * `npc_id` - UUID of the NPC who currently has the item
-/// * `item_id` - UUID of the item to transfer
+/// * `npc_id` - id of the NPC who currently has the item
+/// * `item_id` - id of the item to transfer
 ///
 /// # Returns
 ///
@@ -2008,7 +2008,7 @@ pub fn give_to_player(world: &mut AmbleWorld, npc_id: &Id, item_id: &Id) -> Resu
 /// # Parameters
 ///
 /// * `world` - Mutable reference to the game world
-/// * `item_id` - UUID of the item to remove from the world
+/// * `item_id` - id of the item to remove from the world
 ///
 /// # Returns
 ///

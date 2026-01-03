@@ -430,7 +430,7 @@ pub fn take_from_handler(
 /// * `world` - Mutable reference to the game world
 /// * `view` - Mutable reference to the player's view for feedback messages
 /// * `item_pattern` - Pattern to match against items in the NPC's inventory
-/// * `vessel_id` - UUID of the NPC being accessed
+/// * `vessel_id` - id of the NPC being accessed
 /// * `vessel_name` - Display name of the NPC for user feedback
 ///
 /// # Returns
@@ -516,7 +516,7 @@ pub(crate) fn validate_and_transfer_from_npc(
 /// * `world` - Mutable reference to the game world
 /// * `view` - Mutable reference to the player's view for feedback messages
 /// * `item_pattern` - Pattern to match against items in the container
-/// * `vessel_id` - UUID of the container item being accessed
+/// * `vessel_id` - id of the container item being accessed
 /// * `vessel_name` - Display name of the container for user feedback
 ///
 /// # Returns
@@ -597,9 +597,9 @@ pub(crate) fn validate_and_transfer_from_item(
 /// * `world` - Mutable reference to the game world
 /// * `view` - Mutable reference to the player's view for feedback messages
 /// * `vessel_type` - Whether transferring from an NPC or container item
-/// * `vessel_id` - UUID of the source container or NPC
+/// * `vessel_id` - id of the source container or NPC
 /// * `vessel_name` - Display name of the source for user feedback
-/// * `loot_id` - UUID of the item being transferred
+/// * `loot_id` - id of the item being transferred
 /// * `loot_name` - Display name of the item for user feedback
 ///
 /// # World State Updates

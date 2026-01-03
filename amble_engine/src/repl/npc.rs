@@ -223,7 +223,7 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
 /// - NPC not found in current room
 /// - Item not found in player inventory
 /// - Item is fixed (cannot be transferred)
-/// - World state corruption (UUID lookup failures)
+/// - World state corruption (id lookup failures)
 pub fn give_to_npc_handler(
     world: &mut AmbleWorld,
     view: &mut View,
@@ -308,11 +308,11 @@ fn show_npc_refusal(world: &AmbleWorld, view: &mut View, npc_id: Id, item_id: Id
     let npc = world
         .npcs
         .get(&npc_id)
-        .with_context(|| format!("missing npc UUID: {npc_id}"))?;
+        .with_context(|| format!("missing npc id: {npc_id}"))?;
     let item = world
         .items
         .get(&item_id)
-        .with_context(|| format!("missing item UUID: {item_id}"))?;
+        .with_context(|| format!("missing item id: {item_id}"))?;
 
     view.push(ViewItem::ActionFailure(format!(
         "{} has no use for {}, and won't hold it for you.",
@@ -333,16 +333,16 @@ fn show_npc_refusal(world: &AmbleWorld, view: &mut View, npc_id: Id, item_id: Id
 /// Displays NPC item acceptance and logs it.
 ///
 /// # Errors
-/// - on failed item or NPC retrieval by UUID
+/// - on failed item or NPC retrieval by id
 fn show_npc_acceptance(world: &AmbleWorld, view: &mut View, npc_id: Id, item_id: Id) -> Result<()> {
     let npc = world
         .npcs
         .get(&npc_id)
-        .with_context(|| format!("missing npc UUID: {npc_id}"))?;
+        .with_context(|| format!("missing npc id: {npc_id}"))?;
     let item = world
         .items
         .get(&item_id)
-        .with_context(|| format!("missing item UUID: {item_id}"))?;
+        .with_context(|| format!("missing item id: {item_id}"))?;
 
     view.push(ViewItem::ActionSuccess(format!(
         "{} accepted the {}.",

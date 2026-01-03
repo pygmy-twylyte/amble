@@ -5,12 +5,13 @@
 //! Major capabilities:
 //! - Parse and lint `.amble` sources for rooms, items, triggers, spinners, NPCs,
 //!   and goals, catching unresolved references early.
-//! - Compile the DSL into structured TOML that the `amble_engine` crate consumes.
+//! - Compile the DSL into `WorldDef` (RON) that the `amble_engine` crate consumes.
 //! - Provide AST types so tooling can analyze or transform worlds before
 //!   serialization.
+//! - Legacy helpers exist for emitting per-category TOML (useful for tests or migration).
 //!
 //! ```ignore
-//! use amble_script::{parse_rooms, compile_rooms_to_toml};
+//! use amble_script::{parse_program_full, worlddef_from_asts};
 //!
 //! let src = r#"
 //! room foyer {
@@ -18,9 +19,10 @@
 //!   desc "An inviting entryway."
 //! }
 //! "#;
-//! let rooms = parse_rooms(src).expect("valid DSL");
-//! let toml = compile_rooms_to_toml(&rooms).expect("compiles");
-//! println!("{toml}");
+//! let (triggers, rooms, items, spinners, npcs, goals) = parse_program_full(src).expect("valid DSL");
+//! let worlddef = worlddef_from_asts(&triggers, &rooms, &items, &spinners, &npcs, &goals).expect("compiles");
+//! let ron = ron::ser::to_string_pretty(&worlddef, ron::ser::PrettyConfig::default()).expect("serializes");
+//! println!("{ron}");
 //! ```
 //!
 //! For a full language tour see `amble_script/docs/dsl_creator_handbook.md` in

@@ -32,7 +32,7 @@ pub struct Exit {
     pub barred_message: Option<String>,
 }
 impl Exit {
-    /// Create a basic exit leading to the room with the given UUID.
+    /// Create a basic exit leading to the room with the given id.
     pub fn new(to: Id) -> Self {
         Self {
             to,

@@ -8,8 +8,8 @@ Keep this quick reference open while authoring `.amble` files. It summarizes the
 
 | Command                                           | Purpose                                                                 | Key Flags                                                                                     |     |
 | ------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | --- |
-| `amble_script compile <file>`                     | Compile a single DSL file.                                              | `--out-triggers`, `--out-rooms`, `--out-items`, `--out-spinners`, `--out-npcs`, `--out-goals` |     |
-| `amble_script compile-dir <dir> --out-dir <data>` | Compile every `.amble`/`.able` file under `<dir>` into `<data>/*.toml`. | `--only triggers,rooms,…`, `--verbose`                                                        |     |
+| `amble_script compile <file>`                     | Compile a single DSL file to `world.ron` (stdout by default).           | `--out-world`                                                                                |     |
+| `amble_script compile-dir <dir> --out-dir <data>` | Compile every `.amble`/`.able` file under `<dir>` into `<data>/world.ron`. | `--out-world`, `--verbose`                                                                   |     |
 | `amble_script lint <file>`                        | Compile and crosscheck references against amble_engine/data.            | `--data-dir <dir>`, `--deny-missing`                                                          |     |
 
 ---

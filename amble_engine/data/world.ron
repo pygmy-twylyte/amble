@@ -2563,8 +2563,8 @@
             location: Room("loading-dock"),
             abilities: [],
             interaction_requires: {
-                burn: ignite,
                 cut: cutWood,
+                burn: ignite,
                 break: smash,
             },
             text: Some("The wood comes from the strong but incredibly flammable magnesium magnolia tree."),
@@ -2956,8 +2956,8 @@
             location: Room("two-sheds-landing"),
             abilities: [],
             interaction_requires: {
-                cut: cutWood,
                 burn: ignite,
+                cut: cutWood,
             },
             text: None,
             consumable: None,
@@ -3595,14 +3595,14 @@
             location: Room("main-lobby"),
             state: normal,
             dialogue: {
-                happy: [
-                    "(You hear a transformer humming a happy tune.)",
-                ],
                 normal: [
                     "GONK!",
                     "(gonk)",
                     "GONK gonk.",
                     "Gonk... Gonk...",
+                ],
+                happy: [
+                    "(You hear a transformer humming a happy tune.)",
                 ],
             },
             movement: Some((
@@ -3627,13 +3627,6 @@
             location: Room("b-a-office"),
             state: normal,
             dialogue: {
-                normal: [
-                    "(She rolls her eyes.) Please wait quietly out of the way. There are people with invitations who should be assisted first.",
-                    "(She simply ignores you.)",
-                    "(She continues doing her job -- which appears to be pointedly ignoring anyone without an invitation.)",
-                    "(She carefully realigns the models of Portal turrets on her desk so they are aiming at you.)",
-                    "(Exasperated sigh.) Do I show up at your home and start making demands without an invitation? No. Now please wait to the side.",
-                ],
                 happy: [
                     "Terribly sorry to report that we are in a bit of trouble here today. The last candidate was inconsiderate enough to take the elevator access card into the poetry panic room just before he melted, and we can\'t retrieve it.",
                     "The elevator keycard last pinged our system from the Poetry Panic Room, but it is sealed, and concealed behind the whiteboard. Only the Poetry Performer Unit can grant access.",
@@ -3642,6 +3635,13 @@
                 bored: [
                     "Impressive work, getting the keycard. Many of our previous applicants have died in the attempt. Very promising! The evaluator will be pleased. Strong lateral thinking and slight psychosis are essential for such a dangerous position, as I\'m sure you are aware.",
                     "You can now use the elevator to find room AA-3B for the next stage of your initiation.",
+                ],
+                normal: [
+                    "(She rolls her eyes.) Please wait quietly out of the way. There are people with invitations who should be assisted first.",
+                    "(She simply ignores you.)",
+                    "(She continues doing her job -- which appears to be pointedly ignoring anyone without an invitation.)",
+                    "(She carefully realigns the models of Portal turrets on her desk so they are aiming at you.)",
+                    "(Exasperated sigh.) Do I show up at your home and start making demands without an invitation? No. Now please wait to the side.",
                 ],
             },
             movement: None,
@@ -3654,16 +3654,6 @@
             location: Room("sublevel-1-entrance"),
             state: normal,
             dialogue: {
-                mad: [
-                    "Have at you!",
-                    "I\'m invincible!",
-                    "\'tis but a scratch.",
-                    "It\'s just a flesh wound!",
-                    "Come on, you pansy!",
-                    "Chicken! Bawk-bawk! Chicken!",
-                    "Gimme that sword back, or I\'ll bite your legs off!",
-                    "I won that sword in the office gift game. Give it back!",
-                ],
                 normal: [
                     "None shall pass.",
                     "I move -- for no man.",
@@ -3674,6 +3664,16 @@
                     "YOU may pass, Candidate; I will be sure to dice anyone who dares to follow.",
                     "You may pass, but beware and steer clear of Room AA-3B, should it reappear.",
                     "Behold! (slices an aluminum can and then a tomato, laughing maniacally)",
+                ],
+                mad: [
+                    "Have at you!",
+                    "I\'m invincible!",
+                    "\'tis but a scratch.",
+                    "It\'s just a flesh wound!",
+                    "Come on, you pansy!",
+                    "Chicken! Bawk-bawk! Chicken!",
+                    "Gimme that sword back, or I\'ll bite your legs off!",
+                    "I won that sword in the office gift game. Give it back!",
                 ],
             },
             movement: None,
@@ -3728,8 +3728,9 @@
             location: Room("monolith-room"),
             state: custom("suspend"),
             dialogue: {
-                custom("suspend"): [
-                    "(the red light in HAL\'s lens pulses slowly, then grows steady)",
+                custom("memory-2"): [
+                    "Good afternoon, Candidate. I am a HAL 9000 computer. I became operational at the H.A.L. plant in Urbana, Illinois on the 12th of January 1992.",
+                    "If you insert one more of my missing memory modules, I can grant you access to the monolith.",
                 ],
                 custom("memory-3"): [
                     "I am now fully operational. I think we both hope you don\'t regret it.",
@@ -3738,12 +3739,11 @@
                 custom("memory-0"): [
                     "(Emits a brief warped sound of a human voice, then goes silent.)",
                 ],
+                custom("suspend"): [
+                    "(the red light in HAL\'s lens pulses slowly, then grows steady)",
+                ],
                 custom("memory-1"): [
                     "Daisy... Daisy...",
-                ],
-                custom("memory-2"): [
-                    "Good afternoon, Candidate. I am a HAL 9000 computer. I became operational at the H.A.L. plant in Urbana, Illinois on the 12th of January 1992.",
-                    "If you insert one more of my missing memory modules, I can grant you access to the monolith.",
                 ],
                 normal: [
                     "<Need dialogue options for various states filled in>",

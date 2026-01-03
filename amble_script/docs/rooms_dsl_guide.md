@@ -1,9 +1,9 @@
 # Rooms DSL Guide
 
-This guide introduces the Rooms subset of the amble_script DSL and how it maps to the engine’s `rooms.toml`.
+This guide introduces the Rooms subset of the amble_script DSL and how it maps into the engine’s `WorldDef` (`world.ron`).
 
 Highlights:
-- DSL omits `location`; compiler emits `location = "Nowhere"`.
+- Rooms are their own locations; runtime initializes them with `Location::Nowhere`.
 - `visited` defaults to `false`; specify `visited true` to mark as visited.
 - Exits support `hidden`, `locked`, `barred`, `required_items`, and `required_flags` (flag names only).
 - Overlays support all-of conditions and a `text` body.
@@ -17,15 +17,17 @@ room high-ridge {
 }
 ```
 
-Emits:
+WorldDef excerpt (RON):
 
 ```
-[[rooms]]
-# room high-ridge (source line N)
-id = "high-ridge"
-name = "High Isolated Ridge"
-base_description = "A small, flat ridge..."
-location = "Nowhere"
+(
+  id: "high-ridge",
+  name: "High Isolated Ridge",
+  desc: "A small, flat ridge...",
+  visited: false,
+  exits: [],
+  overlays: [],
+)
 ```
 
 ## Exits
@@ -63,7 +65,7 @@ Notes:
 
 Quoted directions:
 
-You can use quoted exit directions to allow spaces or special characters in the direction name. These emit quoted TOML keys automatically.
+You can use quoted exit directions to allow spaces or special characters in the direction name. These become the `direction` string on the `ExitDef`.
 
 ```
 room shoreline {
@@ -71,11 +73,9 @@ room shoreline {
   desc "..."
   exit "along the shore" -> dunes
 }
-
-# Emits
-[rooms.exits."along the shore"]
-to = "dunes"
 ```
+
+WorldDef excerpt: an `ExitDef` with `direction: "along the shore"` and `to: "dunes"`.
 
 ## Overlays
 
@@ -177,10 +177,10 @@ Notes:
 ## CLI Usage
 
 ```
-# Compile rooms (and any goals in the same file) to TOML
+# Compile rooms (and any goals in the same file) to world.ron
 cargo run -p amble_script -- compile \
   amble_script/data/Amble/areas/bldg_perimeter/rooms/front_entrance.amble \
-  --out-rooms /tmp/rooms.toml --out-goals /tmp/goals.toml
+  --out-world /tmp/world.ron
 
 # Lint a file with engine data for symbol validation
 cargo run -p amble_script -- lint \
@@ -188,7 +188,7 @@ cargo run -p amble_script -- lint \
   --data-dir amble_engine/data --deny-missing
 ```
 
-Generated files include a header comment indicating the source `.amble` and a “do not edit” notice. Each room entry is prefixed with a comment containing the DSL source line number.
+The generated `world.ron` bundles rooms alongside the rest of the compiled world data.
 
 ## Tips
 

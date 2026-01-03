@@ -162,7 +162,7 @@ do schedule on 20 if any(player in room hall, player in room kitchen) onFalse ca
 
 ### Modify actions
 
-Use `do modify item|room|npc … { … }` blocks to patch existing entities without rewriting the original TOML:
+Use `do modify item|room|npc … { … }` blocks to patch existing entities without rewriting the original definitions:
 
 ```amble
 do modify item locker {
@@ -237,28 +237,20 @@ trigger "Outside ambience" when always {
 From the repo root:
 
 ```bash
-# Compile a DSL file to TOML (stdout)
+# Compile a DSL file to world.ron (stdout)
 cargo run -p amble_script -- compile \
   amble_script/data/Amble/global/anywhere_events.amble
 
-# Compile triggers to a file
+# Compile world.ron to a file
 cargo run -p amble_script -- compile \
   amble_script/data/Amble/global/anywhere_events.amble \
-  --out-triggers /tmp/triggers.toml
+  --out-world /tmp/world.ron
 
 # Run tests for the DSL crate
 cargo test -p amble_script
 ```
 
-### Source Comments in Generated TOML
-
-The compiler adds helpful comments to the emitted TOML:
-
-- A header comment at the top of the file indicating the source `.amble` path and that the file is generated (do not edit by hand).
-- A per‑entry prefix comment for each trigger:
-  - `# trigger <name> (source line N)` just above the corresponding `[[triggers]]` table.
-
-These comments make it easy to map engine TOML back to its original DSL source during debugging.
+The generated `world.ron` bundles triggers alongside the rest of the compiled world data.
 
 ## Reference Cheat‑Sheet
 

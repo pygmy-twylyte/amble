@@ -42,7 +42,7 @@ where
 /// has its actions dispatched in order, respecting the `only_once` flag.
 ///
 /// # Errors
-/// - Propagates failures from action dispatch such as missing UUID references.
+/// - Propagates failures from action dispatch such as missing id references.
 pub fn check_triggers<'a>(
     world: &'a mut AmbleWorld,
     view: &mut View,

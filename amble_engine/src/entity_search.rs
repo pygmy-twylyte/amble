@@ -69,9 +69,9 @@ pub enum SearchScope {
 pub enum SearchError {
     #[error("no entity in scope name matching user input '{0}'")]
     NoMatchingName(String),
-    #[error("no npc found with the supplied UUID {0}")]
+    #[error("no npc found with the supplied id {0}")]
     InvalidNpcId(Id),
-    #[error("found no room with the supplied UUID ({0})")]
+    #[error("found no room with the supplied id ({0})")]
     InvalidRoomId(Id),
     #[error("invalid {0} search scope: includes only {1}s")]
     InvalidScope(String, String),
@@ -84,9 +84,9 @@ pub enum SearchError {
 /// # Errors
 /// - if no match found in the specified scope
 /// - if an invalid scope for an item search is specified
-/// - if the supplied room or NPC UUIDs are invalid
+/// - if the supplied room or NPC ids are invalid
 pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<Id, SearchError> {
-    // construct a HashSet of item UUIDs in scope for this search
+    // construct a HashSet of item ids in scope for this search
     let haystack: HashSet<_> = match scope {
         SearchScope::VisibleItems(room_id) | SearchScope::AllVisible(room_id) => {
             let room_items =
@@ -128,7 +128,7 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
 /// # Errors
 /// - if no match found in the specified scope
 /// - if an invalid scope for an npc search is specified
-/// - if the supplied room UUID is invalid
+/// - if the supplied room id is invalid
 pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<Id, SearchError> {
     let haystack = match scope {
         // currently there is no distinction between NPCs you can see and those you could touch
@@ -171,7 +171,7 @@ pub enum EntityId {
 /// - never: the call to `expect` is guarded by an `is_ok()`
 ///
 /// # Errors
-/// - `SearchError` variants of any type, if no match is found or if the scope type or supplied UUID are invalid
+/// - `SearchError` variants of any type, if no match is found or if the scope type or supplied ids are invalid
 pub fn find_entity_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<EntityId, SearchError> {
     // return any item matched first -- these will account for most searches
     // no_match and scope errors are ignored on this pass because they may

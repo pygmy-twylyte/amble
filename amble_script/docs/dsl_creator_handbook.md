@@ -1,6 +1,6 @@
 # Amble Script Creator Handbook
 
-This handbook consolidates the practical information required to author Amble content with the `amble_script` DSL. It covers the CLI tooling and the syntax for every entity the compiler understands: triggers, rooms, items, NPCs, spinners, and goals. Use it as your primary reference when designing new story content or migrating existing TOML definitions into the DSL.
+This handbook consolidates the practical information required to author Amble content with the `amble_script` DSL. It covers the CLI tooling and the syntax for every entity the compiler understands: triggers, rooms, items, NPCs, spinners, and goals. Use it as your primary reference when designing new story content or migrating legacy data definitions into the DSL.
 
 If you only need a terse reminder of keywords and shapes, see the accompanying [DSL Cheat Sheet](./dsl_cheat_sheet.md).
 
@@ -9,7 +9,7 @@ If you only need a terse reminder of keywords and shapes, see the accompanying [
 ## Authoring Workflow Overview
 
 1. **Write DSL files** – author one or more `.amble` files that define triggers, rooms, items, NPCs, spinners, and goals. Files can be organized however you like - the .amble compiler recursively searches all directories under the root data directory.
-2. **Compile TOML and Install** - using `cargo xtask content refresh` will compile, install, and lint all source .amble files using the amble_script CLI.
+2. **Compile WorldDef and Install** - using `cargo xtask content refresh` will compile, install, and lint all source .amble files using the amble_script CLI.
 3. **Run the Engine** - There are a few different ways to do this, depending on whether you've installed the full repo or a pre-built package. If pre-built, you just run the program that you downloaded. If you're working from the cloned Amble repository, you can use `cargo run --bin amble_engine` from the workspace root. Or you can (re)build the engine with `cargo xtask build-engine --dev-mode enabled` which will build with developer game commands and debugging enabled. The executable will then be in ./target/debug/amble_engine (or amble_engine.exe if building for Windows).
 4. **Iterate** - play with the additions and changes you've made to the game world, go back to the .amble sources and do more, refresh the content, build, and run again.
 
@@ -24,23 +24,17 @@ The `amble_script` binary ships inside this repository and can be run via `cargo
 
 ### `compile`
 
-Translate a single DSL file into one or more TOML outputs.
+Translate a single DSL file into a `world.ron` output.
 
 ```bash
-cargo run -p amble_script -- compile path/to/content.amble \
-  [--out-triggers triggers.toml] \
-  [--out-rooms rooms.toml] \
-  [--out-items items.toml] \
-  [--out-spinners spinners.toml] \
-  [--out-npcs npcs.toml] \
-  [--out-goals goals.toml]
+cargo run -p amble_script -- compile path/to/content.amble [--out-world world.ron]
 ```
 
 Key details:
 
-- When only triggers are present and no explicit `--out-triggers` path is provided, compiled triggers are printed to stdout for quick inspection. The same behaviour applies to rooms, spinners, NPCs, and goals when they are the only category present and no other outputs were written.
-- `--out` still works as a deprecated alias for `--out-triggers` and prints a warning so you know to update scripts.
-- The emitted TOML is prefixed with a generated header containing the source file path and an FNV-64 hash of the DSL to detect stale copies.
+- When no `--out-world` path is provided, the compiled `world.ron` is printed to stdout for quick inspection.
+- `--out` still works as a deprecated alias for `--out-world` and prints a warning so you know to update scripts.
+- The emitted output is a single `WorldDef` (RON) file that bundles all categories together.
 
 ### `compile-dir`
 
@@ -48,17 +42,16 @@ Batch-compile an entire directory tree of `.amble` files.
 
 ```bash
 cargo run -p amble_script -- compile-dir content/ --out-dir amble_engine/data \
-  [--only triggers,rooms,items,spinners,npcs,goals] [--verbose|-v]
+  [--out-world world.ron] [--verbose|-v]
 ```
 
 What it does:
 
 - Recursively scans the source directory for DSL files, parses them, and merges all matching entity definitions.
-- Writes one TOML file per category (rooms.toml, items.toml, etc. - as expected by amble_engine) into the target `--out-dir`. When a category has no definitions, the tool still writes an empty skeleton (for example `triggers = []`) so that other generated files cannot go stale.
-- Accepts `--only` to restrict which categories are written. Provide a comma-separated list (`--only triggers,items`) to leave other TOML files untouched.
+- Writes a single `world.ron` file into the target `--out-dir` by default, or to the explicit `--out-world` path if provided.
 - `--verbose` (or `-v`) prints per-file and summary counts, which is useful while refactoring a larger project.
 
-Use `compile-dir` for day-to-day development once you maintain more than a handful of DSL files. It guarantees that every engine data file is regenerated together from the same source snapshot (the header includes the aggregated hash across all compiled files).
+Use `compile-dir` for day-to-day development once you maintain more than a handful of DSL files. It guarantees that every engine data file is regenerated together from the same source snapshot.
 
 ### `lint`
 
@@ -75,7 +68,7 @@ Highlights:
 - Loads identifiers from the target `--data-dir` (defaults to `amble_engine/data`) so it can verify that exits point at existing rooms, trigger references mention valid items/NPCs, spinner IDs exist, etc.
 - Reports each missing reference with file, line/column, and a caret indicator. The command exits with code 1 when `--deny-missing` is supplied and at least one issue was found—perfect for CI pipelines.
 
-__Note: Because the linter uses the TOML files in the engine's data directory as a reference, the .amble source should be compiled and installed before linting, or you may get false reports on missing cross-references.__
+__Note: Because the linter uses `world.ron` in the engine's data directory as a reference, the .amble source should be compiled and installed before linting, or you may get false reports on missing cross-references.__
 
 ---
 
@@ -228,7 +221,7 @@ Key fields:
 - `location` accepts `inventory <owner>`, `room <room_id>`, `npc <npc_id>`, `chest <container_id>`, or `nowhere "note"` for items that spawn later.
 - Optional container states: `open`, `closed`, `locked`, `transparentClosed`, `transparentLocked`.
 - `restricted true` marks an item as non-droppable until explicitly allowed.
-- Each `ability` entry becomes a `[[items.abilities]]` table with optional target (`ability Unlock vault_door`).
+- Each `ability` entry becomes an `ItemDef.abilities` entry with optional target (`ability Unlock vault_door`).
 - `text` attaches readable flavour.
 - `requires <ability> to <interaction>` gates interactions (e.g., require an item ability `cut` to perform the `open` interaction on this item).
 - `consumable { … }` configures limited-use items that despawn or transform after their charges are spent.
@@ -247,7 +240,7 @@ consumable {
 - `consume_on ability <Ability> [<target>]` declares which abilities decrement the counter.
 - `when_consumed …` chooses the depletion behaviour: `despawn`, `replace inventory <item>`, or `replace current room <item>`.
 
-See the [Items DSL Guide](./items_dsl_guide.md) for exhaustive field coverage and emitted TOML structure.
+See the [Items DSL Guide](./items_dsl_guide.md) for exhaustive field coverage and emitted WorldDef structure.
 
 ---
 
@@ -329,7 +322,7 @@ Components:
 - `complete when …` is required and uses the same condition vocabulary.
 - `fail when …` is optional and uses the same condition set to model failure states.
 
-Goals compile into `goals.toml`, matching the engine schema for in-game goal tracking.
+Goals compile into `world.ron` as part of the `WorldDef`, matching the engine schema for in-game goal tracking.
 
 See the [Goals DSL Guide](./goals_dsl_guide.md) for condition details and compiler output samples.
 
@@ -403,6 +396,6 @@ goal restore-atrium { … }
 trigger "Atrium ambience" when always { … }
 ```
 
-Run `amble_script lint ./content --deny-missing` to ensure every reference is valid, then `amble_script compile-dir ./content --out-dir amble_engine/data` to regenerate the TOML the engine consumes.
+Run `amble_script lint ./content --deny-missing` to ensure every reference is valid, then `amble_script compile-dir ./content --out-dir amble_engine/data` to regenerate the `world.ron` the engine consumes.
 
 For a fast reminder of syntax across all entities, keep the [DSL Cheat Sheet](./dsl_cheat_sheet.md) open while you work.

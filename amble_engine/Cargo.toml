@@ -43,7 +43,3 @@ variantly = "0.4.0"
 [dev-dependencies]
 serde_json = "1.0"
 tempfile = "3.13.0"
-
-[[bin]]
-name = "regenerate_snippets"
-path = "tools/regenerate_snippets.rs"

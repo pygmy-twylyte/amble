@@ -51,8 +51,7 @@ use crate::{
     AmbleWorld, View, WorldObject,
     entity_search::{self, SearchError, SearchScope},
     helpers::plural_s,
-    item::{ContainerState, IngestMode, Item, ItemAbility, ItemInteractionType, consume},
-    loader::items::interaction_requirement_met,
+    item::{ContainerState, IngestMode, Item, ItemAbility, ItemInteractionType, consume, interaction_requirement_met},
     repl::entity_not_found,
     spinners::CoreSpinnerType,
     style::GameStyle,
@@ -143,7 +142,7 @@ pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, m
         return Ok(());
     }
 
-    /* we now have the UUID (item_id) of an item that is available nearby,
+    /* we now have the id (item_id) of an item that is available nearby,
     matches player input, and can be ingested in the specified way */
 
     // Check triggers for any specific reaction / feedback to this ingestion
@@ -903,7 +902,7 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
 /// # Key System
 ///
 /// The function searches inventory for items with `ItemAbility::Unlock`:
-/// - **Specific keys**: Target a particular container by UUID
+/// - **Specific keys**: Target a particular container by id
 /// - **Universal keys**: Can unlock any container (master keys)
 ///
 /// # Container State Logic

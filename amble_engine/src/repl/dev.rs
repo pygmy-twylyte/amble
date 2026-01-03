@@ -69,7 +69,7 @@ use crate::{
 ///
 /// # Behavior
 ///
-/// - Converts the symbol to the item's UUID using the item namespace
+/// - Converts the symbol to the item's id using the item namespace
 /// - If the item exists, moves it to inventory (removing from current location)
 /// - Displays success message with item name
 /// - If item doesn't exist, displays error message
@@ -99,7 +99,7 @@ pub fn dev_spawn_item_handler(world: &mut AmbleWorld, view: &mut View, symbol: &
     }
 }
 
-/// Instantly teleports the player to any room by its TOML identifier (`DEV_MODE` only).
+/// Instantly teleports the player to any room by its room id (`DEV_MODE` only).
 ///
 /// This development command bypasses all normal movement restrictions and
 /// immediately transports the player to the specified room. This is useful
@@ -110,11 +110,11 @@ pub fn dev_spawn_item_handler(world: &mut AmbleWorld, view: &mut View, symbol: &
 ///
 /// * `world` - Mutable reference to the game world containing rooms and player
 /// * `view` - Mutable reference to the player's view for feedback and room display
-/// * `room_toml_id` - The room's string identifier from the TOML configuration files
+/// * `room_id` - The room's string identifier from world data
 ///
 /// # Behavior
 ///
-/// - Converts the TOML ID to the room's UUID using the room namespace
+/// - Converts the room id using the room namespace
 /// - If the room exists, immediately updates player location
 /// - Displays the new room with full description (as if entering for first time)
 /// - If room doesn't exist, displays error message
@@ -127,8 +127,8 @@ pub fn dev_spawn_item_handler(world: &mut AmbleWorld, view: &mut View, symbol: &
 /// - Required items or keys
 /// - Story progression flags
 /// - Movement-blocking conditions
-pub fn dev_teleport_handler(world: &mut AmbleWorld, view: &mut View, room_toml_id: &str) {
-    let room_uuid = uuid_from_token(&NAMESPACE_ROOM, room_toml_id);
+pub fn dev_teleport_handler(world: &mut AmbleWorld, view: &mut View, room_id: &str) {
+    let room_uuid = uuid_from_token(&NAMESPACE_ROOM, room_id);
     if let Some(room) = world.rooms.get(&room_uuid) {
         world.player.location = Location::Room(room_uuid);
         warn!(
@@ -140,7 +140,7 @@ pub fn dev_teleport_handler(world: &mut AmbleWorld, view: &mut View, room_toml_i
         let _ = room.show(world, view, None);
     } else {
         view.push(ViewItem::ActionFailure(format!(
-            "Teleport failed: Lookup of '{room_toml_id}' failed."
+            "Teleport failed: Lookup of '{room_id}' failed."
         )));
     }
 }

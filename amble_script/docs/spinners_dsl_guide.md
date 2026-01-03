@@ -1,12 +1,12 @@
 # Spinners DSL Guide
 
-Spinners power ambient flavour text and other weighted random selections. This guide explains the `spinner` syntax in the `amble_script` DSL and how it compiles into `spinners.toml`.
+Spinners power ambient flavour text and other weighted random selections. This guide explains the `spinner` syntax in the `amble_script` DSL and how it compiles into `WorldDef` (`world.ron`).
 
 Highlights:
 - A spinner is a named collection of wedges (`spinner <id> { wedge "Text" [width <n>] … }`).
 - Each wedge carries an optional weight; omit `width` to default to 1.
 - Referenced from triggers via `do spinner message <spinner_id>` or expanded with `do add wedge … spinner <spinner_id>`.
-- Compiles directly to the engine’s spinner schema with source comments for provenance.
+- Compiles directly to the engine’s spinner schema inside `WorldDef`.
 
 ## Minimal Spinner
 
@@ -17,20 +17,16 @@ spinner ambientLobby {
 }
 ```
 
-Emits:
+WorldDef excerpt (RON):
 
-```toml
-[[spinners]]
-# spinner ambientLobby (source line N)
-id = "ambientLobby"
-
-[[spinners.wedges]]
-text = "The HVAC sighs."
-width = 1
-
-[[spinners.wedges]]
-text = "Footsteps echo from deeper inside."
-width = 2
+```ron
+(
+  id: "ambientLobby",
+  wedges: [
+    (text: "The HVAC sighs.", width: 1),
+    (text: "Footsteps echo from deeper inside.", width: 2),
+  ],
+)
 ```
 
 The engine rolls a weighted random selection whenever the spinner is triggered. In this example, the second line is twice as likely as the first.
@@ -44,10 +40,12 @@ The engine rolls a weighted random selection whenever the spinner is triggered. 
 ## Library Usage
 
 ```rust
-use amble_script::{parse_spinners, compile_spinners_to_toml};
+use amble_script::{parse_spinners, worlddef_from_asts};
+use ron::ser::PrettyConfig;
 let src = std::fs::read_to_string("spinners.amble")?;
 let spinners = parse_spinners(&src)?;
-let toml = compile_spinners_to_toml(&spinners)?;
+let worlddef = worlddef_from_asts(&[], &[], &[], &spinners, &[], &[])?;
+let ron = ron::ser::to_string_pretty(&worlddef, PrettyConfig::default())?;
 ```
 
-The resulting TOML matches `amble_engine/data/spinners.toml`, ready to drop into the engine’s data directory or ship with compiled content.
+The resulting `ron` string can be written to `world.ron` for engine loading.

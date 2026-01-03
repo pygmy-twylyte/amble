@@ -11,7 +11,7 @@ use crate::Id;
 use crate::world::WorldObject;
 use crate::{Item, Npc, Room};
 
-/// Generic: Returns the TOML symbol for a given object's id.
+/// Generic: Returns the symbol for a given object's id.
 pub fn symbol_from_id<'a, T: WorldObject, S: BuildHasher>(
     map: &'a HashMap<Id, T, S>,
     id: impl AsRef<str>,
@@ -42,7 +42,7 @@ pub fn pluralize(word: &str, count: isize) -> String {
     format!("{}{}", word, plural_s(count))
 }
 
-/// Returns the TOML symbol for a given room's id.
+/// Returns the symbol for a given room's id.
 pub fn room_symbol_from_id<'a, S: BuildHasher>(
     rooms: &'a HashMap<Id, Room, S>,
     room_id: impl AsRef<str>,
@@ -50,7 +50,7 @@ pub fn room_symbol_from_id<'a, S: BuildHasher>(
     symbol_from_id(rooms, room_id)
 }
 
-/// Returns the TOML symbol for a given item's id.
+/// Returns the symbol for a given item's id.
 pub fn item_symbol_from_id<'a, S: BuildHasher>(
     items: &'a HashMap<Id, Item, S>,
     item_id: impl AsRef<str>,
@@ -58,7 +58,7 @@ pub fn item_symbol_from_id<'a, S: BuildHasher>(
     symbol_from_id(items, item_id)
 }
 
-/// Returns the TOML symbol for a given character's id.
+/// Returns the symbol for a given character's id.
 pub fn npc_symbol_from_id<'a, S: BuildHasher>(
     npcs: &'a HashMap<Id, Npc, S>,
     npc_id: impl AsRef<str>,

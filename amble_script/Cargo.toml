@@ -7,7 +7,7 @@ homepage.workspace = true
 repository.workspace = true
 documentation.workspace = true
 readme = "README.md"
-description = "Authoring-focused DSL, parser, and compiler that produces Amble engine TOML data."
+description = "Authoring-focused DSL, parser, and compiler that produces Amble engine WorldDef data."
 keywords = ["dsl", "parser", "compiler", "interactive-fiction", "cli"]
 categories = ["compilers", "parsing", "command-line-utilities"]
 

@@ -25,12 +25,12 @@ use crate::item::{
     ConsumableOpts, ConsumeType, ContainerState, IngestMode as EngineIngestMode, Item, ItemAbility,
     ItemInteractionType, Movability,
 };
-use crate::loader::spinners::create_default_spinners;
 use crate::npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState};
 use crate::player::Flag;
 use crate::room::{Exit, OverlayCondition, Room, RoomOverlay};
 use crate::scheduler::{EventCondition, OnFalsePolicy};
 use crate::spinners::SpinnerType;
+use crate::spinners::create_default_spinners;
 use crate::trigger::{ScriptedAction, Trigger, TriggerAction, TriggerCondition};
 use crate::world::{AmbleWorld, Location};
 

@@ -1,12 +1,12 @@
 # Items DSL Guide
 
-This guide introduces the Items subset of the amble_script DSL and how it maps to the engine’s `items.toml`.
+This guide introduces the Items subset of the amble_script DSL and how it maps into the engine’s `WorldDef` (`world.ron`).
 
 Highlights:
 - Support for `name`, `desc`, `portable`, and `location` fields.
 - Optional `container state` (`open`, `closed`, `locked`, `transparentClosed`, `transparentLocked`).
 - Optional `text` field for readable items and `restricted` flag for non-droppable items.
-- `ability` entries compile to `[[items.abilities]]` tables with an optional `target`.
+- `ability` entries compile into `ItemDef.abilities` entries with an optional `target`.
 - Interaction requirements: `requires <ability> to <interaction>` compiles to `interaction_requires`.
 - `consumable { … }` blocks model limited-use items that despawn or transform after depletion.
 
@@ -23,20 +23,7 @@ item portal_gun {
 }
 ```
 
-Emits:
-
-```
-[[items]]
-id = "portal_gun"
-name = "Portal Gun"
-description = "A device."
-portable = false
-location = { Room = "portal-room" }
-container_state = "closed"
-
-[[items.abilities]]
-type = "TurnOn"
-```
+This produces an `ItemDef` with the corresponding `id`, `name`, `desc`, `movability`, `location`, `container_state`, and `abilities` fields.
 
 ## Locations
 
@@ -59,7 +46,7 @@ ability Read
 ability Unlock box
 ```
 
-Each ability becomes an entry in `[[items.abilities]]` with `type` and optional `target`.
+Each ability becomes an entry in `ItemDef.abilities` with `type` and optional `target`.
 
 ## Optional Text & Restricted Items
 
@@ -86,13 +73,7 @@ requires insulate to handle
 requires cut to open
 ```
 
-This compiles to TOML as:
-
-```
-[items.interaction_requires]
-handle = "insulate"
-open = "cut"
-```
+This compiles into `ItemDef.interaction_requires` with the matching interaction → ability mapping.
 
 ## Consumables
 
@@ -115,15 +96,17 @@ Available options:
   - `when_consumed replace inventory <item>` swaps it for another item in the player’s inventory.
   - `when_consumed replace current room <item>` drops a replacement into the room where it was used.
 
-The compiler emits these into the `[[items.consumable]]` tables with the correct structure expected by the engine.
+The compiler emits these into `ItemDef.consumable` with the correct structure expected by the engine.
 
 ## Library Usage
 
 ```
-use amble_script::{parse_items, compile_items_to_toml};
+use amble_script::{parse_items, worlddef_from_asts};
+use ron::ser::PrettyConfig;
 let src = std::fs::read_to_string("items.amble")?;
 let items = parse_items(&src)?;
-let toml = compile_items_to_toml(&items)?;
+let worlddef = worlddef_from_asts(&[], &[], &items, &[], &[], &[])?;
+let ron = ron::ser::to_string_pretty(&worlddef, PrettyConfig::default())?;
 ```
 
-The resulting `toml` string matches `amble_engine/data/items.toml`.
+The resulting `ron` string can be written to `world.ron` for engine loading.

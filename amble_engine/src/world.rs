@@ -48,9 +48,9 @@ impl Location {
 
 /// Common API shared by rooms, items, NPCs, and the player.
 pub trait WorldObject {
-    /// Stable UUID assigned to the object.
+    /// Stable id assigned to the object.
     fn id(&self) -> Id;
-    /// Symbol used in TOML content to refer to the object.
+    /// Symbol used in world data to refer to the object.
     fn symbol(&self) -> &str;
     /// Display-friendly name.
     fn name(&self) -> &str;
@@ -75,7 +75,7 @@ pub struct AmbleWorld {
     pub triggers: Vec<Trigger>,
     /// The player character
     pub player: Player,
-    /// History of the player's path since the beginning of the game (Room UUIDs)
+    /// History of the player's path since the beginning of the game (Room IDs)
     #[serde(default)]
     pub player_path: Vec<Id>,
     /// Text / phrase randomizers for ambient events, status effects, and to keep engine messages from being repetitive
@@ -137,7 +137,7 @@ impl AmbleWorld {
 
     /// Obtain a reference to the room the player occupies.
     /// # Errors
-    /// - if player isn't in a Room or the Room's uuid is not found
+    /// - if player isn't in a Room or the Room's id is not found
     pub fn player_room_ref(&self) -> Result<&Room> {
         match &self.player.location {
             Location::Room(room_id) => self
@@ -150,7 +150,7 @@ impl AmbleWorld {
 
     /// Obtain a mutable reference to the room the player occupies.
     /// # Errors
-    /// - if player is not in a room or room's UUID is not found
+    /// - if player is not in a room or room's id is not found
     pub fn player_room_mut(&mut self) -> Result<&mut Room> {
         match &self.player.location {
             Location::Room(room_id) => self
@@ -161,13 +161,13 @@ impl AmbleWorld {
         }
     }
 
-    /// Get a mutable reference to an item by UUID, if present.
+    /// Get a mutable reference to an item by id, if present.
     pub fn get_item_mut(&mut self, item_id: Id) -> Option<&mut Item> {
         self.items.get_mut(&item_id)
     }
 }
 
-/// Collect all item UUIDs visible within a `Room` according to a predicate.
+/// Collect all item ids visible within a `Room` according to a predicate.
 ///
 /// Items stored directly in the room are always included. Contents of containers are only
 /// traversed if the supplied `should_include_contents` function returns `true` for the
@@ -194,7 +194,7 @@ fn collect_room_items(
     Ok(room_items.union(&contained_items).cloned().collect())
 }
 
-/// Constructs a set of all potentially take-able / viewable item (uuids) in a room.
+/// Constructs a set of all potentially take-able / viewable item ids in a room.
 /// Non-portable or restricted items not filtered here -- player discovers
 /// that on their own. The scope includes items in room, and items in open containers.
 /// Items in closed or locked containers and NPCs are excluded.

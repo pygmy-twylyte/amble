@@ -54,17 +54,6 @@ fn test_lib_version() {
 }
 
 #[test]
-fn test_resolve_location_inventory() {
-    let symbols = loader::SymbolTable::default();
-    let mut table = std::collections::HashMap::new();
-    table.insert("Inventory".to_string(), String::new());
-    assert!(matches!(
-        loader::resolve_location(&table, &symbols).unwrap(),
-        world::Location::Inventory
-    ));
-}
-
-#[test]
 fn test_npc_state_keys() {
     use ae::npc::NpcState;
     let custom = NpcState::from_key("custom:foo");
@@ -151,20 +140,23 @@ fn test_world_new_empty_version() {
 
 #[test]
 fn test_loader_goals_to_goal() {
-    use ae::loader::goals::{RawGoal, RawGoalCondition};
-    let symbols = loader::SymbolTable::default();
+    use amble_data::{GoalCondition, GoalDef, GoalGroup, WorldDef};
     let goal_id = "g".to_string();
-    let raw = RawGoal {
-        id: goal_id.clone(),
-        name: "name".into(),
-        description: String::new(),
-        group: ae::goal::GoalGroup::Required,
-        activate_when: None,
-        finished_when: RawGoalCondition::HasFlag { flag: "f".into() },
-        failed_when: None,
+    let def = WorldDef {
+        goals: vec![GoalDef {
+            id: goal_id.clone(),
+            name: "name".into(),
+            description: String::new(),
+            group: GoalGroup::Required,
+            activate_when: None,
+            finished_when: GoalCondition::HasFlag { flag: "f".into() },
+            failed_when: None,
+        }],
+        ..WorldDef::default()
     };
-    let goal = raw.to_goal(&symbols).unwrap();
-    assert_eq!(goal.id, goal_id);
+    let world = ae::loader::worlddef::build_world_from_def(&def).unwrap();
+    assert_eq!(world.goals.len(), 1);
+    assert_eq!(world.goals[0].id, goal_id);
 }
 
 #[test]
@@ -198,7 +190,7 @@ fn test_interaction_requirement_met() {
         text: None,
         consumable: None,
     };
-    assert!(ae::loader::items::interaction_requirement_met(
+    assert!(ae::item::interaction_requirement_met(
         ItemInteractionType::Clean,
         &target,
         &tool
@@ -206,79 +198,60 @@ fn test_interaction_requirement_met() {
 }
 
 #[test]
-fn test_raw_npc_to_npc() {
-    use ae::loader::npcs::RawNpc;
-    use std::collections::{HashMap, HashSet};
-    let mut symbols = loader::SymbolTable::default();
-    ae::loader::rooms::register_npc(&mut symbols, "npc");
-    let raw = RawNpc {
-        id: "npc".into(),
-        name: "Npc".into(),
-        description: String::new(),
-        location: HashMap::from([("Nowhere".to_string(), "".to_string())]),
-        inventory: HashSet::new(),
-        dialogue: HashMap::new(),
-        state: ae::npc::NpcState::Normal,
-        movement: None,
-        max_hp: 10,
+fn test_worlddef_npc_to_world() {
+    use amble_data::{LocationRef, NpcDef, NpcState, RoomDef, WorldDef};
+    let def = WorldDef {
+        rooms: vec![RoomDef {
+            id: "room".into(),
+            name: "Room".into(),
+            desc: String::new(),
+            visited: false,
+            exits: Vec::new(),
+            overlays: Vec::new(),
+        }],
+        npcs: vec![NpcDef {
+            id: "npc".into(),
+            name: "Npc".into(),
+            desc: String::new(),
+            max_hp: 10,
+            location: LocationRef::Room("room".into()),
+            state: NpcState::Normal,
+            dialogue: Default::default(),
+            movement: None,
+        }],
+        ..WorldDef::default()
     };
-
-    let npc = raw.to_npc(&symbols).unwrap();
+    let mut world = ae::loader::worlddef::build_world_from_def(&def).unwrap();
+    ae::loader::placement::place_npcs(&mut world).unwrap();
+    let npc = world.npcs.get("npc").unwrap();
     assert_eq!(npc.name, "Npc");
+    let room = world.rooms.get("room").unwrap();
+    assert!(room.npcs.contains("npc"));
 }
 
 #[test]
-fn test_raw_player_to_player() {
-    use ae::loader::player::{RawPlayer, build_player};
-    use std::collections::{HashMap, HashSet};
-    let mut symbols = loader::SymbolTable::default();
-    let raw = RawPlayer {
+fn test_player_def_to_player() {
+    use ae::loader::player::{PlayerDef, build_player};
+    let def = PlayerDef {
         id: "player".into(),
         name: "P".into(),
         description: String::new(),
-        location: {
-            let mut m = HashMap::new();
-            m.insert("Inventory".into(), String::new());
-            m
-        },
-        inventory: HashMap::new(),
-        flags: HashSet::new(),
-        score: 0,
+        location: world::Location::Inventory,
         max_hp: 10,
+        flags: Vec::new(),
+        score: 0,
     };
-    let player = build_player(&raw, &mut symbols).unwrap();
+    let player = build_player(&def).unwrap();
     assert_eq!(player.name, "P");
     assert_eq!(player.max_hp(), 10);
     assert_eq!(player.current_hp(), 10);
 }
 
 #[test]
-fn test_register_item() {
-    let mut symbols = loader::SymbolTable::default();
-    let id = ae::loader::rooms::register_item(&mut symbols, "item");
-    let again = ae::loader::rooms::register_item(&mut symbols, "item");
-    assert_eq!(id, again);
-}
-
-#[test]
-fn test_spinner_file_to_map() {
-    use ae::loader::spinners::{RawSpinnerData, SpinnerFile};
-    use ae::spinners::{CoreSpinnerType, SpinnerType};
-    let file = SpinnerFile {
-        entries: vec![RawSpinnerData {
-            spinner_type_key: "movement".into(),
-            values: vec!["go".into()],
-            widths: vec![1],
-        }],
-    };
-    let map = file.to_spinner_map();
+fn test_create_default_spinners() {
+    use ae::spinners::{CoreSpinnerType, SpinnerType, create_default_spinners};
+    let map = create_default_spinners();
     assert!(map.contains_key(&SpinnerType::Core(CoreSpinnerType::Movement)));
-}
-
-#[test]
-fn test_build_triggers_empty() {
-    let triggers = ae::loader::triggers::build_triggers(&[], &loader::SymbolTable::default()).unwrap();
-    assert!(triggers.is_empty());
 }
 
 #[test]

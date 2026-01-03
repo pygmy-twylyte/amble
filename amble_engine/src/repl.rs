@@ -535,7 +535,7 @@ impl WorldEntity<'_> {
             WorldEntity::Npc(npc) => npc.name(),
         }
     }
-    /// Get the UUID of the entity
+    /// Get the id of the entity
     pub fn id(&self) -> Id {
         match self {
             WorldEntity::Item(item) => item.id(),

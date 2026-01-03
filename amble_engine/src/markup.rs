@@ -1,7 +1,7 @@
 //! Lightweight inline markup for terminal output.
 //!
 //! Amble content is data-first: most output strings originate in `.amble` DSL and
-//! are compiled to TOML. This module allows authors to add a small amount of
+//! are compiled into `WorldDef` data (`world.ron`). This module allows authors to add a small amount of
 //! formatting inside those strings without touching Rust code.
 //!
 //! # Syntax
