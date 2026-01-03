@@ -5,10 +5,7 @@ use crate::{
 use super::helpers::{parse_movability_opt, unquote};
 use super::{AstError, Rule};
 
-pub(super) fn parse_item_pair(
-    item: pest::iterators::Pair<Rule>,
-    _source: &str,
-) -> Result<ItemAst, AstError> {
+pub(super) fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<ItemAst, AstError> {
     let (src_line, _src_col) = item.as_span().start_pos().line_col();
     let mut it = item.into_inner();
     let id = it
@@ -135,7 +132,7 @@ pub(super) fn parse_item_pair(
                     .ok_or(AstError::Shape("requires interaction"))?
                     .as_str()
                     .to_string();
-                // Store as (interaction, ability) to match TOML mapping
+                // Store as (interaction, ability) to match engine mapping
                 requires.push((interaction, ability));
             },
             Rule::item_consumable => {

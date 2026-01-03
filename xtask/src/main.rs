@@ -60,7 +60,7 @@ struct BuildEngineArgs {
 
 #[derive(Subcommand)]
 enum PackageCommands {
-    /// Package the engine binary and compiled data (TOML) only.
+    /// Package the engine binary and compiled data (`world.ron`) only.
     Engine(PackageEngineArgs),
     /// Package the engine, `amble_script` CLI, and source data.
     Full(PackageFullArgs),
@@ -102,7 +102,7 @@ struct PackageOptions {
 
 #[derive(Subcommand)]
 enum ContentCommands {
-    /// Compile the .amble sources and lint the resulting TOMLs.
+    /// Compile the .amble sources and lint the resulting world data.
     Refresh(ContentRefreshArgs),
 }
 
@@ -111,7 +111,7 @@ struct ContentRefreshArgs {
     /// Source directory containing .amble files.
     #[arg(long, value_name = "DIR", default_value = "amble_script/data/Amble")]
     source: PathBuf,
-    /// Output directory for compiled TOML files.
+    /// Output directory for compiled world data (`world.ron`).
     #[arg(long, value_name = "DIR", default_value = "amble_engine/data")]
     out_dir: PathBuf,
     /// Treat missing files as an error during linting.
@@ -608,7 +608,7 @@ fn package_impl(workspace: &Workspace, options: &PackageOptions, kind: PackageKi
             .with_context(|| format!("failed to copy {}", script_path.display()))?;
     }
 
-    // Copy compiled TOML data.
+    // Copy compiled world data (`world.ron` plus config TOMLs).
     let data_src = workspace.root.join("amble_engine/data");
     let data_dst = staging_dir.join("data");
     copy_dir_recursive(&data_src, &data_dst)

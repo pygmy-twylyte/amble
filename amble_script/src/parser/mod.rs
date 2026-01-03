@@ -261,10 +261,6 @@ trigger "He said:\n\"hi\"" when always {
             },
             _ => panic!("expected npc says"),
         }
-        // TOML may re-escape newlines or include them directly; just ensure both parts appear
-        let toml = crate::compile_trigger_to_toml(&ast).expect("compile ok");
-        assert!(toml.contains("Line1"));
-        assert!(toml.contains("Line2"));
     }
 
     #[test]
@@ -277,9 +273,14 @@ trigger "note escapes" when always {
 }
 "#;
         let ast = parse_trigger(src).expect("parse ok");
-        let t = crate::compile_trigger_to_toml(&ast).expect("compile ok");
-        assert!(t.contains("lineA"));
-        assert!(t.contains("lineB"));
+        match &ast.actions[0].action {
+            ActionAst::ScheduleIn { note, .. } => {
+                let note = note.as_deref().expect("note should be present");
+                assert!(note.contains("lineA"));
+                assert!(note.contains("lineB"));
+            },
+            other => panic!("expected schedule action, got {other:?}"),
+        }
     }
 
     #[test]
@@ -364,15 +365,6 @@ trigger "patch locker" when always {
             },
             other => panic!("expected modify item action, got {other:?}"),
         }
-        let toml = crate::compile_trigger_to_toml(&ast).expect("compile ok");
-        assert!(toml.contains("type = \"modifyItem\""));
-        assert!(toml.contains("item_sym = \"locker\""));
-        assert!(toml.contains("name = \"Unlocked locker\""));
-        assert!(toml.contains("desc = \"It's open now\""));
-        assert!(toml.contains("movability = { restricted = { reason = \"It's not yours to take.\" } }"));
-        assert!(toml.contains("container_state = \"locked\""));
-        assert!(toml.contains("add_abilities = ["));
-        assert!(toml.contains("remove_abilities = ["));
     }
 
     #[test]
@@ -416,13 +408,6 @@ trigger "patch lab" when always {
             },
             other => panic!("expected modify room action, got {other:?}"),
         }
-        let toml = crate::compile_trigger_to_toml(&ast).expect("compile ok");
-        assert!(toml.contains("type = \"modifyRoom\""));
-        assert!(toml.contains("room_sym = \"aperture-lab\""));
-        assert!(toml.contains("remove_exits = [\"portal-room\"]"));
-        assert!(toml.contains("add_exits = ["));
-        assert!(toml.contains("barred_message = \"You can't go that way yet.\""));
-        assert!(toml.contains("required_flags = [{ type = \"simple\", name = \"opened-vault\" }]"));
     }
 
     #[test]
@@ -475,12 +460,6 @@ trigger "patch emh" when always {
             },
             other => panic!("expected modify npc action, got {other:?}"),
         }
-        let toml = crate::compile_trigger_to_toml(&ast).expect("compile ok");
-        assert!(toml.contains("type = \"modifyNpc\""));
-        assert!(toml.contains("npc_sym = \"emh\""));
-        assert!(toml.contains("route = [\"sickbay\", \"corridor\"]"));
-        assert!(toml.contains("type = \"everyNTurns\""));
-        assert!(toml.contains("loop_route = false"));
     }
 
     #[test]
@@ -511,9 +490,6 @@ trigger "patch guard" when always {
             },
             other => panic!("expected modify npc action, got {other:?}"),
         }
-        let toml = crate::compile_trigger_to_toml(&ast).expect("compile ok");
-        assert!(toml.contains("random_rooms = [\"hall\", \"foyer\", \"atrium\"]"));
-        assert!(toml.contains("type = \"onTurn\""));
     }
 
     #[test]
@@ -563,9 +539,6 @@ trigger "patch chest" when always {
             },
             other => panic!("expected modify item action, got {other:?}"),
         }
-        let toml = crate::compile_trigger_to_toml(&ast).expect("compile ok");
-        assert!(toml.contains("remove_container_state = true"));
-        assert!(!toml.contains("container_state = \""));
     }
 
     #[test]
@@ -573,10 +546,13 @@ trigger "patch chest" when always {
         let src = "trigger r#\"raw name with \"quotes\"\"# when always {\n  do show r#\"He said \"hi\"\"#\n}\n";
         let asts = super::parse_program(src).expect("parse ok");
         assert!(!asts.is_empty());
-        // Ensure value with embedded quotes is preserved (serializer may re-escape)
-        let toml = crate::compile_trigger_to_toml(&asts[0]).expect("compile ok");
-        assert!(toml.contains("He said"));
-        assert!(toml.contains("hi"));
+        match &asts[0].actions[0].action {
+            ActionAst::Show(msg) => {
+                assert!(msg.contains("He said"));
+                assert!(msg.contains("hi"));
+            },
+            other => panic!("expected show action, got {other:?}"),
+        }
     }
 
     #[test]
@@ -652,7 +628,7 @@ trigger "patch chest" when always {
     }
 
     #[test]
-    fn npc_movement_loop_flag_parses_and_compiles() {
+    fn npc_movement_loop_flag_parses() {
         let src = r#"
 npc bot {
   name "Maintenance Bot"
@@ -667,9 +643,6 @@ npc bot {
         assert_eq!(npcs.len(), 1);
         let movement = npcs[0].movement.as_ref().expect("movement present");
         assert_eq!(movement.loop_route, Some(false));
-
-        let toml = crate::compile_npcs_to_toml(&npcs).expect("compile npcs");
-        assert!(toml.contains("loop_route = false"));
     }
 
     #[test]
