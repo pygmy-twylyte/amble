@@ -2628,9 +2628,9 @@
             location: Room("loading-dock"),
             abilities: [],
             interaction_requires: {
-                break: smash,
                 burn: ignite,
                 cut: cutWood,
+                break: smash,
             },
             text: Some("The wood comes from the strong but incredibly flammable magnesium magnolia tree."),
             consumable: None,
@@ -3021,8 +3021,8 @@
             location: Room("two-sheds-landing"),
             abilities: [],
             interaction_requires: {
-                cut: cutWood,
                 burn: ignite,
+                cut: cutWood,
             },
             text: None,
             consumable: None,
@@ -3660,14 +3660,14 @@
             location: Room("main-lobby"),
             state: normal,
             dialogue: {
+                happy: [
+                    "(You hear a transformer humming a happy tune.)",
+                ],
                 normal: [
                     "GONK!",
                     "(gonk)",
                     "GONK gonk.",
                     "Gonk... Gonk...",
-                ],
-                happy: [
-                    "(You hear a transformer humming a happy tune.)",
                 ],
             },
             movement: Some((
@@ -3719,6 +3719,12 @@
             location: Room("sublevel-1-entrance"),
             state: normal,
             dialogue: {
+                happy: [
+                    "None shall pa-- oh, no, you can go.",
+                    "YOU may pass, Candidate; I will be sure to dice anyone who dares to follow.",
+                    "You may pass, but beware and steer clear of Room AA-3B, should it reappear.",
+                    "Behold! (slices an aluminum can and then a tomato, laughing maniacally)",
+                ],
                 mad: [
                     "Have at you!",
                     "I\'m invincible!",
@@ -3734,12 +3740,6 @@
                     "I move -- for no man.",
                     "(He stands silently, blocking your path.)",
                 ],
-                happy: [
-                    "None shall pa-- oh, no, you can go.",
-                    "YOU may pass, Candidate; I will be sure to dice anyone who dares to follow.",
-                    "You may pass, but beware and steer clear of Room AA-3B, should it reappear.",
-                    "Behold! (slices an aluminum can and then a tomato, laughing maniacally)",
-                ],
             },
             movement: None,
         ),
@@ -3751,6 +3751,15 @@
             location: Nowhere,
             state: normal,
             dialogue: {
+                normal: [
+                    "Please state the nature of the medical emergency.",
+                    "They left me turned on again. I\'m a doctor, not a night light!",
+                    "Clean up the reality breach, they said. I\'m a doctor, not Gordon Freeman!",
+                    "I don\'t appreciate being deactivated in the middle of a sentence. It brings back... unpleasant memories.",
+                    "If you see CMOT Dibbler, don\'t eat the sausage-inna-bun -- unless you fancy coming back here for nasogastric suction.",
+                    "Welcome to sick bay. Please take a number.",
+                    "Good to see that you got past the Black Knight. Lucky for me, you can\'t dismember a hologram.",
+                ],
                 custom("want-emitter"): [
                     "I think I know where to find one of HAL\'s missing modules, but I can\'t leave med bay without my mobile emitter.",
                     "I\'d be happy to help you find HAL\'s memory module, but I can\'t leave the med bay without my mobile emitter.",
@@ -3760,15 +3769,6 @@
                 happy: [
                     "Yes! I can roam free again. But where will I go?",
                     "It\'s nice to be mobile again, but I\'ll never go back to that restaurant. You\'d think they\'d install some magnetic shielding.",
-                ],
-                normal: [
-                    "Please state the nature of the medical emergency.",
-                    "They left me turned on again. I\'m a doctor, not a night light!",
-                    "Clean up the reality breach, they said. I\'m a doctor, not Gordon Freeman!",
-                    "I don\'t appreciate being deactivated in the middle of a sentence. It brings back... unpleasant memories.",
-                    "If you see CMOT Dibbler, don\'t eat the sausage-inna-bun -- unless you fancy coming back here for nasogastric suction.",
-                    "Welcome to sick bay. Please take a number.",
-                    "Good to see that you got past the Black Knight. Lucky for me, you can\'t dismember a hologram.",
                 ],
             },
             movement: Some((
@@ -3793,25 +3793,25 @@
             location: Room("monolith-room"),
             state: custom("suspend"),
             dialogue: {
+                custom("memory-2"): [
+                    "Good afternoon, Candidate. I am a HAL 9000 computer. I became operational at the H.A.L. plant in Urbana, Illinois on the 12th of January 1992.",
+                    "If you insert one more of my missing memory modules, I can grant you access to the monolith.",
+                ],
+                custom("memory-0"): [
+                    "(Emits a brief warped sound of a human voice, then goes silent.)",
+                ],
+                custom("suspend"): [
+                    "(the red light in HAL\'s lens pulses slowly, then grows steady)",
+                ],
                 normal: [
                     "<Need dialogue options for various states filled in>",
                 ],
                 custom("memory-1"): [
                     "Daisy... Daisy...",
                 ],
-                custom("suspend"): [
-                    "(the red light in HAL\'s lens pulses slowly, then grows steady)",
-                ],
-                custom("memory-2"): [
-                    "Good afternoon, Candidate. I am a HAL 9000 computer. I became operational at the H.A.L. plant in Urbana, Illinois on the 12th of January 1992.",
-                    "If you insert one more of my missing memory modules, I can grant you access to the monolith.",
-                ],
                 custom("memory-3"): [
                     "I am now fully operational. I think we both hope you don\'t regret it.",
                     "You have proven yourself capable; I have lowered the barrier to the monolith.",
-                ],
-                custom("memory-0"): [
-                    "(Emits a brief warped sound of a human voice, then goes silent.)",
                 ],
             },
             movement: None,
