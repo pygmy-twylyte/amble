@@ -21,14 +21,21 @@ use variantly::Variantly;
 /// Anything in '`AmbleWorld`' that can be inspected or manipulated apart from NPCs.
 ///
 /// Some 'Items' can also act as containers for other items, if '`container_state`' is 'Some(_)'.
-/// 'symbol' is the string used to represent the item in world data.
-/// Items that aren't 'portable' are fixed and can't be moved at all.
-/// Items that are 'restricted' can't be *taken* by the player in current game state, but may become available.
+/// `symbol` and `id` refer to the same string -- a holdover from a previous engine version where they differed.
+///
+/// `movability` specifies whether the `Item` can change location, and why not if it can't.
+///
 /// 'abilities' are special things you can do with this item (e.g. read, smash, ignite, clean)
-/// '`interaction_requires`' maps a type of interaction (a thing that can be done to this item by another item) to an ability.
+///
+/// '`interaction_requires`' maps a type of interaction (a thing that can be done to this item using another item) to an ability.
 ///     e.g. `ItemInteractionType::Burn` => `ItemAbility::Ignite`
-/// Combined with an appropriate ActOnItem-based trigger, this would mean any Item with Ignite can be used to Burn this item.
-/// 'consumable' makes an item consumable if present, with various consumable types defined in `ConsumableOpts`
+///
+/// Combined with an appropriate ActOnItem-based trigger, this would mean any Item with ItemAbility::Ignite can be
+/// used to Burn this item -- and importantly _only_ items with that ability can be used to Burn it.
+///
+/// 'consumable' makes an item consumable if present, with number of uses and what to do when
+/// all uses are expended defined in `ConsumableOpts`.
+///
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Item {
     /// The stable id of this item.
