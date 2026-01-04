@@ -47,6 +47,10 @@ impl Location {
 }
 
 /// Common API shared by rooms, items, NPCs, and the player.
+///
+/// Note: There is a duplication here. id() and symbol() effectively return different
+/// views of the same string. It is a throwback to when the engine read TOML and assigned
+/// UUIDs to entities. The DSL symbol strings now *are* the Ids,
 pub trait WorldObject {
     /// Stable id assigned to the object.
     fn id(&self) -> Id;
