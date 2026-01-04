@@ -1,6 +1,6 @@
 # Zed Editor Setup for Amble
 
-The `zed-amble-ext` project provides (I hope) a first-class authoring experience for Amble’s DSL inside the [Zed editor](https://zed.dev). It bundles syntax highlighting, code completion, symbol navigation, inline diagnostics, and formatting powered by a tree-sitter parser and a language server (written in Rust).
+The `zed-amble-ext` project provides (I hope) a first-class authoring experience for Amble’s DSL inside the [Zed editor](https://zed.dev). It bundles syntax highlighting, code completion, symbol navigation, hover information, inline diagnostics, and formatting powered by a tree-sitter parser and a language server.
 
 ## Install the extension
 
