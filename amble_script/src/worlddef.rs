@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use amble_data::{
     ActionDef, ActionKind, ConditionDef, ConditionExpr, ConsumableDef, ConsumeTypeDef, ContainerState, EventDef,
@@ -192,7 +192,7 @@ fn item_to_def(item: &ItemAst) -> Result<ItemDef, WorldDefError> {
             let ability = item_ability_from_str(ability, None)?;
             Ok((interaction, ability))
         })
-        .collect::<Result<HashMap<_, _>, WorldDefError>>()?;
+        .collect::<Result<BTreeMap<_, _>, WorldDefError>>()?;
     let consumable = match &item.consumable {
         Some(consumable) => Some(consumable_to_def(consumable)?),
         None => None,
@@ -255,7 +255,7 @@ fn spinner_wedge_to_def(wedge: &SpinnerWedgeAst) -> Result<SpinnerWedgeDef, Worl
 }
 
 fn npc_to_def(npc: &NpcAst) -> Result<NpcDef, WorldDefError> {
-    let mut dialogue: HashMap<NpcState, Vec<String>> = HashMap::new();
+    let mut dialogue: BTreeMap<NpcState, Vec<String>> = BTreeMap::new();
     for (state, lines) in &npc.dialogue {
         let parsed = npc_state_from_str(state)?;
         dialogue.insert(parsed, lines.clone());

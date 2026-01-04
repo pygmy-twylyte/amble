@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 /// Stable identifier used across WorldDef references.
 pub type Id = String;
@@ -236,7 +236,7 @@ pub struct ItemDef {
     #[serde(default)]
     pub abilities: Vec<ItemAbility>,
     #[serde(default)]
-    pub interaction_requires: HashMap<ItemInteractionType, ItemAbility>,
+    pub interaction_requires: BTreeMap<ItemInteractionType, ItemAbility>,
     pub text: Option<String>,
     pub consumable: Option<ConsumableDef>,
 }
@@ -279,7 +279,7 @@ pub struct NpcDef {
     pub location: LocationRef,
     pub state: NpcState,
     #[serde(default)]
-    pub dialogue: HashMap<NpcState, Vec<String>>,
+    pub dialogue: BTreeMap<NpcState, Vec<String>>,
     pub movement: Option<NpcMovementDef>,
 }
 
@@ -822,7 +822,7 @@ pub enum ItemAbility {
 }
 
 /// Interaction verbs used when applying one item to another.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ItemInteractionType {
     Attach,
@@ -868,7 +868,7 @@ pub enum Movability {
 }
 
 /// NPC mood/state tags used for dialogue and conditions.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum NpcState {
     Bored,

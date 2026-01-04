@@ -235,7 +235,7 @@ pub fn validate_world(world: &WorldDef) -> Vec<ValidationError> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::collections::BTreeMap;
 
     use super::*;
 
@@ -277,7 +277,7 @@ mod tests {
             container_state: None,
             location: LocationRef::Room(room_id.to_string()),
             abilities: Vec::new(),
-            interaction_requires: HashMap::new(),
+            interaction_requires: BTreeMap::new(),
             text: None,
             consumable: None,
         }
