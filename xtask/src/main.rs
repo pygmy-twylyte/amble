@@ -128,7 +128,7 @@ struct ReleaseArgs {
     #[arg(long, value_name = "TRIPLE")]
     linux_target: Option<String>,
     /// Target triple used for Windows packages.
-    #[arg(long, value_name = "TRIPLE", default_value = "x86_64-pc-windows-msvc")]
+    #[arg(long, value_name = "TRIPLE", default_value = "x86_64-pc-windows-gnu")]
     windows_target: String,
     /// Run every step except publishing to crates.io (useful for dry runs).
     #[arg(long)]
