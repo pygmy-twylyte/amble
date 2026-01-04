@@ -10,17 +10,19 @@
 //! - some searches will only want items, some will want NPCS, some will want either
 //! - visible items and reachable items are two different things (consider an item in a locked transparent container)
 //!
-//! Caller should only need to send:
+//! Callers send:
 //! - an immutable `AmbleWorld` reference
 //! - the search string
-//! - the search scope
+//! - the [`SearchScope`] of interest
 //!
-//! Also, callers will generally need in return:
+//! Also, callers get in return:
 //! - the Id of the found entity, OR
 //! - the reason that an entity's ID is not being returned (`SearchError`)
 //!
-//! TODO?: For now, we'll just duplicate search functionality currently existing. Ultimately, the search scopes could
-//! become more task-specific and / or some validation steps may be moved here.
+//! General usage:
+//! `find_item_match(...)` when only interested in items for a given command
+//! `find_npc_match(...)` when only interested in npcs
+//! `find_entity_match(...)` when the input could refer to either an item or an npc
 
 use std::{
     collections::{HashMap, HashSet},
