@@ -20,7 +20,7 @@ name = "amble_script"
 path = "src/main.rs"
 
 [dependencies]
-amble_data = { path = "../amble_data" }
+amble_data = { version = "0.65.0", path = "../amble_data" }
 pest = "2"
 pest_derive = "2"
 ron = "0.10.1"
