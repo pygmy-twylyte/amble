@@ -1,6 +1,7 @@
 [package]
 name = "amble_data"
 version = "0.65.0"
+description = "Shared data model used by amble_engine and amble_script for the Amble game engine."
 edition.workspace = true
 license.workspace = true
 homepage.workspace = true
