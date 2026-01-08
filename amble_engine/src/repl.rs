@@ -85,6 +85,9 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
 
         info!("player entered: \"{input}\"");
 
+        let input = expand_abbreviated_input(&input);
+        let input = expand_exit_direction(input, world.player_room_ref()?.exits.keys());
+
         // parse user input and dispatch an associated `Command`
         let command = parse_command(&input, &mut view);
         let dispatch_result = dispatch_command(&command, world, &mut view)?;
@@ -138,6 +141,35 @@ struct DispatchResult {
     control: ReplControl,
     // Turn number update, if any (needed if game reloaded from file).
     turn: Option<usize>,
+}
+
+/// Checks for an abbreviated command input and expand it as appropriate
+fn expand_abbreviated_input(input: &str) -> &str {
+    match input {
+        "l" => "look",
+        "q" => "quit",
+        "u" => "go up",
+        "d" => "go down",
+        "n" => "go north",
+        "e" => "go east",
+        "w" => "go west",
+        "s" => "go south",
+        _ => input,
+    }
+}
+
+/// Expands input into a "go <direction>" command if any direction in the room contains the input
+/// string. If the input doesn't match exactly one direction, it is returned unexpanded.
+fn expand_exit_direction<'a>(input: &str, directions: impl Iterator<Item = &'a String>) -> String {
+    let mut dir_matches: Vec<_> = directions.filter(|d| d.contains(input)).collect();
+    // just return a copy of input if there isn't *exactly* one match
+    if dir_matches.len() != 1 {
+        return input.to_string();
+    }
+    format!(
+        "go {}",
+        dir_matches.pop().expect("already checked for existing item above")
+    )
 }
 
 /// Dispatch a `Command` to its appropriate handler.
