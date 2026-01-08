@@ -10,6 +10,20 @@ For the *few* of you out there lurking and watching the my pet project so far, i
 So, I intend to keep an informal log here, going forward. With the exception of this intro, newest entries will be at the top.
 
 ---
+1-5-2026
+
+It's been nice to see a *little* reaction from people on this. Taking a little bit of a breather to let the new 0.65.0 release settle. Put in a little work on the language server and some calculations in medicalc. I'll probably toy with / polish the game demo before I do anything else.
+
+Had a comment about adding shorthand commands (l for look, cardinal directions etc) -- creating an issue for it -- should be easy to implement. Just need to decide what the shorthand will be. On a related note, maybe add room exit names to autocomplete, too. 
+
+---
+1-3-2026
+
+Inspiration wound up striking pretty hard after my 1-1 post and it led to a whirlwind of changes to the engine's data pipeline. The TOML intermediary files are all gone. We define everything in .amble files that isn't a static part of the engine. That improved and simplified the loader code in many ways. 
+
+That BIG breaking change along with the bevy of other changes (markup, :note command) led me to go forward with the 0.65.0 release today.
+
+---
 1-1-2026
 
 Feeling uninspired today. Looked at code to refactor -- meh. Thought about starting a dialogue feature upgrade. Meh again. I even went and looked at a couple of my other repos -- meh.
