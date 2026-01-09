@@ -8,6 +8,12 @@ I've been looking for a way to keep informal notes on development of Amble for a
 For the *few* of you out there lurking and watching the my pet project so far, it may sometimes seem like nothing is changing, though I work on Amble just about every day in some aspect or another. Many times, these are small changes buried in the DSL, the demo game content, or updates to the companion Zed extension and language server. 
 
 So, I intend to keep an informal log here, going forward. With the exception of this intro, newest entries will be at the top.
+---
+1-7-2026
+
+Tried using Claude to improve diagnostics in the language server. Unmitigated disaster. Reverted all changes. I'm surprised, after having good luck with Claude on some other stuff some months ago. Oh well. That's what git is for.
+
+User comment on Reddit inspired me to finally add abbreviations and an easier way to navigate. I looked at a few ways to do it... wound up finding the easiest way was to catch and _massage_ user input before passing it on to the parser. Just tested, committed, and pushed it.
 
 ---
 1-5-2026
