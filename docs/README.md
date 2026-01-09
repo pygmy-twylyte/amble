@@ -32,7 +32,7 @@ The Amble DSL is designed to read like plain English while staying precise and c
 - Type `help` in the game REPL for commands. Saves go to `saved_games/`.
 
 ### Build & Tinker (Rust toolchain)
-1. Install the latest stable Rust toolchain (this repo pins a version in `rust-toolchain`).
+1. Install the latest stable Rust toolchain.
 2. Clone this repository and `cd` into it.
 3. Run the engine with the bundled content:
    `cargo run -p amble_engine`
@@ -49,11 +49,12 @@ The Amble DSL is designed to read like plain English while staying precise and c
 ## Crates in this Repository
 - `amble_engine` - loads world data from `world.ron` (plus TOML configs for themes/scoring/help) or a saved state, then runs the game
 - `amble_script` - an intuitive, English-like language (DSL) for defining the game world, which compiles into `WorldDef` (RON) used by `amble_engine`
+- `amble_data` - world data model, shared between `amble_engine` and `amble_script`.
 - [`xtask`](../xtask/README.md) - automation helpers for builds, packaging, and the content pipeline
 
 ## Optional (but nice!) External Repositories for Developers
 - `tree-sitter-amble` - a tree-sitter parser / syntax highlighter for the amble_script DSL
-- `zed-amble-ext` - a full-featured extension for the Zed editor with not only syntax highlighting but a language server that supports outlining, references / go to definition, symbol renaming, formatting, diagnostics, autocomplete -- the works.
+- `zed-amble-ext` - a full-featured extension for the Zed editor with syntax highlighting and a language server (supports outlining, references / go-to-definition, symbol renaming, formatting, diagnostics, autocomplete -- development still ongoing.)
 
 ## Engine Features
 
@@ -64,17 +65,18 @@ The Amble DSL is designed to read like plain English while staying precise and c
 - Goals / Achievement system to help guide players to important objectives and mark progress
 - Configurable point scoring system
 - Customizable status effects
-- In-game help system for players with built-in help for commands but customizable general help text.
+- In-game help system for players (built-in help for commands with customizable general help text.)
 - WorldDef validation plus a placement pass that seeds initial room/NPC/item locations
 - Thorough logging of game and engine events enabled throughout
 - REPL-style parser with natural language verbs, synonyms, and DEV tools
 - Powerful trigger/scheduler system for conditional, delayed, or repeating events
 - Flexible flag model with sequence counters and derived logic helpers
 - Themeable terminal UI with multiple palettes and optional styling
+- Simple terminal markup allows additions styling for emphasis on top of the active theme (but also theme-aware)
 - Save system (RON full game state snapshots) for restoring worlds mid-adventure
-- Comprehensive test suite and CLI harness for fast iteration
+- Comprehensive test suite and CLI for fast iteration
 
 ## Engine Development / Contributions
-- Any ideas / contributions welcome!
-- At initial release, I feel like the UI is the weakest point. I tried to encapsulate everything display-related into the view module, hopefully making it easier to create a better TUI without having to modify the engine much.
-- Bugs and ideas for enhancements to the engine, demo game, DSL or tooling should be submitted as Issues on GitHub.
+- Any ideas / comments or contributions welcome!
+- I check the repo Issues and Discussions regularly.
+
