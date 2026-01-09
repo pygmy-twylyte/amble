@@ -22,7 +22,7 @@ The Amble DSL is designed to read like plain English while staying precise and c
 <img src="amble_zed_dsl_screenshot.png" alt="Amble DSL in Zed with syntax highlighting" width="950" />
 
 - Start with `amble_script/docs/dsl_creator_handbook.md` for the language tour.
-- For rich editing, see the [Zed Amble extension](./zed_extension.md) with outlining, references, rename, formatting, diagnostics, and autocomplete.
+- For rich editing, see the [Zed Amble extension](./zed_extension.md) - powered by [tree-sitter-amble](https://github.com/pygmy-twylyte/tree-sitter-amble)
 
 ## Quickstart
 
@@ -72,7 +72,7 @@ The Amble DSL is designed to read like plain English while staying precise and c
 - Powerful trigger/scheduler system for conditional, delayed, or repeating events
 - Flexible flag model with sequence counters and derived logic helpers
 - Themeable terminal UI with multiple palettes and optional styling
-- Simple terminal markup allows additions styling for emphasis on top of the active theme (but also theme-aware)
+- Simple terminal markup allows additional styling for emphasis on top of the active theme (but also theme-aware)
 - Save system (RON full game state snapshots) for restoring worlds mid-adventure
 - Comprehensive test suite and CLI for fast iteration
 
