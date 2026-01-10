@@ -1545,7 +1545,7 @@
             visited: false,
             exits: [
                 (
-                    direction: "back to the surface",
+                    direction: "up to the surface",
                     to: "snowfield",
                     hidden: false,
                     locked: false,
@@ -1671,7 +1671,7 @@
         (
             id: "guard-post",
             name: "Abandoned Guard Post",
-            desc: "A small stone guard post clings to the side of the trail, complete with a creaky wooden chair and a megaphone labeled [[red]]\'USE ONLY IF VERY SURE\'[[/red]]. A faded official-looking placard reads:\n[[box:NOTICE]] Passage beyond this point will have lead to anachronism.[[/box]]\nIt seems no one’s been stationed here in [[i]]quite[[/i]] some time. The trail continues upward, leading to what appears to be an ancient road—and a distinctly non-ancient office park.",
+            desc: "A small stone guard post clings to the side of the trail, complete with a creaky wooden chair and a megaphone labeled [[red]]\'USE ONLY IF VERY SURE\'[[/red]]. A faded official-looking placard reads:\n[[box:NOTICE]] Passage beyond this point will have led to [[i]]anachronism.[[/i]][[/box]]\nIt seems no one’s been stationed here in [[i]]quite[[/i]] some time. The trail continues upward, leading to what appears to be an ancient road—and a distinctly non-ancient office park.",
             visited: false,
             exits: [
                 (
@@ -9088,7 +9088,7 @@
             actions: [
                 (
                     action: scheduleInIf(
-                        turns_ahead: 2,
+                        turns_ahead: 4,
                         condition: Any([
                             All([
                                 Pred(missingFlag(
@@ -9148,24 +9148,80 @@
         (
             name: "Firewood HINT",
             note: Some("HINT radio: use firewood in ice-pit for plaque 2"),
-            only_once: false,
-            event: always,
-            conditions: All([
-                Pred(hasFlag(
-                    flag: "hint-radio-on",
-                )),
-                Pred(hasFlag(
-                    flag: "tried-read-plaque-2",
-                )),
-                Pred(playerInRoom(
-                    room: "snow-camp",
-                )),
-            ]),
+            only_once: true,
+            event: enterRoom(
+                room: "snow-camp",
+            ),
+            conditions: All([]),
             actions: [
                 (
-                    action: npcSays(
-                        npc: "hint_radio_npc",
-                        quote: "Looks like the researchers didn\'t get their fire lit before the dog-Thing got to them. Bad day for them, but maybe good for you. Maybe you can move it down into the ice pit to melt the ice encasing the pillar there.",
+                    action: scheduleInIf(
+                        turns_ahead: 4,
+                        condition: Any([
+                            All([
+                                Pred(hasFlag(
+                                    flag: "hint-radio-on",
+                                )),
+                                Pred(hasFlag(
+                                    flag: "tried-read-plaque-2",
+                                )),
+                                Pred(missingItem(
+                                    item: "firewood",
+                                )),
+                                Pred(missingFlag(
+                                    flag: "campfire-lit",
+                                )),
+                                Pred(playerInRoom(
+                                    room: "snow-camp",
+                                )),
+                            ]),
+                            Any([
+                                Pred(hasItem(
+                                    item: "firewood",
+                                )),
+                                Pred(hasFlag(
+                                    flag: "campfire-lit",
+                                )),
+                                Pred(hasFlag(
+                                    flag: "read-plaque-2",
+                                )),
+                            ]),
+                        ]),
+                        on_false: retryNextTurn,
+                        actions: [
+                            (
+                                action: conditional(
+                                    condition: All([
+                                        Pred(hasFlag(
+                                            flag: "hint-radio-on",
+                                        )),
+                                        Pred(hasFlag(
+                                            flag: "tried-read-plaque-2",
+                                        )),
+                                        Pred(missingItem(
+                                            item: "firewood",
+                                        )),
+                                        Pred(missingFlag(
+                                            flag: "campfire-lit",
+                                        )),
+                                        Pred(playerInRoom(
+                                            room: "snow-camp",
+                                        )),
+                                    ]),
+                                    actions: [
+                                        (
+                                            action: npcSays(
+                                                npc: "hint_radio_npc",
+                                                quote: "Looks like the researchers didn\'t get their fire lit before the dog-Thing got to them. Bad day for them, but maybe good for you. Could you move the firewood down into the ice pit to melt the ice around the frozen pillar?",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        note: None,
                     ),
                     priority: None,
                 ),
