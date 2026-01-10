@@ -37,7 +37,8 @@ item cheat_button {
     location room dev-room
 }
 
-trigger "Cheat Mode" when touch item cheat_button {
+trigger "Cheat Mode"
+when touch item cheat_button {
     do show "Morphed the room into an endgame backdoor!"
     do modify room dev-room {
         name "AA-3B Back Entrance"
@@ -54,6 +55,7 @@ npc the_luggage {
     name "The Luggage"
     desc "A wooden chest with dozens of tiny legs, layered sharp teeth around its lid, and a violent temper."
     location nowhere "spawns at dev-room for testing"
+    state normal
     max_hp 10
     dialogue normal {
         "(stares at you with menace)"
@@ -66,7 +68,6 @@ when touch item big_red_button {
     do show "Always [[red]]never[[/red]] press the big red button! [[i]]Now look what you've done![[/i]]"
     do spawn npc the_luggage into room dev-room
 }
-
 
 trigger "Big Blue Button Pushed"
 note "test modify npc"
@@ -122,7 +123,8 @@ when give item poison_bottle to npc the_luggage {
     }
 }
 
-trigger "[DEV] Luggage Dies" when npc the_luggage dies {
+trigger "[DEV] Luggage Dies"
+when npc the_luggage dies {
     do show "The Luggage dies with a gasp, its tongue lolling out of the lid."
     do modify npc the_luggage {
         desc "The magnificent magical Luggage lies dead, lid ajar, tongue lolling and cut by the razor-sharp teeth lining the lid."

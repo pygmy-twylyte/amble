@@ -42,7 +42,7 @@ trigger "Firewood HINT" only once
 note "HINT radio: use firewood in ice-pit for plaque 2"
 when enter room snow-camp {
     do schedule in 4 if any(
-        # situation where hint is appropriate,
+        # situation where hint is appropriate
         all(
             has flag hint-radio-on,
             has flag tried-read-plaque-2,
@@ -50,7 +50,7 @@ when enter room snow-camp {
             missing flag campfire-lit,
             in rooms snow-camp,
         ),
-        # situation where this hint is no longer needed,
+        # situation where this hint is no longer needed
         any(
             has item firewood,
             has flag campfire-lit,

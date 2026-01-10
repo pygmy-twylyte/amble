@@ -113,12 +113,14 @@ item delivery_box {
 # Triggers
 # ========================================
 
-trigger "[Loading-Dock] Spawn Special Delivery" only once when leave room loading-dock {
+trigger "[Loading-Dock] Spawn Special Delivery" only once
+when leave room loading-dock {
     do spawn item delivery_box into room loading-dock
     do show "You hear a thud behind you, back toward the dock, like something was just dropped off. You glimpse a drone flying away quickly, as if hoping not to be seen. Was that an Initech logo on the side?"
 }
 
-trigger "[Loading-Dock] Open Security Crate (Key)" only once when unlock item security_locker {
+trigger "[Loading-Dock] Open Security Crate (Key)" only once
+when unlock item security_locker {
     do spawn item crowbar into container security_locker
     do spawn item security_log into container security_locker
     do spawn item strange_liquid into container security_locker
@@ -127,7 +129,8 @@ trigger "[Loading-Dock] Open Security Crate (Key)" only once when unlock item se
     do show "The ear wax on the tip of the key eases it into the rusted lock, which snaps open with a satisfying clunk."
 }
 
-trigger "[Loading-Dock] Open Security Crate (Break)" only once when act break on item security_locker {
+trigger "[Loading-Dock] Open Security Crate (Break)" only once
+when act break on item security_locker {
     if missing flag unlocked-security-crate {
         do despawn item security_locker
         do spawn item crowbar in current room
@@ -139,7 +142,8 @@ trigger "[Loading-Dock] Open Security Crate (Break)" only once when act break on
     }
 }
 
-trigger "[Loading-Dock] Open Security Crate (Burn)" only once when act burn on item security_locker {
+trigger "[Loading-Dock] Open Security Crate (Burn)" only once
+when act burn on item security_locker {
     if missing flag unlocked-security-crate {
         do despawn item security_locker
         do spawn item crowbar in current room
@@ -151,7 +155,8 @@ trigger "[Loading-Dock] Open Security Crate (Burn)" only once when act burn on i
     }
 }
 
-trigger "[Loading-Dock] Got Crowbar" only once when take item crowbar {
+trigger "[Loading-Dock] Got Crowbar" only once
+when take item crowbar {
     do show "You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?"
     do add flag got-crowbar
     do award points 3 reason "Recovered the iconic crowbar"
