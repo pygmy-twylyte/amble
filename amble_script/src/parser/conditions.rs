@@ -6,7 +6,8 @@ use super::AstError;
 use super::helpers::{parse_string_at, split_top_level_commas};
 
 pub(super) fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Result<ConditionAst, AstError> {
-    let t = text.trim();
+    let cleaned = strip_comments(text);
+    let t = cleaned.trim();
     if let Some(inner) = t.strip_prefix("all(") {
         let inner = inner.strip_suffix(')').ok_or(AstError::Shape("all() close"))?;
         let parts = split_top_level_commas(inner);
@@ -159,6 +160,84 @@ pub(super) fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String
         return Ok(ConditionAst::ChancePercent(pct));
     }
     Err(AstError::Shape("unknown condition"))
+}
+
+fn strip_comments(input: &str) -> String {
+    let mut out = String::with_capacity(input.len());
+    let mut in_comment = false;
+    let mut in_single = false;
+    let mut in_double = false;
+    let mut escape = false;
+    let mut at_line_start = true;
+    let mut prev_was_whitespace = true;
+    let mut i = 0usize;
+    while i < input.len() {
+        let ch = input[i..].chars().next().unwrap();
+        i += ch.len_utf8();
+
+        if in_comment {
+            if ch == '\n' {
+                in_comment = false;
+                at_line_start = true;
+                prev_was_whitespace = true;
+                out.push(ch);
+            }
+            continue;
+        }
+
+        if in_single {
+            if escape {
+                escape = false;
+            } else if ch == '\\' {
+                escape = true;
+            } else if ch == '\'' {
+                in_single = false;
+            }
+            out.push(ch);
+            continue;
+        }
+
+        if in_double {
+            if escape {
+                escape = false;
+            } else if ch == '\\' {
+                escape = true;
+            } else if ch == '"' {
+                in_double = false;
+            }
+            out.push(ch);
+            continue;
+        }
+
+        match ch {
+            '#' if at_line_start || prev_was_whitespace => {
+                in_comment = true;
+            },
+            '\'' => {
+                in_single = true;
+                out.push(ch);
+                at_line_start = false;
+                prev_was_whitespace = false;
+            },
+            '"' => {
+                in_double = true;
+                out.push(ch);
+                at_line_start = false;
+                prev_was_whitespace = false;
+            },
+            _ => {
+                out.push(ch);
+                if ch == '\n' {
+                    at_line_start = true;
+                    prev_was_whitespace = true;
+                } else {
+                    at_line_start = false;
+                    prev_was_whitespace = ch.is_whitespace();
+                }
+            },
+        }
+    }
+    out
 }
 
 fn parse_condition_npc_state(token: &str) -> Result<NpcStateValue, AstError> {
