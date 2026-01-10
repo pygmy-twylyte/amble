@@ -15,13 +15,15 @@ room patio {
     exit west -> restaurant
 }
 # Triggers alter room appearance when the sunglasses are taken or dropped
-trigger "Modify Patio: Sunglasses On" when take item peril_sunglasses {
+trigger "Modify Patio: Sunglasses On"
+when take item peril_sunglasses {
     do modify room patio {
         name "Restaurant Patio"
         desc "The patio overlooks nothing in particular—just an endless starfield gently swirling beyond a transparent force field. A few metal tables are bolted to the floor, and one of them has a half-empty cocktail glass slowly un-drinking itself. A sign near the edge reads: 'No Leaning Beyond This Point. You have been warned.'"
     }
 }
-trigger "Modify Patio: Sunglasses Off" when drop item peril_sunglasses {
+trigger "Modify Patio: Sunglasses Off"
+when drop item peril_sunglasses {
     do modify room patio {
         name "BLINDING GLARE"
         desc "You see nothing at all. The pure white light here is direct-sunlight bright and seems to come from all directions, forcing you to shield your eyes with your arm and flee."
@@ -64,7 +66,8 @@ when use item plaque_3 ability read {
     do award points 10 reason "Decoded the third crystal plaque"
 }
 
-trigger "[Patio] Sunglasses Required" when enter room patio {
+trigger "[Patio] Sunglasses Required"
+when enter room patio {
     if missing item peril_sunglasses {
         do push player to restaurant
         do show "A blinding burst of light erupts from the swirling starfield, forcing you to shield your eyes. With no protection, you're driven back into the relative safety of the restaurant."

@@ -51,6 +51,7 @@ when touch item aa_3_button_main {
     }
 }
 
-trigger "[Lift Main]" when touch item main_button_main {
+trigger "[Lift Main]"
+when touch item main_button_main {
     do show "With something between a yawn and a sigh, the elevator reminds you that you are already on the main floor, then closes and opens the doors for emphasis."
 }

@@ -91,14 +91,16 @@ when drink item cooled_coffee {
     do heal player 2 cause "room-temperature coffee"
 }
 
-trigger "[Lounge] Rug Taken / Reveal Trapdoor" only once when take item lebowski_rug {
+trigger "[Lounge] Rug Taken / Reveal Trapdoor" only once
+when take item lebowski_rug {
     do reveal exit from lounge to portal-room direction down
     do add flag found-portal-room
     do award points 3 reason "Found the trapdoor beneath the rug"
     do show "Light shines around the edges of a trap door revealed in the floor when you remove the rug. The room no longer seems tied together."
 }
 
-trigger "[Lounge] Rug Burned Away" only once when act burn on item lebowski_rug {
+trigger "[Lounge] Rug Burned Away" only once
+when act burn on item lebowski_rug {
     do despawn item lebowski_rug
     do reveal exit from lounge to portal-room direction down
     do add flag found-portal-room

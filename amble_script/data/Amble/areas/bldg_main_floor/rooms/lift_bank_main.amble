@@ -23,7 +23,8 @@ room lift-bank-main {
 # Triggers
 # ========================================
 
-trigger "[Lift-Bank-Main] Keycard Activates Elevator" when enter room lift-bank-main {
+trigger "[Lift-Bank-Main] Keycard Activates Elevator"
+when enter room lift-bank-main {
     if has item elevator_keycard {
         do show "The [[item]]keycard[[/item]] in your pack chirps twice as you approach the proximity reader on the wall, which responds with a happy melody."
     }

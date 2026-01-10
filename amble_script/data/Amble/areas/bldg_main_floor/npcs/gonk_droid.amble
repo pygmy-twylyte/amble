@@ -49,7 +49,8 @@ item gonk_family_photo {
 # Triggers
 # ========================================
 
-trigger "[Gonk Droid] Happy When Family Photo Inspected" only once when look at item gonk_family_photo {
+trigger "[Gonk Droid] Happy When Family Photo Inspected" only once
+when look at item gonk_family_photo {
     do npc says gonk_droid "GONK gonk!"
     do show "The gonk droid totters with pride as you view its family photo."
     do award points 2 reason "Admired the gonk droid's family photo"

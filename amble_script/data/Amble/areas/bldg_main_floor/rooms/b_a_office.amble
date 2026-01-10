@@ -87,7 +87,8 @@ when enter room b-a-office {
     }
 }
 
-trigger "[Office] Lost and Found Unlocked" only once when unlock item lost_and_found_box {
+trigger "[Office] Lost and Found Unlocked" only once
+when unlock item lost_and_found_box {
     do award points 3 reason "Unlocked the lost-and-found box"
     do add flag lost-and-found-opened
     do set item description lost_and_found_box "A sturdy metal lockbox marked 'Lost and Found'. Its lid is cracked slightly open."

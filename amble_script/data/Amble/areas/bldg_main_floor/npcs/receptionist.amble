@@ -31,7 +31,8 @@ Demerzel is a positronic android, and has been continuously online for thousands
 # ========================================
 # Triggers
 # ========================================
-trigger "[Office] Receptionist Unhelpful if No Pass" when always {
+trigger "[Office] Receptionist Unhelpful if No Pass"
+when always {
     if all(
         with npc b_a_receptionist,
         missing flag got-visitor-pass,
@@ -41,7 +42,8 @@ trigger "[Office] Receptionist Unhelpful if No Pass" when always {
     }
 }
 
-trigger "[Office] Receptionist Helpful Once Pass Acquired" when always {
+trigger "[Office] Receptionist Helpful Once Pass Acquired"
+when always {
     if all(
         with npc b_a_receptionist,
         has flag got-visitor-pass,
@@ -51,7 +53,8 @@ trigger "[Office] Receptionist Helpful Once Pass Acquired" when always {
     }
 }
 
-trigger "[Office] Exchange Invitation for Visitor Pass" when give item invitation to npc b_a_receptionist {
+trigger "[Office] Exchange Invitation for Visitor Pass"
+when give item invitation to npc b_a_receptionist {
     do add flag got-visitor-pass
     do despawn item invitation
     do spawn item visitor_pass in inventory
@@ -79,7 +82,8 @@ when enter room b-a-office {
     }
 }
 
-trigger "[Office] Receptionist Comment (Sausage Breath)" when talk to npc b_a_receptionist {
+trigger "[Office] Receptionist Comment (Sausage Breath)"
+when talk to npc b_a_receptionist {
     if has flag ate-sausage {
         do npc says b_a_receptionist "My word, the smell coming from your -- mouth? -- is pathological. I can't stand to talk to you. You must see the EMH down on the sublevel."
     }

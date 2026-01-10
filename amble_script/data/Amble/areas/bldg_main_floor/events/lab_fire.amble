@@ -48,7 +48,8 @@ item foam_fire {
 # ========================================
 # Triggers
 # ========================================
-trigger "[Aperture-Lab]" when take item flaming_invitation {
+trigger "[Aperture-Lab]"
+when take item flaming_invitation {
     do replace drop item flaming_invitation with flaming_invitation
     do show "You burn your hand and drop the burning document on the floor. It looks like it might be an Amble Adventures invitation."
     do damage player 3 cause "played with fire"
