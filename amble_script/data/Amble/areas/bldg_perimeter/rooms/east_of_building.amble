@@ -42,7 +42,8 @@ item dental_floss {
 # Triggers
 # ========================================
 
-trigger "[East-of-Building] Pluck Dental Floss" only once when take item dental_floss {
+trigger "[East-of-Building] Pluck Dental Floss" only once
+when take item dental_floss {
     do show "You pluck a strand of floss from the bush. It comes away easily — disturbingly so. Minty. Strong. Too strong. You’re no botanist, but you’re pretty sure this shouldn’t be growing out of a shrubbery."
     do award points 5 reason "Harvested the weird bush's minty dental floss"
     do set item description weird_bush "A squat, leafy bush now stripped of its floss-like strands, bare branches jutting out awkwardly. A small sign next to it reads 'Pride of Montana'."

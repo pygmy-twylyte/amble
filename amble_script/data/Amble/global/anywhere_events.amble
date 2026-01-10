@@ -78,7 +78,8 @@ when drop item vogon_poetry_book
 # Sausage-Inna-Bun
 # ========================================
 
-trigger "[Global] Eat Sausage-Inna-Bun" when eat item sausage-inna-bun {
+trigger "[Global] Eat Sausage-Inna-Bun"
+when eat item sausage-inna-bun {
     do show "You hungrily chomp down the sausage stuffed with questionable meats. Before long, your guts begin to complain loudly."
     do add flag status:bad-breath
     do add flag ate-sausage

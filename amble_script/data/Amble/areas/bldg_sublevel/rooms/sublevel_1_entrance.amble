@@ -33,7 +33,8 @@ room sublevel-1-entrance {
 # Triggers
 # ========================================
 
-trigger "[Sublevel-1-Entrance] Arrived" only once when enter room sublevel-1-entrance {
+trigger "[Sublevel-1-Entrance] Arrived" only once
+when enter room sublevel-1-entrance {
     do add flag entered-sublevel-1
 }
 

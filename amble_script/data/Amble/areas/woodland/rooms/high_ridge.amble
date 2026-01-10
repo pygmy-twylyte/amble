@@ -71,7 +71,8 @@ when act burn on item scrawled_note {
     do despawn item scrawled_note
 }
 
-trigger "[High-Ridge] Read Scrawled Note" only once when use item scrawled_note ability read {
+trigger "[High-Ridge] Read Scrawled Note" only once
+when use item scrawled_note ability read {
     do add flag read-scrawled-note
 }
 

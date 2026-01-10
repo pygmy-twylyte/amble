@@ -15,11 +15,11 @@ room front-entrance {
         happy  "Dibbler beams and offers a celebratory sausage-inna-bun."
         bored  "Dibbler sighs about the slow foot traffic."
     }
-    overlay if (npc absent cmot_dibbler) {
+    overlay if ( npc absent cmot_dibbler ) {
         text "The doorway is mercifully free of purveyors of questionable sausages, for now."
     }
     exit north -> main-lobby {
-        required_flags(got-towel),
+        required_flags( got-towel ),
         barred "Not so fast. The Initech Eye-bot™ is absolutely insistent that you have a towel before you go inside."
     }
     exit west -> snowfield

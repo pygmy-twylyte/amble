@@ -20,7 +20,8 @@ item fallen_tree {
 # Triggers
 # ========================================
 
-trigger "[Two-Sheds-Landing] Cut or Chop Tree" only once when act cut on item fallen_tree {
+trigger "[Two-Sheds-Landing] Cut or Chop Tree" only once
+when act cut on item fallen_tree {
     do show "With considerable effort and just one blister, you're able to chop a path through the branches. The stone steps continue to curve upward from here."
     # here we create a minor injury that heals itself after 20 turns...
     do damage player 1 cause "blister"
@@ -39,7 +40,8 @@ when use item arson_aid on item fallen_tree interaction burn {
     do priority -29 damage player 5 cause "Arson-Aid explosion"
 }
 
-trigger "[Two-Sheds-Landing] Burn Tree" only once when act burn on item fallen_tree {
+trigger "[Two-Sheds-Landing] Burn Tree" only once
+when act burn on item fallen_tree {
     do despawn item fallen_tree
     do add flag cleared-fallen-tree
     do add flag burned-fallen-tree

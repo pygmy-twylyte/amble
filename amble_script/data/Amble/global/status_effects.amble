@@ -22,13 +22,15 @@ spinner nauseated {
     wedge "Throat burning with acid bile, you pray to all the gods for relief. They ignore you, just like last time."
 }
 
-trigger "[Status] Nauseated" when always {
+trigger "[Status] Nauseated"
+when always {
     if all( has flag status:nauseated, chance 50% ) {
         do spinner message nauseated
     }
 }
 
-trigger "[Status] Read Vogon Poetry > Persistent Nausea" when use item vogon_poetry_book ability read {
+trigger "[Status] Read Vogon Poetry > Persistent Nausea"
+when use item vogon_poetry_book ability read {
     do show "You nearly get through the first poem when the vomiting begins..."
     do add flag read-vogon-poetry
     do add flag status:nauseated
@@ -64,7 +66,8 @@ spinner bad-breath {
     wedge "Somewhere deep within, your soul quietly mints itself in self-defense."
 }
 
-trigger "[Status] Bad Breath" when always {
+trigger "[Status] Bad Breath"
+when always {
     if all( has flag status:bad-breath, chance 20% ) {
         do spinner message bad-breath
     }

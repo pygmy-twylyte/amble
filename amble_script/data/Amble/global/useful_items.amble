@@ -70,7 +70,8 @@ item towel {
     ability Clean
 }
 
-trigger "[Hint] Towel / Plaque-1 Hint" only once when take item towel {
+trigger "[Hint] Towel / Plaque-1 Hint" only once
+when take item towel {
     do add flag got-towel
     do award points 3 reason "Recovered the essential towel every frood should carry"
     do show "NOW you're a frood who really \"knows where his towel is\"!"

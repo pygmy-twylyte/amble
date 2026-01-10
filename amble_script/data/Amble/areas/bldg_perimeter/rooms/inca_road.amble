@@ -26,7 +26,8 @@ item road_sign {
 # Triggers
 # ========================================
 
-trigger "[Inca-Road] Traveling Without Towel" only once when enter room inca-road {
+trigger "[Inca-Road] Traveling Without Towel" only once
+when enter room inca-road {
     if missing item towel {
         do show "You pause here, realizing with increasing concern that you are traveling without a towel."
     }
