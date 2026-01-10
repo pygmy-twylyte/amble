@@ -144,8 +144,13 @@ pub(super) fn npc_events_sorted(entries: &[&ViewEntry]) {
     // Then display speech events
     for quote in speech_msgs {
         if let ViewItem::NpcSpeech { speaker, quote } = &quote.view_item {
-            println!("{} says:", speaker.npc_style());
-            println!("{}", fill(quote.as_str(), indented_block()).clone().npc_quote_style());
+            println!("{}:", speaker.npc_style());
+            println!(
+                "{}",
+                fill((String::from("\"") + quote.as_str() + "\"").as_str(), indented_block())
+                    .clone()
+                    .npc_quote_style()
+            );
         }
     }
 
