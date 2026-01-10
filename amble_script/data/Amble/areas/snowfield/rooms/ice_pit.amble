@@ -21,7 +21,7 @@ room ice-pit {
     overlay if flag complete reveal-ice-plaque {
         text "A campfire crackles next to a marble pillar topped with a shiny bronze plaque near one end of the room."
     }
-    exit "back to the surface" -> snowfield
+    exit "up to the surface" -> snowfield
 }
 
 # ========================================
@@ -133,7 +133,7 @@ when act burn on item unlit_campfire {
 trigger "Hint: Find Items to Build a Fire" only once
 note "schedule radio hint about building a fire"
 when use item plaque_2_frozen ability read {
-    do schedule in 2 if any(
+    do schedule in 4 if any(
         all(
             missing flag campfire-lit,
             has flag hint-radio-on,

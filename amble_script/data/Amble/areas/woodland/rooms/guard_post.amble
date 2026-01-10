@@ -4,7 +4,7 @@
 
 room guard-post {
     name "Abandoned Guard Post"
-    desc "A small stone guard post clings to the side of the trail, complete with a creaky wooden chair and a megaphone labeled [[red]]'USE ONLY IF VERY SURE'[[/red]]. A faded official-looking placard reads:\n[[box:NOTICE]] Passage beyond this point will have lead to anachronism.[[/box]]\nIt seems no one’s been stationed here in [[i]]quite[[/i]] some time. The trail continues upward, leading to what appears to be an ancient road—and a distinctly non-ancient office park."
+    desc "A small stone guard post clings to the side of the trail, complete with a creaky wooden chair and a megaphone labeled [[red]]'USE ONLY IF VERY SURE'[[/red]]. A faded official-looking placard reads:\n[[box:NOTICE]] Passage beyond this point will have led to [[i]]anachronism.[[/i]][[/box]]\nIt seems no one’s been stationed here in [[i]]quite[[/i]] some time. The trail continues upward, leading to what appears to be an ancient road—and a distinctly non-ancient office park."
     overlay if item am_dollar {
         present r#"A silver coin sits upon a note on the kiosk: "Lunch Money - [[u]]don't[[/u]] get it from [[i]]that vendor[[/i]] again!" "#
         absent r#"A note on the kiosk reads: "Lunch Money - [[u]]don't[[/u]] get it from that vendor again!" The coin left a neat, circular void in the dust."#

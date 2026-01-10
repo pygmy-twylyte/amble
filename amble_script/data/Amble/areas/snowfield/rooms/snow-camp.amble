@@ -38,14 +38,34 @@ item firewood {
     requires ignite to burn
 }
 
-trigger "Firewood HINT"
+trigger "Firewood HINT" only once
 note "HINT radio: use firewood in ice-pit for plaque 2"
-when always {
-    if all(
-        has flag hint-radio-on,
-        has flag tried-read-plaque-2,
-        in rooms snow-camp,
-    ) {
-        do npc says hint_radio_npc "Looks like the researchers didn't get their fire lit before the dog-Thing got to them. Bad day for them, but maybe good for you. Maybe you can move it down into the ice pit to melt the ice encasing the pillar there."
+when enter room snow-camp {
+    do schedule in 4 if any(
+        # situation where hint is appropriate,
+        all(
+            has flag hint-radio-on,
+            has flag tried-read-plaque-2,
+            missing item firewood,
+            missing flag campfire-lit,
+            in rooms snow-camp,
+        ),
+        # situation where this hint is no longer needed,
+        any(
+            has item firewood,
+            has flag campfire-lit,
+            has flag read-plaque-2,
+        ),
+    ) onFalse retryNextTurn {
+        # situation where hint is appropriate again
+        if all(
+            has flag hint-radio-on,
+            has flag tried-read-plaque-2,
+            missing item firewood,
+            missing flag campfire-lit,
+            in rooms snow-camp,
+        ) {
+            do npc says hint_radio_npc "Looks like the researchers didn't get their fire lit before the dog-Thing got to them. Bad day for them, but maybe good for you. Could you move the firewood down into the ice pit to melt the ice around the frozen pillar?"
+        }
     }
 }
