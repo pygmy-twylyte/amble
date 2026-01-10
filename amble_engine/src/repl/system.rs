@@ -247,54 +247,7 @@ pub fn help_handler(view: &mut View) {
     let commands_toml_path = data_path("help_commands.toml");
 
     match load_help_data(&basic_text_path, &commands_toml_path) {
-        Ok(mut help_data) => {
-            // Append developer-only commands if DEV_MODE is enabled
-            if crate::DEV_MODE {
-                let mut dev_cmds: Vec<HelpCommand> = vec![
-                    HelpCommand {
-                        command: ":npcs".into(),
-                        description: "DEV: List all NPCs with location and state.".into(),
-                    },
-                    HelpCommand {
-                        command: ":flags".into(),
-                        description: "DEV: List all currently set flags (sequences as name#step).".into(),
-                    },
-                    HelpCommand {
-                        command: ":sched".into(),
-                        description: "DEV: List upcoming scheduled events with due turn and notes.".into(),
-                    },
-                    HelpCommand {
-                        command: ":note <text>".into(),
-                        description: "DEV: Append a note to the daily dev log.".into(),
-                    },
-                    HelpCommand {
-                        command: ":teleport <room_symbol>".into(),
-                        description: "DEV: Instantly move to a room (alias :port).".into(),
-                    },
-                    HelpCommand {
-                        command: ":spawn <item_symbol>".into(),
-                        description: "DEV: Spawn/move an item into inventory (alias :item).".into(),
-                    },
-                    HelpCommand {
-                        command: ":set-flag <name>".into(),
-                        description: "DEV: Create a simple flag on the player.".into(),
-                    },
-                    HelpCommand {
-                        command: ":init-seq <name> <end|none>".into(),
-                        description: "DEV: Create a sequence flag with limit or unlimited (none).".into(),
-                    },
-                    HelpCommand {
-                        command: ":adv-seq <name>".into(),
-                        description: "DEV: Advance a sequence flag by one step.".into(),
-                    },
-                    HelpCommand {
-                        command: ":reset-seq <name>".into(),
-                        description: "DEV: Reset a sequence flag to step 0.".into(),
-                    },
-                ];
-                // Keep the main list readable: append DEV commands at the end
-                help_data.commands.append(&mut dev_cmds);
-            }
+        Ok(help_data) => {
             view.push(ViewItem::Help {
                 basic_text: help_data.basic_text,
                 commands: help_data.commands,
