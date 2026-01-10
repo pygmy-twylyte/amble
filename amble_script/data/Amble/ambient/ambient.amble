@@ -3,7 +3,7 @@
 # ========================================
 # Zone Definitions
 # ========================================
-let set woods = (
+let set stepped_path = (
     high-ridge,
     parish-landing,
     two-sheds-landing,
@@ -36,8 +36,9 @@ let set elevator = ( lift-main, lift-sublevel-1 )
 # Woods
 # ========================================
 
-trigger "[Ambient] Woodland" when always {
-    if all( chance 20%, in rooms woods ) {
+trigger "[Ambient] Woodland"
+when always {
+    if all( chance 20%, in rooms stepped_path ) {
         do spinner message ambientWoodland
     }
 }
@@ -68,7 +69,8 @@ spinner ambientWoodland {
 # Near Room AA-3B
 # ========================================
 
-trigger "[Ambient] Near AA-3B" when always {
+trigger "[Ambient] Near AA-3B"
+when always {
     if all( chance 20%, in rooms near_aa3b ) {
         do spinner message ambientAA3B
     }
@@ -104,7 +106,8 @@ spinner ambientAA3B {
 # Main Floor
 # ========================================
 
-trigger "[Ambient] Main Floor" when always {
+trigger "[Ambient] Main Floor"
+when always {
     if all( chance 20%, in rooms main_floor ) {
         do spinner message ambientInterior
     }
@@ -136,7 +139,8 @@ spinner ambientInterior {
 # Snowfield
 # ========================================
 
-trigger "[Ambient] Snowfield" when always {
+trigger "[Ambient] Snowfield"
+when always {
     if all( chance 20%, in rooms snowfield ) {
         do spinner message ambientSnowfield
     }
@@ -152,7 +156,8 @@ spinner ambientSnowfield {
 # Elevator
 # ========================================
 
-trigger "[Ambient] Elevator Muzak" when always {
+trigger "[Ambient] Elevator Muzak"
+when always {
     if all( chance 30%, in rooms elevator ) {
         do spinner message muzak
     }
