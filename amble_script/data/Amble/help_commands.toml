@@ -1,5 +1,5 @@
 [[commands]]
-command = "help"
+command = "help (?)"
 description = "show this help message"
 
 [[commands]]
@@ -7,11 +7,11 @@ command = "goals"
 description = "will help you determine what to do next, if unsure"
 
 [[commands]]
-command = "inventory"
+command = "inventory (inv)"
 description = "show your current inventory (can be shortened to 'inv')"
 
 [[commands]]
-command = "look"
+command = "look (l)"
 description = "describe your surroundings"
 
 [[commands]]
@@ -20,11 +20,11 @@ description = "describe an object (or character) in more detail"
 
 [[commands]]
 command = "go <direction>"
-description = "move in a direction"
+description = "move in a direction (or just type part of the direction)"
 
 [[commands]]
 command = "load <savegame>"
-description = "load a saved game"
+description = "load a saved game (<tab> after 'load' to autocomplete)"
 
 [[commands]]
 command = "save <savegame>"
