@@ -864,7 +864,7 @@
             visited: false,
             exits: [
                 (
-                    direction: "south",
+                    direction: "reception desk",
                     to: "b-a-office",
                     hidden: false,
                     locked: false,
@@ -1946,7 +1946,7 @@
                             item: "fallen_tree",
                         ),
                     ],
-                    text: "A huge tangle of limbs and branches from a fallen tree block the path continuing upward.",
+                    text: "A [[item]]dense tangle of limbs and branches[[/item]] from a fallen tree block the path continuing upward.",
                 ),
                 (
                     conditions: [
@@ -2256,7 +2256,7 @@
         (
             id: "melted_aa_3b_id",
             name: "Section AA-3 Staff ID",
-            desc: "A facility ID card for sector AA-3. Its weight seems to change as you hold it, as does the temperature. It\'s not warped or melted exactly -- just *distorted* somehow.",
+            desc: "A facility ID card for [[red]]Sublevel AA-3[[/red]]. Its weight seems to [[i]]change[[/i]] as you hold it, as does the temperature. It\'s not warped or melted exactly -- [[i]]just distorted somehow[[/i]].",
             movability: free,
             container_state: None,
             location: Item("lost_and_found_box"),
@@ -2264,7 +2264,7 @@
                 read,
             ],
             interaction_requires: {},
-            text: Some(" RESTRICTED ACCESS PASS\nSECTOR AA-3, HIGH ENERGY\n REALITY BRIDGE PROJECT\n"),
+            text: Some("[[box:RESTRICTED ACCESS PASS]]\nSECTOR AA-3, HIGH ENERGY\n REALITY BRIDGE PROJECT[[/box]]\n"),
             consumable: None,
         ),
         (
@@ -2614,7 +2614,7 @@
                 read,
             ],
             interaction_requires: {},
-            text: Some("                            AMBLE ADVENTURES\n                           (Inca Road Branch)\n                 * a division of Brains Anonymous, LLC"),
+            text: Some("[[box:AMBLE ADVENTURES]]        | Inca Road Branch |\n* a division of Brains Anonymous, LLC[[/box]]"),
             consumable: None,
         ),
         (
@@ -3185,7 +3185,7 @@
                 read,
             ],
             interaction_requires: {},
-            text: Some("                 [[red]][[b]][[u]]OFFICIAL NOTICE[[/u]][[/b]][[/red]]\nThe OverShed™ Division of Amble Adventures has\nreclassified this dwelling as:\n\n[[box]]Shed, Subtype B – Multiversal Crosslink Node[[/box]]\n\nReport any fictional apparitions or missing time\nto your local Amble Adventures cover-up coordinator.\n"),
+            text: Some("[[center]][[bright-red]][[b]][[u]] OFFICIAL NOTICE [[/u]][[/b]][[/bright-red]][[/center]][[center]]The OverShed™ Division of Amble Adventures has reclassified this dwelling as:[[/center]]\n\n[[box]]Shed, Subtype B – [[hl]]Multiversal Crosslink Node[[/hl]][[/box]]\n\n[[center]]Report any fictional apparitions or missing time to your local Amble Adventures cover-up coordinator.[[/center]]\n"),
             consumable: None,
         ),
         (
@@ -5685,7 +5685,7 @@
                 ),
                 (
                     action: showMessage(
-                        text: "The machine begins to whine at a high pitch and gives off a noxious odor of burning hair. A klaxon blares and the display warns:\n\n            ⚠\u{fe0f} VOGON INPUT DETECTED - POETRY PANIC ROOM UNLOCKED ⚠\u{fe0f}\n               ☣ VAPORIZING VOGON INPUT - AVOID TOXIC FUMES ☣\n\nThe whiteboard on the west wall slides to the side, revealing a vault-like door.",
+                        text: "The machine begins to whine at a high pitch and gives off a noxious odor like burning hair. A klaxon blares and the display warns:\n[[box]]⚠\u{fe0f} VOGON INPUT DETECTED - POETRY PANIC ROOM UNLOCKED ⚠\u{fe0f}\n☣ VAPORIZING VOGON INPUT - AVOID TOXIC FUMES ☣[[/box]]\nThe whiteboard on the west wall slides to the side, revealing a [[room]]vault-like door[[/room]].",
                     ),
                     priority: None,
                 ),
@@ -6269,7 +6269,7 @@
             actions: [
                 (
                     action: showMessage(
-                        text: "The machine clicks on and hums. A flashing red light warns:\n            ⚠\u{fe0f} NOT FOR USE WITH VOGON POETRY ⚠\u{fe0f}",
+                        text: "The machine clicks on and hums. A flashing red light warns:\n              [[bright-red]]⚠\u{fe0f} NOT FOR USE WITH VOGON POETRY ⚠\u{fe0f}[[/bright-red]]",
                     ),
                     priority: None,
                 ),
@@ -11146,6 +11146,21 @@
                         text: "A soothing yet somehow disquieting and familiar voice flows from the radio\'s speaker.",
                     ),
                     priority: Some(-40),
+                ),
+                (
+                    action: scheduleIn(
+                        turns_ahead: 2,
+                        actions: [
+                            (
+                                action: showMessage(
+                                    text: "(Turn the radio [[b]]off[[/b]] to avoid getting hints when you don\'t need them. Turn it back [[b]]on[[/b]] if you get stuck.)",
+                                ),
+                                priority: Some(-10),
+                            ),
+                        ],
+                        note: None,
+                    ),
+                    priority: None,
                 ),
             ],
         ),
