@@ -18,9 +18,7 @@ item road_sign {
     desc "A 10-foot tall sign, spotlit from below by a fusion powered sodium lamp. The sign is tilted upward, as if meant to be read from the air as well as the ground."
     movability fixed "It is firmly bolted to a heavy concrete base."
     location room inca-road
-    text """                            AMBLE ADVENTURES
-                           (Inca Road Branch)
-                 * a division of Brains Anonymous, LLC"""
+    text """[[box:AMBLE ADVENTURES]]        | Inca Road Branch |\n* a division of Brains Anonymous, LLC[[/box]]"""
     ability Read
 }
 

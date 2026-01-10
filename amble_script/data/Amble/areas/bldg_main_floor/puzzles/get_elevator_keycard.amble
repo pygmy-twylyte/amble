@@ -83,5 +83,5 @@ when insert item vogon_poetry_book into item poetry_performer {
     do add flag panic-room-open
     do reveal exit from b-a-office to poetry-panic direction "poetry panic room"
     do add wedge "PA announcement: Vogon poetry has been detected in the building. If you are experiencing nausea, go to med bay for assistance." width 1 spinner ambientInterior
-    do show "The machine begins to whine at a high pitch and gives off a noxious odor of burning hair. A klaxon blares and the display warns:\n\n            ⚠️ VOGON INPUT DETECTED - POETRY PANIC ROOM UNLOCKED ⚠️\n               ☣ VAPORIZING VOGON INPUT - AVOID TOXIC FUMES ☣\n\nThe whiteboard on the west wall slides to the side, revealing a vault-like door."
+    do show "The machine begins to whine at a high pitch and gives off a noxious odor like burning hair. A klaxon blares and the display warns:\n[[box]]⚠️ VOGON INPUT DETECTED - POETRY PANIC ROOM UNLOCKED ⚠️\n☣ VAPORIZING VOGON INPUT - AVOID TOXIC FUMES ☣[[/box]]\nThe whiteboard on the west wall slides to the side, revealing a [[room]]vault-like door[[/room]]."
 }

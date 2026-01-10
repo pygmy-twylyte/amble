@@ -58,12 +58,12 @@ item zircon_tweezers {
 
 item melted_aa_3b_id {
     name "Section AA-3 Staff ID"
-    desc "A facility ID card for sector AA-3. Its weight seems to change as you hold it, as does the temperature. It's not warped or melted exactly -- just *distorted* somehow."
+    desc "A facility ID card for [[red]]Sublevel AA-3[[/red]]. Its weight seems to [[i]]change[[/i]] as you hold it, as does the temperature. It's not warped or melted exactly -- [[i]]just distorted somehow[[/i]]."
     movability free
     location chest lost_and_found_box
-    text """ RESTRICTED ACCESS PASS
+    text """[[box:RESTRICTED ACCESS PASS]]
 SECTOR AA-3, HIGH ENERGY
- REALITY BRIDGE PROJECT
+ REALITY BRIDGE PROJECT[[/box]]
 """
     ability Read
 }
@@ -74,7 +74,7 @@ SECTOR AA-3, HIGH ENERGY
 
 trigger "[Office] Open Poetry Performer"
 when open item poetry_performer {
-    do show "The machine clicks on and hums. A flashing red light warns:\n            ⚠️ NOT FOR USE WITH VOGON POETRY ⚠️"
+    do show "The machine clicks on and hums. A flashing red light warns:\n              [[bright-red]]⚠️ NOT FOR USE WITH VOGON POETRY ⚠️[[/bright-red]]"
 }
 
 trigger "[Office] Gifted Lost and Found Key" only once

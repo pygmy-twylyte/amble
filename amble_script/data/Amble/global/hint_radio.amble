@@ -29,7 +29,8 @@ item hint_radio {
     ability TurnOn
 }
 
-trigger "Turn Hint Radio On" when use item hint_radio ability turnOn {
+trigger "Turn Hint Radio On"
+when use item hint_radio ability turnOn {
     do modify item hint_radio {
         name "HINT Radio (on)"
         desc r#"A black, long-range walkie-talkie style radio transceiver. A label bearing the word "HINTS" is affixed to the side. The transmit button has been removed. The "Power" LED is on and soft static whispers from the speaker."#
@@ -51,6 +52,9 @@ when use item hint_radio ability turnOn {
     if has flag chopped-fallen-tree {
         do priority -30 npc says hint_radio_npc "Congratulations, Candidate. You've cleared the fallen tree, and you get a bonus point for choosing the hard path of chopping through the tree rather than starting a forest fire. I am your -- handler, let's say -- and this is your HINT radio. In some circumstances, I may be able to provide some extra direction to help you along -- but it looks better if you don't rely on me too heavily."
         do award points 1 reason "Chopped through the fallen tree the hard way"
+    }
+    do schedule in 2 {
+        do priority -10 show "(Turn the radio [[b]]off[[/b]] to avoid getting hints when you don't need them. Turn it back [[b]]on[[/b]] if you get stuck.)"
     }
 }
 

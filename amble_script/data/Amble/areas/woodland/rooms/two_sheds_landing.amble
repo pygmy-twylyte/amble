@@ -8,7 +8,7 @@ room two-sheds-landing {
     desc "A quiet landing tucked along the slope, with a rusted mailbox labeled 'A. Jackson' standing to one side. A trail sign points east toward something optimistically named [[b]]\"Two Sheds\"[[/b]]. Underneath, someone has scratched in: [[i]]\"Technically One.\"[[/i]] Rough steps lead down the slope, and continue curving upward."
 
     overlay if ( item present fallen_tree ) {
-        text "A huge tangle of limbs and branches from a fallen tree block the path continuing upward."
+        text "A [[item]]dense tangle of limbs and branches[[/item]] from a fallen tree block the path continuing upward."
     }
     overlay if ( flag set chopped-fallen-tree, flag unset saw-paul-bunyan ) {
         # these would be gone if player sees paul bunyan at guard-post
@@ -42,14 +42,11 @@ item aa_shed_notice {
     desc "An official-looking notice from Amble Adventures HQ."
     movability free
     location chest jackson_mailbox
-    text """                 [[red]][[b]][[u]]OFFICIAL NOTICE[[/u]][[/b]][[/red]]
-The OverShed™ Division of Amble Adventures has
-reclassified this dwelling as:
+    text """[[center]][[bright-red]][[b]][[u]] OFFICIAL NOTICE [[/u]][[/b]][[/bright-red]][[/center]][[center]]The OverShed™ Division of Amble Adventures has reclassified this dwelling as:[[/center]]
 
-[[box]]Shed, Subtype B – Multiversal Crosslink Node[[/box]]
+[[box]]Shed, Subtype B – [[hl]]Multiversal Crosslink Node[[/hl]][[/box]]
 
-Report any fictional apparitions or missing time
-to your local Amble Adventures cover-up coordinator.
+[[center]]Report any fictional apparitions or missing time to your local Amble Adventures cover-up coordinator.[[/center]]
 """
     ability Read
 }
