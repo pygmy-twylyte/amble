@@ -9,8 +9,8 @@ use textwrap::fill;
 use crate::{
     ViewItem,
     style::{GameStyle as _, normal_block},
+    view::icons::{ICON_DEATH, ICON_HARMED, ICON_HEALED, ICON_STATUS},
     view::{StatusAction, ViewEntry},
-    view::icons::{ICON_DEATH, ICON_HARMED, ICON_HEALED, ICON_STATUS, },
 };
 
 /// Renders messages indicating status effects being applied to or removed
@@ -39,15 +39,21 @@ pub(super) fn status_change(entries: &[&ViewEntry]) {
     }
 }
 
+macro_rules! select_health_msgs {
+    ($entries:expr, $kind:ident, $($params:ident),+) => {
+        $entries
+            .iter()
+            .filter_map(|i| match &i.view_item {
+                ViewItem::$kind { $($params),+ } => Some(($($params),+)),
+                _ => None,
+            })
+            .collect::<Vec<_>>()
+    };
+}
+
 /// Renders messages displayed when a character is harmed.
 pub(super) fn character_harmed(entries: &[&ViewEntry]) {
-    let messages: Vec<_> = entries
-        .iter()
-        .filter_map(|i| match &i.view_item {
-            ViewItem::CharacterHarmed { name, cause, amount } => Some((name, cause, amount)),
-            _ => None,
-        })
-        .collect();
+    let messages = select_health_msgs!(entries, CharacterHarmed, name, cause, amount);
     for (name, cause, amount) in messages {
         println!(
             "{}",
@@ -69,13 +75,7 @@ pub(super) fn character_harmed(entries: &[&ViewEntry]) {
 
 /// Renders messages announcing the death of a character.
 pub(super) fn character_death(entries: &[&ViewEntry]) {
-    let messages: Vec<_> = entries
-        .iter()
-        .filter_map(|i| match &i.view_item {
-            ViewItem::CharacterDeath { name, cause, is_player } => Some((name, cause, is_player)),
-            _ => None,
-        })
-        .collect();
+    let messages = select_health_msgs!(entries, CharacterDeath, name, cause, is_player);
     for (name, cause, is_player) in messages {
         let base = format!("{:<4}{}", ICON_DEATH.red(), name.npc_style());
         let cause_text = cause
@@ -98,13 +98,7 @@ pub(super) fn character_death(entries: &[&ViewEntry]) {
 
 /// Renders the message when a character is healed.
 pub(super) fn character_healed(entries: &[&ViewEntry]) {
-    let messages: Vec<_> = entries
-        .iter()
-        .filter_map(|i| match &i.view_item {
-            ViewItem::CharacterHealed { name, cause, amount } => Some((name, cause, amount)),
-            _ => None,
-        })
-        .collect();
+    let messages = select_health_msgs!(entries, CharacterHealed, name, cause, amount);
     for (name, cause, amount) in messages {
         println!(
             "{}",
