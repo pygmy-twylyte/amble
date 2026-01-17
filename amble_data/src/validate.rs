@@ -262,6 +262,7 @@ mod tests {
                     max_hp: 10,
                 },
                 scoring: ScoringDef::default(),
+                ..GameDef::default()
             },
             rooms: vec![room("start")],
             ..WorldDef::default()
