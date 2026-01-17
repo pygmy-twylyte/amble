@@ -26,6 +26,14 @@ pub struct WorldDef {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameDef {
     pub title: String,
+    #[serde(default)]
+    pub slug: String,
+    #[serde(default)]
+    pub author: String,
+    #[serde(default)]
+    pub version: String,
+    #[serde(default)]
+    pub blurb: String,
     pub intro: String,
     pub player: PlayerDef,
     #[serde(default)]
@@ -36,6 +44,10 @@ impl Default for GameDef {
     fn default() -> Self {
         Self {
             title: String::new(),
+            slug: String::new(),
+            author: String::new(),
+            version: String::new(),
+            blurb: String::new(),
             intro: String::new(),
             player: PlayerDef::default(),
             scoring: ScoringDef::default(),
