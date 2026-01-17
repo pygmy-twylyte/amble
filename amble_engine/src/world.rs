@@ -94,6 +94,18 @@ pub struct AmbleWorld {
     pub scoring: ScoringConfig,
     /// Game title displayed at startup.
     pub game_title: String,
+    /// Stable slug identifying the world content.
+    #[serde(default)]
+    pub world_slug: String,
+    /// World author or studio name.
+    #[serde(default)]
+    pub world_author: String,
+    /// World content version string.
+    #[serde(default)]
+    pub world_version: String,
+    /// Short description used in launchers or choosers.
+    #[serde(default)]
+    pub world_blurb: String,
     /// Introductory text displayed after the title.
     pub intro_text: String,
     /// The Amble engine version for the current build
@@ -118,6 +130,10 @@ impl AmbleWorld {
             goals: Vec::new(),
             scoring: ScoringConfig::default(),
             game_title: String::new(),
+            world_slug: String::new(),
+            world_author: String::new(),
+            world_version: String::new(),
+            world_blurb: String::new(),
             intro_text: String::new(),
             version: AMBLE_VERSION.to_string(),
             turn_count: 0,

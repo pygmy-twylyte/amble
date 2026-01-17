@@ -51,6 +51,7 @@ pub mod repl;
 pub mod room;
 pub mod save_files;
 pub mod scheduler;
+pub mod slug;
 pub mod spinners;
 pub mod style;
 pub mod theme;
@@ -61,7 +62,7 @@ pub mod world;
 // Re-exports for convenience
 pub use goal::Goal;
 pub use item::{Item, ItemHolder};
-pub use loader::load_world;
+pub use loader::{WorldSource, discover_world_sources, load_world, load_world_from_path, set_active_world_path};
 pub use npc::Npc;
 pub use player::Player;
 pub use repl::run_repl;

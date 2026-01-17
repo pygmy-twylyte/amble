@@ -61,8 +61,10 @@ pub enum ReplControl {
 pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     let mut view = View::new();
     let mut input_manager = InputManager::new();
-    let mut current_turn = 0;
-    world.turn_count = 1;
+    if world.turn_count == 0 {
+        world.turn_count = 1;
+    }
+    let mut current_turn = world.turn_count.saturating_sub(1);
     // ---- enter main game loop here ----
     loop {
         current_turn = turn_update(world, current_turn);
@@ -207,7 +209,7 @@ fn dispatch_command(command: &Command, world: &mut AmbleWorld, view: &mut View) 
         LockItem(thing) => lock_handler(world, view, thing)?,
         UnlockItem(thing) => unlock_handler(world, view, thing)?,
         Inventory => inv_handler(world, view)?,
-        ListSaves => list_saves_handler(view),
+        ListSaves => list_saves_handler(world, view),
         Unknown => {
             view.push(ViewItem::Error(
                 world
@@ -518,6 +520,7 @@ fn handle_player_death(
             match load_world() {
                 Ok(mut new_world) => {
                     new_world.turn_count = 1;
+                    crate::save_files::set_active_save_dir(crate::save_files::save_dir_for_world(&new_world));
                     *world = new_world;
                     *current_turn = world.turn_count.saturating_sub(1);
                     view.push(ViewItem::EngineMessage("Restarted from the beginning.".to_string()));

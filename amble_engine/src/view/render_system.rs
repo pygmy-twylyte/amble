@@ -72,13 +72,25 @@ pub(super) fn saved_games(view: &mut View) {
                 summary.score,
                 location
             );
+            if !summary.world_title.trim().is_empty() {
+                let version = if summary.world_version.trim().is_empty() {
+                    String::new()
+                } else {
+                    format!(" v{}", summary.world_version)
+                };
+                println!(
+                    "    World: {}{}",
+                    summary.world_title.as_str().highlight(),
+                    version.dimmed()
+                );
+            }
         } else {
             println!("    {}", "Metadata unavailable for this save.".denied_style());
         }
 
         println!(
             "    {}",
-            format!("load {}    [{directory}/{}]", entry.slot, entry.file_name).dimmed()
+            format!("load {}    [{}]", entry.slot, entry.path.display()).dimmed()
         );
 
         match &entry.status {

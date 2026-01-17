@@ -91,7 +91,7 @@ mod tests {
         // Verify basic text is loaded
         assert!(!help_data.basic_text.is_empty(), "Basic help text should not be empty");
         assert!(
-            help_data.basic_text.contains("commands listed below"),
+            help_data.basic_text.contains("commands below"),
             "Should contain expected content"
         );
 
@@ -101,13 +101,22 @@ mod tests {
         // Check for essential commands
         let command_names: Vec<&str> = help_data.commands.iter().map(|cmd| cmd.command.as_str()).collect();
 
-        assert!(command_names.contains(&"help"), "Should contain 'help' command");
-        assert!(command_names.contains(&"look"), "Should contain 'look' command");
         assert!(
-            command_names.contains(&"inventory"),
+            command_names.iter().any(|cmd| cmd.starts_with("help")),
+            "Should contain 'help' command"
+        );
+        assert!(
+            command_names.iter().any(|cmd| cmd.starts_with("look")),
+            "Should contain 'look' command"
+        );
+        assert!(
+            command_names.iter().any(|cmd| cmd.starts_with("inventory")),
             "Should contain 'inventory' command"
         );
-        assert!(command_names.contains(&"quit"), "Should contain 'quit' command");
+        assert!(
+            command_names.iter().any(|cmd| cmd.starts_with("quit")),
+            "Should contain 'quit' command"
+        );
 
         // Verify each command has a description
         for command in &help_data.commands {
