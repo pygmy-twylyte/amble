@@ -1,0 +1,154 @@
+(
+    game: (
+        title: "Hospital Game TBD",
+        slug: "hospital",
+        author: "pygmy-twylyte",
+        version: "0.1.0",
+        blurb: "A mystery game set in a nearly abandoned small hospital.",
+        intro: "\nGroggily, you wake to the irritating sound of your bedside alarm. Blindly swatting at it in a futile attempt to shut it off, you miss repeatedly, smacking your arm on something that doesn\'t feel at all like your bedside table. In fact, now that you think of it, it doesn\'t even sound like your usual alarm. Or… do you even remember having one?\n\nNow it\'s two different alarms going off on either side of you. This doesn\'t seem right at all.\n\n(type \"help\" for basic instructions)\n",
+        player: (
+            name: "J. Doe",
+            description: "a bewildered individual who finds themselves in an even more bewildering situation.",
+            start_room: "id-isolation",
+            max_hp: 20,
+        ),
+        scoring: (
+            report_title: "Evaluation: J. Doe",
+            ranks: [
+                (
+                    threshold: 0.0,
+                    name: "Trial Participant",
+                    description: "Please ignore any embarrassing after-effects.",
+                ),
+            ],
+        ),
+    ),
+    rooms: [
+        (
+            id: "id-isolation",
+            name: "Isolation Room",
+            desc: "A private white hospital room with a single bed -- the one in which you found yourself. An industrial arm juts from the wall holding a plastic-covered keyboard and mouse and monitor. There\'s large plate window in the wall, allowing an unobstructed view of a typically empty nurses\' station across the way.",
+            visited: false,
+            exits: [],
+            overlays: [],
+        ),
+    ],
+    items: [
+        (
+            id: "iv_pump",
+            name: "Infusion Pump <Alarming>",
+            desc: "A persistently alarming IV pump connected to an empty bag at one end and a catheter [[i]](that appears to have just come out of your arm)[[/i]] at the other. There\'s no plug, so it must be running on battery power.",
+            movability: fixed(
+                reason: "It\'s riveted to a rail on the side of the bed.",
+            ),
+            container_state: None,
+            location: Room("id-isolation"),
+            abilities: [
+                turnOff,
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("KVO — Infusion Complete"),
+            consumable: None,
+        ),
+        (
+            id: "iv_bag",
+            name: "IV Bag",
+            desc: "An empty IV bag, connected to the IV pump that was attached to your arm. Traces of an oily yellow liquid remain inside. A handwritten label is applied near the top.",
+            movability: fixed(
+                reason: "Oddly, it\'s locked to the IV pump.",
+            ),
+            container_state: None,
+            location: Room("id-isolation"),
+            abilities: [
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("[[box: J. Doe ]]Protocol: µ-309[[/box]]"),
+            consumable: None,
+        ),
+    ],
+    npcs: [],
+    spinners: [],
+    triggers: [
+        (
+            name: "Turned IV Pump Off",
+            note: None,
+            only_once: false,
+            event: useItem(
+                item: "iv_pump",
+                ability: turnOff,
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: modifyItem(
+                        item: "iv_pump",
+                        patch: (
+                            name: Some("Infusion Pump <Off>"),
+                            desc: Some("A dark and silent IV pump connected to an empty medication bag and a dangling catheter."),
+                            text: None,
+                            movability: None,
+                            container_state: None,
+                            remove_container_state: false,
+                            add_abilities: [
+                                turnOn,
+                            ],
+                            remove_abilities: [
+                                turnOff,
+                            ],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: removeFlag(
+                        name: "iv-pump-on",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Turned IV Pump On",
+            note: None,
+            only_once: false,
+            event: useItem(
+                item: "iv_pump",
+                ability: turnOn,
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: modifyItem(
+                        item: "iv_pump",
+                        patch: (
+                            name: Some("Infusion Pump <On>"),
+                            desc: Some("An intravenous infusion pump, on and in its default setup mode."),
+                            text: None,
+                            movability: None,
+                            container_state: None,
+                            remove_container_state: false,
+                            add_abilities: [
+                                turnOff,
+                            ],
+                            remove_abilities: [
+                                turnOn,
+                            ],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: addFlag(
+                        flag: simple(
+                            name: "iv-pump-on",
+                        ),
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+    ],
+    goals: [],
+)
