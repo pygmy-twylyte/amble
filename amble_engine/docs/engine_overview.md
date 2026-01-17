@@ -84,7 +84,7 @@ Located in `world.rs`, `AmbleWorld` centralizes mutable state:
 - **Scheduler** – queued events and ambient timers.
 - **History** – movement trail used for `go back`.
 
-Save files (`saved_games/*.ron`) serialise the entire structure, so loading a save restores flags, scheduled events, and NPC positions exactly.
+Save files (`saved_games/<world>/*.ron`) serialise the entire structure, so loading a save restores flags, scheduled events, and NPC positions exactly.
 
 ---
 
