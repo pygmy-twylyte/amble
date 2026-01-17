@@ -79,6 +79,10 @@ fn game_to_def(game: &GameAst) -> Result<GameDef, WorldDefError> {
     let scoring = game.scoring.as_ref().map(scoring_to_def).transpose()?;
     Ok(GameDef {
         title: game.title.clone(),
+        slug: game.slug.clone().unwrap_or_default(),
+        author: game.author.clone().unwrap_or_default(),
+        version: game.version.clone().unwrap_or_default(),
+        blurb: game.blurb.clone().unwrap_or_default(),
         intro: game.intro.clone(),
         player,
         scoring: scoring.unwrap_or_default(),

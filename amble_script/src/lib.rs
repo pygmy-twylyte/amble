@@ -49,6 +49,10 @@ pub use worlddef::{WorldDefError, worlddef_from_asts};
 #[derive(Debug, Clone, PartialEq)]
 pub struct GameAst {
     pub title: String,
+    pub slug: Option<String>,
+    pub author: Option<String>,
+    pub version: Option<String>,
+    pub blurb: Option<String>,
     pub intro: String,
     pub player: PlayerAst,
     pub scoring: Option<ScoringAst>,
