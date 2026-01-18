@@ -163,6 +163,7 @@ fn build_command_from_pair(command_pair: Pair<'_, Rule>) -> Command {
         },
         // twt = "target with tool"
         Rule::attach_twt => verb_target_with_tool(ItemInteractionType::Attach, command_pair),
+        Rule::detach_twt => verb_target_with_tool(ItemInteractionType::Detach, command_pair),
         Rule::break_twt => verb_target_with_tool(ItemInteractionType::Break, command_pair),
         Rule::burn_twt => verb_target_with_tool(ItemInteractionType::Burn, command_pair),
         Rule::extinguish_twt => verb_target_with_tool(ItemInteractionType::Extinguish, command_pair),

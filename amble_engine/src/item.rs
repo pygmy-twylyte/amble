@@ -434,6 +434,7 @@ pub enum ItemInteractionType {
     Clean,
     Cover,
     Cut,
+    Detach,
     Handle,
     Move,
     Open,
@@ -447,6 +448,7 @@ impl Display for ItemInteractionType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Attach => write!(f, "attach"),
+            Self::Detach => write!(f, "detach"),
             Self::Break => write!(f, "break"),
             Self::Burn => write!(f, "burn"),
             Self::Extinguish => write!(f, "extinguish"),

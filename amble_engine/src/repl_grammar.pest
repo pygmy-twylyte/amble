@@ -101,8 +101,10 @@ vtwt_cmd       = _{
   | burn_twt
   | break_twt
   | attach_twt
+  | detach_twt
 }
 attach_twt     =  { ii_attach_vb ~ artic? ~ phrase ~ ("to" | "with" | "and") ~ artic? ~ phrase }
+detach_twt     =  { ii_detach_vb ~ artic? ~ phrase ~ "from" ~ artic? ~ phrase }
 break_twt      =  { ii_break_vb ~ artic? ~ phrase ~ ("with" | "using") ~ artic? ~ phrase }
 burn_twt       =  { ii_burn_vb ~ artic? ~ phrase ~ ("with" | "using") ~ artic? ~ phrase }
 extinguish_twt =  { ii_extinguish_vb ~ artic? ~ phrase ~ ("with" | "using") ~ artic? ~ phrase }
@@ -119,6 +121,7 @@ unlock_twt     =  { ii_unlock_vb ~ artic? ~ phrase ~ ("with" | "using") ~ artic?
 
 // item interaction verbs for (interaction)-tool-with-target commands, e.g. "sharpen sword with stone"
 ii_attach_vb     = _{ "attach" | "join" | "connect" }
+ii_detach_vb     = _{ "detach" | "separate" | "disconnect" }
 ii_break_vb      = _{ "break" | "smash" | "crack" | "shatter" | "crush" }
 ii_burn_vb       = _{ "burn" | "ignite" | "melt" | "light" }
 ii_extinguish_vb = _{ "extinguish" | "douse" | "quench" | "spray" }
