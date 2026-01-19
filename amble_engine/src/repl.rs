@@ -163,8 +163,8 @@ fn expand_abbreviated_input(input: &str) -> &str {
 /// Expands input into a "go <direction>" command if any direction in the room contains the input
 /// string. If the input doesn't match exactly one direction, it is returned unexpanded.
 fn expand_exit_direction<'a>(input: &str, directions: impl Iterator<Item = &'a String>) -> String {
-    let mut dir_matches: Vec<_> = directions.filter(|d| d.contains(input)).collect();
-    // just return a copy of input if there isn't *exactly* one match
+    let lc_input = input.to_lowercase();
+    let mut dir_matches: Vec<_> = directions.filter(|d| d.to_lowercase().contains(&lc_input)).collect();
     if dir_matches.len() != 1 {
         return input.to_string();
     }
