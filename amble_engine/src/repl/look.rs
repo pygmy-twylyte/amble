@@ -156,13 +156,13 @@ pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
     };
     let item = world.items.get(&item_id).expect("item_id known to be valid here");
 
-    if item.text.is_none() {
+    if item.text.is_none() || !item.abilities.contains(&ItemAbility::Read) {
         view.push(ViewItem::ActionFailure(format!(
             "You see nothing special about the {}, and nothing legible on it.",
             item.name().item_style()
         )));
         info!(
-            "{} tried to read textless item {} ({})",
+            "{} examined a detail-less item {} ({})",
             world.player.name(),
             item.name(),
             item.symbol()
