@@ -779,6 +779,7 @@ fn item_interaction_from_def(def: &DefItemInteractionType) -> ItemInteractionTyp
         DefItemInteractionType::Clean => ItemInteractionType::Clean,
         DefItemInteractionType::Cover => ItemInteractionType::Cover,
         DefItemInteractionType::Cut => ItemInteractionType::Cut,
+        DefItemInteractionType::Detach => ItemInteractionType::Detach,
         DefItemInteractionType::Handle => ItemInteractionType::Handle,
         DefItemInteractionType::Move => ItemInteractionType::Move,
         DefItemInteractionType::Open => ItemInteractionType::Open,

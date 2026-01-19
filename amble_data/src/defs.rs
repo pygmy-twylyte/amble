@@ -844,6 +844,7 @@ pub enum ItemInteractionType {
     Clean,
     Cover,
     Cut,
+    Detach,
     Handle,
     Move,
     Open,

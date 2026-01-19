@@ -830,6 +830,7 @@ fn item_interaction_from_str(value: &str) -> Result<ItemInteractionType, WorldDe
     let norm = normalize_token(value);
     let interaction = match norm.as_str() {
         "attach" => ItemInteractionType::Attach,
+        "detach" => ItemInteractionType::Detach,
         "break" => ItemInteractionType::Break,
         "burn" => ItemInteractionType::Burn,
         "extinguish" => ItemInteractionType::Extinguish,
