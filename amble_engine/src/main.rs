@@ -156,10 +156,10 @@ fn select_startup(worlds: &[WorldSource], saves: &[SaveFileEntry]) -> Result<Sta
 fn print_world_option(index: usize, world: &WorldSource) {
     let mut details = Vec::new();
     if !world.author.trim().is_empty() {
-        details.push(format!("by {}", world.author));
+        details.push(format!("by {}", world.author.npc_style()));
     }
     if !world.version.trim().is_empty() {
-        details.push(format!("v{}", world.version));
+        details.push(format!("v{}", world.version.bold()));
     }
     let detail_str = if details.is_empty() {
         String::new()
@@ -167,14 +167,14 @@ fn print_world_option(index: usize, world: &WorldSource) {
         format!(" ({})", details.join(", "))
     };
 
-    println!("  {index}. New game: {}{detail_str}", world.title);
+    println!("  {index}. {}{detail_str}", world.title.highlight());
 
     let blurb = world.blurb.trim();
     if !blurb.is_empty() {
         let width = termwidth().saturating_sub(6);
         let wrapped = fill(blurb, width);
         for line in wrapped.lines() {
-            println!("      {line}");
+            println!("      {}", line.description_style());
         }
     }
 }
@@ -194,7 +194,10 @@ fn print_save_option(index: usize, entry: &SaveFileEntry) {
         };
         println!(
             "  {index}. Load save: {} — {} (turn {}, score {}){suffix}",
-            entry.slot, world_label, summary.turn_count, summary.score
+            entry.slot.item_style(),
+            world_label.highlight(),
+            summary.turn_count.to_string().bold(),
+            summary.score.to_string().bold()
         );
     } else {
         let suffix = if let Some(modified) = modified {
