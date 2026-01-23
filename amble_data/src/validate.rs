@@ -38,6 +38,10 @@ impl std::error::Error for ValidationError {}
 ///     game: GameDef {
 ///         title: "Demo".into(),
 ///         intro: "Intro".into(),
+///         author: "Author".into(),
+///         version: "0.00.0-pre".into(),
+///         slug: "demo-game".into(),
+///         blurb: "some short bit about the…".into(),
 ///         player: PlayerDef {
 ///             name: "Player".into(),
 ///             description: "A hero".into(),
