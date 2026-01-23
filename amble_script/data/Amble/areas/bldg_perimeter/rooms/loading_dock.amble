@@ -26,6 +26,7 @@ item security_locker {
     movability fixed "It's too big and heavy to carry."
     location room loading-dock
     container state locked
+    ability Read
     requires cutWood to cut
     requires smash to break
     requires ignite to burn
