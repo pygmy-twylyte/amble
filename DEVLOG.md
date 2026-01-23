@@ -9,6 +9,15 @@ For the *few* of you out there lurking and watching the my pet project so far, i
 
 So, I intend to keep an informal log here, going forward. With the exception of this intro, newest entries will be at the top.
 ---
+1-17-2026
+
+I'm surprised it's been 10 days since I updated this. I've been working on the multi-game system (game-chooser branch) and it's about good to go… so I've been working on a second small mini-game-demo to distribute alongside the main amble demo, so that people can see how the game chooser works right away.
+
+The new demo will have a more serious tone. A "wake up attached to a strange IV in an abandoned hospital" situation. 
+
+Also been working through exercism and lessons learned there have led to use of a macro / little refactoring in the code -- looking for other opportunities to leverage that and the .fold() method. 
+
+---
 1-7-2026
 
 Tried using Claude to improve diagnostics in the language server. Unmitigated disaster. Reverted all changes. I'm surprised, after having good luck with Claude on some other stuff some months ago. Oh well. That's what git is for.
