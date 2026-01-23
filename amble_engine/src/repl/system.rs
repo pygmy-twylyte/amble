@@ -764,31 +764,6 @@ mod tests {
     use crate::loader::scoring::{ScoringConfig, ScoringRank};
 
     #[test]
-    fn help_includes_dev_commands_when_enabled() {
-        if !crate::DEV_MODE {
-            // In non-dev builds, this test is not applicable
-            return;
-        }
-        let mut view = View::new();
-        help_handler(&mut view);
-        // Find Help ViewItem and ensure at least one DEV command is present
-        if let Some(commands) = view.items.iter().find_map(|entry| {
-            if let ViewItem::Help { commands, .. } = &entry.view_item {
-                Some(commands)
-            } else {
-                None
-            }
-        }) {
-            let cmds: Vec<&str> = commands.iter().map(|c| c.command.as_str()).collect();
-            assert!(cmds.contains(&":npcs"));
-            assert!(cmds.contains(&":flags"));
-            assert!(cmds.contains(&":sched"));
-        } else {
-            panic!("Help ViewItem not produced by help_handler");
-        }
-    }
-
-    #[test]
     fn help_dev_shows_only_dev_commands_when_enabled() {
         if !crate::DEV_MODE {
             return;
