@@ -68,11 +68,9 @@ pub fn discover_world_sources() -> Result<Vec<WorldSource>> {
         }
     }
 
-    if candidates.is_empty() {
-        let fallback = data_root.join("world.ron");
-        if fallback.is_file() {
-            candidates.push(fallback);
-        }
+    let fallback = data_root.join("world.ron");
+    if fallback.is_file() {
+        candidates.push(fallback);
     }
 
     candidates.sort();
