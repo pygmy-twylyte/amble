@@ -26,7 +26,7 @@
 //! compatibility across game updates.
 //!
 //! ## Save File Format
-//! - **Location**: `saved_games/` directory
+//! - **Location**: `saved_games/<world>/` directory
 //! - **Naming**: `{slot_name}-amble-{version}.ron`
 //! - **Content**: Complete serialized `AmbleWorld` state
 //!
@@ -60,18 +60,19 @@
 use colored::Colorize;
 use std::fs;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::data_paths::data_path;
 use crate::goal::GoalStatus;
 use crate::helpers::symbol_or_unknown;
 use crate::loader::help::{HelpCommand, load_help_data};
-use crate::save_files::{self, SAVE_DIR};
+use crate::loader::{discover_world_sources, set_active_world_path};
+use crate::save_files::{self, SAVE_DIR, save_dir_for_world, set_active_save_dir};
 use crate::style::GameStyle;
 use crate::theme::THEME_MANAGER;
 
 use crate::view::ViewMode;
-use crate::{AMBLE_VERSION, Goal, View, ViewItem};
+use crate::{AMBLE_VERSION, Goal, View, ViewItem, WorldSource};
 use crate::{AmbleWorld, WorldObject, repl::ReplControl};
 
 use anyhow::{Context, Result};
@@ -401,10 +402,11 @@ pub fn goals_handler(world: &AmbleWorld, view: &mut View) {
 }
 
 /// Lists available save slots and their details.
-pub fn list_saves_handler(view: &mut View) {
-    match save_files::build_save_entries(Path::new(SAVE_DIR)) {
+pub fn list_saves_handler(world: &AmbleWorld, view: &mut View) {
+    let save_dir = save_dir_for_world(world);
+    match save_files::build_save_entries(&save_dir) {
         Ok(entries) => view.push(ViewItem::SavedGamesList {
-            directory: SAVE_DIR.to_string(),
+            directory: save_dir.to_string_lossy().to_string(),
             entries,
         }),
         Err(err) => view.push(ViewItem::Error(format!("Unable to list saved games: {err}"))),
@@ -450,7 +452,7 @@ pub fn filtered_goals(world: &AmbleWorld, status: GoalStatus) -> Vec<&Goal> {
 ///
 /// # Save File Location
 ///
-/// Files are loaded from: `saved_games/{gamefile}-amble-{version}.ron`
+/// Files are loaded from: `saved_games/<world>/{gamefile}-amble-{version}.ron`
 ///
 /// # Version Compatibility
 ///
@@ -481,14 +483,19 @@ pub fn filtered_goals(world: &AmbleWorld, status: GoalStatus) -> Vec<&Goal> {
 /// - Error details logged for debugging
 /// - Game continues with current state
 pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> bool {
-    let save_dir = Path::new(SAVE_DIR);
-    let mut slots = match save_files::collect_save_slots(save_dir) {
+    let save_dir = save_dir_for_world(world);
+    let mut slots = match save_files::collect_save_slots(&save_dir) {
         Ok(slots) => slots,
         Err(err) => {
             view.push(ViewItem::Error(format!("Unable to inspect saved games: {err}")));
             return false;
         },
     };
+    if save_dir != Path::new(SAVE_DIR) {
+        if let Ok(legacy_slots) = save_files::collect_save_slots(Path::new(SAVE_DIR)) {
+            slots.extend(legacy_slots);
+        }
+    }
 
     slots.retain(|slot| slot.slot == gamefile);
     slots.sort_by(|a, b| b.modified.cmp(&a.modified).then(a.version.cmp(&b.version)));
@@ -523,6 +530,12 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> 
                         "Loaded '{gamefile}' saved under v{original_version}, metadata indicates current version match."
                     );
                 }
+                if let Ok(sources) = discover_world_sources() {
+                    if let Some(source) = match_world_source(&new_world, &sources) {
+                        set_active_world_path(source.path.clone());
+                    }
+                }
+                set_active_save_dir(save_dir_for_world(&new_world));
                 *world = new_world;
                 view.push(ViewItem::ActionSuccess(format!(
                     "Saved game {} (v{}) loaded successfully. Sally forth.",
@@ -577,6 +590,18 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> 
     }
 }
 
+fn match_world_source<'a>(world: &AmbleWorld, sources: &'a [WorldSource]) -> Option<&'a WorldSource> {
+    if !world.world_slug.trim().is_empty() {
+        if let Some(source) = sources.iter().find(|source| source.slug == world.world_slug) {
+            return Some(source);
+        }
+    }
+    if !world.game_title.trim().is_empty() {
+        return sources.iter().find(|source| source.title == world.game_title);
+    }
+    None
+}
+
 /// Saves the current game state to a persistent file on disk.
 ///
 /// This handler serializes the complete game world state using RON format
@@ -595,7 +620,7 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> 
 ///
 /// # Save File Organization
 ///
-/// - **Directory**: `saved_games/` (created if it doesn't exist)
+/// - **Directory**: `saved_games/<world>/` (created if it doesn't exist)
 /// - **Filename**: `{gamefile}-amble-{version}.ron`
 /// - **Format**: RON (Rusty Object Notation) for human readability
 ///
@@ -636,10 +661,11 @@ pub fn save_handler(world: &AmbleWorld, view: &mut View, gamefile: &str) -> Resu
         ron::ser::to_string(world).with_context(|| "error converting AmbleWorld to 'ron' format".to_string())?;
 
     // create save dir if doesn't exist
-    fs::create_dir_all(SAVE_DIR).with_context(|| "error creating saved_games folder".to_string())?;
+    let save_dir = save_dir_for_world(world);
+    fs::create_dir_all(&save_dir).with_context(|| "error creating saved_games folder".to_string())?;
 
     // create save file
-    let save_path = PathBuf::from(SAVE_DIR).join(format!("{gamefile}-amble-{AMBLE_VERSION}.ron"));
+    let save_path = save_dir.join(format!("{gamefile}-amble-{AMBLE_VERSION}.ron"));
     let mut save_file =
         fs::File::create(save_path.as_path()).with_context(|| format!("creating file '{}'", save_path.display()))?;
 
@@ -669,9 +695,10 @@ pub fn autosave_quiet(world: &AmbleWorld, gamefile: &str) -> Result<()> {
     let world_ron =
         ron::ser::to_string(world).with_context(|| "error converting AmbleWorld to 'ron' format".to_string())?;
 
-    fs::create_dir_all(SAVE_DIR).with_context(|| "error creating saved_games folder".to_string())?;
+    let save_dir = save_dir_for_world(world);
+    fs::create_dir_all(&save_dir).with_context(|| "error creating saved_games folder".to_string())?;
 
-    let save_path = PathBuf::from(SAVE_DIR).join(format!("{gamefile}-amble-{AMBLE_VERSION}.ron"));
+    let save_path = save_dir.join(format!("{gamefile}-amble-{AMBLE_VERSION}.ron"));
     let mut save_file =
         fs::File::create(save_path.as_path()).with_context(|| format!("creating file '{}'", save_path.display()))?;
     save_file
@@ -735,31 +762,6 @@ pub fn theme_handler(view: &mut View, theme_name: &str) -> Result<()> {
 mod tests {
     use super::*;
     use crate::loader::scoring::{ScoringConfig, ScoringRank};
-
-    #[test]
-    fn help_includes_dev_commands_when_enabled() {
-        if !crate::DEV_MODE {
-            // In non-dev builds, this test is not applicable
-            return;
-        }
-        let mut view = View::new();
-        help_handler(&mut view);
-        // Find Help ViewItem and ensure at least one DEV command is present
-        if let Some(commands) = view.items.iter().find_map(|entry| {
-            if let ViewItem::Help { commands, .. } = &entry.view_item {
-                Some(commands)
-            } else {
-                None
-            }
-        }) {
-            let cmds: Vec<&str> = commands.iter().map(|c| c.command.as_str()).collect();
-            assert!(cmds.contains(&":npcs"));
-            assert!(cmds.contains(&":flags"));
-            assert!(cmds.contains(&":sched"));
-        } else {
-            panic!("Help ViewItem not produced by help_handler");
-        }
-    }
 
     #[test]
     fn help_dev_shows_only_dev_commands_when_enabled() {

@@ -55,7 +55,7 @@ Subcommands:
 ### `package engine`
 Creates a distribution containing:
 - `bin/amble_engine` (or `.exe` on Windows) built with the requested profile/target.
-- `amble_engine/data/` world data (`world.ron`) plus configuration TOMLs (themes/help).
+- `amble_engine/data/` world data (`world.ron` or `worlds/*.ron`) plus configuration TOMLs (themes/help).
 
 ### `package full`
 Includes everything from `package engine` plus:
@@ -79,7 +79,7 @@ The command ensures binaries exist before packaging, so it will trigger fresh bu
 
 ## `content refresh`
 
-Regenerates `world.ron` data from `.amble` sources and lints the results. This is the fastest way to ensure content changes compile cleanly before committing.
+Regenerates `world.ron` data from `.amble` sources and lints the results. This is the fastest way to ensure content changes compile cleanly before committing. For multiple worlds, pass one or more `--world` entries; the task writes `out-dir/worlds/<slug>.ron` and uses a per-world staging directory for linting.
 
 Options:
 
@@ -87,6 +87,7 @@ Options:
 | --- | --- | --- |
 | `--source <dir>` | `amble_script/data/Amble` | Root of `.amble` files to compile. |
 | `--out-dir <dir>` | `amble_engine/data` | Destination for compiled world data (`world.ron`). The command creates the directory if missing. |
+| `--world <slug>=<dir>` | (none) | Compile multiple worlds into `out-dir/worlds/<slug>.ron` (repeatable). |
 | `--deny-missing` | off | When set, `amble_script lint` fails if referenced symbols are missing (excellent for CI). |
 
 The task runs two steps in sequence:

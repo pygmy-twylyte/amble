@@ -12,6 +12,10 @@ pub(super) fn parse_game_pair(game: pest::iterators::Pair<Rule>, _source: &str) 
 
     let mut title: Option<String> = None;
     let mut intro: Option<String> = None;
+    let mut slug: Option<String> = None;
+    let mut author: Option<String> = None;
+    let mut version: Option<String> = None;
+    let mut blurb: Option<String> = None;
     let mut player: Option<PlayerAst> = None;
     let mut scoring: Option<ScoringAst> = None;
 
@@ -27,6 +31,34 @@ pub(super) fn parse_game_pair(game: pest::iterators::Pair<Rule>, _source: &str) 
                     .next()
                     .ok_or(AstError::Shape("missing game title string"))?;
                 title = Some(unquote(s.as_str()));
+            },
+            Rule::game_slug => {
+                let s = inner_stmt
+                    .into_inner()
+                    .next()
+                    .ok_or(AstError::Shape("missing game slug string"))?;
+                slug = Some(unquote(s.as_str()));
+            },
+            Rule::game_author => {
+                let s = inner_stmt
+                    .into_inner()
+                    .next()
+                    .ok_or(AstError::Shape("missing game author string"))?;
+                author = Some(unquote(s.as_str()));
+            },
+            Rule::game_version => {
+                let s = inner_stmt
+                    .into_inner()
+                    .next()
+                    .ok_or(AstError::Shape("missing game version string"))?;
+                version = Some(unquote(s.as_str()));
+            },
+            Rule::game_blurb => {
+                let s = inner_stmt
+                    .into_inner()
+                    .next()
+                    .ok_or(AstError::Shape("missing game blurb string"))?;
+                blurb = Some(unquote(s.as_str()));
             },
             Rule::game_intro => {
                 let s = inner_stmt
@@ -55,6 +87,10 @@ pub(super) fn parse_game_pair(game: pest::iterators::Pair<Rule>, _source: &str) 
 
     Ok(GameAst {
         title: title.ok_or(AstError::Shape("missing game title"))?,
+        slug,
+        author,
+        version,
+        blurb,
         intro: intro.ok_or(AstError::Shape("missing game intro"))?,
         player: player.ok_or(AstError::Shape("missing player block"))?,
         scoring,

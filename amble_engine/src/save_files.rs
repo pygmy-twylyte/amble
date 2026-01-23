@@ -3,15 +3,19 @@
 //! Provides file management utilities for listing, loading, and writing
 //! player save slots with version awareness.
 
+use crate::slug::sanitize_slug;
 use crate::{AMBLE_VERSION, AmbleWorld, Location, WorldObject};
 use anyhow::{Context, Result};
 use log::warn;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::{LazyLock, RwLock};
 use std::time::{Duration, SystemTime};
 
 pub const SAVE_DIR: &str = "saved_games";
 pub const LOG_DIR: &str = "logs";
+
+static ACTIVE_SAVE_DIR: LazyLock<RwLock<PathBuf>> = LazyLock::new(|| RwLock::new(PathBuf::from(SAVE_DIR)));
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SaveSlot {
@@ -24,6 +28,9 @@ pub struct SaveSlot {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SaveSummary {
+    pub world_title: String,
+    pub world_slug: String,
+    pub world_version: String,
     pub player_name: String,
     pub player_location: Option<String>,
     pub turn_count: usize,
@@ -48,6 +55,38 @@ pub struct SaveFileEntry {
     pub status: SaveFileStatus,
 }
 
+/// Return the active save directory used for completions and save operations.
+pub fn active_save_dir() -> PathBuf {
+    ACTIVE_SAVE_DIR
+        .read()
+        .map(|guard| guard.clone())
+        .unwrap_or_else(|_| PathBuf::from(SAVE_DIR))
+}
+
+/// Set the active save directory.
+pub fn set_active_save_dir(path: PathBuf) {
+    if let Ok(mut guard) = ACTIVE_SAVE_DIR.write() {
+        *guard = path;
+    }
+}
+
+/// Compute a world-specific save directory based on the world's metadata.
+pub fn save_dir_for_world(world: &AmbleWorld) -> PathBuf {
+    let raw = if !world.world_slug.trim().is_empty() {
+        world.world_slug.as_str()
+    } else if !world.game_title.trim().is_empty() {
+        world.game_title.as_str()
+    } else {
+        "world"
+    };
+    save_dir_for_slug(raw)
+}
+
+/// Compute a save directory based on a slug or display name.
+pub fn save_dir_for_slug(raw: &str) -> PathBuf {
+    PathBuf::from(SAVE_DIR).join(sanitize_slug(raw))
+}
+
 /// Discover save slot files stored in `dir`.
 ///
 /// # Errors
@@ -60,34 +99,39 @@ pub fn collect_save_slots(dir: &Path) -> Result<Vec<SaveSlot>> {
     let mut slots = Vec::new();
     for entry in fs::read_dir(dir).with_context(|| format!("reading {}", dir.display()))? {
         let entry = entry.with_context(|| format!("enumerating {}", dir.display()))?;
-        let path = entry.path();
-        if !path.is_file() {
-            continue;
+        if let Some(slot) = slot_from_entry(&entry) {
+            slots.push(slot);
         }
-        if path.extension().and_then(|ext| ext.to_str()) != Some("ron") {
-            continue;
-        }
-        let Some(file_name) = path.file_name().and_then(|name| name.to_str()).map(str::to_string) else {
-            continue;
-        };
-        let Some(stem) = path.file_stem().and_then(|stem| stem.to_str()) else {
-            continue;
-        };
-        let Some((slot, version)) = stem.rsplit_once("-amble-") else {
-            continue;
-        };
-        if slot.is_empty() {
-            continue;
-        }
-        let modified = entry.metadata().ok().and_then(|meta| meta.modified().ok());
-        slots.push(SaveSlot {
-            slot: slot.to_string(),
-            version: version.to_string(),
-            path: path.clone(),
-            file_name,
-            modified,
-        });
     }
+    slots.sort_by(|a, b| a.slot.cmp(&b.slot).then(a.version.cmp(&b.version)));
+    Ok(slots)
+}
+
+/// Discover save slots across a root directory and its immediate subdirectories.
+///
+/// This supports the per-world save folder layout while still picking up legacy
+/// saves stored directly under `saved_games/`.
+pub fn collect_save_slots_recursive(root: &Path) -> Result<Vec<SaveSlot>> {
+    if !root.exists() {
+        return Ok(Vec::new());
+    }
+
+    let mut slots = Vec::new();
+    for entry in fs::read_dir(root).with_context(|| format!("reading {}", root.display()))? {
+        let entry = entry.with_context(|| format!("enumerating {}", root.display()))?;
+        let path = entry.path();
+        if path.is_dir() {
+            for sub in fs::read_dir(&path).with_context(|| format!("reading {}", path.display()))? {
+                let sub = sub.with_context(|| format!("enumerating {}", path.display()))?;
+                if let Some(slot) = slot_from_entry(&sub) {
+                    slots.push(slot);
+                }
+            }
+        } else if let Some(slot) = slot_from_entry(&entry) {
+            slots.push(slot);
+        }
+    }
+
     slots.sort_by(|a, b| a.slot.cmp(&b.slot).then(a.version.cmp(&b.version)));
     Ok(slots)
 }
@@ -101,6 +145,26 @@ pub fn build_save_entries(dir: &Path) -> Result<Vec<SaveFileEntry>> {
     let mut entries: Vec<_> = slots.into_iter().map(entry_for_slot).collect();
     entries.sort_by(|a, b| b.modified.cmp(&a.modified).then(a.slot.cmp(&b.slot)));
     Ok(entries)
+}
+
+/// Build descriptive entries for save files located in a root directory and its subfolders.
+///
+/// # Errors
+/// Returns an error if reading the directory or loading a save slot fails.
+pub fn build_save_entries_recursive(root: &Path) -> Result<Vec<SaveFileEntry>> {
+    let slots = collect_save_slots_recursive(root)?;
+    let mut entries: Vec<_> = slots.into_iter().map(entry_for_slot).collect();
+    entries.sort_by(|a, b| b.modified.cmp(&a.modified).then(a.slot.cmp(&b.slot)));
+    Ok(entries)
+}
+
+/// Load a save file from disk and deserialize its world state.
+///
+/// # Errors
+/// Returns an error if the file cannot be read or deserialized.
+pub fn load_save_file(path: &Path) -> Result<AmbleWorld> {
+    let raw = fs::read_to_string(path).with_context(|| format!("reading save file {}", path.display()))?;
+    ron::from_str::<AmbleWorld>(&raw).with_context(|| format!("parsing save file {}", path.display()))
 }
 
 /// Format a human-friendly modified time relative to now.
@@ -127,6 +191,9 @@ fn entry_for_slot(slot: SaveSlot) -> SaveFileEntry {
                     }
                 };
                 let summary = SaveSummary {
+                    world_title: world.game_title.clone(),
+                    world_slug: world.world_slug.clone(),
+                    world_version: world.world_version.clone(),
                     player_name: world.player.name.clone(),
                     player_location: describe_location(&world),
                     turn_count: world.turn_count,
@@ -169,6 +236,30 @@ fn entry_for_slot(slot: SaveSlot) -> SaveFileEntry {
         summary,
         status,
     }
+}
+
+fn slot_from_entry(entry: &fs::DirEntry) -> Option<SaveSlot> {
+    let path = entry.path();
+    if !path.is_file() {
+        return None;
+    }
+    if path.extension().and_then(|ext| ext.to_str()) != Some("ron") {
+        return None;
+    }
+    let file_name = path.file_name().and_then(|name| name.to_str())?.to_string();
+    let stem = path.file_stem().and_then(|stem| stem.to_str())?;
+    let (slot, version) = stem.rsplit_once("-amble-")?;
+    if slot.is_empty() {
+        return None;
+    }
+    let modified = entry.metadata().ok().and_then(|meta| meta.modified().ok());
+    Some(SaveSlot {
+        slot: slot.to_string(),
+        version: version.to_string(),
+        path,
+        file_name,
+        modified,
+    })
 }
 
 /// Render the player's current location into a human-readable label.

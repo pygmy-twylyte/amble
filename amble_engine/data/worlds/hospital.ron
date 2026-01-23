@@ -1,0 +1,544 @@
+(
+    game: (
+        title: "Hospital Game TBD",
+        slug: "hospital",
+        author: "pygmy-twylyte",
+        version: "0.1.0",
+        blurb: "A mystery game set in a nearly abandoned small hospital.",
+        intro: "\nGroggily, you wake to the irritating sound of your bedside alarm. Blindly swatting at it in a futile attempt to shut it off, you miss repeatedly, smacking your arm on something that doesn\'t feel at all like your bedside table. In fact, now that you think of it, it doesn\'t even sound like your usual alarm. Or… do you even remember having one?\n\nNow it\'s two different alarms going off on either side of you. This doesn\'t seem right at all.\n\n(type \"help\" for basic instructions)\n",
+        player: (
+            name: "J. Doe",
+            description: "a bewildered individual who finds themselves in an even more bewildering situation.",
+            start_room: "id-isolation",
+            max_hp: 20,
+        ),
+        scoring: (
+            report_title: "Evaluation: J. Doe",
+            ranks: [
+                (
+                    threshold: 0.0,
+                    name: "Trial Participant",
+                    description: "Please ignore any embarrassing after-effects.",
+                ),
+            ],
+        ),
+    ),
+    rooms: [
+        (
+            id: "id-hallway",
+            name: "Hallway",
+            desc: "The hallway outside the isolation room where you came to. It\'s white and spotless. No beds, trays, linen carts, or trash containers spill into the hallway… [[i]][[b]]and there are no people anywhwere.[[/b]][[/i]]",
+            visited: false,
+            exits: [
+                (
+                    direction: "Isolation Room",
+                    to: "id-isolation",
+                    hidden: false,
+                    locked: false,
+                    required_flags: [],
+                    required_items: [],
+                    barred_message: None,
+                ),
+            ],
+            overlays: [],
+        ),
+        (
+            id: "id-isolation",
+            name: "Isolation Room",
+            desc: "A private white hospital room with a single bed -- the one in which you found yourself. An industrial arm juts from the wall holding a plastic-covered keyboard and mouse and monitor. There\'s large plate window in the wall, allowing an unobstructed view of a typically empty nurses\' station across the way.",
+            visited: false,
+            exits: [
+                (
+                    direction: "Hallway",
+                    to: "id-hallway",
+                    hidden: false,
+                    locked: false,
+                    required_flags: [
+                        "port_decannulated",
+                    ],
+                    required_items: [],
+                    barred_message: Some("You\'re still tethered to the IV pump."),
+                ),
+            ],
+            overlays: [],
+        ),
+    ],
+    items: [
+        (
+            id: "player_access_port",
+            name: "Access Port (implanted)",
+            desc: "An advanced infusion and access port attached to your carotid artery and jugular vein. [[i]]An [[item]]IV line[[/item]] tethers it (and you) to the nearby [[item]]IV pump[[/item]].[[/i]]",
+            movability: fixed(
+                reason: "It\'s permanently implanted in your neck.",
+            ),
+            container_state: None,
+            location: Inventory,
+            abilities: [],
+            interaction_requires: {},
+            text: None,
+            consumable: None,
+        ),
+        (
+            id: "iv_pump",
+            name: "Infusion Pump <Alarming>",
+            desc: "A persistently alarming IV pump connected to an empty bag at one end and a catheter [[i]](that appears to have just come out of your arm)[[/i]] at the other. There\'s no plug, so it must be running on battery power.",
+            movability: fixed(
+                reason: "It\'s riveted to a rail on the side of the bed.",
+            ),
+            container_state: None,
+            location: Room("id-isolation"),
+            abilities: [
+                turnOff,
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("[[red]]WARNING - AIR IN LINE[[/red]]"),
+            consumable: None,
+        ),
+        (
+            id: "iv_bag",
+            name: "IV Bag",
+            desc: "An empty IV bag, connected to the IV pump that was attached to your arm. Traces of a cloudy, mustard-yellow liquid remain inside. A handwritten label is applied near the top.",
+            movability: fixed(
+                reason: "Oddly, it\'s chained to the IV pole.",
+            ),
+            container_state: None,
+            location: Room("id-isolation"),
+            abilities: [
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("[[box: J. Doe ]]Protocol: µ-309[[/box]]"),
+            consumable: None,
+        ),
+        (
+            id: "iv_line",
+            name: "IV Line",
+            desc: "An intravenous infusion line, which is currently connecting the infusion system to the port in your neck.",
+            movability: fixed(
+                reason: "It\'s an inseparable part of the infusion system.",
+            ),
+            container_state: None,
+            location: Room("id-isolation"),
+            abilities: [],
+            interaction_requires: {},
+            text: None,
+            consumable: None,
+        ),
+    ],
+    npcs: [],
+    spinners: [],
+    triggers: [
+        (
+            name: "Set Initial Flags",
+            note: Some("sets any default flags… but technically not until 1 turn taken"),
+            only_once: true,
+            event: always,
+            conditions: All([]),
+            actions: [
+                (
+                    action: addFlag(
+                        flag: simple(
+                            name: "iv_pump_alarming",
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: addFlag(
+                        flag: simple(
+                            name: "port_connected",
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: addFlag(
+                        flag: simple(
+                            name: "iv_pump_on",
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: addFlag(
+                        flag: simple(
+                            name: "status:headache",
+                        ),
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Turned IV Pump Off",
+            note: None,
+            only_once: false,
+            event: useItem(
+                item: "iv_pump",
+                ability: turnOff,
+            ),
+            conditions: Pred(hasFlag(
+                flag: "iv_pump_alarming",
+            )),
+            actions: [
+                (
+                    action: removeFlag(
+                        name: "iv_pump_alarming",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: removeFlag(
+                        name: "status:headache",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: showMessage(
+                        text: "Thankfully, the piercing alarm from the IV pump goes quiet.",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: awardPoints(
+                        amount: 5,
+                        reason: "Stopped the headache-inducing IV alarm.",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Turned IV Pump Off",
+            note: None,
+            only_once: false,
+            event: useItem(
+                item: "iv_pump",
+                ability: turnOff,
+            ),
+            conditions: Pred(hasFlag(
+                flag: "port_connected",
+            )),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "The large air bubbles in the tubing stop moving toward your infusion port.",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Turned IV Pump Off",
+            note: None,
+            only_once: false,
+            event: useItem(
+                item: "iv_pump",
+                ability: turnOff,
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: modifyItem(
+                        item: "iv_pump",
+                        patch: (
+                            name: Some("Infusion Pump <Off>"),
+                            desc: Some("A dark and silent IV pump connected to an empty medication bag and a dangling catheter."),
+                            text: None,
+                            movability: None,
+                            container_state: None,
+                            remove_container_state: false,
+                            add_abilities: [
+                                turnOn,
+                            ],
+                            remove_abilities: [
+                                turnOff,
+                                read,
+                            ],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: removeFlag(
+                        name: "iv_pump_on",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: showMessage(
+                        text: "The infusion pump goes dark.",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Turned IV Pump On",
+            note: None,
+            only_once: false,
+            event: useItem(
+                item: "iv_pump",
+                ability: turnOn,
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: modifyItem(
+                        item: "iv_pump",
+                        patch: (
+                            name: Some("Infusion Pump <On>"),
+                            desc: Some("An intravenous infusion pump, turned on and in its default setup mode."),
+                            text: Some("READY"),
+                            movability: None,
+                            container_state: None,
+                            remove_container_state: false,
+                            add_abilities: [
+                                turnOff,
+                                read,
+                            ],
+                            remove_abilities: [
+                                turnOn,
+                            ],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: addFlag(
+                        flag: simple(
+                            name: "iv_pump_on",
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: showMessage(
+                        text: "The display on the infusion pump lights up.",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Detach Line from Port",
+            note: Some("part 1 of trigger pair to handle detach line / port commands"),
+            only_once: true,
+            event: useItemOnItem(
+                tool: "iv_line",
+                target: "player_access_port",
+                interaction: detach,
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "You yank the IV line from the port in your neck - just before the air bubbles reach you.",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyItem(
+                        item: "iv_line",
+                        patch: (
+                            name: None,
+                            desc: Some("An intravenous infusion line, dripping a jaundice-yellow, oily substance on the tile floor below."),
+                            text: None,
+                            movability: None,
+                            container_state: None,
+                            remove_container_state: false,
+                            add_abilities: [],
+                            remove_abilities: [],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyItem(
+                        item: "player_access_port",
+                        patch: (
+                            name: None,
+                            desc: Some("An advanced infusion and access port attached to your carotid artery and jugular vein. [[i]]Nothing is currently attached to it.[[/i]]"),
+                            text: None,
+                            movability: None,
+                            container_state: None,
+                            remove_container_state: false,
+                            add_abilities: [],
+                            remove_abilities: [],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: removeFlag(
+                        name: "port_connected",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: addFlag(
+                        flag: simple(
+                            name: "port_decannulated",
+                        ),
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Detach Port from Line",
+            note: Some("part 2 of trigger pair to handle detach line / port commands"),
+            only_once: true,
+            event: useItemOnItem(
+                tool: "player_access_port",
+                target: "iv_line",
+                interaction: detach,
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "You yank the IV line from the port in your neck - just before the air bubbles reach you.",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyItem(
+                        item: "iv_line",
+                        patch: (
+                            name: None,
+                            desc: Some("An intravenous infusion line, dripping a jaundice-yellow, oily substance on the tile floor below."),
+                            text: None,
+                            movability: None,
+                            container_state: None,
+                            remove_container_state: false,
+                            add_abilities: [],
+                            remove_abilities: [],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyItem(
+                        item: "player_access_port",
+                        patch: (
+                            name: None,
+                            desc: Some("An advanced infusion and access port attached to your carotid artery and jugular vein. [[i]]Nothing is currently attached to it.[[/i]]"),
+                            text: None,
+                            movability: None,
+                            container_state: None,
+                            remove_container_state: false,
+                            add_abilities: [],
+                            remove_abilities: [],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: removeFlag(
+                        name: "port_connected",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: addFlag(
+                        flag: simple(
+                            name: "port_decannulated",
+                        ),
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Start Embolism Sequence",
+            note: Some("start the cascading sequence leading to air embolism"),
+            only_once: true,
+            event: always,
+            conditions: All([]),
+            actions: [
+                (
+                    action: scheduleInIf(
+                        turns_ahead: 3,
+                        condition: All([
+                            Pred(missingFlag(
+                                flag: "port_decannulated",
+                            )),
+                            Pred(hasFlag(
+                                flag: "iv_pump_on",
+                            )),
+                        ]),
+                        on_false: cancel,
+                        actions: [
+                            (
+                                action: showMessage(
+                                    text: "The air bubbles in the IV tubing are moving toward your neck.",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: scheduleInIf(
+                                    turns_ahead: 3,
+                                    condition: All([
+                                        Pred(missingFlag(
+                                            flag: "port_decannulated",
+                                        )),
+                                        Pred(hasFlag(
+                                            flag: "iv_pump_on",
+                                        )),
+                                    ]),
+                                    on_false: cancel,
+                                    actions: [
+                                        (
+                                            action: showMessage(
+                                                text: "[[red]][[b]]The air bubble may kill you if it reaches your neck. Act quickly![[/b]][[/red]]",
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: scheduleInIf(
+                                                turns_ahead: 3,
+                                                condition: All([
+                                                    Pred(missingFlag(
+                                                        flag: "port_decannulated",
+                                                    )),
+                                                    Pred(hasFlag(
+                                                        flag: "iv_pump_on",
+                                                    )),
+                                                ]),
+                                                on_false: cancel,
+                                                actions: [
+                                                    (
+                                                        action: showMessage(
+                                                            text: "[[bright-red]][[b]]The largest bubble pushes into your port, causing a massive air embolism.",
+                                                        ),
+                                                        priority: None,
+                                                    ),
+                                                    (
+                                                        action: damagePlayer(
+                                                            amount: 100,
+                                                            cause: "air embolism",
+                                                        ),
+                                                        priority: None,
+                                                    ),
+                                                ],
+                                                note: None,
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    note: None,
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        note: None,
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+    ],
+    goals: [],
+)

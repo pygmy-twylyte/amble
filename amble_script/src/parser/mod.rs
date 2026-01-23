@@ -233,6 +233,10 @@ mod tests {
         let src = r#"
 game {
   title "Demo"
+  slug "demo"
+  author "Jane Doe"
+  version "0.1.0"
+  blurb "Short and sweet."
   intro "Intro"
   player {
     name "The Candidate"
@@ -248,6 +252,10 @@ game {
         let (game, ..) = parse_program_full(src).expect("valid game block");
         let game = game.expect("game block parsed");
         assert_eq!(game.title, "Demo");
+        assert_eq!(game.slug.as_deref(), Some("demo"));
+        assert_eq!(game.author.as_deref(), Some("Jane Doe"));
+        assert_eq!(game.version.as_deref(), Some("0.1.0"));
+        assert_eq!(game.blurb.as_deref(), Some("Short and sweet."));
         assert_eq!(game.player.start_room, "foyer");
         let scoring = game.scoring.expect("scoring parsed");
         assert_eq!(scoring.ranks.len(), 1);

@@ -114,6 +114,9 @@ struct ContentRefreshArgs {
     /// Output directory for compiled world data (`world.ron`).
     #[arg(long, value_name = "DIR", default_value = "amble_engine/data")]
     out_dir: PathBuf,
+    /// Compile multiple worlds as `slug=DIR` entries (writes to `out-dir/worlds/<slug>.ron`).
+    #[arg(long, value_name = "SLUG=DIR")]
+    world: Vec<String>,
     /// Treat missing files as an error during linting.
     #[arg(long)]
     deny_missing: bool,
@@ -236,42 +239,124 @@ fn package_full(workspace: &Workspace, args: &PackageFullArgs) -> Result<()> {
 }
 
 fn refresh_content(workspace: &Workspace, args: &ContentRefreshArgs) -> Result<()> {
-    let source_dir = workspace.root.join(&args.source);
+    if args.world.is_empty() {
+        let source_dir = workspace.root.join(&args.source);
+        let out_dir = workspace.root.join(&args.out_dir);
+
+        if !source_dir.exists() {
+            bail!("source directory '{}' does not exist", source_dir.display());
+        }
+
+        fs::create_dir_all(&out_dir)
+            .with_context(|| format!("unable to create output directory {}", out_dir.display()))?;
+
+        let mut compile_cmd = cargo_cmd("run", workspace);
+        compile_cmd
+            .arg("-p")
+            .arg("amble_script")
+            .arg("--bin")
+            .arg("amble_script");
+
+        compile_cmd.arg("--");
+        compile_cmd.arg("compile-dir");
+        compile_cmd.arg(&source_dir);
+        compile_cmd.arg("--out-dir");
+        compile_cmd.arg(&out_dir);
+
+        run_command(&mut compile_cmd, "amble_script compile-dir")?;
+
+        let mut lint_cmd = cargo_cmd("run", workspace);
+        lint_cmd.arg("-p").arg("amble_script").arg("--bin").arg("amble_script");
+        lint_cmd.arg("--");
+        lint_cmd.arg("lint");
+        lint_cmd.arg(&source_dir);
+        lint_cmd.arg("--data-dir");
+        lint_cmd.arg(&out_dir);
+        if args.deny_missing {
+            lint_cmd.arg("--deny-missing");
+        }
+
+        return run_command(&mut lint_cmd, "amble_script lint");
+    }
+
+    let worlds = parse_world_specs(&args.world)?;
     let out_dir = workspace.root.join(&args.out_dir);
+    let worlds_dir = out_dir.join("worlds");
+    fs::create_dir_all(&worlds_dir)
+        .with_context(|| format!("unable to create output directory {}", worlds_dir.display()))?;
 
-    if !source_dir.exists() {
-        bail!("source directory '{}' does not exist", source_dir.display());
+    for world in worlds {
+        let source_dir = workspace.root.join(&world.source);
+        if !source_dir.exists() {
+            bail!("source directory '{}' does not exist", source_dir.display());
+        }
+
+        let staging_dir = workspace.target_dir.join("content").join(&world.slug);
+        ensure_clean_dir(&staging_dir)?;
+
+        let mut compile_cmd = cargo_cmd("run", workspace);
+        compile_cmd
+            .arg("-p")
+            .arg("amble_script")
+            .arg("--bin")
+            .arg("amble_script");
+        compile_cmd.arg("--");
+        compile_cmd.arg("compile-dir");
+        compile_cmd.arg(&source_dir);
+        compile_cmd.arg("--out-dir");
+        compile_cmd.arg(&staging_dir);
+
+        run_command(&mut compile_cmd, "amble_script compile-dir")?;
+
+        let compiled_world = staging_dir.join("world.ron");
+        let target_world = worlds_dir.join(format!("{}.ron", world.slug));
+        fs::copy(&compiled_world, &target_world).with_context(|| {
+            format!(
+                "copying compiled world from {} to {}",
+                compiled_world.display(),
+                target_world.display()
+            )
+        })?;
+
+        let mut lint_cmd = cargo_cmd("run", workspace);
+        lint_cmd.arg("-p").arg("amble_script").arg("--bin").arg("amble_script");
+        lint_cmd.arg("--");
+        lint_cmd.arg("lint");
+        lint_cmd.arg(&source_dir);
+        lint_cmd.arg("--data-dir");
+        lint_cmd.arg(&staging_dir);
+        if args.deny_missing {
+            lint_cmd.arg("--deny-missing");
+        }
+
+        run_command(&mut lint_cmd, "amble_script lint")?;
     }
 
-    fs::create_dir_all(&out_dir).with_context(|| format!("unable to create output directory {}", out_dir.display()))?;
+    Ok(())
+}
 
-    let mut compile_cmd = cargo_cmd("run", workspace);
-    compile_cmd
-        .arg("-p")
-        .arg("amble_script")
-        .arg("--bin")
-        .arg("amble_script");
+struct WorldSpec {
+    slug: String,
+    source: PathBuf,
+}
 
-    compile_cmd.arg("--");
-    compile_cmd.arg("compile-dir");
-    compile_cmd.arg(&source_dir);
-    compile_cmd.arg("--out-dir");
-    compile_cmd.arg(&out_dir);
-
-    run_command(&mut compile_cmd, "amble_script compile-dir")?;
-
-    let mut lint_cmd = cargo_cmd("run", workspace);
-    lint_cmd.arg("-p").arg("amble_script").arg("--bin").arg("amble_script");
-    lint_cmd.arg("--");
-    lint_cmd.arg("lint");
-    lint_cmd.arg(&source_dir);
-    lint_cmd.arg("--data-dir");
-    lint_cmd.arg(&out_dir);
-    if args.deny_missing {
-        lint_cmd.arg("--deny-missing");
+fn parse_world_specs(values: &[String]) -> Result<Vec<WorldSpec>> {
+    let mut specs = Vec::new();
+    for value in values {
+        let (slug, source) = value
+            .split_once('=')
+            .ok_or_else(|| anyhow!("invalid --world '{value}', expected SLUG=DIR"))?;
+        let slug = slug.trim();
+        let source = source.trim();
+        if slug.is_empty() || source.is_empty() {
+            bail!("invalid --world '{value}', expected SLUG=DIR");
+        }
+        specs.push(WorldSpec {
+            slug: slug.to_string(),
+            source: PathBuf::from(source),
+        });
     }
-
-    run_command(&mut lint_cmd, "amble_script lint")
+    Ok(specs)
 }
 
 fn release(workspace: &mut Workspace, args: &ReleaseArgs) -> Result<()> {
@@ -296,6 +381,7 @@ fn release(workspace: &mut Workspace, args: &ReleaseArgs) -> Result<()> {
     let refresh_args = ContentRefreshArgs {
         source: PathBuf::from("amble_script/data/Amble"),
         out_dir: PathBuf::from("amble_engine/data"),
+        world: Vec::new(),
         deny_missing: true,
     };
     refresh_content(workspace, &refresh_args)?;

@@ -1133,13 +1133,6 @@ pub fn npc_refuse_item(
 /// # Errors
 ///
 /// - If the specified spinner type doesn't exist in the world's spinner collection
-///
-/// # Examples
-///
-/// Adding a new take verb with higher probability:
-/// ```ignore
-/// add_spinner_wedge(spinners, SpinnerType::Core(CoreSpinnerType::TakeVerb), "snatch", 3)?;
-/// ```
 pub fn add_spinner_wedge<S: BuildHasher>(
     spinners: &mut HashMap<SpinnerType, Spinner<String>, S>,
     spin_type: &SpinnerType,

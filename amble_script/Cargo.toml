@@ -1,6 +1,6 @@
 [package]
 name = "amble_script"
-version = "0.65.0"
+version = "0.66.0-pre"
 edition.workspace = true
 license.workspace = true
 homepage.workspace = true
@@ -20,7 +20,7 @@ name = "amble_script"
 path = "src/main.rs"
 
 [dependencies]
-amble_data = { version = "0.65.0", path = "../amble_data" }
+amble_data = { version = "0.66.0-pre", path = "../amble_data" }
 pest = "2"
 pest_derive = "2"
 ron = "0.10.1"

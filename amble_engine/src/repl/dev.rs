@@ -46,6 +46,7 @@ use time::{OffsetDateTime, format_description};
 use crate::helpers::symbol_or_unknown;
 use crate::save_files::LOG_DIR;
 use crate::scheduler::{EventCondition, OnFalsePolicy, ScheduledEvent};
+use crate::slug::sanitize_slug;
 use crate::trigger::TriggerCondition;
 use crate::{
     AmbleWorld, Location, View, ViewItem, WorldObject,
@@ -219,16 +220,17 @@ pub fn dev_set_flag_handler(world: &mut AmbleWorld, view: &mut View, flag_name: 
 
 /// Record a development note to the daily log file (`DEV_MODE` only).
 pub fn dev_note_handler(world: &AmbleWorld, view: &mut View, note: &str) {
-    if let Err(err) = fs::create_dir_all(LOG_DIR) {
+    let log_dir = world_log_dir(world);
+    if let Err(err) = fs::create_dir_all(&log_dir) {
         view.push(ViewItem::ActionFailure(format!(
             "Unable to create logs directory: {err}"
         )));
-        warn!("DEV_MODE note failed creating log dir '{LOG_DIR}': {err}");
+        warn!("DEV_MODE note failed creating log dir '{}': {err}", log_dir.display());
         return;
     }
 
     let now = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
-    let log_path = note_log_path(now);
+    let log_path = note_log_path(now, world);
     let timestamp = format_note_timestamp(now);
     let note_text = note.trim();
     let note_text = if note_text.is_empty() { "<empty>" } else { note_text };
@@ -288,10 +290,21 @@ pub fn dev_note_handler(world: &AmbleWorld, view: &mut View, note: &str) {
     warn!("DEV_MODE command used: :note");
 }
 
-fn note_log_path(now: OffsetDateTime) -> PathBuf {
+fn world_log_dir(world: &AmbleWorld) -> PathBuf {
+    let slug = if !world.world_slug.trim().is_empty() {
+        sanitize_slug(&world.world_slug)
+    } else if !world.game_title.trim().is_empty() {
+        sanitize_slug(&world.game_title)
+    } else {
+        "world".to_string()
+    };
+    PathBuf::from(LOG_DIR).join(slug)
+}
+
+fn note_log_path(now: OffsetDateTime, world: &AmbleWorld) -> PathBuf {
     let fmt = format_description::parse("[year]-[month]-[day]").expect("valid note date format");
     let date = now.format(&fmt).unwrap_or_else(|_| "unknown-date".to_string());
-    PathBuf::from(LOG_DIR).join(format!("notes-{date}.md"))
+    world_log_dir(world).join(format!("notes-{date}.md"))
 }
 
 fn format_note_timestamp(now: OffsetDateTime) -> String {

@@ -1,5 +1,5 @@
 // Amble DSL Grammar
-// Amble version 0.65.0
+// Amble version 0.66.0-pre
 
 COMMENT    = _{ "#" ~ (!NEWLINE ~ ANY)* }
 WHITESPACE = _{ " " | "\t" | NEWLINE | COMMENT }
@@ -148,8 +148,12 @@ set_list = { "(" ~ ident ~ ("," ~ ident)* ~ (",")? ~ ")" }
 
 game_def        =  { "game" ~ game_block }
 game_block      =  { "{" ~ game_stmt* ~ "}" }
-game_stmt       =  { game_title | game_intro | game_player | game_scoring }
+game_stmt       =  { game_title | game_slug | game_author | game_version | game_blurb | game_intro | game_player | game_scoring }
 game_title      =  { "title" ~ string }
+game_slug       =  { "slug" ~ string }
+game_author     =  { "author" ~ string }
+game_version    =  { "version" ~ string }
+game_blurb      =  { "blurb" ~ string }
 game_intro      =  { "intro" ~ string }
 game_player     =  { "player" ~ player_block }
 player_block    =  { "{" ~ player_stmt* ~ "}" }

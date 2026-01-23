@@ -49,6 +49,10 @@ pub fn build_world_from_def(def: &WorldDef) -> Result<AmbleWorld> {
     let mut world = AmbleWorld::new_empty();
 
     world.game_title = def.game.title.clone();
+    world.world_slug = def.game.slug.clone();
+    world.world_author = def.game.author.clone();
+    world.world_version = def.game.version.clone();
+    world.world_blurb = def.game.blurb.clone();
     world.intro_text = def.game.intro.clone();
     world.scoring = ScoringConfig::from_def(&def.game.scoring);
     world.player = build_player(&def.game.player)?;
@@ -775,6 +779,7 @@ fn item_interaction_from_def(def: &DefItemInteractionType) -> ItemInteractionTyp
         DefItemInteractionType::Clean => ItemInteractionType::Clean,
         DefItemInteractionType::Cover => ItemInteractionType::Cover,
         DefItemInteractionType::Cut => ItemInteractionType::Cut,
+        DefItemInteractionType::Detach => ItemInteractionType::Detach,
         DefItemInteractionType::Handle => ItemInteractionType::Handle,
         DefItemInteractionType::Move => ItemInteractionType::Move,
         DefItemInteractionType::Open => ItemInteractionType::Open,

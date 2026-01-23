@@ -42,6 +42,6 @@ Point the extension’s grammar path at your local build if you want to test gra
 - Hit **cmd/ctrl+P** and search for `Amble:` commands to explore formatting or linting actions exposed by the language server.
 - When you lint or compile via the CLI (`amble_script lint …`, `amble_script compile …`), the extension mirrors diagnostics in the Problems panel.
 - The Outline panel should populate automatically for easy navigation between definitions within a file.
-- Zed tasks are also defined for common refresh / build / packaging processes.
+- Zed tasks are also defined for common refresh / build / packaging processes, including a multi-world refresh option.
 
 Pair the extension with the CLI quickstart in the main [README](./README.md#quickstart) for a smooth authoring loop.

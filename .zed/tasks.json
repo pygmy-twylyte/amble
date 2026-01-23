@@ -1,30 +1,34 @@
 [
   {
     "label": "Refresh Amble Content",
-    "command": "cargo xtask content refresh"
+    "command": "cargo xtask content refresh",
+  },
+  {
+    "label": "Refresh Amble Content (Worlds)",
+    "command": "cargo xtask content refresh --world amble=amble_script/data/Amble",
   },
   {
     "label": "Run Engine (Debug, DEV_MODE on)",
-    "command": "AMBLE_LOG=info cargo run --bin amble_engine --features dev-mode"
+    "command": "AMBLE_LOG=info cargo run --bin amble_engine --features dev-mode",
   },
   {
     "label": "Run Engine (Release, DEV_MODE off)",
-    "command": "AMBLE_LOG=info cargo run --release --bin amble_engine"
+    "command": "AMBLE_LOG=info cargo run --release --bin amble_engine",
   },
   {
     "label": "Package Engine (Linux Release)",
-    "command": "cargo xtask package engine --profile release --target x86_64-unknown-linux-gnu --format zip"
+    "command": "cargo xtask package engine --profile release --target x86_64-unknown-linux-gnu --format zip",
   },
   {
     "label": "Package Engine (Windows Release)",
-    "command": "cargo xtask package engine --profile release --target x86_64-pc-windows-gnu --format zip"
+    "command": "cargo xtask package engine --profile release --target x86_64-pc-windows-gnu --format zip",
   },
   {
     "label": "Package Suite (Linux Release, DEV_MODE on)",
-    "command": "cargo xtask package full --profile release --target x86_64-unknown-linux-gnu --dev-mode enabled --format zip"
+    "command": "cargo xtask package full --profile release --target x86_64-unknown-linux-gnu --dev-mode enabled --format zip",
   },
   {
     "label": "Package Suite (Windows Release, DEV_MODE on)",
-    "command": "cargo xtask package full --profile release --target x86_64-pc-windows-gnu --dev-mode enabled --format zip"
-  }
+    "command": "cargo xtask package full --profile release --target x86_64-pc-windows-gnu --dev-mode enabled --format zip",
+  },
 ]

@@ -19,7 +19,7 @@ use rustyline::history::DefaultHistory;
 use rustyline::validate::{ValidationContext, ValidationResult, Validator};
 use rustyline::{Context, Helper};
 
-use crate::save_files::{SAVE_DIR, collect_save_slots};
+use crate::save_files::{active_save_dir, collect_save_slots};
 
 /// Outcome of reading a line from the REPL input.
 pub enum InputEvent {
@@ -267,7 +267,8 @@ fn matches_keyword(lower: &str, keyword: &str) -> bool {
 }
 
 fn available_save_slots() -> Vec<String> {
-    let dir = Path::new(SAVE_DIR);
+    let dir = active_save_dir();
+    let dir = dir.as_path();
     match collect_save_slots(dir) {
         Ok(slots) => {
             let mut names = Vec::new();
