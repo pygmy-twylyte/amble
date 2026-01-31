@@ -27,7 +27,7 @@
         (
             id: "id-hallway",
             name: "Hallway",
-            desc: "The hallway outside the isolation room where you came to. It\'s white and spotless. No beds, trays, linen carts, or trash containers spill into the hallway… [[i]][[b]]and there are no people anywhwere.[[/b]][[/i]]",
+            desc: "The hallway outside the isolation room where you emerged from sedation. It\'s white and spotless. No beds, trays, linen carts, or trash containers spill into the hallway… [[i]][[b]]and there are no people anywhwere.[[/b]][[/i]]",
             visited: false,
             exits: [
                 (
@@ -62,6 +62,24 @@
             ],
             overlays: [],
         ),
+        (
+            id: "id-nurses_station",
+            name: "Nurses\' Station (Infectious Division)",
+            desc: "<Nurses station description here>",
+            visited: false,
+            exits: [
+                (
+                    direction: "south hallway",
+                    to: "id-hallway",
+                    hidden: false,
+                    locked: false,
+                    required_flags: [],
+                    required_items: [],
+                    barred_message: None,
+                ),
+            ],
+            overlays: [],
+        ),
     ],
     items: [
         (
@@ -73,6 +91,46 @@
             ),
             container_state: None,
             location: Inventory,
+            abilities: [],
+            interaction_requires: {},
+            text: None,
+            consumable: None,
+        ),
+        (
+            id: "id_bracelet",
+            name: "Patient ID Bracelet (attached)",
+            desc: "A patient ID bracelet, but made out of much stronger material than the typical plastic and with no legible text -- just a chip and a barcode.",
+            movability: fixed(
+                reason: "You can\'t pull it off with your bare hands; it\'s too tight and too strong.",
+            ),
+            container_state: None,
+            location: Inventory,
+            abilities: [],
+            interaction_requires: {},
+            text: None,
+            consumable: None,
+        ),
+        (
+            id: "vocera",
+            name: "Vocera",
+            desc: "An intercom badge, typically used by hospital staff to communicate room-to-room quickly when needed.",
+            movability: free,
+            container_state: Some(open),
+            location: Room("id-hallway"),
+            abilities: [
+                turnOn,
+            ],
+            interaction_requires: {},
+            text: None,
+            consumable: None,
+        ),
+        (
+            id: "dead_vocera_battery",
+            name: "Dead Battery",
+            desc: "A battery for the [[item]]Vocera[[/item]] system. The charge indicator shows that this one is [[red]]dead[[/red]].",
+            movability: free,
+            container_state: None,
+            location: Item("vocera"),
             abilities: [],
             interaction_requires: {},
             text: None,
@@ -125,8 +183,41 @@
             text: None,
             consumable: None,
         ),
+        (
+            id: "charged_vocera_battery",
+            name: "Vocera Battery (Charged)",
+            desc: "A fully charged battery for a Vocera communication badge.",
+            movability: free,
+            container_state: None,
+            location: Room("id-nurses_station"),
+            abilities: [],
+            interaction_requires: {},
+            text: None,
+            consumable: None,
+        ),
     ],
-    npcs: [],
+    npcs: [
+        (
+            id: "intercom",
+            name: "Voice on Intercom",
+            desc: "A voice heard only through a nearby hospital intercom speaker.",
+            max_hp: 1000,
+            location: Nowhere,
+            state: normal,
+            dialogue: {},
+            movement: None,
+        ),
+        (
+            id: "vocera_npc",
+            name: "Vocera",
+            desc: "The friendly voice coming from the Vocera device.",
+            max_hp: 1000,
+            location: Nowhere,
+            state: normal,
+            dialogue: {},
+            movement: None,
+        ),
+    ],
     spinners: [],
     triggers: [
         (
@@ -165,6 +256,88 @@
                         flag: simple(
                             name: "status:headache",
                         ),
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Patient Exit Alert",
+            note: None,
+            only_once: true,
+            event: leaveRoom(
+                room: "id-isolation",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "A voice flows from the hospital intercom, no doubt meant to be serene and calming -- yet somehow tainted with menace.",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: npcSays(
+                        npc: "intercom",
+                        quote: "Patient Doe, it will be best for you if you return to your room and resume the treatment immediately. Resistance will only prolong your suffering.",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Got Vocera",
+            note: None,
+            only_once: true,
+            event: takeItem(
+                item: "vocera",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: awardPoints(
+                        amount: 10,
+                        reason: "took the Vocera communicator device",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Turn Vocera On",
+            note: None,
+            only_once: false,
+            event: useItem(
+                item: "vocera",
+                ability: turnOn,
+            ),
+            conditions: Pred(missingFlag(
+                flag: "charged-vocera-battery-inserted",
+            )),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "You flip the switch, but nothing happens.",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Turn Vocera On",
+            note: None,
+            only_once: false,
+            event: useItem(
+                item: "vocera",
+                ability: turnOn,
+            ),
+            conditions: Pred(hasFlag(
+                flag: "charged-vocera-battery-inserted",
+            )),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "The LED lights green, the device chimes [[i]]BRRRING![[/i]] and a cheerful voice announces \"Vo-cera!\"",
                     ),
                     priority: None,
                 ),
@@ -534,6 +707,42 @@
                             ),
                         ],
                         note: None,
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Vocera Battery Inserted",
+            note: None,
+            only_once: true,
+            event: insertItemInto(
+                item: "charged_vocera_battery",
+                container: "vocera",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: awardPoints(
+                        amount: 5,
+                        reason: "fixed the Vocera device",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: addFlag(
+                        flag: simple(
+                            name: "charged-vocera-battery-inserted",
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: setItemMovability(
+                        item: "charged_vocera_battery",
+                        movability: fixed(
+                            reason: "It\'s locked into the device.",
+                        ),
                     ),
                     priority: None,
                 ),
