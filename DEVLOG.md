@@ -8,6 +8,12 @@ I've been looking for a way to keep informal notes on development of Amble for a
 For the *few* of you out there lurking and watching the my pet project so far, it may sometimes seem like nothing is changing, though I work on Amble just about every day in some aspect or another. Many times, these are small changes buried in the DSL, the demo game content, or updates to the companion Zed extension and language server. 
 
 So, I intend to keep an informal log here, going forward. With the exception of this intro, newest entries will be at the top.
+
+---
+1-30-2026
+
+Still in a lull on Amble. Have a few ideas for engine enhancement. Also some ideas for the second demo game (hospital) which I've started adding. In the process of that, I've found a bug in the Command::Take handler that causes a problem working with items inside transparent containers. Been working on other projects and enhancing my Rust-fu while I'm at low tide on amble_engine ideas.
+
 ---
 1-17-2026
 
