@@ -806,8 +806,9 @@ fn parse_modify_action(
     smap: &SourceMap,
     body: &str,
     offset: usize,
+    sets: &HashMap<String, Vec<String>>,
 ) -> Result<Option<(ActionStmt, usize)>, AstError> {
-    match parse_modify_item_action(remainder) {
+    match parse_modify_item_action(remainder, sets) {
         Ok((action, used)) => return Ok(Some((action, offset + used))),
         Err(AstError::Shape("not a modify item action")) => {},
         Err(AstError::Shape(m)) => return Err(shape_at(m, source, smap, body, offset)),
@@ -884,7 +885,7 @@ pub(super) fn parse_actions_from_body(
             continue;
         }
         let remainder = &body[i..];
-        if let Some((action, new_i)) = parse_modify_action(remainder, source, smap, body, i)? {
+        if let Some((action, new_i)) = parse_modify_action(remainder, source, smap, body, i, sets)? {
             out.push(action);
             i = new_i;
             continue;
@@ -948,7 +949,10 @@ fn parse_modify_header<'a>(
     Ok((priority, ident, patch_block, consumed))
 }
 
-pub(super) fn parse_modify_item_action(text: &str) -> Result<(ActionStmt, usize), AstError> {
+pub(super) fn parse_modify_item_action(
+    text: &str,
+    sets: &HashMap<String, Vec<String>>,
+) -> Result<(ActionStmt, usize), AstError> {
     let (priority, item, patch_block, consumed) = parse_modify_header(
         text,
         "item",
@@ -997,6 +1001,35 @@ pub(super) fn parse_modify_item_action(text: &str) -> Result<(ActionStmt, usize)
                     .map(|(_, rest)| rest)
                     .ok_or(AstError::Shape("modify item movability missing value"))?;
                 patch.movability = Some(parse_movability_opt(raw)?);
+            },
+            Rule::item_visibility_patch => {
+                let val = stmt
+                    .as_str()
+                    .split_whitespace()
+                    .last()
+                    .ok_or(AstError::Shape("modify item visibility missing value"))?;
+                patch.visibility = Some(match val {
+                    "listed" => crate::ItemVisibilityAst::Listed,
+                    "scenery" => crate::ItemVisibilityAst::Scenery,
+                    "hidden" => crate::ItemVisibilityAst::Hidden,
+                    _ => return Err(AstError::Shape("invalid visibility in item patch")),
+                });
+            },
+            Rule::item_visible_when_patch => {
+                let cond_pair = stmt
+                    .into_inner()
+                    .next()
+                    .ok_or(AstError::Shape("modify item visible_when missing condition"))?;
+                let cond_text = cond_pair.as_str().trim();
+                patch.visible_when = Some(parse_condition_text(cond_text, sets)?);
+            },
+            Rule::item_aliases_patch => {
+                let list = stmt
+                    .into_inner()
+                    .filter(|p| p.as_rule() == Rule::string)
+                    .map(|p| unquote(p.as_str()))
+                    .collect::<Vec<_>>();
+                patch.aliases = Some(list);
             },
             Rule::item_container_state_patch => {
                 let state_word = stmt

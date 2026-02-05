@@ -297,7 +297,7 @@ pub(super) fn parse_trigger_pair(
             continue;
         }
         let remainder = &inner[i..];
-        match parse_modify_item_action(remainder) {
+        match parse_modify_item_action(remainder, sets) {
             Ok((action, used)) => {
                 unconditional_actions.push(action);
                 i += used;

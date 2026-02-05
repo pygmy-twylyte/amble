@@ -1,12 +1,9 @@
-use crate::RoomAst;
+use crate::{RoomAst, RoomSceneryAst};
 
 use super::helpers::unquote;
 use super::{AstError, Rule};
 
-pub(super) fn parse_room_pair(
-    room: pest::iterators::Pair<Rule>,
-    _source: &str,
-) -> Result<RoomAst, AstError> {
+pub(super) fn parse_room_pair(room: pest::iterators::Pair<Rule>, _source: &str) -> Result<RoomAst, AstError> {
     // room_def = "room" ~ ident ~ room_block
     let (src_line, _src_col) = room.as_span().start_pos().line_col();
     let mut it = room.into_inner();
@@ -26,6 +23,8 @@ pub(super) fn parse_room_pair(
     let mut visited: Option<bool> = None;
     let mut exits: Vec<(String, crate::ExitAst)> = Vec::new();
     let mut overlays: Vec<crate::OverlayAst> = Vec::new();
+    let mut scenery: Vec<RoomSceneryAst> = Vec::new();
+    let mut scenery_default: Option<String> = None;
     for stmt in block.into_inner() {
         // room_block yields Rule::room_stmt nodes; unwrap to the concrete inner rule
         let inner_stmt = {
@@ -355,6 +354,27 @@ pub(super) fn parse_room_pair(
                     }
                 }
             },
+            Rule::room_scenery_default => {
+                let s = inner_stmt
+                    .into_inner()
+                    .next()
+                    .ok_or(AstError::Shape("missing scenery default string"))?;
+                scenery_default = Some(unquote(s.as_str()));
+            },
+            Rule::room_scenery_entry => {
+                let mut it = inner_stmt.into_inner();
+                let name_pair = it.next().ok_or(AstError::Shape("missing scenery name string"))?;
+                let name = unquote(name_pair.as_str());
+                let mut desc: Option<String> = None;
+                if let Some(desc_pair) = it.next() {
+                    let s = desc_pair
+                        .into_inner()
+                        .next()
+                        .ok_or(AstError::Shape("missing scenery desc string"))?;
+                    desc = Some(unquote(s.as_str()));
+                }
+                scenery.push(RoomSceneryAst { name, desc });
+            },
             _ => {},
         }
     }
@@ -367,6 +387,8 @@ pub(super) fn parse_room_pair(
         visited: visited.unwrap_or(false),
         exits,
         overlays,
+        scenery,
+        scenery_default,
         src_line,
     })
 }
