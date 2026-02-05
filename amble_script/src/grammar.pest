@@ -98,6 +98,13 @@ keyword = {
   | "for"
   | "turns"
   | "cause"
+  | "visibility"
+  | "visible"
+  | "listed"
+  | "hidden"
+  | "scenery"
+  | "aliases"
+  | "default"
   | // container state literals
   "off"
   | "closed"
@@ -268,15 +275,21 @@ item_patch_stmt  = _{
   | item_desc_patch
   | item_text_patch
   | item_movability_patch
+  | item_visibility_patch
+  | item_visible_when_patch
+  | item_aliases_patch
   | item_container_state_patch
   | item_add_ability
   | item_remove_ability
 }
 
-item_name_patch       = { "name" ~ string }
-item_desc_patch       = { ("description" | "desc") ~ string }
-item_text_patch       = { "text" ~ string }
-item_movability_patch = { "movability" ~ movability_opt }
+item_name_patch         = { "name" ~ string }
+item_desc_patch         = { ("description" | "desc") ~ string }
+item_text_patch         = { "text" ~ string }
+item_movability_patch   = { "movability" ~ movability_opt }
+item_visibility_patch   = { "visibility" ~ ("listed" | "scenery" | "hidden") }
+item_visible_when_patch = { "visible" ~ "when" ~ cond }
+item_aliases_patch      = { "aliases" ~ string ~ ("," ~ string)* }
 // turn item into a non-container; requires special handling in case the item isn't empty
 // setting container_state to "off" -> remove_container_state = true in resulting ItemPatch
 item_container_state_patch = { "container" ~ "state" ~ ("off" | "open" | "closed" | "locked" | "transparentOpen" | "transparentClosed" | "transparentLocked") }
@@ -370,12 +383,15 @@ cond_list = { cond ~ ("," ~ cond)* ~ (",")? }
 // Rooms (minimal)
 // -----------------
 
-room_def     = { "room" ~ ident ~ room_block }
-room_block   = { "{" ~ room_stmt* ~ "}" }
-room_stmt    = { room_name | room_desc | room_visited | exit_stmt | overlay_stmt | overlay_flag_pair_stmt | overlay_item_pair_stmt | overlay_npc_pair_stmt | overlay_npc_states_stmt }
-room_name    = { "name" ~ string }
-room_desc    = { ("desc" | "description") ~ string }
-room_visited = { "visited" ~ boolean }
+room_def             = { "room" ~ ident ~ room_block }
+room_block           = { "{" ~ room_stmt* ~ "}" }
+room_stmt            = { room_name | room_desc | room_visited | exit_stmt | overlay_stmt | overlay_flag_pair_stmt | overlay_item_pair_stmt | overlay_npc_pair_stmt | overlay_npc_states_stmt | room_scenery_default | room_scenery_entry }
+room_name            = { "name" ~ string }
+room_desc            = { ("desc" | "description") ~ string }
+room_visited         = { "visited" ~ boolean }
+room_scenery_default = { "scenery" ~ "default" ~ string }
+room_scenery_entry   = { "scenery" ~ string ~ room_scenery_desc? }
+room_scenery_desc    = { ("desc" | "description") ~ string }
 // Exits: exit <direction> -> <room_id>
 // Allow quoted or bare direction names
 exit_stmt = { "exit" ~ (ident | string) ~ "->" ~ ident ~ exit_opts? }
@@ -431,11 +447,14 @@ overlay_npc_state_line   = { (ident ~ string) | ("custom" ~ "(" ~ ident ~ ")" ~ 
 // -----------------
 
 item_def             = { "item" ~ ident ~ item_block }
-item_block           = { "{" ~ (item_name | item_desc | item_movability | item_location | item_container_state | item_ability | item_text | item_requires | item_consumable)* ~ "}" }
+item_block           = { "{" ~ (item_name | item_desc | item_movability | item_location | item_visibility | item_visible_when | item_aliases | item_container_state | item_ability | item_text | item_requires | item_consumable)* ~ "}" }
 item_name            = { "name" ~ string }
 item_desc            = { ("desc" | "description") ~ string }
 item_movability      = { "movability" ~ movability_opt }
 item_location        = { "location" ~ (inventory_loc | room_loc | npc_loc | chest_loc | nowhere_loc) }
+item_visibility      = { "visibility" ~ ("listed" | "scenery" | "hidden") }
+item_visible_when    = { "visible" ~ "when" ~ cond }
+item_aliases         = { "aliases" ~ string ~ ("," ~ string)* }
 player_kw            = { "player" }
 inventory_loc        = { "inventory" ~ (ident | player_kw) }
 room_loc             = { "room" ~ ident }
