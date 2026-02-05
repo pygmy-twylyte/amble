@@ -194,14 +194,14 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
     // match "input_dir" to an Exit
     let destination_exit = {
         let current_room = world.player_room_ref()?;
-        // find a direction (e.g. "up") in current room that matches user input
+        // find a direction (e.g. "up") in current room that matches user input and isn't hidden
         let direction = current_room
             .exits
-            .keys()
-            .find(|dir| dir.to_lowercase().contains(input_dir));
+            .iter()
+            .find(|(dir, exit)| !exit.hidden && dir.to_lowercase().contains(input_dir));
         // if valid direction found, return the associated Exit
-        if let Some(exit_key) = direction {
-            current_room.exits.get(exit_key)
+        if let Some((_, exit)) = direction {
+            Some(exit)
         } else {
             // no valid direction matched -- report and return
             view.push(ViewItem::Error(format!(
@@ -346,6 +346,8 @@ mod tests {
             name: "Start".into(),
             base_description: String::new(),
             overlays: vec![],
+            scenery: Vec::new(),
+            scenery_default: None,
             location: Location::Nowhere,
             visited: true,
             exits: HashMap::new(),
@@ -359,6 +361,8 @@ mod tests {
             name: "Dest".into(),
             base_description: String::new(),
             overlays: vec![],
+            scenery: Vec::new(),
+            scenery_default: None,
             location: Location::Nowhere,
             visited: false,
             exits: HashMap::new(),
@@ -372,7 +376,7 @@ mod tests {
     }
 
     #[test]
-    fn move_to_hidden_exit_allowed() {
+    fn move_to_hidden_exit_blocked() {
         let (mut world, start, dest, mut view) = build_test_world();
         {
             world
@@ -386,9 +390,9 @@ mod tests {
         }
         let initial = world.player.score;
         assert!(move_to_handler(&mut world, &mut view, "north").is_ok());
-        assert!(matches!(&world.player.location, Location::Room(id) if id == &dest));
-        assert_eq!(world.player.score, initial + 1);
-        assert!(world.rooms.get(&dest).unwrap().visited);
+        assert!(matches!(&world.player.location, Location::Room(id) if id == &start));
+        assert_eq!(world.player.score, initial);
+        assert!(!world.rooms.get(&dest).unwrap().visited);
     }
 
     #[test]
@@ -530,6 +534,8 @@ mod tests {
                 name: format!("Room {short_id}"),
                 base_description: String::new(),
                 overlays: vec![],
+                scenery: Vec::new(),
+                scenery_default: None,
                 location: Location::Nowhere,
                 visited: false,
                 exits: HashMap::new(),
@@ -565,6 +571,8 @@ mod tests {
             name: "Room3".into(),
             base_description: String::new(),
             overlays: vec![],
+            scenery: Vec::new(),
+            scenery_default: None,
             location: Location::Nowhere,
             visited: false,
             exits: HashMap::new(),
