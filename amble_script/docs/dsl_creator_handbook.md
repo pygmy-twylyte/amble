@@ -215,6 +215,7 @@ Highlights:
 - `visited` defaults to `false`; set it to `true` for starting rooms.
 - `exit <direction> <room_id>` supports optional modifiers: `hidden`, `locked`, `barred "…"`, `required_items(item_a,item_b)`, and `required_flags(flag_a,flag_b#3)` (steps are normalised to the base flag name).
 - Overlays let you swap or append flavour text when conditions hold. Supported overlay conditions mirror the engine’s room overlay system: flag set/unset/complete, item present/absent, player has/missing item, NPC present/absent/in state, and item-in-room checks.
+- `scenery default "..."` and `scenery "<name>" [desc "..."]` add look-only room details without creating items.
 
 ---
 
@@ -245,6 +246,7 @@ Key fields:
 - `location` accepts `inventory <owner>`, `room <room_id>`, `npc <npc_id>`, `chest <container_id>`, or `nowhere "note"` for items that spawn later.
 - Optional container states: `open`, `closed`, `locked`, `transparentClosed`, `transparentLocked`.
 - `restricted true` marks an item as non-droppable until explicitly allowed.
+- `visibility listed|scenery|hidden` controls listing and discoverability; `visible when <condition>` gates visibility; `aliases` adds alternate match terms.
 - Each `ability` entry becomes an `ItemDef.abilities` entry with optional target (`ability Unlock vault_door`).
 - `text` attaches readable flavour.
 - `requires <ability> to <interaction>` gates interactions (e.g., require an item ability `cut` to perform the `open` interaction on this item).

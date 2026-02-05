@@ -93,6 +93,8 @@ room <id> {
   [visited true|false]
   [exit "some direction" -> <destination> {[hidden] [locked] [barred "…"] [required_items(a,b)] [required_flags(flag_a,flag_b#3)]}]
   [overlay if <conditions> { text "…" }]
+  [scenery default "Fallback text"]
+  [scenery "name" [desc "Description"]]
 }
 ```
 
@@ -108,6 +110,9 @@ item <id> {
   desc "Description"
   portable true|false
   location inventory <owner>|room <room>|npc <npc>|chest <container>|nowhere "note"
+  [visibility listed|scenery|hidden]
+  [visible when <condition>]
+  [aliases "alias one", "alias two"]
   [container state open|closed|locked|transparentClosed|transparentLocked]
   [restricted true]
   [ability <Ability> [<target>]]
