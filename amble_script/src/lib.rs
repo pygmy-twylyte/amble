@@ -455,6 +455,9 @@ pub struct ItemPatchAst {
     pub movability: Option<MovabilityAst>,
     pub container_state: Option<ContainerStateAst>,
     pub remove_container_state: bool,
+    pub visibility: Option<ItemVisibilityAst>,
+    pub visible_when: Option<ConditionAst>,
+    pub aliases: Option<Vec<String>>,
     pub add_abilities: Vec<ItemAbilityAst>,
     pub remove_abilities: Vec<ItemAbilityAst>,
 }
@@ -541,7 +544,16 @@ pub struct RoomAst {
     pub visited: bool, // defaults to false when omitted in DSL
     pub exits: Vec<(String, ExitAst)>,
     pub overlays: Vec<OverlayAst>,
+    pub scenery: Vec<RoomSceneryAst>,
+    pub scenery_default: Option<String>,
     pub src_line: usize,
+}
+
+/// Room-local scenery entry (look/examine only).
+#[derive(Debug, Clone, PartialEq)]
+pub struct RoomSceneryAst {
+    pub name: String,
+    pub desc: Option<String>,
 }
 
 /// Connection between rooms emitted within a room AST.
@@ -593,12 +605,23 @@ pub struct ItemAst {
     pub desc: String,
     pub movability: MovabilityAst,
     pub location: ItemLocationAst,
+    pub visibility: ItemVisibilityAst,
+    pub visible_when: Option<ConditionAst>,
+    pub aliases: Vec<String>,
     pub container_state: Option<ContainerStateAst>,
     pub abilities: Vec<ItemAbilityAst>,
     pub text: Option<String>,
     pub interaction_requires: Vec<(String, String)>,
     pub consumable: Option<ConsumableAst>,
     pub src_line: usize,
+}
+
+/// Visibility settings for items.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ItemVisibilityAst {
+    Listed,
+    Scenery,
+    Hidden,
 }
 
 /// Possible item locations in the DSL.
