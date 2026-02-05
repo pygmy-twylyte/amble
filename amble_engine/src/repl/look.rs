@@ -89,6 +89,29 @@ pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> 
     let entity_id = match find_entity_match(world, thing, SearchScope::AllVisible(room_id)) {
         Ok(id) => id,
         Err(SearchError::NoMatchingName(input)) => {
+            let room = world.player_room_ref()?;
+            let lc_input = input.to_lowercase();
+            if let Some(entry) = room
+                .scenery
+                .iter()
+                .find(|scenery| scenery.name.to_lowercase().contains(&lc_input))
+            {
+                let desc = entry
+                    .desc
+                    .clone()
+                    .or_else(|| {
+                        room.scenery_default
+                            .clone()
+                            .map(|text| text.replace("{thing}", entry.name.to_lowercase().as_str()))
+                    })
+                    .unwrap_or_else(|| format!("You see nothing remarkable about the {}.", entry.name));
+                view.push(ViewItem::ItemDescription {
+                    name: entry.name.clone(),
+                    description: desc,
+                });
+                world.turn_count += 1;
+                return Ok(());
+            }
             entity_not_found(world, view, input.as_str());
             return Ok(());
         },
