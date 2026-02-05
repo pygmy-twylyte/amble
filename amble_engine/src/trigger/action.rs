@@ -82,7 +82,7 @@ use std::hash::BuildHasher;
 use crate::Item;
 use crate::health::{HealthEffect, LifeState, LivingEntity};
 use crate::helpers::{symbol_from_id, symbol_or_unknown};
-use crate::item::{ContainerState, ItemAbility, ItemHolder, Movability};
+use crate::item::{ContainerState, ItemAbility, ItemHolder, ItemVisibility, Movability};
 use crate::npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState, move_npc};
 use crate::player::{Flag, Player};
 use crate::room::Exit;
@@ -479,6 +479,9 @@ pub struct ItemPatch {
     pub container_state: Option<ContainerState>,
     #[serde(default)]
     pub remove_container_state: bool,
+    pub visibility: Option<ItemVisibility>,
+    pub visible_when: Option<EventCondition>,
+    pub aliases: Option<Vec<String>>,
     #[serde(default)]
     pub add_abilities: Vec<ItemAbility>,
     #[serde(default)]
@@ -864,6 +867,18 @@ fn apply_item_patch(world: &mut AmbleWorld, item_id: Id, patch: &ItemPatch) -> R
 
     if let Some(ref new_mov) = patch.movability {
         patched.movability.clone_from(new_mov);
+    }
+
+    if let Some(new_visibility) = patch.visibility {
+        patched.visibility = new_visibility;
+    }
+
+    if patch.visible_when.is_some() {
+        patched.visible_when.clone_from(&patch.visible_when);
+    }
+
+    if let Some(new_aliases) = &patch.aliases {
+        patched.aliases = new_aliases.clone();
     }
 
     if patch.remove_container_state {
@@ -2452,6 +2467,8 @@ mod tests {
             name: "Room1".into(),
             base_description: "Room1".into(),
             overlays: Vec::new(),
+            scenery: Vec::new(),
+            scenery_default: None,
             location: Location::Nowhere,
             visited: false,
             exits: HashMap::new(),
@@ -2464,6 +2481,8 @@ mod tests {
             name: "Room2".into(),
             base_description: "Room2".into(),
             overlays: Vec::new(),
+            scenery: Vec::new(),
+            scenery_default: None,
             location: Location::Nowhere,
             visited: false,
             exits: HashMap::new(),
@@ -2490,6 +2509,8 @@ mod tests {
                 name: "Lab".into(),
                 base_description: "Original description".into(),
                 overlays: Vec::new(),
+            scenery: Vec::new(),
+            scenery_default: None,
                 location: Location::Nowhere,
                 visited: false,
                 exits: HashMap::from([("north".into(), Exit::new(dest_id.clone()))]),
@@ -2505,6 +2526,8 @@ mod tests {
                 name: "Hall".into(),
                 base_description: "Hall".into(),
                 overlays: Vec::new(),
+            scenery: Vec::new(),
+            scenery_default: None,
                 location: Location::Nowhere,
                 visited: false,
                 exits: HashMap::new(),
@@ -2520,6 +2543,8 @@ mod tests {
                 name: "Vault".into(),
                 base_description: "Vault".into(),
                 overlays: Vec::new(),
+            scenery: Vec::new(),
+            scenery_default: None,
                 location: Location::Nowhere,
                 visited: false,
                 exits: HashMap::new(),
@@ -2569,6 +2594,8 @@ mod tests {
                 name: "Lab".into(),
                 base_description: "Original description".into(),
                 overlays: Vec::new(),
+            scenery: Vec::new(),
+            scenery_default: None,
                 location: Location::Nowhere,
                 visited: false,
                 exits: HashMap::new(),
@@ -2701,6 +2728,9 @@ mod tests {
             name: "Item".into(),
             description: String::new(),
             location,
+            visibility: crate::item::ItemVisibility::Listed,
+            visible_when: None,
+            aliases: Vec::new(),
             movability: Movability::Free,
             container_state,
             contents: HashSet::new(),
