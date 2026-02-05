@@ -4,7 +4,7 @@
 //! track the current state of the adventure.
 
 use crate::AMBLE_VERSION;
-use crate::item::ContainerState;
+use crate::item::{ContainerState, ItemVisibility};
 use crate::loader::scoring::ScoringConfig;
 use crate::npc::Npc;
 use crate::spinners::{CoreSpinnerType, SpinnerType};
@@ -203,21 +203,54 @@ fn collect_room_items(
     room_id: Id,
     // Predicate determining whether an item's contents should be collected
     should_include_contents: impl Fn(&Item) -> bool,
+    // Predicate determining whether an item itself should be included
+    should_include_item: impl Fn(&Item) -> bool,
 ) -> Result<HashSet<Id>> {
     let current_room = world
         .rooms
         .get(&room_id)
         .with_context(|| format!("{room_id} room id not found"))?;
     let room_items = &current_room.contents;
+    let mut visible_room_items = HashSet::new();
     let mut contained_items = HashSet::new();
     for item_id in room_items {
-        if let Some(item) = world.items.get(item_id)
-            && should_include_contents(item)
-        {
-            contained_items.extend(item.contents.iter().cloned());
+        if let Some(item) = world.items.get(item_id) {
+            if !should_include_item(item) {
+                continue;
+            }
+            visible_room_items.insert(item_id.clone());
+            if should_include_contents(item) {
+                for contained_id in &item.contents {
+                    if let Some(contained_item) = world.items.get(contained_id)
+                        && should_include_item(contained_item)
+                    {
+                        contained_items.insert(contained_id.clone());
+                    }
+                }
+            }
         }
     }
-    Ok(room_items.union(&contained_items).cloned().collect())
+    Ok(visible_room_items.union(&contained_items).cloned().collect())
+}
+
+fn item_is_visible_item(item: &Item, world: &AmbleWorld) -> bool {
+    item.visible_when.as_ref().map_or(true, |cond| cond.eval(world))
+}
+
+/// Returns true if the item passes its visibility condition (if any).
+pub fn item_is_visible(world: &AmbleWorld, item_id: &Id) -> bool {
+    world
+        .items
+        .get(item_id)
+        .is_some_and(|item| item_is_visible_item(item, world))
+}
+
+/// Returns true if the item should be listed in automatic room/container listings.
+pub fn item_is_listed(world: &AmbleWorld, item_id: &Id) -> bool {
+    world
+        .items
+        .get(item_id)
+        .is_some_and(|item| item.visibility == ItemVisibility::Listed)
 }
 
 /// Constructs a set of all potentially take-able / viewable item ids in a room.
@@ -228,9 +261,12 @@ fn collect_room_items(
 /// # Errors
 /// - if supplied `room_id` is invalid
 pub fn nearby_reachable_items(world: &AmbleWorld, room_id: Id) -> Result<HashSet<Id>> {
-    collect_room_items(world, room_id, |item| {
-        item.container_state == Some(ContainerState::Open)
-    })
+    collect_room_items(
+        world,
+        room_id,
+        |item| item.container_state == Some(ContainerState::Open),
+        |item| item_is_visible_item(item, world),
+    )
 }
 
 /// Get all items that are visible in the room, including those in transparent containers.
@@ -238,9 +274,12 @@ pub fn nearby_reachable_items(world: &AmbleWorld, room_id: Id) -> Result<HashSet
 /// # Errors
 /// - if supplied `room_id` is invalid
 pub fn nearby_visible_items(world: &AmbleWorld, room_id: Id) -> Result<HashSet<Id>> {
-    collect_room_items(world, room_id, |item| {
-        item.container_state == Some(ContainerState::Open) || item.is_transparent()
-    })
+    collect_room_items(
+        world,
+        room_id,
+        |item| item.container_state == Some(ContainerState::Open) || item.is_transparent(),
+        |item| item_is_visible_item(item, world),
+    )
 }
 
 /// Get a list of IDs of all items in the room that are containers.
@@ -264,6 +303,7 @@ pub fn nearby_vessel_items(world: &AmbleWorld, room_id: Id) -> Result<HashSet<Id
     for item_id in all_local_items {
         if let Some(item) = world.items.get(&item_id)
             && item.container_state.is_some()
+            && item_is_visible_item(item, world)
         {
             vessels.insert(item_id);
         }
@@ -293,6 +333,9 @@ mod tests {
             name: format!("Item {}", id),
             description: "A test item".into(),
             location,
+            visibility: crate::item::ItemVisibility::Listed,
+            visible_when: None,
+            aliases: Vec::new(),
             movability: Movability::Free,
             container_state: None,
             contents: HashSet::new(),
@@ -310,6 +353,8 @@ mod tests {
             name: format!("Room {}", id),
             base_description: "A test room".into(),
             overlays: vec![],
+            scenery: Vec::new(),
+            scenery_default: None,
             location: Location::Nowhere,
             visited: false,
             exits: HashMap::new(),
