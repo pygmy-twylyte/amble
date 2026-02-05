@@ -851,6 +851,8 @@ mod tests {
                 name: "Test Room".into(),
                 base_description: String::new(),
                 overlays: vec![],
+                scenery: Vec::new(),
+                scenery_default: None,
                 location: Location::Nowhere,
                 visited: false,
                 exits: HashMap::new(),
