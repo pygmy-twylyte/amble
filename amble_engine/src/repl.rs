@@ -597,7 +597,11 @@ pub fn find_world_object<'a, S: BuildHasher>(
     let lc_term = search_term.to_lowercase();
     for uuid in nearby_ids {
         if let Some(found_item) = world_items.get(uuid)
-            && found_item.name().to_lowercase().contains(&lc_term)
+            && (found_item.name().to_lowercase().contains(&lc_term)
+                || found_item
+                    .aliases
+                    .iter()
+                    .any(|alias| alias.to_lowercase().contains(&lc_term)))
         {
             return Some(WorldEntity::Item(found_item));
         }
