@@ -104,7 +104,7 @@ pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> 
                             .clone()
                             .map(|text| text.replace("{thing}", entry.name.to_lowercase().as_str()))
                     })
-                    .unwrap_or_else(|| format!("You see nothing remarkable about the {}.", entry.name));
+                    .unwrap_or_else(|| format!("You see nothing remarkable about the {}.", entry.name.to_lowercase()));
                 view.push(ViewItem::ItemDescription {
                     name: entry.name.clone(),
                     description: desc,
