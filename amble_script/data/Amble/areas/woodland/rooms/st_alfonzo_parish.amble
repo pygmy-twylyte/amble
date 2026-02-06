@@ -10,6 +10,10 @@ room st-alfonzo-parish {
         absent  "The pedestal stands empty, chilling nothing in particular."
     }
     exit "out the door" -> parish-landing
+    scenery "Stained Glass Windows" desc "In one, a [[i]]formidable[[/i]] stack of pancakes wields a fork like a javelin, valiantly defending a bowl of cereal from a [[i]]vicious[[/i]] mug of coffee."
+    scenery "Hymn Board"
+    scenery "Parish Door"
+    scenery "Refrigerated Pedestal"
 }
 
 # ========================================
@@ -33,6 +37,7 @@ item messiah_kit {
     movability free
     location room st-alfonzo-parish
     container state closed
+    aliases "messiah kit"
 }
 
 item messiah_gourd {
@@ -49,4 +54,5 @@ item messiah_shoe {
     location chest messiah_kit
     text "If found: [[b]]Return to Brian of Nazareth[[/b]]"
     ability Read
+    aliases "sole", "sandal"
 }

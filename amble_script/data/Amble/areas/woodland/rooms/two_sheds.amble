@@ -15,6 +15,10 @@ room two-sheds {
         text "A disused but serviceable axe remains partly concealed in the tall grass."
     }
     exit "trail west" -> two-sheds-landing
+    scenery "Concrete Foundation"
+    scenery "Broken Signpost"
+    scenery "Single Shed"
+    scenery default "Just your typical, everyday {thing}. Nothing to see here."
 }
 
 # Items arson_aid and lumberjack_axe here are found in global/useful_items.amble

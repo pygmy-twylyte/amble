@@ -16,6 +16,25 @@ room parish-landing {
     exit "down the steps" -> high-ridge
     exit "westward trail" -> st-alfonzo-parish
     exit "up the steps" -> two-sheds-landing
+    scenery "Saint Alfonzo" desc "The depiction looks suspiciously like Super Mario dressed in religious garb."
+    scenery "Sculpted Pillar" desc "Ornate and hand-carved in rare marble that doesn't seem native to the area. The meticulous scrollwork and attention to detail expose the sculptor's deep reverence for the [[i]]wisdom imparted to those who read the plaque[[/i]]."
+    scenery "Trail" desc "Most of the gravel has washed away long ago, leaving a mostly dirt trail toward the parish."
+    scenery "Wooden Sign"
+    scenery "Forest Grime"
+    scenery "Spatula"
+    scenery "Stone Steps"
+    scenery "Faded Poster" desc "You see nothing odd about the poster — apart from the subject matter."
+    scenery "Strange Symbols" desc "You can't make much out of them. They're strange. [[i]]It's right in the name.[[/i]]"
+}
+
+item scenery_woodland_gate {
+    name "Woodlands Stargate"
+    desc "A garage-sized metallic ring with a shimmering portal in the center hidden behind the St. Alfonzo's sign. Symbols around its edge seem to indicate destinations. On chevron is locked to a tree icon, and the other is locked to a microscope."
+    location room parish-landing
+    movability fixed "It weighs enough to have its own gravity."
+    visibility scenery
+    visible when has flag woodland-gate-open
+    aliases "gate", "ring"
 }
 
 # ========================================

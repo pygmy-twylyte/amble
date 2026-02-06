@@ -23,6 +23,12 @@ room two-sheds-landing {
     }
     exit "down the steps" -> parish-landing
     exit "trail east" -> two-sheds
+    scenery "Trail Sign" desc "A hand-cut but well crafted, arrow-shaped wooden sign pointing to the head of the eastern trail."
+    scenery "Steps"
+    scenery "Cut Branches"
+    scenery "Charred Twigs"
+    scenery "Smoldering Ash"
+    scenery default "You see nothing remarkable about the {thing}."
 }
 
 # ========================================
