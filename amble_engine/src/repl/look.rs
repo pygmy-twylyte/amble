@@ -109,6 +109,7 @@ pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> 
                     name: entry.name.clone(),
                     description: desc,
                 });
+                info!("player looked at scenery item \"{}\"", entry.name);
                 world.turn_count += 1;
                 return Ok(());
             }
