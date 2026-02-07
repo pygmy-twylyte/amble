@@ -25,10 +25,19 @@ room two-sheds-landing {
     exit "trail east" -> two-sheds
     scenery "Trail Sign" desc "A hand-cut but well crafted, arrow-shaped wooden sign pointing to the head of the eastern trail."
     scenery "Steps"
-    scenery "Cut Branches"
+    scenery "Branches"
     scenery "Charred Twigs"
     scenery "Smoldering Ash"
     scenery default "You see nothing remarkable about the {thing}."
+}
+
+item scenery_claw_marks {
+    name "Claw Marks"
+    desc "Deep claw marks gouged into the hardwood trunk. They could have been made by a [[i]]bear on cocaine[[/i]]. Or a [[i]]velociraptor[[/i]]."
+    location room two-sheds-landing
+    movability fixed "They're gouged into the tree trunk."
+    visibility scenery
+    visible when missing flag cleared-fallen-tree
 }
 
 # ========================================

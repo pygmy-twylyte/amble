@@ -14,6 +14,7 @@ item fallen_tree {
     location room two-sheds-landing
     requires ignite to burn
     requires cutWood to cut
+    aliases "oak"
 }
 
 # ========================================

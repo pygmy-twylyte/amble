@@ -14,7 +14,7 @@ room high-ridge {
         text "Strangely, a slice of [[item]]birthday cake[[/item]] on a paper plate sits precariously balanced on top of a thin boulder nearby."
     }
     exit "up the steps" -> parish-landing
-    scenery "Stone Steps" desc "Worn smooth by time and weather, you can still see where the giant slabs were chiseled from larger stones the hand tools of ancient craftsmen."
+    scenery "Stone Steps" desc "Worn smooth by time and weather, you can still see where these giant slabs were shaped by the hand tools of ancient craftsmen."
     scenery "Paper Plate"
     scenery "Boulder"
 }

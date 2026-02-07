@@ -4,7 +4,7 @@
 
 room parish-landing {
     name "Parish Landing"
-    desc """A small plateau carved into the slope, marked by an old wooden sign that reads:\n[[box:Candidates Welcome]][[b]]Pancakes Served Daily (Terms and Conditions Apply)[[/b]][[/box]]\nA faded poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a holy relic. From here, the steps curve gently upward, disappearing into the woodland growth again. A modest trail leads west toward a nearby parish."""
+    desc """A small plateau carved into the slope, marked by an old [[b]]wooden sign[[/b]] which reads:\n[[box:Candidates Welcome]][[b]]Pancakes Served Daily (Terms and Conditions Apply)[[/b]][[/box]]\nA faded poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a holy relic. From here, the steps curve gently upward, disappearing into the woodland growth again. A modest trail leads west toward a nearby parish."""
     overlay if flag woodland-gate-open {
         set "The open Stargate shimmers just behind the Saint Alfonzo's sign."
         unset "A shed-sized metallic ring sits upright behind the St. Alfonzo's sign. [[i]]Strange symbols[[/i]] are forged around its circumference."
@@ -18,11 +18,12 @@ room parish-landing {
     exit "up the steps" -> two-sheds-landing
     scenery "Saint Alfonzo" desc "The depiction looks suspiciously like Super Mario dressed in religious garb."
     scenery "Sculpted Pillar" desc "Ornate and hand-carved in rare marble that doesn't seem native to the area. The meticulous scrollwork and attention to detail expose the sculptor's deep reverence for the [[i]]wisdom imparted to those who read the plaque[[/i]]."
-    scenery "Trail" desc "Most of the gravel has washed away long ago, leaving a mostly dirt trail toward the parish."
+    scenery "Trail" desc "Most of the gravel has washed away long ago, leaving a rough dirt trail toward the parish."
     scenery "Wooden Sign"
     scenery "Forest Grime"
     scenery "Spatula"
     scenery "Stone Steps"
+    scenery "Metallic Ring"
     scenery "Faded Poster" desc "You see nothing odd about the poster — apart from the subject matter."
     scenery "Strange Symbols" desc "You can't make much out of them. They're strange. [[i]]It's right in the name.[[/i]]"
 }
