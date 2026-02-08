@@ -154,6 +154,8 @@ pub fn load_world_from_path(world_ron_path: &Path) -> Result<AmbleWorld> {
     place_npcs(&mut world)?;
     place_items(&mut world)?;
 
+    // we gather an estimate of possible maximum points to earn in the world here, but
+    // in can be made inaccurate by repeatable awards or mutually exclusive reward paths
     for trigger in &world.triggers {
         for action in &trigger.actions {
             if let TriggerAction::AwardPoints { amount, .. } = &action.action
