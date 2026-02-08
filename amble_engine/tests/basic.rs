@@ -496,7 +496,7 @@ fn test_check_npc_movement() {
         scenery: vec![],
         scenery_default: None,
     };
-    let room3 = Room {
+    let _room3 = Room {
         id: ae::idgen::new_id(),
         symbol: "r3".into(),
         name: "R3".into(),
