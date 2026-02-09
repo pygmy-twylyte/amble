@@ -4,12 +4,20 @@
 
 room snowfield {
     name "Desolate Snowfield"
-    desc "You find yourself in a wide, desolate snowfield west of the main building -- which is odd, because you still see summery woodlands just yards away, with a clean line separating the two climates. Wind howls across the ice, and powdery drifts swirl around a dark rectangular pit, some 20 feet across, but too deep and dark to see the bottom. A thick rope anchored deeply into the ice leads down into the pit."
-    exit northeast -> loading-dock
-    exit southeast -> front-entrance
-    exit west -> snow-camp
-    exit rope-down -> ice-pit
+    desc "You find yourself in a wide, desolate snowfield west of the main building -- which is odd, because you still see summery woodlands just yards away, with a clean line separating the two climates. Wind howls across the ice, and powdery drifts swirl around a dark rectangular pit. A thick rope leads down into the pit. Farther to the west, you can just make out the outline of a small camp."
+    exit "north of the building" -> loading-dock
+    exit "south of the building" -> front-entrance
+    exit "campsite" -> snow-camp
+    exit "rope down" -> ice-pit
+
+    scenery "Snow"
+    scenery "Woodlands"
+    scenery "Office Building"
+    scenery "Camp" desc "Just a small cluster of colors and shapes on the blinding white background; you can't tell much more from here."
+    scenery "Ice Pit" desc "A rectangular shaft, certainly sunk into the ice by some large machinery long gone. It's five meters across, and yet too deep and dark to see the bottom."
+    scenery "Thick Rope" desc "Thick as your wrist and braided from dark blue synthetic fibers, it's spliced onto a steel spike driven deep into the ice."
 }
+
 
 # ========================================
 # Triggers
