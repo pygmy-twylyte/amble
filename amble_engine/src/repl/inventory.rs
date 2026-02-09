@@ -112,6 +112,8 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
     if matches!(item.movability, Movability::Free) {
         if let Some(dropped) = world.items.get_mut(&item_id) {
             dropped.set_location_room(room_id.clone());
+            // anything dropped must be listed, or it could vanish / become inaccessible...
+            dropped.visibility = crate::item::ItemVisibility::Listed;
             if let Some(room) = world.rooms.get_mut(&room_id) {
                 room.add_item(dropped.id());
                 info!(
