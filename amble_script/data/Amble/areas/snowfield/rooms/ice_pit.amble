@@ -5,23 +5,39 @@
 room ice-pit {
     name "Abysmal Ice Pit"
     desc "The bottom of a deep, sheer ice shaft seemingly dug for some kind of arctic research -- though you were nowhere near the Arctic Circle, last you checked. You're just able to see in the dim light filtering down from the tiny opening to the surface above."
+
     overlay if flag snowfield-gate-open {
         set "The center of the Stargate shimmers and phases, still connected to the room back at the Aperture Laboratory."
         unset "A dark metallic ring the size of two sheds stands where it appears to have been chiseled from the ice some time ago."
     }
+
     overlay if item present plaque_2_frozen {
         text "A slightly larger than human-sized pillar of ice rises from the floor near one end of the excavated area."
     }
+
     overlay if item present unlit_campfire {
         text "A carefully-laid but unlit campfire waits next to the pillar."
     }
+
     overlay if item present campfire {
         text "A toasty campfire burns steadily next to the gradually melting ice pillar."
     }
+
     overlay if flag complete reveal-ice-plaque {
         text "A campfire crackles next to a marble pillar topped with a shiny bronze plaque near one end of the room."
     }
+
     exit "up to the surface" -> snowfield
+}
+
+item snowfield_stargate {
+    name "Snowfield Stargate"
+    desc "The stargate looms at one end of the excavated area. Its shimmering center reveals an open wormhole. Around the ring, one chevron is locked to an Aperture Laboratories icon, while the other is on a snowflake icon."
+    visibility scenery
+    movability fixed "It's frozen into the ice and weighs as much as a cargo ship."
+    visible when has flag snowfield-gate-open
+    location room ice-pit
+    aliases "ring", "gate", "portal"
 }
 
 # ========================================
@@ -134,19 +150,19 @@ trigger "Hint: Find Items to Build a Fire" only once
 note "schedule radio hint about building a fire"
 when use item plaque_2_frozen ability read {
     do schedule in 4 if any(
-        all(
-            missing flag campfire-lit,
-            has flag hint-radio-on,
-            has item hint_radio,
-            in rooms ice-pit,
-        ),
-        has flag campfire-lit,
+    all(
+    missing flag campfire-lit,
+    has flag hint-radio-on,
+    has item hint_radio,
+    in rooms ice-pit,
+    ),
+    has flag campfire-lit,
     ) onFalse retryNextTurn note "radio gives campfire hint" {
         if all(
-            missing flag campfire-lit,
-            has flag hint-radio-on,
-            has item hint_radio,
-            in rooms ice-pit,
+        missing flag campfire-lit,
+        has flag hint-radio-on,
+        has item hint_radio,
+        in rooms ice-pit,
         ) {
             do npc says hint_radio_npc "To melt that pillar, you'll need to drop some firewood here and light it with something."
         }

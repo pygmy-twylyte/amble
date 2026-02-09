@@ -45,6 +45,9 @@ pub enum CoreSpinnerType {
     NpcEntered,
     /// Used for "NPC left" messages
     NpcLeft,
+    /// Used for descriptions of scenery items when none is specified. "{thing}" is
+    /// replaced by the item's name.
+    NothingSpecial,
 }
 
 /// Represents either a core spinner type or a custom game-specific spinner.
@@ -116,6 +119,7 @@ impl CoreSpinnerType {
             CoreSpinnerType::QuitMsg => "quitMsg".to_string(),
             CoreSpinnerType::NpcLeft => "npcLeft".to_string(),
             CoreSpinnerType::NpcEntered => "npcEntered".to_string(),
+            CoreSpinnerType::NothingSpecial => "nothingSpecial".to_string(),
         }
     }
 
@@ -132,6 +136,7 @@ impl CoreSpinnerType {
             "quitMsg" => Some(CoreSpinnerType::QuitMsg),
             "npcEntered" => Some(CoreSpinnerType::NpcEntered),
             "npcLeft" => Some(CoreSpinnerType::NpcLeft),
+            "nothingSpecial" => Some(CoreSpinnerType::NothingSpecial),
             _ => None,
         }
     }
@@ -187,6 +192,13 @@ impl CoreSpinnerType {
                 "drops in.",
             ],
             CoreSpinnerType::NpcLeft => vec!["leaves.", "departs.", "exits.", "goes away.", "takes off."],
+            CoreSpinnerType::NothingSpecial => vec![
+                "There's nothing special about the {thing}.",
+                "Just a {thing} — nothing remarkable about it.",
+                "Nothing about the {thing} seems noteworthy.",
+                "The {thing} is quite ordinary, as far as you can see.",
+                "Just a typical {thing} — not unusual at all.",
+            ],
         }
     }
 
@@ -210,6 +222,7 @@ pub fn create_default_spinners() -> HashMap<SpinnerType, Spinner<String>> {
         CoreSpinnerType::QuitMsg,
         CoreSpinnerType::NpcEntered,
         CoreSpinnerType::NpcLeft,
+        CoreSpinnerType::NothingSpecial,
     ];
 
     let mut spinners = HashMap::new();
@@ -290,6 +303,7 @@ mod tests {
             CoreSpinnerType::QuitMsg,
             CoreSpinnerType::NpcEntered,
             CoreSpinnerType::NpcLeft,
+            CoreSpinnerType::NothingSpecial,
         ];
 
         for core_type in core_types {
@@ -334,6 +348,7 @@ mod tests {
             CoreSpinnerType::QuitMsg,
             CoreSpinnerType::NpcEntered,
             CoreSpinnerType::NpcLeft,
+            CoreSpinnerType::NothingSpecial,
         ] {
             let values = core_type.default_values();
             let widths = core_type.default_widths();

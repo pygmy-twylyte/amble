@@ -363,6 +363,8 @@ mod tests {
             name: "Test Room".into(),
             base_description: "Desc".into(),
             overlays: Vec::new(),
+            scenery: Vec::new(),
+            scenery_default: None,
             location: Location::Nowhere,
             visited: false,
             exits: HashMap::new(),

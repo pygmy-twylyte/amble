@@ -9,11 +9,23 @@
 # it from the main game map at all.
 
 room dev-room {
-    name "The Construct"
-    desc """Like in the Matrix, this is the Construct -- an empty, bare white room with white walls. It is here for the [[b]]Architect[[/b]] ([[i]]that's you![[/i]]) to experiment with things before putting them in play in the rest of the AmbleWorld.
-
-    [[center]][[box:WARNING]]Beware of [[npc]]The Luggage[[/npc]][[/box]][[/center]]"""
+    name "Test Chamber"
+    desc "A large workshop area, used for development, construction and testing of Amble engine features. A Linux workstation sits on a desk near the window, next to a 3D printer. Pneumatic tubes criss-cross the ceiling to destinations unknown. Two metal lockers occupy the opposite side of the room, with a broom and dustpan leaning against them."
     exit "back to game start" -> high-ridge
+    scenery default "There's nothing interesting about the {thing}."
+    scenery "Tubes"
+    scenery "Broom"
+    scenery "Dustpan"
+    scenery "Lockers" desc "One is marked 'Unsafe'. The other is marked 'Unsound'. Both are locked tight."
+}
+
+item pc {
+    name "Linux Workstation"
+    desc "A System76 laptop running Pop!_OS with COSMIC DE, with Zed open to a file called [[i]]dev_playground.amble[[/i]]."
+    location room dev-room
+    movability fixed "It's fused to a device under the desk that connects to the pneumatic tubes."
+    visibility scenery
+    aliases "pc", "laptop", "computer"
 }
 
 item big_red_button {
@@ -25,9 +37,10 @@ item big_red_button {
 
 item big_blue_button {
     name "Big Blue Button"
-    desc "It's big, it's blue, and it's a button! Press away!"
+    desc "It's big, it's blue, and it's a button! It mysteriously appeared after you pressed the Red Button. Press away!"
     movability fixed "It's attached to a floating button box."
     location room dev-room
+    visible when has flag red_button_pushed
 }
 
 item cheat_button {
@@ -67,6 +80,7 @@ note "test for the touch item command/event -- works!"
 when touch item big_red_button {
     do show "Always [[red]]never[[/red]] press the big red button! [[i]]Now look what you've done![[/i]]"
     do spawn npc the_luggage into room dev-room
+    do add flag red_button_pushed
 }
 
 trigger "Big Blue Button Pushed"
@@ -109,6 +123,7 @@ item antidote {
         consume_on ability Drink
         when_consumed despawn
     }
+    visible when has item poison_bottle
 }
 
 trigger "[DEV] Poison the Luggage"

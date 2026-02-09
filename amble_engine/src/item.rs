@@ -4,7 +4,13 @@
 //! containers for other items. Functions here handle display logic and
 //! movement between locations.
 
-use crate::{Location, View, ViewItem, WorldObject, style::GameStyle, view::ContentLine, world::AmbleWorld};
+use crate::{
+    Location, View, ViewItem, WorldObject,
+    scheduler::EventCondition,
+    style::GameStyle,
+    view::ContentLine,
+    world::{AmbleWorld, item_is_listed, item_is_visible},
+};
 
 use anyhow::{Context, Result};
 use colored::Colorize;
@@ -48,6 +54,15 @@ pub struct Item {
     pub description: String,
     /// The current `Location` of the item.
     pub location: Location,
+    /// Determines whether the item appears in listings or is discoverable.
+    #[serde(default)]
+    pub visibility: ItemVisibility,
+    /// Optional condition gating visibility.
+    #[serde(default)]
+    pub visible_when: Option<EventCondition>,
+    /// Alternate names that can match this item in parser searches.
+    #[serde(default)]
+    pub aliases: Vec<String>,
     /// Determines whether the item can be moved from its current location.
     pub movability: Movability,
     /// Some state (open, locked, etc) for the item as a container, or `None` if it is not a container.
@@ -62,6 +77,21 @@ pub struct Item {
     pub text: Option<String>,
     /// Some consumable parameters [`ConsumableOpts`], or None it the item isn't consumable.
     pub consumable: Option<ConsumableOpts>,
+}
+
+/// Determines whether an item is listed, scenery, or hidden.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ItemVisibility {
+    Listed,
+    Scenery,
+    Hidden,
+}
+
+impl Default for ItemVisibility {
+    fn default() -> Self {
+        ItemVisibility::Listed
+    }
 }
 
 impl WorldObject for Item {
@@ -200,13 +230,18 @@ impl Item {
     }
 
     fn show_contents(&self, world: &AmbleWorld, view: &mut View) {
-        if self.contents.is_empty() {
+        let visible_contents: Vec<_> = self
+            .contents
+            .iter()
+            .filter(|id| item_is_visible(world, id) && item_is_listed(world, id))
+            .filter_map(|id| world.items.get(id))
+            .collect();
+        if visible_contents.is_empty() {
             view.push(ViewItem::ItemContents(Vec::new()));
         } else {
             view.push(ViewItem::ItemContents(
-                self.contents
-                    .iter()
-                    .filter_map(|id| world.items.get(id))
+                visible_contents
+                    .into_iter()
                     .map(|i| ContentLine {
                         item_name: i.name.clone(),
                         restricted: matches!(i.movability, Movability::Restricted { .. }),
@@ -522,6 +557,9 @@ mod tests {
             name: "Test Item".into(),
             description: "A test item".into(),
             location: Location::Nowhere,
+            visibility: ItemVisibility::Listed,
+            visible_when: None,
+            aliases: Vec::new(),
             movability: Movability::Free,
             container_state: None,
             contents: HashSet::new(),

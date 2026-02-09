@@ -13,23 +13,23 @@ use amble_data::{
     ActionDef, ActionKind, ConditionDef, ConditionExpr, ConsumableDef, ConsumeTypeDef,
     ContainerState as DefContainerState, EventDef, ExitDef, FlagDef, GoalCondition as DefGoalCondition, GoalDef,
     GoalGroup as DefGoalGroup, IngestMode, ItemAbility as DefItemAbility, ItemDef,
-    ItemInteractionType as DefItemInteractionType, ItemPatchDef, LocationRef, Movability as DefMovability, NpcDef,
-    NpcDialoguePatchDef, NpcMovementDef, NpcMovementPatchDef, NpcMovementTiming, NpcMovementType, NpcPatchDef,
-    NpcState as DefNpcState, OnFalsePolicy as DefOnFalsePolicy, OverlayCondDef, OverlayDef, RoomDef, RoomExitPatchDef,
-    RoomPatchDef, SpinnerDef, TriggerDef, WorldDef,
+    ItemInteractionType as DefItemInteractionType, ItemPatchDef, ItemVisibility as DefItemVisibility, LocationRef,
+    Movability as DefMovability, NpcDef, NpcDialoguePatchDef, NpcMovementDef, NpcMovementPatchDef, NpcMovementTiming,
+    NpcMovementType, NpcPatchDef, NpcState as DefNpcState, OnFalsePolicy as DefOnFalsePolicy, OverlayCondDef,
+    OverlayDef, RoomDef, RoomExitPatchDef, RoomPatchDef, SpinnerDef, TriggerDef, WorldDef,
 };
 
 use crate::goal::{Goal, GoalCondition, GoalGroup};
 use crate::health::HealthState;
 use crate::item::{
     ConsumableOpts, ConsumeType, ContainerState, IngestMode as EngineIngestMode, Item, ItemAbility,
-    ItemInteractionType, Movability,
+    ItemInteractionType, ItemVisibility, Movability,
 };
 use crate::loader::player::build_player;
 use crate::loader::scoring::ScoringConfig;
 use crate::npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState};
 use crate::player::Flag;
-use crate::room::{Exit, OverlayCondition, Room, RoomOverlay};
+use crate::room::{Exit, OverlayCondition, Room, RoomOverlay, RoomScenery};
 use crate::scheduler::{EventCondition, OnFalsePolicy};
 use crate::spinners::SpinnerType;
 use crate::spinners::create_default_spinners;
@@ -102,6 +102,14 @@ fn room_from_def(def: &RoomDef) -> Result<Room> {
         exits.insert(exit.direction.clone(), exit_from_def(exit));
     }
     let overlays = def.overlays.iter().map(overlay_from_def).collect::<Result<Vec<_>>>()?;
+    let scenery = def
+        .scenery
+        .iter()
+        .map(|entry| RoomScenery {
+            name: entry.name.clone(),
+            desc: entry.desc.clone(),
+        })
+        .collect::<Vec<_>>();
 
     Ok(Room {
         id: def.id.clone(),
@@ -109,6 +117,8 @@ fn room_from_def(def: &RoomDef) -> Result<Room> {
         name: def.name.clone(),
         base_description: def.desc.clone(),
         overlays,
+        scenery,
+        scenery_default: def.scenery_default.clone(),
         location: Location::Nowhere,
         visited: def.visited,
         exits,
@@ -169,6 +179,8 @@ fn item_from_def(def: &ItemDef) -> Result<Item> {
         interaction_requires.insert(item_interaction_from_def(interaction), item_ability_from_def(ability));
     }
     let consumable = def.consumable.as_ref().map(consumable_from_def).transpose()?;
+    let visibility = item_visibility_from_def(&def.visibility);
+    let visible_when = def.visible_when.as_ref().map(condition_expr_from_def);
 
     Ok(Item {
         id: def.id.clone(),
@@ -176,6 +188,9 @@ fn item_from_def(def: &ItemDef) -> Result<Item> {
         name: def.name.clone(),
         description: def.desc.clone(),
         location: location_from_ref(&def.location),
+        visibility,
+        visible_when,
+        aliases: def.aliases.clone(),
         movability: movability_from_def(&def.movability),
         container_state: def.container_state.as_ref().map(container_state_from_def),
         contents: HashSet::new(),
@@ -533,6 +548,9 @@ fn item_patch_from_def(def: &ItemPatchDef) -> crate::trigger::ItemPatch {
         movability: def.movability.as_ref().map(movability_from_def),
         container_state: def.container_state.as_ref().map(container_state_from_def),
         remove_container_state: def.remove_container_state,
+        visibility: def.visibility.as_ref().map(item_visibility_from_def),
+        visible_when: def.visible_when.as_ref().map(condition_expr_from_def),
+        aliases: def.aliases.clone(),
         add_abilities: def.add_abilities.iter().map(item_ability_from_def).collect(),
         remove_abilities: def.remove_abilities.iter().map(item_ability_from_def).collect(),
     }
@@ -787,6 +805,14 @@ fn item_interaction_from_def(def: &DefItemInteractionType) -> ItemInteractionTyp
         DefItemInteractionType::Sharpen => ItemInteractionType::Sharpen,
         DefItemInteractionType::Turn => ItemInteractionType::Turn,
         DefItemInteractionType::Unlock => ItemInteractionType::Unlock,
+    }
+}
+
+fn item_visibility_from_def(def: &DefItemVisibility) -> ItemVisibility {
+    match def {
+        DefItemVisibility::Listed => ItemVisibility::Listed,
+        DefItemVisibility::Scenery => ItemVisibility::Scenery,
+        DefItemVisibility::Hidden => ItemVisibility::Hidden,
     }
 }
 

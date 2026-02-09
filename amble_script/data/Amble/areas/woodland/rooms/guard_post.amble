@@ -11,6 +11,20 @@ room guard-post {
     }
     exit "up to the road" -> inca-road
     exit "down the steps" -> two-sheds-landing
+    scenery default "There's nothing remarkable about the {thing}."
+    scenery "Wooden Chair"
+}
+
+# ========================================
+# Scenery
+# ========================================
+
+item megaphone {
+    name "Megaphone"
+    desc "A typical white megaphone with [[bright-blue]][[b]]AMBLE Adventure Security[[/b]][[/bright-blue]] stenciled on one side. It appears to be broken."
+    location room guard-post
+    movability fixed "Stealing from security on your first day isn't a good look."
+    visibility scenery
 }
 
 # ========================================
@@ -24,6 +38,7 @@ item am_dollar {
     movability free
     location room guard-post
     ability Read
+    aliases "dollar", "money", "cash"
 }
 
 # ========================================

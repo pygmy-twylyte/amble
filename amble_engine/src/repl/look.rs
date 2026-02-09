@@ -2,9 +2,8 @@
 //!
 //! This module provides handlers for commands that allow players to examine
 //! their environment, items, and inventory without modifying world state.
-//! These commands are essential for player understanding and navigation.
 //!
-//! # Command Categories
+//! # Commands
 //!
 //! ## Environmental Observation
 //! - [`look_handler`] - Examine current surroundings in detail
@@ -18,10 +17,10 @@
 //!
 //! # Scope Management
 //!
-//! The module implements intelligent scoping for examination commands:
-//! - Current room contents (items and NPCs)
-//! - Player inventory items
-//! - Items within reach (including container contents)
+//! The player's overall "field of view" is limited by the `SearchScope` supplied,
+//! and generally is limited to some subset of the `Items` and `Npcs` present at
+//! the current location (inventory included). This can be further be limited in
+//! a more granular way through `ItemVisibility` settings.
 //!
 //! # Conditional Access
 //!
@@ -36,12 +35,14 @@
 //! - Looking around may reveal hidden details or trigger story events
 //! - Reading specific items may advance plot or provide crucial information
 //! - Examination may unlock new areas or interactions
+//! - Actions can alter the text / details on read/examine-enabled items.
 
 use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
     entity_search::{EntityId, SearchError, SearchScope, find_entity_match, find_item_match},
     item::ItemAbility,
     repl::entity_not_found,
+    room::RoomScenery,
     style::GameStyle,
     trigger::{TriggerAction, TriggerCondition, check_triggers},
     view::{ContentLine, ViewMode},
@@ -89,6 +90,30 @@ pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> 
     let entity_id = match find_entity_match(world, thing, SearchScope::AllVisible(room_id)) {
         Ok(id) => id,
         Err(SearchError::NoMatchingName(input)) => {
+            let room = world.player_room_ref()?;
+            let lc_input = input.to_lowercase();
+            if let Some(entry) = room
+                .scenery
+                .iter()
+                .find(|scenery| scenery.name.to_lowercase().contains(&lc_input))
+            {
+                let desc = entry
+                    .desc
+                    .clone()
+                    .or_else(|| {
+                        room.scenery_default
+                            .clone()
+                            .map(|text| text.replace("{thing}", &markup_scenery_item(&entry.name)))
+                    })
+                    .unwrap_or_else(|| create_default_scenery_description(world, entry));
+                view.push(ViewItem::ItemDescription {
+                    name: entry.name.clone(),
+                    description: desc,
+                });
+                info!("player looked at scenery item \"{}\"", entry.name);
+                world.turn_count += 1;
+                return Ok(());
+            }
             entity_not_found(world, view, input.as_str());
             return Ok(());
         },
@@ -112,6 +137,21 @@ pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> 
 
     world.turn_count += 1;
     Ok(())
+}
+
+/// Lowercases and adds markup to an item name for display in default descriptions.
+fn markup_scenery_item(item_name: &str) -> String {
+    format!("[[item]][[i]]{}[[/i]][[/item]]", item_name.to_lowercase())
+}
+
+/// Uses the `NothingSpecial` core spinner to build a default description for a scenery `Item`.
+fn create_default_scenery_description(world: &AmbleWorld, entry: &RoomScenery) -> String {
+    let default_desc = world.spin_core(
+        crate::spinners::CoreSpinnerType::NothingSpecial,
+        "Just a plain {thing}, you see nothing curious about it.",
+    );
+    let thing_substitute = markup_scenery_item(&entry.name);
+    default_desc.replace("{thing}", &thing_substitute)
 }
 
 /// Shows list of items held in inventory.

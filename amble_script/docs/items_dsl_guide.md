@@ -5,6 +5,7 @@ This guide introduces the Items subset of the amble_script DSL and how it maps i
 Highlights:
 - Support for `name`, `desc`, `portable`, and `location` fields.
 - Optional `container state` (`open`, `closed`, `locked`, `transparentClosed`, `transparentLocked`).
+- Visibility controls: `visibility`, `visible when`, and `aliases` for matching.
 - Optional `text` field for readable items and `restricted` flag for non-droppable items.
 - `ability` entries compile into `ItemDef.abilities` entries with an optional `target`.
 - Interaction requirements: `requires <ability> to <interaction>` compiles to `interaction_requires`.
@@ -36,6 +37,23 @@ location npc clerk          # held by an NPC
 location chest strongbox    # inside a chest/container
 location nowhere "note"     # nowhere; note explains when it spawns
 ```
+
+## Visibility, Scenery, and Aliases
+
+Items default to `visibility listed`, which means they appear in room/container lists and are discoverable with `look at`.
+
+```
+visibility scenery   # discoverable but not listed
+visibility hidden    # only discoverable once visible when condition passes
+
+visible when has flag desk_moved
+
+aliases "desk", "table", "mahogany desk"
+```
+
+- `visibility listed|scenery|hidden` controls whether the item is listed.
+- `visible when <condition>` uses the same condition syntax as triggers (`has flag`, `has item`, `any(...)`, etc.).
+- `aliases` adds alternate terms that can match the item in player input.
 
 ## Abilities
 

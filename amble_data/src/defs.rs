@@ -113,6 +113,17 @@ pub struct RoomDef {
     pub exits: Vec<ExitDef>,
     #[serde(default)]
     pub overlays: Vec<OverlayDef>,
+    #[serde(default)]
+    pub scenery: Vec<RoomSceneryDef>,
+    #[serde(default)]
+    pub scenery_default: Option<String>,
+}
+
+/// Room-local scenery entry, used for look/examine fallbacks.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoomSceneryDef {
+    pub name: String,
+    pub desc: Option<String>,
 }
 
 /// Exit metadata for room navigation.
@@ -246,11 +257,32 @@ pub struct ItemDef {
     pub container_state: Option<ContainerState>,
     pub location: LocationRef,
     #[serde(default)]
+    pub visibility: ItemVisibility,
+    #[serde(default)]
+    pub visible_when: Option<ConditionExpr>,
+    #[serde(default)]
+    pub aliases: Vec<String>,
+    #[serde(default)]
     pub abilities: Vec<ItemAbility>,
     #[serde(default)]
     pub interaction_requires: BTreeMap<ItemInteractionType, ItemAbility>,
     pub text: Option<String>,
     pub consumable: Option<ConsumableDef>,
+}
+
+/// Determines how an item is listed or discovered in a room.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ItemVisibility {
+    Listed,
+    Scenery,
+    Hidden,
+}
+
+impl Default for ItemVisibility {
+    fn default() -> Self {
+        ItemVisibility::Listed
+    }
 }
 
 /// Authoring-time reference to an object's starting location.
@@ -682,6 +714,9 @@ pub struct ItemPatchDef {
     pub container_state: Option<ContainerState>,
     #[serde(default)]
     pub remove_container_state: bool,
+    pub visibility: Option<ItemVisibility>,
+    pub visible_when: Option<ConditionExpr>,
+    pub aliases: Option<Vec<String>>,
     #[serde(default)]
     pub add_abilities: Vec<ItemAbility>,
     #[serde(default)]

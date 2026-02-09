@@ -57,6 +57,8 @@ impl std::error::Error for ValidationError {}
 ///         visited: false,
 ///         exits: Vec::new(),
 ///         overlays: Vec::new(),
+///         scenery: Vec::new(),
+///         scenery_default: None,
 ///     }],
 ///     ..WorldDef::default()
 /// };
@@ -165,6 +167,9 @@ pub fn validate_world(world: &WorldDef) -> Vec<ValidationError> {
 
     for item in &world.items {
         validate_location(&item.location, &ids, &mut errors, &format!("item '{}'", item.id));
+        if let Some(cond) = &item.visible_when {
+            validate_condition_expr(cond, &ids, &mut errors, &format!("item '{}' visibility", item.id));
+        }
         for ability in &item.abilities {
             validate_item_ability(ability, &ids, &mut errors, &format!("item '{}'", item.id));
         }
@@ -251,6 +256,8 @@ mod tests {
             visited: false,
             exits: Vec::new(),
             overlays: Vec::new(),
+            scenery: Vec::new(),
+            scenery_default: None,
         }
     }
 
@@ -281,6 +288,9 @@ mod tests {
             movability: Movability::Free,
             container_state: None,
             location: LocationRef::Room(room_id.to_string()),
+            visibility: ItemVisibility::Listed,
+            visible_when: None,
+            aliases: Vec::new(),
             abilities: Vec::new(),
             interaction_requires: BTreeMap::new(),
             text: None,
@@ -612,6 +622,9 @@ fn validate_action(action: &ActionDef, ids: &IdSets<'_>, errors: &mut Vec<Valida
         },
         ActionKind::ModifyItem { item, patch } => {
             check_ref("item", item, ids.items, context.to_string(), errors);
+            if let Some(cond) = &patch.visible_when {
+                validate_condition_expr(cond, ids, errors, context);
+            }
             for ability in &patch.add_abilities {
                 validate_item_ability(ability, ids, errors, context);
             }

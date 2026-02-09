@@ -3,19 +3,19 @@ use std::collections::BTreeMap;
 use amble_data::{
     ActionDef, ActionKind, ConditionDef, ConditionExpr, ConsumableDef, ConsumeTypeDef, ContainerState, EventDef,
     ExitDef, FlagDef, GameDef, GoalCondition, GoalDef, GoalGroup, IngestMode, ItemAbility, ItemDef,
-    ItemInteractionType, ItemPatchDef, LocationRef, Movability, NpcDef, NpcDialoguePatchDef, NpcMovementDef,
-    NpcMovementPatchDef, NpcMovementTiming, NpcMovementType, NpcPatchDef, NpcState, NpcTimingPatchDef, OnFalsePolicy,
-    OverlayCondDef, OverlayDef, PlayerDef, RoomDef, RoomExitPatchDef, RoomPatchDef, ScoringDef, ScoringRankDef,
-    SpinnerDef, SpinnerWedgeDef, TriggerDef, WorldDef,
+    ItemInteractionType, ItemPatchDef, ItemVisibility, LocationRef, Movability, NpcDef, NpcDialoguePatchDef,
+    NpcMovementDef, NpcMovementPatchDef, NpcMovementTiming, NpcMovementType, NpcPatchDef, NpcState, NpcTimingPatchDef,
+    OnFalsePolicy, OverlayCondDef, OverlayDef, PlayerDef, RoomDef, RoomExitPatchDef, RoomPatchDef, RoomSceneryDef,
+    ScoringDef, ScoringRankDef, SpinnerDef, SpinnerWedgeDef, TriggerDef, WorldDef,
 };
 use thiserror::Error;
 
 use crate::{
     ActionAst, ActionStmt, ConditionAst, ConsumableAst, ConsumableWhenAst, ContainerStateAst, GameAst, GoalAst,
-    GoalCondAst, GoalGroupAst, IngestModeAst, ItemAbilityAst, ItemAst, ItemLocationAst, MovabilityAst, NpcAst,
-    NpcLocationAst, NpcMovementAst, NpcMovementTypeAst, NpcPatchAst, NpcStateValue, NpcTimingPatchAst, OnFalseAst,
-    OverlayAst, OverlayCondAst, PlayerAst, RoomAst, RoomExitPatchAst, ScoringAst, ScoringRankAst, SpinnerAst,
-    SpinnerWedgeAst, TriggerAst,
+    GoalCondAst, GoalGroupAst, IngestModeAst, ItemAbilityAst, ItemAst, ItemLocationAst, ItemVisibilityAst,
+    MovabilityAst, NpcAst, NpcLocationAst, NpcMovementAst, NpcMovementTypeAst, NpcPatchAst, NpcStateValue,
+    NpcTimingPatchAst, OnFalseAst, OverlayAst, OverlayCondAst, PlayerAst, RoomAst, RoomExitPatchAst, ScoringAst,
+    ScoringRankAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
 };
 
 /// Errors emitted while lowering AST data into the WorldDef model.
@@ -137,6 +137,14 @@ fn room_to_def(room: &RoomAst) -> Result<RoomDef, WorldDefError> {
         .iter()
         .map(overlay_to_def)
         .collect::<Result<Vec<_>, _>>()?;
+    let scenery = room
+        .scenery
+        .iter()
+        .map(|entry| RoomSceneryDef {
+            name: entry.name.clone(),
+            desc: entry.desc.clone(),
+        })
+        .collect::<Vec<_>>();
 
     Ok(RoomDef {
         id: room.id.clone(),
@@ -145,6 +153,8 @@ fn room_to_def(room: &RoomAst) -> Result<RoomDef, WorldDefError> {
         visited: room.visited,
         exits,
         overlays,
+        scenery,
+        scenery_default: room.scenery_default.clone(),
     })
 }
 
@@ -201,6 +211,7 @@ fn item_to_def(item: &ItemAst) -> Result<ItemDef, WorldDefError> {
         Some(consumable) => Some(consumable_to_def(consumable)?),
         None => None,
     };
+    let visible_when = item.visible_when.as_ref().map(condition_expr_from_ast).transpose()?;
 
     Ok(ItemDef {
         id: item.id.clone(),
@@ -209,6 +220,9 @@ fn item_to_def(item: &ItemAst) -> Result<ItemDef, WorldDefError> {
         movability: movability_from_ast(&item.movability),
         container_state: item.container_state.as_ref().map(container_state_from_ast),
         location: location_from_item_ast(&item.location),
+        visibility: item_visibility_from_ast(&item.visibility),
+        visible_when,
+        aliases: item.aliases.clone(),
         abilities,
         interaction_requires,
         text: item.text.clone(),
@@ -566,6 +580,9 @@ fn item_patch_to_def(patch: &crate::ItemPatchAst) -> Result<ItemPatchDef, WorldD
         movability: patch.movability.as_ref().map(movability_from_ast),
         container_state: patch.container_state.as_ref().map(container_state_from_ast),
         remove_container_state: patch.remove_container_state,
+        visibility: patch.visibility.as_ref().map(item_visibility_from_ast),
+        visible_when: patch.visible_when.as_ref().map(condition_expr_from_ast).transpose()?,
+        aliases: patch.aliases.clone(),
         add_abilities: patch
             .add_abilities
             .iter()
@@ -787,6 +804,14 @@ fn condition_expr_from_ast(cond: &ConditionAst) -> Result<ConditionExpr, WorldDe
             });
         },
     })
+}
+
+fn item_visibility_from_ast(ast: &ItemVisibilityAst) -> ItemVisibility {
+    match ast {
+        ItemVisibilityAst::Listed => ItemVisibility::Listed,
+        ItemVisibilityAst::Scenery => ItemVisibility::Scenery,
+        ItemVisibilityAst::Hidden => ItemVisibility::Hidden,
+    }
 }
 
 fn item_ability_from_ast(ast: &ItemAbilityAst) -> Result<ItemAbility, WorldDefError> {

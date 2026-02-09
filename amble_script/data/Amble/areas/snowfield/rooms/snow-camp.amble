@@ -1,7 +1,11 @@
 room snow-camp {
     name "Abandoned Campsite"
-    desc "The remains of a temporary shelter are dug into a snowbank here. The tent has collapsed, half-fused to a scorched sled. The river — or some frozen remnant of it — glistens beyond."
+    desc "The remains of a temporary shelter are dug into a snowbank here. A nearby tent has collapsed, half-fused to a scorched sled. The river — or some frozen remnant of it — glistens beyond."
     exit "back to the snowfield" -> snowfield
+    scenery "Shelter" desc "A small concavity in the snowbank likely offered little protection from… anything, really. It looks to have been scooped out by hand."
+    scenery "Snowbank" desc "An otherwise pristine drift of snow, marred by the [[b]]shelter[[/b]] and a patch of [[hl]]yellow snow[[/hl]] surrounded by disturbingly large paw prints."
+    scenery "Tent-Sled" desc "The remains of a 2-man tent fused to the remains of a dogsled, first by melting with extreme heat, and then freezing into an icy heap."
+    scenery "Ice River" desc "A steep, boulder-laden icy drop stands between you and the frozen river below, but it's pretty."
 }
 
 # ========================================
@@ -42,28 +46,28 @@ trigger "Firewood HINT" only once
 note "HINT radio: use firewood in ice-pit for plaque 2"
 when enter room snow-camp {
     do schedule in 4 if any(
-        # situation where hint is appropriate
-        all(
-            has flag hint-radio-on,
-            has flag tried-read-plaque-2,
-            missing item firewood,
-            missing flag campfire-lit,
-            in rooms snow-camp,
-        ),
-        # situation where this hint is no longer needed
-        any(
-            has item firewood,
-            has flag campfire-lit,
-            has flag read-plaque-2,
-        ),
+    # situation where hint is appropriate
+    all(
+    has flag hint-radio-on,
+    has flag tried-read-plaque-2,
+    missing item firewood,
+    missing flag campfire-lit,
+    in rooms snow-camp,
+    ),
+    # situation where this hint is no longer needed
+    any(
+    has item firewood,
+    has flag campfire-lit,
+    has flag read-plaque-2,
+    ),
     ) onFalse retryNextTurn {
         # situation where hint is appropriate again
         if all(
-            has flag hint-radio-on,
-            has flag tried-read-plaque-2,
-            missing item firewood,
-            missing flag campfire-lit,
-            in rooms snow-camp,
+        has flag hint-radio-on,
+        has flag tried-read-plaque-2,
+        missing item firewood,
+        missing flag campfire-lit,
+        in rooms snow-camp,
         ) {
             do npc says hint_radio_npc "Looks like the researchers didn't get their fire lit before the dog-Thing got to them. Bad day for them, but maybe good for you. Could you move the firewood down into the ice pit to melt the ice around the frozen pillar?"
         }

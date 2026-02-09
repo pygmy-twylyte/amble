@@ -13,7 +13,7 @@ use crate::{
     npc::NpcState,
     player::Flag,
     view::{ExitLine, NpcLine, ViewMode},
-    world::AmbleWorld,
+    world::{AmbleWorld, item_is_listed, item_is_visible},
 };
 use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
@@ -54,6 +54,13 @@ impl Exit {
 pub struct RoomOverlay {
     pub conditions: Vec<OverlayCondition>,
     pub text: String,
+}
+
+/// Room-level scenery entry (look/examine only).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoomScenery {
+    pub name: String,
+    pub desc: Option<String>,
 }
 impl RoomOverlay {
     /// Returns true if an overlay's conditions are all met.
@@ -128,6 +135,10 @@ pub struct Room {
     pub name: String,
     pub base_description: String,
     pub overlays: Vec<RoomOverlay>,
+    #[serde(default)]
+    pub scenery: Vec<RoomScenery>,
+    #[serde(default)]
+    pub scenery_default: Option<String>,
     pub location: Location,
     pub visited: bool,
     pub exits: HashMap<String, Exit>,
@@ -184,9 +195,12 @@ impl Room {
             let item_names: Vec<_> = self
                 .contents
                 .iter()
+                .filter(|id| item_is_visible(world, id) && item_is_listed(world, id))
                 .filter_map(|id| world.items.get(id).map(|item| item.name().to_string()))
                 .collect();
-            view.push(ViewItem::RoomItems(item_names));
+            if !item_names.is_empty() {
+                view.push(ViewItem::RoomItems(item_names));
+            }
         }
         self.show_exits(world, view)?;
         self.show_npcs(world, view);
@@ -234,6 +248,9 @@ impl Room {
     pub fn show_exits(&self, world: &AmbleWorld, view: &mut View) -> Result<()> {
         let mut exit_lines = Vec::new();
         for (direction, exit) in &self.exits {
+            if exit.hidden {
+                continue;
+            }
             let target_room = world.rooms.get(&exit.to).ok_or(anyhow!(
                 "Room({}) not found ({} exit from Room({})",
                 exit.to,
@@ -273,6 +290,8 @@ mod tests {
             name: "Test Room".into(),
             base_description: "A test room for testing".into(),
             overlays: vec![],
+            scenery: Vec::new(),
+            scenery_default: None,
             location: Location::Nowhere,
             visited: false,
             exits: HashMap::new(),
@@ -296,6 +315,9 @@ mod tests {
             name: "Test Item".into(),
             description: "A test item".into(),
             location: Location::Room(room_id.clone()),
+            visibility: crate::item::ItemVisibility::Listed,
+            visible_when: None,
+            aliases: Vec::new(),
             movability: crate::item::Movability::Free,
             container_state: None,
             contents: HashSet::new(),

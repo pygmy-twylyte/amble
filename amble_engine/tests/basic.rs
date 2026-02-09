@@ -37,6 +37,9 @@ fn test_item_accessible() {
         name: "Box".into(),
         description: String::new(),
         location: world::Location::Nowhere,
+        visibility: ae::item::ItemVisibility::Listed,
+        visible_when: None,
+        aliases: Vec::new(),
         container_state: Some(ContainerState::Open),
         movability: item::Movability::Free,
         contents: Default::default(),
@@ -78,6 +81,9 @@ fn test_find_world_object() {
         name: "Foo".into(),
         description: String::new(),
         location: world::Location::Inventory,
+        visibility: ae::item::ItemVisibility::Listed,
+        visible_when: None,
+        aliases: Vec::new(),
         container_state: None,
         movability: item::Movability::Free,
         contents: Default::default(),
@@ -168,6 +174,9 @@ fn test_interaction_requirement_met() {
         name: "tool".into(),
         description: String::new(),
         location: world::Location::Nowhere,
+        visibility: ae::item::ItemVisibility::Listed,
+        visible_when: None,
+        aliases: Vec::new(),
         container_state: None,
         contents: Default::default(),
         movability: item::Movability::Free,
@@ -182,6 +191,9 @@ fn test_interaction_requirement_met() {
         name: "target".into(),
         description: String::new(),
         location: world::Location::Nowhere,
+        visibility: ae::item::ItemVisibility::Listed,
+        visible_when: None,
+        aliases: Vec::new(),
         container_state: None,
         movability: item::Movability::Free,
         contents: Default::default(),
@@ -208,6 +220,8 @@ fn test_worlddef_npc_to_world() {
             visited: false,
             exits: Vec::new(),
             overlays: Vec::new(),
+            scenery: Vec::new(),
+            scenery_default: None,
         }],
         npcs: vec![NpcDef {
             id: "npc".into(),
@@ -243,6 +257,8 @@ fn test_worlddef_trigger_combines_event_and_conditions() {
             visited: false,
             exits: Vec::new(),
             overlays: Vec::new(),
+            scenery: Vec::new(),
+            scenery_default: None,
         }],
         triggers: vec![TriggerDef {
             name: "t".into(),
@@ -380,6 +396,8 @@ fn test_move_to_handler_simple() {
         exits: HashMap::new(),
         contents: HashSet::new(),
         npcs: HashSet::new(),
+        scenery: vec![],
+        scenery_default: None,
     };
     room1.exits.insert(
         "north".into(),
@@ -403,6 +421,8 @@ fn test_move_to_handler_simple() {
         exits: HashMap::new(),
         contents: HashSet::new(),
         npcs: HashSet::new(),
+        scenery: vec![],
+        scenery_default: None,
     };
     world.rooms.insert(r1.clone(), room1);
     world.rooms.insert(r2.clone(), room2);
@@ -459,6 +479,8 @@ fn test_check_npc_movement() {
         exits: HashMap::new(),
         contents: HashSet::new(),
         npcs: HashSet::new(),
+        scenery: vec![],
+        scenery_default: None,
     };
     let room2 = Room {
         id: r2.clone(),
@@ -471,6 +493,22 @@ fn test_check_npc_movement() {
         exits: HashMap::new(),
         contents: HashSet::new(),
         npcs: HashSet::new(),
+        scenery: vec![],
+        scenery_default: None,
+    };
+    let _room3 = Room {
+        id: ae::idgen::new_id(),
+        symbol: "r3".into(),
+        name: "R3".into(),
+        base_description: String::new(),
+        overlays: vec![],
+        location: world::Location::Nowhere,
+        visited: false,
+        exits: HashMap::new(),
+        contents: HashSet::new(),
+        npcs: HashSet::new(),
+        scenery: vec![],
+        scenery_default: None,
     };
     world.rooms.insert(r1.clone(), room1);
     world.rooms.insert(r2.clone(), room2);
@@ -525,6 +563,8 @@ fn test_check_ambient_triggers() {
         exits: std::collections::HashMap::new(),
         contents: std::collections::HashSet::new(),
         npcs: std::collections::HashSet::new(),
+        scenery: vec![],
+        scenery_default: None,
     };
     world.rooms.insert(r1.clone(), room1);
     world.player.location = world::Location::Room(r1.clone());

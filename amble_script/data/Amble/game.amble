@@ -4,7 +4,7 @@ game {
     title "AMBLE: An Absurd Adventure"
     slug "amble-demo"
     author "Dave"
-    version "0.65.0"
+    version "0.66.0-pre"
     blurb "A surreal sci-fi comedy adventure about cake, curiosity, and improbable facilities."
     intro """
 You find yourself standing on a rocky outcrop of a ridge high in the mountains -- maybe the Andes? Emerging from a daze, you realize you were brought here and dropped off by some sort of flying vehicle. When it flew off, it didn't make a sound. Did it have a motor, or was it something different?

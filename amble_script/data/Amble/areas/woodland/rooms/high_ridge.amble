@@ -14,6 +14,18 @@ room high-ridge {
         text "Strangely, a slice of [[item]]birthday cake[[/item]] on a paper plate sits precariously balanced on top of a thin boulder nearby."
     }
     exit "up the steps" -> parish-landing
+    scenery "Stone Steps" desc "Worn smooth by time and weather, you can still see where these giant slabs were shaped by the hand tools of ancient craftsmen."
+    scenery "Paper Plate"
+    scenery "Boulder"
+}
+
+item scenery_trees {
+    name "Trees"
+    desc "A faded sign stapled to one tree reads: [[box]]№ 1 — [[i]]The Larch[[/i]][[/box]]"
+    location room high-ridge
+    movability fixed "Seriously? They're rooted into the ground and twenty times your size!"
+    visibility scenery
+    aliases "woods", "forest"
 }
 
 # ========================================
@@ -29,6 +41,7 @@ item scrawled_note {
            * MUST SHOW VALID INVITATION *[[/box]]"""
     ability Read
     requires ignite to burn
+    aliases "paper"
 }
 
 item ephemeral_cake {

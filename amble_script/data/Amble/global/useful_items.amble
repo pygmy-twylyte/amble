@@ -28,6 +28,7 @@ item arson_aid {
 """
     ability Ignite
     ability Read
+    aliases "flamethrower"
 }
 
 trigger "[Global] Arson-Aid Used" only once
@@ -76,9 +77,9 @@ when take item towel {
     do award points 3 reason "Recovered the essential towel every frood should carry"
     do show "NOW you're a frood who really \"knows where his towel is\"!"
     do schedule in 10 if all(
-        has item towel,
-        missing flag read-plaque-1,
-        has flag tried-read-plaque-1,
+    has item towel,
+    missing flag read-plaque-1,
+    has flag tried-read-plaque-1,
     )
     note "hint: towels can clean things" {
         do show "Towels can be awfully handy for cleaning grimy things. Just sayin'."

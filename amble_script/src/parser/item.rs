@@ -1,11 +1,19 @@
+use std::collections::HashMap;
+
 use crate::{
-    ConsumableAst, ConsumableWhenAst, ContainerStateAst, ItemAbilityAst, ItemAst, ItemLocationAst, MovabilityAst,
+    ConditionAst, ConsumableAst, ConsumableWhenAst, ContainerStateAst, ItemAbilityAst, ItemAst, ItemLocationAst,
+    ItemVisibilityAst, MovabilityAst,
 };
 
+use super::conditions::parse_condition_text;
 use super::helpers::{parse_movability_opt, unquote};
 use super::{AstError, Rule};
 
-pub(super) fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) -> Result<ItemAst, AstError> {
+pub(super) fn parse_item_pair(
+    item: pest::iterators::Pair<Rule>,
+    _source: &str,
+    sets: &HashMap<String, Vec<String>>,
+) -> Result<ItemAst, AstError> {
     let (src_line, _src_col) = item.as_span().start_pos().line_col();
     let mut it = item.into_inner();
     let id = it
@@ -18,6 +26,9 @@ pub(super) fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) 
     let mut desc: Option<String> = None;
     let mut movability: Option<MovabilityAst> = None;
     let mut location: Option<ItemLocationAst> = None;
+    let mut visibility: Option<ItemVisibilityAst> = None;
+    let mut visible_when: Option<ConditionAst> = None;
+    let mut aliases: Vec<String> = Vec::new();
     let mut container_state: Option<ContainerStateAst> = None;
     let mut abilities: Vec<ItemAbilityAst> = Vec::new();
     let mut text: Option<String> = None;
@@ -92,6 +103,35 @@ pub(super) fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) 
                     _ => return Err(AstError::Shape("unknown location kind")),
                 };
                 location = Some(loc);
+            },
+            Rule::item_visibility => {
+                let val = stmt
+                    .as_str()
+                    .split_whitespace()
+                    .last()
+                    .ok_or(AstError::Shape("missing visibility value"))?;
+                visibility = Some(match val {
+                    "listed" => ItemVisibilityAst::Listed,
+                    "scenery" => ItemVisibilityAst::Scenery,
+                    "hidden" => ItemVisibilityAst::Hidden,
+                    _ => return Err(AstError::Shape("unknown visibility value")),
+                });
+            },
+            Rule::item_visible_when => {
+                let cond_pair = stmt
+                    .into_inner()
+                    .next()
+                    .ok_or(AstError::Shape("missing visibility condition"))?;
+                let cond_text = cond_pair.as_str().trim();
+                visible_when = Some(parse_condition_text(cond_text, sets)?);
+            },
+            Rule::item_aliases => {
+                let aliases_list = stmt
+                    .into_inner()
+                    .filter(|p| p.as_rule() == Rule::string)
+                    .map(|p| unquote(p.as_str()))
+                    .collect::<Vec<_>>();
+                aliases.extend(aliases_list);
             },
             Rule::item_container_state => {
                 let val = stmt
@@ -210,12 +250,16 @@ pub(super) fn parse_item_pair(item: pest::iterators::Pair<Rule>, _source: &str) 
     let desc = desc.ok_or(AstError::Shape("item missing desc"))?;
     let movability = movability.unwrap_or(MovabilityAst::Free);
     let location = location.ok_or(AstError::Shape("item missing location"))?;
+    let visibility = visibility.unwrap_or(ItemVisibilityAst::Listed);
     Ok(ItemAst {
         id,
         name,
         desc,
         movability,
         location,
+        visibility,
+        visible_when,
+        aliases,
         container_state,
         abilities,
         text,

@@ -122,8 +122,12 @@ pub fn load_world() -> Result<AmbleWorld> {
 /// # Errors
 /// Errors bubble up from file IO, deserialization, or missing references.
 pub fn load_world_from_path(world_ron_path: &Path) -> Result<AmbleWorld> {
+    info!("loading selected world definition from: {}", world_ron_path.display());
     let worlddef = load_worlddef(&world_ron_path).context("while loading worlddef from file")?;
+
     validate_worlddef(&worlddef)?;
+    info!("validation passed, building AmbleWorld for \"{}\"", worlddef.game.title);
+
     let mut world = build_world_from_def(&worlddef).context("while building world from worlddef")?;
     world.world_slug = derive_world_slug(&worlddef, world_ron_path);
     world.game_title = derive_world_title(&worlddef, world_ron_path);
@@ -150,6 +154,8 @@ pub fn load_world_from_path(world_ron_path: &Path) -> Result<AmbleWorld> {
     place_npcs(&mut world)?;
     place_items(&mut world)?;
 
+    // we gather an estimate of possible maximum points to earn in the world here, but
+    // in can be made inaccurate by repeatable awards or mutually exclusive reward paths
     for trigger in &world.triggers {
         for action in &trigger.actions {
             if let TriggerAction::AwardPoints { amount, .. } = &action.action

@@ -138,7 +138,7 @@ pub fn parse_program_full(source: &str) -> Result<ProgramAstBundle, AstError> {
     }
     let mut items = Vec::new();
     for ip in item_pairs {
-        let it = parse_item_pair(ip, source)?;
+        let it = parse_item_pair(ip, source, &sets)?;
         items.push(it);
     }
     let mut spinners = Vec::new();
@@ -558,7 +558,8 @@ trigger "patch guard" when always {
     #[test]
     fn parse_modify_item_action_helper_handles_basic_block() {
         let snippet = "do modify item locker { name \"Ok\" }\n";
-        let (action, used) = super::parse_modify_item_action(snippet).expect("parse helper");
+        let (action, used) =
+            super::parse_modify_item_action(snippet, &std::collections::HashMap::new()).expect("parse helper");
         assert_eq!(&snippet[..used], "do modify item locker { name \"Ok\" }");
         match &action.action {
             ActionAst::ModifyItem { item, patch } => {

@@ -7,6 +7,7 @@ Highlights:
 - `visited` defaults to `false`; specify `visited true` to mark as visited.
 - Exits support `hidden`, `locked`, `barred`, `required_items`, and `required_flags` (flag names only).
 - Overlays support all-of conditions and a `text` body.
+- Optional room scenery entries provide fallback `look at` responses.
 
 ## Minimal Room
 
@@ -117,6 +118,24 @@ room locker-room {
   }
 }
 ```
+
+## Scenery (Look-Only Entries)
+
+Scenery entries add room-local nouns that respond to `look at`/`examine` without creating full items.
+
+```
+room foyer {
+  name "Foyer"
+  desc "A bright entryway with old pipes along the ceiling."
+
+  scenery default "You see nothing remarkable about the {thing}."
+  scenery "pipes"
+  scenery "vents" desc "The vents hum softly with recycled air."
+}
+```
+
+- `scenery default "..."` is used when a matching scenery entry has no `desc`.
+- `scenery "<name>"` adds a lookable noun; add `desc` to override the default.
 
 Emits overlay entries:
 
