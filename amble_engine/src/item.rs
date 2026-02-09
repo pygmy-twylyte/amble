@@ -79,7 +79,9 @@ pub struct Item {
     pub consumable: Option<ConsumableOpts>,
 }
 
-/// Determines whether an item is listed, scenery, or hidden.
+/// Determines whether an item is listed (shows in room and item contents listings),
+/// scenery (available for some interaction but not specifically listed), or hidden
+/// (currently completely hidden from view).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ItemVisibility {
@@ -236,9 +238,7 @@ impl Item {
             .filter(|id| item_is_visible(world, id) && item_is_listed(world, id))
             .filter_map(|id| world.items.get(id))
             .collect();
-        if visible_contents.is_empty() {
-            view.push(ViewItem::ItemContents(Vec::new()));
-        } else {
+        if !visible_contents.is_empty() {
             view.push(ViewItem::ItemContents(
                 visible_contents
                     .into_iter()
