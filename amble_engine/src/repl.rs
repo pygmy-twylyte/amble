@@ -88,10 +88,13 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         info!("player entered: \"{input}\"");
 
         let input = expand_abbreviated_input(&input);
-        let input = expand_exit_direction(input, world.player_room_ref()?.exits.keys());
+        let mut command = parse_command(&input, &mut view);
+        if matches!(command, Command::Unknown)
+            && let Some(move_to_cmd) = check_for_exit_fallback(&input, world.player_room_ref()?.exits.keys())
+        {
+            command = move_to_cmd
+        }
 
-        // parse user input and dispatch an associated `Command`
-        let command = parse_command(&input, &mut view);
         let dispatch_result = dispatch_command(&command, world, &mut view)?;
         if dispatch_result.control == ReplControl::Quit {
             view.flush();
@@ -160,18 +163,15 @@ fn expand_abbreviated_input(input: &str) -> &str {
     }
 }
 
-/// Expands input into a "go <direction>" command if any direction in the room contains the input
-/// string. If the input doesn't match exactly one direction, it is returned unexpanded.
-fn expand_exit_direction<'a>(input: &str, directions: impl Iterator<Item = &'a String>) -> String {
+/// Used as a fallback to check if user input is a shortcut for an exit direction, e.g. "rope" -> "down the rope ladder".
+/// Returns the appropriate movement command if a single unambiguous exit match is found, otherwise None.
+fn check_for_exit_fallback<'a>(input: &str, directions: impl Iterator<Item = &'a String>) -> Option<Command> {
     let lc_input = input.to_lowercase();
-    let mut dir_matches: Vec<_> = directions.filter(|d| d.to_lowercase().contains(&lc_input)).collect();
+    let dir_matches: Vec<_> = directions.filter(|d| d.to_lowercase().contains(&lc_input)).collect();
     if dir_matches.len() != 1 {
-        return input.to_string();
+        return None;
     }
-    format!(
-        "go {}",
-        dir_matches.pop().expect("already checked for existing item above")
-    )
+    Some(Command::MoveTo(dir_matches[0].clone()))
 }
 
 /// Dispatch a `Command` to its appropriate handler.
