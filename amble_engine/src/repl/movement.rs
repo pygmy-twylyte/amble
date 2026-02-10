@@ -40,16 +40,16 @@
 
 use std::collections::HashSet;
 
-use crate::Id;
 use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
-    helpers::symbol_or_unknown,
-    player,
+    player::Flag,
+    room::Exit,
     spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers},
     view::ViewMode,
 };
+use crate::{Id, Player};
 
 use anyhow::{Context, Result, anyhow};
 use log::info;
@@ -214,114 +214,125 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
     };
 
     if let Some(destination_exit) = destination_exit {
-        if destination_exit.locked {
-            view.push(ViewItem::ActionFailure(format!(
-                "You can't go that way ({}) -- it's locked.",
-                input_dir.exit_locked_style()
-            )));
-            info!("{} tried to enter locked exit.", world.player.name());
+        if let Some(denial_reason) = exit_access_restriction(destination_exit, &world.player) {
+            handle_barred_exit(world, view, &denial_reason, destination_exit)?;
+            world.turn_count += 1;
             return Ok(());
         }
 
-        // check for missing items or flags required to use this Exit
-        let unmet_flags: HashSet<_> = destination_exit
-            .required_flags
-            .difference(&world.player.flags)
-            .collect();
+        let destination_id = destination_exit.to.clone();
+        world.player.move_to_room(destination_id.clone());
+        world.player_path.push(destination_id.clone());
 
-        let unmet_items: HashSet<_> = destination_exit
-            .required_items
-            .difference(&world.player.inventory)
-            .collect();
+        let new_room = world
+            .rooms
+            .get(&destination_id)
+            .ok_or_else(|| anyhow!("invalid move destination ({})", destination_id))?;
 
-        if unmet_flags.is_empty() && unmet_items.is_empty() {
-            // we've met all of the requirements to move now
-            // update player's location using the new history-tracking method
-            let destination_id = destination_exit.to.clone();
-            // add to player's short history (5 max) for go_back command
-            world.player.move_to_room(destination_id.clone());
-            // add to complete player path history
-            world.player_path.push(destination_id.clone());
+        info!("{} moving to {} ({})", player_name, new_room.name(), new_room.symbol());
+        view.push(ViewItem::TransitionMessage(travel_message));
 
-            let new_room = world
-                .rooms
-                .get(&destination_id)
-                .ok_or_else(|| anyhow!("invalid move destination ({})", destination_id))?;
-
-            // log and push display items for the new location
-            info!("{} moved to {} ({})", player_name, new_room.name(), new_room.symbol());
-            view.push(ViewItem::TransitionMessage(travel_message));
-            if new_room.visited {
-                new_room.show(world, view, None)?;
-            } else {
-                world.player.score = world.player.score.saturating_add(1);
-                new_room.show(
-                    world,
-                    view,
-                    if matches!(view.mode, ViewMode::Brief) {
-                        Some(ViewMode::Verbose)
-                    } else {
-                        None
-                    },
-                )?;
-            }
-            if let Some(new_room) = world.rooms.get_mut(&destination_id) {
-                new_room.visited = true;
-            }
-            check_triggers(
+        if new_room.visited {
+            new_room.show(world, view, None)?;
+        } else {
+            world.player.score = world.player.score.saturating_add(1);
+            new_room.show(
                 world,
                 view,
-                &[
-                    TriggerCondition::Leave(leaving_id),
-                    TriggerCondition::Enter(destination_id),
-                ],
+                // set temporary verbose mode if output is in brief mode but never visited
+                if matches!(view.mode, ViewMode::Brief) {
+                    Some(ViewMode::Verbose)
+                } else {
+                    None
+                },
             )?;
-        } else {
-            // the Exit is barred due to a missing item or flag
-            handle_barred_exit(world, view, &unmet_flags, &unmet_items, destination_exit)?;
         }
+        if let Some(new_room) = world.rooms.get_mut(&destination_id) {
+            new_room.visited = true;
+        }
+        check_triggers(
+            world,
+            view,
+            &[
+                TriggerCondition::Leave(leaving_id),
+                TriggerCondition::Enter(destination_id),
+            ],
+        )?;
+
         world.turn_count += 1;
     }
     Ok(())
 }
 
-/// Report reason for a barred exit to player and log the attempt.
+/// Reasons a player may be denied access to an exit.
+#[derive(Debug, Clone, Default)]
+struct AccessDenial<'a> {
+    unmet_flags: HashSet<&'a Flag>,
+    unmet_items: HashSet<&'a Id>,
+    locked: bool,
+}
+impl AccessDenial<'_> {
+    /// Summarizes the denial reason(s) for logging
+    fn log_format(&self) -> String {
+        let unmet_item_list = self
+            .unmet_items
+            .iter()
+            .map(|&item| item.as_str())
+            .collect::<Vec<_>>()
+            .join(", ");
+        let unmet_flag_list = self
+            .unmet_flags
+            .iter()
+            .map(|&flag| flag.name())
+            .collect::<Vec<&str>>()
+            .join(", ");
+        format!(
+            "items ( {unmet_item_list} ), flags( {unmet_flag_list} ), locked( {} )",
+            self.locked
+        )
+    }
+}
+
+/// Determines whether player's access to an exit is prevented
+fn exit_access_restriction<'a>(exit: &'a Exit, player: &'a Player) -> Option<AccessDenial<'a>> {
+    let unmet_flags: HashSet<_> = exit.required_flags.difference(&player.flags).collect();
+    let unmet_items: HashSet<_> = exit.required_items.difference(&player.inventory).collect();
+    if unmet_flags.is_empty() && unmet_items.is_empty() && !exit.locked {
+        None
+    } else {
+        Some(AccessDenial {
+            unmet_flags,
+            unmet_items,
+            locked: exit.locked,
+        })
+    }
+}
+
+/// Report the reason for a barred exit to the player, and log the reason the attempt failed.
+/// # Errors
+/// - on failed destination room lookup
 fn handle_barred_exit(
     world: &AmbleWorld,
     view: &mut View,
-    unmet_flags: &HashSet<&player::Flag>,
-    unmet_items: &HashSet<&Id>,
+    denial: &AccessDenial,
     destination_exit: &crate::room::Exit,
 ) -> Result<()> {
-    // Show player why the exit is barred or a generic reason.
-    if let Some(msg) = &destination_exit.barred_message {
-        view.push(ViewItem::ActionFailure((*msg).denied_style().to_string()));
-    } else {
-        view.push(ViewItem::ActionFailure(format!(
-            "{}",
-            "You can't go that way because... \"reasons\"".denied_style()
-        )));
-    }
+    let msg = match (&destination_exit.barred_message, &denial.locked) {
+        (Some(msg), _) => msg,
+        (None, true) => "You can't go that way: it's locked.",
+        (None, false) => "You can't go that way: something is missing or undone.",
+    };
+    view.push(ViewItem::ActionFailure(msg.denied_style().to_string()));
 
-    // Log the failed attempt
     let (dest_name, dest_sym) = world
         .rooms
         .get(&destination_exit.to)
         .map(|rm| (rm.name(), rm.symbol()))
         .with_context(|| format!("accessing room {}", destination_exit.to))?;
-    let unmet_item_list = unmet_items
-        .iter()
-        .map(|id| symbol_or_unknown(&world.items, id.as_str()))
-        .collect::<Vec<String>>()
-        .join(", ");
-    let unmet_flag_list = unmet_flags
-        .iter()
-        .map(|&flag| flag.name())
-        .collect::<Vec<&str>>()
-        .join(", ");
+
     info!(
-        "{} denied access to {dest_name} ({dest_sym}): missing items ({unmet_item_list}) or flags ({unmet_flag_list})",
-        world.player.name(),
+        "player denied access to {dest_name} ({dest_sym}) !>> {}",
+        denial.log_format(),
     );
     Ok(())
 }
