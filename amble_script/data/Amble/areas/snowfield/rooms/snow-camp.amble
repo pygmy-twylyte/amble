@@ -1,11 +1,11 @@
 room snow-camp {
     name "Abandoned Campsite"
-    desc "The remains of a temporary shelter are dug into a snowbank here. A nearby tent has collapsed, half-fused to a scorched sled. The river — or some frozen remnant of it — glistens beyond."
+    desc "The remains of a temporary shelter are dug into a snowbank here. A nearby tent has collapsed, half-fused to a scorched sled. The river — or some frozen remnant of it — glistens beyond. The only sign of civilization (and central heating) appears to be the building on the far east side of the snowfield."
     exit "back to the snowfield" -> snowfield
     scenery "Shelter" desc "A small concavity in the snowbank likely offered little protection from… anything, really. It looks to have been scooped out by hand."
     scenery "Snowbank" desc "An otherwise pristine drift of snow, marred by the [[b]]shelter[[/b]] and a patch of [[hl]]yellow snow[[/hl]] surrounded by disturbingly large paw prints."
     scenery "Tent-Sled" desc "The remains of a 2-man tent fused to the remains of a dogsled, first by melting with extreme heat, and then freezing into an icy heap."
-    scenery "Ice River" desc "A steep, boulder-laden icy drop stands between you and the frozen river below, but it's pretty."
+    scenery "Frozen River" desc "A steep, boulder-laden icy drop of certain death stands between you and the frozen river below — but it's pretty."
 }
 
 # ========================================

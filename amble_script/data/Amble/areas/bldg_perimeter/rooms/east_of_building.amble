@@ -4,17 +4,22 @@
 
 room east-of-building {
     name "East of Building"
-    desc "You’re east of the building now, facing a patch of ornamental gravel and a struggling yucca plant. The air here smells faintly of ozone and buttered lobster, though the source is unclear.\n\nThe side of the building appears to be a normal wall, but you keep glimpsing something that looks like -- patio umbrellas? -- from the corner of your eye. You briefly wonder if the building is bending space or if your sense of geography is just feeling shy.\n\nThe walkway wraps around the building to the northwest and southwest."
+    desc "You’re east of the building now, facing a patch of ornamental gravel supporting a lonesome yucca plant and a [[item]][[i]]really[[/i]] weird bush[[/item]]. The air here smells faintly of ozone and buttered lobster, though the source is unclear.\n\nThe side of the building appears to be a normal concrete wall, but you keep glimpsing something that looks like -- [[i]]patio umbrellas??[[/i]].\n\nThe walkway wraps around the building in either direction."
     overlay if npc cmot_dibbler here {
         normal "Dibbler wanders here, pitching sausages to the patient yucca."
         happy  "Dibbler hums a sales jingle, certain new patrons will arrive."
         bored  "Dibbler kicks at the gravel, lamenting the lack of customers."
     }
     overlay if ( player has item dental_floss ) {
-        text "The weird bush looks oddly bare now, stripped of its floss-like strands."
+        text "The [[item]]weird bush[[/item]] looks oddly bare now, stripped of its [[item]]floss-like strands[[/item]]."
     }
-    exit northwest -> loading-dock
-    exit southwest -> front-entrance
+    exit "northern walkway" -> loading-dock
+    exit "southern walkway" -> front-entrance
+    scenery "Patch of Ornamental Gravel"
+    scenery "Paved Walkway"
+    scenery "Building Wall" desc "There is nothing unusual about the [[item]]building wall[[/item]], or about the [[item]]umbrellas[[/item]] that you didn't see."
+    scenery "Yucca Plant" desc "[[b]][[i]]Yuri's Yuccapædia[[/i]][[/b]]: \"The Yucca, as a species, are always lonely. Even when planted in groups. And they're [[i]]always struggling[[/i]] no matter how good you are to them. A loathesome plant all around. And I should know. I wrote the book.\" -- Yuri Nary"
+    scenery "Patio Umbrellas" desc "When you focus on the building for a bit, the nearest wall occasionally [[i]]phases out[[/i]] for a moment, revealing something resembling a posh restaurant patio."
 }
 
 # ========================================
@@ -23,8 +28,9 @@ room east-of-building {
 
 item weird_bush {
     name "Weird Bush"
-    desc "A squat, leafy bush with long, pale strands growing among the branches. The fibers look oddly uniform — almost like... dental floss?"
-    movability fixed "It is firmly rooted into the rocky ground."
+    desc "A squat, leafy bush with long, pale strings growing among the branches. The fibers look oddly waxy and uniform — almost like... [[i]][[item]]dental floss[[/item]][[/i]]?"
+    movability fixed "It is firmly rooted into the gravelly ground."
+    visibility scenery
     location room east-of-building
     container state open
 }
@@ -33,9 +39,11 @@ item dental_floss {
     name "Dental Floss"
     desc "A long, strong strand of waxed dental floss, harvested from the weird bush. It smells faintly minty, but seems surprisingly durable — maybe even useful for something besides oral hygiene."
     movability free
+    visibility scenery
     location chest weird_bush
     ability Attach
     requires attach to attach
+    aliases "strands", "fibers", "strings"
 }
 
 # ========================================
