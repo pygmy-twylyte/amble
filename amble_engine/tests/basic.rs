@@ -23,8 +23,8 @@ fn test_goal_condition_flag() {
 
 #[test]
 fn test_idgen_uuid_deterministic() {
-    let u1 = idgen::uuid_from_token(idgen::NAMESPACE_ROOM, "test");
-    let u2 = idgen::uuid_from_token(idgen::NAMESPACE_ROOM, "test");
+    let u1 = idgen::symbol_to_id(idgen::NAMESPACE_ROOM, "test");
+    let u2 = idgen::symbol_to_id(idgen::NAMESPACE_ROOM, "test");
     assert_eq!(u1, u2);
 }
 

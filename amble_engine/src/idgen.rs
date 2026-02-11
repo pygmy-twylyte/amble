@@ -20,7 +20,16 @@ pub fn new_id() -> Id {
 }
 
 /// Convert a token id from content files into a runtime ID.
-pub fn uuid_from_token(namespace: impl AsRef<str>, token: &str) -> Id {
+///
+/// # Important Note
+/// **This is semi-deprecated.** Earlier versions of the engine generated
+/// namespaced UUIDs from the symbols in TOML files. `Id` is now just a type
+/// alias for String. (We were having to keep track of the TOML symbols for
+/// logging / debugging anyway, so it added a layer of complication without benefit).
+/// I'm leaving this call in place for now for compatibility with the older code,
+/// and because we could go back to UUIDs or possibly have newtypes (eg ItemId(&str),
+/// NpcId(&str) etc) that could be handled here.
+pub fn symbol_to_id(namespace: impl AsRef<str>, token: &str) -> Id {
     let _ = namespace.as_ref();
     token.to_string()
 }
@@ -32,7 +41,7 @@ mod tests {
     #[test]
     fn uuid_from_token_is_identity_mapping() {
         let token = "test_item";
-        let id = uuid_from_token(NAMESPACE_ITEM, token);
+        let id = symbol_to_id(NAMESPACE_ITEM, token);
         assert_eq!(id, token);
     }
 }
