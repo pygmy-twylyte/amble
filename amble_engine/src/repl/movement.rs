@@ -194,20 +194,17 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
     // match "input_dir" to an Exit
     let destination_exit = {
         let current_room = world.player_room_ref()?;
-        // find a direction (e.g. "up") in current room that matches user input and isn't hidden
         let direction = current_room
             .exits
             .iter()
             .find(|(dir, exit)| !exit.hidden && dir.to_lowercase().contains(input_dir));
-        // if valid direction found, return the associated Exit
         if let Some((_, exit)) = direction {
             Some(exit)
         } else {
-            // no valid direction matched -- report and return
             view.push(ViewItem::Error(format!(
                 "{}? {}",
                 input_dir.error_style(),
-                world.spin_core(CoreSpinnerType::DestinationUnknown, "Which way is that?")
+                world.spin_core(CoreSpinnerType::DestinationUnknown, "Which direction is that?")
             )));
             return Ok(());
         }

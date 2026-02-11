@@ -216,7 +216,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                 view.push(ViewItem::ActionFailure(format!(
                     "{}",
                     format!(
-                        "You can't handle the {} without using something to {} it.",
+                        "You can't take the {} without using something to {} it.",
                         item.name().item_style(),
                         ability.to_string().bold()
                     )

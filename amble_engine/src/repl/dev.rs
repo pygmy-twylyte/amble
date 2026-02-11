@@ -50,7 +50,7 @@ use crate::slug::sanitize_slug;
 use crate::trigger::TriggerCondition;
 use crate::{
     AmbleWorld, Location, View, ViewItem, WorldObject,
-    idgen::{NAMESPACE_ITEM, NAMESPACE_ROOM, uuid_from_token},
+    idgen::{NAMESPACE_ITEM, NAMESPACE_ROOM, symbol_to_id},
     player::Flag,
     style::GameStyle,
     trigger::{self, spawn_item_in_inventory},
@@ -87,7 +87,7 @@ use crate::{
 /// # Panics
 /// None -- `item_id` is already known to be valid and exist in symbol table before `expect()` is called
 pub fn dev_spawn_item_handler(world: &mut AmbleWorld, view: &mut View, symbol: &str) {
-    let item_id = uuid_from_token(&NAMESPACE_ITEM, symbol);
+    let item_id = symbol_to_id(&NAMESPACE_ITEM, symbol);
     if world.items.contains_key(&item_id) {
         spawn_item_in_inventory(world, &item_id).expect("should not err; item_id already known to be valid");
         info!("player used DEV_MODE SpawnItem({symbol})");
@@ -129,7 +129,7 @@ pub fn dev_spawn_item_handler(world: &mut AmbleWorld, view: &mut View, symbol: &
 /// - Story progression flags
 /// - Movement-blocking conditions
 pub fn dev_teleport_handler(world: &mut AmbleWorld, view: &mut View, room_id: &str) {
-    let room_uuid = uuid_from_token(&NAMESPACE_ROOM, room_id);
+    let room_uuid = symbol_to_id(&NAMESPACE_ROOM, room_id);
     if let Some(room) = world.rooms.get(&room_uuid) {
         world.player.location = Location::Room(room_uuid);
         warn!(
