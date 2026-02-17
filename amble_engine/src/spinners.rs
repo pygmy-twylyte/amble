@@ -194,10 +194,11 @@ impl CoreSpinnerType {
             CoreSpinnerType::NpcLeft => vec!["leaves.", "departs.", "exits.", "goes away.", "takes off."],
             CoreSpinnerType::NothingSpecial => vec![
                 "There's nothing special about the {thing}.",
-                "Just a {thing} — nothing remarkable about it.",
+                "The {thing} is pretty plain — nothing remarkable about it.",
                 "Nothing about the {thing} seems noteworthy.",
                 "The {thing} is quite ordinary, as far as you can see.",
                 "Just a typical {thing} — not unusual at all.",
+                "You see nothing striking about the {thing}.",
             ],
         }
     }
