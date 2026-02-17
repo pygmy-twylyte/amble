@@ -10,6 +10,17 @@ For the *few* of you out there lurking and watching the my pet project so far, i
 So, I intend to keep an informal log here, going forward. With the exception of this intro, newest entries will be at the top.
 
 ---
+2-16-2026
+
+Haven't kept this log as I'd intended for frequent tidbits. So it goes.
+
+The Amble lull is over, though. Due to a great user suggestion, scenery and conditional visibility have entered the chat. These lend a whole new dimension to the engine and help to cut down greatly on parse errors stemming from reasonable word choices.
+
+However... the creation of that system and my injecting it into the first room in the demo has led to the "clean spot" effect... now that that room has been "spruced up" with that system, the rest of them seem kludgy. So, now, before 0.66.0 is released, I want to go over **all** of the demo game content and apply scenery and conditional visibility where is smooths out the experience -- which is everywhere.
+
+So... I've got about 1/3 of the rooms converted so far. I opened a couple of additional issues for an easy quick fix and and medium fix on GH. Unlikely anyone will jump in and complete them, but they're small enough and straightforward so will probably go into 0.66.0 as well.
+
+---
 1-30-2026
 
 Still in a lull on Amble. Have a few ideas for engine enhancement. Also some ideas for the second demo game (hospital) which I've started adding. In the process of that, I've found a bug in the Command::Take handler that causes a problem working with items inside transparent containers. Been working on other projects and enhancing my Rust-fu while I'm at low tide on amble_engine ideas.
