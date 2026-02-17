@@ -4,15 +4,28 @@
 
 room loading-dock {
     name "Useless Loading Dock"
-    desc "The so-called loading dock juts ten feet *above* the ground, with no ramp, stairs, or apparent means of access and a loading door thirty feet wide and ten inches tall. A conveyor belt runs from the building wall to the edge of the dock, then loops straight back in again without touching anything.\n\nA bronze plaque proudly identifies this as a **Bloody Stupid Johnson** project:\n'Winner of the 3rd Prize for Architectural Enthusiasm, 1973.'\n\nIt's unclear what this office ever needed to load—or who would deliver to the side of a remote building halfway up a mountain."
+    desc "The so-called loading dock juts ten feet *above* the ground, with no ramp, stairs, or apparent means of access and a [[i]]baffling[[/i]] loading door thirty [[b]]meters[[/b]] wide but a mere four [[b]]centimeters[[/b]] tall. A conveyor belt runs from the building wall to the edge of the dock, then loops straight back in again without touching anything.\n\nA bronze plaque is inset into the wall at the far edge of the dock.\n\nIt's unclear what this facility ever needed to load or unload — or who would deliver to the side of a remote building halfway up a mountain.\n\nA paved walkway wraps around the building in both directions."
+
+    overlay if item present security_locker {
+        text "A heavy wooden locker marked [[hl]]AMBLE SECURITY[[/hl]] sits in a far corner of the dock."
+    }
+
     overlay if npc cmot_dibbler here {
         normal "Dibbler paces the dock, trying to sell sausages to absent drivers."
         happy  "Dibbler whistles, convinced the loading dock will make him rich."
         bored  "Dibbler slumps against the dock, lamenting the lack of deliveries."
     }
-    exit southeast -> east-of-building
-    exit southwest -> snowfield
-    exit north -> inca-road
+
+    exit "walkway left" -> east-of-building
+    exit "walkway right" -> snowfield
+    exit "across the lawn" -> inca-road
+
+    scenery "Conveyor Belt" desc "It's running at blinding speed. Anything placed on it would likely be launched violently off the side and smashed to bits."
+    scenery "Building Wall"
+    scenery "Paved Walkway"
+    scenery "Bronze Plaque" desc "The plaque boasts: [[box]]This Dock Designed By:\n[[b]]        Bloody Stupid Johnson[[/b]]\n\nRunner Up for 3rd Most Unusable Design\n[[i]]        — Annals of Insipid Design, May 1973[[/i]][[/box]]"
+    scenery "Dock" desc "I mean, [[i]]look[[/i]] at it! It's like a cubist impression of a dock and can't possibly function."
+    scenery "Loading Door" desc "Apart from being 30 meters wide just 4 centimeters tall, it appears to have hinges on [[u]]all[[/u]] sides and is set at a sassy 27° angle to the rest of the dock."
 }
 
 # ========================================
@@ -25,6 +38,7 @@ item security_locker {
     text "The wood comes from the strong but incredibly flammable magnesium magnolia tree."
     movability fixed "It's too big and heavy to carry."
     location room loading-dock
+    visibility scenery
     container state locked
     ability Read
     requires cutWood to cut
@@ -82,6 +96,7 @@ item strange_liquid {
         consume_on ability Drink
         when_consumed despawn
     }
+    aliases "glass vial"
 }
 
 item shattered_vial {
@@ -100,6 +115,7 @@ item initech_mug {
 From: Your Initech Rep
 """
     ability Read
+    aliases "coffee mug"
 }
 
 item delivery_box {
@@ -108,6 +124,7 @@ item delivery_box {
     movability free
     location nowhere "spawns@loading-dock after first leaving"
     container state closed
+    aliases "box", "delivery"
 }
 
 # ========================================

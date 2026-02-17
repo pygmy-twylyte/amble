@@ -4,9 +4,19 @@
 
 room inca-road {
     name "Inca Road"
-    desc "An ancient road of broken and uneven stones winds precariously along the mountainside, half-swallowed by time and weeds. North of here, a river's rocky rapid rushes westward through the gorge.\n\nTo the south lies a trim, modern lawn with an improbably square footprint. It leads up toward a squat commercial building that seems to have landed here by accident."
+    desc "An ancient road of broken and uneven stones winds precariously along the mountainside, half-swallowed by time and weeds. Across the road lies a trim, modern lawn with an improbably square footprint. Oddly, the pristene green grass leads right up to the loading dock of a squat commercial building that seems to have landed here by accident. A [[item]]welcome sign[[/item]] looms large next to the road at the edge of the lawn."
+
     exit "across the lawn" -> loading-dock
     exit "down the slope" -> guard-post
+
+    scenery "Modern Lawn" desc "Very well kept and professionally treated, there isn't a single bare patch, weed, or patch of crabgrass in sight."
+    scenery "Patch of Grass"
+    scenery "Loading Dock" desc "From what you can see from here, this isn't a loading dock like any you've ever seen. It just [[i]]doesn't make sense[[/i]]. The designer must have been [[b]]bloody stupid[[/b]]."
+    scenery "Commercial Building"
+    scenery "Road"
+    scenery "Broken Stones"
+    scenery "Bunch of Weeds"
+    scenery "Mountainside"
 }
 
 # ========================================
@@ -15,8 +25,9 @@ room inca-road {
 
 item road_sign {
     name "Welcome Sign"
-    desc "A 10-foot tall sign, spotlit from below by a fusion powered sodium lamp. The sign is tilted upward, as if meant to be read from the air as well as the ground."
+    desc "A 10-foot tall sign, spotlit from below by a fusion powered sodium lamp. The sign is tilted upward, as if meant to be read from the air ([[i]]space?[[/i]]) as well as the ground."
     movability fixed "It is firmly bolted to a heavy concrete base."
+    visibility scenery
     location room inca-road
     text """[[box:AMBLE ADVENTURES]]        | Inca Road Branch |\n* a division of Brains Anonymous, LLC[[/box]]"""
     ability Read

@@ -4,19 +4,12 @@
 
 room front-entrance {
     name "Front Entrance"
-    desc "Potted plants flank a plain, darkened glass door on the front of the building to the north. As you approach the door, an Initech Eye-bot™ mounted above it mutters judgementally as it scans you. A sign above it reads:\n\n                       \"Always Know Where Your Towel Is\"\n\nPaved walkways lead around the building to the east and west."
-    overlay if flag got-towel {
-        set "Finished scanning, the Eye-bot™'s iris glows green. The doors unlatch and open slightly."
-        unset "After a few moments, the Eye-bot™'s iris turns red, and it points at the sign above."
-    }
+    desc "Potted plants flank a plain, darkened glass door on the front of the building to the north. As you approach the door, a [[item]]security scanner[[/item]] above it mutters judgementally as it scans you, and an imposing sign above that commands:[[box]]Always Know Where Your Towel Is[[/box]]\nPaved walkways lead around the building to the east and west."
 
     overlay if npc cmot_dibbler here {
         normal "C.M.O.T. Dibbler blocks the entrance, hawking dubious sausages."
         happy  "Dibbler beams and offers a celebratory sausage-inna-bun."
         bored  "Dibbler sighs about the slow foot traffic."
-    }
-    overlay if ( npc absent cmot_dibbler ) {
-        text "The doorway is mercifully free of purveyors of questionable sausages, for now."
     }
 
     exit "glass door" -> main-lobby {
@@ -26,22 +19,32 @@ room front-entrance {
     exit "western walkway" -> snowfield
     exit "eastern walkway" -> east-of-building
 
-    scenery "Potted Plants"
+    scenery "Pots" desc "Upon closer inspection, these pots appear to be recycled nuclear waste containers. A stem and a couple of leaves are painted below the [[b]][[i]]RADIOACTIVE[[/i]][[/b]] symbol to make it look like a flower."
+    scenery "Plants" desc "Tall broad leaf plants which would be typical, if it weren't for the fact that they're covered in jaundice-yellow splotches. [[i]]And [[u]]moaning[[/u]], softly[[/i]]."
     scenery "Glass Door"
+    scenery "Paved Walkway"
 
 }
 
 item eye_bot-scenery {
     name "Initech Eye-Bot™"
-    desc "A security scanner made to look like a reptilian eye, maneuvered by an arthritic robotic arm. Its slit-like iris is glowing [[red]]RED[[/red]]."
+    desc "A security scanner made to look like a reptilian eye, maneuvered by an robotic arm. Its slit-like iris is glowing [[red]]RED[[/red]]. With an arthritic groan, it moves to point at the sign above the door."
     location room front-entrance
     movability fixed "It's firmly mounted above the door."
     visibility scenery
+    aliases "camera", "scanner", "security"
 }
+
 trigger "Toggle Eye-Bot Green"
 note "eye-bot changes when the towel is taken or dropped"
 when take item towel {
     do set item description eye_bot-scenery "A security scanner made to look like a reptilian eye, maneuvered by an arthritic robotic arm. Its slit-like iris is glowing [[bright-green]]GREEN[[/bright-green]]."
+}
+
+trigger "Toggle Eye-Bot Red"
+note "eye-bot changes when towel is taken or dropped"
+when drop item towel {
+    do set item description eye_bot-scenery "A security scanner made to look like a reptilian eye, maneuvered by an arthritic robotic arm. Its slit-like iris is glowing [[red]]RED[[/red]]."
 }
 
 # ========================================
