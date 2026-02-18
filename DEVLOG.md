@@ -10,6 +10,13 @@ For the *few* of you out there lurking and watching the my pet project so far, i
 So, I intend to keep an informal log here, going forward. With the exception of this intro, newest entries will be at the top.
 
 ---
+2-17-2026
+
+Didn't make any headway on the content tonight. The amble-LSP language server was annoying me (there was an indexing problem causing false positive diagnostics, leading back to a problem with the tree-sitter grammar's handling of scheduled action blocks which was also causing syntax highlighting to fail). Worked with Codex first for a workaround, but then wound up updating the tree-sitter-amble's parsing within schedule blocks -- diagnostics are fixed along with the syntax highlighting -- which will make further work on the content easier going forward. 
+
+On another note: I *really* wish I would have named this thing Ramble instead of Amble! I'm not sure what one would need to do to change it across... everything. I may just be too locked in to Amble for it. 
+
+---
 2-16-2026
 
 Haven't kept this log as I'd intended for frequent tidbits. So it goes.
