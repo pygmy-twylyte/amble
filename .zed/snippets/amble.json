@@ -1,0 +1,535 @@
+{
+  "amble-game-block": {
+    "prefix": "amble-game",
+    "description": "Amble DSL: game block (required fields)",
+    "body": [
+      "game {",
+      "    title \"${1:Game Title}\"",
+      "    intro \"${2:Intro text}\"",
+      "    player {",
+      "        name \"${3:Player Name}\"",
+      "        desc \"${4:Player description}\"",
+      "        max_hp ${5:20}",
+      "        start room ${6:start-room}",
+      "    }",
+      "}"
+    ]
+  },
+  "amble-player-block": {
+    "prefix": "amble-player",
+    "description": "Amble DSL: player block (required fields)",
+    "body": [
+      "player {",
+      "    name \"${1:Player Name}\"",
+      "    desc \"${2:Player description}\"",
+      "    max_hp ${3:20}",
+      "    start room ${4:start-room}",
+      "}"
+    ]
+  },
+  "amble-item-block": {
+    "prefix": "amble-item",
+    "description": "Amble DSL: item block (required fields)",
+    "body": [
+      "item ${1:item-id} {",
+      "    name \"${2:Item Name}\"",
+      "    desc \"${3:Item description}\"",
+      "    location room ${4:room-id}",
+      "}"
+    ]
+  },
+  "amble-npc-block": {
+    "prefix": "amble-npc",
+    "description": "Amble DSL: npc block (required fields)",
+    "body": [
+      "npc ${1:npc-id} {",
+      "    name \"${2:NPC Name}\"",
+      "    desc \"${3:NPC description}\"",
+      "    max_hp ${4:10}",
+      "    location room ${5:room-id}",
+      "}"
+    ]
+  },
+  "amble-trigger-block": {
+    "prefix": "amble-trigger",
+    "description": "Amble DSL: trigger block",
+    "body": [
+      "trigger \"${1:Trigger Name}\"",
+      "when ${2:always} {",
+      "    do show \"${3:Message}\"",
+      "}"
+    ]
+  },
+  "amble-room-block": {
+    "prefix": "amble-room",
+    "description": "Amble DSL: room block (required fields)",
+    "body": [
+      "room ${1:room-id} {",
+      "    name \"${2:Room Name}\"",
+      "    desc \"${3:Room description}\"",
+      "}"
+    ]
+  },
+  "amble-goal-block": {
+    "prefix": "amble-goal",
+    "description": "Amble DSL: goal block (required fields)",
+    "body": [
+      "goal ${1:goal-id} {",
+      "    name \"${2:Goal Name}\"",
+      "    desc \"${3:Goal description}\"",
+      "    group ${4:required}",
+      "    done when ${5:has flag some_flag}",
+      "}"
+    ]
+  },
+  "amble-game-scoring-block": {
+    "prefix": "amble-scoring",
+    "description": "Amble DSL: scoring subblock",
+    "body": [
+      "scoring {",
+      "    report_title \"${1:Score Report}\"",
+      "    rank ${2:100.0} \"${3:Rank Name}\" \"${4:Rank description}\"",
+      "}"
+    ]
+  },
+  "amble-game-rank-line": {
+    "prefix": "amble-rank",
+    "description": "Amble DSL: scoring rank line",
+    "body": [
+      "rank ${1:50.0} \"${2:Rank Name}\" \"${3:Rank description}\""
+    ]
+  },
+  "amble-trigger-only-once": {
+    "prefix": "amble-trigger-once",
+    "description": "Amble DSL: trigger block with only once",
+    "body": [
+      "trigger \"${1:Trigger Name}\" only once",
+      "when ${2:always} {",
+      "    do ${3:show \"Message\"}",
+      "}"
+    ]
+  },
+  "amble-trigger-if-block": {
+    "prefix": "amble-if",
+    "description": "Amble DSL: trigger if block",
+    "body": [
+      "if ${1:has flag some_flag} {",
+      "    do ${2:show \"Message\"}",
+      "}"
+    ]
+  },
+  "amble-when-always": {
+    "prefix": "amble-when-always",
+    "description": "Amble DSL: when always",
+    "body": [
+      "when always {",
+      "    do ${1:show \"Message\"}",
+      "}"
+    ]
+  },
+  "amble-when-enter-room": {
+    "prefix": "amble-when-enter",
+    "description": "Amble DSL: when enter room",
+    "body": [
+      "when enter room ${1:room-id} {",
+      "    do ${2:show \"Message\"}",
+      "}"
+    ]
+  },
+  "amble-when-use-item": {
+    "prefix": "amble-when-use-item",
+    "description": "Amble DSL: when use item ability",
+    "body": [
+      "when use item ${1:item-id} ability ${2:Ability} {",
+      "    do ${3:show \"Message\"}",
+      "}"
+    ]
+  },
+  "amble-when-use-item-on-item": {
+    "prefix": "amble-when-use-on-item",
+    "description": "Amble DSL: when use item on item interaction",
+    "body": [
+      "when use item ${1:tool-id} on item ${2:target-id} interaction ${3:interaction} {",
+      "    do ${4:show \"Message\"}",
+      "}"
+    ]
+  },
+  "amble-when-talk-to-npc": {
+    "prefix": "amble-when-talk",
+    "description": "Amble DSL: when talk to npc",
+    "body": [
+      "when talk to npc ${1:npc-id} {",
+      "    do ${2:show \"Message\"}",
+      "}"
+    ]
+  },
+  "amble-when-give-item-to-npc": {
+    "prefix": "amble-when-give",
+    "description": "Amble DSL: when give item to npc",
+    "body": [
+      "when give item ${1:item-id} to npc ${2:npc-id} {",
+      "    do ${3:show \"Message\"}",
+      "}"
+    ]
+  },
+  "amble-when-take-item": {
+    "prefix": "amble-when-take",
+    "description": "Amble DSL: when take item",
+    "body": [
+      "when take item ${1:item-id} {",
+      "    do ${2:show \"Message\"}",
+      "}"
+    ]
+  },
+  "amble-cond-all": {
+    "prefix": "amble-cond-all",
+    "description": "Amble DSL: all(...) condition group",
+    "body": [
+      "all(${1:has flag some_flag}, ${2:missing item some_item})"
+    ]
+  },
+  "amble-cond-any": {
+    "prefix": "amble-cond-any",
+    "description": "Amble DSL: any(...) condition group",
+    "body": [
+      "any(${1:has item keycard}, ${2:with npc receptionist})"
+    ]
+  },
+  "amble-cond-has-flag": {
+    "prefix": "amble-cond-has-flag",
+    "description": "Amble DSL: has flag condition",
+    "body": [
+      "has flag ${1:flag-name}"
+    ]
+  },
+  "amble-cond-missing-flag": {
+    "prefix": "amble-cond-missing-flag",
+    "description": "Amble DSL: missing flag condition",
+    "body": [
+      "missing flag ${1:flag-name}"
+    ]
+  },
+  "amble-cond-has-item": {
+    "prefix": "amble-cond-has-item",
+    "description": "Amble DSL: has item condition",
+    "body": [
+      "has item ${1:item-id}"
+    ]
+  },
+  "amble-cond-player-in-room": {
+    "prefix": "amble-cond-player-in-room",
+    "description": "Amble DSL: player in room condition",
+    "body": [
+      "player in room ${1:room-id}"
+    ]
+  },
+  "amble-cond-npc-in-state": {
+    "prefix": "amble-cond-npc-in-state",
+    "description": "Amble DSL: npc in state condition",
+    "body": [
+      "npc in state ${1:npc-id} ${2:normal}"
+    ]
+  },
+  "amble-cond-in-rooms": {
+    "prefix": "amble-cond-in-rooms",
+    "description": "Amble DSL: in rooms condition",
+    "body": [
+      "in rooms ${1:room-a},${2:room-b}"
+    ]
+  },
+  "amble-cond-chance": {
+    "prefix": "amble-cond-chance",
+    "description": "Amble DSL: chance condition",
+    "body": [
+      "chance ${1:25}%"
+    ]
+  },
+  "amble-do-show": {
+    "prefix": "amble-do-show",
+    "description": "Amble DSL: do show action",
+    "body": [
+      "do show \"${1:Message}\""
+    ]
+  },
+  "amble-do-award-points": {
+    "prefix": "amble-do-award",
+    "description": "Amble DSL: do award points action",
+    "body": [
+      "do award points ${1:5} reason \"${2:Reason}\""
+    ]
+  },
+  "amble-do-add-flag": {
+    "prefix": "amble-do-add-flag",
+    "description": "Amble DSL: do add flag action",
+    "body": [
+      "do add flag ${1:flag-name}"
+    ]
+  },
+  "amble-do-advance-flag": {
+    "prefix": "amble-do-advance-flag",
+    "description": "Amble DSL: do advance flag action",
+    "body": [
+      "do advance flag ${1:flag-name}"
+    ]
+  },
+  "amble-do-spawn-item-room": {
+    "prefix": "amble-do-spawn-item-room",
+    "description": "Amble DSL: do spawn item into room action",
+    "body": [
+      "do spawn item ${1:item-id} into room ${2:room-id}"
+    ]
+  },
+  "amble-do-despawn-item": {
+    "prefix": "amble-do-despawn-item",
+    "description": "Amble DSL: do despawn item action",
+    "body": [
+      "do despawn item ${1:item-id}"
+    ]
+  },
+  "amble-do-npc-says": {
+    "prefix": "amble-do-npc-says",
+    "description": "Amble DSL: do npc says action",
+    "body": [
+      "do npc says ${1:npc-id} \"${2:Quote}\""
+    ]
+  },
+  "amble-do-set-npc-state": {
+    "prefix": "amble-do-set-npc-state",
+    "description": "Amble DSL: do set npc state action",
+    "body": [
+      "do set npc state ${1:npc-id} ${2:normal}"
+    ]
+  },
+  "amble-do-lock-exit": {
+    "prefix": "amble-do-lock-exit",
+    "description": "Amble DSL: do lock exit action",
+    "body": [
+      "do lock exit from ${1:from-room} direction ${2:dir}"
+    ]
+  },
+  "amble-do-unlock-exit": {
+    "prefix": "amble-do-unlock-exit",
+    "description": "Amble DSL: do unlock exit action",
+    "body": [
+      "do unlock exit from ${1:from-room} direction ${2:dir}"
+    ]
+  },
+  "amble-do-reveal-exit": {
+    "prefix": "amble-do-reveal-exit",
+    "description": "Amble DSL: do reveal exit action",
+    "body": [
+      "do reveal exit from ${1:from-room} to ${2:to-room} direction ${3:dir}"
+    ]
+  },
+  "amble-do-schedule-in-block": {
+    "prefix": "amble-do-schedule-in",
+    "description": "Amble DSL: do schedule in block action",
+    "body": [
+      "do schedule in ${1:2} {",
+      "    do ${2:show \"Scheduled action\"}",
+      "}"
+    ]
+  },
+  "amble-do-modify-item-block": {
+    "prefix": "amble-do-modify-item",
+    "description": "Amble DSL: do modify item block action",
+    "body": [
+      "do modify item ${1:item-id} {",
+      "    ${2:name \"Updated Name\"}",
+      "}"
+    ]
+  },
+  "amble-do-modify-room-block": {
+    "prefix": "amble-do-modify-room",
+    "description": "Amble DSL: do modify room block action",
+    "body": [
+      "do modify room ${1:room-id} {",
+      "    ${2:desc \"Updated room description\"}",
+      "}"
+    ]
+  },
+  "amble-do-modify-npc-block": {
+    "prefix": "amble-do-modify-npc",
+    "description": "Amble DSL: do modify npc block action",
+    "body": [
+      "do modify npc ${1:npc-id} {",
+      "    ${2:state custom(happy)}",
+      "}"
+    ]
+  },
+  "amble-room-exit": {
+    "prefix": "amble-exit",
+    "description": "Amble DSL: room exit statement",
+    "body": [
+      "exit \"${1:direction}\" -> ${2:destination-room}"
+    ]
+  },
+  "amble-room-exit-opts": {
+    "prefix": "amble-exit-opts",
+    "description": "Amble DSL: room exit with options",
+    "body": [
+      "exit \"${1:direction}\" -> ${2:destination-room} {",
+      "    ${3:locked},",
+      "    barred \"${4:Barred message}\"",
+      "}"
+    ]
+  },
+  "amble-room-overlay": {
+    "prefix": "amble-overlay",
+    "description": "Amble DSL: room overlay statement",
+    "body": [
+      "overlay if ${1:flag set some_flag} {",
+      "    text \"${2:Overlay text}\"",
+      "}"
+    ]
+  },
+  "amble-room-overlay-flag-pair": {
+    "prefix": "amble-overlay-flag-pair",
+    "description": "Amble DSL: room overlay flag pair sugar",
+    "body": [
+      "overlay if flag ${1:flag-name} {",
+      "    set \"${2:Text when flag is set}\"",
+      "    unset \"${3:Text when flag is unset}\"",
+      "}"
+    ]
+  },
+  "amble-room-scenery-default": {
+    "prefix": "amble-scenery-default",
+    "description": "Amble DSL: room scenery default statement",
+    "body": [
+      "scenery default \"${1:There's nothing notable about the {thing}.}\""
+    ]
+  },
+  "amble-room-scenery-entry": {
+    "prefix": "amble-scenery",
+    "description": "Amble DSL: room scenery entry statement",
+    "body": [
+      "scenery \"${1:thing}\" desc \"${2:Description}\""
+    ]
+  },
+  "amble-item-movability-free": {
+    "prefix": "amble-item-movability-free",
+    "description": "Amble DSL: item movability free statement",
+    "body": [
+      "movability free"
+    ]
+  },
+  "amble-item-movability-fixed": {
+    "prefix": "amble-item-movability-fixed",
+    "description": "Amble DSL: item movability fixed statement",
+    "body": [
+      "movability fixed \"${1:Reason item cannot be moved}\""
+    ]
+  },
+  "amble-item-visibility": {
+    "prefix": "amble-item-visibility",
+    "description": "Amble DSL: item visibility statement",
+    "body": [
+      "visibility ${1:listed}"
+    ]
+  },
+  "amble-item-visible-when": {
+    "prefix": "amble-item-visible-when",
+    "description": "Amble DSL: item visible when statement",
+    "body": [
+      "visible when ${1:has flag some_flag}"
+    ]
+  },
+  "amble-item-aliases": {
+    "prefix": "amble-item-aliases",
+    "description": "Amble DSL: item aliases statement",
+    "body": [
+      "aliases \"${1:alias-one}\", \"${2:alias-two}\""
+    ]
+  },
+  "amble-item-ability": {
+    "prefix": "amble-item-ability",
+    "description": "Amble DSL: item ability statement",
+    "body": [
+      "ability ${1:Read}"
+    ]
+  },
+  "amble-item-text": {
+    "prefix": "amble-item-text",
+    "description": "Amble DSL: item text statement",
+    "body": [
+      "text \"${1:Readable text}\""
+    ]
+  },
+  "amble-item-requires": {
+    "prefix": "amble-item-requires",
+    "description": "Amble DSL: item requires statement",
+    "body": [
+      "requires ${1:ability} to ${2:interaction}"
+    ]
+  },
+  "amble-item-consumable-block": {
+    "prefix": "amble-item-consumable",
+    "description": "Amble DSL: item consumable block",
+    "body": [
+      "consumable {",
+      "    uses_left ${1:1}",
+      "    consume_on ability ${2:Drink}",
+      "    when_consumed ${3:despawn}",
+      "}"
+    ]
+  },
+  "amble-npc-state": {
+    "prefix": "amble-npc-state",
+    "description": "Amble DSL: npc state statement",
+    "body": [
+      "state ${1:normal}"
+    ]
+  },
+  "amble-npc-state-custom": {
+    "prefix": "amble-npc-state-custom",
+    "description": "Amble DSL: npc custom state statement",
+    "body": [
+      "state custom ${1:state-id}"
+    ]
+  },
+  "amble-npc-movement-route": {
+    "prefix": "amble-npc-movement-route",
+    "description": "Amble DSL: npc route movement statement",
+    "body": [
+      "movement route rooms (${1:room-a}, ${2:room-b}) timing ${3:every_5_turns} active ${4:true} loop ${5:true}"
+    ]
+  },
+  "amble-npc-movement-random": {
+    "prefix": "amble-npc-movement-random",
+    "description": "Amble DSL: npc random movement statement",
+    "body": [
+      "movement random rooms (${1:room-a}, ${2:room-b}) timing ${3:every_5_turns} active ${4:true}"
+    ]
+  },
+  "amble-npc-dialogue-block": {
+    "prefix": "amble-npc-dialogue",
+    "description": "Amble DSL: npc dialogue block",
+    "body": [
+      "dialogue ${1:normal} {",
+      "    \"${2:Dialogue line}\"",
+      "}"
+    ]
+  },
+  "amble-goal-start-when": {
+    "prefix": "amble-goal-start",
+    "description": "Amble DSL: goal start when statement",
+    "body": [
+      "start when ${1:has flag some_flag}"
+    ]
+  },
+  "amble-goal-done-when": {
+    "prefix": "amble-goal-done",
+    "description": "Amble DSL: goal done when statement",
+    "body": [
+      "done when ${1:has flag some_flag}"
+    ]
+  },
+  "amble-goal-fail-when": {
+    "prefix": "amble-goal-fail",
+    "description": "Amble DSL: goal fail when statement",
+    "body": [
+      "fail when ${1:has flag failed_flag}"
+    ]
+  }
+}
