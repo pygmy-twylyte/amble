@@ -187,7 +187,7 @@ impl Item {
             let consuming_abilities: Vec<_> = opts.consume_on.iter().map(ItemAbility::to_string).collect();
             let uses = consuming_abilities.join(" or ").underline();
             view.push(ViewItem::ItemConsumableStatus(format!(
-                "You can {uses} this item {} more time{}.",
+                "You can {uses} {} more time{}.",
                 opts.uses_left.to_string().yellow(),
                 if opts.uses_left == 1 { "" } else { "s" }
             )));
