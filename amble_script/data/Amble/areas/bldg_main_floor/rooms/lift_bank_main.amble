@@ -1,9 +1,14 @@
 room lift-bank-main {
     name "Elevator Bank (Main Floor)"
-    desc "A bank of elevators waits here, none of which seem eager to go anywhere. One of them is open and labeled 'MAIN LIFT' in glowing teal script.  To the east, a door marked 'LOUNGE' is just slightly ajar, as if luring you to come in. The lobby is still visible through the archway south."
+    desc "A bank of elevators waits here, none of which seem eager to go anywhere. One of them is open and labeled [[room]][[i]]Main Lift[[/i]][[/room]]. To one side, a door marked [[room]][[i]]Lounge[[/i]][[/room]] is just slightly ajar, as if luring you to come in. To the other, the lobby is still visible through the archway."
+    scenery "Card Reader"
+    scenery "Elevators"
+    scenery "Main Lifts"
+    scenery "Archway"
+
     overlay if flag got-elevator-keycard {
-        set "The proximity card reader next to the lift now somewhat sheepishly displays: ACCESS GRANTED."
-        unset "The proximity card reader next to the lift displays: ACCESS DENIED -- and with no sympathy whatsoever."
+        set "The proximity card reader next to the lift now somewhat sheepishly displays: [[bright-green]]ACCESS GRANTED[[/bright-green]]."
+        unset "The proximity card reader next to the lift displays: [[bright-red]]ACCESS DENIED[[/bright-red]] -- and with no sympathy whatsoever."
     }
     overlay if npc gonk_droid here {
         normal "A gonk droid pokes at the elevator call panel, emitting perplexed gonks."
@@ -14,9 +19,9 @@ room lift-bank-main {
         happy  "Dibbler beams, certain elevator patrons are his best customers."
         bored  "Dibbler counts his sausages as the lift lights blink listlessly."
     }
-    exit "into the elevator" -> lift-main
-    exit "to the lounge" -> lounge
-    exit "through the archway" -> main-lobby
+    exit "elevator" -> lift-main
+    exit "lounge" -> lounge
+    exit "archway" -> main-lobby
 }
 
 # ========================================
