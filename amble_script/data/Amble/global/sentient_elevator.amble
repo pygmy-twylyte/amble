@@ -1,0 +1,24 @@
+# ========================================
+# Sentient Elevator NPC
+# ========================================
+
+npc elevator {
+    name "Sentient Elevator"
+    desc "An elevator, imbued with a sentient artificial intelligence."
+    location room lift-main
+    max_hp 1
+    state custom on_main
+    dialogue custom on_main {
+        "Main floor. If you hurry, you may still be able to escape. But probably not."
+        "We're on the main floor. I hope."
+        "Main floor. If the vending machine is still broken, try the lounge or restaurant for a refreshment."
+        "You're a Candidate? Whoa. I thought they shut that program down after... well, nevermind."
+        "We're on main. If you see the gonk droid, tell him my emergency lighting needs a recharge."
+    }
+    dialogue custom on_aa_3 {
+        "We're on the sublevel. I wouldn't get out here if I were you."
+        "Sublevel AA-3. Very strange things have been going on here since the last Candidate... ah, forget I said anything."
+        "We're on AA-3, so you might want to see the EMH if you feel unwell."
+        "Sublevel AA-3. You'll be looking for room AA-3B. Nobody's seen it for some time now. I'm not sure it's even here anymore. Best of luck."
+    }
+}
