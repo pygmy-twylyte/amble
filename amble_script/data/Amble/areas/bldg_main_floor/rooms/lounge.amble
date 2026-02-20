@@ -106,9 +106,6 @@ when take item lebowski_rug {
     do add flag found-portal-room
     do award points 3 reason "Found the trapdoor beneath the rug"
     do show "Light shines around the edges of a trap door revealed in the floor when you remove the rug. The room no longer seems tied together."
-    do modify room lounge {
-        desc
-    }
 }
 
 trigger "[Lounge] Rug Burned Away" only once
