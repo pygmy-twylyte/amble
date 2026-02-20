@@ -3,12 +3,17 @@
 # ========================================
 room lift-main {
     name "Elevator (Main Floor)"
-    desc "The elevator interior is surprisingly luxurious -- polished chrome panels, soft lighting, and a faint scent of something that might be vanilla or data corruption."
+    desc "The elevator interior is surprisingly luxurious -- polished chrome panels, soft lighting, and a faint scent of something that might be vanilla or data corruption. Two rounded button bars are available on the control panel:"
     overlay if flag got-elevator-keycard {
-        set "The [main] and [aa-3] buttons are now both lit -- but [aa-3] flickers and then glows intensely bright intermittently."
-        unset "There are only two buttons: [main] is lit, but [aa-3] is dark."
+        set "[[b]][[bright-green]][Main][[/bright-green]][[/b]]"
+        unset "[[b]][[bright-green]][Main][[/bright-green]][[/b]]"
+    }
+    overlay if flag got-elevator-keycard {
+        set "[[b]][[bright-green]][AA-3][[/bright-green]][[/b]]"
+        unset "[[b]][[bright-red]][AA-3][[/bright-red]][[/b]]"
     }
     exit "out to main floor" -> lift-bank-main
+    scenery "Control Panel" desc "The only thing odd about the [[item]]control panel[[/item]] is that there is no button to press in case of emergency."
 }
 
 # ========================================
@@ -16,14 +21,18 @@ room lift-main {
 # ========================================
 
 item aa_3_button_main {
+    visibility scenery
     name "[AA-3] Button (Unlit)"
+    aliases "aa-3", "aa3", "aa-3 button", "aa3 button"
     desc "The button to send the elevator to sublevel AA-3, currently unlit and disabled."
     movability fixed "It's part of the elevator control panel."
     location room lift-main
 }
 
 item main_button_main {
+    visibility scenery
     name "[Main] Button"
+    aliases "main", "main button"
     desc "The button that sends the elevator to the main floor."
     movability fixed "It's part of the elevator control panel."
     location room lift-main
@@ -38,20 +47,26 @@ note "elevator aa_3 button controller"
 when touch item aa_3_button_main {
     if all( has item elevator_keycard, has item visitor_pass ) {
         do push player to lift-sublevel-1
+        do set npc state elevator custom:on_aa_3
         do show "The elevator giggles and lurches gleefully downward, nearly taking you off your feet. Just as your spleen is becoming accustomed to sharing space with your tonsils, a sudden deceleration throws it all the way down into your pelvis and you come to an abrupt stop at the deep sublevel entrance."
+        do npc random dialogue elevator
     }
     if all( missing item elevator_keycard, missing item visitor_pass ) {
-        do show "The elevator seems truly upset when it tells you it can't move unless you have a visitor pass *and* a proximity keycard."
+        do show "The elevator doesn't budge."
+        do npc says elevator "I'd love to go for a ride too, but I'm not allowed to move unless you have a keycard and a visitor's pass."
     }
     if all( has item visitor_pass, missing item elevator_keycard ) {
-        do show "With a sigh, the elevator acknowledges your psychic Visitor Pass (which currently identifies you as a master elevator technician) but reminds you that it can't budge unless you have a proximity card."
+        do show "The elevator remains still and lets out a sigh."
+        do npc says elevator "I see your visitor pass there -- wow, are you really a master elevator technician? That's great, but I still can't move without the proximity card."
     }
     if all( missing item visitor_pass, has item elevator_keycard ) {
-        do show "The elevator begins to move... and then freezes when it realizes that you have lost your visitor pass."
+        do show "The elevator begins to move... and then freezes."
+        do npc says elevator "Um... it appears you got the proximity card but somehow managed to lose your visitor pass?! You'll need to find it; I can't take you to the sublevel without one."
     }
 }
 
 trigger "[Lift Main]"
 when touch item main_button_main {
-    do show "With something between a yawn and a sigh, the elevator reminds you that you are already on the main floor, then closes and opens the doors for emphasis."
+    do npc says elevator "It's nice to have my buttons pushed once in a while, but we're already on the main floor."
+    do priority 100 show "The doors open and close a couple of times for emphasis."
 }

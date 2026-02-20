@@ -1,6 +1,11 @@
 room lounge {
     name "Coffee Lounge"
-    desc "A small space to relax, with a worn sofa, a ringed coffee table bearing a few magazines, and part of a jigsaw puzzle depicting the USS Enterprise D."
+    desc "A small space to relax, with a worn sofa, and a ringed coffee table. A few outdated magazines and parts of a jigsaw puzzle are scattered across the table."
+    scenery "Worn Sofa"
+    scenery "Coffee Table"
+    scenery "Magazines"
+    scenery "Jigsaw Puzzle" desc "Partially assembled, it the [[item]]jigsaw puzzle[[/item]] appears to be a depiction of a Borg cube."
+
     overlay if item lebowski_rug {
         present "An ornate, brick red rug lies in the center of the room and somehow -- really ties the room together."
         absent "The trap door opened in the floor reveals a ladder down to a hidden room below."
@@ -29,6 +34,7 @@ room lounge {
 # ========================================
 
 item lebowski_rug {
+    visibility scenery
     name "Ornate Rug"
     desc "It really ties the room together, man."
     movability free
@@ -37,6 +43,7 @@ item lebowski_rug {
 }
 
 item coffee_machine {
+    visibility scenery
     name "Coffee Machine"
     desc "A sleek black single-serve drip coffee machine, ready to go with fresh grounds."
     movability fixed "It's tied directly into the water supply pipe."
@@ -45,7 +52,8 @@ item coffee_machine {
 }
 
 item hot_coffee {
-    name "Hot Coffee"
+    name "Café Americano"
+    aliases "coffee", "paper cup", "hot coffee"
     desc "A paper cup of piping hot deep black coffee. Smells like a dark french roast."
     movability free
     location nowhere "spawns@lounge after coffee_machine started"
@@ -59,6 +67,7 @@ item hot_coffee {
 
 item cooled_coffee {
     name "Cooled Coffee"
+    aliases "coffee", "paper cup", "cool coffee"
     desc "A paper cup of formerly-hot coffee, cooled down to room temperature now."
     movability free
     location nowhere "spawns when hot coffee cools down"
@@ -97,6 +106,9 @@ when take item lebowski_rug {
     do add flag found-portal-room
     do award points 3 reason "Found the trapdoor beneath the rug"
     do show "Light shines around the edges of a trap door revealed in the floor when you remove the rug. The room no longer seems tied together."
+    do modify room lounge {
+        desc
+    }
 }
 
 trigger "[Lounge] Rug Burned Away" only once

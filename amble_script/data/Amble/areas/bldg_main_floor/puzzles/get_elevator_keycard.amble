@@ -74,6 +74,10 @@ trigger "[Poetry-Panic] Acquired Elevator Keycard" only once
 when take item elevator_keycard {
     do set npc state b_a_receptionist bored
     do add flag got-elevator-keycard
+    do modify item aa_3_button_main {
+        name "[AA-3] Button"
+        desc "The button to send the elevator to sublevel AA-3, now pulsing with a quiet intensity."
+    }
 }
 
 trigger "[Office] Insert Poems to Open Panic Room" only once
