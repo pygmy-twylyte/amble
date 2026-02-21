@@ -192,12 +192,13 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
     })?;
 
     // match "input_dir" to an Exit
+    let input_dir_normalized = input_dir.to_lowercase();
     let destination_exit = {
         let current_room = world.player_room_ref()?;
         let direction = current_room
             .exits
             .iter()
-            .find(|(dir, exit)| !exit.hidden && dir.to_lowercase().contains(input_dir));
+            .find(|(dir, exit)| !exit.hidden && dir.to_lowercase().contains(&input_dir_normalized));
         if let Some((_, exit)) = direction {
             Some(exit)
         } else {
