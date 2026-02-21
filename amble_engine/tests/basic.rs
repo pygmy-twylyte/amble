@@ -358,7 +358,7 @@ fn test_player_def_to_player() {
         start_room: "room".into(),
         max_hp: 10,
     };
-    let player = build_player(&def).unwrap();
+    let player = build_player(&def);
     assert_eq!(player.name, "P");
     assert_eq!(player.max_hp(), 10);
     assert_eq!(player.current_hp(), 10);

@@ -208,7 +208,7 @@ mod tests {
         let room_id = crate::idgen::new_id();
         let room = Room {
             id: room_id.clone(),
-            symbol: format!("room_{}", room_id),
+            symbol: format!("room_{room_id}"),
             name: name.to_string(),
             base_description: format!("{name} description"),
             overlays: Vec::new(),
@@ -233,7 +233,7 @@ mod tests {
         let item_id = crate::idgen::new_id();
         let item = Item {
             id: item_id.clone(),
-            symbol: format!("item_{}", item_id),
+            symbol: format!("item_{item_id}"),
             name: name.to_string(),
             description: format!("{name} item"),
             location,
@@ -256,7 +256,7 @@ mod tests {
         let npc_id = crate::idgen::new_id();
         let npc = Npc {
             id: npc_id.clone(),
-            symbol: format!("npc_{}", npc_id),
+            symbol: format!("npc_{npc_id}"),
             name: name.to_string(),
             description: format!("{name} npc"),
             location,

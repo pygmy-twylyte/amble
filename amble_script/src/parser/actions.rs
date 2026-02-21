@@ -1439,10 +1439,12 @@ fn parse_schedule_header(text: &str) -> Result<ScheduleHeader<'_>, AstError> {
     })
 }
 
-fn parse_schedule_extras(
+type ScheduledActionOpts = (Option<ConditionAst>, Option<OnFalseAst>, Option<String>);
+
+fn parse_scheduled_action_opts(
     header: &str,
     sets: &HashMap<String, Vec<String>>,
-) -> Result<(Option<ConditionAst>, Option<OnFalseAst>, Option<String>), AstError> {
+) -> Result<ScheduledActionOpts, AstError> {
     let mut on_false = None;
     let mut note = None;
     let mut cond: Option<ConditionAst> = None;
@@ -1525,7 +1527,7 @@ pub(super) fn parse_schedule_action(
     sets: &HashMap<String, Vec<String>>,
 ) -> Result<(ActionStmt, usize), AstError> {
     let header = parse_schedule_header(text)?;
-    let (cond, on_false, note) = parse_schedule_extras(header.header, sets)?;
+    let (cond, on_false, note) = parse_scheduled_action_opts(header.header, sets)?;
     let (p, inner_body) = find_schedule_block(header.rest1, header.brace_pos)?;
     let actions = parse_actions_from_body(inner_body, source, smap, sets)?;
     let consumed = header.leading_ws + (header.trimmed.len() - header.rest1[p + 1..].len());

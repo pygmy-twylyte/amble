@@ -23,7 +23,7 @@ pub struct WorldDef {
 }
 
 /// Game-level metadata and startup configuration.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct GameDef {
     pub title: String,
     #[serde(default)]
@@ -38,21 +38,6 @@ pub struct GameDef {
     pub player: PlayerDef,
     #[serde(default)]
     pub scoring: ScoringDef,
-}
-
-impl Default for GameDef {
-    fn default() -> Self {
-        Self {
-            title: String::new(),
-            slug: String::new(),
-            author: String::new(),
-            version: String::new(),
-            blurb: String::new(),
-            intro: String::new(),
-            player: PlayerDef::default(),
-            scoring: ScoringDef::default(),
-        }
-    }
 }
 
 /// Player definition emitted from DSL configuration.
@@ -271,18 +256,13 @@ pub struct ItemDef {
 }
 
 /// Determines how an item is listed or discovered in a room.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub enum ItemVisibility {
+    #[default]
     Listed,
     Scenery,
     Hidden,
-}
-
-impl Default for ItemVisibility {
-    fn default() -> Self {
-        ItemVisibility::Listed
-    }
 }
 
 /// Authoring-time reference to an object's starting location.

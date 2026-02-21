@@ -12,18 +12,12 @@ use crate::world::WorldObject;
 use crate::{Item, Npc, Room};
 
 /// Generic: Returns the symbol for a given object's id.
-pub fn symbol_from_id<'a, T: WorldObject, S: BuildHasher>(
-    map: &'a HashMap<Id, T, S>,
-    id: impl AsRef<str>,
-) -> Option<&'a str> {
+pub fn symbol_from_id<T: WorldObject, S: BuildHasher>(map: &HashMap<Id, T, S>, id: impl AsRef<str>) -> Option<&str> {
     map.get(id.as_ref()).map(super::world::WorldObject::symbol)
 }
 
 /// Generic: Returns the display name for a given object's id.
-pub fn name_from_id<'a, T: WorldObject, S: BuildHasher>(
-    map: &'a HashMap<Id, T, S>,
-    id: impl AsRef<str>,
-) -> Option<&'a str> {
+pub fn name_from_id<T: WorldObject, S: BuildHasher>(map: &HashMap<Id, T, S>, id: impl AsRef<str>) -> Option<&str> {
     map.get(id.as_ref()).map(super::world::WorldObject::name)
 }
 
@@ -43,25 +37,16 @@ pub fn pluralize(word: &str, count: isize) -> String {
 }
 
 /// Returns the symbol for a given room's id.
-pub fn room_symbol_from_id<'a, S: BuildHasher>(
-    rooms: &'a HashMap<Id, Room, S>,
-    room_id: impl AsRef<str>,
-) -> Option<&'a str> {
+pub fn room_symbol_from_id<S: BuildHasher>(rooms: &HashMap<Id, Room, S>, room_id: impl AsRef<str>) -> Option<&str> {
     symbol_from_id(rooms, room_id)
 }
 
 /// Returns the symbol for a given item's id.
-pub fn item_symbol_from_id<'a, S: BuildHasher>(
-    items: &'a HashMap<Id, Item, S>,
-    item_id: impl AsRef<str>,
-) -> Option<&'a str> {
+pub fn item_symbol_from_id<S: BuildHasher>(items: &HashMap<Id, Item, S>, item_id: impl AsRef<str>) -> Option<&str> {
     symbol_from_id(items, item_id)
 }
 
 /// Returns the symbol for a given character's id.
-pub fn npc_symbol_from_id<'a, S: BuildHasher>(
-    npcs: &'a HashMap<Id, Npc, S>,
-    npc_id: impl AsRef<str>,
-) -> Option<&'a str> {
+pub fn npc_symbol_from_id<S: BuildHasher>(npcs: &HashMap<Id, Npc, S>, npc_id: impl AsRef<str>) -> Option<&str> {
     symbol_from_id(npcs, npc_id)
 }

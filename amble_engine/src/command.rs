@@ -187,13 +187,9 @@ fn parse_pair_from_input(input_text: &str) -> Option<Pair<'_, Rule>> {
     let Ok(mut pairs) = CommandParser::parse(Rule::repl_input, input_text) else {
         return None;
     };
-    let Some(repl_input_pair) = pairs.next() else {
-        return None;
-    };
+    let repl_input_pair = pairs.next()?;
     let mut inner = repl_input_pair.into_inner();
-    let Some(command) = inner.next() else {
-        return None;
-    };
+    let command = inner.next()?;
     Some(command)
 }
 

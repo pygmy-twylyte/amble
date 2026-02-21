@@ -926,7 +926,7 @@ pub fn spawn_npc_in_room(world: &mut AmbleWorld, view: &mut View, npc_id: Id, ro
             npc.symbol(),
         );
     }
-    move_npc(world, view, npc_id, Location::Room(room_id))?;
+    move_npc(world, view, &npc_id, Location::Room(room_id))?;
     Ok(())
 }
 
@@ -940,7 +940,7 @@ pub fn despawn_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Id) -> Resul
         "└─ action: despawning NPC '{}'",
         symbol_or_unknown(&world.npcs, &npc_id)
     );
-    move_npc(world, view, npc_id, Location::Nowhere)?;
+    move_npc(world, view, &npc_id, Location::Nowhere)?;
     Ok(())
 }
 
@@ -2509,8 +2509,8 @@ mod tests {
                 name: "Lab".into(),
                 base_description: "Original description".into(),
                 overlays: Vec::new(),
-            scenery: Vec::new(),
-            scenery_default: None,
+                scenery: Vec::new(),
+                scenery_default: None,
                 location: Location::Nowhere,
                 visited: false,
                 exits: HashMap::from([("north".into(), Exit::new(dest_id.clone()))]),
@@ -2526,8 +2526,8 @@ mod tests {
                 name: "Hall".into(),
                 base_description: "Hall".into(),
                 overlays: Vec::new(),
-            scenery: Vec::new(),
-            scenery_default: None,
+                scenery: Vec::new(),
+                scenery_default: None,
                 location: Location::Nowhere,
                 visited: false,
                 exits: HashMap::new(),
@@ -2543,8 +2543,8 @@ mod tests {
                 name: "Vault".into(),
                 base_description: "Vault".into(),
                 overlays: Vec::new(),
-            scenery: Vec::new(),
-            scenery_default: None,
+                scenery: Vec::new(),
+                scenery_default: None,
                 location: Location::Nowhere,
                 visited: false,
                 exits: HashMap::new(),
@@ -2594,8 +2594,8 @@ mod tests {
                 name: "Lab".into(),
                 base_description: "Original description".into(),
                 overlays: Vec::new(),
-            scenery: Vec::new(),
-            scenery_default: None,
+                scenery: Vec::new(),
+                scenery_default: None,
                 location: Location::Nowhere,
                 visited: false,
                 exits: HashMap::new(),

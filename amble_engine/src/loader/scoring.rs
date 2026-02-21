@@ -42,7 +42,7 @@ impl ScoringConfig {
         }
     }
 
-    /// Build a scoring configuration from the compiled WorldDef data.
+    /// Build a scoring configuration from the compiled `WorldDef` data.
     pub fn from_def(def: &ScoringDef) -> Self {
         let defaults = ScoringDef::default();
         let mut ranks = if def.ranks.is_empty() {

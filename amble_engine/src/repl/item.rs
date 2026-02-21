@@ -175,7 +175,7 @@ pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, m
         IngestMode::Drink => ItemAbility::Drink,
         IngestMode::Inhale => ItemAbility::Inhale,
     };
-    if let Some(uses_left) = consume(world, &item_id, ability)? {
+    if let Some(uses_left) = consume(world, &item_id, &ability)? {
         if uses_left == 0 {
             view.push(ViewItem::ActionSuccess(format!(
                 "The {} has no more uses left.",
@@ -304,7 +304,7 @@ pub fn use_item_on_handler(
     }
     // consume 1 use if consumable. Obviously.
     if tool_is_consumable {
-        let uses_left = consume(world, &tool_id, used_ability)?;
+        let uses_left = consume(world, &tool_id, &used_ability)?;
         if let Some(uses_left) = uses_left {
             if uses_left == 0 {
                 view.push(ViewItem::ActionSuccess(format!(

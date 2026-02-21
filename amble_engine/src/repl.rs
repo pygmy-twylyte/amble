@@ -425,7 +425,7 @@ pub fn check_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()>
                     && npc.location != new_location
                 {
                     movement.last_moved_turn = current_turn;
-                    move_npc(world, view, npc_id, new_location)?;
+                    move_npc(world, view, &npc_id, new_location)?;
                 }
             }
         }

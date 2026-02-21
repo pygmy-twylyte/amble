@@ -242,112 +242,7 @@ pub fn validate_world(world: &WorldDef) -> Vec<ValidationError> {
     errors
 }
 
-#[cfg(test)]
-mod tests {
-    use std::collections::BTreeMap;
-
-    use super::*;
-
-    fn room(id: &str) -> RoomDef {
-        RoomDef {
-            id: id.to_string(),
-            name: format!("Room {id}"),
-            desc: "Test room".into(),
-            visited: false,
-            exits: Vec::new(),
-            overlays: Vec::new(),
-            scenery: Vec::new(),
-            scenery_default: None,
-        }
-    }
-
-    fn base_world() -> WorldDef {
-        WorldDef {
-            game: GameDef {
-                title: "Demo".into(),
-                intro: "Intro".into(),
-                player: PlayerDef {
-                    name: "Player".into(),
-                    description: "A hero".into(),
-                    start_room: "start".into(),
-                    max_hp: 10,
-                },
-                scoring: ScoringDef::default(),
-                ..GameDef::default()
-            },
-            rooms: vec![room("start")],
-            ..WorldDef::default()
-        }
-    }
-
-    fn item_in_room(id: &str, room_id: &str) -> ItemDef {
-        ItemDef {
-            id: id.to_string(),
-            name: format!("Item {id}"),
-            desc: "Test item".into(),
-            movability: Movability::Free,
-            container_state: None,
-            location: LocationRef::Room(room_id.to_string()),
-            visibility: ItemVisibility::Listed,
-            visible_when: None,
-            aliases: Vec::new(),
-            abilities: Vec::new(),
-            interaction_requires: BTreeMap::new(),
-            text: None,
-            consumable: None,
-        }
-    }
-
-    fn trigger_with_condition(name: &str, condition: ConditionExpr) -> TriggerDef {
-        TriggerDef {
-            name: name.to_string(),
-            note: None,
-            only_once: false,
-            event: EventDef::Always,
-            conditions: condition,
-            actions: Vec::new(),
-        }
-    }
-
-    #[test]
-    fn duplicate_ids_are_reported() {
-        let mut world = base_world();
-        world.rooms = vec![room("same"), room("same")];
-
-        let errors = validate_world(&world);
-        assert!(
-            errors
-                .iter()
-                .any(|err| matches!(err, ValidationError::DuplicateId { kind, id } if *kind == "room" && id == "same"))
-        );
-    }
-
-    #[test]
-    fn missing_references_are_reported() {
-        let mut world = base_world();
-        world.items = vec![item_in_room("lantern", "missing_room")];
-
-        let errors = validate_world(&world);
-        assert!(errors.iter().any(|err| matches!(err, ValidationError::MissingReference { kind, id, .. } if *kind == "room" && id == "missing_room")));
-    }
-
-    #[test]
-    fn invalid_chance_percent_is_reported() {
-        let mut world = base_world();
-        world.triggers = vec![trigger_with_condition(
-            "chance",
-            ConditionExpr::Pred(ConditionDef::ChancePercent { percent: 0.0 }),
-        )];
-
-        let errors = validate_world(&world);
-        assert!(
-            errors
-                .iter()
-                .any(|err| matches!(err, ValidationError::InvalidValue { .. }))
-        );
-    }
-}
-
+/// Hashsets of entity IDs used to verify existence / prevent duplication
 struct IdSets<'a> {
     rooms: &'a HashSet<String>,
     items: &'a HashSet<String>,
@@ -356,6 +251,7 @@ struct IdSets<'a> {
     goals: &'a HashSet<String>,
 }
 
+/// Add entity IDs to the tracker. Stores error if any are duplicates.
 fn track_ids<'a>(
     kind: &'static str,
     ids: impl Iterator<Item = &'a str>,
@@ -372,6 +268,7 @@ fn track_ids<'a>(
     }
 }
 
+/// Verify that an entity `id` is registered, tracking errors if any missing.
 fn check_ref(kind: &'static str, id: &str, set: &HashSet<String>, context: String, errors: &mut Vec<ValidationError>) {
     if !set.contains(id) {
         errors.push(ValidationError::MissingReference {
@@ -382,6 +279,7 @@ fn check_ref(kind: &'static str, id: &str, set: &HashSet<String>, context: Strin
     }
 }
 
+/// Verify that a given location exists.
 fn validate_location(loc: &LocationRef, ids: &IdSets<'_>, errors: &mut Vec<ValidationError>, context: &str) {
     match loc {
         LocationRef::Inventory | LocationRef::Nowhere => {},
@@ -397,6 +295,7 @@ fn validate_location(loc: &LocationRef, ids: &IdSets<'_>, errors: &mut Vec<Valid
     }
 }
 
+/// Verify that entities contained within overlay condition definitions exist.
 fn validate_overlay_condition(
     cond: &OverlayCondDef,
     ids: &IdSets<'_>,
@@ -676,5 +575,111 @@ fn validate_action(action: &ActionDef, ids: &IdSets<'_>, errors: &mut Vec<Valida
                 validate_action(action, ids, errors, context);
             }
         },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+
+    use super::*;
+
+    fn room(id: &str) -> RoomDef {
+        RoomDef {
+            id: id.to_string(),
+            name: format!("Room {id}"),
+            desc: "Test room".into(),
+            visited: false,
+            exits: Vec::new(),
+            overlays: Vec::new(),
+            scenery: Vec::new(),
+            scenery_default: None,
+        }
+    }
+
+    fn base_world() -> WorldDef {
+        WorldDef {
+            game: GameDef {
+                title: "Demo".into(),
+                intro: "Intro".into(),
+                player: PlayerDef {
+                    name: "Player".into(),
+                    description: "A hero".into(),
+                    start_room: "start".into(),
+                    max_hp: 10,
+                },
+                scoring: ScoringDef::default(),
+                ..GameDef::default()
+            },
+            rooms: vec![room("start")],
+            ..WorldDef::default()
+        }
+    }
+
+    fn item_in_room(id: &str, room_id: &str) -> ItemDef {
+        ItemDef {
+            id: id.to_string(),
+            name: format!("Item {id}"),
+            desc: "Test item".into(),
+            movability: Movability::Free,
+            container_state: None,
+            location: LocationRef::Room(room_id.to_string()),
+            visibility: ItemVisibility::Listed,
+            visible_when: None,
+            aliases: Vec::new(),
+            abilities: Vec::new(),
+            interaction_requires: BTreeMap::new(),
+            text: None,
+            consumable: None,
+        }
+    }
+
+    fn trigger_with_condition(name: &str, condition: ConditionExpr) -> TriggerDef {
+        TriggerDef {
+            name: name.to_string(),
+            note: None,
+            only_once: false,
+            event: EventDef::Always,
+            conditions: condition,
+            actions: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn duplicate_ids_are_reported() {
+        let mut world = base_world();
+        world.rooms = vec![room("same"), room("same")];
+
+        let errors = validate_world(&world);
+        assert!(
+            errors
+                .iter()
+                .any(|err| matches!(err, ValidationError::DuplicateId { kind, id } if *kind == "room" && id == "same"))
+        );
+    }
+
+    #[test]
+    fn missing_references_are_reported() {
+        let mut world = base_world();
+        world.items = vec![item_in_room("lantern", "missing_room")];
+
+        let errors = validate_world(&world);
+        assert!(errors.iter().any(|err| matches!(err, ValidationError::MissingReference { kind, id, .. } if *kind == "room" && id == "missing_room")));
+    }
+
+    #[test]
+    fn invalid_chance_percent_is_reported() {
+        let mut world = base_world();
+        world.triggers = vec![trigger_with_condition(
+            "chance",
+            ConditionExpr::Pred(ConditionDef::ChancePercent { percent: 0.0 }),
+        )];
+
+        let errors = validate_world(&world);
+        assert!(
+            errors
+                .iter()
+                .any(|err| matches!(err, ValidationError::InvalidValue { .. }))
+        );
     }
 }

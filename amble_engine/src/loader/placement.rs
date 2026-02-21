@@ -1,6 +1,6 @@
 //! Placement helpers for populating rooms, containers, and inventories.
 //!
-//! WorldDef items and NPCs already carry location data; these helpers apply
+//! `WorldDef` items and NPCs already carry location data; these helpers apply
 //! those locations to room contents and inventories after the player is built.
 
 use anyhow::{Context, Result, anyhow};

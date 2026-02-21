@@ -5,7 +5,6 @@
 
 use std::collections::HashSet;
 
-use anyhow::Result;
 use log::info;
 
 use amble_data::PlayerDef;
@@ -16,10 +15,10 @@ use crate::player::{Flag, Player};
 use crate::world::Location;
 
 /// Build `Player` from player definition.
-pub fn build_player(def: &PlayerDef) -> Result<Player> {
-    let flags: HashSet<Flag> = HashSet::new();
+pub fn build_player(def: &PlayerDef) -> Player {
+    info!("building player character from definition");
 
-    let player = Player {
+    Player {
         id: "player".to_string(),
         symbol: "player".to_string(),
         name: def.name.clone(),
@@ -27,10 +26,8 @@ pub fn build_player(def: &PlayerDef) -> Result<Player> {
         location: Location::Room(def.start_room.clone()),
         location_history: Vec::new(),
         inventory: HashSet::<Id>::default(),
-        flags,
+        flags: HashSet::<Flag>::default(),
         score: 0,
         health: HealthState::new_at_max(def.max_hp),
-    };
-    info!("built player character from definition");
-    Ok(player)
+    }
 }

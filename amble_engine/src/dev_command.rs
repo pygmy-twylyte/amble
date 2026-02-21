@@ -47,7 +47,7 @@ pub fn parse_dev_command(input: &str, view: &mut View) -> Option<Command> {
     }
 
     let words: Vec<&str> = trimmed.trim_start_matches(':').split_whitespace().collect();
-    let maybe_command = match words.as_slice() {
+    match words.as_slice() {
         ["help", "dev"] => Some(Command::HelpDev),
         ["npcs"] => Some(Command::ListNpcs),
         ["flags"] => Some(Command::ListFlags),
@@ -82,10 +82,8 @@ pub fn parse_dev_command(input: &str, view: &mut View) -> Option<Command> {
         }),
         ["reset-seq", seq_name] => Some(Command::ResetSeq((*seq_name).into())),
         ["set-flag", flag_name] => Some(Command::SetFlag((*flag_name).into())),
-
         _ => None,
-    };
-    maybe_command
+    }
 }
 
 fn parse_note_command(input: &str) -> Option<String> {

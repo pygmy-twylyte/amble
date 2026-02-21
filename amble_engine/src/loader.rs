@@ -51,6 +51,8 @@ pub fn active_world_path() -> Option<PathBuf> {
 ///
 /// Looks for `data/worlds/*.ron` when a `worlds/` directory exists, falling back
 /// to `data/world.ron` if none are found.
+/// # Errors
+/// - on file/directory access problems
 pub fn discover_world_sources() -> Result<Vec<WorldSource>> {
     let data_root = data_path("");
     let worlds_dir = data_root.join("worlds");
@@ -123,7 +125,7 @@ pub fn load_world() -> Result<AmbleWorld> {
 /// Errors bubble up from file IO, deserialization, or missing references.
 pub fn load_world_from_path(world_ron_path: &Path) -> Result<AmbleWorld> {
     info!("loading selected world definition from: {}", world_ron_path.display());
-    let worlddef = load_worlddef(&world_ron_path).context("while loading worlddef from file")?;
+    let worlddef = load_worlddef(world_ron_path).context("while loading worlddef from file")?;
 
     validate_worlddef(&worlddef)?;
     info!("validation passed, building AmbleWorld for \"{}\"", worlddef.game.title);
@@ -197,7 +199,7 @@ fn derive_world_title(def: &WorldDef, path: &Path) -> String {
         .to_string()
 }
 
-/// Validate the compiled WorldDef and return a single aggregated error.
+/// Validate the compiled `WorldDef` and return a single aggregated error.
 fn validate_worlddef(def: &WorldDef) -> Result<()> {
     let errors = amble_data::validate_world(def);
     if errors.is_empty() {

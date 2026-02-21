@@ -426,11 +426,11 @@ pub fn calculate_next_location(movement: &mut NpcMovement) -> Option<Location> {
 /// Moves an NPC to a new `Location`.
 /// # Errors
 /// - if '`move_to`' is a location other than a 'Room' or 'Nowhere'
-pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Id, move_to: Location) -> Result<()> {
+pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: &Id, move_to: Location) -> Result<()> {
     // update location in NPC instance
     let npc = world
         .npcs
-        .get(&npc_id)
+        .get(npc_id)
         .with_context(|| format!("looking up npc_id {npc_id} for move"))?;
 
     // only valid locations to move to are "nowhere" (a despawn) or a room (spawn/move)
@@ -486,7 +486,7 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Id, move_to: Lo
                 world.player.name()
             );
         }
-        world.rooms.get_mut(&uuid).map(|room| room.npcs.remove(&npc_id));
+        world.rooms.get_mut(&uuid).map(|room| room.npcs.remove(npc_id));
     }
     if let Some(uuid) = to_room_id {
         if uuid == player_room_id {
@@ -505,7 +505,7 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: Id, move_to: Lo
     }
 
     // finally update NPC instance's location field
-    if let Some(npc) = world.npcs.get_mut(&npc_id) {
+    if let Some(npc) = world.npcs.get_mut(npc_id) {
         npc.location = move_to;
     }
 
@@ -893,12 +893,7 @@ mod tests {
 
         // Move NPC from player's room to another room (should create NpcLeft)
         world.npcs.get_mut(&npc_id).unwrap().location = Location::Room(player_room_id.clone());
-        let _ = move_npc(
-            &mut world,
-            &mut view,
-            npc_id.clone(),
-            Location::Room(other_room_id.clone()),
-        );
+        let _ = move_npc(&mut world, &mut view, &npc_id, Location::Room(other_room_id.clone()));
 
         // Check that NpcLeft ViewItem was created
         let left_items: Vec<_> = view
@@ -916,12 +911,7 @@ mod tests {
         view.items.clear();
 
         // Move NPC from another room to player's room (should create NpcEntered)
-        let _ = move_npc(
-            &mut world,
-            &mut view,
-            npc_id.clone(),
-            Location::Room(player_room_id.clone()),
-        );
+        let _ = move_npc(&mut world, &mut view, &npc_id, Location::Room(player_room_id.clone()));
 
         // Check that NpcEntered ViewItem was created
         let entered_items: Vec<_> = view
@@ -989,12 +979,7 @@ mod tests {
         // Simulate NPC entering, speaking, then leaving
         // First: NPC enters player's room
         world.npcs.get_mut(&npc_id).unwrap().location = Location::Room(other_room_id.clone());
-        let _ = move_npc(
-            &mut world,
-            &mut view,
-            npc_id.clone(),
-            Location::Room(player_room_id.clone()),
-        );
+        let _ = move_npc(&mut world, &mut view, &npc_id, Location::Room(player_room_id.clone()));
 
         // Add some speech
         view.push(ViewItem::NpcSpeech {
@@ -1003,12 +988,7 @@ mod tests {
         });
 
         // Then: NPC leaves player's room
-        let _ = move_npc(
-            &mut world,
-            &mut view,
-            npc_id.clone(),
-            Location::Room(other_room_id.clone()),
-        );
+        let _ = move_npc(&mut world, &mut view, &npc_id, Location::Room(other_room_id.clone()));
 
         // Verify we have all three event types
         assert_eq!(

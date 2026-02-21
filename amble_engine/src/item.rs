@@ -36,8 +36,8 @@ use variantly::Variantly;
 /// '`interaction_requires`' maps a type of interaction (a thing that can be done to this item using another item) to an ability.
 ///     e.g. `ItemInteractionType::Burn` => `ItemAbility::Ignite`
 ///
-/// Combined with an appropriate ActOnItem-based trigger, this would mean any Item with ItemAbility::Ignite can be
-/// used to Burn this item -- and importantly _only_ items with that ability can be used to Burn it.
+/// Combined with an appropriate ActOnItem-based trigger, this would mean any `Item` with `ItemAbility::Ignite` can be
+/// used to `Burn` this item -- and importantly _only_ items with that ability can be used to Burn it.
 ///
 /// 'consumable' makes an item consumable if present, with number of uses and what to do when
 /// all uses are expended defined in `ConsumableOpts`.
@@ -82,18 +82,13 @@ pub struct Item {
 /// Determines whether an item is listed (shows in room and item contents listings),
 /// scenery (available for some interaction but not specifically listed), or hidden
 /// (currently completely hidden from view).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub enum ItemVisibility {
+    #[default]
     Listed,
     Scenery,
     Hidden,
-}
-
-impl Default for ItemVisibility {
-    fn default() -> Self {
-        ItemVisibility::Listed
-    }
 }
 
 impl WorldObject for Item {
@@ -323,7 +318,7 @@ impl Item {
 /// # Errors
 /// * Returns error if the item id is not found in world.items
 /// * Context will include the item id that failed lookup
-pub fn consume(world: &mut AmbleWorld, item_id: &Id, ability: ItemAbility) -> Result<Option<usize>> {
+pub fn consume(world: &mut AmbleWorld, item_id: &Id, ability: &ItemAbility) -> Result<Option<usize>> {
     let item = world
         .items
         .get_mut(item_id)
@@ -336,7 +331,7 @@ pub fn consume(world: &mut AmbleWorld, item_id: &Id, ability: ItemAbility) -> Re
     // if not consumable, return early with None
     let (uses_left, when_consumed) = if let Some(opts) = &mut item.consumable {
         // decrement uses_left if right ability was used
-        if opts.consume_on.contains(&ability) && opts.uses_left > 0 {
+        if opts.consume_on.contains(ability) && opts.uses_left > 0 {
             opts.uses_left -= 1;
         }
         (opts.uses_left, opts.when_consumed.clone())
@@ -864,7 +859,7 @@ mod tests {
         let mut world = create_test_world();
         let item_id = world.items.keys().next().unwrap().clone();
 
-        let result = consume(&mut world, &item_id, ItemAbility::Use).unwrap();
+        let result = consume(&mut world, &item_id, &ItemAbility::Use).unwrap();
         assert_eq!(result, None);
     }
 
@@ -882,7 +877,7 @@ mod tests {
             when_consumed: ConsumeType::Despawn,
         });
 
-        let result = consume(&mut world, &item_id, ItemAbility::Ignite).unwrap();
+        let result = consume(&mut world, &item_id, &ItemAbility::Ignite).unwrap();
         assert_eq!(result, Some(2));
         assert_eq!(world.items[&item_id].consumable.as_ref().unwrap().uses_left, 2);
     }
@@ -901,7 +896,7 @@ mod tests {
             when_consumed: ConsumeType::Despawn,
         });
 
-        let result = consume(&mut world, &item_id, ItemAbility::Use).unwrap();
+        let result = consume(&mut world, &item_id, &ItemAbility::Use).unwrap();
         assert_eq!(result, Some(3));
         assert_eq!(world.items[&item_id].consumable.as_ref().unwrap().uses_left, 3);
     }

@@ -1,4 +1,4 @@
-//! WorldDef loader and conversion helpers.
+//! `WorldDef` loader and conversion helpers.
 //!
 //! Converts the serialized `WorldDef` data model into runtime engine structs.
 
@@ -37,6 +37,8 @@ use crate::trigger::{ScriptedAction, Trigger, TriggerAction, TriggerCondition};
 use crate::world::{AmbleWorld, Location};
 
 /// Load a `WorldDef` from a RON file.
+/// # Errors
+/// - propagated from file read and RON parse errors
 pub fn load_worlddef(path: &Path) -> Result<WorldDef> {
     let text = fs::read_to_string(path).with_context(|| format!("reading worlddef from '{}'", path.display()))?;
     ron::from_str(&text).with_context(|| format!("parsing worlddef RON from '{}'", path.display()))
@@ -45,39 +47,41 @@ pub fn load_worlddef(path: &Path) -> Result<WorldDef> {
 /// Convert a `WorldDef` into a populated `AmbleWorld`.
 ///
 /// Item/NPC placements are applied later by the placement stage.
+/// # Errors
+/// - propagated from entity (item, room, npc, etc) builders
 pub fn build_world_from_def(def: &WorldDef) -> Result<AmbleWorld> {
     let mut world = AmbleWorld::new_empty();
 
-    world.game_title = def.game.title.clone();
-    world.world_slug = def.game.slug.clone();
-    world.world_author = def.game.author.clone();
-    world.world_version = def.game.version.clone();
-    world.world_blurb = def.game.blurb.clone();
-    world.intro_text = def.game.intro.clone();
+    world.game_title.clone_from(&def.game.title);
+    world.world_slug.clone_from(&def.game.slug);
+    world.world_author.clone_from(&def.game.author);
+    world.world_version.clone_from(&def.game.version);
+    world.world_blurb.clone_from(&def.game.blurb);
+    world.intro_text.clone_from(&def.game.intro);
     world.scoring = ScoringConfig::from_def(&def.game.scoring);
-    world.player = build_player(&def.game.player)?;
+    world.player = build_player(&def.game.player);
 
     world.spinners = build_spinners(&def.spinners);
 
     for room_def in &def.rooms {
-        let room = room_from_def(room_def)?;
+        let room = room_from_def(room_def);
         world.rooms.insert(room.id.clone(), room);
     }
     world.max_score = world.rooms.len();
 
     for npc_def in &def.npcs {
-        let npc = npc_from_def(npc_def)?;
+        let npc = npc_from_def(npc_def);
         world.npcs.insert(npc.id.clone(), npc);
     }
 
     for item_def in &def.items {
-        let item = item_from_def(item_def)?;
+        let item = item_from_def(item_def);
         world.items.insert(item.id.clone(), item);
     }
 
     world.triggers = def.triggers.iter().map(trigger_from_def).collect::<Result<Vec<_>>>()?;
 
-    world.goals = def.goals.iter().map(goal_from_def).collect::<Result<Vec<_>>>()?;
+    world.goals = def.goals.iter().map(goal_from_def).collect::<Vec<_>>();
 
     Ok(world)
 }
@@ -96,12 +100,12 @@ fn build_spinners(defs: &[SpinnerDef]) -> HashMap<SpinnerType, Spinner<String>> 
     spinners
 }
 
-fn room_from_def(def: &RoomDef) -> Result<Room> {
+fn room_from_def(def: &RoomDef) -> Room {
     let mut exits = HashMap::new();
     for exit in &def.exits {
         exits.insert(exit.direction.clone(), exit_from_def(exit));
     }
-    let overlays = def.overlays.iter().map(overlay_from_def).collect::<Result<Vec<_>>>()?;
+    let overlays = def.overlays.iter().map(overlay_from_def).collect::<Vec<_>>();
     let scenery = def
         .scenery
         .iter()
@@ -111,7 +115,7 @@ fn room_from_def(def: &RoomDef) -> Result<Room> {
         })
         .collect::<Vec<_>>();
 
-    Ok(Room {
+    Room {
         id: def.id.clone(),
         symbol: def.id.clone(),
         name: def.name.clone(),
@@ -124,7 +128,7 @@ fn room_from_def(def: &RoomDef) -> Result<Room> {
         exits,
         contents: HashSet::new(),
         npcs: HashSet::new(),
-    })
+    }
 }
 
 fn exit_from_def(def: &ExitDef) -> Exit {
@@ -138,20 +142,20 @@ fn exit_from_def(def: &ExitDef) -> Exit {
     }
 }
 
-fn overlay_from_def(def: &OverlayDef) -> Result<RoomOverlay> {
+fn overlay_from_def(def: &OverlayDef) -> RoomOverlay {
     let conditions = def
         .conditions
         .iter()
         .map(overlay_condition_from_def)
-        .collect::<Result<Vec<_>>>()?;
-    Ok(RoomOverlay {
+        .collect::<Vec<_>>();
+    RoomOverlay {
         conditions,
         text: def.text.clone(),
-    })
+    }
 }
 
-fn overlay_condition_from_def(def: &OverlayCondDef) -> Result<OverlayCondition> {
-    Ok(match def {
+fn overlay_condition_from_def(def: &OverlayCondDef) -> OverlayCondition {
+    match def {
         OverlayCondDef::FlagSet { flag } => OverlayCondition::FlagSet { flag: flag.clone() },
         OverlayCondDef::FlagUnset { flag } => OverlayCondition::FlagUnset { flag: flag.clone() },
         OverlayCondDef::FlagComplete { flag } => OverlayCondition::FlagComplete { flag: flag.clone() },
@@ -169,20 +173,20 @@ fn overlay_condition_from_def(def: &OverlayCondDef) -> Result<OverlayCondition> 
             item_id: item.clone(),
             room_id: room.clone(),
         },
-    })
+    }
 }
 
-fn item_from_def(def: &ItemDef) -> Result<Item> {
+fn item_from_def(def: &ItemDef) -> Item {
     let abilities = def.abilities.iter().map(item_ability_from_def).collect::<HashSet<_>>();
     let mut interaction_requires = HashMap::new();
     for (interaction, ability) in &def.interaction_requires {
-        interaction_requires.insert(item_interaction_from_def(interaction), item_ability_from_def(ability));
+        interaction_requires.insert(item_interaction_from_def(*interaction), item_ability_from_def(ability));
     }
-    let consumable = def.consumable.as_ref().map(consumable_from_def).transpose()?;
-    let visibility = item_visibility_from_def(&def.visibility);
+    let consumable = def.consumable.as_ref().map(consumable_from_def);
+    let visibility = item_visibility_from_def(def.visibility);
     let visible_when = def.visible_when.as_ref().map(condition_expr_from_def);
 
-    Ok(Item {
+    Item {
         id: def.id.clone(),
         symbol: def.id.clone(),
         name: def.name.clone(),
@@ -192,16 +196,16 @@ fn item_from_def(def: &ItemDef) -> Result<Item> {
         visible_when,
         aliases: def.aliases.clone(),
         movability: movability_from_def(&def.movability),
-        container_state: def.container_state.as_ref().map(container_state_from_def),
+        container_state: def.container_state.map(container_state_from_def),
         contents: HashSet::new(),
         abilities,
         interaction_requires,
         text: def.text.clone(),
         consumable,
-    })
+    }
 }
 
-fn consumable_from_def(def: &ConsumableDef) -> Result<ConsumableOpts> {
+fn consumable_from_def(def: &ConsumableDef) -> ConsumableOpts {
     let consume_on = def.consume_on.iter().map(item_ability_from_def).collect::<HashSet<_>>();
     let when_consumed = match &def.when_consumed {
         ConsumeTypeDef::Despawn => ConsumeType::Despawn,
@@ -212,21 +216,21 @@ fn consumable_from_def(def: &ConsumableDef) -> Result<ConsumableOpts> {
             replacement: replacement.clone(),
         },
     };
-    Ok(ConsumableOpts {
+    ConsumableOpts {
         uses_left: def.uses_left,
         consume_on,
         when_consumed,
-    })
+    }
 }
 
-fn npc_from_def(def: &NpcDef) -> Result<Npc> {
+fn npc_from_def(def: &NpcDef) -> Npc {
     let dialogue = def
         .dialogue
         .iter()
         .map(|(state, lines)| (npc_state_from_def(state), lines.clone()))
         .collect::<HashMap<_, _>>();
-    let movement = def.movement.as_ref().map(npc_movement_from_def).transpose()?;
-    Ok(Npc {
+    let movement = def.movement.as_ref().map(npc_movement_from_def);
+    Npc {
         id: def.id.clone(),
         symbol: def.id.clone(),
         name: def.name.clone(),
@@ -237,10 +241,10 @@ fn npc_from_def(def: &NpcDef) -> Result<Npc> {
         state: npc_state_from_def(&def.state),
         movement,
         health: HealthState::new_at_max(def.max_hp),
-    })
+    }
 }
 
-fn npc_movement_from_def(def: &NpcMovementDef) -> Result<NpcMovement> {
+fn npc_movement_from_def(def: &NpcMovementDef) -> NpcMovement {
     let active = def.active.unwrap_or(true);
     let loop_route = def.loop_route.unwrap_or(true);
     let timing = match def.timing {
@@ -258,13 +262,13 @@ fn npc_movement_from_def(def: &NpcMovementDef) -> Result<NpcMovement> {
             rooms: def.rooms.iter().cloned().collect(),
         },
     };
-    Ok(NpcMovement {
+    NpcMovement {
         movement_type,
         timing,
         active,
         last_moved_turn: 0,
         paused_until: None,
-    })
+    }
 }
 
 fn trigger_from_def(def: &TriggerDef) -> Result<Trigger> {
@@ -288,8 +292,8 @@ fn trigger_from_def(def: &TriggerDef) -> Result<Trigger> {
     })
 }
 
-fn goal_from_def(def: &GoalDef) -> Result<Goal> {
-    Ok(Goal {
+fn goal_from_def(def: &GoalDef) -> Goal {
+    Goal {
         id: def.id.clone(),
         name: def.name.clone(),
         description: def.description.clone(),
@@ -297,7 +301,7 @@ fn goal_from_def(def: &GoalDef) -> Result<Goal> {
         activate_when: def.activate_when.as_ref().map(goal_condition_from_def),
         finished_when: goal_condition_from_def(&def.finished_when),
         failed_when: def.failed_when.as_ref().map(goal_condition_from_def),
-    })
+    }
 }
 
 fn scripted_action_from_def(def: &ActionDef) -> Result<ScriptedAction> {
@@ -305,6 +309,7 @@ fn scripted_action_from_def(def: &ActionDef) -> Result<ScriptedAction> {
     Ok(ScriptedAction::with_priority(action, def.priority))
 }
 
+#[allow(clippy::too_many_lines)]
 fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
     Ok(match def {
         ActionKind::ShowMessage { text } => TriggerAction::ShowMessage(text.clone()),
@@ -430,7 +435,7 @@ fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
         ActionKind::UnlockItem { item } => TriggerAction::UnlockItem(item.clone()),
         ActionKind::SetContainerState { item, state } => TriggerAction::SetContainerState {
             item_id: item.clone(),
-            state: state.as_ref().map(container_state_from_def),
+            state: state.map(container_state_from_def),
         },
         ActionKind::SetItemDescription { item, text } => TriggerAction::SetItemDescription {
             item_id: item.clone(),
@@ -546,9 +551,9 @@ fn item_patch_from_def(def: &ItemPatchDef) -> crate::trigger::ItemPatch {
         desc: def.desc.clone(),
         text: def.text.clone(),
         movability: def.movability.as_ref().map(movability_from_def),
-        container_state: def.container_state.as_ref().map(container_state_from_def),
+        container_state: def.container_state.map(container_state_from_def),
         remove_container_state: def.remove_container_state,
-        visibility: def.visibility.as_ref().map(item_visibility_from_def),
+        visibility: def.visibility.map(item_visibility_from_def),
         visible_when: def.visible_when.as_ref().map(condition_expr_from_def),
         aliases: def.aliases.clone(),
         add_abilities: def.add_abilities.iter().map(item_ability_from_def).collect(),
@@ -704,13 +709,13 @@ fn event_condition_from_def(def: &EventDef) -> Option<TriggerCondition> {
             target,
             interaction,
         } => TriggerCondition::UseItemOnItem {
-            interaction: item_interaction_from_def(interaction),
+            interaction: item_interaction_from_def(*interaction),
             target_id: target.clone(),
             tool_id: tool.clone(),
         },
         EventDef::ActOnItem { target, action } => TriggerCondition::ActOnItem {
             target_id: target.clone(),
-            action: item_interaction_from_def(action),
+            action: item_interaction_from_def(*action),
         },
         EventDef::GiveToNpc { item, npc } => TriggerCondition::GiveToNpc {
             item_id: item.clone(),
@@ -726,7 +731,7 @@ fn event_condition_from_def(def: &EventDef) -> Option<TriggerCondition> {
         },
         EventDef::Ingest { item, mode } => TriggerCondition::Ingest {
             item_id: item.clone(),
-            mode: ingest_mode_from_def(mode),
+            mode: ingest_mode_from_def(*mode),
         },
         EventDef::PlayerDeath => TriggerCondition::PlayerDeath,
         EventDef::NpcDeath { npc } => TriggerCondition::NpcDeath(npc.clone()),
@@ -751,7 +756,7 @@ fn movability_from_def(def: &DefMovability) -> Movability {
     }
 }
 
-fn container_state_from_def(def: &DefContainerState) -> ContainerState {
+fn container_state_from_def(def: DefContainerState) -> ContainerState {
     match def {
         DefContainerState::Open => ContainerState::Open,
         DefContainerState::Closed => ContainerState::Closed,
@@ -788,7 +793,7 @@ fn item_ability_from_def(def: &DefItemAbility) -> ItemAbility {
     }
 }
 
-fn item_interaction_from_def(def: &DefItemInteractionType) -> ItemInteractionType {
+fn item_interaction_from_def(def: DefItemInteractionType) -> ItemInteractionType {
     match def {
         DefItemInteractionType::Attach => ItemInteractionType::Attach,
         DefItemInteractionType::Break => ItemInteractionType::Break,
@@ -808,7 +813,7 @@ fn item_interaction_from_def(def: &DefItemInteractionType) -> ItemInteractionTyp
     }
 }
 
-fn item_visibility_from_def(def: &DefItemVisibility) -> ItemVisibility {
+fn item_visibility_from_def(def: DefItemVisibility) -> ItemVisibility {
     match def {
         DefItemVisibility::Listed => ItemVisibility::Listed,
         DefItemVisibility::Scenery => ItemVisibility::Scenery,
@@ -828,7 +833,7 @@ fn npc_state_from_def(def: &DefNpcState) -> NpcState {
     }
 }
 
-fn ingest_mode_from_def(def: &IngestMode) -> EngineIngestMode {
+fn ingest_mode_from_def(def: IngestMode) -> EngineIngestMode {
     match def {
         IngestMode::Eat => EngineIngestMode::Eat,
         IngestMode::Drink => EngineIngestMode::Drink,

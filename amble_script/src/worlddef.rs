@@ -196,7 +196,7 @@ fn item_to_def(item: &ItemAst) -> Result<ItemDef, WorldDefError> {
     let abilities = item
         .abilities
         .iter()
-        .map(|ab| item_ability_from_ast(ab))
+        .map(item_ability_from_ast)
         .collect::<Result<Vec<_>, _>>()?;
     let interaction_requires = item
         .interaction_requires
