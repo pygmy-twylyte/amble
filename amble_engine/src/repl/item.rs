@@ -70,11 +70,27 @@ use log::info;
 /// Returns an error if the player's current room cannot be resolved or if the scoped items
 /// referenced during trigger evaluation cannot be found.
 pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) -> Result<()> {
-    let room_id = world.player.location.room_id()?;
-    let item_id = match entity_search::find_item_match(world, item_str, SearchScope::TouchableItems(room_id)) {
+    let room_id = world.player_room_ref()?.id();
+    let item_id = match entity_search::find_item_match(world, item_str, SearchScope::TouchableItems(room_id.clone())) {
         Ok(uuid) => uuid,
-        Err(SearchError::NoMatchingName(_)) => {
-            entity_not_found(world, view, item_str);
+        Err(SearchError::NoMatchingName(input)) => {
+            if let Some(room) = world.rooms.get(&room_id)
+                && let Some(entry) = room.find_scenery(&input)
+            {
+                view.push(ViewItem::ActionSuccess(format!(
+                    "You touch the {}. It's firmly part of the scenery.",
+                    entry.name.item_style()
+                )));
+                info!(
+                    "{} touched scenery \"{}\" in room {}",
+                    world.player.name(),
+                    entry.name,
+                    room.symbol()
+                );
+                world.turn_count += 1;
+                return Ok(());
+            }
+            entity_not_found(world, view, input.as_str());
             return Ok(());
         },
         Err(e) => bail!(e),
