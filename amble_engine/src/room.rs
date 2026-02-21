@@ -178,6 +178,14 @@ impl ItemHolder for Room {
     }
 }
 impl Room {
+    /// Finds a scenery entry whose name loosely matches the supplied pattern (case-insensitive substring).
+    pub fn find_scenery(&self, pattern: &str) -> Option<&RoomScenery> {
+        let needle = pattern.to_lowercase();
+        self.scenery
+            .iter()
+            .find(|entry| entry.name.to_lowercase().contains(&needle))
+    }
+
     /// Displays full description, exit, and NPC information for the `Room`.
     ///
     /// # Errors
