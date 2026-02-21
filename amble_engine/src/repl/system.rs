@@ -491,11 +491,10 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> 
             return false;
         },
     };
-    if save_dir != Path::new(SAVE_DIR) {
-        if let Ok(legacy_slots) = save_files::collect_save_slots(Path::new(SAVE_DIR)) {
+    if save_dir != Path::new(SAVE_DIR)
+        && let Ok(legacy_slots) = save_files::collect_save_slots(Path::new(SAVE_DIR)) {
             slots.extend(legacy_slots);
         }
-    }
 
     slots.retain(|slot| slot.slot == gamefile);
     slots.sort_by(|a, b| b.modified.cmp(&a.modified).then(a.version.cmp(&b.version)));
@@ -530,11 +529,10 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> 
                         "Loaded '{gamefile}' saved under v{original_version}, metadata indicates current version match."
                     );
                 }
-                if let Ok(sources) = discover_world_sources() {
-                    if let Some(source) = match_world_source(&new_world, &sources) {
+                if let Ok(sources) = discover_world_sources()
+                    && let Some(source) = match_world_source(&new_world, &sources) {
                         set_active_world_path(source.path.clone());
                     }
-                }
                 set_active_save_dir(save_dir_for_world(&new_world));
                 *world = new_world;
                 view.push(ViewItem::ActionSuccess(format!(
@@ -591,11 +589,10 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> 
 }
 
 fn match_world_source<'a>(world: &AmbleWorld, sources: &'a [WorldSource]) -> Option<&'a WorldSource> {
-    if !world.world_slug.trim().is_empty() {
-        if let Some(source) = sources.iter().find(|source| source.slug == world.world_slug) {
+    if !world.world_slug.trim().is_empty()
+        && let Some(source) = sources.iter().find(|source| source.slug == world.world_slug) {
             return Some(source);
         }
-    }
     if !world.game_title.trim().is_empty() {
         return sources.iter().find(|source| source.title == world.game_title);
     }

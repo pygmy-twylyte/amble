@@ -225,7 +225,7 @@ impl ThemeManager {
         let theme = self
             .themes
             .get(name)
-            .ok_or_else(|| anyhow::anyhow!("Theme '{}' not found", name))?;
+            .ok_or_else(|| anyhow::anyhow!("Theme '{name}' not found"))?;
 
         let mut current = self
             .current_theme

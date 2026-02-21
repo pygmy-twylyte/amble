@@ -58,9 +58,7 @@ pub struct SaveFileEntry {
 /// Return the active save directory used for completions and save operations.
 pub fn active_save_dir() -> PathBuf {
     ACTIVE_SAVE_DIR
-        .read()
-        .map(|guard| guard.clone())
-        .unwrap_or_else(|_| PathBuf::from(SAVE_DIR))
+        .read().map_or_else(|_| PathBuf::from(SAVE_DIR), |guard| guard.clone())
 }
 
 /// Set the active save directory.

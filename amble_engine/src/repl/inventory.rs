@@ -477,7 +477,7 @@ pub(crate) fn validate_and_transfer_from_npc(
     let npc = world
         .npcs
         .get(&npc_id)
-        .ok_or(anyhow!("container {} lookup failed", npc_id))?;
+        .ok_or(anyhow!("container {npc_id} lookup failed"))?;
     tx_data.vessel_name = npc.name.clone();
 
     match find_item_match(world, item_pattern, SearchScope::NpcInventory(npc_id.clone())) {
@@ -499,7 +499,7 @@ pub(crate) fn validate_and_transfer_from_npc(
             return Ok(());
         },
         Err(e) => bail!(e),
-    };
+    }
 
     transfer_to_player(world, view, &tx_data);
     // both generic `take` and `take_from_npc` events fire because triggers
@@ -508,9 +508,9 @@ pub(crate) fn validate_and_transfer_from_npc(
         world,
         view,
         &[
-            TriggerCondition::Take(tx_data.loot_id.to_string()),
+            TriggerCondition::Take(tx_data.loot_id.clone()),
             TriggerCondition::TakeFromNpc {
-                item_id: tx_data.loot_id.to_string(),
+                item_id: tx_data.loot_id.clone(),
                 npc_id: npc_id.clone(),
             },
         ],
@@ -577,7 +577,7 @@ pub(crate) fn validate_and_transfer_from_item(
             return Ok(());
         },
         Err(e) => bail!(e),
-    };
+    }
 
     // report failure and return early if loot item is immovable
     if let Some(loot) = world.items.get(&tx_data.loot_id)
@@ -626,26 +626,26 @@ pub(crate) fn validate_and_transfer_from_item(
 /// reflect the current world state.
 pub(crate) fn transfer_to_player(world: &mut AmbleWorld, view: &mut View, tx_data: &TransferData) {
     // Change item location to inventory
-    if let Some(moving_item) = world.get_item_mut(tx_data.loot_id.to_string()) {
+    if let Some(moving_item) = world.get_item_mut(tx_data.loot_id.clone()) {
         moving_item.set_location_inventory();
     }
     // Remove item id from vessel's contents / inventory
     match tx_data.vessel_type {
         VesselType::Item => {
-            if let Some(vessel) = world.get_item_mut(tx_data.vessel_id.to_string()) {
-                vessel.remove_item(tx_data.loot_id.to_string());
+            if let Some(vessel) = world.get_item_mut(tx_data.vessel_id.clone()) {
+                vessel.remove_item(tx_data.loot_id.clone());
             }
         },
         VesselType::Npc => {
             if let Some(vessel) = world.npcs.get_mut(&tx_data.vessel_id) {
                 // keeps NPC from walking away immediately after a transaction
                 vessel.pause_movement(world.turn_count, 4);
-                vessel.remove_item(tx_data.loot_id.to_string());
+                vessel.remove_item(tx_data.loot_id.clone());
             }
         },
     }
     // Add item to player inventory
-    world.player.add_item(tx_data.loot_id.to_string());
+    world.player.add_item(tx_data.loot_id.clone());
     // Report and log success
     let take_verb = world.spin_core(CoreSpinnerType::TakeVerb, "take");
     view.push(ViewItem::ActionSuccess(format!(
@@ -702,7 +702,7 @@ pub(crate) fn transfer_to_player(world: &mut AmbleWorld, view: &mut View, tx_dat
 /// if world state updates fail due to missing entities, or if trigger evaluation fails.
 ///
 /// # Panics
-/// None... expect is called on a HashMap::get where the key is already known to be present
+/// None... expect is called on a `HashMap::get` where the key is already known to be present
 pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, container: &str) -> Result<()> {
     // get uuid of item and container
     let (item_id, item_name) = match find_item_match(world, item, SearchScope::Inventory) {

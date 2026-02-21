@@ -99,7 +99,7 @@ pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
         let previous_room = world
             .rooms
             .get(&previous_room_id)
-            .ok_or_else(|| anyhow!("invalid previous room in history ({})", previous_room_id))?;
+            .ok_or_else(|| anyhow!("invalid previous room in history ({previous_room_id})"))?;
 
         info!(
             "{} went back to {} ({})",
@@ -224,7 +224,7 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
         let new_room = world
             .rooms
             .get(&destination_id)
-            .ok_or_else(|| anyhow!("invalid move destination ({})", destination_id))?;
+            .ok_or_else(|| anyhow!("invalid move destination ({destination_id})"))?;
 
         info!("{} moving to {} ({})", player_name, new_room.name(), new_room.symbol());
         view.push(ViewItem::TransitionMessage(travel_message));

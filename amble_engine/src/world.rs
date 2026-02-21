@@ -48,7 +48,7 @@ impl Location {
 
 /// Common API shared by rooms, items, NPCs, and the player.
 ///
-/// Note: There is a duplication here. id() and symbol() effectively return different
+/// Note: There is a duplication here. `id()` and `symbol()` effectively return different
 /// views of the same string. It is a throwback to when the engine read TOML and assigned
 /// UUIDs to entities. The DSL symbol strings now *are* the Ids,
 pub trait WorldObject {
@@ -169,7 +169,7 @@ impl AmbleWorld {
             Location::Room(room_id) => self
                 .rooms
                 .get(room_id)
-                .ok_or_else(|| anyhow!("player's room id ({}) not found in world", room_id)),
+                .ok_or_else(|| anyhow!("player's room id ({room_id}) not found in world")),
             _ => Err(anyhow!("player not in a room - located at {:?}", self.player.location)),
         }
     }
@@ -182,7 +182,7 @@ impl AmbleWorld {
             Location::Room(room_id) => self
                 .rooms
                 .get_mut(room_id)
-                .ok_or_else(|| anyhow!("player's room id ({}) not found in world", room_id)),
+                .ok_or_else(|| anyhow!("player's room id ({room_id}) not found in world")),
             _ => Err(anyhow!("player not in a room - located at {:?}", self.player.location)),
         }
     }
@@ -234,7 +234,7 @@ fn collect_room_items(
 }
 
 fn item_is_visible_item(item: &Item, world: &AmbleWorld) -> bool {
-    item.visible_when.as_ref().map_or(true, |cond| cond.eval(world))
+    item.visible_when.as_ref().is_none_or(|cond| cond.eval(world))
 }
 
 /// Returns true if the item passes its visibility condition (if any).

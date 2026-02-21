@@ -1,4 +1,4 @@
-//! ViewItem module
+//! `ViewItem` module
 //!
 //! A `ViewItem` is an enum variant sent to the `View`, which aggregates them, styles them,
 //! organizes them, and displays them before moving to the next turn. Variants contain different

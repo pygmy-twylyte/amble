@@ -88,11 +88,11 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
         info!("player entered: \"{input}\"");
 
         let input = expand_abbreviated_input(&input);
-        let mut command = parse_command(&input, &mut view);
+        let mut command = parse_command(input, &mut view);
         if matches!(command, Command::Unknown)
-            && let Some(move_to_cmd) = check_for_exit_fallback(&input, world.player_room_ref()?.exits.keys())
+            && let Some(move_to_cmd) = check_for_exit_fallback(input, world.player_room_ref()?.exits.keys())
         {
-            command = move_to_cmd
+            command = move_to_cmd;
         }
 
         let dispatch_result = dispatch_command(&command, world, &mut view)?;
@@ -463,22 +463,20 @@ pub fn check_ambient_triggers(world: &mut AmbleWorld, view: &mut View) -> Result
         {
             let trigger = &world.triggers[idx];
             trigger.conditions.for_each_trigger(|cond| {
-                if let TriggerCondition::Ambient { room_ids, spinner } = cond {
-                    if room_ids.is_empty() || room_ids.contains(&current_room_id) {
+                if let TriggerCondition::Ambient { room_ids, spinner } = cond
+                    && (room_ids.is_empty() || room_ids.contains(&current_room_id)) {
                         let message = world.spinners.get(spinner).and_then(Spinner::spin).unwrap_or_default();
                         if !message.is_empty() {
                             view.push(ViewItem::AmbientEvent(format!("{}", message.ambient_trig_style())));
                         }
                         fired = true;
                     }
-                }
             });
         }
-        if fired {
-            if let Some(trigger) = world.triggers.get_mut(idx) {
+        if fired
+            && let Some(trigger) = world.triggers.get_mut(idx) {
                 trigger.fired = true;
             }
-        }
     }
     Ok(())
 }

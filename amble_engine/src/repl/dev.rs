@@ -322,9 +322,7 @@ fn describe_note_location(world: &AmbleWorld) -> String {
     match &world.player.location {
         Location::Room(room_id) => world
             .rooms
-            .get(room_id)
-            .map(|room| format!("room={} \"{}\"", room.symbol(), room.name()))
-            .unwrap_or_else(|| format!("room_id={room_id}")),
+            .get(room_id).map_or_else(|| format!("room_id={room_id}"), |room| format!("room={} \"{}\"", room.symbol(), room.name())),
         _ => String::from("loc=<unknown>"),
     }
 }

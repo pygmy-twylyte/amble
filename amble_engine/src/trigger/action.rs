@@ -501,6 +501,7 @@ pub struct RoomPatch {
 
 /// Exit data used when adding an exit via `RoomPatch`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct RoomExitPatch {
     pub direction: String,
     pub to: Id,
@@ -516,19 +517,6 @@ pub struct RoomExitPatch {
     pub barred_message: Option<String>,
 }
 
-impl Default for RoomExitPatch {
-    fn default() -> Self {
-        Self {
-            direction: String::new(),
-            to: String::new(),
-            hidden: false,
-            locked: false,
-            required_flags: HashSet::new(),
-            required_items: HashSet::new(),
-            barred_message: None,
-        }
-    }
-}
 
 /// Represents a line of dialogue to be appended to a specific NPC state when applying an `NpcPatch`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1594,7 +1582,7 @@ pub fn spawn_item_in_specific_room(world: &mut AmbleWorld, item_id: &Id, room_id
     let item = world
         .items
         .get_mut(item_id)
-        .ok_or_else(|| anyhow!("item {} missing", item_id))?;
+        .ok_or_else(|| anyhow!("item {item_id} missing"))?;
     info!(
         "└─ action: SpawnItemInRoom({}, {})",
         item.symbol(),
@@ -1604,7 +1592,7 @@ pub fn spawn_item_in_specific_room(world: &mut AmbleWorld, item_id: &Id, room_id
     world
         .rooms
         .get_mut(room_id)
-        .ok_or_else(|| anyhow!("room {} missing", room_id))?
+        .ok_or_else(|| anyhow!("room {room_id} missing"))?
         .add_item(item_id.clone());
     Ok(())
 }
@@ -1656,14 +1644,14 @@ pub fn spawn_item_in_current_room(world: &mut AmbleWorld, item_id: &Id) -> Resul
     let item = world
         .items
         .get_mut(item_id)
-        .ok_or_else(|| anyhow!("item {} missing", item_id))?;
+        .ok_or_else(|| anyhow!("item {item_id} missing"))?;
 
     info!("└─ action: SpawnItemCurrentRoom({})", item.symbol());
     item.set_location_room(room_id.clone());
     world
         .rooms
         .get_mut(room_id)
-        .ok_or_else(|| anyhow!("room {} missing", room_id))?
+        .ok_or_else(|| anyhow!("room {room_id} missing"))?
         .add_item(item_id.clone());
     Ok(())
 }
@@ -1709,7 +1697,7 @@ pub fn spawn_item_in_inventory(world: &mut AmbleWorld, item_id: &Id) -> Result<(
     let item = world
         .items
         .get_mut(item_id)
-        .ok_or_else(|| anyhow!("item {} missing", item_id))?;
+        .ok_or_else(|| anyhow!("item {item_id} missing"))?;
     info!("└─ action: SpawnItemInInventory({})", item.symbol());
     item.set_location_inventory();
     world.player.add_item(item_id.clone());
@@ -1762,13 +1750,13 @@ pub fn spawn_item_in_container(world: &mut AmbleWorld, item_id: &Id, container_i
     let item = world
         .items
         .get_mut(item_id)
-        .ok_or_else(|| anyhow!("item {} missing", item_id))?;
+        .ok_or_else(|| anyhow!("item {item_id} missing"))?;
     info!("└─ action: SpawnItemInContainer({}, {})", item.symbol(), container_sym);
     item.set_location_item(container_id.clone());
     world
         .items
         .get_mut(container_id)
-        .ok_or_else(|| anyhow!("container {} missing", container_id))?
+        .ok_or_else(|| anyhow!("container {container_id} missing"))?
         .add_item(item_id.clone());
     Ok(())
 }
@@ -1793,7 +1781,7 @@ pub fn show_message(view: &mut View, text: &String) {
 }
 
 fn show_message_with_priority(view: &mut View, text: &String, priority: Option<isize>) {
-    view.push_with_custom_priority(ViewItem::TriggeredEvent(text.to_string()), priority);
+    view.push_with_custom_priority(ViewItem::TriggeredEvent(text.clone()), priority);
     info!(
         "└─ action: ShowMessage(\"{}...\")",
         &text[..std::cmp::min(text.len(), 50)]
@@ -1867,7 +1855,7 @@ pub fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &Id, e
     let exit = world
         .rooms
         .get_mut(exit_from)
-        .ok_or_else(|| anyhow!("invalid exit_from room {}", exit_from))?
+        .ok_or_else(|| anyhow!("invalid exit_from room {exit_from}"))?
         .exits
         .entry(direction.clone())
         .or_insert_with(|| Exit::new(exit_to.clone()));
@@ -2036,7 +2024,7 @@ pub fn despawn_item(world: &mut AmbleWorld, item_id: &Id) -> Result<()> {
     let item = world
         .items
         .get_mut(item_id)
-        .ok_or_else(|| anyhow!("unknown item {}", item_id))?;
+        .ok_or_else(|| anyhow!("unknown item {item_id}"))?;
     let prev_loc = std::mem::replace(&mut item.location, Location::Nowhere);
     info!(
         "└─ action: DespawnItem({}) - removing from {:?}",
