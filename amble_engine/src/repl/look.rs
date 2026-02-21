@@ -42,7 +42,7 @@ use crate::{
     entity_search::{EntityId, SearchError, SearchScope, find_entity_match, find_item_match},
     item::ItemAbility,
     repl::entity_not_found,
-    room::RoomScenery,
+    room::{Room, RoomScenery},
     style::GameStyle,
     trigger::{TriggerAction, TriggerCondition, check_triggers},
     view::{ContentLine, ViewMode},
@@ -93,21 +93,8 @@ pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> 
         Ok(id) => id,
         Err(SearchError::NoMatchingName(input)) => {
             let room = world.player_room_ref()?;
-            let lc_input = input.to_lowercase();
-            if let Some(entry) = room
-                .scenery
-                .iter()
-                .find(|scenery| scenery.name.to_lowercase().contains(&lc_input))
-            {
-                let desc = entry
-                    .desc
-                    .clone()
-                    .or_else(|| {
-                        room.scenery_default
-                            .clone()
-                            .map(|text| text.replace("{thing}", &markup_scenery_item(&entry.name)))
-                    })
-                    .unwrap_or_else(|| create_default_scenery_description(world, entry));
+            if let Some(entry) = room.find_scenery(&input) {
+                let desc = describe_scenery(room, world, entry);
                 view.push(ViewItem::ItemDescription {
                     name: entry.name.clone(),
                     description: desc,
@@ -156,6 +143,18 @@ fn create_default_scenery_description(world: &AmbleWorld, entry: &RoomScenery) -
     default_desc.replace("{thing}", &thing_substitute)
 }
 
+fn describe_scenery(room: &Room, world: &AmbleWorld, entry: &RoomScenery) -> String {
+    entry
+        .desc
+        .clone()
+        .or_else(|| {
+            room.scenery_default
+                .clone()
+                .map(|text| text.replace("{thing}", &markup_scenery_item(&entry.name)))
+        })
+        .unwrap_or_else(|| create_default_scenery_description(world, entry))
+}
+
 /// Shows list of items held in inventory.
 ///
 /// # Errors
@@ -190,9 +189,17 @@ pub fn inv_handler(world: &AmbleWorld, view: &mut View) -> Result<()> {
 /// If an item lookup fails for some reason even after the item is found to exist
 pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     let room_id = world.player_room_ref()?.id();
-    let item_id = match find_item_match(world, pattern, SearchScope::VisibleItems(room_id)) {
+    let item_id = match find_item_match(world, pattern, SearchScope::VisibleItems(room_id.clone())) {
         Ok(uuid) => uuid,
         Err(SearchError::NoMatchingName(input)) => {
+            let room = world.player_room_ref()?;
+            if let Some(entry) = room.find_scenery(&input) {
+                let desc = describe_scenery(room, world, entry);
+                view.push(ViewItem::ItemText(desc));
+                info!("{} read scenery \"{}\"", world.player.name(), entry.name);
+                world.turn_count += 1;
+                return Ok(());
+            }
             entity_not_found(world, view, input.as_str());
             return Ok(());
         },
