@@ -22,7 +22,7 @@ room main-lobby {
     exit "elevator access" -> lift-bank-main
     exit "outside" -> front-entrance
     exit "broad entryway" -> restaurant
-    exit "etched door" -> b-a-office
+    exit "etched door" -> amble-office
 }
 
 item restaurant_sign {

@@ -38,7 +38,7 @@ item poetry_performer {
     name "Initech Poetry Performer"
     desc "In lieu of decades-old magazines, the office has installed this poetry recitation device. If poetic material is supplied, it is automatically performed in the whichever voice the listener finds most soul-penetrating (as long as it happens to be Morgan Freeman's)."
     movability fixed "It weighs about 500 kilograms. Are you hoping for a hernia?"
-    location room b-a-office
+    location room amble-office
     container state closed
 }
 
@@ -46,7 +46,7 @@ item poetry_performer {
 # Triggers
 # ========================================
 
-let set keycard_hint_zone = ( b-a-office, vip-bathroom )
+let set keycard_hint_zone = ( amble-office, vip-bathroom )
 trigger "[HINT Radio] Find/Insert Vogon Poetry" only once
 when give item invitation to npc b_a_receptionist {
     do schedule in 3 if any(
@@ -82,10 +82,22 @@ when take item elevator_keycard {
 
 trigger "[Office] Insert Poems to Open Panic Room" only once
 when insert item vogon_poetry_book into item poetry_performer {
-    do award points 5 reason "Unlocked the poetry panic room with Vogon verse"
+    # Destroy the book and cause add a color announcement
     do despawn item vogon_poetry_book
-    do add flag panic-room-open
-    do reveal exit from b-a-office to poetry-panic direction "poetry panic room"
     do add wedge "PA announcement: Vogon poetry has been detected in the building. If you are experiencing nausea, go to med bay for assistance." width 1 spinner ambientInterior
-    do show "The machine begins to whine at a high pitch and gives off a noxious odor like burning hair. A klaxon blares and the display warns:\n[[box]]⚠️ VOGON INPUT DETECTED - POETRY PANIC ROOM UNLOCKED ⚠️\n☣ VAPORIZING VOGON INPUT - AVOID TOXIC FUMES ☣[[/box]]\nThe whiteboard on the west wall slides to the side, revealing a [[room]]vault-like door[[/room]]."
+    # Reveal the poetry panic room
+    do reveal exit from amble-office to poetry-panic direction "poetry panic room"
+    do show "The machine begins to whine at a high pitch and gives off a noxious odor like burning hair. A klaxon blares and the display warns: [[b]][[bright-red]]⚠️ VOGON INPUT DETECTED - BUNKER UNLOCKED ⚠️[[/bright-red]][[/b]]\n\nThe whiteboard on the west wall slides to the side, revealing a small [[room]]panic room[[/room]]."
+    do add flag panic-room-open
+    # Demerzel seals the player inside for protection
+    do npc says b_a_receptionist "Block your ears! Quickly!"
+    do show "In a blur, Demerzel picks you up as if you were a toddler, tosses you into the panic room, and seals the door."
+    do push player to poetry-panic
+    # Poetry will be ongoing for 10 turns.
+    do add flag poetry-in-progress
+    do schedule in 10 {
+        do award points 5 reason "Survived the Vogon poetry reading"
+        do remove flag poetry-in-progress
+        do unlock exit from poetry-panic direction "Amble office"
+    }
 }

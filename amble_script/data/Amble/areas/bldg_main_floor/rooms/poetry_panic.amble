@@ -4,8 +4,16 @@
 
 room poetry-panic {
     name "Bad Poetry Panic Room"
-    desc "A concrete and titanium vacuum-sealed room equipped with noise generators, active voice-cancelling harmonics and Cone of Silence™ technology. A seal by the door proudly boasts that the chamber is [[i]][[b]]almost[[/b]][[/i]] completely Vogon poetry-proof."
-    exit "Amble office" -> b-a-office
+    desc "A concrete and titanium vacuum-sealed room equipped with noise generators, active voice-cancelling harmonics and Cone of Silence™ technology. A seal on the door proudly boasts that the chamber is [[i]][[b]]almost[[/b]][[/i]] completely Vogon poetry-proof."
+
+    overlay if flag poetry-in-progress {
+        set "An indicator next to the door shows [[u]][[red]]Vogon Poetry Detected[[/red]][[/u]] and the door remains sealed."
+        unset "The [[u]][[green]]All Clear[[/green]][[/u]] light next to the door is lit."
+    }
+    exit "Amble office" -> amble-office {
+        locked,
+        barred "The door will remain sealed until the Vogon poetry reading has finished."
+    }
 }
 
 # ========================================

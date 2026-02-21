@@ -2,7 +2,7 @@
 # Brains Anonymous / Amble Adventures Office
 # ==========================================
 
-room b-a-office {
+room amble-office {
     name "Amble Adventures Main Office"
     desc "The office of [[hl]]Amble Adventures[[/hl]], a wholly [[u]]dis[[/u]]owned subsidiary of Brains Anonymous™, is a shrine to barely-funded creativity. Faded posters of games that were never released adorn the walls. A sagging ficus looms in the corner like it’s been through something. In the north wall, a closet door is marked with a sign hanging at a carefree slant. An [[item]]Initech™ Poetry Performer[[/item]] machine plays possum in another corner, hoping you don't notice it."
 
@@ -39,7 +39,7 @@ item office_whiteboard {
     aliases "whiteboard", "flowchart"
     desc "It is a mind-bending, Escheresque diagram that seems to fold recursively in upon itself. The initial step is to form an elected committee to determine the types and number of subcommittees that will determine which departments must be established — of course only after the initial creation of legal and financial committees to verify whether the consideration of future planning is even feasible and/or advantageous to the company's mission at large."
     movability fixed "It's a part of the wall."
-    location room b-a-office
+    location room amble-office
 }
 
 # ========================================
@@ -61,7 +61,7 @@ item lost_and_found_box {
     name "Lost & Found Box"
     desc "A sturdy metal lock box with an official-looking sticker reading: 'Lost & Found — Amble Adventures Division' and 'Caution: Contents May Be Fictional'."
     movability fixed "It is property of Brains Anonymous, and they're quite fond of it."
-    location room b-a-office
+    location room amble-office
     container state locked
 }
 
@@ -96,7 +96,7 @@ when open item poetry_performer {
 }
 
 trigger "[Office] Gifted Lost and Found Key" only once
-when enter room b-a-office {
+when enter room amble-office {
     if all( has flag got-elevator-keycard, with npc b_a_receptionist ) {
         do give item lost_and_found_key to player from npc b_a_receptionist
         do priority -40 show "Seeing you return with the keycard, the receptionist looks around warily and slips something into your hand, then looks directly at the lost and found box."
@@ -121,7 +121,7 @@ goal find-the-office {
     desc "According to the posted note, there's an office somewhere around here and you need to check in. You'll need to find it first."
     group required
     start when goal complete get-oriented
-    done when reached room b-a-office
+    done when reached room amble-office
 }
 
 goal get-visitor-pass {

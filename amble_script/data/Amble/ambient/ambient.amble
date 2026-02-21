@@ -22,7 +22,7 @@ let set near_aa3b = (
 )
 let set main_floor = (
     main-lobby,
-    b-a-office,
+    amble-office,
     restaurant,
     patio,
     lift-bank-main,
