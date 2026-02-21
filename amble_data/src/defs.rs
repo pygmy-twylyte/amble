@@ -180,53 +180,44 @@ fn default_scoring_ranks() -> Vec<ScoringRankDef> {
     vec![
         ScoringRankDef {
             threshold: 99.0,
-            name: "Quantum Overachiever".to_string(),
-            description: "You saw the multiverse, understood it, then filed a bug report.".to_string(),
+            name: "Stellar".to_string(),
+            description: "You saw everything and obtained essentially every possible point in the game. Good show!"
+                .to_string(),
         },
         ScoringRankDef {
             threshold: 90.0,
-            name: "Senior Field Operative".to_string(),
-            description: "A nearly flawless run. Someone give this candidate a promotion.".to_string(),
+            name: "Excellent".to_string(),
+            description: "A nearly flawless run. You earned more than 9/10 of all possible points.".to_string(),
         },
         ScoringRankDef {
             threshold: 75.0,
-            name: "Licensed Reality Bender".to_string(),
-            description: "Impressive grasp of nonlinear environments and cake-based paradoxes.".to_string(),
+            name: "Great".to_string(),
+            description: "A solid effort. You earned more than 3/4 of all possible points.".to_string(),
         },
         ScoringRankDef {
-            threshold: 60.0,
-            name: "Rogue Intern, Level II".to_string(),
-            description: "You got the job done, and only melted one small pocket universe.".to_string(),
-        },
-        ScoringRankDef {
-            threshold: 45.0,
-            name: "Unpaid Research Assistant".to_string(),
-            description: "Solid effort. Some concepts may have slipped through dimensional cracks.".to_string(),
+            threshold: 50.0,
+            name: "Good".to_string(),
+            description: "You got a little over half of all possible points — a fair showing.".to_string(),
         },
         ScoringRankDef {
             threshold: 30.0,
-            name: "Junior Sandwich Technician".to_string(),
+            name: "Fair".to_string(),
             description: "Good instincts, questionable execution. Especially with condiments.".to_string(),
         },
         ScoringRankDef {
-            threshold: 15.0,
-            name: "Volunteer Tour Guide".to_string(),
-            description: "You wandered. You looked at stuff. It was something.".to_string(),
-        },
-        ScoringRankDef {
-            threshold: 5.0,
-            name: "Mailbox Stuffing Trainee".to_string(),
-            description: "You opened a box, tripped on a rug, and called it a day.".to_string(),
+            threshold: 10.0,
+            name: "Subpar".to_string(),
+            description: "You'd just started to make some real early progress when you stopped.".to_string(),
         },
         ScoringRankDef {
             threshold: 1.0,
-            name: "Accidental Hire".to_string(),
-            description: "We're not sure how you got in. Please return your lanyard.".to_string(),
+            name: "Poor".to_string(),
+            description: "Apart from managing to look around a bit, you didn't accomplish much.".to_string(),
         },
         ScoringRankDef {
             threshold: 0.0,
-            name: "Amnesiac Test Subject".to_string(),
-            description: "Did you… play? Were you even awake?".to_string(),
+            name: "Failed".to_string(),
+            description: "Game? What game?".to_string(),
         },
     ]
 }
