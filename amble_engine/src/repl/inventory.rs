@@ -197,9 +197,24 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
     let take_verb = world.spin_core(CoreSpinnerType::TakeVerb, "take");
     let room_id = world.player_room_ref()?.id();
 
-    let entity_id = match find_entity_match(world, thing, SearchScope::AllTouchable(room_id)) {
+    let entity_id = match find_entity_match(world, thing, SearchScope::AllTouchable(room_id.clone())) {
         Ok(id) => id,
         Err(SearchError::NoMatchingName(input)) => {
+            if let Some(room) = world.rooms.get(&room_id)
+                && let Some(entry) = room.find_scenery(&input)
+            {
+                view.push(ViewItem::ActionFailure(format!(
+                    "You can't {take_verb} the {}. It's part of the scenery.",
+                    entry.name.error_style()
+                )));
+                info!(
+                    "{} tried to take scenery \"{}\" in room {}",
+                    world.player.name(),
+                    entry.name,
+                    room.symbol()
+                );
+                return Ok(());
+            }
             entity_not_found(world, view, input.as_str());
             return Ok(());
         },
