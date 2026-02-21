@@ -144,7 +144,7 @@
             ],
         ),
         (
-            id: "b-a-office",
+            id: "amble-office",
             name: "Amble Adventures Main Office",
             desc: "The office of [[hl]]Amble Adventures[[/hl]], a wholly [[u]]disowned[[/u]] subsidiary of Brains Anonymous™, is a shrine to barely-funded creativity. Faded posters of games that were never released adorn the walls, including one titled [[b]]\'PONG Construction Set 3000\'[[/b]]. A sagging ficus looms in the corner like it’s been through something. In the north wall, a closet door is marked with a \"Supplies\" sign, hanging at a carefree slant. An Initech™ Poetry Performer machine plays possum in another corner, hoping you don\'t notice it.",
             visited: false,
@@ -535,7 +535,7 @@
                 ),
                 (
                     direction: "office",
-                    to: "b-a-office",
+                    to: "amble-office",
                     hidden: false,
                     locked: false,
                     required_flags: [],
@@ -655,7 +655,7 @@
             exits: [
                 (
                     direction: "Amble office",
-                    to: "b-a-office",
+                    to: "amble-office",
                     hidden: false,
                     locked: false,
                     required_flags: [],
@@ -869,7 +869,7 @@
             exits: [
                 (
                     direction: "reception desk",
-                    to: "b-a-office",
+                    to: "amble-office",
                     hidden: false,
                     locked: false,
                     required_flags: [],
@@ -2106,7 +2106,7 @@
                 reason: "It weighs about 500 kilograms. Are you hoping for a hernia?",
             ),
             container_state: Some(closed),
-            location: Room("b-a-office"),
+            location: Room("amble-office"),
             abilities: [],
             interaction_requires: {},
             text: None,
@@ -2237,7 +2237,7 @@
                 reason: "It is property of Brains Anonymous, and they\'re quite fond of it.",
             ),
             container_state: Some(locked),
-            location: Room("b-a-office"),
+            location: Room("amble-office"),
             abilities: [],
             interaction_requires: {},
             text: None,
@@ -3693,7 +3693,7 @@
             name: "Demerzel",
             desc: "A sharply dressed android sitting at the reception desk.\n\nDemerzel is a positronic android, and has been continuously online for thousands of years -- working at reception desks going back as far as Pharoah Ramses II. At her position at Amble Adentures, she also serves as a firewall, preventing any clearly unworthy Candidates from making any progress through the system.",
             max_hp: 20,
-            location: Room("b-a-office"),
+            location: Room("amble-office"),
             state: normal,
             dialogue: {
                 bored: [
@@ -4909,7 +4909,7 @@
                         room: "main-lobby",
                     )),
                     Pred(playerInRoom(
-                        room: "b-a-office",
+                        room: "amble-office",
                     )),
                     Pred(playerInRoom(
                         room: "restaurant",
@@ -5467,7 +5467,7 @@
             note: None,
             only_once: true,
             event: enterRoom(
-                room: "b-a-office",
+                room: "amble-office",
             ),
             conditions: All([
                 Pred(withNpc(
@@ -5495,7 +5495,7 @@
             note: None,
             only_once: false,
             event: enterRoom(
-                room: "b-a-office",
+                room: "amble-office",
             ),
             conditions: All([
                 Pred(withNpc(
@@ -5561,7 +5561,7 @@
                                 )),
                                 Any([
                                     Pred(playerInRoom(
-                                        room: "b-a-office",
+                                        room: "amble-office",
                                     )),
                                     Pred(playerInRoom(
                                         room: "vip-bathroom",
@@ -5588,7 +5588,7 @@
                                         )),
                                         Any([
                                             Pred(playerInRoom(
-                                                room: "b-a-office",
+                                                room: "amble-office",
                                             )),
                                             Pred(playerInRoom(
                                                 room: "vip-bathroom",
@@ -5673,7 +5673,7 @@
                 ),
                 (
                     action: revealExit(
-                        exit_from: "b-a-office",
+                        exit_from: "amble-office",
                         exit_to: "poetry-panic",
                         direction: "poetry panic room",
                     ),
@@ -6284,7 +6284,7 @@
             note: None,
             only_once: true,
             event: enterRoom(
-                room: "b-a-office",
+                room: "amble-office",
             ),
             conditions: All([
                 Pred(hasFlag(
@@ -11575,7 +11575,7 @@
                 goal_id: "get-oriented",
             )),
             finished_when: reachedRoom(
-                room: "b-a-office",
+                room: "amble-office",
             ),
             failed_when: None,
         ),
