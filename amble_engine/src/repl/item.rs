@@ -60,7 +60,7 @@ use crate::{
 };
 
 use crate::Id;
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use colored::Colorize;
 use log::info;
 
@@ -85,7 +85,10 @@ pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) ->
         TriggerCondition::Touch(triggered_item_id) => triggered_item_id == &item_id,
         _ => false,
     });
-    let item = world.items.get(&item_id).expect("item_id should be valid here");
+    let item = world
+        .items
+        .get(&item_id)
+        .with_context(|| format!("get({item_id}) from world.items"))?;
     if !sent_trigger_fired {
         info!(
             "{} touched {} ({})... and nothing happened.",
@@ -121,7 +124,7 @@ pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, m
     let item = world
         .items
         .get(&item_id)
-        .expect("item_id already known to exist in map here");
+        .with_context(|| format!("get({item_id}) from world.items"))?;
     let (item_name, item_symbol) = (item.name().to_owned(), item.symbol().to_owned());
     let meets_mode = match mode {
         IngestMode::Eat => item.abilities.contains(&ItemAbility::Eat),
@@ -284,14 +287,7 @@ pub fn use_item_on_handler(
         .unwrap_or(&ItemAbility::Use)
         .clone();
 
-    let interaction_fired = dispatch_use_item_triggers(
-        world,
-        view,
-        interaction,
-        target_id.clone(),
-        tool_id.clone(),
-        used_ability.clone(),
-    )?;
+    let interaction_fired = dispatch_use_item_triggers(world, view, interaction, &target_id, &tool_id, &used_ability)?;
 
     // Nope, no triggered reaction to these conditions
     if !interaction_fired {
@@ -369,9 +365,9 @@ fn dispatch_use_item_triggers(
     world: &mut AmbleWorld,
     view: &mut View,
     interaction: ItemInteractionType,
-    target_id: Id,
-    tool_id: Id,
-    used_ability: ItemAbility,
+    target_id: &Id,
+    tool_id: &Id,
+    used_ability: &ItemAbility,
 ) -> Result<bool> {
     let fired = check_triggers(
         world,
@@ -397,13 +393,13 @@ fn dispatch_use_item_triggers(
         TriggerCondition::ActOnItem {
             action,
             target_id: fired_target,
-        } => *action == interaction && fired_target == &target_id,
-        TriggerCondition::UseItem { ability, .. } => ability == &used_ability,
+        } => *action == interaction && fired_target == target_id,
+        TriggerCondition::UseItem { ability, .. } => ability == used_ability,
         TriggerCondition::UseItemOnItem {
             interaction: fired_interaction,
             target_id: fired_target,
             tool_id: fired_tool,
-        } => *fired_interaction == interaction && fired_target == &target_id && fired_tool == &tool_id,
+        } => *fired_interaction == interaction && fired_target == target_id && fired_tool == tool_id,
         _ => false,
     }))
 }
@@ -453,7 +449,10 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
             _ => bail!(e),
         },
     };
-    let item = world.items.get_mut(&item_id).expect("item ID known to be valid here");
+    let item = world
+        .items
+        .get_mut(&item_id)
+        .with_context(|| format!("world.items.get_mut({item_id})"))?;
 
     if item.abilities.contains(&ItemAbility::TurnOn) {
         info!("Player switched on {} ({})", item.name(), item.symbol());
@@ -537,7 +536,10 @@ pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &
             _ => bail!(e),
         },
     };
-    let item = world.items.get_mut(&item_id).expect("item ID known to be valid here");
+    let item = world
+        .items
+        .get_mut(&item_id)
+        .with_context(|| format!("world.items.get_mut({item_id})"))?;
     if item.abilities.contains(&ItemAbility::TurnOff) {
         info!("Player switched off {} ({})", item.name(), item.symbol());
         let sent_id = item.id();
@@ -630,7 +632,7 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
 
     // either show failure reasons, or set container state to open
     let mut container_opened = false;
-    if let Some(target_item) = world.get_item_mut(container_id.clone()) {
+    if let Some(target_item) = world.get_item_mut(&container_id) {
         match target_item.container_state {
             None => {
                 view.push(ViewItem::ActionFailure(format!(
@@ -751,7 +753,7 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
         },
     };
 
-    if let Some(target_item) = world.get_item_mut(container_id) {
+    if let Some(target_item) = world.get_item_mut(&container_id) {
         let item_name = target_item.name().to_owned();
         let item_sym = target_item.symbol().to_owned();
 
@@ -845,7 +847,7 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
         },
     };
 
-    if let Some(target_item) = world.get_item_mut(container_id) {
+    if let Some(target_item) = world.get_item_mut(&container_id) {
         let item_name = target_item.name().to_owned();
         let item_sym = target_item.symbol().to_owned();
         match target_item.container_state {
@@ -942,9 +944,9 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
         },
     };
 
-    let key_data = find_valid_key(&world.items, &world.player.inventory, container_id.clone());
+    let key_data = find_valid_key(&world.items, &world.player.inventory, &container_id);
 
-    if let Some(target_item) = world.get_item_mut(container_id.clone()) {
+    if let Some(target_item) = world.get_item_mut(&container_id) {
         let item_name = target_item.name().to_owned();
         let item_sym = target_item.symbol().to_owned();
         match target_item.container_state {
@@ -1014,7 +1016,7 @@ struct KeyData {
 ///
 /// If a specific key *and* a "skeleton" key are present, the data for the specific key is
 /// returned.
-fn find_valid_key(world_items: &HashMap<Id, Item>, maybe_keys: &HashSet<Id>, container: Id) -> Option<KeyData> {
+fn find_valid_key(world_items: &HashMap<Id, Item>, maybe_keys: &HashSet<Id>, container: &Id) -> Option<KeyData> {
     // find and return a specific key
     let specific = maybe_keys
         .iter()
@@ -1058,6 +1060,7 @@ mod tests {
     };
     use std::collections::{HashMap, HashSet};
 
+    #[allow(clippy::too_many_lines)]
     fn build_world() -> (AmbleWorld, View, Id, Id, Id, Id) {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();

@@ -188,8 +188,8 @@ impl AmbleWorld {
     }
 
     /// Get a mutable reference to an item by id, if present.
-    pub fn get_item_mut(&mut self, item_id: Id) -> Option<&mut Item> {
-        self.items.get_mut(&item_id)
+    pub fn get_item_mut(&mut self, item_id: &Id) -> Option<&mut Item> {
+        self.items.get_mut(item_id)
     }
 }
 
@@ -200,7 +200,7 @@ impl AmbleWorld {
 /// container item (typically when it either is open or transparent).
 fn collect_room_items(
     world: &AmbleWorld,
-    room_id: Id,
+    room_id: &Id,
     // Predicate determining whether an item's contents should be collected
     should_include_contents: impl Fn(&Item) -> bool,
     // Predicate determining whether an item itself should be included
@@ -208,7 +208,7 @@ fn collect_room_items(
 ) -> Result<HashSet<Id>> {
     let current_room = world
         .rooms
-        .get(&room_id)
+        .get(room_id)
         .with_context(|| format!("{room_id} room id not found"))?;
     let room_items = &current_room.contents;
     let mut visible_room_items = HashSet::new();
@@ -260,7 +260,7 @@ pub fn item_is_listed(world: &AmbleWorld, item_id: &Id) -> bool {
 ///
 /// # Errors
 /// - if supplied `room_id` is invalid
-pub fn nearby_reachable_items(world: &AmbleWorld, room_id: Id) -> Result<HashSet<Id>> {
+pub fn nearby_reachable_items(world: &AmbleWorld, room_id: &Id) -> Result<HashSet<Id>> {
     collect_room_items(
         world,
         room_id,
@@ -273,7 +273,7 @@ pub fn nearby_reachable_items(world: &AmbleWorld, room_id: Id) -> Result<HashSet
 ///
 /// # Errors
 /// - if supplied `room_id` is invalid
-pub fn nearby_visible_items(world: &AmbleWorld, room_id: Id) -> Result<HashSet<Id>> {
+pub fn nearby_visible_items(world: &AmbleWorld, room_id: &Id) -> Result<HashSet<Id>> {
     collect_room_items(
         world,
         room_id,
@@ -286,10 +286,10 @@ pub fn nearby_visible_items(world: &AmbleWorld, room_id: Id) -> Result<HashSet<I
 ///
 /// # Errors
 /// - if supplied `room_id` is invalid
-pub fn nearby_vessel_items(world: &AmbleWorld, room_id: Id) -> Result<HashSet<Id>> {
+pub fn nearby_vessel_items(world: &AmbleWorld, room_id: &Id) -> Result<HashSet<Id>> {
     let current_room = world
         .rooms
-        .get(&room_id)
+        .get(room_id)
         .with_context(|| format!("{room_id} room id not found"))?;
     let room_items = &current_room.contents;
     let mut contained_items = HashSet::new();
@@ -326,11 +326,11 @@ mod tests {
     use gametools::{Spinner, Wedge};
     use std::collections::{HashMap, HashSet};
 
-    fn create_test_item(id: Id, location: Location) -> Item {
+    fn create_test_item(id: &Id, location: Location) -> Item {
         Item {
             id: id.clone(),
-            symbol: format!("item_{}", id),
-            name: format!("Item {}", id),
+            symbol: format!("item_{id}"),
+            name: format!("Item {id}"),
             description: "A test item".into(),
             location,
             visibility: crate::item::ItemVisibility::Listed,
@@ -346,11 +346,11 @@ mod tests {
         }
     }
 
-    fn create_test_room(id: Id) -> Room {
+    fn create_test_room(id: &Id) -> Room {
         Room {
             id: id.clone(),
-            symbol: format!("room_{}", id),
-            name: format!("Room {}", id),
+            symbol: format!("room_{id}"),
+            name: format!("Room {id}"),
             base_description: "A test room".into(),
             overlays: vec![],
             scenery: Vec::new(),
@@ -364,11 +364,11 @@ mod tests {
     }
 
     #[allow(dead_code)]
-    fn create_test_npc(id: Id, location: Location) -> Npc {
+    fn create_test_npc(id: &Id, location: Location) -> Npc {
         Npc {
             id: id.clone(),
-            symbol: format!("npc_{}", id),
-            name: format!("NPC {}", id),
+            symbol: format!("npc_{id}"),
+            name: format!("NPC {id}"),
             description: "A test NPC".into(),
             location,
             inventory: HashSet::new(),
@@ -500,7 +500,7 @@ mod tests {
     fn amble_world_player_room_ref_works() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let room = create_test_room(room_id.clone());
+        let room = create_test_room(&room_id);
         world.rooms.insert(room_id.clone(), room);
         world.player.location = Location::Room(room_id.clone());
 
@@ -526,7 +526,7 @@ mod tests {
     fn amble_world_player_room_mut_works() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let room = create_test_room(room_id.clone());
+        let room = create_test_room(&room_id);
         world.rooms.insert(room_id.clone(), room);
         world.player.location = Location::Room(room_id.clone());
 
@@ -544,17 +544,17 @@ mod tests {
 
     #[test]
     fn amble_world_get_item_mut_works() {
+        let item_id = "test_item".to_string();
         let mut world = AmbleWorld::new_empty();
-        let item_id = crate::idgen::new_id();
-        let item = create_test_item(item_id.clone(), Location::Nowhere);
+        let item = create_test_item(&item_id, Location::Nowhere);
         world.items.insert(item_id.clone(), item);
 
-        let item_mut = world.get_item_mut(item_id.clone()).unwrap();
+        let item_mut = world.get_item_mut(&String::from("test_item")).unwrap();
         item_mut.movability = Movability::Restricted {
             reason: "restricted".into(),
         };
         assert!(matches!(
-            world.items.get(&item_id).unwrap().movability,
+            world.items.get(&String::from("test_item")).unwrap().movability,
             Movability::Restricted { .. }
         ));
     }
@@ -562,23 +562,23 @@ mod tests {
     #[test]
     fn amble_world_get_item_mut_returns_none_for_nonexistent() {
         let mut world = AmbleWorld::new_empty();
-        assert!(world.get_item_mut(crate::idgen::new_id()).is_none());
+        assert!(world.get_item_mut(&"test".to_string()).is_none());
     }
 
     #[test]
     fn nearby_reachable_items_includes_room_items() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let mut room = create_test_room(room_id.clone());
+        let mut room = create_test_room(&room_id);
 
         let item_id = crate::idgen::new_id();
-        let item = create_test_item(item_id.clone(), Location::Room(room_id.clone()));
+        let item = create_test_item(&item_id, Location::Room(room_id.clone()));
         room.contents.insert(item_id.clone());
 
         world.rooms.insert(room_id.clone(), room);
         world.items.insert(item_id.clone(), item);
 
-        let reachable = nearby_reachable_items(&world, room_id.clone()).unwrap();
+        let reachable = nearby_reachable_items(&world, &room_id).unwrap();
         assert!(reachable.contains(&item_id));
     }
 
@@ -586,14 +586,14 @@ mod tests {
     fn nearby_reachable_items_includes_open_container_contents() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let mut room = create_test_room(room_id.clone());
+        let mut room = create_test_room(&room_id);
 
         let container_id = crate::idgen::new_id();
-        let mut container = create_test_item(container_id.clone(), Location::Room(room_id.clone()));
+        let mut container = create_test_item(&container_id, Location::Room(room_id.clone()));
         container.container_state = Some(ContainerState::Open);
 
         let item_in_container_id = crate::idgen::new_id();
-        let item_in_container = create_test_item(item_in_container_id.clone(), Location::Item(container_id.clone()));
+        let item_in_container = create_test_item(&item_in_container_id, Location::Item(container_id.clone()));
         container.contents.insert(item_in_container_id.clone());
 
         room.contents.insert(container_id.clone());
@@ -602,7 +602,7 @@ mod tests {
         world.items.insert(container_id.clone(), container);
         world.items.insert(item_in_container_id.clone(), item_in_container);
 
-        let reachable = nearby_reachable_items(&world, room_id.clone()).unwrap();
+        let reachable = nearby_reachable_items(&world, &room_id).unwrap();
         assert!(reachable.contains(&container_id));
         assert!(reachable.contains(&item_in_container_id));
     }
@@ -611,14 +611,14 @@ mod tests {
     fn nearby_reachable_items_excludes_closed_container_contents() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let mut room = create_test_room(room_id.clone());
+        let mut room = create_test_room(&room_id);
 
         let container_id = crate::idgen::new_id();
-        let mut container = create_test_item(container_id.clone(), Location::Room(room_id.clone()));
+        let mut container = create_test_item(&container_id, Location::Room(room_id.clone()));
         container.container_state = Some(ContainerState::Closed);
 
         let item_in_container_id = crate::idgen::new_id();
-        let item_in_container = create_test_item(item_in_container_id.clone(), Location::Item(container_id.clone()));
+        let item_in_container = create_test_item(&item_in_container_id, Location::Item(container_id.clone()));
         container.contents.insert(item_in_container_id.clone());
 
         room.contents.insert(container_id.clone());
@@ -627,7 +627,7 @@ mod tests {
         world.items.insert(container_id.clone(), container);
         world.items.insert(item_in_container_id.clone(), item_in_container);
 
-        let reachable = nearby_reachable_items(&world, room_id.clone()).unwrap();
+        let reachable = nearby_reachable_items(&world, &room_id).unwrap();
         assert!(reachable.contains(&container_id));
         assert!(!reachable.contains(&item_in_container_id));
     }
@@ -636,14 +636,14 @@ mod tests {
     fn nearby_reachable_items_excludes_locked_container_contents() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let mut room = create_test_room(room_id.clone());
+        let mut room = create_test_room(&room_id);
 
         let container_id = crate::idgen::new_id();
-        let mut container = create_test_item(container_id.clone(), Location::Room(room_id.clone()));
+        let mut container = create_test_item(&container_id, Location::Room(room_id.clone()));
         container.container_state = Some(ContainerState::Locked);
 
         let item_in_container_id = crate::idgen::new_id();
-        let item_in_container = create_test_item(item_in_container_id.clone(), Location::Item(container_id.clone()));
+        let item_in_container = create_test_item(&item_in_container_id, Location::Item(container_id.clone()));
         container.contents.insert(item_in_container_id.clone());
 
         room.contents.insert(container_id.clone());
@@ -652,7 +652,7 @@ mod tests {
         world.items.insert(container_id.clone(), container);
         world.items.insert(item_in_container_id.clone(), item_in_container);
 
-        let reachable = nearby_reachable_items(&world, room_id.clone()).unwrap();
+        let reachable = nearby_reachable_items(&world, &room_id).unwrap();
         assert!(reachable.contains(&container_id));
         assert!(!reachable.contains(&item_in_container_id));
     }
@@ -660,7 +660,7 @@ mod tests {
     #[test]
     fn nearby_reachable_items_errors_for_invalid_room() {
         let world = AmbleWorld::new_empty();
-        let result = nearby_reachable_items(&world, crate::idgen::new_id());
+        let result = nearby_reachable_items(&world, &String::from("fleefawrtwerse"));
         assert!(result.is_err());
     }
 
@@ -668,10 +668,10 @@ mod tests {
     fn nearby_reachable_items_handles_empty_room() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let room = create_test_room(room_id.clone());
+        let room = create_test_room(&room_id);
         world.rooms.insert(room_id.clone(), room);
 
-        let reachable = nearby_reachable_items(&world, room_id.clone()).unwrap();
+        let reachable = nearby_reachable_items(&world, &room_id).unwrap();
         assert!(reachable.is_empty());
     }
 
@@ -679,16 +679,16 @@ mod tests {
     fn nearby_reachable_items_handles_non_container_items() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let mut room = create_test_room(room_id.clone());
+        let mut room = create_test_room(&room_id);
 
         let item_id = crate::idgen::new_id();
-        let item = create_test_item(item_id.clone(), Location::Room(room_id.clone()));
+        let item = create_test_item(&item_id, Location::Room(room_id.clone()));
         room.contents.insert(item_id.clone());
 
         world.rooms.insert(room_id.clone(), room);
         world.items.insert(item_id.clone(), item);
 
-        let reachable = nearby_reachable_items(&world, room_id.clone()).unwrap();
+        let reachable = nearby_reachable_items(&world, &room_id).unwrap();
         assert_eq!(reachable.len(), 1);
         assert!(reachable.contains(&item_id));
     }
@@ -697,14 +697,14 @@ mod tests {
     fn nearby_visible_items_includes_transparent_container_contents() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let mut room = create_test_room(room_id.clone());
+        let mut room = create_test_room(&room_id);
 
         let container_id = crate::idgen::new_id();
-        let mut container = create_test_item(container_id.clone(), Location::Room(room_id.clone()));
+        let mut container = create_test_item(&container_id, Location::Room(room_id.clone()));
         container.container_state = Some(ContainerState::TransparentClosed);
 
         let item_in_container_id = crate::idgen::new_id();
-        let item_in_container = create_test_item(item_in_container_id.clone(), Location::Item(container_id.clone()));
+        let item_in_container = create_test_item(&item_in_container_id, Location::Item(container_id.clone()));
         container.contents.insert(item_in_container_id.clone());
 
         room.contents.insert(container_id.clone());
@@ -712,7 +712,7 @@ mod tests {
         world.items.insert(container_id.clone(), container);
         world.items.insert(item_in_container_id.clone(), item_in_container);
 
-        let visible = nearby_visible_items(&world, room_id.clone()).unwrap();
+        let visible = nearby_visible_items(&world, &room_id).unwrap();
         assert_eq!(visible.len(), 2);
         assert!(visible.contains(&container_id));
         assert!(visible.contains(&item_in_container_id));
@@ -722,14 +722,14 @@ mod tests {
     fn nearby_visible_items_includes_transparent_locked_container_contents() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let mut room = create_test_room(room_id.clone());
+        let mut room = create_test_room(&room_id);
 
         let container_id = crate::idgen::new_id();
-        let mut container = create_test_item(container_id.clone(), Location::Room(room_id.clone()));
+        let mut container = create_test_item(&container_id, Location::Room(room_id.clone()));
         container.container_state = Some(ContainerState::TransparentLocked);
 
         let item_in_container_id = crate::idgen::new_id();
-        let item_in_container = create_test_item(item_in_container_id.clone(), Location::Item(container_id.clone()));
+        let item_in_container = create_test_item(&item_in_container_id, Location::Item(container_id.clone()));
         container.contents.insert(item_in_container_id.clone());
 
         room.contents.insert(container_id.clone());
@@ -737,7 +737,7 @@ mod tests {
         world.items.insert(container_id.clone(), container);
         world.items.insert(item_in_container_id.clone(), item_in_container);
 
-        let visible = nearby_visible_items(&world, room_id.clone()).unwrap();
+        let visible = nearby_visible_items(&world, &room_id).unwrap();
         assert_eq!(visible.len(), 2);
         assert!(visible.contains(&container_id));
         assert!(visible.contains(&item_in_container_id));
@@ -747,14 +747,14 @@ mod tests {
     fn nearby_visible_items_excludes_regular_locked_container_contents() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let mut room = create_test_room(room_id.clone());
+        let mut room = create_test_room(&room_id);
 
         let container_id = crate::idgen::new_id();
-        let mut container = create_test_item(container_id.clone(), Location::Room(room_id.clone()));
+        let mut container = create_test_item(&container_id, Location::Room(room_id.clone()));
         container.container_state = Some(ContainerState::Locked);
 
         let item_in_container_id = crate::idgen::new_id();
-        let item_in_container = create_test_item(item_in_container_id.clone(), Location::Item(container_id.clone()));
+        let item_in_container = create_test_item(&item_in_container_id, Location::Item(container_id.clone()));
         container.contents.insert(item_in_container_id.clone());
 
         room.contents.insert(container_id.clone());
@@ -762,7 +762,7 @@ mod tests {
         world.items.insert(container_id.clone(), container);
         world.items.insert(item_in_container_id.clone(), item_in_container);
 
-        let visible = nearby_visible_items(&world, room_id.clone()).unwrap();
+        let visible = nearby_visible_items(&world, &room_id).unwrap();
         assert_eq!(visible.len(), 1);
         assert!(visible.contains(&container_id));
         assert!(!visible.contains(&item_in_container_id));

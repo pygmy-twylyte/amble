@@ -85,6 +85,8 @@ pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
 ///
 /// # Errors
 /// Returns an error if the player's current room or the scoped items cannot be resolved.
+/// # Panics
+/// If a `.get()` call failed for some reason even after the ID was verified to exist
 pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     let room_id = world.player_room_ref()?.id();
     let entity_id = match find_entity_match(world, thing, SearchScope::AllVisible(room_id)) {
@@ -184,6 +186,8 @@ pub fn inv_handler(world: &AmbleWorld, view: &mut View) -> Result<()> {
 /// # Errors
 /// Returns an error if the current room cannot be determined, if scoping nearby items fails,
 /// or if trigger evaluation encounters missing world entities.
+/// # Panics
+/// If an item lookup fails for some reason even after the item is found to exist
 pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     let room_id = world.player_room_ref()?.id();
     let item_id = match find_item_match(world, pattern, SearchScope::VisibleItems(room_id)) {

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-/// Stable identifier used across WorldDef references.
+/// Stable identifier used across `WorldDef` references.
 pub type Id = String;
 
 /// Top-level compiled world data loaded by the engine.
@@ -429,7 +429,7 @@ impl Default for ConditionExpr {
     }
 }
 
-/// Leaf predicates used by ConditionExpr.
+/// Leaf predicates used by `ConditionExpr`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ConditionDef {

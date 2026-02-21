@@ -124,7 +124,7 @@ struct ContentRefreshArgs {
 
 #[derive(Args)]
 struct ReleaseArgs {
-    /// Version applied to both amble_engine and amble_script (SemVer).
+    /// Version applied to both `amble_engine` and `amble_script` (`SemVer`).
     #[arg(long, value_name = "SEMVER")]
     version: String,
     /// Target triple used for Linux packages (defaults to host triple).

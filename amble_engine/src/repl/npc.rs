@@ -224,6 +224,10 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
 /// - Item not found in player inventory
 /// - Item is fixed (cannot be transferred)
 /// - World state corruption (id lookup failures)
+///
+/// # Panics
+///
+/// - if lookup of an ID already verified to exist fails for some reason
 pub fn give_to_npc_handler(
     world: &mut AmbleWorld,
     view: &mut View,
@@ -291,7 +295,7 @@ pub fn give_to_npc_handler(
 
     // the trigger fired -- proceed with item transfer if it wasn't a refusal
     if gift_response.trigger_fired && !gift_response.npc_refused {
-        transfer_if_not_despawned(world, npc_id.clone(), item_id.clone())?;
+        transfer_if_not_despawned(world, &npc_id, item_id.clone())?;
         check_triggers(world, view, &[TriggerCondition::Drop(item_id.clone())])?;
         show_npc_acceptance(world, view, npc_id.clone(), item_id.clone())?;
     } else if !gift_response.trigger_fired {
@@ -390,7 +394,7 @@ fn check_fired_and_refused(all_fired: &Vec<&Trigger>) -> GiftResponse {
 }
 
 /// Transfers an item from player to NPC if it hasn't been despawned
-fn transfer_if_not_despawned(world: &mut AmbleWorld, npc_id: Id, item_id: Id) -> Result<()> {
+fn transfer_if_not_despawned(world: &mut AmbleWorld, npc_id: &Id, item_id: Id) -> Result<()> {
     // The item may have been despawned by a fired trigger -- so we skip
     // the location transfer below if the item is found to be `Nowhere`
     if world
@@ -402,14 +406,14 @@ fn transfer_if_not_despawned(world: &mut AmbleWorld, npc_id: Id, item_id: Id) ->
     {
         // set new location in NPC on world item
         world
-            .get_item_mut(item_id.clone())
+            .get_item_mut(&item_id)
             .with_context(|| format!("looking up item {item_id}"))?
             .set_location_npc(npc_id.clone());
 
         // add to npc inventory
         world
             .npcs
-            .get_mut(&npc_id)
+            .get_mut(npc_id)
             .with_context(|| format!("looking up NPC {npc_id}"))?
             .add_item(item_id.clone());
 

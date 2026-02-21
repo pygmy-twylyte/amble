@@ -91,18 +91,17 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
     // construct a HashSet of item ids in scope for this search
     let haystack: HashSet<_> = match scope {
         SearchScope::VisibleItems(room_id) | SearchScope::AllVisible(room_id) => {
-            let room_items =
-                nearby_visible_items(world, room_id.clone()).map_err(|_| SearchError::InvalidRoomId(room_id))?;
+            let room_items = nearby_visible_items(world, &room_id).map_err(|_| SearchError::InvalidRoomId(room_id))?;
             room_items.union(&world.player.inventory).cloned().collect()
         },
         SearchScope::TouchableItems(room_id) | SearchScope::AllTouchable(room_id) => {
             let room_items =
-                nearby_reachable_items(world, room_id.clone()).map_err(|_| SearchError::InvalidRoomId(room_id))?;
+                nearby_reachable_items(world, &room_id).map_err(|_| SearchError::InvalidRoomId(room_id))?;
             room_items.union(&world.player.inventory).cloned().collect()
         },
         SearchScope::NearbyVessels(room_id) => {
             let room_items =
-                nearby_vessel_items(world, room_id.clone()).map_err(|_| SearchError::InvalidRoomId(room_id.clone()))?;
+                nearby_vessel_items(world, &room_id).map_err(|_| SearchError::InvalidRoomId(room_id.clone()))?;
             let current_room = world.rooms.get(&room_id).ok_or(SearchError::InvalidRoomId(room_id))?;
             room_items.union(&current_room.npcs).cloned().collect()
         },

@@ -58,7 +58,8 @@ pub struct SaveFileEntry {
 /// Return the active save directory used for completions and save operations.
 pub fn active_save_dir() -> PathBuf {
     ACTIVE_SAVE_DIR
-        .read().map_or_else(|_| PathBuf::from(SAVE_DIR), |guard| guard.clone())
+        .read()
+        .map_or_else(|_| PathBuf::from(SAVE_DIR), |guard| guard.clone())
 }
 
 /// Set the active save directory.
@@ -109,6 +110,9 @@ pub fn collect_save_slots(dir: &Path) -> Result<Vec<SaveSlot>> {
 ///
 /// This supports the per-world save folder layout while still picking up legacy
 /// saves stored directly under `saved_games/`.
+///
+/// # Errors
+/// - on problems with file / directory access
 pub fn collect_save_slots_recursive(root: &Path) -> Result<Vec<SaveSlot>> {
     if !root.exists() {
         return Ok(Vec::new());

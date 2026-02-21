@@ -19,7 +19,9 @@ pub fn sanitize_slug(raw: &str) -> String {
                 slug.push(ch);
             }
             pending_dash = false;
-        } else { ch.is_ascii_whitespace(); pending_dash = true; }
+        } else {
+            pending_dash = true;
+        }
     }
 
     let trimmed = slug.trim_matches(&['-', '_'][..]).to_string();

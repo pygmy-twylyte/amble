@@ -65,13 +65,14 @@ fn init_logging() -> Result<()> {
 
             let mut ready = true;
             if let Some(parent) = log_path.parent()
-                && let Err(error) = fs::create_dir_all(parent) {
-                    eprintln!(
-                        "AMBLE_LOG: failed to create log directory {} ({error}). Falling back to stderr.",
-                        parent.display()
-                    );
-                    ready = false;
-                }
+                && let Err(error) = fs::create_dir_all(parent)
+            {
+                eprintln!(
+                    "AMBLE_LOG: failed to create log directory {} ({error}). Falling back to stderr.",
+                    parent.display()
+                );
+                ready = false;
+            }
 
             if ready {
                 match OpenOptions::new()
@@ -220,9 +221,10 @@ fn prompt_selection(max: usize) -> Result<usize> {
             return Ok(1);
         }
         if let Ok(choice) = trimmed.parse::<usize>()
-            && (1..=max).contains(&choice) {
-                return Ok(choice);
-            }
+            && (1..=max).contains(&choice)
+        {
+            return Ok(choice);
+        }
         println!("Invalid selection. Please enter a number between 1 and {max}.");
     }
 }
@@ -230,9 +232,10 @@ fn prompt_selection(max: usize) -> Result<usize> {
 fn match_world_for_save<'a>(entry: &SaveFileEntry, worlds: &'a [WorldSource]) -> Option<&'a WorldSource> {
     let summary = entry.summary.as_ref()?;
     if !summary.world_slug.trim().is_empty()
-        && let Some(world) = worlds.iter().find(|world| world.slug == summary.world_slug) {
-            return Some(world);
-        }
+        && let Some(world) = worlds.iter().find(|world| world.slug == summary.world_slug)
+    {
+        return Some(world);
+    }
     if !summary.world_title.trim().is_empty() {
         return worlds.iter().find(|world| world.title == summary.world_title);
     }

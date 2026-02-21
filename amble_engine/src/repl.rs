@@ -443,11 +443,10 @@ pub fn check_ambient_triggers(world: &mut AmbleWorld, view: &mut View) -> Result
     for idx in 0..trigger_count {
         let should_check = {
             let trigger = &world.triggers[idx];
-            if trigger.fired && trigger.only_once {
-                false
-            } else if !trigger
-                .conditions
-                .any_trigger(|c| matches!(c, TriggerCondition::Ambient { .. }))
+            if trigger.fired && trigger.only_once
+                || !trigger
+                    .conditions
+                    .any_trigger(|c| matches!(c, TriggerCondition::Ambient { .. }))
             {
                 false
             } else {
@@ -464,19 +463,19 @@ pub fn check_ambient_triggers(world: &mut AmbleWorld, view: &mut View) -> Result
             let trigger = &world.triggers[idx];
             trigger.conditions.for_each_trigger(|cond| {
                 if let TriggerCondition::Ambient { room_ids, spinner } = cond
-                    && (room_ids.is_empty() || room_ids.contains(&current_room_id)) {
-                        let message = world.spinners.get(spinner).and_then(Spinner::spin).unwrap_or_default();
-                        if !message.is_empty() {
-                            view.push(ViewItem::AmbientEvent(format!("{}", message.ambient_trig_style())));
-                        }
-                        fired = true;
+                    && (room_ids.is_empty() || room_ids.contains(&current_room_id))
+                {
+                    let message = world.spinners.get(spinner).and_then(Spinner::spin).unwrap_or_default();
+                    if !message.is_empty() {
+                        view.push(ViewItem::AmbientEvent(format!("{}", message.ambient_trig_style())));
                     }
+                    fired = true;
+                }
             });
         }
-        if fired
-            && let Some(trigger) = world.triggers.get_mut(idx) {
-                trigger.fired = true;
-            }
+        if fired && let Some(trigger) = world.triggers.get_mut(idx) {
+            trigger.fired = true;
+        }
     }
     Ok(())
 }

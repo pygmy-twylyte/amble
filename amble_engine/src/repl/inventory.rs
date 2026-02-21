@@ -215,7 +215,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
             // e.g. "take hot pan" fails but "take hot pan using potholder" should succeed
             // the latter command is run through a different (use tool on target) handler.
             if let Some(ability) = item.requires_capability_for(ItemInteractionType::Handle) {
-                report_handling_requirement(view, item, ability);
+                report_handling_requirement(view, item, &ability);
                 return Ok(());
             }
 
@@ -299,7 +299,7 @@ fn report_immovable_item(world: &AmbleWorld, view: &mut View, take_verb: &str, i
 
 /// Reports need for (a "tool" item with) special ability to handle a target item, and logs the
 /// attempt.
-fn report_handling_requirement(view: &mut View, item: &Item, ability: ItemAbility) {
+fn report_handling_requirement(view: &mut View, item: &Item, ability: &ItemAbility) {
     view.push(ViewItem::ActionFailure(format!(
         "{}",
         format!(
@@ -415,10 +415,10 @@ pub fn take_from_handler(
                 )));
                 return Ok(());
             }
-            validate_and_transfer_from_item(world, view, item_pattern, vessel_uuid)?;
+            validate_and_transfer_from_item(world, view, item_pattern, &vessel_uuid)?;
         },
         EntityId::Npc(npc_id) => {
-            validate_and_transfer_from_npc(world, view, item_pattern, npc_id)?;
+            validate_and_transfer_from_npc(world, view, item_pattern, &npc_id)?;
         },
     }
     world.turn_count += 1;
@@ -468,21 +468,23 @@ pub(crate) fn validate_and_transfer_from_npc(
     world: &mut AmbleWorld,
     view: &mut View,
     item_pattern: &str,
-    npc_id: Id,
+    npc_id: &Id,
 ) -> Result<(), anyhow::Error> {
-    let mut tx_data = TransferData::default();
-    tx_data.vessel_type = VesselType::Npc;
-    tx_data.vessel_id = npc_id.clone();
+    let mut tx_data = TransferData {
+        vessel_id: npc_id.clone(),
+        vessel_type: VesselType::Npc,
+        ..Default::default()
+    };
 
     let npc = world
         .npcs
-        .get(&npc_id)
+        .get(npc_id)
         .ok_or(anyhow!("container {npc_id} lookup failed"))?;
     tx_data.vessel_name = npc.name.clone();
 
     match find_item_match(world, item_pattern, SearchScope::NpcInventory(npc_id.clone())) {
         Ok(loot_id) => {
-            tx_data.loot_id = loot_id.clone();
+            tx_data.loot_id.clone_from(&loot_id);
             let loot = world.items.get(&loot_id).expect("loot_id already validated");
             tx_data.loot_name = loot.name.clone();
             if let Some(reason) = loot.take_denied_reason() {
@@ -552,20 +554,22 @@ pub(crate) fn validate_and_transfer_from_item(
     world: &mut AmbleWorld,
     view: &mut View,
     item_pattern: &str,
-    vessel_id: Id,
+    vessel_id: &Id,
 ) -> Result<(), anyhow::Error> {
-    let mut tx_data = TransferData::default();
-    tx_data.vessel_name = name_from_id(&world.items, &vessel_id)
-        .expect("vessel validated by take_from (caller)")
-        .to_owned();
-    tx_data.vessel_id = vessel_id.clone();
-    tx_data.vessel_type = VesselType::Item;
+    let mut tx_data = TransferData {
+        vessel_type: VesselType::Item,
+        vessel_id: vessel_id.clone(),
+        vessel_name: name_from_id(&world.items, vessel_id)
+            .expect("vessel validated by (take_from()) caller")
+            .to_owned(),
+        ..Default::default()
+    };
 
     // match the item_pattern (input loot name) to an available item in the room
     let room_id = world.player_room_ref()?.id();
     match find_item_match(world, item_pattern, SearchScope::TouchableItems(room_id)) {
         Ok(id) => {
-            tx_data.loot_id = id.clone();
+            tx_data.loot_id.clone_from(&id);
             tx_data.loot_name = world.items.get(&id).expect("id must be present").name().to_owned();
         },
         Err(SearchError::NoMatchingName(input)) => {
@@ -626,13 +630,13 @@ pub(crate) fn validate_and_transfer_from_item(
 /// reflect the current world state.
 pub(crate) fn transfer_to_player(world: &mut AmbleWorld, view: &mut View, tx_data: &TransferData) {
     // Change item location to inventory
-    if let Some(moving_item) = world.get_item_mut(tx_data.loot_id.clone()) {
+    if let Some(moving_item) = world.get_item_mut(&tx_data.loot_id) {
         moving_item.set_location_inventory();
     }
     // Remove item id from vessel's contents / inventory
     match tx_data.vessel_type {
         VesselType::Item => {
-            if let Some(vessel) = world.get_item_mut(tx_data.vessel_id.clone()) {
+            if let Some(vessel) = world.get_item_mut(&tx_data.vessel_id) {
                 vessel.remove_item(tx_data.loot_id.clone());
             }
         },
@@ -1134,7 +1138,7 @@ mod tests {
         let mut tw = build_world();
         let chest_id = tw.chest_id.clone();
         let gem_id = tw.gem_id.clone();
-        validate_and_transfer_from_item(&mut tw.world, &mut tw.view, "gem", chest_id.clone()).unwrap();
+        validate_and_transfer_from_item(&mut tw.world, &mut tw.view, "gem", &chest_id).unwrap();
         assert!(tw.world.player.inventory.contains(&gem_id));
         assert!(!tw.world.items.get(&chest_id).unwrap().contents.contains(&gem_id));
         assert_eq!(tw.world.items.get(&gem_id).unwrap().location(), &Location::Inventory);
@@ -1145,7 +1149,7 @@ mod tests {
         let mut tw = build_world();
         let npc_id = tw.npc_id.clone();
         let coin_id = tw.npc_item_id.clone();
-        validate_and_transfer_from_npc(&mut tw.world, &mut tw.view, "coin", npc_id.clone()).unwrap();
+        validate_and_transfer_from_npc(&mut tw.world, &mut tw.view, "coin", &npc_id).unwrap();
         assert!(tw.world.player.inventory.contains(&coin_id));
         assert!(!tw.world.npcs.get(&npc_id).unwrap().inventory.contains(&coin_id));
         assert_eq!(tw.world.items.get(&coin_id).unwrap().location(), &Location::Inventory);
@@ -1154,13 +1158,13 @@ mod tests {
     #[test]
     fn transfer_to_player_updates_world_from_item() {
         let mut tw = build_world();
-        let mut tx_data = TransferData::default();
-        tx_data.vessel_id = tw.chest_id.clone();
-        tx_data.loot_id = tw.gem_id.clone();
-        tx_data.vessel_type = VesselType::Item;
-        tx_data.vessel_name = "Vessel".to_string();
-        tx_data.loot_name = "Loot".to_string();
-
+        let tx_data = TransferData {
+            vessel_id: tw.chest_id.clone(),
+            loot_id: tw.gem_id.clone(),
+            vessel_type: VesselType::Item,
+            vessel_name: "Vessel".to_string(),
+            loot_name: "Loot".to_string(),
+        };
         transfer_to_player(&mut tw.world, &mut tw.view, &tx_data);
         assert!(tw.world.player.inventory.contains(&tx_data.loot_id));
         assert_eq!(
@@ -1180,12 +1184,13 @@ mod tests {
     #[test]
     fn transfer_to_player_updates_world_from_npc() {
         let mut tw = build_world();
-        let mut tx_data = TransferData::default();
-        tx_data.vessel_type = VesselType::Npc;
-        tx_data.vessel_id = tw.npc_id.clone();
-        tx_data.vessel_name = "Some NPC".to_string();
-        tx_data.loot_id = tw.npc_item_id.clone();
-        tx_data.loot_name = "Loot".to_string();
+        let tx_data = TransferData {
+            vessel_type: VesselType::Npc,
+            vessel_id: tw.npc_id.clone(),
+            vessel_name: "Some NPC".to_string(),
+            loot_id: tw.npc_item_id.clone(),
+            loot_name: "Loot".to_string(),
+        };
         transfer_to_player(&mut tw.world, &mut tw.view, &tx_data);
         assert!(tw.world.player.inventory.contains(&tx_data.loot_id));
         assert_eq!(
