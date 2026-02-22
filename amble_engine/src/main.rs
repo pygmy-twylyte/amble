@@ -7,6 +7,7 @@
 //! Handles CLI startup, logging configuration, and world loading before
 //! entering the interactive REPL.
 
+use amble_engine::markup::{StyleKind, StyleMods, WrapMode, render_wrapped};
 use amble_engine::save_files::{
     LOG_DIR, SAVE_DIR, SaveFileEntry, build_save_entries_recursive, format_modified, load_save_file,
     save_dir_for_world, set_active_save_dir,
@@ -323,7 +324,17 @@ fn main() -> Result<()> {
     );
 
     if !world.intro_text.trim().is_empty() {
-        println!("{}", fill(&world.intro_text, termwidth()).description_style());
+        println!(
+            "{}",
+            render_wrapped(
+                &world.intro_text,
+                termwidth(),
+                WrapMode::Normal,
+                StyleKind::Plain,
+                StyleMods::default()
+            )
+        );
+        //println!("{}", fill(&world.intro_text, termwidth()).description_style());
     }
 
     run_repl(&mut world)
