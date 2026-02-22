@@ -92,7 +92,7 @@ mod tests {
     fn test_get_rank_exact_match() {
         let config = ScoringConfig::default();
         let (name, _) = config.get_rank(99.0);
-        assert_eq!(name, "Quantum Overachiever");
+        assert_eq!(name, "Stellar");
     }
 
     #[test]
@@ -100,10 +100,10 @@ mod tests {
         let config = ScoringConfig::default();
 
         let (name, _) = config.get_rank(88.0);
-        assert_eq!(name, "Licensed Reality Bender");
+        assert_eq!(name, "Great");
 
         let (name, _) = config.get_rank(50.0);
-        assert_eq!(name, "Unpaid Research Assistant");
+        assert_eq!(name, "Good");
     }
 
     #[test]
@@ -111,13 +111,13 @@ mod tests {
         let config = ScoringConfig::default();
 
         let (name, _) = config.get_rank(100.0);
-        assert_eq!(name, "Quantum Overachiever");
+        assert_eq!(name, "Stellar");
 
         let (name, _) = config.get_rank(99.99);
-        assert_eq!(name, "Quantum Overachiever");
+        assert_eq!(name, "Stellar");
 
         let (name, _) = config.get_rank(0.01);
-        assert_eq!(name, "Amnesiac Test Subject");
+        assert_eq!(name, "Failed");
     }
 
     #[test]
