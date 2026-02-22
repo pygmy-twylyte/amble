@@ -91,7 +91,10 @@ trigger "[Plaque 2] Read the Plaque" only once
 when use item plaque_2 ability read {
     do remove flag tried-read-plaque-2
     do add flag read-plaque-2
-    do award points 10 reason "Read the second crystal plaque"
+    do award points 10 reason "Read the frozen plaque"
+    if has visited room stargate-room {
+        do show "(A new Stargate destination has been enabled.)"
+    }
 }
 
 trigger "[Plaque 2] Pile Firewood"
@@ -150,19 +153,19 @@ trigger "Hint: Find Items to Build a Fire" only once
 note "schedule radio hint about building a fire"
 when use item plaque_2_frozen ability read {
     do schedule in 4 if any(
-    all(
-    missing flag campfire-lit,
-    has flag hint-radio-on,
-    has item hint_radio,
-    in rooms ice-pit,
-    ),
-    has flag campfire-lit,
+        all(
+            missing flag campfire-lit,
+            has flag hint-radio-on,
+            has item hint_radio,
+            in rooms ice-pit,
+        ),
+        has flag campfire-lit,
     ) onFalse retryNextTurn note "radio gives campfire hint" {
         if all(
-        missing flag campfire-lit,
-        has flag hint-radio-on,
-        has item hint_radio,
-        in rooms ice-pit,
+            missing flag campfire-lit,
+            has flag hint-radio-on,
+            has item hint_radio,
+            in rooms ice-pit,
         ) {
             do npc says hint_radio_npc "To melt that pillar, you'll need to drop some firewood here and light it with something."
         }

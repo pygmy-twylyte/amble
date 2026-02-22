@@ -77,9 +77,13 @@ trigger "[Parish-Landing] Read Cleaned Plaque 1" only once
 when use item plaque_1 ability read {
     if has flag cleaned-plaque-1 {
         do add flag read-plaque-1
-        do award points 5 reason "Read the first crystal plaque"
+        do award points 10 reason "Read the grimy plaque"
+    }
+    if all( has visited room stargate-room, has flag cleaned-plaque-1 ) {
+        do show "(A new Stargate destination has been enabled.)"
     }
 }
+
 
 # ========================================
 # Goals

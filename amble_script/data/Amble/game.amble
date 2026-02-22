@@ -6,17 +6,16 @@ game {
     author "Dave"
     version "0.66.0-pre"
     blurb "A surreal sci-fi comedy adventure about cake, curiosity, and improbable facilities."
-    intro """
-You find yourself standing on a rocky outcrop of a ridge high in the mountains -- maybe the Andes? Emerging from a daze, you realize you were brought here and dropped off by some sort of flying vehicle. When it flew off, it didn't make a sound. Did it have a motor, or was it something different?
+    intro """You find yourself standing on a rocky outcrop of a ridge high in the mountains -- maybe the Andes? Emerging from a daze, you realize you were brought here and dropped off by some sort of flying vehicle. When it flew off, it didn't make a sound. [[i]]Did it have a motor, or was it something different?[[/i]]
 
 Your head gradually begins to clear, and you start to take stock of your surroundings...
 
-(type "help" for basic instructions)
+[[hl]][[i]](type "help" for basic instructions)[[/i]][[/hl]]
 """
     player {
         name "The Candidate"
         desc "a seasoned adventurer with a faint memory of a promised cake that has gone unfulfilled."
-        max_hp 20
+        max_hp 30
         start room high-ridge
     }
     scoring {

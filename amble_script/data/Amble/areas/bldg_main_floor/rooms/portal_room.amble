@@ -4,7 +4,16 @@
 
 room portal-room {
     name "Portal Room"
-    desc "A bare white room with a white tile floor. A ladder leads back up through the trap door in the ceiling. Three of the four walls are used as whiteboards, littered with obscure diagrams and equations. In the center, a black and white Portal gun is affixed to a pedestal and aimed squarely at the fourth wall."
+    desc "A bare white room with a tile floor. A ladder leads back up through the trap door in the ceiling. Three of the four walls are used as whiteboards, littered with obscure diagrams and equations. In the center, a black and white Portal gun is affixed to a pedestal and aimed squarely at the fourth wall."
+
+    scenery "Tile Floor"
+    scenery "Ladder"
+    scenery "Trap Door"
+    scenery "Walls"
+    scenery "Pedestal"
+    scenery "Diagrams" desc "There are many, including one depicting a swallow carrying a coconut, and another with some sort of tunnel leading to a facility, with more tunnels dispersing from there."
+    scenery "Equations" desc "The equations scrawled across the wall appear complicated, but in particular many of the terms are bizarre, seemingly centered around improbability levels and the quantum nature of truth itself, being undecided until observed."
+
     overlay if ( flag set portal-gun-powered ) {
         text "The power indicator on the Portal gun now glows a steady green."
     }

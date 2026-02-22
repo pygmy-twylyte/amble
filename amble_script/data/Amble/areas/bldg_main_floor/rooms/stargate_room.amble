@@ -7,7 +7,11 @@
 
 room stargate-room {
     name "Stargate Room"
-    desc """A hangar-size concrete room, connected to the Aperture lab through a huge, round vault door. Little light reaches the darkened corners of the room, but at its center stands a round control console ringed with hieroglyphs, obscure emojis, and diagrams from IKEA assembly manuals. A giant metallic ring festooned with similar symbols stands on end at the end of the room.\n\nThere are three large buttons in the center of the console:"""
+    desc """A hangar-size concrete room, connected to the Aperture lab through a huge, round vault door. Little light reaches the darkened corners of the room, but at its center stands a round control console in a crossfire of floodligts and ringed with [[b]]strange symbols[[/b]]. A giant metallic ring festooned with similar symbols stands on end at the end of the room.\n\nThere are three large buttons in the center of the console:"""
+
+    scenery "Strange Symbols" desc "Some of the symbols look like map markers or landmarks, others look like hieroglyphs or bits of IKEA assembly manuals."
+
+    scenery "Control Console" desc "Made of some dark metal, waist high and seemingly of alien design similar to that of the giant ring, it seems logical to assume that it is paired to the giant ring across the room."
 
     overlay if flag read-plaque-1 {
         set   "On the left, shaped like a tree:        [[green]]RAISED[[/green]]"
@@ -48,6 +52,7 @@ note "schedule/give point award for first time opening gate"
 when touch item woodland_button {
     do schedule in 1 if has flag read-plaque-1 onFalse retryNextTurn {
         do award points 5 reason "Activated the Woodland Gate"
+        do add flag woodland-gate-enabled
     }
 }
 
@@ -105,6 +110,7 @@ note "schedule/give point award for first time opening gate"
 when touch item snowfield_button {
     do schedule in 1 if has flag read-plaque-2 onFalse retryNextTurn {
         do award points 5 reason "Activated the Snowfield Gate"
+        do add flag snowfield-gate-enabled
     }
 }
 
@@ -163,7 +169,8 @@ trigger "[Stargate] Patio Gate: Activate" only once
 note "schedule/give point award for first time opening gate"
 when touch item patio_button {
     do schedule in 1 if has flag read-plaque-3 onFalse retryNextTurn {
-        do award points 5 reason "Activate the Patio Gate"
+        do award points 5 reason "Enabled the Patio Gate"
+        do add flag patio-gate-enabled
     }
 }
 
@@ -204,4 +211,71 @@ when touch item patio_button {
     if missing flag read-plaque-3 {
         do show "The fork-shaped button is already pressed down as far as it can go."
     }
+}
+
+# ========================================
+# HINT Radio Trigger
+# ========================================
+let set stargate_hint_rooms = (
+    stargate-room,
+    patio,
+    parish-landing,
+    ice-pit,
+)
+trigger "HINT Radio: Activating the Stargate" only once
+when enter room stargate-room {
+    do schedule in 2
+    if any(
+        all(
+            has item hint_radio,
+            has flag hint-radio-on,
+            all(
+                missing flag woodland-gate-open,
+                missing flag snowfield-gate-open,
+                missing flag patio-gate-open,
+            ),
+            in rooms stargate_hint_rooms,
+        ),
+        has flag portal-gun-powered,
+    ) onFalse retryNextTurn {
+        if all(
+            has item hint_radio,
+            has flag hint-radio-on,
+            all(
+                missing flag woodland-gate-open,
+                missing flag snowfield-gate-open,
+                missing flag patio-gate-open,
+            ),
+            in rooms stargate_hint_rooms,
+        ) {
+            do npc says hint_radio_npc "The stargate seems to be tied to certain sites around the premises. It looks like there's something that you need to do at the receiving sites to be able to open those portals, though. Come to think of it, there was one of those ornate pillars at each of the other gate sites..."
+        }
+    }
+}
+
+# ========================================================================
+# Stargate GOALS
+# ========================================================================
+goal activate_woodland_gate {
+    name "Enable the Woodland Gate"
+    desc "Find a way to enable the Stargate link back to the woodlands."
+    group optional
+    done when has flag woodland-gate-enabled
+    start when reached room stargate-room
+}
+
+goal activate_snowfield_gate {
+    name "Enable the Snowfield Gate"
+    desc "Find a way to enable the Stargate link back to the snowfield."
+    group optional
+    start when reached room stargate-room
+    done when has flag snowfield-gate-enabled
+}
+
+goal activate_patio_gate {
+    name "Enable the Patio Gate"
+    desc "Find a way to enable the Stargate link back to the restaurant patio."
+    group optional
+    done when has flag patio-gate-enabled
+    start when reached room stargate-room
 }

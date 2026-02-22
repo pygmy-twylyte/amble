@@ -6,20 +6,32 @@
 room patio {
     name "BLINDING GLARE"
     desc "You see almost nothing at all, except for a momentary glimpse of a few scattered details before you are blinded. The pure white light here is stare-into-the-sun bright and seems to come from all directions, forcing you to shield your eyes with your arm and flee."
+
     overlay if player has item peril_sunglasses, flag set patio-gate-open {
         text "The Stargate shimmers off to the side by the kitchen door, its connection to the laboratory still open."
     }
     overlay if player has item peril_sunglasses, flag unset patio-gate-open {
         text "A large metallic ring stands by the kitchen door. It might be a backdrop for weddings, but it's covered in hieroglyphs and other odd symbols -- none of them rings, hearts, doves, or branding irons."
     }
-    exit west -> restaurant
+
+    overlay if item present lighter, item present un_drink {
+        text "An abandoned half-empty [[item]]cocktail[[/item]] glass sits on a high bar table next to a [[item]]lighter[[/item]]. The drink seems to be slowly un-drinking itself."
+    }
+    overlay if item absent lighter, item present un_drink {
+        text "An abandoned half-empty [[item]]cocktail[[/item]] glass is un-drinking itself on a high bar table."
+    }
+    overlay if item present lighter, item absent un_drink {
+        text "A silver Zippo-style [[item]]lighter[[/item]] sits abandoned on a high bar table."
+    }
+    exit "dining room" -> restaurant
 }
+
 # Triggers alter room appearance when the sunglasses are taken or dropped
 trigger "Modify Patio: Sunglasses On"
 when take item peril_sunglasses {
     do modify room patio {
         name "Restaurant Patio"
-        desc "The patio overlooks nothing in particular—just an endless starfield gently swirling beyond a transparent force field. A few metal tables are bolted to the floor, and one of them has a half-empty cocktail glass slowly un-drinking itself. A sign near the edge reads: 'No Leaning Beyond This Point. You have been warned.'"
+        desc "The patio overlooks nothing in particular—just an endless starfield gently swirling beyond a transparent force field. A few metal tables are bolted to the floor, but nicely appointed with linens and decorative centerpieces. A sign near the edge of the balcony reads: 'No Leaning Beyond This Point. You have been warned.'"
     }
 }
 trigger "Modify Patio: Sunglasses Off"
@@ -36,6 +48,7 @@ when drop item peril_sunglasses {
 #
 item un_drink {
     name "Negative Cocktail"
+    aliases "drink", "glass"
     desc "A crystal glass sits half full of... nothing. And yet, the liquid level keeps rising, as if the drink is slowly returning to the bartender across time. The stir stick spins gently in defiance of gravity and good sense."
     movability free
     location room patio
@@ -63,7 +76,10 @@ item plaque_3 {
 trigger "[Plaque 3] Read the Plaque" only once
 when use item plaque_3 ability read {
     do add flag read-plaque-3
-    do award points 10 reason "Decoded the third crystal plaque"
+    do award points 10 reason "Reached and read the third crystal plaque"
+    if has visited room stargate-room {
+        do show "(A new Stargate destination has been enabled.)"
+    }
 }
 
 trigger "[Patio] Sunglasses Required"
