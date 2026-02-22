@@ -3,12 +3,12 @@
 //! This module defines [`AmbleWorld`] and related types used at runtime to
 //! track the current state of the adventure.
 
-use crate::AMBLE_VERSION;
 use crate::item::{ContainerState, ItemVisibility};
 use crate::loader::scoring::ScoringConfig;
 use crate::npc::Npc;
 use crate::spinners::{CoreSpinnerType, SpinnerType};
 use crate::trigger::Trigger;
+use crate::{AMBLE_VERSION, ItemId, NpcId, RoomId};
 use crate::{Goal, Item, Player, Room, Scheduler};
 
 use anyhow::{Context, Result, anyhow};
@@ -25,12 +25,12 @@ use variantly::Variantly;
 /// Unspawned/despawned items and NPCs are also located `Nowhere`
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Variantly, PartialEq, Eq)]
 pub enum Location {
-    Item(Id),
+    Item(ItemId),
     Inventory,
     #[default]
     Nowhere,
-    Npc(Id),
-    Room(Id),
+    Npc(NpcId),
+    Room(RoomId),
 }
 
 impl Location {
@@ -39,7 +39,7 @@ impl Location {
     /// # Errors
     ///
     /// Returns an error if the location is not a room.
-    pub fn room_id(&self) -> Result<Id> {
+    pub fn room_id(&self) -> Result<RoomId> {
         self.room_ref()
             .cloned()
             .ok_or_else(|| anyhow!("location is not a room"))
@@ -72,20 +72,20 @@ pub trait WorldObject {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AmbleWorld {
     /// Rooms or areas that define the game world
-    pub rooms: HashMap<Id, Room>,
+    pub rooms: HashMap<RoomId, Room>,
     /// Inanimate objects
-    pub items: HashMap<Id, Item>,
+    pub items: HashMap<ItemId, Item>,
     /// Actions that fire in response to events or changes in world state
     pub triggers: Vec<Trigger>,
     /// The player character
     pub player: Player,
     /// History of the player's path since the beginning of the game (Room IDs)
     #[serde(default)]
-    pub player_path: Vec<Id>,
+    pub player_path: Vec<RoomId>,
     /// Text / phrase randomizers for ambient events, status effects, and to keep engine messages from being repetitive
     pub spinners: HashMap<SpinnerType, Spinner<String>>,
     /// Non-playable characters
-    pub npcs: HashMap<Id, Npc>,
+    pub npcs: HashMap<NpcId, Npc>,
     /// The maximum achieveable score in the game
     pub max_score: usize,
     /// Goals or achievements to guide player progress
@@ -188,7 +188,7 @@ impl AmbleWorld {
     }
 
     /// Get a mutable reference to an item by id, if present.
-    pub fn get_item_mut(&mut self, item_id: &Id) -> Option<&mut Item> {
+    pub fn get_item_mut(&mut self, item_id: &ItemId) -> Option<&mut Item> {
         self.items.get_mut(item_id)
     }
 }
@@ -200,12 +200,12 @@ impl AmbleWorld {
 /// container item (typically when it either is open or transparent).
 fn collect_room_items(
     world: &AmbleWorld,
-    room_id: &Id,
+    room_id: &RoomId,
     // Predicate determining whether an item's contents should be collected
     should_include_contents: impl Fn(&Item) -> bool,
     // Predicate determining whether an item itself should be included
     should_include_item: impl Fn(&Item) -> bool,
-) -> Result<HashSet<Id>> {
+) -> Result<HashSet<ItemId>> {
     let current_room = world
         .rooms
         .get(room_id)
@@ -238,7 +238,7 @@ fn item_is_visible_item(item: &Item, world: &AmbleWorld) -> bool {
 }
 
 /// Returns true if the item passes its visibility condition (if any).
-pub fn item_is_visible(world: &AmbleWorld, item_id: &Id) -> bool {
+pub fn item_is_visible(world: &AmbleWorld, item_id: &ItemId) -> bool {
     world
         .items
         .get(item_id)
@@ -246,7 +246,7 @@ pub fn item_is_visible(world: &AmbleWorld, item_id: &Id) -> bool {
 }
 
 /// Returns true if the item should be listed in automatic room/container listings.
-pub fn item_is_listed(world: &AmbleWorld, item_id: &Id) -> bool {
+pub fn item_is_listed(world: &AmbleWorld, item_id: &ItemId) -> bool {
     world
         .items
         .get(item_id)
@@ -260,7 +260,7 @@ pub fn item_is_listed(world: &AmbleWorld, item_id: &Id) -> bool {
 ///
 /// # Errors
 /// - if supplied `room_id` is invalid
-pub fn nearby_reachable_items(world: &AmbleWorld, room_id: &Id) -> Result<HashSet<Id>> {
+pub fn nearby_reachable_items(world: &AmbleWorld, room_id: &RoomId) -> Result<HashSet<ItemId>> {
     collect_room_items(
         world,
         room_id,
@@ -273,7 +273,7 @@ pub fn nearby_reachable_items(world: &AmbleWorld, room_id: &Id) -> Result<HashSe
 ///
 /// # Errors
 /// - if supplied `room_id` is invalid
-pub fn nearby_visible_items(world: &AmbleWorld, room_id: &Id) -> Result<HashSet<Id>> {
+pub fn nearby_visible_items(world: &AmbleWorld, room_id: &RoomId) -> Result<HashSet<ItemId>> {
     collect_room_items(
         world,
         room_id,
@@ -286,7 +286,7 @@ pub fn nearby_visible_items(world: &AmbleWorld, room_id: &Id) -> Result<HashSet<
 ///
 /// # Errors
 /// - if supplied `room_id` is invalid
-pub fn nearby_vessel_items(world: &AmbleWorld, room_id: &Id) -> Result<HashSet<Id>> {
+pub fn nearby_vessel_items(world: &AmbleWorld, room_id: &RoomId) -> Result<HashSet<ItemId>> {
     let current_room = world
         .rooms
         .get(room_id)
@@ -314,7 +314,7 @@ pub fn nearby_vessel_items(world: &AmbleWorld, room_id: &Id) -> Result<HashSet<I
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Id;
+
     use crate::{
         health::HealthState,
         item::{ContainerState, Item, Movability},
@@ -326,7 +326,7 @@ mod tests {
     use gametools::{Spinner, Wedge};
     use std::collections::{HashMap, HashSet};
 
-    fn create_test_item(id: &Id, location: Location) -> Item {
+    fn create_test_item(id: &ItemId, location: Location) -> Item {
         Item {
             id: id.clone(),
             symbol: format!("item_{id}"),
@@ -346,7 +346,7 @@ mod tests {
         }
     }
 
-    fn create_test_room(id: &Id) -> Room {
+    fn create_test_room(id: &RoomId) -> Room {
         Room {
             id: id.clone(),
             symbol: format!("room_{id}"),
@@ -364,7 +364,7 @@ mod tests {
     }
 
     #[allow(dead_code)]
-    fn create_test_npc(id: &Id, location: Location) -> Npc {
+    fn create_test_npc(id: &NpcId, location: Location) -> Npc {
         Npc {
             id: id.clone(),
             symbol: format!("npc_{id}"),

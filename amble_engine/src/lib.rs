@@ -26,6 +26,12 @@ pub const AMBLE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub type Id = String;
 
+// These aliases are being inserted both for clarity and as part of a plan to migrate
+// to newtype IDs in the future (e.g. pub struct ItemId(String) etc)
+pub type ItemId = Id;
+pub type NpcId = Id;
+pub type RoomId = Id;
+
 // DEV_MODE is enabled or disabled through this const throughout
 #[cfg(feature = "dev-mode")]
 pub const DEV_MODE: bool = true;
