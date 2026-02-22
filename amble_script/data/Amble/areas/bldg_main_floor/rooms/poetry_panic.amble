@@ -4,15 +4,20 @@
 
 room poetry-panic {
     name "Bad Poetry Panic Room"
-    desc "A concrete and titanium vacuum-sealed room equipped with noise generators, active voice-cancelling harmonics and Cone of Silence™ technology. A seal on the door proudly boasts that the chamber is [[i]][[b]]almost[[/b]][[/i]] completely Vogon poetry-proof."
+    desc "A concrete and titanium vacuum-sealed room equipped with noise generators, active voice-cancelling harmonics and Cone of Silence™ technology. Faint mist drifts from a ceiling vent next to a very large [[b]]scorch mark[[/b]]. A seal on the wall proudly boasts that the chamber is [[i]][[b]]almost[[/b]][[/i]] completely Vogon poetry-proof."
 
     overlay if flag poetry-in-progress {
-        set "An indicator next to the door shows [[u]][[red]]Vogon Poetry Detected[[/red]][[/u]] and the door remains sealed."
-        unset "The [[u]][[green]]All Clear[[/green]][[/u]] light next to the door is lit."
+        set "[[box:External Sensor]][[u]][[red]]Vogon Poetry Detected[[/red]][[/u]][[/box]]"
+        unset "[[box:External Sensor]][[u]][[green]]All Clear[[/green]][[/u]][[/box]]"
     }
+
+    scenery "Scorch Mark" desc "A soot-stained outline of a humanoid figure is baked into the ceiling, as though someone briefly became pure plasma while holding a towel. Someone chalked [[i]]RIP Candidate 2112-41[[/i]] next to it in tidy block letters."
+
+    scenery "Stress Mist" desc "A faint plume smelling of burnt marshmallow and panic curls from the vent, refusing to disperse even with the scrubbers roaring."
+
     exit "Amble office" -> amble-office {
         locked,
-        barred "The door will remain sealed until the Vogon poetry reading has finished."
+        barred "The door will remain sealed until the Vogon poetry reading outside has finished."
     }
 }
 
@@ -21,7 +26,90 @@ room poetry-panic {
 # ========================================
 item elevator_keycard {
     name "Proximity Keycard"
-    desc "This is either a keycard or a rejected prototype for a business card. It reads: 'Amble Adventures — Internal Use Only — Do Not Duplicate, Think About, or Eat'. It's warm to the touch, and it buzzes slightly."
+    desc "This is either a keycard or a rejected prototype for a business card. It reads: 'Amble Adventures — Internal Use Only — Do Not Duplicate, Think About, or Eat'. Tiny scorch marks freckle the edge, as if the last person to hold it took criticism poorly."
     movability free
     location room poetry-panic
+}
+
+item thermo_goggles {
+    name "Thermo-Goggles"
+    desc "A pair of emergency thermo-goggles has been slagged into the bulkhead. The cracked lenses still glow, as if replaying the last thing they saw."
+    movability fixed "They're welded into the titanium wall."
+    location room poetry-panic
+}
+
+item stress_sensor_anklets {
+    name "Stress-Sensor Anklets"
+    desc "Two biometric anklets lie on the floor. One is snapped clean in half; the other still flashes a warning: [[b]]VOLATILE CLADE 6 — MOOD CONTAINMENT FAILURE[[/b]]."
+    movability fixed "They were fused to the deck plates by the blast."
+    location room poetry-panic
+}
+
+item containment_cape {
+    name "Containment Cape"
+    desc "Shreds of a containment cape flutter near the ceiling vent, caught in a perpetual updraft. Its smart-fabric pattern is frozen mid-transition between \"calming ocean\" and \"corporate motivational poster\"."
+    movability fixed "It's cemented in place by emergency foam and a lingering static field."
+    location room poetry-panic
+}
+
+item evaluation_slate {
+    name "Candidate Evaluation Slate"
+    desc "A slim console sits on a pedestal, screen paused on performance review [[i]]Candidate 2112-41[[/i]]. A bar graph labeled AGITATION creeps dangerously close to the red zone."
+    movability fixed "The slate is bolted to the pedestal for everyone's safety."
+    location room poetry-panic
+    ability Read
+    text """CANDIDATE 2112-41 PERFORMANCE FEEDBACK
+Stress Tolerance........... 12% (target 85%)
+Keycard Retention.......... FAILED (item dropped mid freak-out)
+Professional Demeanor...... Needs Improvement (self-detonated during review)
+Species Tag................ Volatile Clade 6 — DO NOT TAUNT
+
+"Reminder: breathe between bouts of cosmic dread." """
+}
+
+# ========================================
+# Room-specific Reactions
+# ========================================
+
+trigger "[Poetry-Panic] Touch Thermo-Goggles"
+when touch item thermo_goggles {
+    do show "The slagged goggles flare, projecting the ghostly outline of Candidate 2112-41 mid-meltdown. A puff of roasted sugar and despair vents from the lenses before they dim."
+}
+
+trigger "[Poetry-Panic] Touch Stress Anklets"
+when touch item stress_sensor_anklets {
+    do show "The intact anklet chirps, \"Agitation exceeded safe levels. Next time: hydrate.\" It then sparks, welding itself even deeper into the flooring."
+}
+
+trigger "[Poetry-Panic] Touch Containment Cape"
+when touch item containment_cape {
+    do show "Static zaps your fingers and the cape cycles through its calming program: beach vista, inspirational quote, then a blunt warning: [[bright-red]]DO NOT READ EVALUATIONS WHILE STEAMING[[/bright-red]]."
+}
+
+trigger "[Poetry-Panic] Evaluation Slate Reactions"
+when use item evaluation_slate ability read {
+    if all(
+        has flag slate-page-1,
+        has flag slate-page-2,
+        has flag slate-page-3,
+    ) {
+        do show "\"For safety compliance, additional critiques have been archived. Please calm down before requesting more.\" The slate locks itself."
+    }
+    if all(
+        has flag slate-page-1,
+        has flag slate-page-2,
+        missing flag slate-page-3,
+    ) {
+        do add flag slate-page-3
+        do show "The slate emits a soft chime and plays back the final seconds of Candidate 2112-41: the stress anklets screaming, the containment cape shredding, and the keycard skittering beneath the bench where you found it."
+        do award points 1 reason "Witnessed the last moments of Candidate 2112-41"
+    }
+    if all( has flag slate-page-1, missing flag slate-page-2 ) {
+        do add flag slate-page-2
+        do show "Page 3 displays: [[i]]\"Volatile Clade 6 candidates are reminded not to internalize criticism.\"[[/i]] A siren chirps \"EMOTIONAL CASCADE DETECTED\" as holographic soot trickles from the projector."
+    }
+    if missing flag slate-page-1 {
+        do add flag slate-page-1
+        do show "Page 2: \"Opportunities for Growth.\" Bullet one reads: [[i]]\"Consider smiling more when sealed in panic rooms.\"[[/i]] The agitation bar jumps ten points."
+    }
 }
