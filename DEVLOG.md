@@ -10,6 +10,19 @@ For the *few* of you out there lurking and watching the my pet project so far, i
 So, I intend to keep an informal log here, going forward. With the exception of this intro, newest entries will be at the top.
 
 ---
+2-21-2026
+
+Some headway on 0.66.0-pre -- more scenery updates to demo room content, but those sometimes lead to new ideas of ways to do thing or new things entirely. The whole sequence with the Vogon poetry and the panic room has been revamped. Some additional engine changes were needed as well, to fix a bug in room exit matching, to allow handlers other than "look_at" to recognize scenery items.
+
+I've also been doing a bunch of code cleanup, addressing clippy lints, light refactoring. 
+
+Also addressed a papercut that was bugging me -- no markup / formatting could be used in the game intro text, which was silly. It's now passed through the markup / wrap renderers like (most) everything else.
+
+Also changed the default scoring ranks to some generic ones; kept the fun ones in the game demo definition to override it, though. 
+
+I'd really like to get 0.66.0 out soon, but there's still a bunch of the demo game to adjust for scenery before I do. At some point, I need to go through the demo front to back and make sure all of the puzzles and everything is working as expected. It's hard to do when I wrote the game and all of the puzzles, and already know all of the answers and how to phrase things so the parser understands them. I need fresh eyes on it. The one user who commented so far made one simple suggestion that's making a *huge* difference in the way the engine/game plays and I'd have never seen it. (I never tried to interact with the "scenery" because I already knew it was just scenery from creating it... so I missed the fact that people would get jarring "unrecognized" all the time when trying to explore an area.)
+
+---
 2-17-2026
 
 Didn't make any headway on the content tonight. The amble-LSP language server was annoying me (there was an indexing problem causing false positive diagnostics, leading back to a problem with the tree-sitter grammar's handling of scheduled action blocks which was also causing syntax highlighting to fail). Worked with Codex first for a workaround, but then wound up updating the tree-sitter-amble's parsing within schedule blocks -- diagnostics are fixed along with the syntax highlighting -- which will make further work on the content easier going forward. 
