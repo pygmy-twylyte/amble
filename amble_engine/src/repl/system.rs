@@ -492,9 +492,10 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> 
         },
     };
     if save_dir != Path::new(SAVE_DIR)
-        && let Ok(legacy_slots) = save_files::collect_save_slots(Path::new(SAVE_DIR)) {
-            slots.extend(legacy_slots);
-        }
+        && let Ok(legacy_slots) = save_files::collect_save_slots(Path::new(SAVE_DIR))
+    {
+        slots.extend(legacy_slots);
+    }
 
     slots.retain(|slot| slot.slot == gamefile);
     slots.sort_by(|a, b| b.modified.cmp(&a.modified).then(a.version.cmp(&b.version)));
@@ -530,9 +531,10 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> 
                     );
                 }
                 if let Ok(sources) = discover_world_sources()
-                    && let Some(source) = match_world_source(&new_world, &sources) {
-                        set_active_world_path(source.path.clone());
-                    }
+                    && let Some(source) = match_world_source(&new_world, &sources)
+                {
+                    set_active_world_path(source.path.clone());
+                }
                 set_active_save_dir(save_dir_for_world(&new_world));
                 *world = new_world;
                 view.push(ViewItem::ActionSuccess(format!(
@@ -590,9 +592,10 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> 
 
 fn match_world_source<'a>(world: &AmbleWorld, sources: &'a [WorldSource]) -> Option<&'a WorldSource> {
     if !world.world_slug.trim().is_empty()
-        && let Some(source) = sources.iter().find(|source| source.slug == world.world_slug) {
-            return Some(source);
-        }
+        && let Some(source) = sources.iter().find(|source| source.slug == world.world_slug)
+    {
+        return Some(source);
+    }
     if !world.game_title.trim().is_empty() {
         return sources.iter().find(|source| source.title == world.game_title);
     }
@@ -859,7 +862,7 @@ mod tests {
 
         assert!(matches!(result, Ok(ReplControl::Quit)));
 
-        // Verify it uses default ranks (100% = "Quantum Overachiever")
+        // Verify it uses default ranks (100% = "Stellar")
         if let Some(rank) = view.items.iter().find_map(|entry| {
             if let ViewItem::QuitSummary { rank, .. } = &entry.view_item {
                 Some(rank)
@@ -867,7 +870,7 @@ mod tests {
                 None
             }
         }) {
-            assert_eq!(rank, "Quantum Overachiever");
+            assert_eq!(rank, "Stellar");
         } else {
             panic!("quit_handler did not produce a QuitSummary ViewItem");
         }
