@@ -29,7 +29,7 @@ use std::{
     sync::OnceLock,
 };
 
-use crate::Id;
+use crate::{ItemId, NpcId, RoomId};
 use thiserror::Error;
 
 use crate::{
@@ -39,31 +39,31 @@ use crate::{
 };
 
 /// Empty item map used in NPC-only searches.
-pub static NO_ITEMS: OnceLock<HashMap<Id, Item>> = OnceLock::new();
+pub static NO_ITEMS: OnceLock<HashMap<ItemId, Item>> = OnceLock::new();
 /// Empty NPC map used in item-only searches.
-pub static NO_NPCS: OnceLock<HashMap<Id, Npc>> = OnceLock::new();
+pub static NO_NPCS: OnceLock<HashMap<NpcId, Npc>> = OnceLock::new();
 
 /// Represents the scope of a requested search by the caller and includes the location to search.
 #[derive(Debug, Clone, PartialEq)]
 pub enum SearchScope {
     /// All items and NPCs within the player's sight
-    AllVisible(Id),
+    AllVisible(RoomId),
     /// All items and NPCs that the player can touch
-    AllTouchable(Id),
+    AllTouchable(RoomId),
     /// Items the player can look at.
-    VisibleItems(Id),
+    VisibleItems(RoomId),
     /// NPCs the player can see.
-    VisibleNpcs(Id),
+    VisibleNpcs(RoomId),
     /// Items the player can touch (but not necessarily move) in room or inventory
-    TouchableItems(Id),
+    TouchableItems(RoomId),
     /// NPCs the player can touch.
-    TouchableNpcs(Id),
+    TouchableNpcs(RoomId),
     /// Nearby container items or NPCs which can potentially offer or accept an item.
-    NearbyVessels(Id),
+    NearbyVessels(RoomId),
     /// Only items in player's inventory.
     Inventory,
     /// Only items in an NPC's inventory.
-    NpcInventory(Id),
+    NpcInventory(NpcId),
 }
 
 /// Possible errors / situations causing a failed entity search.
@@ -72,9 +72,9 @@ pub enum SearchError {
     #[error("no entity in scope name matching user input '{0}'")]
     NoMatchingName(String),
     #[error("no npc found with the supplied id {0}")]
-    InvalidNpcId(Id),
+    InvalidNpcId(NpcId),
     #[error("found no room with the supplied id ({0})")]
-    InvalidRoomId(Id),
+    InvalidRoomId(RoomId),
     #[error("invalid {0} search scope: includes only {1}s")]
     InvalidScope(String, String),
     #[error("unknown error: {0}")]
@@ -87,7 +87,7 @@ pub enum SearchError {
 /// - if no match found in the specified scope
 /// - if an invalid scope for an item search is specified
 /// - if the supplied room or NPC ids are invalid
-pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<Id, SearchError> {
+pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<ItemId, SearchError> {
     // construct a HashSet of item ids in scope for this search
     let haystack: HashSet<_> = match scope {
         SearchScope::VisibleItems(room_id) | SearchScope::AllVisible(room_id) => {
@@ -130,7 +130,7 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
 /// - if no match found in the specified scope
 /// - if an invalid scope for an npc search is specified
 /// - if the supplied room id is invalid
-pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<Id, SearchError> {
+pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<NpcId, SearchError> {
     let haystack = match scope {
         // currently there is no distinction between NPCs you can see and those you could touch
         // both scopes kept for now as this may change in the future
@@ -162,8 +162,8 @@ pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> 
 /// Holds the `Id` of different types of `WorldEntity`
 #[derive(Debug, Clone, PartialEq)]
 pub enum EntityId {
-    Item(Id),
-    Npc(Id),
+    Item(ItemId),
+    Npc(NpcId),
 }
 
 /// Find either an `NPC` or an `Item` with name matching `pattern` within the `SearchScope`.
@@ -193,7 +193,7 @@ pub fn find_entity_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Id;
+
     use crate::{
         AmbleWorld, Item, Npc, Room,
         health::HealthState,
@@ -203,7 +203,7 @@ mod tests {
     };
     use std::collections::{HashMap, HashSet};
 
-    fn insert_room(world: &mut AmbleWorld, name: &str) -> Id {
+    fn insert_room(world: &mut AmbleWorld, name: &str) -> RoomId {
         let room_id = crate::idgen::new_id();
         let room = Room {
             id: room_id.clone(),
@@ -228,7 +228,7 @@ mod tests {
         name: &str,
         location: Location,
         container_state: Option<ContainerState>,
-    ) -> Id {
+    ) -> ItemId {
         let item_id = crate::idgen::new_id();
         let item = Item {
             id: item_id.clone(),
@@ -251,7 +251,7 @@ mod tests {
         item_id
     }
 
-    fn insert_npc(world: &mut AmbleWorld, name: &str, location: Location) -> Id {
+    fn insert_npc(world: &mut AmbleWorld, name: &str, location: Location) -> NpcId {
         let npc_id = crate::idgen::new_id();
         let npc = Npc {
             id: npc_id.clone(),

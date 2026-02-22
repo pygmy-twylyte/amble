@@ -47,7 +47,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    AmbleWorld, ItemHolder, Location, View, ViewItem, WorldObject,
+    AmbleWorld, ItemHolder, ItemId, Location, NpcId, View, ViewItem, WorldObject,
     entity_search::{self, SearchError, SearchScope},
     health::{LifeState, LivingEntity},
     helpers::symbol_or_unknown,
@@ -61,7 +61,6 @@ use crate::{
 
 use anyhow::{Context, Result, bail};
 
-use crate::Id;
 use log::info;
 
 /// Finds an NPC in the specified location by partial name matching.
@@ -84,7 +83,7 @@ use log::info;
 /// - Uses case-insensitive matching for user convenience
 /// - Returns the first NPC whose name contains the query string
 /// - Only searches NPCs actually present in the specified location
-fn select_npc<'a>(location: &Location, world_npcs: &'a HashMap<Id, Npc>, query: &str) -> Option<&'a Npc> {
+fn select_npc<'a>(location: &Location, world_npcs: &'a HashMap<NpcId, Npc>, query: &str) -> Option<&'a Npc> {
     let npcs_in_room = world_npcs
         .values()
         .filter(|npc| npc.location() == location)
@@ -308,7 +307,7 @@ pub fn give_to_npc_handler(
 }
 
 /// Displays NPC item refusal to the player and logs it.
-fn show_npc_refusal(world: &AmbleWorld, view: &mut View, npc_id: Id, item_id: Id) -> Result<()> {
+fn show_npc_refusal(world: &AmbleWorld, view: &mut View, npc_id: NpcId, item_id: ItemId) -> Result<()> {
     let npc = world
         .npcs
         .get(&npc_id)
@@ -338,7 +337,7 @@ fn show_npc_refusal(world: &AmbleWorld, view: &mut View, npc_id: Id, item_id: Id
 ///
 /// # Errors
 /// - on failed item or NPC retrieval by id
-fn show_npc_acceptance(world: &AmbleWorld, view: &mut View, npc_id: Id, item_id: Id) -> Result<()> {
+fn show_npc_acceptance(world: &AmbleWorld, view: &mut View, npc_id: NpcId, item_id: ItemId) -> Result<()> {
     let npc = world
         .npcs
         .get(&npc_id)
@@ -394,7 +393,7 @@ fn check_fired_and_refused(all_fired: &Vec<&Trigger>) -> GiftResponse {
 }
 
 /// Transfers an item from player to NPC if it hasn't been despawned
-fn transfer_if_not_despawned(world: &mut AmbleWorld, npc_id: &Id, item_id: Id) -> Result<()> {
+fn transfer_if_not_despawned(world: &mut AmbleWorld, npc_id: &NpcId, item_id: ItemId) -> Result<()> {
     // The item may have been despawned by a fired trigger -- so we skip
     // the location transfer below if the item is found to be `Nowhere`
     if world

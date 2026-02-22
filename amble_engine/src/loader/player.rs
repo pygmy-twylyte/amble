@@ -9,7 +9,7 @@ use log::info;
 
 use amble_data::PlayerDef;
 
-use crate::Id;
+use crate::ItemId;
 use crate::health::HealthState;
 use crate::player::{Flag, Player};
 use crate::world::Location;
@@ -25,7 +25,7 @@ pub fn build_player(def: &PlayerDef) -> Player {
         description: def.description.clone(),
         location: Location::Room(def.start_room.clone()),
         location_history: Vec::new(),
-        inventory: HashSet::<Id>::default(),
+        inventory: HashSet::<ItemId>::default(),
         flags: HashSet::<Flag>::default(),
         score: 0,
         health: HealthState::new_at_max(def.max_hp),

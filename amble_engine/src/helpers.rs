@@ -7,8 +7,8 @@
 use std::collections::HashMap;
 use std::hash::BuildHasher;
 
-use crate::Id;
 use crate::world::WorldObject;
+use crate::{Id, ItemId, NpcId, RoomId};
 use crate::{Item, Npc, Room};
 
 /// Generic: Returns the symbol for a given object's id.
@@ -37,16 +37,16 @@ pub fn pluralize(word: &str, count: isize) -> String {
 }
 
 /// Returns the symbol for a given room's id.
-pub fn room_symbol_from_id<S: BuildHasher>(rooms: &HashMap<Id, Room, S>, room_id: impl AsRef<str>) -> Option<&str> {
+pub fn room_symbol_from_id<S: BuildHasher>(rooms: &HashMap<RoomId, Room, S>, room_id: impl AsRef<str>) -> Option<&str> {
     symbol_from_id(rooms, room_id)
 }
 
 /// Returns the symbol for a given item's id.
-pub fn item_symbol_from_id<S: BuildHasher>(items: &HashMap<Id, Item, S>, item_id: impl AsRef<str>) -> Option<&str> {
+pub fn item_symbol_from_id<S: BuildHasher>(items: &HashMap<ItemId, Item, S>, item_id: impl AsRef<str>) -> Option<&str> {
     symbol_from_id(items, item_id)
 }
 
 /// Returns the symbol for a given character's id.
-pub fn npc_symbol_from_id<S: BuildHasher>(npcs: &HashMap<Id, Npc, S>, npc_id: impl AsRef<str>) -> Option<&str> {
+pub fn npc_symbol_from_id<S: BuildHasher>(npcs: &HashMap<NpcId, Npc, S>, npc_id: impl AsRef<str>) -> Option<&str> {
     symbol_from_id(npcs, npc_id)
 }

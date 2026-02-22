@@ -15,7 +15,7 @@
 //! a `GoalStatus`, which is then used to filter/style goals and their descriptions
 //! for display.
 
-use crate::Id;
+use crate::{ItemId, RoomId};
 use serde::de::{self, Deserializer, EnumAccess, VariantAccess, Visitor};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -39,10 +39,10 @@ pub enum GoalCondition {
     FlagComplete { flag: String },    // for checking if sequence-type flags are at end
     FlagInProgress { flag: String },  // check if a sequence flag not yet at end
     GoalComplete { goal_id: String }, // for activating a goal after another is done
-    HasItem { item_id: Id },
+    HasItem { item_id: ItemId },
     HasFlag { flag: String },
     MissingFlag { flag: String },
-    ReachedRoom { room_id: Id },
+    ReachedRoom { room_id: RoomId },
 }
 impl GoalCondition {
     /// Returns true if the condition has been satisfied.
@@ -302,9 +302,9 @@ struct GoalConditionRepr {
     #[serde(default, deserialize_with = "deserialize_maybe_value")]
     goal_id: Option<String>,
     #[serde(default, deserialize_with = "deserialize_maybe_value")]
-    item_id: Option<Id>,
+    item_id: Option<ItemId>,
     #[serde(default, deserialize_with = "deserialize_maybe_value")]
-    room_id: Option<Id>,
+    room_id: Option<RoomId>,
 }
 
 impl<'de> Deserialize<'de> for GoalCondition {

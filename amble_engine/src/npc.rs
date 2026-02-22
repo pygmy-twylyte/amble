@@ -16,7 +16,7 @@ use colored::Colorize;
 use gametools::Spinner;
 use rand::{prelude::IndexedRandom, seq::IteratorRandom};
 
-use crate::Id;
+use crate::{Id, ItemId, NpcId, RoomId};
 
 use crate::{
     ItemHolder, Location, View, ViewItem, WorldObject,
@@ -31,12 +31,12 @@ use crate::{
 /// A non-playable character.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Npc {
-    pub id: Id,
+    pub id: NpcId,
     pub symbol: String,
     pub name: String,
     pub description: String,
     pub location: Location,
-    pub inventory: HashSet<Id>,
+    pub inventory: HashSet<ItemId>,
     pub dialogue: HashMap<NpcState, Vec<String>>,
     pub state: NpcState,
     pub movement: Option<NpcMovement>,
@@ -115,15 +115,15 @@ impl WorldObject for Npc {
     }
 }
 impl ItemHolder for Npc {
-    fn add_item(&mut self, item_id: Id) {
+    fn add_item(&mut self, item_id: ItemId) {
         self.inventory.insert(item_id);
     }
 
-    fn remove_item(&mut self, item_id: Id) {
+    fn remove_item(&mut self, item_id: ItemId) {
         self.inventory.remove(&item_id);
     }
 
-    fn contains_item(&self, item_id: Id) -> bool {
+    fn contains_item(&self, item_id: ItemId) -> bool {
         self.inventory.contains(&item_id)
     }
 }
@@ -176,12 +176,12 @@ pub struct NpcMovement {
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum MovementType {
     Route {
-        rooms: Vec<Id>,
+        rooms: Vec<RoomId>,
         current_idx: usize,
         loop_route: bool,
     },
     RandomSet {
-        rooms: HashSet<Id>,
+        rooms: HashSet<RoomId>,
     },
 }
 
@@ -265,7 +265,7 @@ struct MovementTypeRepr {
     #[serde(rename = "type")]
     kind: MovementTypeKind,
     #[serde(default)]
-    rooms: Vec<Id>,
+    rooms: Vec<RoomId>,
     #[serde(default)]
     current_idx: usize,
     #[serde(default)]
@@ -426,7 +426,7 @@ pub fn calculate_next_location(movement: &mut NpcMovement) -> Option<Location> {
 /// Moves an NPC to a new `Location`.
 /// # Errors
 /// - if '`move_to`' is a location other than a 'Room' or 'Nowhere'
-pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: &Id, move_to: Location) -> Result<()> {
+pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: &NpcId, move_to: Location) -> Result<()> {
     // update location in NPC instance
     let npc = world
         .npcs

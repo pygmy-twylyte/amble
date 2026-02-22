@@ -48,7 +48,7 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::{
-    AmbleWorld, View, WorldObject,
+    AmbleWorld, ItemId, View, WorldObject,
     entity_search::{self, SearchError, SearchScope},
     helpers::plural_s,
     item::{ContainerState, IngestMode, Item, ItemAbility, ItemInteractionType, consume, interaction_requirement_met},
@@ -59,7 +59,6 @@ use crate::{
     view::ViewItem,
 };
 
-use crate::Id;
 use anyhow::{Context, Result, bail};
 use colored::Colorize;
 use log::info;
@@ -381,8 +380,8 @@ fn dispatch_use_item_triggers(
     world: &mut AmbleWorld,
     view: &mut View,
     interaction: ItemInteractionType,
-    target_id: &Id,
-    tool_id: &Id,
+    target_id: &ItemId,
+    tool_id: &ItemId,
     used_ability: &ItemAbility,
 ) -> Result<bool> {
     let fired = check_triggers(
@@ -1022,7 +1021,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
 // Key metadata.
 #[derive(Debug, Clone, PartialEq)]
 struct KeyData {
-    id: Id,
+    id: ItemId,
     name: String,
     symbol: String,
     skeleton: bool,
@@ -1032,7 +1031,11 @@ struct KeyData {
 ///
 /// If a specific key *and* a "skeleton" key are present, the data for the specific key is
 /// returned.
-fn find_valid_key(world_items: &HashMap<Id, Item>, maybe_keys: &HashSet<Id>, container: &Id) -> Option<KeyData> {
+fn find_valid_key(
+    world_items: &HashMap<ItemId, Item>,
+    maybe_keys: &HashSet<ItemId>,
+    container: &ItemId,
+) -> Option<KeyData> {
     // find and return a specific key
     let specific = maybe_keys
         .iter()
@@ -1066,7 +1069,6 @@ fn find_valid_key(world_items: &HashMap<Id, Item>, maybe_keys: &HashSet<Id>, con
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Id;
     use crate::{
         item::{ContainerState, Item, ItemAbility, ItemInteractionType, Movability},
         room::Room,
@@ -1077,7 +1079,7 @@ mod tests {
     use std::collections::{HashMap, HashSet};
 
     #[allow(clippy::too_many_lines)]
-    fn build_world() -> (AmbleWorld, View, Id, Id, Id, Id) {
+    fn build_world() -> (AmbleWorld, View, ItemId, ItemId, ItemId, ItemId) {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
         let room = Room {

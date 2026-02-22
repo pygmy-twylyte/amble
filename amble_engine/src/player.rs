@@ -3,7 +3,7 @@
 //! Defines the player struct plus helpers for manipulating inventory,
 //! location history, and progression flags.
 use crate::health::{HealthEffect, HealthState, LivingEntity};
-use crate::{ItemHolder, Location, WorldObject};
+use crate::{ItemHolder, ItemId, Location, RoomId, WorldObject};
 
 use crate::Id;
 use log::{info, warn};
@@ -24,8 +24,8 @@ pub struct Player {
     pub name: String,
     pub description: String,
     pub location: Location,
-    pub location_history: Vec<Id>,
-    pub inventory: HashSet<Id>,
+    pub location_history: Vec<RoomId>,
+    pub inventory: HashSet<ItemId>,
     pub flags: HashSet<Flag>,
     pub score: usize,
     pub health: HealthState,
@@ -72,7 +72,7 @@ impl Player {
 
     /// Adds current location to history and updates to new location.
     /// Maintains a maximum of 5 previous locations.
-    pub fn move_to_room(&mut self, new_room_id: Id) {
+    pub fn move_to_room(&mut self, new_room_id: RoomId) {
         if let Location::Room(current_room) = &self.location {
             self.location_history.push(current_room.clone());
             // Keep only the last 5 locations
@@ -84,13 +84,13 @@ impl Player {
     }
 
     /// Returns the most recent room in history, if any.
-    pub fn previous_room(&self) -> Option<Id> {
+    pub fn previous_room(&self) -> Option<RoomId> {
         self.location_history.last().cloned()
     }
 
     /// Moves back to the previous room, removing it from history.
     /// Returns the room ID moved to, or None if no history exists.
-    pub fn go_back(&mut self) -> Option<Id> {
+    pub fn go_back(&mut self) -> Option<RoomId> {
         if let Some(previous_room) = self.location_history.pop() {
             self.location = Location::Room(previous_room.clone());
             Some(previous_room)
@@ -108,7 +108,7 @@ impl Default for Player {
             description: "default".into(),
             location: Location::default(),
             location_history: Vec::new(),
-            inventory: HashSet::<Id>::default(),
+            inventory: HashSet::<ItemId>::default(),
             flags: HashSet::<Flag>::default(),
             score: 1,
             health: HealthState::default(),
@@ -133,15 +133,15 @@ impl WorldObject for Player {
     }
 }
 impl ItemHolder for Player {
-    fn add_item(&mut self, item_id: Id) {
+    fn add_item(&mut self, item_id: ItemId) {
         self.inventory.insert(item_id);
     }
 
-    fn remove_item(&mut self, item_id: Id) {
+    fn remove_item(&mut self, item_id: ItemId) {
         self.inventory.remove(&item_id);
     }
 
-    fn contains_item(&self, item_id: Id) -> bool {
+    fn contains_item(&self, item_id: ItemId) -> bool {
         self.inventory.contains(&item_id)
     }
 }
@@ -446,7 +446,7 @@ pub fn format_sequence_value(name: &str, step: u8) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Id;
+    use crate::RoomId;
     use std::collections::HashSet;
 
     fn create_test_player() -> Player {
@@ -812,7 +812,7 @@ mod tests {
     fn move_to_room_limits_history_size() {
         use crate::Location;
         let mut player = Player::default();
-        let rooms: Vec<Id> = (0..8).map(|_| crate::idgen::new_id()).collect();
+        let rooms: Vec<RoomId> = (0..8).map(|_| crate::idgen::new_id()).collect();
 
         // Start in room 0
         player.location = Location::Room(rooms[0].clone());

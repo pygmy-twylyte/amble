@@ -5,7 +5,7 @@
 //! movement between locations.
 
 use crate::{
-    Location, View, ViewItem, WorldObject,
+    ItemId, Location, NpcId, RoomId, View, ViewItem, WorldObject,
     scheduler::EventCondition,
     style::GameStyle,
     view::ContentLine,
@@ -45,7 +45,7 @@ use variantly::Variantly;
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Item {
     /// The stable id of this item.
-    pub id: Id,
+    pub id: ItemId,
     /// The symbol used to refer to this item in world data.
     pub symbol: String,
     /// The display name of the item.
@@ -68,7 +68,7 @@ pub struct Item {
     /// Some state (open, locked, etc) for the item as a container, or `None` if it is not a container.
     pub container_state: Option<ContainerState>,
     /// Set of ids of other items contained by this one.
-    pub contents: HashSet<Id>,
+    pub contents: HashSet<ItemId>,
     /// Set of capabilities [`ItemAbility`] for this item.
     pub abilities: HashSet<ItemAbility>,
     /// Relates interactions to abilities. (Ex: to perform the "burn" interaction targeting this item, the other item must have the "ignite" capability.)
@@ -110,18 +110,18 @@ impl WorldObject for Item {
 }
 
 impl ItemHolder for Item {
-    fn add_item(&mut self, item_id: Id) {
+    fn add_item(&mut self, item_id: ItemId) {
         // ensure this is a container and disallow placing an item inside itself
         if self.container_state.is_some() && self.id.ne(&item_id) {
             self.contents.insert(item_id);
         }
     }
-    fn remove_item(&mut self, item_id: Id) {
+    fn remove_item(&mut self, item_id: ItemId) {
         if self.container_state.is_some() {
             self.contents.remove(&item_id);
         }
     }
-    fn contains_item(&self, item_id: Id) -> bool {
+    fn contains_item(&self, item_id: ItemId) -> bool {
         self.contents.contains(&item_id)
     }
 }
@@ -147,11 +147,11 @@ impl Item {
             .is_some_and(|cs| cs.is_transparent_closed() || cs.is_transparent_locked() || cs.is_transparent_open())
     }
     /// Set location to a `Room` by id.
-    pub fn set_location_room(&mut self, room_id: Id) {
+    pub fn set_location_room(&mut self, room_id: RoomId) {
         self.location = Location::Room(room_id);
     }
     /// Set location to inside another container `Item` by id.
-    pub fn set_location_item(&mut self, container_id: Id) {
+    pub fn set_location_item(&mut self, container_id: ItemId) {
         self.location = Location::Item(container_id);
     }
     /// Set location to player inventory
@@ -166,7 +166,7 @@ impl Item {
         self.location = Location::Inventory;
     }
     /// Set location to NPC inventory by id.
-    pub fn set_location_npc(&mut self, npc_id: Id) {
+    pub fn set_location_npc(&mut self, npc_id: NpcId) {
         self.location = Location::Npc(npc_id);
     }
     /// Show item description (and any contents if a container and open).
@@ -318,7 +318,7 @@ impl Item {
 /// # Errors
 /// * Returns error if the item id is not found in world.items
 /// * Context will include the item id that failed lookup
-pub fn consume(world: &mut AmbleWorld, item_id: &Id, ability: &ItemAbility) -> Result<Option<usize>> {
+pub fn consume(world: &mut AmbleWorld, item_id: &ItemId, ability: &ItemAbility) -> Result<Option<usize>> {
     let item = world
         .items
         .get_mut(item_id)
@@ -392,11 +392,11 @@ impl Display for IngestMode {
 /// Methods common to things that can hold items.
 pub trait ItemHolder {
     /// Insert an item into the holder's contents.
-    fn add_item(&mut self, item_id: Id);
+    fn add_item(&mut self, item_id: ItemId);
     /// Remove an item from the holder's contents.
-    fn remove_item(&mut self, item_id: Id);
+    fn remove_item(&mut self, item_id: ItemId);
     /// Return `true` when the holder already contains the given item.
-    fn contains_item(&self, item_id: Id) -> bool;
+    fn contains_item(&self, item_id: ItemId) -> bool;
 }
 
 /// Things an item can do.
@@ -422,7 +422,7 @@ pub enum ItemAbility {
     Smash,
     TurnOn,
     TurnOff,
-    Unlock(Option<Id>),
+    Unlock(Option<ItemId>),
     Use,
 }
 impl Display for ItemAbility {
@@ -534,18 +534,18 @@ pub struct ConsumableOpts {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum ConsumeType {
     Despawn,
-    ReplaceInventory { replacement: Id },   // put replacement in inventory
-    ReplaceCurrentRoom { replacement: Id }, // put replacement in current room
+    ReplaceInventory { replacement: ItemId },   // put replacement in inventory
+    ReplaceCurrentRoom { replacement: ItemId }, // put replacement in current room
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Id;
+
     use crate::world::{AmbleWorld, Location};
     use std::collections::{HashMap, HashSet};
 
-    fn create_test_item(id: Id) -> Item {
+    fn create_test_item(id: ItemId) -> Item {
         Item {
             id,
             symbol: "test_item".into(),

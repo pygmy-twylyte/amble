@@ -8,7 +8,7 @@ use log::info;
 
 use crate::item::ItemHolder;
 use crate::world::{Location, WorldObject};
-use crate::{AmbleWorld, Id};
+use crate::{AmbleWorld, ItemId, NpcId, RoomId};
 
 /// Place items in their starting locations.
 ///
@@ -16,10 +16,10 @@ use crate::{AmbleWorld, Id};
 /// - on failed lookups of items, rooms, or NPCs in the world
 pub fn place_items(world: &mut AmbleWorld) -> Result<()> {
     info!("building item location lists for placement stage");
-    let mut room_placements: Vec<(Id, Id)> = Vec::new();
-    let mut chest_placements: Vec<(Id, Id)> = Vec::new();
-    let mut npc_placements: Vec<(Id, Id)> = Vec::new();
-    let mut inventory: Vec<Id> = Vec::new();
+    let mut room_placements: Vec<(RoomId, ItemId)> = Vec::new();
+    let mut chest_placements: Vec<(ItemId, ItemId)> = Vec::new();
+    let mut npc_placements: Vec<(NpcId, ItemId)> = Vec::new();
+    let mut inventory: Vec<ItemId> = Vec::new();
     let mut unspawned = 0;
 
     for item in world.items.values() {
@@ -76,7 +76,7 @@ pub fn place_items(world: &mut AmbleWorld) -> Result<()> {
 /// # Errors
 /// - on invalid placement locations
 pub fn place_npcs(world: &mut AmbleWorld) -> Result<()> {
-    let mut placements: Vec<(Id, Id)> = Vec::new();
+    let mut placements: Vec<(NpcId, RoomId)> = Vec::new();
     let mut unspawned = 0;
 
     for npc in world.npcs.values() {

@@ -43,7 +43,7 @@
 //! unlocking areas, or triggering NPC responses.
 
 use crate::{
-    AmbleWorld, Item, ItemHolder, Location, View, ViewItem, WorldObject,
+    AmbleWorld, Item, ItemHolder, ItemId, Location, NpcId, View, ViewItem, WorldObject,
     entity_search::{EntityId, SearchError, SearchScope, find_entity_match, find_item_match},
     helpers::{name_from_id, symbol_or_unknown},
     item::{ItemAbility, ItemInteractionType, Movability},
@@ -53,7 +53,6 @@ use crate::{
     trigger::{TriggerCondition, check_triggers},
 };
 
-use crate::Id;
 use anyhow::{Result, anyhow, bail};
 use colored::Colorize;
 use log::{error, info, warn};
@@ -483,7 +482,7 @@ pub(crate) fn validate_and_transfer_from_npc(
     world: &mut AmbleWorld,
     view: &mut View,
     item_pattern: &str,
-    npc_id: &Id,
+    npc_id: &NpcId,
 ) -> Result<(), anyhow::Error> {
     let mut tx_data = TransferData {
         vessel_id: npc_id.clone(),
@@ -569,7 +568,7 @@ pub(crate) fn validate_and_transfer_from_item(
     world: &mut AmbleWorld,
     view: &mut View,
     item_pattern: &str,
-    vessel_id: &Id,
+    vessel_id: &ItemId,
 ) -> Result<(), anyhow::Error> {
     let mut tx_data = TransferData {
         vessel_type: VesselType::Item,
@@ -843,7 +842,7 @@ pub fn unexpected_entity(entity: WorldEntity, view: &mut View, denial_msg: &str)
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Id;
+    use crate::RoomId;
     use crate::{
         ItemHolder,
         health::HealthState,
@@ -856,15 +855,15 @@ mod tests {
     struct TestWorld {
         world: AmbleWorld,
         view: View,
-        room_id: Id,
-        inv_item_id: Id,
-        room_item_id: Id,
-        chest_id: Id,
-        gem_id: Id,
-        npc_id: Id,
-        npc_item_id: Id,
-        restr_chest_item_id: Id,
-        restr_npc_item_id: Id,
+        room_id: RoomId,
+        inv_item_id: ItemId,
+        room_item_id: ItemId,
+        chest_id: ItemId,
+        gem_id: ItemId,
+        npc_id: NpcId,
+        npc_item_id: ItemId,
+        restr_chest_item_id: ItemId,
+        restr_npc_item_id: ItemId,
     }
 
     #[allow(clippy::too_many_lines)]

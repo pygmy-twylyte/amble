@@ -5,7 +5,7 @@
 
 use std::collections::HashSet;
 
-use crate::Id;
+use crate::{Id, ItemId, NpcId, RoomId};
 use rand::random_bool;
 use serde::{Deserialize, Serialize};
 
@@ -21,73 +21,73 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum TriggerCondition {
     ActOnItem {
-        target_id: Id,
+        target_id: ItemId,
         action: ItemInteractionType,
     },
     Ambient {
-        room_ids: HashSet<Id>, // empty = applies everywhere
+        room_ids: HashSet<RoomId>, // empty = applies everywhere
         spinner: SpinnerType,
     },
     Chance {
         one_in: f64,
     },
     ContainerHasItem {
-        container_id: Id,
-        item_id: Id,
+        container_id: ItemId,
+        item_id: ItemId,
     },
-    Drop(Id),
-    Enter(Id),
+    Drop(ItemId),
+    Enter(RoomId),
     GiveToNpc {
-        item_id: Id,
-        npc_id: Id,
+        item_id: ItemId,
+        npc_id: NpcId,
     },
-    HasItem(Id),
+    HasItem(ItemId),
     HasFlag(String),
     FlagInProgress(String),
     FlagComplete(String),
-    HasVisited(Id),
-    InRoom(Id),
+    HasVisited(RoomId),
+    InRoom(RoomId),
     Ingest {
-        item_id: Id,
+        item_id: ItemId,
         mode: IngestMode,
     },
     PlayerDeath,
     Insert {
-        item: Id,
-        container: Id,
+        item: ItemId,
+        container: ItemId,
     },
-    Leave(Id),
+    Leave(RoomId),
     LookAt(Id),
     MissingFlag(String),
-    MissingItem(Id),
-    NpcDeath(Id),
+    MissingItem(ItemId),
+    NpcDeath(NpcId),
     NpcHasItem {
-        npc_id: Id,
-        item_id: Id,
+        npc_id: NpcId,
+        item_id: ItemId,
     },
     NpcInState {
-        npc_id: Id,
+        npc_id: NpcId,
         mood: NpcState,
     },
-    Open(Id),
-    Take(Id),
+    Open(ItemId),
+    Take(ItemId),
     TakeFromNpc {
-        item_id: Id,
-        npc_id: Id,
+        item_id: ItemId,
+        npc_id: NpcId,
     },
-    TalkToNpc(Id),
-    Touch(Id),
+    TalkToNpc(NpcId),
+    Touch(ItemId),
     UseItem {
-        item_id: Id,
+        item_id: ItemId,
         ability: ItemAbility,
     },
     UseItemOnItem {
         interaction: ItemInteractionType,
-        target_id: Id,
-        tool_id: Id,
+        target_id: ItemId,
+        tool_id: ItemId,
     },
-    Unlock(Id),
-    WithNpc(Id),
+    Unlock(ItemId),
+    WithNpc(NpcId),
 }
 
 impl TriggerCondition {
@@ -159,7 +159,6 @@ impl TriggerCondition {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Id;
     use crate::{
         health::HealthState,
         item::{ContainerState, Item},
@@ -170,7 +169,7 @@ mod tests {
     };
     use std::collections::{HashMap, HashSet};
 
-    fn build_test_world() -> (AmbleWorld, Id, Id) {
+    fn build_test_world() -> (AmbleWorld, RoomId, RoomId) {
         let mut world = AmbleWorld::new_empty();
         let room1_id = crate::idgen::new_id();
         let room2_id = crate::idgen::new_id();
@@ -209,7 +208,7 @@ mod tests {
         (world, room1_id, room2_id)
     }
 
-    fn make_item(id: Id, location: Location, container_state: Option<ContainerState>) -> Item {
+    fn make_item(id: ItemId, location: Location, container_state: Option<ContainerState>) -> Item {
         Item {
             id,
             symbol: "it".into(),
@@ -229,7 +228,7 @@ mod tests {
         }
     }
 
-    fn make_npc(id: Id, location: Location, state: NpcState) -> Npc {
+    fn make_npc(id: NpcId, location: Location, state: NpcState) -> Npc {
         Npc {
             id,
             symbol: "n".into(),

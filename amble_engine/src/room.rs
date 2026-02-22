@@ -6,7 +6,7 @@
 //! Captures room metadata, exits, and overlays along with helpers used
 //! during movement, rendering, and trigger evaluation.
 
-use crate::Id;
+use crate::{Id, ItemId, NpcId, RoomId};
 use crate::{
     ItemHolder, Location, View, ViewItem, WorldObject,
     health::{LifeState, LivingEntity},
@@ -24,16 +24,16 @@ use std::collections::{HashMap, HashSet};
 ///
 /// Additional flags and items may be required to traverse it.
 pub struct Exit {
-    pub to: Id,
+    pub to: RoomId,
     pub hidden: bool,
     pub locked: bool,
     pub required_flags: HashSet<Flag>,
-    pub required_items: HashSet<Id>,
+    pub required_items: HashSet<ItemId>,
     pub barred_message: Option<String>,
 }
 impl Exit {
     /// Create a basic exit leading to the room with the given id.
-    pub fn new(to: Id) -> Self {
+    pub fn new(to: RoomId) -> Self {
         Self {
             to,
             hidden: false,
@@ -64,7 +64,7 @@ pub struct RoomScenery {
 }
 impl RoomOverlay {
     /// Returns true if an overlay's conditions are all met.
-    pub fn applies(&self, room_id: &str, world: &AmbleWorld) -> bool {
+    pub fn applies(&self, room_id: &RoomId, world: &AmbleWorld) -> bool {
         self.conditions.iter().all(|cond| cond.applies(room_id, world))
     }
 }
@@ -76,18 +76,18 @@ pub enum OverlayCondition {
     FlagComplete { flag: String },
     FlagSet { flag: String },
     FlagUnset { flag: String },
-    ItemAbsent { item_id: Id },
-    ItemInRoom { item_id: Id, room_id: Id },
-    ItemPresent { item_id: Id },
-    NpcInState { npc_id: Id, mood: NpcState },
-    NpcAbsent { npc_id: Id },
-    NpcPresent { npc_id: Id },
-    PlayerHasItem { item_id: Id },
-    PlayerMissingItem { item_id: Id },
+    ItemAbsent { item_id: ItemId },
+    ItemInRoom { item_id: ItemId, room_id: RoomId },
+    ItemPresent { item_id: ItemId },
+    NpcInState { npc_id: NpcId, mood: NpcState },
+    NpcAbsent { npc_id: NpcId },
+    NpcPresent { npc_id: NpcId },
+    PlayerHasItem { item_id: ItemId },
+    PlayerMissingItem { item_id: ItemId },
 }
 impl OverlayCondition {
     /// Returns true if this condition currently applies.
-    pub fn applies(&self, room_id: &str, world: &AmbleWorld) -> bool {
+    pub fn applies(&self, room_id: &RoomId, world: &AmbleWorld) -> bool {
         let flag_is_set = |flag_str: &str| world.player.flags.iter().any(|f| f.value() == *flag_str);
         match &self {
             OverlayCondition::FlagComplete { flag } => world
@@ -130,7 +130,7 @@ impl OverlayCondition {
 /// Any visitable location in the game world.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Room {
-    pub id: Id,
+    pub id: RoomId,
     pub symbol: String,
     pub name: String,
     pub base_description: String,
@@ -142,8 +142,8 @@ pub struct Room {
     pub location: Location,
     pub visited: bool,
     pub exits: HashMap<String, Exit>,
-    pub contents: HashSet<Id>,
-    pub npcs: HashSet<Id>,
+    pub contents: HashSet<ItemId>,
+    pub npcs: HashSet<NpcId>,
 }
 impl WorldObject for Room {
     fn id(&self) -> Id {
@@ -165,15 +165,15 @@ impl WorldObject for Room {
     }
 }
 impl ItemHolder for Room {
-    fn add_item(&mut self, item_id: Id) {
+    fn add_item(&mut self, item_id: ItemId) {
         self.contents.insert(item_id);
     }
 
-    fn remove_item(&mut self, item_id: Id) {
+    fn remove_item(&mut self, item_id: ItemId) {
         self.contents.remove(&item_id);
     }
 
-    fn contains_item(&self, item_id: Id) -> bool {
+    fn contains_item(&self, item_id: ItemId) -> bool {
         self.contents.contains(&item_id)
     }
 }
@@ -220,7 +220,7 @@ impl Room {
         let overlay_text: Vec<String> = self
             .overlays
             .iter()
-            .filter(|o| o.applies(self.id.as_str(), world))
+            .filter(|o| o.applies(&self.id, world))
             .map(|o| o.text.clone())
             .collect();
         view.push(ViewItem::RoomOverlays {
@@ -280,7 +280,7 @@ impl Room {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Id;
+
     use crate::{
         health::HealthState,
         item::Item,
@@ -291,7 +291,7 @@ mod tests {
     };
     use std::collections::{HashMap, HashSet};
 
-    fn create_test_room(id: Id) -> Room {
+    fn create_test_room(id: RoomId) -> Room {
         Room {
             id,
             symbol: "test_room".into(),

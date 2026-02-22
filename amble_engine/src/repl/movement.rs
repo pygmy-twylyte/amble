@@ -40,8 +40,9 @@
 
 use std::collections::HashSet;
 
+use crate::Player;
 use crate::{
-    AmbleWorld, View, ViewItem, WorldObject,
+    AmbleWorld, ItemId, View, ViewItem, WorldObject,
     player::Flag,
     room::Exit,
     spinners::CoreSpinnerType,
@@ -49,7 +50,6 @@ use crate::{
     trigger::{TriggerCondition, check_triggers},
     view::ViewMode,
 };
-use crate::{Id, Player};
 
 use anyhow::{Context, Result, anyhow};
 use log::info;
@@ -266,7 +266,7 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
 #[derive(Debug, Clone, Default)]
 struct AccessDenial<'a> {
     unmet_flags: HashSet<&'a Flag>,
-    unmet_items: HashSet<&'a Id>,
+    unmet_items: HashSet<&'a ItemId>,
     locked: bool,
 }
 impl AccessDenial<'_> {
@@ -338,13 +338,13 @@ fn handle_barred_exit(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Id;
+    use crate::RoomId;
     use crate::player::Flag;
     use crate::room::{Exit, Room};
     use crate::world::{AmbleWorld, Location};
     use std::collections::{HashMap, HashSet};
 
-    fn build_test_world() -> (AmbleWorld, Id, Id, View) {
+    fn build_test_world() -> (AmbleWorld, RoomId, RoomId, View) {
         let view = View::new();
         let mut world = AmbleWorld::new_empty();
         let start = crate::idgen::new_id();

@@ -31,7 +31,7 @@ use crate::spinners::CoreSpinnerType;
 use crate::style::GameStyle;
 use crate::trigger::{TriggerCondition, check_triggers, dispatch_action};
 use crate::world::AmbleWorld;
-use crate::{Item, View, ViewItem, WorldObject};
+use crate::{Item, ItemId, NpcId, View, ViewItem, WorldObject};
 
 use crate::Id;
 use anyhow::Result;
@@ -311,7 +311,7 @@ fn run_health_effects(world: &mut AmbleWorld, view: &mut View) -> (bool, Vec<Tri
         });
     }
 
-    let npc_ids: Vec<Id> = world.npcs.keys().cloned().collect();
+    let npc_ids: Vec<NpcId> = world.npcs.keys().cloned().collect();
     for npc_id in npc_ids {
         let was_alive = world
             .npcs
@@ -394,7 +394,7 @@ pub fn check_scheduled_events(world: &mut AmbleWorld, view: &mut View) -> Result
 ///
 pub fn check_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let current_turn = world.turn_count;
-    let npc_ids: Vec<Id> = world.npcs.keys().cloned().collect();
+    let npc_ids: Vec<NpcId> = world.npcs.keys().cloned().collect();
 
     for npc_id in npc_ids {
         if let Some(npc) = world.npcs.get_mut(&npc_id)
@@ -587,8 +587,8 @@ impl WorldEntity<'_> {
 /// Returns Some(&'a `WorldEntity`) or None.
 pub fn find_world_object<'a, S: BuildHasher>(
     nearby_ids: impl IntoIterator<Item = &'a Id>,
-    world_items: &'a HashMap<Id, Item, S>,
-    world_npcs: &'a HashMap<Id, Npc, S>,
+    world_items: &'a HashMap<ItemId, Item, S>,
+    world_npcs: &'a HashMap<NpcId, Npc, S>,
     search_term: &str,
 ) -> Option<WorldEntity<'a>> {
     let lc_term = search_term.to_lowercase();

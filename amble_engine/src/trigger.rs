@@ -83,14 +83,14 @@ pub fn check_triggers<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Id;
+    use crate::RoomId;
     use crate::{
         room::Room,
         world::{AmbleWorld, Location},
     };
     use std::collections::{HashMap, HashSet};
 
-    fn build_test_world() -> (AmbleWorld, Id, Id) {
+    fn build_test_world() -> (AmbleWorld, RoomId, RoomId) {
         let mut world = AmbleWorld::new_empty();
         let room1_id = crate::idgen::new_id();
         let room2_id = crate::idgen::new_id();
