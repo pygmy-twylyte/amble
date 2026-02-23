@@ -3,10 +3,7 @@ use crate::{SpinnerAst, SpinnerWedgeAst};
 use super::helpers::unquote;
 use super::{AstError, Rule};
 
-pub(super) fn parse_spinner_pair(
-    sp: pest::iterators::Pair<Rule>,
-    _source: &str,
-) -> Result<SpinnerAst, AstError> {
+pub(super) fn parse_spinner_pair(sp: pest::iterators::Pair<Rule>, _source: &str) -> Result<SpinnerAst, AstError> {
     let (src_line, _src_col) = sp.as_span().start_pos().line_col();
     let mut it = sp.into_inner();
     let id = it
