@@ -438,7 +438,7 @@ pub fn check_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()>
 /// # Errors
 /// - on failed lookup of player's location
 pub fn check_ambient_triggers(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
-    let current_room_id = world.player_room_ref()?.id();
+    let current_room_id = world.player_room_id();
     let trigger_count = world.triggers.len();
     for idx in 0..trigger_count {
         let should_check = {

@@ -347,8 +347,8 @@ mod tests {
     fn build_test_world() -> (AmbleWorld, RoomId, RoomId, View) {
         let view = View::new();
         let mut world = AmbleWorld::new_empty();
-        let start = crate::idgen::new_id();
-        let dest = crate::idgen::new_id();
+        let start = crate::idgen::new_room_id();
+        let dest = crate::idgen::new_room_id();
         let mut start_room = Room {
             id: start.clone(),
             symbol: "start".into(),
@@ -528,11 +528,11 @@ mod tests {
         let (mut world, start, dest, _view) = build_test_world();
 
         // Create additional rooms for testing history limit
-        let room3 = crate::idgen::new_id();
-        let room4 = crate::idgen::new_id();
-        let room5 = crate::idgen::new_id();
-        let room6 = crate::idgen::new_id();
-        let room7 = crate::idgen::new_id();
+        let room3 = crate::idgen::new_room_id();
+        let room4 = crate::idgen::new_room_id();
+        let room5 = crate::idgen::new_room_id();
+        let room6 = crate::idgen::new_room_id();
+        let room7 = crate::idgen::new_room_id();
 
         for room_id in [&room3, &room4, &room5, &room6, &room7] {
             let room_id = room_id.clone();
@@ -573,7 +573,7 @@ mod tests {
         let (mut world, start, dest, mut view) = build_test_world();
 
         // Add a third room for more complex history
-        let room3 = crate::idgen::new_id();
+        let room3 = crate::idgen::new_room_id();
         let room3_obj = Room {
             id: room3.clone(),
             symbol: "room3".into(),

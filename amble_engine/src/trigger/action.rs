@@ -81,7 +81,7 @@ use std::hash::BuildHasher;
 
 use crate::Item;
 use crate::health::{HealthEffect, LifeState, LivingEntity};
-use crate::helpers::{symbol_from_id, symbol_or_unknown};
+use crate::helpers::symbol_or_unknown;
 use crate::item::{ContainerState, ItemAbility, ItemHolder, ItemVisibility, Movability};
 use crate::npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState, move_npc};
 use crate::player::{Flag, Player};
@@ -646,11 +646,7 @@ pub fn modify_item(world: &mut AmbleWorld, item_id: ItemId, patch: &ItemPatch) -
 /// Returns an error if the target room cannot be found or if referenced exits
 /// or items in the patch cannot be resolved.
 pub fn modify_room(world: &mut AmbleWorld, room_id: &RoomId, patch: &RoomPatch) -> Result<()> {
-    info!(
-        "└─ action: modifying room {} using patch: {:?}",
-        symbol_or_unknown(&world.rooms, room_id),
-        patch
-    );
+    info!("└─ action: modifying room {room_id} using patch: {patch:?}");
     apply_room_patch(world, room_id, patch)?;
     Ok(())
 }
@@ -686,10 +682,8 @@ fn apply_room_patch(world: &mut AmbleWorld, room_id: &RoomId, patch: &RoomPatch)
             {
                 removal_plan.push((direction, target_room_id.clone()));
             } else {
-                let target_sym = symbol_or_unknown(&world.rooms, target_room_id);
                 warn!(
-                    "modifyRoom patch attempted to remove exit to '{target_sym}' but room '{}' has no such exit",
-                    room_ref.symbol
+                    "modifyRoom patch attempted to remove exit to '{target_room_id}' but room '{room_id}' has no such exit"
                 );
             }
         }
@@ -913,16 +907,14 @@ fn apply_item_patch(world: &mut AmbleWorld, item_id: &ItemId, patch: &ItemPatch)
 /// Propagates errors when the NPC or destination room cannot be found.
 pub fn spawn_npc_in_room(world: &mut AmbleWorld, view: &mut View, npc_id: &NpcId, room_id: &RoomId) -> Result<()> {
     info!(
-        "└─ action: spawning NPC '{}' in Room '{}'",
+        "└─ action: spawning NPC '{}' in Room '{room_id}'",
         symbol_or_unknown(&world.npcs, npc_id),
-        symbol_or_unknown(&world.rooms, room_id)
     );
     if let Some(npc) = world.npcs.get_mut(npc_id)
-        && npc.location.is_not_nowhere()
+        && let Some(npc_room) = npc.location.clone().room()
     {
-        let current_loc = symbol_from_id(&world.rooms, npc.location.room_id()?).unwrap_or("<unknown room>");
         warn!(
-            "spawn called on NPC {} who was already in-game -- MOVING from {current_loc}",
+            "spawn called on NPC {} who was already in-game -- MOVING from {npc_room}",
             npc.symbol(),
         );
     }
@@ -1085,11 +1077,7 @@ pub fn set_barred_message(world: &mut AmbleWorld, exit_from: &RoomId, exit_to: &
         exit.set_barred_msg(Some(msg.to_string()));
         room.exits.insert(direction, exit);
     }
-    info!(
-        "└─ action: SetBarredMessage({} -> {}, '{msg}')",
-        symbol_or_unknown(&world.rooms, exit_from.clone()),
-        symbol_or_unknown(&world.rooms, exit_to.clone())
-    );
+    info!("└─ action: SetBarredMessage({exit_from} -> {exit_to}, '{msg}')");
     Ok(())
 }
 
@@ -1482,10 +1470,7 @@ pub fn lock_exit(world: &mut AmbleWorld, from_room: &RoomId, direction: &String)
         .and_then(|rm| rm.exits.get_mut(direction))
     {
         exit.locked = true;
-        info!(
-            "└─ action: LockExit({direction}, from [{}]",
-            symbol_or_unknown(&world.rooms, from_room.clone())
-        );
+        info!("└─ action: LockExit({direction}, from [{from_room}]");
         Ok(())
     } else {
         bail!("LockExit({from_room}, {direction}): bad room id or exit direction");
@@ -1515,10 +1500,7 @@ pub fn lock_exit(world: &mut AmbleWorld, from_room: &RoomId, direction: &String)
 pub fn unlock_exit(world: &mut AmbleWorld, from_room: &RoomId, direction: &String) -> Result<()> {
     if let Some(exit) = world.rooms.get_mut(from_room).and_then(|r| r.exits.get_mut(direction)) {
         exit.locked = false;
-        info!(
-            "└─ action: UnlockExit({direction}, from [{}])",
-            symbol_or_unknown(&world.rooms, from_room.clone())
-        );
+        info!("└─ action: UnlockExit({direction}, from [{from_room}])");
         Ok(())
     } else {
         bail!("UnlockExit({from_room}, {direction}): bad room id or exit direction");
@@ -1598,11 +1580,7 @@ pub fn spawn_item_in_specific_room(world: &mut AmbleWorld, item_id: &ItemId, roo
         .items
         .get_mut(item_id)
         .ok_or_else(|| anyhow!("item {item_id} missing"))?;
-    info!(
-        "└─ action: SpawnItemInRoom({}, {})",
-        item.symbol(),
-        symbol_or_unknown(&world.rooms, room_id.clone())
-    );
+    info!("└─ action: SpawnItemInRoom({}, {room_id})", item.symbol());
     item.set_location_room(room_id.clone());
     world
         .rooms
@@ -1875,11 +1853,7 @@ pub fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &RoomI
         .entry(direction.clone())
         .or_insert_with(|| Exit::new(exit_to.clone()));
     exit.hidden = false;
-    info!(
-        "└─ action: RevealExit({direction}, from '{}', to '{}')",
-        symbol_or_unknown(&world.rooms, exit_from.clone()),
-        symbol_or_unknown(&world.rooms, exit_to.clone())
-    );
+    info!("└─ action: RevealExit({direction}, from '{exit_from}', to '{exit_to}')");
     Ok(())
 }
 
@@ -1910,10 +1884,7 @@ pub fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &RoomI
 pub fn push_player(world: &mut AmbleWorld, room_id: &RoomId) -> Result<()> {
     if world.rooms.contains_key(room_id) {
         world.player.location = Location::Room(room_id.clone());
-        info!(
-            "└─ action: PushPlayerTo({})",
-            symbol_or_unknown(&world.rooms, room_id.clone())
-        );
+        info!("└─ action: PushPlayerTo({room_id})");
         Ok(())
     } else {
         bail!("tried to push player to unknown room ({room_id})");
@@ -2460,8 +2431,8 @@ mod tests {
 
     fn build_test_world() -> (AmbleWorld, RoomId, RoomId) {
         let mut world = AmbleWorld::new_empty();
-        let room1_id = crate::idgen::new_id();
-        let room2_id = crate::idgen::new_id();
+        let room1_id = crate::idgen::new_room_id();
+        let room2_id = crate::idgen::new_room_id();
 
         let room1 = Room {
             id: room1_id.clone(),
@@ -2500,9 +2471,9 @@ mod tests {
     #[test]
     fn modify_room_updates_name_desc_and_exits() {
         let mut world = AmbleWorld::new_empty();
-        let room_id = crate::idgen::new_id();
-        let dest_id = crate::idgen::new_id();
-        let target_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
+        let dest_id = crate::idgen::new_room_id();
+        let target_id = crate::idgen::new_room_id();
         world.rooms.insert(
             room_id.clone(),
             Room {
@@ -2587,7 +2558,7 @@ mod tests {
         // attempt to remove a non-existent exit should fail silently (with a log warning),
         // not panic
         let mut world = AmbleWorld::new_empty();
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
         world.rooms.insert(
             room_id.clone(),
             Room {
@@ -2605,7 +2576,7 @@ mod tests {
                 npcs: HashSet::default(),
             },
         );
-        let missing_exit_target = crate::idgen::new_id();
+        let missing_exit_target = crate::idgen::new_room_id();
         let patch = RoomPatch {
             remove_exits: vec![missing_exit_target],
             ..Default::default()
@@ -2931,7 +2902,7 @@ mod tests {
     #[test]
     fn push_player_errors_with_invalid_room() {
         let (mut world, _, _) = build_test_world();
-        let bad_room = crate::idgen::new_id();
+        let bad_room = crate::idgen::new_room_id();
         assert!(push_player(&mut world, &bad_room).is_err());
     }
 

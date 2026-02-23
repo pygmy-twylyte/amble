@@ -21,7 +21,6 @@ use crate::{Id, ItemId, NpcId, RoomId};
 use crate::{
     ItemHolder, Location, View, ViewItem, WorldObject,
     health::{HealthEffect, HealthState, LivingEntity},
-    helpers::symbol_or_unknown,
     item::Movability,
     spinners::CoreSpinnerType,
     view::ContentLine,
@@ -441,11 +440,11 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: &NpcId, move_to
         "moving NPC '{}' from [{}] to [{}]",
         npc.symbol,
         match &npc.location {
-            Location::Room(room_id) => symbol_or_unknown(&world.rooms, room_id),
+            Location::Room(room_id) => room_id.to_string(),
             _ => "<nowhere>".to_string(),
         },
         match &move_to {
-            Location::Room(room_id) => symbol_or_unknown(&world.rooms, room_id),
+            Location::Room(room_id) => room_id.to_string(),
             _ => "<nowhere>".to_string(),
         }
     );
@@ -849,8 +848,8 @@ mod tests {
         let mut view = View::new();
 
         // Create two rooms
-        let player_room_id = crate::idgen::new_id();
-        let other_room_id = crate::idgen::new_id();
+        let player_room_id = crate::idgen::new_room_id();
+        let other_room_id = crate::idgen::new_room_id();
 
         let player_room = Room {
             id: player_room_id.clone(),
@@ -935,8 +934,8 @@ mod tests {
         let mut view = View::new();
 
         // Create rooms and NPC
-        let player_room_id = crate::idgen::new_id();
-        let other_room_id = crate::idgen::new_id();
+        let player_room_id = crate::idgen::new_room_id();
+        let other_room_id = crate::idgen::new_room_id();
 
         let player_room = Room {
             id: player_room_id.clone(),

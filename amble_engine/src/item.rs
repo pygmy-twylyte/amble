@@ -670,7 +670,7 @@ mod tests {
     #[test]
     fn set_location_room_updates_location() {
         let mut item = create_test_item(crate::idgen::new_id());
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
         item.set_location_room(room_id.clone());
         assert_eq!(item.location, Location::Room(room_id));
     }

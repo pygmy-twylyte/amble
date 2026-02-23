@@ -9,7 +9,7 @@ use std::hash::BuildHasher;
 
 use crate::world::WorldObject;
 use crate::{Id, ItemId, NpcId, RoomId};
-use crate::{Item, Npc, Room};
+use crate::{Item, Npc};
 
 /// Generic: Returns the symbol for a given object's id.
 pub fn symbol_from_id<T: WorldObject, S: BuildHasher>(map: &HashMap<Id, T, S>, id: impl AsRef<str>) -> Option<&str> {
@@ -37,8 +37,8 @@ pub fn pluralize(word: &str, count: isize) -> String {
 }
 
 /// Returns the symbol for a given room's id.
-pub fn room_symbol_from_id<S: BuildHasher>(rooms: &HashMap<RoomId, Room, S>, room_id: impl AsRef<str>) -> Option<&str> {
-    symbol_from_id(rooms, room_id)
+pub fn room_symbol_from_id<S: BuildHasher>(room_id: &RoomId) -> String {
+    room_id.to_string()
 }
 
 /// Returns the symbol for a given item's id.

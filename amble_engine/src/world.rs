@@ -161,6 +161,13 @@ impl AmbleWorld {
         self.spin_spinner(&SpinnerType::Custom(key.to_string()), default)
     }
 
+    pub fn player_room_id(&self) -> RoomId {
+        self.player
+            .location
+            .clone()
+            .expect_room("player should always be in a Room")
+    }
+
     /// Obtain a reference to the room the player occupies.
     /// # Errors
     /// - if player isn't in a Room or the Room's id is not found
@@ -382,7 +389,7 @@ mod tests {
     #[test]
     fn location_variants_work() {
         let item_id = crate::idgen::new_id();
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
         let npc_id = crate::idgen::new_id();
 
         assert_eq!(Location::Item(item_id.clone()), Location::Item(item_id.clone()));
@@ -404,20 +411,20 @@ mod tests {
     fn location_is_nowhere_works() {
         assert!(Location::Nowhere.is_nowhere());
         assert!(!Location::Inventory.is_nowhere());
-        assert!(!Location::Room(crate::idgen::new_id()).is_nowhere());
+        assert!(!Location::Room(crate::idgen::new_room_id()).is_nowhere());
     }
 
     #[test]
     fn location_is_not_nowhere_works() {
         assert!(!Location::Nowhere.is_not_nowhere());
         assert!(Location::Inventory.is_not_nowhere());
-        assert!(Location::Room(crate::idgen::new_id()).is_not_nowhere());
+        assert!(Location::Room(crate::idgen::new_room_id()).is_not_nowhere());
     }
 
     #[test]
     fn location_room_id_works() {
         let room_id = crate::idgen::new_id();
-        let location = Location::Room(room_id.clone());
+        let location = Location::Room(RoomId::new(&room_id));
         assert_eq!(location.room_id().unwrap(), room_id);
     }
 
@@ -429,8 +436,8 @@ mod tests {
     #[test]
     fn location_room_ref_works() {
         let room_id = crate::idgen::new_id();
-        let location = Location::Room(room_id.clone());
-        assert_eq!(location.room_ref(), Some(&room_id));
+        let location = Location::Room(RoomId::new(&room_id));
+        assert_eq!(location.room_ref(), Some(&RoomId::new(&room_id)));
 
         assert_eq!(Location::Inventory.room_ref(), None);
         assert_eq!(Location::Nowhere.room_ref(), None);
@@ -500,9 +507,9 @@ mod tests {
     fn amble_world_player_room_ref_works() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let room = create_test_room(&room_id);
-        world.rooms.insert(room_id.clone(), room);
-        world.player.location = Location::Room(room_id.clone());
+        let room = create_test_room(&RoomId::new(&room_id));
+        world.rooms.insert(RoomId::new(&room_id), room);
+        world.player.location = Location::Room(RoomId::new(&room_id));
 
         let room_ref = world.player_room_ref().unwrap();
         assert_eq!(room_ref.id, room_id);
@@ -526,13 +533,13 @@ mod tests {
     fn amble_world_player_room_mut_works() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let room = create_test_room(&room_id);
-        world.rooms.insert(room_id.clone(), room);
-        world.player.location = Location::Room(room_id.clone());
+        let room = create_test_room(&RoomId::new(&room_id));
+        world.rooms.insert(RoomId::new(&room_id), room);
+        world.player.location = Location::Room(RoomId::new(&room_id));
 
         let room_mut = world.player_room_mut().unwrap();
         room_mut.visited = true;
-        assert!(world.rooms.get(&room_id).unwrap().visited);
+        assert!(world.rooms.get(&room_id.into()).unwrap().visited);
     }
 
     #[test]
@@ -569,16 +576,16 @@ mod tests {
     fn nearby_reachable_items_includes_room_items() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let mut room = create_test_room(&room_id);
+        let mut room = create_test_room(&RoomId::new(&room_id));
 
         let item_id = crate::idgen::new_id();
-        let item = create_test_item(&item_id, Location::Room(room_id.clone()));
+        let item = create_test_item(&item_id, Location::Room(RoomId::new(&room_id)));
         room.contents.insert(item_id.clone());
 
-        world.rooms.insert(room_id.clone(), room);
+        world.rooms.insert(RoomId::new(&room_id), room);
         world.items.insert(item_id.clone(), item);
 
-        let reachable = nearby_reachable_items(&world, &room_id).unwrap();
+        let reachable = nearby_reachable_items(&world, &room_id.into()).unwrap();
         assert!(reachable.contains(&item_id));
     }
 
@@ -586,10 +593,10 @@ mod tests {
     fn nearby_reachable_items_includes_open_container_contents() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let mut room = create_test_room(&room_id);
+        let mut room = create_test_room(&RoomId::new(&room_id));
 
         let container_id = crate::idgen::new_id();
-        let mut container = create_test_item(&container_id, Location::Room(room_id.clone()));
+        let mut container = create_test_item(&container_id, Location::Room(RoomId::new(&room_id)));
         container.container_state = Some(ContainerState::Open);
 
         let item_in_container_id = crate::idgen::new_id();
@@ -598,11 +605,11 @@ mod tests {
 
         room.contents.insert(container_id.clone());
 
-        world.rooms.insert(room_id.clone(), room);
+        world.rooms.insert(RoomId::new(&room_id), room);
         world.items.insert(container_id.clone(), container);
         world.items.insert(item_in_container_id.clone(), item_in_container);
 
-        let reachable = nearby_reachable_items(&world, &room_id).unwrap();
+        let reachable = nearby_reachable_items(&world, &RoomId::new(&room_id)).unwrap();
         assert!(reachable.contains(&container_id));
         assert!(reachable.contains(&item_in_container_id));
     }
@@ -611,10 +618,10 @@ mod tests {
     fn nearby_reachable_items_excludes_closed_container_contents() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let mut room = create_test_room(&room_id);
+        let mut room = create_test_room(&RoomId::new(&room_id));
 
         let container_id = crate::idgen::new_id();
-        let mut container = create_test_item(&container_id, Location::Room(room_id.clone()));
+        let mut container = create_test_item(&container_id, Location::Room(RoomId::new(&room_id)));
         container.container_state = Some(ContainerState::Closed);
 
         let item_in_container_id = crate::idgen::new_id();
@@ -623,11 +630,11 @@ mod tests {
 
         room.contents.insert(container_id.clone());
 
-        world.rooms.insert(room_id.clone(), room);
+        world.rooms.insert(RoomId::new(&room_id), room);
         world.items.insert(container_id.clone(), container);
         world.items.insert(item_in_container_id.clone(), item_in_container);
 
-        let reachable = nearby_reachable_items(&world, &room_id).unwrap();
+        let reachable = nearby_reachable_items(&world, &RoomId::new(&room_id)).unwrap();
         assert!(reachable.contains(&container_id));
         assert!(!reachable.contains(&item_in_container_id));
     }
@@ -636,10 +643,10 @@ mod tests {
     fn nearby_reachable_items_excludes_locked_container_contents() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let mut room = create_test_room(&room_id);
+        let mut room = create_test_room(&RoomId::new(&room_id));
 
         let container_id = crate::idgen::new_id();
-        let mut container = create_test_item(&container_id, Location::Room(room_id.clone()));
+        let mut container = create_test_item(&container_id, Location::Room(RoomId::new(&room_id)));
         container.container_state = Some(ContainerState::Locked);
 
         let item_in_container_id = crate::idgen::new_id();
@@ -648,11 +655,11 @@ mod tests {
 
         room.contents.insert(container_id.clone());
 
-        world.rooms.insert(room_id.clone(), room);
+        world.rooms.insert(RoomId::new(&room_id), room);
         world.items.insert(container_id.clone(), container);
         world.items.insert(item_in_container_id.clone(), item_in_container);
 
-        let reachable = nearby_reachable_items(&world, &room_id).unwrap();
+        let reachable = nearby_reachable_items(&world, &RoomId::new(&room_id)).unwrap();
         assert!(reachable.contains(&container_id));
         assert!(!reachable.contains(&item_in_container_id));
     }
@@ -660,7 +667,7 @@ mod tests {
     #[test]
     fn nearby_reachable_items_errors_for_invalid_room() {
         let world = AmbleWorld::new_empty();
-        let result = nearby_reachable_items(&world, &String::from("fleefawrtwerse"));
+        let result = nearby_reachable_items(&world, &"fleefawrtwerse".into());
         assert!(result.is_err());
     }
 
@@ -668,18 +675,18 @@ mod tests {
     fn nearby_reachable_items_handles_empty_room() {
         let mut world = AmbleWorld::new_empty();
         let room_id = crate::idgen::new_id();
-        let room = create_test_room(&room_id);
-        world.rooms.insert(room_id.clone(), room);
+        let room = create_test_room(&RoomId::new(&room_id));
+        world.rooms.insert(RoomId::new(&room_id), room);
 
-        let reachable = nearby_reachable_items(&world, &room_id).unwrap();
+        let reachable = nearby_reachable_items(&world, &RoomId::new(&room_id)).unwrap();
         assert!(reachable.is_empty());
     }
 
     #[test]
     fn nearby_reachable_items_handles_non_container_items() {
         let mut world = AmbleWorld::new_empty();
-        let room_id = crate::idgen::new_id();
-        let mut room = create_test_room(&room_id);
+        let room_id = crate::idgen::new_room_id();
+        let mut room = create_test_room(&RoomId::new(&room_id));
 
         let item_id = crate::idgen::new_id();
         let item = create_test_item(&item_id, Location::Room(room_id.clone()));
@@ -696,7 +703,7 @@ mod tests {
     #[test]
     fn nearby_visible_items_includes_transparent_container_contents() {
         let mut world = AmbleWorld::new_empty();
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
         let mut room = create_test_room(&room_id);
 
         let container_id = crate::idgen::new_id();
@@ -721,7 +728,7 @@ mod tests {
     #[test]
     fn nearby_visible_items_includes_transparent_locked_container_contents() {
         let mut world = AmbleWorld::new_empty();
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
         let mut room = create_test_room(&room_id);
 
         let container_id = crate::idgen::new_id();
@@ -746,7 +753,7 @@ mod tests {
     #[test]
     fn nearby_visible_items_excludes_regular_locked_container_contents() {
         let mut world = AmbleWorld::new_empty();
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
         let mut room = create_test_room(&room_id);
 
         let container_id = crate::idgen::new_id();

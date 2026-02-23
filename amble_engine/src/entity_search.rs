@@ -204,7 +204,7 @@ mod tests {
     use std::collections::{HashMap, HashSet};
 
     fn insert_room(world: &mut AmbleWorld, name: &str) -> RoomId {
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
         let room = Room {
             id: room_id.clone(),
             symbol: format!("room_{room_id}"),
@@ -299,7 +299,7 @@ mod tests {
     #[test]
     fn find_item_match_errors_when_room_missing() {
         let world = AmbleWorld::new_empty();
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
 
         let err = find_item_match(&world, "coin", SearchScope::VisibleItems(room_id.clone())).unwrap_err();
         match err {
@@ -311,7 +311,7 @@ mod tests {
     #[test]
     fn find_item_match_rejects_npc_scopes() {
         let world = AmbleWorld::new_empty();
-        let scope = SearchScope::VisibleNpcs(crate::idgen::new_id());
+        let scope = SearchScope::VisibleNpcs(crate::idgen::new_room_id());
 
         let err = find_item_match(&world, "coin", scope).unwrap_err();
         match err {
@@ -337,7 +337,7 @@ mod tests {
     #[test]
     fn find_npc_match_errors_when_room_missing() {
         let world = AmbleWorld::new_empty();
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
 
         let err = find_npc_match(&world, "caretaker", SearchScope::VisibleNpcs(room_id.clone())).unwrap_err();
         match err {

@@ -43,6 +43,7 @@ use std::path::PathBuf;
 use log::{info, warn};
 use time::{OffsetDateTime, format_description};
 
+use crate::RoomId;
 use crate::helpers::symbol_or_unknown;
 use crate::save_files::LOG_DIR;
 use crate::scheduler::{EventCondition, OnFalsePolicy, ScheduledEvent};
@@ -50,7 +51,7 @@ use crate::slug::sanitize_slug;
 use crate::trigger::TriggerCondition;
 use crate::{
     AmbleWorld, Location, View, ViewItem, WorldObject,
-    idgen::{NAMESPACE_ITEM, NAMESPACE_ROOM, symbol_to_id},
+    idgen::{NAMESPACE_ITEM, symbol_to_id},
     player::Flag,
     style::GameStyle,
     trigger::{self, spawn_item_in_inventory},
@@ -128,10 +129,11 @@ pub fn dev_spawn_item_handler(world: &mut AmbleWorld, view: &mut View, symbol: &
 /// - Required items or keys
 /// - Story progression flags
 /// - Movement-blocking conditions
-pub fn dev_teleport_handler(world: &mut AmbleWorld, view: &mut View, room_id: &str) {
-    let room_uuid = symbol_to_id(NAMESPACE_ROOM, room_id);
-    if let Some(room) = world.rooms.get(&room_uuid) {
-        world.player.location = Location::Room(room_uuid);
+pub fn dev_teleport_handler(world: &mut AmbleWorld, view: &mut View, destination: &str) {
+    // let room_id = symbol_to_id(NAMESPACE_ROOM, room_id);
+    let dest_id = RoomId::new(&destination);
+    if let Some(room) = world.rooms.get(&dest_id) {
+        world.player.location = Location::Room(dest_id);
         warn!(
             "DEV only command used: Teleported player to {} ({})",
             room.name(),
@@ -141,7 +143,7 @@ pub fn dev_teleport_handler(world: &mut AmbleWorld, view: &mut View, room_id: &s
         let _ = room.show(world, view, None);
     } else {
         view.push(ViewItem::ActionFailure(format!(
-            "Teleport failed: Lookup of '{room_id}' failed."
+            "Teleport failed: Lookup of '{destination}' failed."
         )));
     }
 }
@@ -320,9 +322,10 @@ fn format_note_heading(now: OffsetDateTime) -> String {
 
 fn describe_note_location(world: &AmbleWorld) -> String {
     match &world.player.location {
-        Location::Room(room_id) => world
-            .rooms
-            .get(room_id).map_or_else(|| format!("room_id={room_id}"), |room| format!("room={} \"{}\"", room.symbol(), room.name())),
+        Location::Room(room_id) => world.rooms.get(room_id).map_or_else(
+            || format!("room_id={room_id}"),
+            |room| format!("room={} \"{}\"", room.symbol(), room.name()),
+        ),
         _ => String::from("loc=<unknown>"),
     }
 }
@@ -441,7 +444,7 @@ pub fn dev_list_npcs_handler(world: &mut AmbleWorld, view: &mut View) {
         .values()
         .map(|npc| {
             let loc = match npc.location() {
-                Location::Room(uuid) => symbol_or_unknown(&world.rooms, uuid),
+                Location::Room(id) => id.to_string(),
                 Location::Nowhere => "<nowhere>".to_string(),
                 other => format!("<{other:?}>"),
             };
@@ -575,10 +578,10 @@ fn summarize_trigger_condition(world: &AmbleWorld, tc: &TriggerCondition) -> Str
         TriggerCondition::FlagComplete(f) => format!("flagComplete:{f}"),
         TriggerCondition::HasItem(item) => format!("hasItem:{}", symbol_or_unknown(&world.items, item)),
         TriggerCondition::MissingItem(item) => format!("missingItem:{}", symbol_or_unknown(&world.items, item)),
-        TriggerCondition::InRoom(room) => format!("inRoom:{}", symbol_or_unknown(&world.rooms, room)),
-        TriggerCondition::Enter(room) => format!("enter:{}", symbol_or_unknown(&world.rooms, room)),
-        TriggerCondition::Leave(room) => format!("leave:{}", symbol_or_unknown(&world.rooms, room)),
-        TriggerCondition::HasVisited(room) => format!("visited:{}", symbol_or_unknown(&world.rooms, room)),
+        TriggerCondition::InRoom(room_id) => format!("inRoom:{room_id}"),
+        TriggerCondition::Enter(room_id) => format!("enter:{room_id}"),
+        TriggerCondition::Leave(room_id) => format!("leave:{room_id}"),
+        TriggerCondition::HasVisited(room_id) => format!("visited:{room_id}"),
         TriggerCondition::WithNpc(npc) => format!("withNpc:{}", symbol_or_unknown(&world.npcs, npc)),
         TriggerCondition::NpcInState { npc_id, mood } => format!(
             "npcState:{}:{}",
@@ -840,7 +843,7 @@ mod tests {
         let mut world = AmbleWorld::new_empty();
         let mut view = View::new();
         // room
-        let room_id = crate::idgen::new_id();
+        let room_id = RoomId::new(&"test_room");
         world.rooms.insert(
             room_id.clone(),
             Room {
@@ -884,6 +887,7 @@ mod tests {
             })
             .collect::<Vec<_>>()
             .join("\n");
+        eprintln!("{combined:?}");
         assert!(combined.contains("NPCs [1]"));
         assert!(combined.contains("Zed (npc_sym) @ test_room [normal]"));
     }

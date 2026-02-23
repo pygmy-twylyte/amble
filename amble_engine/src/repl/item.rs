@@ -69,7 +69,7 @@ use log::info;
 /// Returns an error if the player's current room cannot be resolved or if the scoped items
 /// referenced during trigger evaluation cannot be found.
 pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) -> Result<()> {
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let item_id = match entity_search::find_item_match(world, item_str, SearchScope::TouchableItems(room_id.clone())) {
         Ok(uuid) => uuid,
         Err(SearchError::NoMatchingName(input)) => {
@@ -125,7 +125,7 @@ pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) ->
 /// Returns an error if the player's current room cannot be located, if scoped items cannot be
 /// resolved, or if trigger evaluation encounters missing world state.
 pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, mode: IngestMode) -> Result<()> {
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let item_id = match entity_search::find_item_match(world, item_str, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(SearchError::NoMatchingName(_)) => {
@@ -356,7 +356,7 @@ fn resolve_use_item_participants<'a>(
         Err(e) => bail!(e),
     };
     // find a reachable item in the room or inventory matching target_str
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let target_id = match entity_search::find_item_match(world, target_str, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(SearchError::NoMatchingName(target_pattern)) => {
@@ -453,7 +453,7 @@ fn dispatch_use_item_triggers(
 /// fails due to missing world data.
 pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<()> {
     // search player's location for an item with name matching 'pattern'
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let item_id = match entity_search::find_item_match(world, item_pattern, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(e) => match e {
@@ -540,7 +540,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
 /// fails because required world data is missing.
 pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<()> {
     // search player's location for an item with name matching 'pattern'
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let item_id = match entity_search::find_item_match(world, item_pattern, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(e) => match e {
@@ -633,7 +633,7 @@ pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &
 /// cannot be retrieved, or if trigger execution fails due to missing data.
 pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     // search player's location for an item with name matching 'pattern'
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(e) => match e {
@@ -756,7 +756,7 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
 /// cannot be retrieved from the world.
 pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     // search player's location for an item with name matching 'pattern'
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(e) => match e {
@@ -850,7 +850,7 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
 /// cannot be located within the world state.
 pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     // search player's location for an item with name matching 'pattern'
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(e) => match e {
@@ -947,7 +947,7 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
 /// cannot be resolved from the world state, or if trigger evaluation fails.
 pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     // search player's location for an item with name matching 'pattern'
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(e) => match e {
@@ -1081,7 +1081,7 @@ mod tests {
     #[allow(clippy::too_many_lines)]
     fn build_world() -> (AmbleWorld, View, ItemId, ItemId, ItemId, ItemId) {
         let mut world = AmbleWorld::new_empty();
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
         let room = Room {
             id: room_id.clone(),
             symbol: "r".into(),

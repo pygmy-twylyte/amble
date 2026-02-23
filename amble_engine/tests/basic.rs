@@ -109,7 +109,7 @@ fn test_room_overlay_applies_flag() {
         conditions: vec![OverlayCondition::FlagSet { flag: "x".into() }],
         text: String::new(),
     };
-    let room_id = ae::idgen::new_id();
+    let room_id = ae::idgen::new_room_id();
     assert!(overlay.applies(&room_id, &world));
 }
 
@@ -239,7 +239,7 @@ fn test_worlddef_npc_to_world() {
     ae::loader::placement::place_npcs(&mut world).unwrap();
     let npc = world.npcs.get("npc").unwrap();
     assert_eq!(npc.name, "Npc");
-    let room = world.rooms.get("room").unwrap();
+    let room = world.rooms.get(&RoomId::from("room")).unwrap();
     assert!(room.npcs.contains("npc"));
 }
 
@@ -279,7 +279,7 @@ fn test_worlddef_trigger_combines_event_and_conditions() {
             assert_eq!(list.len(), 2);
             assert!(list.iter().any(|cond| matches!(
                 cond,
-                EventCondition::Trigger(TriggerCondition::Enter(id)) if id == "room"
+                EventCondition::Trigger(TriggerCondition::Enter(id)) if *id == RoomId::from("room")
             )));
             assert!(list.iter().any(|cond| matches!(
                 cond,
@@ -383,8 +383,8 @@ fn test_move_to_handler_simple() {
     use ae::room::{Exit, Room};
     use std::collections::{HashMap, HashSet};
     let mut world = world::AmbleWorld::new_empty();
-    let r1 = ae::idgen::new_id();
-    let r2 = ae::idgen::new_id();
+    let r1 = ae::idgen::new_room_id();
+    let r2 = ae::idgen::new_room_id();
     let mut room1 = Room {
         id: r1.clone(),
         symbol: "r1".into(),
@@ -466,8 +466,8 @@ fn test_check_npc_movement() {
     use std::collections::{HashMap, HashSet};
     let mut world = world::AmbleWorld::new_empty();
     let mut view = View::new();
-    let r1 = ae::idgen::new_id();
-    let r2 = ae::idgen::new_id();
+    let r1 = ae::idgen::new_room_id();
+    let r2 = ae::idgen::new_room_id();
     let room1 = Room {
         id: r1.clone(),
         symbol: "r1".into(),
@@ -497,7 +497,7 @@ fn test_check_npc_movement() {
         scenery_default: None,
     };
     let _room3 = Room {
-        id: ae::idgen::new_id(),
+        id: ae::idgen::new_room_id(),
         symbol: "r3".into(),
         name: "R3".into(),
         base_description: String::new(),
@@ -551,7 +551,7 @@ fn test_check_ambient_triggers() {
     use gametools::{Spinner, Wedge};
     let mut world = world::AmbleWorld::new_empty();
     let mut view = View::new();
-    let r1 = ae::idgen::new_id();
+    let r1 = ae::idgen::new_room_id();
     let room1 = room::Room {
         id: r1.clone(),
         symbol: "r1".into(),

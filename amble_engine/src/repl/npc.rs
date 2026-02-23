@@ -234,7 +234,7 @@ pub fn give_to_npc_handler(
     npc_pattern: &str,
 ) -> Result<()> {
     // find the target npc in the current room and collect metadata
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let npc_id = match entity_search::find_npc_match(world, npc_pattern, SearchScope::TouchableNpcs(room_id)) {
         Ok(id) => {
             if let Some(npc) = world.npcs.get(&id)

@@ -19,6 +19,7 @@ use amble_data::{
     OverlayDef, RoomDef, RoomExitPatchDef, RoomPatchDef, SpinnerDef, TriggerDef, WorldDef,
 };
 
+use crate::RoomId;
 use crate::goal::{Goal, GoalCondition, GoalGroup};
 use crate::health::HealthState;
 use crate::item::{
@@ -116,7 +117,7 @@ fn room_from_def(def: &RoomDef) -> Room {
         .collect::<Vec<_>>();
 
     Room {
-        id: def.id.clone(),
+        id: RoomId::new(&def.id),
         symbol: def.id.clone(),
         name: def.name.clone(),
         base_description: def.desc.clone(),
@@ -133,7 +134,7 @@ fn room_from_def(def: &RoomDef) -> Room {
 
 fn exit_from_def(def: &ExitDef) -> Exit {
     Exit {
-        to: def.to.clone(),
+        to: RoomId::new(&def.to),
         hidden: def.hidden,
         locked: def.locked,
         required_flags: def.required_flags.iter().map(|flag| Flag::simple(flag, 0)).collect(),
@@ -171,7 +172,7 @@ fn overlay_condition_from_def(def: &OverlayCondDef) -> OverlayCondition {
         },
         OverlayCondDef::ItemInRoom { item, room } => OverlayCondition::ItemInRoom {
             item_id: item.clone(),
-            room_id: room.clone(),
+            room_id: RoomId::new(room),
         },
     }
 }
@@ -254,12 +255,12 @@ fn npc_movement_from_def(def: &NpcMovementDef) -> NpcMovement {
     };
     let movement_type = match def.movement_type {
         NpcMovementType::Route => MovementType::Route {
-            rooms: def.rooms.clone(),
+            rooms: def.rooms.iter().map(RoomId::new).collect(),
             current_idx: 0,
             loop_route,
         },
         NpcMovementType::RandomSet => MovementType::RandomSet {
-            rooms: def.rooms.iter().cloned().collect(),
+            rooms: def.rooms.iter().map(RoomId::new).collect(),
         },
     };
     NpcMovement {
@@ -397,7 +398,7 @@ fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
             npc_id: npc.clone(),
             item_id: item.clone(),
         },
-        ActionKind::PushPlayerTo { room } => TriggerAction::PushPlayerTo(room.clone()),
+        ActionKind::PushPlayerTo { room } => TriggerAction::PushPlayerTo(RoomId(room.clone())),
         ActionKind::AddSpinnerWedge { spinner, text, width } => TriggerAction::AddSpinnerWedge {
             spinner: SpinnerType::from_toml_key(spinner),
             text: text.clone(),
@@ -410,7 +411,7 @@ fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
         ActionKind::SpawnItemCurrentRoom { item } => TriggerAction::SpawnItemCurrentRoom(item.clone()),
         ActionKind::SpawnItemInRoom { item, room } => TriggerAction::SpawnItemInRoom {
             item_id: item.clone(),
-            room_id: room.clone(),
+            room_id: RoomId(room.clone()),
         },
         ActionKind::SpawnItemInInventory { item } => TriggerAction::SpawnItemInInventory(item.clone()),
         ActionKind::SpawnItemInContainer { item, container } => TriggerAction::SpawnItemInContainer {
@@ -419,7 +420,7 @@ fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
         },
         ActionKind::SpawnNpcInRoom { npc, room } => TriggerAction::SpawnNpcInRoom {
             npc_id: npc.clone(),
-            room_id: room.clone(),
+            room_id: RoomId(room.clone()),
         },
         ActionKind::DespawnItem { item } => TriggerAction::DespawnItem { item_id: item.clone() },
         ActionKind::DespawnNpc { npc } => TriggerAction::DespawnNpc { npc_id: npc.clone() },
@@ -446,11 +447,11 @@ fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
             movability: movability_from_def(movability),
         },
         ActionKind::LockExit { from_room, direction } => TriggerAction::LockExit {
-            from_room: from_room.clone(),
+            from_room: RoomId(from_room.clone()),
             direction: direction.clone(),
         },
         ActionKind::UnlockExit { from_room, direction } => TriggerAction::UnlockExit {
-            from_room: from_room.clone(),
+            from_room: RoomId(from_room.clone()),
             direction: direction.clone(),
         },
         ActionKind::RevealExit {
@@ -458,8 +459,8 @@ fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
             exit_to,
             direction,
         } => TriggerAction::RevealExit {
-            exit_from: exit_from.clone(),
-            exit_to: exit_to.clone(),
+            exit_from: RoomId(exit_from.clone()),
+            exit_to: RoomId(exit_to.clone()),
             direction: direction.clone(),
         },
         ActionKind::SetBarredMessage {
@@ -467,8 +468,8 @@ fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
             exit_to,
             msg,
         } => TriggerAction::SetBarredMessage {
-            exit_from: exit_from.clone(),
-            exit_to: exit_to.clone(),
+            exit_from: RoomId(exit_from.clone()),
+            exit_to: RoomId(exit_to.clone()),
             msg: msg.clone(),
         },
         ActionKind::ModifyItem { item, patch } => TriggerAction::ModifyItem {
@@ -476,7 +477,7 @@ fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
             patch: item_patch_from_def(patch),
         },
         ActionKind::ModifyRoom { room, patch } => TriggerAction::ModifyRoom {
-            room_id: room.clone(),
+            room_id: RoomId(room.clone()),
             patch: room_patch_from_def(patch),
         },
         ActionKind::ModifyNpc { npc, patch } => TriggerAction::ModifyNpc {
@@ -565,7 +566,7 @@ fn room_patch_from_def(def: &RoomPatchDef) -> crate::trigger::RoomPatch {
     crate::trigger::RoomPatch {
         name: def.name.clone(),
         desc: def.desc.clone(),
-        remove_exits: def.remove_exits.clone(),
+        remove_exits: def.remove_exits.iter().map(RoomId::new).collect(),
         add_exits: def.add_exits.iter().map(room_exit_patch_from_def).collect(),
     }
 }
@@ -573,7 +574,7 @@ fn room_patch_from_def(def: &RoomPatchDef) -> crate::trigger::RoomPatch {
 fn room_exit_patch_from_def(def: &RoomExitPatchDef) -> crate::trigger::RoomExitPatch {
     crate::trigger::RoomExitPatch {
         direction: def.direction.clone(),
-        to: def.to.clone(),
+        to: RoomId(def.to.clone()),
         hidden: def.hidden,
         locked: def.locked,
         required_flags: def.required_flags.iter().map(|flag| Flag::simple(flag, 0)).collect(),
@@ -601,8 +602,14 @@ fn npc_dialogue_patch_from_def(def: &NpcDialoguePatchDef) -> crate::trigger::Npc
 
 fn npc_movement_patch_from_def(def: &NpcMovementPatchDef) -> crate::trigger::NpcMovementPatch {
     crate::trigger::NpcMovementPatch {
-        route: def.route.clone(),
-        random_rooms: def.random_rooms.as_ref().map(|rooms| rooms.iter().cloned().collect()),
+        route: def
+            .route
+            .clone()
+            .map(|symbols| symbols.iter().map(RoomId::new).collect()),
+        random_rooms: def
+            .random_rooms
+            .as_ref()
+            .map(|rooms| rooms.iter().map(RoomId::new).collect()),
         timing: def.timing.as_ref().map(npc_timing_patch_from_def),
         active: def.active,
         loop_route: def.loop_route,
@@ -634,7 +641,9 @@ fn goal_condition_from_def(def: &DefGoalCondition) -> GoalCondition {
         DefGoalCondition::HasItem { item } => GoalCondition::HasItem { item_id: item.clone() },
         DefGoalCondition::HasFlag { flag } => GoalCondition::HasFlag { flag: flag.clone() },
         DefGoalCondition::MissingFlag { flag } => GoalCondition::MissingFlag { flag: flag.clone() },
-        DefGoalCondition::ReachedRoom { room } => GoalCondition::ReachedRoom { room_id: room.clone() },
+        DefGoalCondition::ReachedRoom { room } => GoalCondition::ReachedRoom {
+            room_id: RoomId(room.clone()),
+        },
     }
 }
 
@@ -654,8 +663,8 @@ fn condition_from_def(def: &ConditionDef) -> TriggerCondition {
         ConditionDef::FlagComplete { flag } => TriggerCondition::FlagComplete(flag.clone()),
         ConditionDef::HasItem { item } => TriggerCondition::HasItem(item.clone()),
         ConditionDef::MissingItem { item } => TriggerCondition::MissingItem(item.clone()),
-        ConditionDef::HasVisited { room } => TriggerCondition::HasVisited(room.clone()),
-        ConditionDef::PlayerInRoom { room } => TriggerCondition::InRoom(room.clone()),
+        ConditionDef::HasVisited { room } => TriggerCondition::HasVisited(RoomId(room.clone())),
+        ConditionDef::PlayerInRoom { room } => TriggerCondition::InRoom(RoomId(room.clone())),
         ConditionDef::WithNpc { npc } => TriggerCondition::WithNpc(npc.clone()),
         ConditionDef::NpcHasItem { npc, item } => TriggerCondition::NpcHasItem {
             npc_id: npc.clone(),
@@ -681,7 +690,7 @@ fn condition_from_def(def: &ConditionDef) -> TriggerCondition {
             // Empty room set means the ambient spinner applies in any room.
             room_ids: rooms
                 .as_ref()
-                .map(|list| list.iter().cloned().collect())
+                .map(|list| list.iter().map(RoomId::new).collect())
                 .unwrap_or_default(),
             spinner: SpinnerType::from_toml_key(spinner),
         },
@@ -691,8 +700,8 @@ fn condition_from_def(def: &ConditionDef) -> TriggerCondition {
 fn event_condition_from_def(def: &EventDef) -> Option<TriggerCondition> {
     Some(match def {
         EventDef::Always => return None,
-        EventDef::EnterRoom { room } => TriggerCondition::Enter(room.clone()),
-        EventDef::LeaveRoom { room } => TriggerCondition::Leave(room.clone()),
+        EventDef::EnterRoom { room } => TriggerCondition::Enter(RoomId(room.clone())),
+        EventDef::LeaveRoom { room } => TriggerCondition::Leave(RoomId(room.clone())),
         EventDef::TakeItem { item } => TriggerCondition::Take(item.clone()),
         EventDef::DropItem { item } => TriggerCondition::Drop(item.clone()),
         EventDef::LookAtItem { item } => TriggerCondition::LookAt(item.clone()),
@@ -742,7 +751,7 @@ fn location_from_ref(loc: &LocationRef) -> Location {
     match loc {
         LocationRef::Inventory => Location::Inventory,
         LocationRef::Nowhere => Location::Nowhere,
-        LocationRef::Room(id) => Location::Room(id.clone()),
+        LocationRef::Room(id) => Location::Room(RoomId(id.clone())),
         LocationRef::Item(id) => Location::Item(id.clone()),
         LocationRef::Npc(id) => Location::Npc(id.clone()),
     }

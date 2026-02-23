@@ -96,7 +96,7 @@ use log::{error, info, warn};
 /// # Panics
 /// - none (expect is called only after key is already known to exist)
 pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let item_id = match find_item_match(world, thing, SearchScope::Inventory) {
         Ok(item_id) => item_id,
         Err(SearchError::NoMatchingName(input)) => {
@@ -194,7 +194,7 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
 /// None... the call to expect only happens after the key (`item_id`) is already validated
 pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
     let take_verb = world.spin_core(CoreSpinnerType::TakeVerb, "take");
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
 
     let entity_id = match find_entity_match(world, thing, SearchScope::AllTouchable(room_id.clone())) {
         Ok(id) => id,
@@ -406,7 +406,7 @@ pub fn take_from_handler(
     vessel_pattern: &str,
 ) -> Result<()> {
     // find vessel id from containers and NPCs in the current room matching `vessel_pattern`
-    let current_room = world.player_room_ref()?.id();
+    let current_room = world.player_room_id();
     let vessel_id = match find_entity_match(world, vessel_pattern, SearchScope::NearbyVessels(current_room)) {
         Ok(id) => id,
         Err(SearchError::NoMatchingName(input)) => {
@@ -580,7 +580,7 @@ pub(crate) fn validate_and_transfer_from_item(
     };
 
     // match the item_pattern (input loot name) to an available item in the room
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     match find_item_match(world, item_pattern, SearchScope::TouchableItems(room_id)) {
         Ok(id) => {
             tx_data.loot_id.clone_from(&id);
@@ -743,7 +743,7 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
         Err(e) => bail!(e),
     };
 
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let (vessel_id, vessel_name) = match find_item_match(world, container, SearchScope::NearbyVessels(room_id)) {
         Ok(vessel_id) => {
             let vessel = world.items.get(&vessel_id).expect("vessel_id must be valid");
@@ -871,7 +871,7 @@ mod tests {
         let mut world = AmbleWorld::new_empty();
 
         // set up room
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
         let room = Room {
             id: room_id.clone(),
             symbol: "room".into(),

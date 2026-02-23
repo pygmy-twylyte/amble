@@ -115,7 +115,7 @@ mod tests {
     use crate::item::{ContainerState, Item, Movability};
     use crate::npc::{Npc, NpcState};
     use crate::world::Location;
-    use crate::{AmbleWorld, Room, idgen};
+    use crate::{AmbleWorld, Room, RoomId, idgen};
 
     use super::{place_items, place_npcs};
 
@@ -123,7 +123,7 @@ mod tests {
     fn test_transparent_container_loading() {
         let mut world = AmbleWorld::new_empty();
 
-        let room_id = idgen::new_id();
+        let room_id = idgen::new_room_id();
         let room = Room {
             id: room_id.clone(),
             symbol: "test_room".into(),
@@ -194,7 +194,7 @@ mod tests {
 
         let room_id = "room".to_string();
         let room = Room {
-            id: room_id.clone(),
+            id: RoomId(room_id.clone()),
             symbol: "room".into(),
             name: "Room".into(),
             base_description: "Room".into(),
@@ -207,7 +207,7 @@ mod tests {
             contents: HashSet::new(),
             npcs: HashSet::new(),
         };
-        world.rooms.insert(room_id.clone(), room);
+        world.rooms.insert(RoomId(room_id.clone()), room);
 
         let outer_id = "outer".to_string();
         let inner_id = "inner".to_string();
@@ -218,7 +218,7 @@ mod tests {
             symbol: "outer".into(),
             name: "Outer".into(),
             description: "Outer container".into(),
-            location: Location::Room(room_id.clone()),
+            location: Location::Room(RoomId(room_id.clone())),
             visibility: crate::item::ItemVisibility::Listed,
             visible_when: None,
             aliases: Vec::new(),
@@ -273,7 +273,7 @@ mod tests {
 
         place_items(&mut world).unwrap();
 
-        let room = world.rooms.get(&room_id).unwrap();
+        let room = world.rooms.get(&room_id.into()).unwrap();
         assert!(room.contents.contains(&outer_id));
 
         let outer = world.items.get(&outer_id).unwrap();
