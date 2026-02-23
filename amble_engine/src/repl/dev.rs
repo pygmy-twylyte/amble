@@ -699,7 +699,7 @@ pub fn dev_sched_delay_handler(world: &mut AmbleWorld, view: &mut View, idx: usi
 mod tests {
     use super::*;
     use crate::{
-        AmbleWorld, View, ViewItem,
+        AmbleWorld, NpcId, View, ViewItem,
         health::HealthState,
         player::{Flag, Player},
     };
@@ -862,7 +862,7 @@ mod tests {
             },
         );
         // npc
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = Npc {
             id: npc_id.clone(),
             symbol: "npc_sym".into(),

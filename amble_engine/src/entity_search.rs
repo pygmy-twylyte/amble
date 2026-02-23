@@ -248,7 +248,7 @@ mod tests {
     }
 
     fn insert_npc(world: &mut AmbleWorld, name: &str, location: Location) -> NpcId {
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = Npc {
             id: npc_id.clone(),
             symbol: format!("npc_{npc_id}"),

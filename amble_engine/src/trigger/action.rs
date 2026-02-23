@@ -2587,7 +2587,7 @@ mod tests {
     #[test]
     fn modify_npc_updates_identity_and_dialogue() {
         let (mut world, room_id, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let mut npc = make_npc(npc_id.clone(), Location::Room(room_id), NpcState::Normal);
         npc.dialogue.insert(NpcState::Normal, vec!["Hello there.".into()]);
         world.npcs.insert(npc_id.clone(), npc);
@@ -2620,7 +2620,7 @@ mod tests {
     #[test]
     fn modify_npc_updates_movement_and_flags() {
         let (mut world, room_a, room_b) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let mut npc = make_npc(npc_id.clone(), Location::Room(room_a.clone()), NpcState::Normal);
         npc.movement = Some(NpcMovement {
             movement_type: MovementType::Route {
@@ -2670,7 +2670,7 @@ mod tests {
     #[test]
     fn modify_npc_creates_movement_if_missing() {
         let (mut world, room_id, other_room) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = make_npc(npc_id.clone(), Location::Room(room_id.clone()), NpcState::Normal);
         world.npcs.insert(npc_id.clone(), npc);
 
@@ -2795,7 +2795,7 @@ mod tests {
     #[test]
     fn damage_npc_over_time_ticks_each_turn() {
         let (mut world, room_id, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         world.npcs.insert(
             npc_id.clone(),
             make_npc(npc_id.clone(), Location::Room(room_id.clone()), NpcState::Normal),
@@ -2867,7 +2867,7 @@ mod tests {
     #[test]
     fn remove_npc_effect_action_clears_effect_and_is_idempotent() {
         let (mut world, room_id, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let mut npc = make_npc(npc_id.clone(), Location::Room(room_id.clone()), NpcState::Normal);
         npc.health.effects.push(HealthEffect::DamageOverTime {
             cause: "burn".into(),
@@ -3206,7 +3206,7 @@ mod tests {
     #[test]
     fn give_to_player_transfers_item_from_npc() {
         let (mut world, room1, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = make_npc(npc_id.clone(), Location::Room(room1.clone()), NpcState::Normal);
         world.rooms.get_mut(&room1).unwrap().npcs.insert(npc_id.clone());
         world.npcs.insert(npc_id.clone(), npc);
@@ -3435,7 +3435,7 @@ mod tests {
     #[test]
     fn npc_says_adds_dialogue_to_view() {
         let (mut world, room1, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = make_npc(npc_id.clone(), Location::Room(room1.clone()), NpcState::Normal);
         world.rooms.get_mut(&room1).unwrap().npcs.insert(npc_id.clone());
         world.npcs.insert(npc_id.clone(), npc);
@@ -3456,7 +3456,7 @@ mod tests {
             SpinnerType::Core(CoreSpinnerType::NpcIgnore),
             Spinner::new(vec![Wedge::new("Ignores you.".into())]),
         );
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let mut npc = make_npc(npc_id.clone(), Location::Room(room1.clone()), NpcState::Normal);
         npc.dialogue.insert(NpcState::Normal, vec!["Howdy".to_string()]);
         world.rooms.get_mut(&room1).unwrap().npcs.insert(npc_id.clone());
@@ -3474,7 +3474,7 @@ mod tests {
     #[test]
     fn set_npc_state_changes_state() {
         let (mut world, room1, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = make_npc(npc_id.clone(), Location::Room(room1.clone()), NpcState::Normal);
         world.rooms.get_mut(&room1).unwrap().npcs.insert(npc_id.clone());
         world.npcs.insert(npc_id.clone(), npc);

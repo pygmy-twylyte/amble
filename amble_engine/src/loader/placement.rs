@@ -115,7 +115,7 @@ mod tests {
     use crate::item::{ContainerState, Item, Movability};
     use crate::npc::{Npc, NpcState};
     use crate::world::Location;
-    use crate::{AmbleWorld, ItemId, Room, RoomId, idgen};
+    use crate::{AmbleWorld, ItemId, NpcId, Room, RoomId, idgen};
 
     use super::{place_items, place_npcs};
 
@@ -287,7 +287,7 @@ mod tests {
     fn test_place_items_adds_to_npc_inventory() {
         let mut world = AmbleWorld::new_empty();
 
-        let npc_id = "npc".to_string();
+        let npc_id = NpcId::from("npc");
         let npc = Npc {
             id: npc_id.clone(),
             symbol: "npc".into(),
@@ -332,7 +332,7 @@ mod tests {
     fn test_place_npcs_rejects_invalid_location() {
         let mut world = AmbleWorld::new_empty();
 
-        let npc_id = "npc".to_string();
+        let npc_id = NpcId::from("npc");
         let npc = Npc {
             id: npc_id.clone(),
             symbol: "npc".into(),

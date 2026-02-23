@@ -390,7 +390,7 @@ mod tests {
     fn location_variants_work() {
         let item_id: ItemId = crate::idgen::new_id().into();
         let room_id = crate::idgen::new_room_id();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
 
         assert_eq!(Location::Item(item_id.clone()), Location::Item(item_id.clone()));
         assert_eq!(Location::Room(room_id.clone()), Location::Room(room_id.clone()));

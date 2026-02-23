@@ -35,7 +35,7 @@ use crate::spinners::SpinnerType;
 use crate::spinners::create_default_spinners;
 use crate::trigger::{ScriptedAction, Trigger, TriggerAction, TriggerCondition};
 use crate::world::{AmbleWorld, Location};
-use crate::{ItemId, RoomId};
+use crate::{ItemId, NpcId, RoomId};
 
 /// Load a `WorldDef` from a RON file.
 /// # Errors
@@ -172,10 +172,14 @@ fn overlay_condition_from_def(def: &OverlayCondDef) -> OverlayCondition {
         OverlayCondDef::PlayerMissingItem { item } => OverlayCondition::PlayerMissingItem {
             item_id: item.clone().into(),
         },
-        OverlayCondDef::NpcPresent { npc } => OverlayCondition::NpcPresent { npc_id: npc.clone() },
-        OverlayCondDef::NpcAbsent { npc } => OverlayCondition::NpcAbsent { npc_id: npc.clone() },
+        OverlayCondDef::NpcPresent { npc } => OverlayCondition::NpcPresent {
+            npc_id: npc.clone().into(),
+        },
+        OverlayCondDef::NpcAbsent { npc } => OverlayCondition::NpcAbsent {
+            npc_id: npc.clone().into(),
+        },
         OverlayCondDef::NpcInState { npc, state } => OverlayCondition::NpcInState {
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
             mood: npc_state_from_def(state),
         },
         OverlayCondDef::ItemInRoom { item, room } => OverlayCondition::ItemInRoom {
@@ -240,7 +244,7 @@ fn npc_from_def(def: &NpcDef) -> Npc {
         .collect::<HashMap<_, _>>();
     let movement = def.movement.as_ref().map(npc_movement_from_def);
     Npc {
-        id: def.id.clone(),
+        id: def.id.clone().into(),
         symbol: def.id.clone(),
         name: def.name.clone(),
         description: def.desc.clone(),
@@ -303,7 +307,7 @@ fn trigger_from_def(def: &TriggerDef) -> Result<Trigger> {
 
 fn goal_from_def(def: &GoalDef) -> Goal {
     Goal {
-        id: def.id.clone(),
+        id: def.id.clone().into(),
         name: def.name.clone(),
         description: def.description.clone(),
         group: goal_group_from_def(def.group),
@@ -350,7 +354,7 @@ fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
         },
         ActionKind::RemovePlayerEffect { cause } => TriggerAction::RemovePlayerEffect { cause: cause.clone() },
         ActionKind::DamageNpc { npc, amount, cause } => TriggerAction::DamageNpc {
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
             amount: *amount,
             cause: cause.clone(),
         },
@@ -360,13 +364,13 @@ fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
             turns,
             cause,
         } => TriggerAction::DamageNpcOT {
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
             amount: *amount,
             turns: *turns,
             cause: cause.clone(),
         },
         ActionKind::HealNpc { npc, amount, cause } => TriggerAction::HealNpc {
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
             amount: *amount,
             cause: cause.clone(),
         },
@@ -376,34 +380,36 @@ fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
             turns,
             cause,
         } => TriggerAction::HealNpcOT {
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
             amount: *amount,
             turns: *turns,
             cause: cause.clone(),
         },
         ActionKind::RemoveNpcEffect { npc, cause } => TriggerAction::RemoveNpcEffect {
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
             cause: cause.clone(),
         },
         ActionKind::SetNpcActive { npc, active } => TriggerAction::SetNpcActive {
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
             active: *active,
         },
         ActionKind::SetNpcState { npc, state } => TriggerAction::SetNPCState {
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
             state: npc_state_from_def(state),
         },
         ActionKind::NpcSays { npc, quote } => TriggerAction::NpcSays {
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
             quote: quote.clone(),
         },
-        ActionKind::NpcSaysRandom { npc } => TriggerAction::NpcSaysRandom { npc_id: npc.clone() },
+        ActionKind::NpcSaysRandom { npc } => TriggerAction::NpcSaysRandom {
+            npc_id: npc.clone().into(),
+        },
         ActionKind::NpcRefuseItem { npc, reason } => TriggerAction::NpcRefuseItem {
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
             reason: reason.clone(),
         },
         ActionKind::GiveItemToPlayer { npc, item } => TriggerAction::GiveItemToPlayer {
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
             item_id: item.clone().into(),
         },
         ActionKind::PushPlayerTo { room } => TriggerAction::PushPlayerTo(RoomId(room.clone())),
@@ -427,13 +433,15 @@ fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
             container_id: container.clone().into(),
         },
         ActionKind::SpawnNpcInRoom { npc, room } => TriggerAction::SpawnNpcInRoom {
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
             room_id: RoomId(room.clone()),
         },
         ActionKind::DespawnItem { item } => TriggerAction::DespawnItem {
             item_id: item.clone().into(),
         },
-        ActionKind::DespawnNpc { npc } => TriggerAction::DespawnNpc { npc_id: npc.clone() },
+        ActionKind::DespawnNpc { npc } => TriggerAction::DespawnNpc {
+            npc_id: npc.clone().into(),
+        },
         ActionKind::ReplaceItem { old_item, new_item } => TriggerAction::ReplaceItem {
             old_id: old_item.clone().into(),
             new_id: new_item.clone().into(),
@@ -491,7 +499,7 @@ fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
             patch: room_patch_from_def(patch),
         },
         ActionKind::ModifyNpc { npc, patch } => TriggerAction::ModifyNpc {
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
             patch: npc_patch_from_def(patch),
         },
         ActionKind::Conditional { condition, actions } => TriggerAction::Conditional {
@@ -677,13 +685,13 @@ fn condition_from_def(def: &ConditionDef) -> TriggerCondition {
         ConditionDef::MissingItem { item } => TriggerCondition::MissingItem(item.clone().into()),
         ConditionDef::HasVisited { room } => TriggerCondition::HasVisited(RoomId(room.clone())),
         ConditionDef::PlayerInRoom { room } => TriggerCondition::InRoom(RoomId(room.clone())),
-        ConditionDef::WithNpc { npc } => TriggerCondition::WithNpc(npc.clone()),
+        ConditionDef::WithNpc { npc } => TriggerCondition::WithNpc(npc.clone().into()),
         ConditionDef::NpcHasItem { npc, item } => TriggerCondition::NpcHasItem {
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
             item_id: item.clone().into(),
         },
         ConditionDef::NpcInState { npc, state } => TriggerCondition::NpcInState {
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
             mood: npc_state_from_def(state),
         },
         ConditionDef::ContainerHasItem { container, item } => TriggerCondition::ContainerHasItem {
@@ -720,7 +728,7 @@ fn event_condition_from_def(def: &EventDef) -> Option<TriggerCondition> {
         EventDef::OpenItem { item } => TriggerCondition::Open(item.clone().into()),
         EventDef::UnlockItem { item } => TriggerCondition::Unlock(item.clone().into()),
         EventDef::TouchItem { item } => TriggerCondition::Touch(item.clone().into()),
-        EventDef::TalkToNpc { npc } => TriggerCondition::TalkToNpc(npc.clone()),
+        EventDef::TalkToNpc { npc } => TriggerCondition::TalkToNpc(npc.clone().into()),
         EventDef::UseItem { item, ability } => TriggerCondition::UseItem {
             item_id: item.clone().into(),
             ability: item_ability_from_def(ability),
@@ -740,11 +748,11 @@ fn event_condition_from_def(def: &EventDef) -> Option<TriggerCondition> {
         },
         EventDef::GiveToNpc { item, npc } => TriggerCondition::GiveToNpc {
             item_id: item.clone().into(),
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
         },
         EventDef::TakeFromNpc { item, npc } => TriggerCondition::TakeFromNpc {
             item_id: item.clone().into(),
-            npc_id: npc.clone(),
+            npc_id: npc.clone().into(),
         },
         EventDef::InsertItemInto { item, container } => TriggerCondition::Insert {
             item: item.clone().into(),
@@ -755,7 +763,7 @@ fn event_condition_from_def(def: &EventDef) -> Option<TriggerCondition> {
             mode: ingest_mode_from_def(*mode),
         },
         EventDef::PlayerDeath => TriggerCondition::PlayerDeath,
-        EventDef::NpcDeath { npc } => TriggerCondition::NpcDeath(npc.clone()),
+        EventDef::NpcDeath { npc } => TriggerCondition::NpcDeath(npc.clone().into()),
     })
 }
 
@@ -765,7 +773,7 @@ fn location_from_ref(loc: &LocationRef) -> Location {
         LocationRef::Nowhere => Location::Nowhere,
         LocationRef::Room(id) => Location::Room(RoomId(id.clone())),
         LocationRef::Item(id) => Location::Item(ItemId::from(id.clone())),
-        LocationRef::Npc(id) => Location::Npc(id.clone()),
+        LocationRef::Npc(id) => Location::Npc(NpcId::from(id.clone())),
     }
 }
 

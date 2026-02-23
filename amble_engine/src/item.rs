@@ -708,7 +708,7 @@ mod tests {
     #[test]
     fn set_location_npc_updates_location() {
         let mut item = create_test_item(crate::idgen::new_id().into());
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         item.set_location_npc(npc_id.clone());
         assert_eq!(item.location, Location::Npc(npc_id));
     }

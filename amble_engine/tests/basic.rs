@@ -518,7 +518,7 @@ fn test_check_npc_movement() {
     };
     world.rooms.insert(r1.clone(), room1);
     world.rooms.insert(r2.clone(), room2);
-    let npc_id = ae::idgen::new_id();
+    let npc_id: ae::NpcId = ae::idgen::new_id().into();
     let npc = Npc {
         id: npc_id.clone(),
         symbol: "npc".into(),

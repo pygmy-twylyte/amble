@@ -336,7 +336,7 @@ mod tests {
         };
         world.items.insert(item_id.clone(), item);
 
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = Npc {
             id: npc_id.clone(),
             symbol: "test_npc".into(),

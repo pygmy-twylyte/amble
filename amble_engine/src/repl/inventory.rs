@@ -485,7 +485,7 @@ pub(crate) fn validate_and_transfer_from_npc(
     npc_id: &NpcId,
 ) -> Result<(), anyhow::Error> {
     let mut tx_data = TransferData {
-        vessel_id: npc_id.clone(),
+        vessel_id: npc_id.to_string(),
         vessel_type: VesselType::Npc,
         ..Default::default()
     };
@@ -1000,7 +1000,7 @@ mod tests {
         world.rooms.get_mut(&room_id).unwrap().add_item(chest_id.clone());
 
         // npc with item
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let mut npc = Npc {
             id: npc_id.clone(),
             symbol: "bob".into(),
@@ -1200,7 +1200,7 @@ mod tests {
         let mut tw = build_world();
         let tx_data = TransferData {
             vessel_type: VesselType::Npc,
-            vessel_id: tw.npc_id.clone(),
+            vessel_id: tw.npc_id.to_string(),
             vessel_name: "Some NPC".to_string(),
             loot_id: tw.npc_item_id.clone(),
             loot_name: "Loot".to_string(),

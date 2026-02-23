@@ -307,7 +307,7 @@ mod tests {
     #[test]
     fn npc_item_and_state_conditions() {
         let (mut world, room1_id, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let item_id: ItemId = crate::idgen::new_id().into();
         let mut npc = make_npc(npc_id.clone(), Location::Room(room1_id.clone()), NpcState::Happy);
         npc.inventory.insert(item_id.clone());
@@ -359,7 +359,7 @@ mod tests {
     #[test]
     fn with_npc_condition_detects_presence() {
         let (mut world, room1_id, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         world.rooms.get_mut(&room1_id).unwrap().npcs.insert(npc_id.clone());
         world.npcs.insert(
             npc_id.clone(),

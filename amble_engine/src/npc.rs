@@ -98,7 +98,7 @@ impl Npc {
 }
 impl WorldObject for Npc {
     fn id(&self) -> Id {
-        self.id.clone()
+        self.id.to_string()
     }
     fn symbol(&self) -> &str {
         &self.symbol
@@ -591,7 +591,7 @@ mod tests {
         dialogue.insert(NpcState::Mad, vec!["Go away!".into(), "I'm not talking to you!".into()]);
 
         Npc {
-            id: crate::idgen::new_id(),
+            id: crate::idgen::new_id().into(),
             symbol: "test_npc".into(),
             name: "Test NPC".into(),
             description: "A test NPC".into(),
@@ -885,7 +885,7 @@ mod tests {
         world.rooms.insert(other_room_id.clone(), other_room);
 
         // Create NPC and set player location
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = create_test_npc();
         world.npcs.insert(npc_id.clone(), npc);
         world.player.location = Location::Room(player_room_id.clone());
@@ -970,7 +970,7 @@ mod tests {
         world.rooms.insert(player_room_id.clone(), player_room);
         world.rooms.insert(other_room_id.clone(), other_room);
 
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = create_test_npc();
         world.npcs.insert(npc_id.clone(), npc);
         world.player.location = Location::Room(player_room_id.clone());

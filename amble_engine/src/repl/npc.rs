@@ -139,7 +139,7 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
             )));
             return Ok(());
         }
-        npc.id()
+        npc.id.clone()
     } else {
         entity_not_found(world, view, npc_name);
         return Ok(());
@@ -153,7 +153,7 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
     // check for any condition-specific dialogue
     let fired_triggers = check_triggers(world, view, &[TriggerCondition::TalkToNpc(sent_id.clone())])?;
     let dialogue_fired = triggers_contain_condition(&fired_triggers, |cond| match cond {
-        TriggerCondition::TalkToNpc(npc_id) => sent_id == npc_id.as_str(),
+        TriggerCondition::TalkToNpc(npc_id) => sent_id == *npc_id,
         _ => false,
     });
 
