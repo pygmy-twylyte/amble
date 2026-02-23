@@ -32,7 +32,7 @@ fn test_idgen_uuid_deterministic() {
 fn test_item_accessible() {
     use ae::item::{ContainerState, Item};
     let item = Item {
-        id: ae::idgen::new_id(),
+        id: ae::idgen::new_id().into(),
         symbol: "i".into(),
         name: "Box".into(),
         description: String::new(),
@@ -74,7 +74,7 @@ fn test_player_flag_sequence() {
 #[test]
 fn test_find_world_object() {
     use std::collections::HashMap;
-    let id = ae::idgen::new_id();
+    let id: ae::ItemId = ae::idgen::new_id().into();
     let item = ae::item::Item {
         id: id.clone(),
         symbol: "i".into(),
@@ -175,7 +175,7 @@ fn test_loader_goals_to_goal() {
 fn test_interaction_requirement_met() {
     use ae::item::{Item, ItemAbility, ItemInteractionType};
     let tool = Item {
-        id: ae::idgen::new_id(),
+        id: ae::idgen::new_id().into(),
         symbol: "t".into(),
         name: "tool".into(),
         description: String::new(),
@@ -192,7 +192,7 @@ fn test_interaction_requirement_met() {
         consumable: None,
     };
     let target = Item {
-        id: ae::idgen::new_id(),
+        id: ae::idgen::new_id().into(),
         symbol: "x".into(),
         name: "target".into(),
         description: String::new(),

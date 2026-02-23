@@ -226,7 +226,7 @@ pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
         world,
         view,
         &[TriggerCondition::UseItem {
-            item_id: item.id(),
+            item_id: item.id.clone(),
             ability: ItemAbility::Read,
         }],
     )?;

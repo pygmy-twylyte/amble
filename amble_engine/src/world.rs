@@ -388,7 +388,7 @@ mod tests {
 
     #[test]
     fn location_variants_work() {
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let room_id = crate::idgen::new_room_id();
         let npc_id = crate::idgen::new_id();
 
@@ -539,7 +539,7 @@ mod tests {
 
         let room_mut = world.player_room_mut().unwrap();
         room_mut.visited = true;
-        assert!(world.rooms.get(&room_id.into()).unwrap().visited);
+        assert!(world.rooms.get(&RoomId::new(&room_id)).unwrap().visited);
     }
 
     #[test]
@@ -551,17 +551,17 @@ mod tests {
 
     #[test]
     fn amble_world_get_item_mut_works() {
-        let item_id = "test_item".to_string();
+        let item_id = ItemId::from("test_item");
         let mut world = AmbleWorld::new_empty();
         let item = create_test_item(&item_id, Location::Nowhere);
         world.items.insert(item_id.clone(), item);
 
-        let item_mut = world.get_item_mut(&String::from("test_item")).unwrap();
+        let item_mut = world.get_item_mut(&ItemId::from("test_item")).unwrap();
         item_mut.movability = Movability::Restricted {
             reason: "restricted".into(),
         };
         assert!(matches!(
-            world.items.get(&String::from("test_item")).unwrap().movability,
+            world.items.get(&ItemId::from("test_item")).unwrap().movability,
             Movability::Restricted { .. }
         ));
     }
@@ -569,7 +569,7 @@ mod tests {
     #[test]
     fn amble_world_get_item_mut_returns_none_for_nonexistent() {
         let mut world = AmbleWorld::new_empty();
-        assert!(world.get_item_mut(&"test".to_string()).is_none());
+        assert!(world.get_item_mut(&ItemId::from("test")).is_none());
     }
 
     #[test]
@@ -578,7 +578,7 @@ mod tests {
         let room_id = crate::idgen::new_id();
         let mut room = create_test_room(&RoomId::new(&room_id));
 
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = create_test_item(&item_id, Location::Room(RoomId::new(&room_id)));
         room.contents.insert(item_id.clone());
 
@@ -595,11 +595,11 @@ mod tests {
         let room_id = crate::idgen::new_id();
         let mut room = create_test_room(&RoomId::new(&room_id));
 
-        let container_id = crate::idgen::new_id();
+        let container_id: ItemId = crate::idgen::new_id().into();
         let mut container = create_test_item(&container_id, Location::Room(RoomId::new(&room_id)));
         container.container_state = Some(ContainerState::Open);
 
-        let item_in_container_id = crate::idgen::new_id();
+        let item_in_container_id: ItemId = crate::idgen::new_id().into();
         let item_in_container = create_test_item(&item_in_container_id, Location::Item(container_id.clone()));
         container.contents.insert(item_in_container_id.clone());
 
@@ -620,11 +620,11 @@ mod tests {
         let room_id = crate::idgen::new_id();
         let mut room = create_test_room(&RoomId::new(&room_id));
 
-        let container_id = crate::idgen::new_id();
+        let container_id: ItemId = crate::idgen::new_id().into();
         let mut container = create_test_item(&container_id, Location::Room(RoomId::new(&room_id)));
         container.container_state = Some(ContainerState::Closed);
 
-        let item_in_container_id = crate::idgen::new_id();
+        let item_in_container_id: ItemId = crate::idgen::new_id().into();
         let item_in_container = create_test_item(&item_in_container_id, Location::Item(container_id.clone()));
         container.contents.insert(item_in_container_id.clone());
 
@@ -645,11 +645,11 @@ mod tests {
         let room_id = crate::idgen::new_id();
         let mut room = create_test_room(&RoomId::new(&room_id));
 
-        let container_id = crate::idgen::new_id();
+        let container_id: ItemId = crate::idgen::new_id().into();
         let mut container = create_test_item(&container_id, Location::Room(RoomId::new(&room_id)));
         container.container_state = Some(ContainerState::Locked);
 
-        let item_in_container_id = crate::idgen::new_id();
+        let item_in_container_id: ItemId = crate::idgen::new_id().into();
         let item_in_container = create_test_item(&item_in_container_id, Location::Item(container_id.clone()));
         container.contents.insert(item_in_container_id.clone());
 
@@ -688,7 +688,7 @@ mod tests {
         let room_id = crate::idgen::new_room_id();
         let mut room = create_test_room(&RoomId::new(&room_id));
 
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = create_test_item(&item_id, Location::Room(room_id.clone()));
         room.contents.insert(item_id.clone());
 
@@ -706,11 +706,11 @@ mod tests {
         let room_id = crate::idgen::new_room_id();
         let mut room = create_test_room(&room_id);
 
-        let container_id = crate::idgen::new_id();
+        let container_id: ItemId = crate::idgen::new_id().into();
         let mut container = create_test_item(&container_id, Location::Room(room_id.clone()));
         container.container_state = Some(ContainerState::TransparentClosed);
 
-        let item_in_container_id = crate::idgen::new_id();
+        let item_in_container_id: ItemId = crate::idgen::new_id().into();
         let item_in_container = create_test_item(&item_in_container_id, Location::Item(container_id.clone()));
         container.contents.insert(item_in_container_id.clone());
 
@@ -731,11 +731,11 @@ mod tests {
         let room_id = crate::idgen::new_room_id();
         let mut room = create_test_room(&room_id);
 
-        let container_id = crate::idgen::new_id();
+        let container_id: ItemId = crate::idgen::new_id().into();
         let mut container = create_test_item(&container_id, Location::Room(room_id.clone()));
         container.container_state = Some(ContainerState::TransparentLocked);
 
-        let item_in_container_id = crate::idgen::new_id();
+        let item_in_container_id: ItemId = crate::idgen::new_id().into();
         let item_in_container = create_test_item(&item_in_container_id, Location::Item(container_id.clone()));
         container.contents.insert(item_in_container_id.clone());
 
@@ -756,11 +756,11 @@ mod tests {
         let room_id = crate::idgen::new_room_id();
         let mut room = create_test_room(&room_id);
 
-        let container_id = crate::idgen::new_id();
+        let container_id: ItemId = crate::idgen::new_id().into();
         let mut container = create_test_item(&container_id, Location::Room(room_id.clone()));
         container.container_state = Some(ContainerState::Locked);
 
-        let item_in_container_id = crate::idgen::new_id();
+        let item_in_container_id: ItemId = crate::idgen::new_id().into();
         let item_in_container = create_test_item(&item_in_container_id, Location::Item(container_id.clone()));
         container.contents.insert(item_in_container_id.clone());
 

@@ -115,7 +115,7 @@ mod tests {
     use crate::item::{ContainerState, Item, Movability};
     use crate::npc::{Npc, NpcState};
     use crate::world::Location;
-    use crate::{AmbleWorld, Room, RoomId, idgen};
+    use crate::{AmbleWorld, ItemId, Room, RoomId, idgen};
 
     use super::{place_items, place_npcs};
 
@@ -140,7 +140,7 @@ mod tests {
         };
         world.rooms.insert(room_id.clone(), room);
 
-        let container_id = idgen::new_id();
+        let container_id: ItemId = idgen::new_id().into();
         let container = Item {
             id: container_id.clone(),
             symbol: "test_container".into(),
@@ -159,7 +159,7 @@ mod tests {
             text: None,
         };
 
-        let item_id = idgen::new_id();
+        let item_id: ItemId = idgen::new_id().into();
         let item = Item {
             id: item_id.clone(),
             symbol: "test_item".into(),
@@ -209,9 +209,9 @@ mod tests {
         };
         world.rooms.insert(RoomId(room_id.clone()), room);
 
-        let outer_id = "outer".to_string();
-        let inner_id = "inner".to_string();
-        let item_id = "item".to_string();
+        let outer_id = ItemId::from("outer");
+        let inner_id = ItemId::from("inner");
+        let item_id = ItemId::from("item");
 
         let outer = Item {
             id: outer_id.clone(),
@@ -273,7 +273,7 @@ mod tests {
 
         place_items(&mut world).unwrap();
 
-        let room = world.rooms.get(&room_id.into()).unwrap();
+        let room = world.rooms.get(&room_id).unwrap();
         assert!(room.contents.contains(&outer_id));
 
         let outer = world.items.get(&outer_id).unwrap();
@@ -302,7 +302,7 @@ mod tests {
         };
         world.npcs.insert(npc_id.clone(), npc);
 
-        let item_id = "token".to_string();
+        let item_id = ItemId::from("token");
         let item = Item {
             id: item_id.clone(),
             symbol: "token".into(),

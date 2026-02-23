@@ -308,7 +308,7 @@ mod tests {
     fn npc_item_and_state_conditions() {
         let (mut world, room1_id, _) = build_test_world();
         let npc_id = crate::idgen::new_id();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let mut npc = make_npc(npc_id.clone(), Location::Room(room1_id.clone()), NpcState::Happy);
         npc.inventory.insert(item_id.clone());
         world.npcs.insert(npc_id.clone(), npc);
@@ -342,14 +342,14 @@ mod tests {
     #[test]
     fn player_inventory_item_conditions() {
         let (mut world, _, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         world
             .items
             .insert(item_id.clone(), make_item(item_id.clone(), Location::Inventory, None));
         world.player.inventory.insert(item_id.clone());
         assert!(TriggerCondition::HasItem(item_id.clone()).is_ongoing(&world));
         assert!(!TriggerCondition::MissingItem(item_id.clone()).is_ongoing(&world));
-        let other_id = crate::idgen::new_id();
+        let other_id: ItemId = crate::idgen::new_id().into();
         world
             .items
             .insert(other_id.clone(), make_item(other_id.clone(), Location::Nowhere, None));
@@ -371,8 +371,8 @@ mod tests {
     #[test]
     fn container_has_item_condition_detects_item() {
         let (mut world, room1_id, _) = build_test_world();
-        let container_id = crate::idgen::new_id();
-        let item_id = crate::idgen::new_id();
+        let container_id: ItemId = crate::idgen::new_id().into();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let mut container = make_item(
             container_id.clone(),
             Location::Room(room1_id.clone()),

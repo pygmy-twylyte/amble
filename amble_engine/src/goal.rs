@@ -501,7 +501,7 @@ mod tests {
         world.rooms.insert(room_id.clone(), room);
 
         // Add test item
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = Item {
             id: item_id.clone(),
             symbol: "test_item".into(),
@@ -628,7 +628,7 @@ mod tests {
         assert!(condition.satisfied(&world));
 
         let condition = GoalCondition::HasItem {
-            item_id: crate::idgen::new_id(),
+            item_id: crate::idgen::new_id().into(),
         };
         assert!(!condition.satisfied(&world));
     }

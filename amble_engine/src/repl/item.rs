@@ -278,8 +278,9 @@ pub fn use_item_on_handler(
     let Some((target, tool)) = resolve_use_item_participants(world, view, tool_str, target_str)? else {
         return Ok(());
     };
-    let (target_id, target_name, target_sym) = (target.id(), target.name().to_owned(), target.symbol().to_owned());
-    let (tool_id, tool_name, tool_sym) = (tool.id(), tool.name().to_string(), tool.symbol().to_owned());
+    let (target_id, target_name, target_sym) =
+        (target.id.clone(), target.name().to_owned(), target.symbol().to_owned());
+    let (tool_id, tool_name, tool_sym) = (tool.id.clone(), tool.name().to_string(), tool.symbol().to_owned());
     let tool_is_consumable = tool.consumable.is_some();
 
     // check if these items can interact in this way
@@ -471,7 +472,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
 
     if item.abilities.contains(&ItemAbility::TurnOn) {
         info!("Player switched on {} ({})", item.name(), item.symbol());
-        let sent_id = item.id();
+        let sent_id = item.id.clone();
         let fired_triggers = check_triggers(
             world,
             view,
@@ -557,7 +558,7 @@ pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &
         .with_context(|| format!("world.items.get_mut({item_id})"))?;
     if item.abilities.contains(&ItemAbility::TurnOff) {
         info!("Player switched off {} ({})", item.name(), item.symbol());
-        let sent_id = item.id();
+        let sent_id = item.id.clone();
         let fired_triggers = check_triggers(
             world,
             view,
@@ -1099,7 +1100,7 @@ mod tests {
         world.rooms.insert(room_id.clone(), room);
         world.player.location = Location::Room(room_id.clone());
 
-        let container_id = crate::idgen::new_id();
+        let container_id: ItemId = crate::idgen::new_id().into();
         let mut container = Item {
             id: container_id.clone(),
             symbol: "c".into(),
@@ -1128,7 +1129,7 @@ mod tests {
             .insert(container_id.clone());
         world.items.insert(container_id.clone(), container);
 
-        let tool_id = crate::idgen::new_id();
+        let tool_id: ItemId = crate::idgen::new_id().into();
         let tool = Item {
             id: tool_id.clone(),
             symbol: "t".into(),
@@ -1149,7 +1150,7 @@ mod tests {
         world.player.inventory.insert(tool_id.clone());
         world.items.insert(tool_id.clone(), tool);
 
-        let lamp_id = crate::idgen::new_id();
+        let lamp_id: ItemId = crate::idgen::new_id().into();
         let lamp = Item {
             id: lamp_id.clone(),
             symbol: "l".into(),
@@ -1172,7 +1173,7 @@ mod tests {
         world.rooms.get_mut(&room_id).unwrap().contents.insert(lamp_id.clone());
         world.items.insert(lamp_id.clone(), lamp);
 
-        let key_id = crate::idgen::new_id();
+        let key_id: ItemId = crate::idgen::new_id().into();
         let key = Item {
             id: key_id.clone(),
             symbol: "k".into(),

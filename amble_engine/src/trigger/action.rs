@@ -2953,7 +2953,7 @@ mod tests {
     #[test]
     fn lock_and_unlock_item_changes_state() {
         let (mut world, room_id, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = make_item(
             item_id.clone(),
             Location::Room(room_id.clone()),
@@ -2990,7 +2990,7 @@ mod tests {
     #[test]
     fn modify_item_updates_scalar_fields() {
         let (mut world, room_id, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let mut item = make_item(
             item_id.clone(),
             Location::Room(room_id.clone()),
@@ -3028,7 +3028,7 @@ mod tests {
     #[test]
     fn modify_item_leaves_container_state_when_unset() {
         let (mut world, room_id, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = make_item(
             item_id.clone(),
             Location::Room(room_id.clone()),
@@ -3050,7 +3050,7 @@ mod tests {
     #[test]
     fn modify_item_updates_abilities() {
         let (mut world, room_id, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let mut item = make_item(item_id.clone(), Location::Room(room_id.clone()), None);
         item.abilities.insert(ItemAbility::Ignite);
         world.items.insert(item_id.clone(), item);
@@ -3071,7 +3071,7 @@ mod tests {
     #[test]
     fn modify_item_removes_container_state_when_empty() {
         let (mut world, room_id, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let container = make_item(
             item_id.clone(),
             Location::Room(room_id.clone()),
@@ -3093,7 +3093,7 @@ mod tests {
     #[test]
     fn modify_item_errors_when_removing_container_state_with_contents() {
         let (mut world, room_id, _) = build_test_world();
-        let container_id = crate::idgen::new_id();
+        let container_id: ItemId = crate::idgen::new_id().into();
         let container = make_item(
             container_id.clone(),
             Location::Room(room_id.clone()),
@@ -3101,7 +3101,7 @@ mod tests {
         );
         world.items.insert(container_id.clone(), container);
 
-        let child_id = crate::idgen::new_id();
+        let child_id: ItemId = crate::idgen::new_id().into();
         let child_item = make_item(child_id.clone(), Location::Item(container_id.clone()), None);
         world.items.insert(child_id.clone(), child_item);
         world
@@ -3129,7 +3129,7 @@ mod tests {
     #[test]
     fn spawn_item_in_specific_room_places_item() {
         let (mut world, _room1, room2) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = make_item(item_id.clone(), Location::Nowhere, None);
         world.items.insert(item_id.clone(), item);
         spawn_item_in_specific_room(&mut world, &item_id, &room2).unwrap();
@@ -3140,7 +3140,7 @@ mod tests {
     #[test]
     fn spawn_item_in_current_room_places_item() {
         let (mut world, room1, _room2) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         world
             .items
             .insert(item_id.clone(), make_item(item_id.clone(), Location::Nowhere, None));
@@ -3152,7 +3152,7 @@ mod tests {
     #[test]
     fn spawn_item_in_inventory_adds_to_player_and_removes_restriction() {
         let (mut world, _, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let mut item = make_item(item_id.clone(), Location::Nowhere, None);
         item.movability = Movability::Restricted {
             reason: "some reason".to_string(),
@@ -3167,7 +3167,7 @@ mod tests {
     #[test]
     fn spawn_item_in_container_places_item_inside() {
         let (mut world, room1, _) = build_test_world();
-        let container_id = crate::idgen::new_id();
+        let container_id: ItemId = crate::idgen::new_id().into();
         let container = make_item(
             container_id.clone(),
             Location::Room(room1.clone()),
@@ -3180,7 +3180,7 @@ mod tests {
             .unwrap()
             .contents
             .insert(container_id.clone());
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         world
             .items
             .insert(item_id.clone(), make_item(item_id.clone(), Location::Nowhere, None));
@@ -3192,7 +3192,7 @@ mod tests {
     #[test]
     fn despawn_item_removes_item_from_world() {
         let (mut world, room1, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         world.items.insert(
             item_id.clone(),
             make_item(item_id.clone(), Location::Room(room1.clone()), None),
@@ -3210,7 +3210,7 @@ mod tests {
         let npc = make_npc(npc_id.clone(), Location::Room(room1.clone()), NpcState::Normal);
         world.rooms.get_mut(&room1).unwrap().npcs.insert(npc_id.clone());
         world.npcs.insert(npc_id.clone(), npc);
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         world.items.insert(
             item_id.clone(),
             make_item(item_id.clone(), Location::Npc(npc_id.clone()), None),
@@ -3397,8 +3397,8 @@ mod tests {
     #[test]
     fn replace_item_swaps_items_preserving_location() {
         let (mut world, room1, _) = build_test_world();
-        let old_id = crate::idgen::new_id();
-        let new_id = crate::idgen::new_id();
+        let old_id: ItemId = crate::idgen::new_id().into();
+        let new_id: ItemId = crate::idgen::new_id().into();
         world.items.insert(
             old_id.clone(),
             make_item(old_id.clone(), Location::Room(room1.clone()), None),

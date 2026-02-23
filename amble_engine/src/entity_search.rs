@@ -225,7 +225,7 @@ mod tests {
         location: Location,
         container_state: Option<ContainerState>,
     ) -> ItemId {
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = Item {
             id: item_id.clone(),
             symbol: format!("item_{item_id}"),

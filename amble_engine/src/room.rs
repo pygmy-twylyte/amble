@@ -316,7 +316,7 @@ mod tests {
         world.rooms.insert(room_id.clone(), room);
         world.player.location = Location::Room(room_id.clone());
 
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = Item {
             id: item_id.clone(),
             symbol: "test_item".into(),
@@ -450,7 +450,7 @@ mod tests {
     fn room_overlay_applies_with_item_absent() {
         let world = create_test_world();
         let room_id = world.player.location.room_id().unwrap();
-        let nonexistent_item = crate::idgen::new_id();
+        let nonexistent_item: ItemId = crate::idgen::new_id().into();
 
         let overlay = RoomOverlay {
             conditions: vec![OverlayCondition::ItemAbsent {
@@ -676,7 +676,7 @@ mod tests {
     #[test]
     fn item_holder_add_item_works() {
         let mut room = create_test_room(crate::idgen::new_room_id());
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
 
         room.add_item(item_id.clone());
         assert!(room.contents.contains(&item_id));
@@ -685,7 +685,7 @@ mod tests {
     #[test]
     fn item_holder_remove_item_works() {
         let mut room = create_test_room(crate::idgen::new_room_id());
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         room.contents.insert(item_id.clone());
 
         room.remove_item(item_id.clone());
@@ -695,11 +695,11 @@ mod tests {
     #[test]
     fn item_holder_contains_item_works() {
         let mut room = create_test_room(crate::idgen::new_room_id());
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         room.contents.insert(item_id.clone());
 
         assert!(room.contains_item(item_id));
-        assert!(!room.contains_item(crate::idgen::new_id()));
+        assert!(!room.contains_item(crate::idgen::new_id().into()));
     }
 
     #[test]
@@ -777,7 +777,7 @@ mod tests {
     fn room_overlay_applies_with_player_missing_item() {
         let world = create_test_world();
         let room_id = world.player.location.room_id().unwrap();
-        let missing_item = crate::idgen::new_id();
+        let missing_item: ItemId = crate::idgen::new_id().into();
 
         let overlay = RoomOverlay {
             conditions: vec![OverlayCondition::PlayerMissingItem { item_id: missing_item }],

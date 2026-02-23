@@ -114,7 +114,7 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
             // anything dropped must be listed, or it could vanish / become inaccessible...
             dropped.visibility = crate::item::ItemVisibility::Listed;
             if let Some(room) = world.rooms.get_mut(&room_id) {
-                room.add_item(dropped.id());
+                room.add_item(dropped.id.clone());
                 info!(
                     "{} dropped {} ({}) in {} ({})",
                     world.player.name(),
@@ -234,13 +234,13 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
             }
 
             if matches!(item.movability, Movability::Free) {
-                let loot_id = item.id();
+                let loot_id = item.id.clone();
                 let orig_loc = item.location.clone();
 
                 // update item location and copy to player inventory
                 if let Some(moved_item) = world.items.get_mut(&loot_id) {
                     moved_item.set_location_inventory();
-                    world.player.add_item(moved_item.id());
+                    world.player.add_item(moved_item.id.clone());
                     view.push(ViewItem::ActionSuccess(format!(
                         "You {take_verb} the {}.",
                         moved_item.name().item_style()
@@ -444,7 +444,7 @@ pub(crate) struct TransferData {
     vessel_type: VesselType,
     vessel_id: String,
     vessel_name: String,
-    loot_id: String,
+    loot_id: ItemId,
     loot_name: String,
 }
 
@@ -572,7 +572,7 @@ pub(crate) fn validate_and_transfer_from_item(
 ) -> Result<(), anyhow::Error> {
     let mut tx_data = TransferData {
         vessel_type: VesselType::Item,
-        vessel_id: vessel_id.clone(),
+        vessel_id: vessel_id.to_string(),
         vessel_name: name_from_id(&world.items, vessel_id)
             .expect("vessel validated by (take_from()) caller")
             .to_owned(),
@@ -607,7 +607,7 @@ pub(crate) fn validate_and_transfer_from_item(
 
     // vessel and loot now identified and validated -- execute the transfer
     transfer_to_player(world, view, &tx_data);
-    check_triggers(world, view, &[TriggerCondition::Take(tx_data.loot_id)])?;
+    check_triggers(world, view, &[TriggerCondition::Take(tx_data.loot_id.clone())])?;
     Ok(())
 }
 
@@ -650,7 +650,7 @@ pub(crate) fn transfer_to_player(world: &mut AmbleWorld, view: &mut View, tx_dat
     // Remove item id from vessel's contents / inventory
     match tx_data.vessel_type {
         VesselType::Item => {
-            if let Some(vessel) = world.get_item_mut(&tx_data.vessel_id) {
+            if let Some(vessel) = world.items.get_mut(tx_data.vessel_id.as_str()) {
                 vessel.remove_item(tx_data.loot_id.clone());
             }
         },
@@ -890,7 +890,7 @@ mod tests {
         world.player.location = Location::Room(room_id.clone());
 
         // item in inventory
-        let inv_item_id = crate::idgen::new_id();
+        let inv_item_id: ItemId = crate::idgen::new_id().into();
         let inv_item = Item {
             id: inv_item_id.clone(),
             symbol: "apple".into(),
@@ -912,7 +912,7 @@ mod tests {
         world.player.inventory.insert(inv_item_id.clone());
 
         // item in room
-        let room_item_id = crate::idgen::new_id();
+        let room_item_id: ItemId = crate::idgen::new_id().into();
         let room_item = Item {
             id: room_item_id.clone(),
             symbol: "rock".into(),
@@ -934,7 +934,7 @@ mod tests {
         world.rooms.get_mut(&room_id).unwrap().add_item(room_item_id.clone());
 
         // container item with loot
-        let chest_id = crate::idgen::new_id();
+        let chest_id: ItemId = crate::idgen::new_id().into();
         let mut chest = Item {
             id: chest_id.clone(),
             symbol: "chest".into(),
@@ -952,7 +952,7 @@ mod tests {
             text: None,
             consumable: None,
         };
-        let gem_id = crate::idgen::new_id();
+        let gem_id: ItemId = crate::idgen::new_id().into();
         let gem = Item {
             id: gem_id.clone(),
             symbol: "gem".into(),
@@ -970,7 +970,7 @@ mod tests {
             text: None,
             consumable: None,
         };
-        let restricted_chest_item_id = crate::idgen::new_id();
+        let restricted_chest_item_id: ItemId = crate::idgen::new_id().into();
         let restricted_chest_item = Item {
             id: restricted_chest_item_id.clone(),
             symbol: "rci".into(),
@@ -1013,7 +1013,7 @@ mod tests {
             movement: None,
             health: HealthState::new_at_max(10),
         };
-        let npc_item_id = crate::idgen::new_id();
+        let npc_item_id: ItemId = crate::idgen::new_id().into();
         let npc_item = Item {
             id: npc_item_id.clone(),
             symbol: "coin".into(),
@@ -1031,7 +1031,7 @@ mod tests {
             text: None,
             consumable: None,
         };
-        let restricted_npc_item_id = crate::idgen::new_id();
+        let restricted_npc_item_id: ItemId = crate::idgen::new_id().into();
         let restricted_npc_item = Item {
             id: restricted_npc_item_id.clone(),
             symbol: "key".into(),
@@ -1173,7 +1173,7 @@ mod tests {
     fn transfer_to_player_updates_world_from_item() {
         let mut tw = build_world();
         let tx_data = TransferData {
-            vessel_id: tw.chest_id.clone(),
+            vessel_id: tw.chest_id.to_string(),
             loot_id: tw.gem_id.clone(),
             vessel_type: VesselType::Item,
             vessel_name: "Vessel".to_string(),

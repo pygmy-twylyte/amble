@@ -4,25 +4,35 @@
 //! belong in another module. Prefer adding generally useful, low‑level
 //! utilities here to avoid duplication across the codebase.
 
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::hash::BuildHasher;
 
 use crate::world::WorldObject;
-use crate::{Id, ItemId, NpcId, RoomId};
 use crate::{Item, Npc};
+use crate::{ItemId, NpcId, RoomId};
 
 /// Generic: Returns the symbol for a given object's id.
-pub fn symbol_from_id<T: WorldObject, S: BuildHasher>(map: &HashMap<Id, T, S>, id: impl AsRef<str>) -> Option<&str> {
+pub fn symbol_from_id<K: Borrow<str> + Eq + std::hash::Hash, T: WorldObject, S: BuildHasher>(
+    map: &HashMap<K, T, S>,
+    id: impl AsRef<str>,
+) -> Option<&str> {
     map.get(id.as_ref()).map(super::world::WorldObject::symbol)
 }
 
 /// Generic: Returns the display name for a given object's id.
-pub fn name_from_id<T: WorldObject, S: BuildHasher>(map: &HashMap<Id, T, S>, id: impl AsRef<str>) -> Option<&str> {
+pub fn name_from_id<K: Borrow<str> + Eq + std::hash::Hash, T: WorldObject, S: BuildHasher>(
+    map: &HashMap<K, T, S>,
+    id: impl AsRef<str>,
+) -> Option<&str> {
     map.get(id.as_ref()).map(super::world::WorldObject::name)
 }
 
 /// Convenience: Returns the symbol or a standard fallback string.
-pub fn symbol_or_unknown<T: WorldObject, S: BuildHasher>(map: &HashMap<Id, T, S>, id: impl AsRef<str>) -> String {
+pub fn symbol_or_unknown<K: Borrow<str> + Eq + std::hash::Hash, T: WorldObject, S: BuildHasher>(
+    map: &HashMap<K, T, S>,
+    id: impl AsRef<str>,
+) -> String {
     symbol_from_id(map, id).unwrap_or("<not_found>").to_string()
 }
 

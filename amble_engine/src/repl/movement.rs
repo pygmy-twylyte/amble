@@ -425,7 +425,7 @@ mod tests {
     #[test]
     fn move_requires_item() {
         let (mut world, start, dest, mut view) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         world
             .rooms
             .get_mut(&start)

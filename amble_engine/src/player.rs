@@ -453,7 +453,7 @@ mod tests {
         let mut player = Player::default();
         player.flags.insert(Flag::simple("test_flag", 0));
         player.flags.insert(Flag::sequence("test_seq", Some(3), 0));
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         player.inventory.insert(item_id);
         player
     }
@@ -592,7 +592,7 @@ mod tests {
     #[test]
     fn item_holder_add_item_works() {
         let mut player = Player::default();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
 
         player.add_item(item_id.clone());
         assert!(player.inventory.contains(&item_id));
@@ -613,7 +613,7 @@ mod tests {
         let item_id = player.inventory.iter().next().unwrap().clone();
 
         assert!(player.contains_item(item_id.clone()));
-        assert!(!player.contains_item(crate::idgen::new_id()));
+        assert!(!player.contains_item(crate::idgen::new_id().into()));
     }
 
     #[test]

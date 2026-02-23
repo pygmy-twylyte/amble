@@ -50,7 +50,7 @@ use crate::scheduler::{EventCondition, OnFalsePolicy, ScheduledEvent};
 use crate::slug::sanitize_slug;
 use crate::trigger::TriggerCondition;
 use crate::{
-    AmbleWorld, Location, View, ViewItem, WorldObject,
+    AmbleWorld, ItemId, Location, View, ViewItem, WorldObject,
     idgen::{NAMESPACE_ITEM, symbol_to_id},
     player::Flag,
     style::GameStyle,
@@ -88,7 +88,7 @@ use crate::{
 /// # Panics
 /// None -- `item_id` is already known to be valid and exist in symbol table before `expect()` is called
 pub fn dev_spawn_item_handler(world: &mut AmbleWorld, view: &mut View, symbol: &str) {
-    let item_id = symbol_to_id(NAMESPACE_ITEM, symbol);
+    let item_id: ItemId = symbol_to_id(NAMESPACE_ITEM, symbol).into();
     if world.items.contains_key(&item_id) {
         spawn_item_in_inventory(world, &item_id).expect("should not err; item_id already known to be valid");
         info!("player used DEV_MODE SpawnItem({symbol})");

@@ -607,7 +607,7 @@ mod tests {
     fn create_test_world() -> AmbleWorld {
         let mut world = AmbleWorld::new_empty();
 
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = Item {
             id: item_id.clone(),
             symbol: "test_item".into(),
@@ -789,7 +789,7 @@ mod tests {
     #[test]
     fn item_holder_add_item_works() {
         let mut npc = create_test_npc();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
 
         npc.add_item(item_id.clone());
         assert!(npc.inventory.contains(&item_id));
@@ -798,7 +798,7 @@ mod tests {
     #[test]
     fn item_holder_remove_item_works() {
         let mut npc = create_test_npc();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         npc.inventory.insert(item_id.clone());
 
         npc.remove_item(item_id.clone());
@@ -808,11 +808,11 @@ mod tests {
     #[test]
     fn item_holder_contains_item_works() {
         let mut npc = create_test_npc();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         npc.inventory.insert(item_id.clone());
 
         assert!(npc.contains_item(item_id));
-        assert!(!npc.contains_item(crate::idgen::new_id()));
+        assert!(!npc.contains_item(crate::idgen::new_id().into()));
     }
 
     #[test]
