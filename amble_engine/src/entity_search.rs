@@ -24,24 +24,17 @@
 //! `find_npc_match(...)` when only interested in npcs
 //! `find_entity_match(...)` when the input could refer to either an item or an npc
 
-use std::{
-    collections::{HashMap, HashSet},
-    sync::OnceLock,
-};
+use std::collections::HashSet;
 
+pub use crate::EntityId;
 use crate::{ItemId, NpcId, RoomId};
 use thiserror::Error;
 
 use crate::{
-    AmbleWorld, Item, Npc,
+    AmbleWorld,
     repl::find_world_object,
     world::{nearby_reachable_items, nearby_vessel_items, nearby_visible_items},
 };
-
-/// Empty item map used in NPC-only searches.
-pub static NO_ITEMS: OnceLock<HashMap<ItemId, Item>> = OnceLock::new();
-/// Empty NPC map used in item-only searches.
-pub static NO_NPCS: OnceLock<HashMap<NpcId, Npc>> = OnceLock::new();
 
 /// Represents the scope of a requested search by the caller and includes the location to search.
 #[derive(Debug, Clone, PartialEq)]
@@ -100,10 +93,7 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
             room_items.union(&world.player.inventory).cloned().collect()
         },
         SearchScope::NearbyVessels(room_id) => {
-            let room_items =
-                nearby_vessel_items(world, &room_id).map_err(|_| SearchError::InvalidRoomId(room_id.clone()))?;
-            let current_room = world.rooms.get(&room_id).ok_or(SearchError::InvalidRoomId(room_id))?;
-            room_items.union(&current_room.npcs).cloned().collect()
+            nearby_vessel_items(world, &room_id).map_err(|_| SearchError::InvalidRoomId(room_id.clone()))?
         },
         SearchScope::Inventory => world.player.inventory.clone(),
         SearchScope::NpcInventory(npc_id) => {
@@ -115,13 +105,43 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
         },
     };
 
-    // find the first item (no_npcs = empty NPC map) in scope that matches the input pattern, return error if none found
-    let no_npcs = NO_NPCS.get_or_init(HashMap::new);
-    let Some(entity) = find_world_object(&haystack, &world.items, no_npcs, pattern) else {
+    let Some(entity) = find_world_object(
+        haystack.iter(),
+        std::iter::empty::<&NpcId>(),
+        &world.items,
+        &world.npcs,
+        pattern,
+    ) else {
         return Err(SearchError::NoMatchingName(pattern.to_string()));
     };
+    match entity.entity_id() {
+        EntityId::Item(item_id) => Ok(item_id),
+        EntityId::Npc(_) => Err(SearchError::InvalidScope("item".into(), "NPC".into())),
+    }
+}
 
-    Ok(entity.id())
+/// Find either an `NPC` or an `Item` with name matching `pattern` within the `SearchScope`.
+///
+/// # Panics
+/// - never: the call to `expect` is guarded by an `is_ok()`
+///
+/// # Errors
+/// - `SearchError` variants of any type, if no match is found or if the scope type or supplied ids are invalid
+pub fn find_entity_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<EntityId, SearchError> {
+    // return any item matched first -- these will account for most searches
+    // no_match and scope errors are ignored on this pass because they may
+    // not be errors when run against the NPCs
+    match find_item_match(world, pattern, scope.clone()) {
+        Ok(item_id) => return Ok(EntityId::Item(item_id)),
+        Err(SearchError::NoMatchingName(_) | SearchError::InvalidScope(_, _)) => (),
+        Err(e) => return Err(e),
+    }
+
+    // less often looking for an NPC match -- return that now if found
+    match find_npc_match(world, pattern, scope) {
+        Ok(npc_id) => Ok(EntityId::Npc(npc_id)),
+        Err(e) => Err(e),
+    }
 }
 
 /// Find an `Npc` with name matching `pattern` in the specified `SearchScope`.
@@ -150,43 +170,19 @@ pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> 
         },
     };
 
-    // find any NPC matching the pattern (items excluded -- empty Item map passed to search)
-    let no_items = NO_ITEMS.get_or_init(HashMap::new);
-    let Some(entity) = find_world_object(&haystack, no_items, &world.npcs, pattern) else {
+    let Some(entity) = find_world_object(
+        std::iter::empty::<&ItemId>(),
+        haystack.iter(),
+        &world.items,
+        &world.npcs,
+        pattern,
+    ) else {
         return Err(SearchError::NoMatchingName(pattern.to_string()));
     };
 
-    Ok(entity.id())
-}
-
-/// Holds the `Id` of different types of `WorldEntity`
-#[derive(Debug, Clone, PartialEq)]
-pub enum EntityId {
-    Item(ItemId),
-    Npc(NpcId),
-}
-
-/// Find either an `NPC` or an `Item` with name matching `pattern` within the `SearchScope`.
-///
-/// # Panics
-/// - never: the call to `expect` is guarded by an `is_ok()`
-///
-/// # Errors
-/// - `SearchError` variants of any type, if no match is found or if the scope type or supplied ids are invalid
-pub fn find_entity_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> Result<EntityId, SearchError> {
-    // return any item matched first -- these will account for most searches
-    // no_match and scope errors are ignored on this pass because they may
-    // not be errors when run against the NPCs
-    match find_item_match(world, pattern, scope.clone()) {
-        Ok(item_id) => return Ok(EntityId::Item(item_id)),
-        Err(SearchError::NoMatchingName(_) | SearchError::InvalidScope(_, _)) => (),
-        Err(e) => return Err(e),
-    }
-
-    // less often looking for an NPC match -- return that now if found
-    match find_npc_match(world, pattern, scope) {
-        Ok(npc_id) => Ok(EntityId::Npc(npc_id)),
-        Err(e) => Err(e),
+    match entity.entity_id() {
+        EntityId::Npc(npc_id) => Ok(npc_id),
+        EntityId::Item(_) => Err(SearchError::InvalidScope("npc".into(), "item".into())),
     }
 }
 

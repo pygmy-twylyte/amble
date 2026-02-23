@@ -95,7 +95,13 @@ fn test_find_world_object() {
     let mut items = HashMap::new();
     items.insert(id.clone(), item);
     let npcs = HashMap::new();
-    let res = ae::repl::find_world_object(std::iter::once(&id), &items, &npcs, "foo");
+    let res = ae::repl::find_world_object(
+        std::iter::once(&id),
+        std::iter::empty::<&ae::NpcId>(),
+        &items,
+        &npcs,
+        "foo",
+    );
     assert!(res.is_some());
 }
 

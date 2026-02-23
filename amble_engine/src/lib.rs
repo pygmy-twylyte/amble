@@ -24,53 +24,6 @@
 
 pub const AMBLE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub type Id = String;
-
-// These aliases are being inserted both for clarity and as part of a plan to migrate
-// to newtype IDs in the future (e.g. pub struct ItemId(String) etc)
-pub type ItemId = Id;
-pub type NpcId = Id;
-
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct RoomId(String);
-impl RoomId {
-    pub fn new(id: &impl ToString) -> Self {
-        Self(id.to_string())
-    }
-}
-impl From<&str> for RoomId {
-    fn from(id: &str) -> Self {
-        Self(id.to_string())
-    }
-}
-impl From<String> for RoomId {
-    fn from(id: String) -> Self {
-        Self(id)
-    }
-}
-impl Deref for RoomId {
-    type Target = String;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-impl AsRef<str> for RoomId {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
-impl PartialEq<String> for RoomId {
-    fn eq(&self, other: &String) -> bool {
-        *other == self.0
-    }
-}
-impl Display for RoomId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
 // DEV_MODE is enabled or disabled through this const throughout
 #[cfg(feature = "dev-mode")]
 pub const DEV_MODE: bool = true;
@@ -87,6 +40,7 @@ pub mod goal;
 pub mod health;
 pub mod helpers;
 pub mod idgen;
+pub mod ids;
 pub mod item;
 pub mod loader;
 pub mod markup;
@@ -104,10 +58,9 @@ pub mod trigger;
 pub mod view;
 pub mod world;
 
-use std::{fmt::Display, ops::Deref};
-
 // Re-exports for convenience
 pub use goal::Goal;
+pub use ids::{EntityId, Id, ItemId, NpcId, RoomId};
 pub use item::{Item, ItemHolder};
 pub use loader::{WorldSource, discover_world_sources, load_world, load_world_from_path, set_active_world_path};
 pub use npc::Npc;
@@ -115,6 +68,5 @@ pub use player::Player;
 pub use repl::run_repl;
 pub use room::Room;
 pub use scheduler::Scheduler;
-use serde::{Deserialize, Serialize};
 pub use view::{View, ViewItem};
 pub use world::{AmbleWorld, Location, WorldObject};

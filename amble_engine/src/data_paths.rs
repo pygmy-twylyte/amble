@@ -19,15 +19,16 @@ fn detect_data_root() -> PathBuf {
     candidates.push(PathBuf::from("data"));
 
     if let Ok(exe_path) = env::current_exe()
-        && let Some(dir) = exe_path.parent() {
-            candidates.push(dir.join("amble_engine/data"));
-            candidates.push(dir.join("data"));
+        && let Some(dir) = exe_path.parent()
+    {
+        candidates.push(dir.join("amble_engine/data"));
+        candidates.push(dir.join("data"));
 
-            if let Some(parent) = dir.parent() {
-                candidates.push(parent.join("amble_engine/data"));
-                candidates.push(parent.join("data"));
-            }
+        if let Some(parent) = dir.parent() {
+            candidates.push(parent.join("amble_engine/data"));
+            candidates.push(parent.join("data"));
         }
+    }
 
     candidates
         .into_iter()
