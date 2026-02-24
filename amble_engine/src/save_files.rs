@@ -358,7 +358,7 @@ mod tests {
         let dir = tempdir()?;
         let path = dir.path();
 
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
         let room = Room {
             id: room_id.clone(),
             symbol: "room_symbol".into(),

@@ -81,7 +81,7 @@ use std::hash::BuildHasher;
 
 use crate::Item;
 use crate::health::{HealthEffect, LifeState, LivingEntity};
-use crate::helpers::{symbol_from_id, symbol_or_unknown};
+use crate::helpers::symbol_or_unknown;
 use crate::item::{ContainerState, ItemAbility, ItemHolder, ItemVisibility, Movability};
 use crate::npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState, move_npc};
 use crate::player::{Flag, Player};
@@ -646,11 +646,7 @@ pub fn modify_item(world: &mut AmbleWorld, item_id: ItemId, patch: &ItemPatch) -
 /// Returns an error if the target room cannot be found or if referenced exits
 /// or items in the patch cannot be resolved.
 pub fn modify_room(world: &mut AmbleWorld, room_id: &RoomId, patch: &RoomPatch) -> Result<()> {
-    info!(
-        "└─ action: modifying room {} using patch: {:?}",
-        symbol_or_unknown(&world.rooms, room_id),
-        patch
-    );
+    info!("└─ action: modifying room {room_id} using patch: {patch:?}");
     apply_room_patch(world, room_id, patch)?;
     Ok(())
 }
@@ -686,10 +682,8 @@ fn apply_room_patch(world: &mut AmbleWorld, room_id: &RoomId, patch: &RoomPatch)
             {
                 removal_plan.push((direction, target_room_id.clone()));
             } else {
-                let target_sym = symbol_or_unknown(&world.rooms, target_room_id);
                 warn!(
-                    "modifyRoom patch attempted to remove exit to '{target_sym}' but room '{}' has no such exit",
-                    room_ref.symbol
+                    "modifyRoom patch attempted to remove exit to '{target_room_id}' but room '{room_id}' has no such exit"
                 );
             }
         }
@@ -913,16 +907,14 @@ fn apply_item_patch(world: &mut AmbleWorld, item_id: &ItemId, patch: &ItemPatch)
 /// Propagates errors when the NPC or destination room cannot be found.
 pub fn spawn_npc_in_room(world: &mut AmbleWorld, view: &mut View, npc_id: &NpcId, room_id: &RoomId) -> Result<()> {
     info!(
-        "└─ action: spawning NPC '{}' in Room '{}'",
+        "└─ action: spawning NPC '{}' in Room '{room_id}'",
         symbol_or_unknown(&world.npcs, npc_id),
-        symbol_or_unknown(&world.rooms, room_id)
     );
     if let Some(npc) = world.npcs.get_mut(npc_id)
-        && npc.location.is_not_nowhere()
+        && let Some(npc_room) = npc.location.clone().room()
     {
-        let current_loc = symbol_from_id(&world.rooms, npc.location.room_id()?).unwrap_or("<unknown room>");
         warn!(
-            "spawn called on NPC {} who was already in-game -- MOVING from {current_loc}",
+            "spawn called on NPC {} who was already in-game -- MOVING from {npc_room}",
             npc.symbol(),
         );
     }
@@ -1085,11 +1077,7 @@ pub fn set_barred_message(world: &mut AmbleWorld, exit_from: &RoomId, exit_to: &
         exit.set_barred_msg(Some(msg.to_string()));
         room.exits.insert(direction, exit);
     }
-    info!(
-        "└─ action: SetBarredMessage({} -> {}, '{msg}')",
-        symbol_or_unknown(&world.rooms, exit_from.clone()),
-        symbol_or_unknown(&world.rooms, exit_to.clone())
-    );
+    info!("└─ action: SetBarredMessage({exit_from} -> {exit_to}, '{msg}')");
     Ok(())
 }
 
@@ -1482,10 +1470,7 @@ pub fn lock_exit(world: &mut AmbleWorld, from_room: &RoomId, direction: &String)
         .and_then(|rm| rm.exits.get_mut(direction))
     {
         exit.locked = true;
-        info!(
-            "└─ action: LockExit({direction}, from [{}]",
-            symbol_or_unknown(&world.rooms, from_room.clone())
-        );
+        info!("└─ action: LockExit({direction}, from [{from_room}]");
         Ok(())
     } else {
         bail!("LockExit({from_room}, {direction}): bad room id or exit direction");
@@ -1515,10 +1500,7 @@ pub fn lock_exit(world: &mut AmbleWorld, from_room: &RoomId, direction: &String)
 pub fn unlock_exit(world: &mut AmbleWorld, from_room: &RoomId, direction: &String) -> Result<()> {
     if let Some(exit) = world.rooms.get_mut(from_room).and_then(|r| r.exits.get_mut(direction)) {
         exit.locked = false;
-        info!(
-            "└─ action: UnlockExit({direction}, from [{}])",
-            symbol_or_unknown(&world.rooms, from_room.clone())
-        );
+        info!("└─ action: UnlockExit({direction}, from [{from_room}])");
         Ok(())
     } else {
         bail!("UnlockExit({from_room}, {direction}): bad room id or exit direction");
@@ -1598,11 +1580,7 @@ pub fn spawn_item_in_specific_room(world: &mut AmbleWorld, item_id: &ItemId, roo
         .items
         .get_mut(item_id)
         .ok_or_else(|| anyhow!("item {item_id} missing"))?;
-    info!(
-        "└─ action: SpawnItemInRoom({}, {})",
-        item.symbol(),
-        symbol_or_unknown(&world.rooms, room_id.clone())
-    );
+    info!("└─ action: SpawnItemInRoom({}, {room_id})", item.symbol());
     item.set_location_room(room_id.clone());
     world
         .rooms
@@ -1875,11 +1853,7 @@ pub fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &RoomI
         .entry(direction.clone())
         .or_insert_with(|| Exit::new(exit_to.clone()));
     exit.hidden = false;
-    info!(
-        "└─ action: RevealExit({direction}, from '{}', to '{}')",
-        symbol_or_unknown(&world.rooms, exit_from.clone()),
-        symbol_or_unknown(&world.rooms, exit_to.clone())
-    );
+    info!("└─ action: RevealExit({direction}, from '{exit_from}', to '{exit_to}')");
     Ok(())
 }
 
@@ -1910,10 +1884,7 @@ pub fn reveal_exit(world: &mut AmbleWorld, direction: &String, exit_from: &RoomI
 pub fn push_player(world: &mut AmbleWorld, room_id: &RoomId) -> Result<()> {
     if world.rooms.contains_key(room_id) {
         world.player.location = Location::Room(room_id.clone());
-        info!(
-            "└─ action: PushPlayerTo({})",
-            symbol_or_unknown(&world.rooms, room_id.clone())
-        );
+        info!("└─ action: PushPlayerTo({room_id})");
         Ok(())
     } else {
         bail!("tried to push player to unknown room ({room_id})");
@@ -2460,8 +2431,8 @@ mod tests {
 
     fn build_test_world() -> (AmbleWorld, RoomId, RoomId) {
         let mut world = AmbleWorld::new_empty();
-        let room1_id = crate::idgen::new_id();
-        let room2_id = crate::idgen::new_id();
+        let room1_id = crate::idgen::new_room_id();
+        let room2_id = crate::idgen::new_room_id();
 
         let room1 = Room {
             id: room1_id.clone(),
@@ -2500,9 +2471,9 @@ mod tests {
     #[test]
     fn modify_room_updates_name_desc_and_exits() {
         let mut world = AmbleWorld::new_empty();
-        let room_id = crate::idgen::new_id();
-        let dest_id = crate::idgen::new_id();
-        let target_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
+        let dest_id = crate::idgen::new_room_id();
+        let target_id = crate::idgen::new_room_id();
         world.rooms.insert(
             room_id.clone(),
             Room {
@@ -2587,7 +2558,7 @@ mod tests {
         // attempt to remove a non-existent exit should fail silently (with a log warning),
         // not panic
         let mut world = AmbleWorld::new_empty();
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
         world.rooms.insert(
             room_id.clone(),
             Room {
@@ -2605,7 +2576,7 @@ mod tests {
                 npcs: HashSet::default(),
             },
         );
-        let missing_exit_target = crate::idgen::new_id();
+        let missing_exit_target = crate::idgen::new_room_id();
         let patch = RoomPatch {
             remove_exits: vec![missing_exit_target],
             ..Default::default()
@@ -2616,7 +2587,7 @@ mod tests {
     #[test]
     fn modify_npc_updates_identity_and_dialogue() {
         let (mut world, room_id, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let mut npc = make_npc(npc_id.clone(), Location::Room(room_id), NpcState::Normal);
         npc.dialogue.insert(NpcState::Normal, vec!["Hello there.".into()]);
         world.npcs.insert(npc_id.clone(), npc);
@@ -2649,7 +2620,7 @@ mod tests {
     #[test]
     fn modify_npc_updates_movement_and_flags() {
         let (mut world, room_a, room_b) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let mut npc = make_npc(npc_id.clone(), Location::Room(room_a.clone()), NpcState::Normal);
         npc.movement = Some(NpcMovement {
             movement_type: MovementType::Route {
@@ -2699,7 +2670,7 @@ mod tests {
     #[test]
     fn modify_npc_creates_movement_if_missing() {
         let (mut world, room_id, other_room) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = make_npc(npc_id.clone(), Location::Room(room_id.clone()), NpcState::Normal);
         world.npcs.insert(npc_id.clone(), npc);
 
@@ -2824,7 +2795,7 @@ mod tests {
     #[test]
     fn damage_npc_over_time_ticks_each_turn() {
         let (mut world, room_id, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         world.npcs.insert(
             npc_id.clone(),
             make_npc(npc_id.clone(), Location::Room(room_id.clone()), NpcState::Normal),
@@ -2896,7 +2867,7 @@ mod tests {
     #[test]
     fn remove_npc_effect_action_clears_effect_and_is_idempotent() {
         let (mut world, room_id, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let mut npc = make_npc(npc_id.clone(), Location::Room(room_id.clone()), NpcState::Normal);
         npc.health.effects.push(HealthEffect::DamageOverTime {
             cause: "burn".into(),
@@ -2931,7 +2902,7 @@ mod tests {
     #[test]
     fn push_player_errors_with_invalid_room() {
         let (mut world, _, _) = build_test_world();
-        let bad_room = crate::idgen::new_id();
+        let bad_room = crate::idgen::new_room_id();
         assert!(push_player(&mut world, &bad_room).is_err());
     }
 
@@ -2982,7 +2953,7 @@ mod tests {
     #[test]
     fn lock_and_unlock_item_changes_state() {
         let (mut world, room_id, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = make_item(
             item_id.clone(),
             Location::Room(room_id.clone()),
@@ -3019,7 +2990,7 @@ mod tests {
     #[test]
     fn modify_item_updates_scalar_fields() {
         let (mut world, room_id, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let mut item = make_item(
             item_id.clone(),
             Location::Room(room_id.clone()),
@@ -3057,7 +3028,7 @@ mod tests {
     #[test]
     fn modify_item_leaves_container_state_when_unset() {
         let (mut world, room_id, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = make_item(
             item_id.clone(),
             Location::Room(room_id.clone()),
@@ -3079,7 +3050,7 @@ mod tests {
     #[test]
     fn modify_item_updates_abilities() {
         let (mut world, room_id, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let mut item = make_item(item_id.clone(), Location::Room(room_id.clone()), None);
         item.abilities.insert(ItemAbility::Ignite);
         world.items.insert(item_id.clone(), item);
@@ -3100,7 +3071,7 @@ mod tests {
     #[test]
     fn modify_item_removes_container_state_when_empty() {
         let (mut world, room_id, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let container = make_item(
             item_id.clone(),
             Location::Room(room_id.clone()),
@@ -3122,7 +3093,7 @@ mod tests {
     #[test]
     fn modify_item_errors_when_removing_container_state_with_contents() {
         let (mut world, room_id, _) = build_test_world();
-        let container_id = crate::idgen::new_id();
+        let container_id: ItemId = crate::idgen::new_id().into();
         let container = make_item(
             container_id.clone(),
             Location::Room(room_id.clone()),
@@ -3130,7 +3101,7 @@ mod tests {
         );
         world.items.insert(container_id.clone(), container);
 
-        let child_id = crate::idgen::new_id();
+        let child_id: ItemId = crate::idgen::new_id().into();
         let child_item = make_item(child_id.clone(), Location::Item(container_id.clone()), None);
         world.items.insert(child_id.clone(), child_item);
         world
@@ -3158,7 +3129,7 @@ mod tests {
     #[test]
     fn spawn_item_in_specific_room_places_item() {
         let (mut world, _room1, room2) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = make_item(item_id.clone(), Location::Nowhere, None);
         world.items.insert(item_id.clone(), item);
         spawn_item_in_specific_room(&mut world, &item_id, &room2).unwrap();
@@ -3169,7 +3140,7 @@ mod tests {
     #[test]
     fn spawn_item_in_current_room_places_item() {
         let (mut world, room1, _room2) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         world
             .items
             .insert(item_id.clone(), make_item(item_id.clone(), Location::Nowhere, None));
@@ -3181,7 +3152,7 @@ mod tests {
     #[test]
     fn spawn_item_in_inventory_adds_to_player_and_removes_restriction() {
         let (mut world, _, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let mut item = make_item(item_id.clone(), Location::Nowhere, None);
         item.movability = Movability::Restricted {
             reason: "some reason".to_string(),
@@ -3196,7 +3167,7 @@ mod tests {
     #[test]
     fn spawn_item_in_container_places_item_inside() {
         let (mut world, room1, _) = build_test_world();
-        let container_id = crate::idgen::new_id();
+        let container_id: ItemId = crate::idgen::new_id().into();
         let container = make_item(
             container_id.clone(),
             Location::Room(room1.clone()),
@@ -3209,7 +3180,7 @@ mod tests {
             .unwrap()
             .contents
             .insert(container_id.clone());
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         world
             .items
             .insert(item_id.clone(), make_item(item_id.clone(), Location::Nowhere, None));
@@ -3221,7 +3192,7 @@ mod tests {
     #[test]
     fn despawn_item_removes_item_from_world() {
         let (mut world, room1, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         world.items.insert(
             item_id.clone(),
             make_item(item_id.clone(), Location::Room(room1.clone()), None),
@@ -3235,11 +3206,11 @@ mod tests {
     #[test]
     fn give_to_player_transfers_item_from_npc() {
         let (mut world, room1, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = make_npc(npc_id.clone(), Location::Room(room1.clone()), NpcState::Normal);
         world.rooms.get_mut(&room1).unwrap().npcs.insert(npc_id.clone());
         world.npcs.insert(npc_id.clone(), npc);
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         world.items.insert(
             item_id.clone(),
             make_item(item_id.clone(), Location::Npc(npc_id.clone()), None),
@@ -3426,8 +3397,8 @@ mod tests {
     #[test]
     fn replace_item_swaps_items_preserving_location() {
         let (mut world, room1, _) = build_test_world();
-        let old_id = crate::idgen::new_id();
-        let new_id = crate::idgen::new_id();
+        let old_id: ItemId = crate::idgen::new_id().into();
+        let new_id: ItemId = crate::idgen::new_id().into();
         world.items.insert(
             old_id.clone(),
             make_item(old_id.clone(), Location::Room(room1.clone()), None),
@@ -3464,7 +3435,7 @@ mod tests {
     #[test]
     fn npc_says_adds_dialogue_to_view() {
         let (mut world, room1, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = make_npc(npc_id.clone(), Location::Room(room1.clone()), NpcState::Normal);
         world.rooms.get_mut(&room1).unwrap().npcs.insert(npc_id.clone());
         world.npcs.insert(npc_id.clone(), npc);
@@ -3485,7 +3456,7 @@ mod tests {
             SpinnerType::Core(CoreSpinnerType::NpcIgnore),
             Spinner::new(vec![Wedge::new("Ignores you.".into())]),
         );
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let mut npc = make_npc(npc_id.clone(), Location::Room(room1.clone()), NpcState::Normal);
         npc.dialogue.insert(NpcState::Normal, vec!["Howdy".to_string()]);
         world.rooms.get_mut(&room1).unwrap().npcs.insert(npc_id.clone());
@@ -3503,7 +3474,7 @@ mod tests {
     #[test]
     fn set_npc_state_changes_state() {
         let (mut world, room1, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = make_npc(npc_id.clone(), Location::Room(room1.clone()), NpcState::Normal);
         world.rooms.get_mut(&room1).unwrap().npcs.insert(npc_id.clone());
         world.npcs.insert(npc_id.clone(), npc);

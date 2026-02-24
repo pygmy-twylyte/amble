@@ -16,7 +16,7 @@
 //! for display.
 
 use crate::{ItemId, RoomId};
-use serde::de::{self, Deserializer, EnumAccess, VariantAccess, Visitor};
+use serde::de::{self, DeserializeOwned, Deserializer, EnumAccess, VariantAccess, Visitor};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use variantly::Variantly;
@@ -98,19 +98,17 @@ pub enum GoalStatus {
 
 fn deserialize_maybe_value<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
 where
-    T: Deserialize<'de>,
+    T: DeserializeOwned,
     D: Deserializer<'de>,
 {
-    #[derive(Deserialize)]
-    #[serde(untagged)]
-    enum Maybe<T> {
-        Value(T),
-        Option(Option<T>),
-    }
-
-    match Maybe::deserialize(deserializer)? {
-        Maybe::Value(value) => Ok(Some(value)),
-        Maybe::Option(opt) => Ok(opt),
+    // Avoid serde's untagged backtracking here: tuple/newtype values (e.g. RoomId)
+    // can fail to match reliably when we accept both bare values and Some(...)
+    // wrappers from mixed historical encodings.
+    let value = ron::Value::deserialize(deserializer)?;
+    match value {
+        ron::Value::Option(None) => Ok(None),
+        ron::Value::Option(Some(inner)) => inner.into_rust::<T>().map(Some).map_err(de::Error::custom),
+        other => other.into_rust::<T>().map(Some).map_err(de::Error::custom),
     }
 }
 
@@ -484,7 +482,7 @@ mod tests {
         let mut world = AmbleWorld::new_empty();
 
         // Add test room
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
         let mut room = Room {
             id: room_id.clone(),
             symbol: "test_room".into(),
@@ -503,7 +501,7 @@ mod tests {
         world.rooms.insert(room_id.clone(), room);
 
         // Add test item
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = Item {
             id: item_id.clone(),
             symbol: "test_item".into(),
@@ -630,7 +628,7 @@ mod tests {
         assert!(condition.satisfied(&world));
 
         let condition = GoalCondition::HasItem {
-            item_id: crate::idgen::new_id(),
+            item_id: crate::idgen::new_id().into(),
         };
         assert!(!condition.satisfied(&world));
     }
@@ -674,9 +672,21 @@ mod tests {
         assert!(condition.satisfied(&world));
 
         let condition = GoalCondition::ReachedRoom {
-            room_id: crate::idgen::new_id(),
+            room_id: crate::idgen::new_room_id(),
         };
         assert!(!condition.satisfied(&world));
+    }
+
+    #[test]
+    fn goal_condition_reached_room_deserializes_room_id_newtype() {
+        let raw = r#"(type:"reachedRoom",room_id:("test-room"))"#;
+        let condition: GoalCondition = ron::from_str(raw).expect("goal condition should deserialize");
+        assert_eq!(
+            condition,
+            GoalCondition::ReachedRoom {
+                room_id: "test-room".into()
+            }
+        );
     }
 
     #[test]

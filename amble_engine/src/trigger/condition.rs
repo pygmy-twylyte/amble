@@ -171,8 +171,8 @@ mod tests {
 
     fn build_test_world() -> (AmbleWorld, RoomId, RoomId) {
         let mut world = AmbleWorld::new_empty();
-        let room1_id = crate::idgen::new_id();
-        let room2_id = crate::idgen::new_id();
+        let room1_id = crate::idgen::new_room_id();
+        let room2_id = crate::idgen::new_room_id();
 
         let room1 = Room {
             id: room1_id.clone(),
@@ -307,8 +307,8 @@ mod tests {
     #[test]
     fn npc_item_and_state_conditions() {
         let (mut world, room1_id, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
-        let item_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let mut npc = make_npc(npc_id.clone(), Location::Room(room1_id.clone()), NpcState::Happy);
         npc.inventory.insert(item_id.clone());
         world.npcs.insert(npc_id.clone(), npc);
@@ -342,14 +342,14 @@ mod tests {
     #[test]
     fn player_inventory_item_conditions() {
         let (mut world, _, _) = build_test_world();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         world
             .items
             .insert(item_id.clone(), make_item(item_id.clone(), Location::Inventory, None));
         world.player.inventory.insert(item_id.clone());
         assert!(TriggerCondition::HasItem(item_id.clone()).is_ongoing(&world));
         assert!(!TriggerCondition::MissingItem(item_id.clone()).is_ongoing(&world));
-        let other_id = crate::idgen::new_id();
+        let other_id: ItemId = crate::idgen::new_id().into();
         world
             .items
             .insert(other_id.clone(), make_item(other_id.clone(), Location::Nowhere, None));
@@ -359,7 +359,7 @@ mod tests {
     #[test]
     fn with_npc_condition_detects_presence() {
         let (mut world, room1_id, _) = build_test_world();
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         world.rooms.get_mut(&room1_id).unwrap().npcs.insert(npc_id.clone());
         world.npcs.insert(
             npc_id.clone(),
@@ -371,8 +371,8 @@ mod tests {
     #[test]
     fn container_has_item_condition_detects_item() {
         let (mut world, room1_id, _) = build_test_world();
-        let container_id = crate::idgen::new_id();
-        let item_id = crate::idgen::new_id();
+        let container_id: ItemId = crate::idgen::new_id().into();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let mut container = make_item(
             container_id.clone(),
             Location::Room(room1_id.clone()),

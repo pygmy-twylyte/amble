@@ -9,10 +9,10 @@ use log::info;
 
 use amble_data::PlayerDef;
 
-use crate::ItemId;
 use crate::health::HealthState;
 use crate::player::{Flag, Player};
 use crate::world::Location;
+use crate::{ItemId, RoomId};
 
 /// Build `Player` from player definition.
 pub fn build_player(def: &PlayerDef) -> Player {
@@ -23,7 +23,7 @@ pub fn build_player(def: &PlayerDef) -> Player {
         symbol: "player".to_string(),
         name: def.name.clone(),
         description: def.description.clone(),
-        location: Location::Room(def.start_room.clone()),
+        location: Location::Room(RoomId(def.start_room.clone())),
         location_history: Vec::new(),
         inventory: HashSet::<ItemId>::default(),
         flags: HashSet::<Flag>::default(),

@@ -31,9 +31,7 @@ use crate::spinners::CoreSpinnerType;
 use crate::style::GameStyle;
 use crate::trigger::{TriggerCondition, check_triggers, dispatch_action};
 use crate::world::AmbleWorld;
-use crate::{Item, ItemId, NpcId, View, ViewItem, WorldObject};
-
-use crate::Id;
+use crate::{EntityId, Item, ItemId, NpcId, View, ViewItem, WorldObject};
 use anyhow::Result;
 use colored::Colorize;
 use std::collections::HashMap;
@@ -438,7 +436,7 @@ pub fn check_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()>
 /// # Errors
 /// - on failed lookup of player's location
 pub fn check_ambient_triggers(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
-    let current_room_id = world.player_room_ref()?.id();
+    let current_room_id = world.player_room_id();
     let trigger_count = world.triggers.len();
     for idx in 0..trigger_count {
         let should_check = {
@@ -567,11 +565,11 @@ impl WorldEntity<'_> {
             WorldEntity::Npc(npc) => npc.name(),
         }
     }
-    /// Get the id of the entity
-    pub fn id(&self) -> Id {
+    /// Get the typed id of the entity.
+    pub fn entity_id(&self) -> EntityId {
         match self {
-            WorldEntity::Item(item) => item.id(),
-            WorldEntity::Npc(npc) => npc.id(),
+            WorldEntity::Item(item) => EntityId::Item(item.id.clone()),
+            WorldEntity::Npc(npc) => EntityId::Npc(npc.id.clone()),
         }
     }
     /// Get the symbol for the entity
@@ -583,17 +581,17 @@ impl WorldEntity<'_> {
     }
 }
 
-/// Searches a list of `WorldEntities`' uuids to find a `WorldObject` with a matching name.
-/// Returns Some(&'a `WorldEntity`) or None.
+/// Search item and NPC ids for a name match and return the resolved world entity.
 pub fn find_world_object<'a, S: BuildHasher>(
-    nearby_ids: impl IntoIterator<Item = &'a Id>,
+    nearby_item_ids: impl IntoIterator<Item = &'a ItemId>,
+    nearby_npc_ids: impl IntoIterator<Item = &'a NpcId>,
     world_items: &'a HashMap<ItemId, Item, S>,
     world_npcs: &'a HashMap<NpcId, Npc, S>,
     search_term: &str,
 ) -> Option<WorldEntity<'a>> {
     let lc_term = search_term.to_lowercase();
-    for uuid in nearby_ids {
-        if let Some(found_item) = world_items.get(uuid)
+    for item_id in nearby_item_ids {
+        if let Some(found_item) = world_items.get(item_id)
             && (found_item.name().to_lowercase().contains(&lc_term)
                 || found_item
                     .aliases
@@ -602,7 +600,9 @@ pub fn find_world_object<'a, S: BuildHasher>(
         {
             return Some(WorldEntity::Item(found_item));
         }
-        if let Some(found_npc) = world_npcs.get(uuid)
+    }
+    for npc_id in nearby_npc_ids {
+        if let Some(found_npc) = world_npcs.get(npc_id)
             && found_npc.name().to_lowercase().contains(&lc_term)
         {
             return Some(WorldEntity::Npc(found_npc));

@@ -64,7 +64,7 @@ use std::path::Path;
 
 use crate::data_paths::data_path;
 use crate::goal::GoalStatus;
-use crate::helpers::symbol_or_unknown;
+
 use crate::loader::help::{HelpCommand, load_help_data};
 use crate::loader::{discover_world_sources, set_active_world_path};
 use crate::save_files::{self, SAVE_DIR, save_dir_for_world, set_active_save_dir};
@@ -72,7 +72,7 @@ use crate::style::GameStyle;
 use crate::theme::THEME_MANAGER;
 
 use crate::view::ViewMode;
-use crate::{AMBLE_VERSION, Goal, View, ViewItem, WorldSource};
+use crate::{AMBLE_VERSION, Goal, RoomId, View, ViewItem, WorldSource};
 use crate::{AmbleWorld, WorldObject, repl::ReplControl};
 
 use anyhow::{Context, Result};
@@ -166,11 +166,7 @@ pub fn set_viewmode_handler(view: &mut View, mode: ViewMode) {
 /// This handler never produces an error; it always returns `Ok(ReplControl::Quit)`.
 pub fn quit_handler(world: &AmbleWorld, view: &mut View) -> Result<ReplControl> {
     info!("$$ {} quit with a score of {}", world.player.name(), world.player.score);
-    let path: Vec<_> = world
-        .player_path
-        .iter()
-        .map(|uuid| symbol_or_unknown(&world.rooms, uuid))
-        .collect();
+    let path: Vec<_> = world.player_path.iter().map(RoomId::to_string).collect();
     let path_str = path.join(" > ");
     info!("$$ PATH ({} moves): {path_str}", path.len().saturating_sub(1));
     info!("$$ FLAGS:");

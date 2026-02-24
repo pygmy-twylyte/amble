@@ -88,7 +88,7 @@ pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
 /// # Panics
 /// If a `.get()` call failed for some reason even after the ID was verified to exist
 pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let entity_id = match find_entity_match(world, thing, SearchScope::AllVisible(room_id)) {
         Ok(id) => id,
         Err(SearchError::NoMatchingName(input)) => {
@@ -188,8 +188,8 @@ pub fn inv_handler(world: &AmbleWorld, view: &mut View) -> Result<()> {
 /// # Panics
 /// If an item lookup fails for some reason even after the item is found to exist
 pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
-    let room_id = world.player_room_ref()?.id();
-    let item_id = match find_item_match(world, pattern, SearchScope::VisibleItems(room_id.clone())) {
+    let room_id = world.player_room_id();
+    let item_id = match find_item_match(world, pattern, SearchScope::VisibleItems(room_id)) {
         Ok(uuid) => uuid,
         Err(SearchError::NoMatchingName(input)) => {
             let room = world.player_room_ref()?;
@@ -226,7 +226,7 @@ pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
         world,
         view,
         &[TriggerCondition::UseItem {
-            item_id: item.id(),
+            item_id: item.id.clone(),
             ability: ItemAbility::Read,
         }],
     )?;

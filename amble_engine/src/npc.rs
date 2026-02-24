@@ -21,7 +21,6 @@ use crate::{Id, ItemId, NpcId, RoomId};
 use crate::{
     ItemHolder, Location, View, ViewItem, WorldObject,
     health::{HealthEffect, HealthState, LivingEntity},
-    helpers::symbol_or_unknown,
     item::Movability,
     spinners::CoreSpinnerType,
     view::ContentLine,
@@ -99,7 +98,7 @@ impl Npc {
 }
 impl WorldObject for Npc {
     fn id(&self) -> Id {
-        self.id.clone()
+        self.id.to_string()
     }
     fn symbol(&self) -> &str {
         &self.symbol
@@ -441,11 +440,11 @@ pub fn move_npc(world: &mut AmbleWorld, view: &mut View, npc_id: &NpcId, move_to
         "moving NPC '{}' from [{}] to [{}]",
         npc.symbol,
         match &npc.location {
-            Location::Room(room_id) => symbol_or_unknown(&world.rooms, room_id),
+            Location::Room(room_id) => room_id.to_string(),
             _ => "<nowhere>".to_string(),
         },
         match &move_to {
-            Location::Room(room_id) => symbol_or_unknown(&world.rooms, room_id),
+            Location::Room(room_id) => room_id.to_string(),
             _ => "<nowhere>".to_string(),
         }
     );
@@ -592,7 +591,7 @@ mod tests {
         dialogue.insert(NpcState::Mad, vec!["Go away!".into(), "I'm not talking to you!".into()]);
 
         Npc {
-            id: crate::idgen::new_id(),
+            id: crate::idgen::new_id().into(),
             symbol: "test_npc".into(),
             name: "Test NPC".into(),
             description: "A test NPC".into(),
@@ -608,7 +607,7 @@ mod tests {
     fn create_test_world() -> AmbleWorld {
         let mut world = AmbleWorld::new_empty();
 
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = Item {
             id: item_id.clone(),
             symbol: "test_item".into(),
@@ -790,7 +789,7 @@ mod tests {
     #[test]
     fn item_holder_add_item_works() {
         let mut npc = create_test_npc();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
 
         npc.add_item(item_id.clone());
         assert!(npc.inventory.contains(&item_id));
@@ -799,7 +798,7 @@ mod tests {
     #[test]
     fn item_holder_remove_item_works() {
         let mut npc = create_test_npc();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         npc.inventory.insert(item_id.clone());
 
         npc.remove_item(item_id.clone());
@@ -809,11 +808,11 @@ mod tests {
     #[test]
     fn item_holder_contains_item_works() {
         let mut npc = create_test_npc();
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         npc.inventory.insert(item_id.clone());
 
         assert!(npc.contains_item(item_id));
-        assert!(!npc.contains_item(crate::idgen::new_id()));
+        assert!(!npc.contains_item(crate::idgen::new_id().into()));
     }
 
     #[test]
@@ -849,8 +848,8 @@ mod tests {
         let mut view = View::new();
 
         // Create two rooms
-        let player_room_id = crate::idgen::new_id();
-        let other_room_id = crate::idgen::new_id();
+        let player_room_id = crate::idgen::new_room_id();
+        let other_room_id = crate::idgen::new_room_id();
 
         let player_room = Room {
             id: player_room_id.clone(),
@@ -886,7 +885,7 @@ mod tests {
         world.rooms.insert(other_room_id.clone(), other_room);
 
         // Create NPC and set player location
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = create_test_npc();
         world.npcs.insert(npc_id.clone(), npc);
         world.player.location = Location::Room(player_room_id.clone());
@@ -935,8 +934,8 @@ mod tests {
         let mut view = View::new();
 
         // Create rooms and NPC
-        let player_room_id = crate::idgen::new_id();
-        let other_room_id = crate::idgen::new_id();
+        let player_room_id = crate::idgen::new_room_id();
+        let other_room_id = crate::idgen::new_room_id();
 
         let player_room = Room {
             id: player_room_id.clone(),
@@ -971,7 +970,7 @@ mod tests {
         world.rooms.insert(player_room_id.clone(), player_room);
         world.rooms.insert(other_room_id.clone(), other_room);
 
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = create_test_npc();
         world.npcs.insert(npc_id.clone(), npc);
         world.player.location = Location::Room(player_room_id.clone());

@@ -92,8 +92,8 @@ mod tests {
 
     fn build_test_world() -> (AmbleWorld, RoomId, RoomId) {
         let mut world = AmbleWorld::new_empty();
-        let room1_id = crate::idgen::new_id();
-        let room2_id = crate::idgen::new_id();
+        let room1_id = crate::idgen::new_room_id();
+        let room2_id = crate::idgen::new_room_id();
 
         let room1 = Room {
             id: room1_id.clone(),

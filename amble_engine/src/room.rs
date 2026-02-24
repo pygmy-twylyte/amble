@@ -103,11 +103,11 @@ impl OverlayCondition {
             OverlayCondition::ItemPresent { item_id } => world
                 .items
                 .get(item_id)
-                .is_some_and(|item| matches!(&item.location, Location::Room(id) if id.as_str() == room_id)),
+                .is_some_and(|item| matches!(&item.location, Location::Room(id) if id == room_id)),
             OverlayCondition::ItemAbsent { item_id } => world
                 .items
                 .get(item_id)
-                .is_none_or(|item| !matches!(&item.location, Location::Room(id) if id.as_str() == room_id)),
+                .is_none_or(|item| !matches!(&item.location, Location::Room(id) if id == room_id)),
             OverlayCondition::PlayerHasItem { item_id } => world.player.contains_item(item_id.clone()),
             OverlayCondition::PlayerMissingItem { item_id } => !world.player.contains_item(item_id.clone()),
             OverlayCondition::NpcInState { npc_id, mood } => {
@@ -147,7 +147,7 @@ pub struct Room {
 }
 impl WorldObject for Room {
     fn id(&self) -> Id {
-        self.id.clone()
+        self.id.to_string()
     }
     fn symbol(&self) -> &str {
         &self.symbol
@@ -311,12 +311,12 @@ mod tests {
     fn create_test_world() -> AmbleWorld {
         let mut world = AmbleWorld::new_empty();
 
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
         let room = create_test_room(room_id.clone());
         world.rooms.insert(room_id.clone(), room);
         world.player.location = Location::Room(room_id.clone());
 
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = Item {
             id: item_id.clone(),
             symbol: "test_item".into(),
@@ -336,7 +336,7 @@ mod tests {
         };
         world.items.insert(item_id.clone(), item);
 
-        let npc_id = crate::idgen::new_id();
+        let npc_id: NpcId = crate::idgen::new_id().into();
         let npc = Npc {
             id: npc_id.clone(),
             symbol: "test_npc".into(),
@@ -356,7 +356,7 @@ mod tests {
 
     #[test]
     fn exit_new_creates_basic_exit() {
-        let dest_id = crate::idgen::new_id();
+        let dest_id = crate::idgen::new_room_id();
         let exit = Exit::new(dest_id.clone());
 
         assert_eq!(exit.to, dest_id);
@@ -450,7 +450,7 @@ mod tests {
     fn room_overlay_applies_with_item_absent() {
         let world = create_test_world();
         let room_id = world.player.location.room_id().unwrap();
-        let nonexistent_item = crate::idgen::new_id();
+        let nonexistent_item: ItemId = crate::idgen::new_id().into();
 
         let overlay = RoomOverlay {
             conditions: vec![OverlayCondition::ItemAbsent {
@@ -526,7 +526,7 @@ mod tests {
         world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id);
 
         // Add another room for exits
-        let other_room_id = crate::idgen::new_id();
+        let other_room_id = crate::idgen::new_room_id();
         let other_room = create_test_room(other_room_id.clone());
         world.rooms.insert(other_room_id.clone(), other_room);
 
@@ -633,7 +633,7 @@ mod tests {
         let mut view = View::new();
         let room_id = world.player.location.room_id().unwrap();
 
-        let dest_room_id = crate::idgen::new_id();
+        let dest_room_id = crate::idgen::new_room_id();
         let dest_room = create_test_room(dest_room_id.clone());
         world.rooms.insert(dest_room_id.clone(), dest_room);
 
@@ -666,7 +666,7 @@ mod tests {
 
     #[test]
     fn world_object_trait_works() {
-        let room = create_test_room(crate::idgen::new_id());
+        let room = create_test_room(crate::idgen::new_room_id());
         assert_eq!(room.symbol(), "test_room");
         assert_eq!(room.name(), "Test Room");
         assert_eq!(room.description(), "A test room for testing");
@@ -675,8 +675,8 @@ mod tests {
 
     #[test]
     fn item_holder_add_item_works() {
-        let mut room = create_test_room(crate::idgen::new_id());
-        let item_id = crate::idgen::new_id();
+        let mut room = create_test_room(crate::idgen::new_room_id());
+        let item_id: ItemId = crate::idgen::new_id().into();
 
         room.add_item(item_id.clone());
         assert!(room.contents.contains(&item_id));
@@ -684,8 +684,8 @@ mod tests {
 
     #[test]
     fn item_holder_remove_item_works() {
-        let mut room = create_test_room(crate::idgen::new_id());
-        let item_id = crate::idgen::new_id();
+        let mut room = create_test_room(crate::idgen::new_room_id());
+        let item_id: ItemId = crate::idgen::new_id().into();
         room.contents.insert(item_id.clone());
 
         room.remove_item(item_id.clone());
@@ -694,12 +694,12 @@ mod tests {
 
     #[test]
     fn item_holder_contains_item_works() {
-        let mut room = create_test_room(crate::idgen::new_id());
-        let item_id = crate::idgen::new_id();
+        let mut room = create_test_room(crate::idgen::new_room_id());
+        let item_id: ItemId = crate::idgen::new_id().into();
         room.contents.insert(item_id.clone());
 
         assert!(room.contains_item(item_id));
-        assert!(!room.contains_item(crate::idgen::new_id()));
+        assert!(!room.contains_item(crate::idgen::new_id().into()));
     }
 
     #[test]
@@ -742,7 +742,7 @@ mod tests {
         let mut view = View::new();
         let room_id = world.player.location.room_id().unwrap();
 
-        let dest_room_id = crate::idgen::new_id();
+        let dest_room_id = crate::idgen::new_room_id();
         let dest_room = create_test_room(dest_room_id.clone());
         world.rooms.insert(dest_room_id.clone(), dest_room);
 
@@ -777,7 +777,7 @@ mod tests {
     fn room_overlay_applies_with_player_missing_item() {
         let world = create_test_world();
         let room_id = world.player.location.room_id().unwrap();
-        let missing_item = crate::idgen::new_id();
+        let missing_item: ItemId = crate::idgen::new_id().into();
 
         let overlay = RoomOverlay {
             conditions: vec![OverlayCondition::PlayerMissingItem { item_id: missing_item }],
@@ -807,7 +807,7 @@ mod tests {
         let mut world = create_test_world();
         let mut view = View::new();
         let room_id = world.player.location.room_id().unwrap();
-        let missing_room = crate::idgen::new_id();
+        let missing_room = crate::idgen::new_room_id();
         world
             .rooms
             .get_mut(&room_id)

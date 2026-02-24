@@ -3,10 +3,7 @@ use crate::{NpcAst, NpcMovementAst, NpcMovementTypeAst, NpcStateValue};
 use super::helpers::{parse_string_at, unquote};
 use super::{AstError, Rule};
 
-pub(super) fn parse_npc_pair(
-    npc: pest::iterators::Pair<Rule>,
-    _source: &str,
-) -> Result<NpcAst, AstError> {
+pub(super) fn parse_npc_pair(npc: pest::iterators::Pair<Rule>, _source: &str) -> Result<NpcAst, AstError> {
     let (src_line, _src_col) = npc.as_span().start_pos().line_col();
     let mut it = npc.into_inner();
     let id = it

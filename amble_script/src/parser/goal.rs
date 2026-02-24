@@ -3,10 +3,7 @@ use crate::{GoalAst, GoalCondAst, GoalGroupAst};
 use super::helpers::unquote;
 use super::{AstError, Rule};
 
-pub(super) fn parse_goal_pair(
-    goal: pest::iterators::Pair<Rule>,
-    _source: &str,
-) -> Result<GoalAst, AstError> {
+pub(super) fn parse_goal_pair(goal: pest::iterators::Pair<Rule>, _source: &str) -> Result<GoalAst, AstError> {
     let (src_line, _src_col) = goal.as_span().start_pos().line_col();
     let mut it = goal.into_inner();
     let id = it.next().ok_or(AstError::Shape("goal id"))?.as_str().to_string();

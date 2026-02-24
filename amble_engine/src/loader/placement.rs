@@ -115,7 +115,7 @@ mod tests {
     use crate::item::{ContainerState, Item, Movability};
     use crate::npc::{Npc, NpcState};
     use crate::world::Location;
-    use crate::{AmbleWorld, Room, idgen};
+    use crate::{AmbleWorld, ItemId, NpcId, Room, RoomId, idgen};
 
     use super::{place_items, place_npcs};
 
@@ -123,7 +123,7 @@ mod tests {
     fn test_transparent_container_loading() {
         let mut world = AmbleWorld::new_empty();
 
-        let room_id = idgen::new_id();
+        let room_id = idgen::new_room_id();
         let room = Room {
             id: room_id.clone(),
             symbol: "test_room".into(),
@@ -140,7 +140,7 @@ mod tests {
         };
         world.rooms.insert(room_id.clone(), room);
 
-        let container_id = idgen::new_id();
+        let container_id: ItemId = idgen::new_id().into();
         let container = Item {
             id: container_id.clone(),
             symbol: "test_container".into(),
@@ -159,7 +159,7 @@ mod tests {
             text: None,
         };
 
-        let item_id = idgen::new_id();
+        let item_id: ItemId = idgen::new_id().into();
         let item = Item {
             id: item_id.clone(),
             symbol: "test_item".into(),
@@ -194,7 +194,7 @@ mod tests {
 
         let room_id = "room".to_string();
         let room = Room {
-            id: room_id.clone(),
+            id: RoomId(room_id.clone()),
             symbol: "room".into(),
             name: "Room".into(),
             base_description: "Room".into(),
@@ -207,18 +207,18 @@ mod tests {
             contents: HashSet::new(),
             npcs: HashSet::new(),
         };
-        world.rooms.insert(room_id.clone(), room);
+        world.rooms.insert(RoomId(room_id.clone()), room);
 
-        let outer_id = "outer".to_string();
-        let inner_id = "inner".to_string();
-        let item_id = "item".to_string();
+        let outer_id = ItemId::from("outer");
+        let inner_id = ItemId::from("inner");
+        let item_id = ItemId::from("item");
 
         let outer = Item {
             id: outer_id.clone(),
             symbol: "outer".into(),
             name: "Outer".into(),
             description: "Outer container".into(),
-            location: Location::Room(room_id.clone()),
+            location: Location::Room(RoomId(room_id.clone())),
             visibility: crate::item::ItemVisibility::Listed,
             visible_when: None,
             aliases: Vec::new(),
@@ -287,7 +287,7 @@ mod tests {
     fn test_place_items_adds_to_npc_inventory() {
         let mut world = AmbleWorld::new_empty();
 
-        let npc_id = "npc".to_string();
+        let npc_id = NpcId::from("npc");
         let npc = Npc {
             id: npc_id.clone(),
             symbol: "npc".into(),
@@ -302,7 +302,7 @@ mod tests {
         };
         world.npcs.insert(npc_id.clone(), npc);
 
-        let item_id = "token".to_string();
+        let item_id = ItemId::from("token");
         let item = Item {
             id: item_id.clone(),
             symbol: "token".into(),
@@ -332,7 +332,7 @@ mod tests {
     fn test_place_npcs_rejects_invalid_location() {
         let mut world = AmbleWorld::new_empty();
 
-        let npc_id = "npc".to_string();
+        let npc_id = NpcId::from("npc");
         let npc = Npc {
             id: npc_id.clone(),
             symbol: "npc".into(),

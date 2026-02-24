@@ -4,7 +4,7 @@
 //! a simple identity mapping. Namespaces remain for compatibility with
 //! older loader call sites.
 
-use crate::Id;
+use crate::{Id, RoomId};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub const NAMESPACE_ROOM: &str = "room";
@@ -17,6 +17,12 @@ static NEXT_ID: AtomicUsize = AtomicUsize::new(1);
 pub fn new_id() -> Id {
     let next = NEXT_ID.fetch_add(1, Ordering::Relaxed);
     format!("id_{next}")
+}
+
+/// Generate a new, unique `RoomId` (typically only used for tests.)
+pub fn new_room_id() -> RoomId {
+    let next = NEXT_ID.fetch_add(1, Ordering::Relaxed);
+    format!("id_{next}").into()
 }
 
 /// Convert a token id from content files into a runtime ID.

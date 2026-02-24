@@ -69,7 +69,7 @@ use log::info;
 /// Returns an error if the player's current room cannot be resolved or if the scoped items
 /// referenced during trigger evaluation cannot be found.
 pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) -> Result<()> {
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let item_id = match entity_search::find_item_match(world, item_str, SearchScope::TouchableItems(room_id.clone())) {
         Ok(uuid) => uuid,
         Err(SearchError::NoMatchingName(input)) => {
@@ -125,7 +125,7 @@ pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) ->
 /// Returns an error if the player's current room cannot be located, if scoped items cannot be
 /// resolved, or if trigger evaluation encounters missing world state.
 pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, mode: IngestMode) -> Result<()> {
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let item_id = match entity_search::find_item_match(world, item_str, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(SearchError::NoMatchingName(_)) => {
@@ -278,8 +278,9 @@ pub fn use_item_on_handler(
     let Some((target, tool)) = resolve_use_item_participants(world, view, tool_str, target_str)? else {
         return Ok(());
     };
-    let (target_id, target_name, target_sym) = (target.id(), target.name().to_owned(), target.symbol().to_owned());
-    let (tool_id, tool_name, tool_sym) = (tool.id(), tool.name().to_string(), tool.symbol().to_owned());
+    let (target_id, target_name, target_sym) =
+        (target.id.clone(), target.name().to_owned(), target.symbol().to_owned());
+    let (tool_id, tool_name, tool_sym) = (tool.id.clone(), tool.name().to_string(), tool.symbol().to_owned());
     let tool_is_consumable = tool.consumable.is_some();
 
     // check if these items can interact in this way
@@ -356,7 +357,7 @@ fn resolve_use_item_participants<'a>(
         Err(e) => bail!(e),
     };
     // find a reachable item in the room or inventory matching target_str
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let target_id = match entity_search::find_item_match(world, target_str, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(SearchError::NoMatchingName(target_pattern)) => {
@@ -453,7 +454,7 @@ fn dispatch_use_item_triggers(
 /// fails due to missing world data.
 pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<()> {
     // search player's location for an item with name matching 'pattern'
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let item_id = match entity_search::find_item_match(world, item_pattern, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(e) => match e {
@@ -471,7 +472,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
 
     if item.abilities.contains(&ItemAbility::TurnOn) {
         info!("Player switched on {} ({})", item.name(), item.symbol());
-        let sent_id = item.id();
+        let sent_id = item.id.clone();
         let fired_triggers = check_triggers(
             world,
             view,
@@ -540,7 +541,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
 /// fails because required world data is missing.
 pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<()> {
     // search player's location for an item with name matching 'pattern'
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let item_id = match entity_search::find_item_match(world, item_pattern, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(e) => match e {
@@ -557,7 +558,7 @@ pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &
         .with_context(|| format!("world.items.get_mut({item_id})"))?;
     if item.abilities.contains(&ItemAbility::TurnOff) {
         info!("Player switched off {} ({})", item.name(), item.symbol());
-        let sent_id = item.id();
+        let sent_id = item.id.clone();
         let fired_triggers = check_triggers(
             world,
             view,
@@ -633,7 +634,7 @@ pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &
 /// cannot be retrieved, or if trigger execution fails due to missing data.
 pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     // search player's location for an item with name matching 'pattern'
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(e) => match e {
@@ -756,7 +757,7 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
 /// cannot be retrieved from the world.
 pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     // search player's location for an item with name matching 'pattern'
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(e) => match e {
@@ -850,7 +851,7 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
 /// cannot be located within the world state.
 pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     // search player's location for an item with name matching 'pattern'
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(e) => match e {
@@ -947,7 +948,7 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
 /// cannot be resolved from the world state, or if trigger evaluation fails.
 pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
     // search player's location for an item with name matching 'pattern'
-    let room_id = world.player_room_ref()?.id();
+    let room_id = world.player_room_id();
     let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(e) => match e {
@@ -1081,7 +1082,7 @@ mod tests {
     #[allow(clippy::too_many_lines)]
     fn build_world() -> (AmbleWorld, View, ItemId, ItemId, ItemId, ItemId) {
         let mut world = AmbleWorld::new_empty();
-        let room_id = crate::idgen::new_id();
+        let room_id = crate::idgen::new_room_id();
         let room = Room {
             id: room_id.clone(),
             symbol: "r".into(),
@@ -1099,7 +1100,7 @@ mod tests {
         world.rooms.insert(room_id.clone(), room);
         world.player.location = Location::Room(room_id.clone());
 
-        let container_id = crate::idgen::new_id();
+        let container_id: ItemId = crate::idgen::new_id().into();
         let mut container = Item {
             id: container_id.clone(),
             symbol: "c".into(),
@@ -1128,7 +1129,7 @@ mod tests {
             .insert(container_id.clone());
         world.items.insert(container_id.clone(), container);
 
-        let tool_id = crate::idgen::new_id();
+        let tool_id: ItemId = crate::idgen::new_id().into();
         let tool = Item {
             id: tool_id.clone(),
             symbol: "t".into(),
@@ -1149,7 +1150,7 @@ mod tests {
         world.player.inventory.insert(tool_id.clone());
         world.items.insert(tool_id.clone(), tool);
 
-        let lamp_id = crate::idgen::new_id();
+        let lamp_id: ItemId = crate::idgen::new_id().into();
         let lamp = Item {
             id: lamp_id.clone(),
             symbol: "l".into(),
@@ -1172,7 +1173,7 @@ mod tests {
         world.rooms.get_mut(&room_id).unwrap().contents.insert(lamp_id.clone());
         world.items.insert(lamp_id.clone(), lamp);
 
-        let key_id = crate::idgen::new_id();
+        let key_id: ItemId = crate::idgen::new_id().into();
         let key = Item {
             id: key_id.clone(),
             symbol: "k".into(),

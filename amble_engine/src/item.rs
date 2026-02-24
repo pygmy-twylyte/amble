@@ -93,7 +93,7 @@ pub enum ItemVisibility {
 
 impl WorldObject for Item {
     fn id(&self) -> Id {
-        self.id.clone()
+        self.id.to_string()
     }
     fn symbol(&self) -> &str {
         &self.symbol
@@ -568,7 +568,7 @@ mod tests {
     fn create_test_world() -> AmbleWorld {
         let mut world = AmbleWorld::new_empty();
 
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let item = create_test_item(item_id.clone());
         world.items.insert(item_id.clone(), item);
 
@@ -577,13 +577,13 @@ mod tests {
 
     #[test]
     fn item_is_consumed_returns_false_for_non_consumable() {
-        let item = create_test_item(crate::idgen::new_id());
+        let item = create_test_item(crate::idgen::new_id().into());
         assert!(!item.is_consumed());
     }
 
     #[test]
     fn item_is_consumed_returns_false_for_unconsumed_consumable() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.consumable = Some(ConsumableOpts {
             uses_left: 3,
             consume_on: HashSet::new(),
@@ -594,7 +594,7 @@ mod tests {
 
     #[test]
     fn item_is_consumed_returns_true_for_consumed_consumable() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.consumable = Some(ConsumableOpts {
             uses_left: 0,
             consume_on: HashSet::new(),
@@ -605,48 +605,48 @@ mod tests {
 
     #[test]
     fn item_is_accessible_returns_false_for_non_container() {
-        let item = create_test_item(crate::idgen::new_id());
+        let item = create_test_item(crate::idgen::new_id().into());
         assert!(!item.is_accessible());
     }
 
     #[test]
     fn item_is_accessible_returns_true_for_open_container() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.container_state = Some(ContainerState::Open);
         assert!(item.is_accessible());
     }
 
     #[test]
     fn item_is_accessible_returns_false_for_closed_container() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.container_state = Some(ContainerState::Closed);
         assert!(!item.is_accessible());
     }
 
     #[test]
     fn item_is_accessible_returns_false_for_locked_container() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.container_state = Some(ContainerState::Locked);
         assert!(!item.is_accessible());
     }
 
     #[test]
     fn item_is_accessible_returns_false_for_transparent_closed_container() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.container_state = Some(ContainerState::TransparentClosed);
         assert!(!item.is_accessible());
     }
 
     #[test]
     fn item_is_accessible_returns_false_for_transparent_locked_container() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.container_state = Some(ContainerState::TransparentLocked);
         assert!(!item.is_accessible());
     }
 
     #[test]
     fn item_is_transparent_returns_true_for_transparent_containers() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
 
         item.container_state = Some(ContainerState::TransparentClosed);
         assert!(item.is_transparent());
@@ -669,23 +669,23 @@ mod tests {
 
     #[test]
     fn set_location_room_updates_location() {
-        let mut item = create_test_item(crate::idgen::new_id());
-        let room_id = crate::idgen::new_id();
+        let mut item = create_test_item(crate::idgen::new_id().into());
+        let room_id = crate::idgen::new_room_id();
         item.set_location_room(room_id.clone());
         assert_eq!(item.location, Location::Room(room_id));
     }
 
     #[test]
     fn set_location_item_updates_location() {
-        let mut item = create_test_item(crate::idgen::new_id());
-        let container_id = crate::idgen::new_id();
+        let mut item = create_test_item(crate::idgen::new_id().into());
+        let container_id: ItemId = crate::idgen::new_id().into();
         item.set_location_item(container_id.clone());
         assert_eq!(item.location, Location::Item(container_id));
     }
 
     #[test]
     fn set_location_inventory_updates_location_and_unrestricts() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.movability = Movability::Restricted {
             reason: "You haven't earned it yet.".to_string(),
         };
@@ -696,7 +696,7 @@ mod tests {
 
     #[test]
     fn set_location_inventory_preserves_fixed_movability() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.movability = Movability::Fixed {
             reason: "Bolted down.".to_string(),
         };
@@ -707,21 +707,21 @@ mod tests {
 
     #[test]
     fn set_location_npc_updates_location() {
-        let mut item = create_test_item(crate::idgen::new_id());
-        let npc_id = crate::idgen::new_id();
+        let mut item = create_test_item(crate::idgen::new_id().into());
+        let npc_id: NpcId = crate::idgen::new_id().into();
         item.set_location_npc(npc_id.clone());
         assert_eq!(item.location, Location::Npc(npc_id));
     }
 
     #[test]
     fn requires_capability_for_returns_none_for_no_requirement() {
-        let item = create_test_item(crate::idgen::new_id());
+        let item = create_test_item(crate::idgen::new_id().into());
         assert_eq!(item.requires_capability_for(ItemInteractionType::Break), None);
     }
 
     #[test]
     fn requires_capability_for_returns_ability_when_required() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.interaction_requires
             .insert(ItemInteractionType::Break, ItemAbility::Smash);
         assert_eq!(
@@ -732,14 +732,14 @@ mod tests {
 
     #[test]
     fn access_denied_reason_returns_none_for_open_container() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.container_state = Some(ContainerState::Open);
         assert_eq!(item.access_denied_reason(), None);
     }
 
     #[test]
     fn access_denied_reason_returns_reason_for_closed_container() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.container_state = Some(ContainerState::Closed);
         let reason = item.access_denied_reason().unwrap();
         assert!(reason.contains("closed"));
@@ -747,7 +747,7 @@ mod tests {
 
     #[test]
     fn access_denied_reason_returns_reason_for_locked_container() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.container_state = Some(ContainerState::Locked);
         let reason = item.access_denied_reason().unwrap();
         assert!(reason.contains("locked"));
@@ -755,7 +755,7 @@ mod tests {
 
     #[test]
     fn access_denied_reason_returns_reason_for_transparent_closed_container() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.container_state = Some(ContainerState::TransparentClosed);
         let reason = item.access_denied_reason().unwrap();
         assert!(reason.contains("closed"));
@@ -764,7 +764,7 @@ mod tests {
 
     #[test]
     fn access_denied_reason_returns_reason_for_transparent_locked_container() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.container_state = Some(ContainerState::TransparentLocked);
         let reason = item.access_denied_reason().unwrap();
         assert!(reason.contains("locked"));
@@ -773,20 +773,20 @@ mod tests {
 
     #[test]
     fn access_denied_reason_returns_reason_for_non_container() {
-        let item = create_test_item(crate::idgen::new_id());
+        let item = create_test_item(crate::idgen::new_id().into());
         let reason = item.access_denied_reason().unwrap();
         assert!(reason.contains("isn't a container"));
     }
 
     #[test]
     fn take_denied_reason_returns_none_for_movable() {
-        let item = create_test_item(crate::idgen::new_id());
+        let item = create_test_item(crate::idgen::new_id().into());
         assert_eq!(item.take_denied_reason(), None);
     }
 
     #[test]
     fn take_denied_reason_returns_reason_for_fixed() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.movability = Movability::Fixed {
             reason: "The item isn't portable.".to_string(),
         };
@@ -796,7 +796,7 @@ mod tests {
 
     #[test]
     fn take_denied_reason_returns_reason_for_restricted() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.movability = Movability::Restricted {
             reason: "You can't take that yet.".to_string(),
         };
@@ -806,9 +806,9 @@ mod tests {
 
     #[test]
     fn item_holder_add_item_works() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.container_state = Some(ContainerState::Open);
-        let item_to_add = crate::idgen::new_id();
+        let item_to_add: ItemId = crate::idgen::new_id().into();
 
         item.add_item(item_to_add.clone());
         assert!(item.contents.contains(&item_to_add));
@@ -816,7 +816,7 @@ mod tests {
 
     #[test]
     fn item_holder_add_item_ignores_self_reference() {
-        let item_id = crate::idgen::new_id();
+        let item_id: ItemId = crate::idgen::new_id().into();
         let mut item = create_test_item(item_id.clone());
         item.container_state = Some(ContainerState::Open);
 
@@ -826,8 +826,8 @@ mod tests {
 
     #[test]
     fn item_holder_add_item_ignores_non_container() {
-        let mut item = create_test_item(crate::idgen::new_id());
-        let item_to_add = crate::idgen::new_id();
+        let mut item = create_test_item(crate::idgen::new_id().into());
+        let item_to_add: ItemId = crate::idgen::new_id().into();
 
         item.add_item(item_to_add.clone());
         assert!(!item.contents.contains(&item_to_add));
@@ -835,9 +835,9 @@ mod tests {
 
     #[test]
     fn item_holder_remove_item_works() {
-        let mut item = create_test_item(crate::idgen::new_id());
+        let mut item = create_test_item(crate::idgen::new_id().into());
         item.container_state = Some(ContainerState::Open);
-        let item_to_remove = crate::idgen::new_id();
+        let item_to_remove: ItemId = crate::idgen::new_id().into();
         item.contents.insert(item_to_remove.clone());
 
         item.remove_item(item_to_remove.clone());
@@ -846,12 +846,12 @@ mod tests {
 
     #[test]
     fn item_holder_contains_item_works() {
-        let mut item = create_test_item(crate::idgen::new_id());
-        let contained_item = crate::idgen::new_id();
+        let mut item = create_test_item(crate::idgen::new_id().into());
+        let contained_item: ItemId = crate::idgen::new_id().into();
         item.contents.insert(contained_item.clone());
 
         assert!(item.contains_item(contained_item));
-        assert!(!item.contains_item(crate::idgen::new_id()));
+        assert!(!item.contains_item(crate::idgen::new_id().into()));
     }
 
     #[test]
@@ -931,8 +931,8 @@ mod tests {
 
     #[test]
     fn world_object_trait_works() {
-        let item = create_test_item(crate::idgen::new_id());
-        assert_eq!(item.id(), item.id);
+        let item = create_test_item(crate::idgen::new_id().into());
+        assert_eq!(item.id(), item.id.to_string());
         assert_eq!(item.symbol(), "test_item");
         assert_eq!(item.name(), "Test Item");
         assert_eq!(item.description(), "A test item");
