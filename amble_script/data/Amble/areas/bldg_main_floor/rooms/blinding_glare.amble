@@ -1,0 +1,9 @@
+# BLINDING GLARE ROOM
+#
+# THIS ROOM IS JUST A STUB. The player only lands here for a moment if they try to enter the
+# restaurant patio without sunglasses. They'll see this and then are immediately pushed back
+# into the restaurant dining room. So, no exits, scenery or overlays are needed / useful here.
+room blinding-glare {
+    name "BLINDING GLARE"
+    desc "You see almost nothing at all, except for a momentary glimpse of a few scattered details before you are blinded. The pure white light here is stare-into-the-sun bright and seems to come from all directions, forcing you to shield your eyes with your arm and flee."
+}

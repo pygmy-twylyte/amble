@@ -4,14 +4,12 @@
 
 # Starts with description merely as blinding explosion of light, so player doesn't get to peek at the contents early
 room patio {
-    name "BLINDING GLARE"
-    desc "You see almost nothing at all, except for a momentary glimpse of a few scattered details before you are blinded. The pure white light here is stare-into-the-sun bright and seems to come from all directions, forcing you to shield your eyes with your arm and flee."
+    name "Restaurant Patio"
+    desc "The patio overlooks nothing in particular—just an endless starfield gently swirling beyond a transparent force field. A few metal tables are bolted to the floor, but nicely appointed with linens and decorative centerpieces. A sign near the edge of the balcony reads: 'No Leaning Beyond This Point. You have been warned.'"
 
-    overlay if player has item peril_sunglasses, flag set patio-gate-open {
-        text "The Stargate shimmers off to the side by the kitchen door, its connection to the laboratory still open."
-    }
-    overlay if player has item peril_sunglasses, flag unset patio-gate-open {
-        text "A large metallic ring stands by the kitchen door. It might be a backdrop for weddings, but it's covered in hieroglyphs and other odd symbols -- none of them rings, hearts, doves, or branding irons."
+    overlay if flag patio-gate-open {
+        set "The Stargate shimmers off to the side by the kitchen door, its connection to the laboratory still open."
+        unset "A large metallic ring stands by the kitchen door. It might be a backdrop for weddings, but it's covered in hieroglyphs and other odd symbols -- none of them rings, hearts, doves, or branding irons."
     }
 
     overlay if item present lighter, item present un_drink {
@@ -29,16 +27,16 @@ room patio {
 # Triggers alter room appearance when the sunglasses are taken or dropped
 trigger "Modify Patio: Sunglasses On"
 when take item peril_sunglasses {
-    do modify room patio {
-        name "Restaurant Patio"
-        desc "The patio overlooks nothing in particular—just an endless starfield gently swirling beyond a transparent force field. A few metal tables are bolted to the floor, but nicely appointed with linens and decorative centerpieces. A sign near the edge of the balcony reads: 'No Leaning Beyond This Point. You have been warned.'"
+    do modify room restaurant {
+        remove exit blinding-glare
+        add exit "patio" -> patio
     }
 }
 trigger "Modify Patio: Sunglasses Off"
 when drop item peril_sunglasses {
-    do modify room patio {
-        name "BLINDING GLARE"
-        desc "You see nothing at all. The pure white light here is direct-sunlight bright and seems to come from all directions, forcing you to shield your eyes with your arm and flee."
+    do modify room restaurant {
+        remove exit patio
+        add exit "patio" -> blinding-glare
     }
 }
 
@@ -83,14 +81,14 @@ when use item plaque_3 ability read {
 }
 
 trigger "[Patio] Sunglasses Required"
+when enter room blinding-glare {
+    do show "A blinding burst of light erupts from the swirling starfield, forcing you to shield your eyes. With no protection, you're driven back into the relative safety of the restaurant."
+    do push player to restaurant
+}
+
+trigger "[Patio] Sunglasses Activate"
 when enter room patio {
-    if missing item peril_sunglasses {
-        do push player to restaurant
-        do show "A blinding burst of light erupts from the swirling starfield, forcing you to shield your eyes. With no protection, you're driven back into the relative safety of the restaurant."
-    }
-    if has item peril_sunglasses {
-        do show "Sensing the possible harm in eating a dessert a stone's throw away from the explosions of all nearby stars, your peril-sensitive sunglasses flash nearly completely opaque, allowing you to see without permanent damage to the retina as the galaxies outside continue to erupt."
-    }
+    do show "Sensing the possible harm in eating a dessert a stone's throw away from the explosions of all nearby stars, your peril-sensitive sunglasses flash nearly completely opaque, allowing you to see without permanent damage to the retina as the galaxies outside continue to erupt."
 }
 
 trigger "[Patio] Award Points Getting In" only once
