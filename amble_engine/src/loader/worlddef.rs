@@ -307,7 +307,7 @@ fn trigger_from_def(def: &TriggerDef) -> Result<Trigger> {
 
 fn goal_from_def(def: &GoalDef) -> Goal {
     Goal {
-        id: def.id.clone().into(),
+        id: def.id.clone(),
         name: def.name.clone(),
         description: def.description.clone(),
         group: goal_group_from_def(def.group),
