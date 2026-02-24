@@ -16,7 +16,7 @@ item lost_and_found_key {
     name "Lost and Found Key"
     desc "A small brass key on a ring, labeled \"Lost and Found\"."
     movability restricted "The receptionist won't let you have it... yet."
-    location npc b_a_receptionist
+    location npc demerzel
     ability Unlock lost_and_found_box
 }
 

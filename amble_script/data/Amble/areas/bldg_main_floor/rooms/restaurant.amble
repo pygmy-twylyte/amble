@@ -4,7 +4,8 @@
 
 room restaurant {
     name "Restaurant at the End of the Universe"
-    desc "Acturan A-POP wafts through invisible speakers, accompanied by the occasional sound of imploding galaxies. A tasteful sign declares this to be the Restaurant at the End of the Universe, though it appears to be between dinner rushes. Tables float slightly above the ground and rearrange themselves when you're not looking. A reservation book is here, chained to the host's podium. Restrooms lie to the south bearing a sign in fancy script reading:\n[[box:VIP PAN-SPECIES RESTROOM]][[i]](must possess [[item]]visitor pass[[/item]] to enter)[[/i]][[/box]]\nPatio seating stretches farther east."
+    desc "Acturan A-POP wafts through invisible speakers, accompanied by the occasional sound of imploding galaxies. A tasteful sign declares this to be the Restaurant at the End of the Universe, though it appears to be between dinner rushes. Tables float slightly above the ground and rearrange themselves when you're not looking. A host's podium stands to one side with an open reservation book, but the host is nowhere to be seen. Restrooms lie to the south bearing a sign in fancy script reading:\n\nPatio seating stretches farther east."
+
     overlay if npc cmot_dibbler here {
         normal "Dibbler circles the tables, insisting his sausages are a bargain."
         happy  "Dibbler proclaims today's special with exaggerated flair."
@@ -18,10 +19,17 @@ room restaurant {
     }
 }
 
-# ========================================
-# Items
-# ========================================
+item restroom_sign {
+    visibility scenery
+    aliases "bathroom sign", "restroom sign", "wc sign"
+    name "Restroom Sign"
+    desc "[[box:VIP PAN-SPECIES RESTROOM]][[i]](must possess [[item]]visitor pass[[/item]] to enter)[[/i]][[/box]]"
+    location room restaurant
+    movability fixed "It's screwed into the door at the corners."
+}
+
 item reservation_book {
+    visibility scenery
     name "Reservation Book"
     desc "A leather-bound guest book sits at the host stand, its pages flipping themselves when unattended. You spot several reservations, hastily written in wildly different scripts."
     movability fixed "It's attached to the host stand by a chain."
@@ -31,6 +39,6 @@ item reservation_book {
     Candidate (#2112-42) ............... (overdue)
     Jenkins the Time Ferret............. (last Thursday)
 
-There's a smudged doodle of a blinding sun and a stylish pair of sunglasses in the bottom margin."""
+There's a smudged doodle of a blinding sun and a stylish pair of sunglasses next to the list for patio seating."""
     ability Read
 }

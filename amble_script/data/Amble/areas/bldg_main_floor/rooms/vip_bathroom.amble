@@ -4,11 +4,18 @@
 
 room vip-bathroom {
     name "VIP Bathroom"
-    desc "Blinding white tile and pristine mirrors make it almost seem like this pan-gender, pan-species bathroom has never been used, but a lingering asparagus odor suggests otherwise."
+    desc "Blinding white tile and pristine mirrors make it almost seem like this pan-gender, pan-species bathroom has never been used, but a lingering asparagus odor suggests otherwise. Commodes in stalls stand against one wall opposite a vanity with three sinks."
+
+    scenery "Commodes" desc "Commodes of seven different shapes, sizes, and orientations line up along the wall. You're not even certain how a couple of them work. One even has a bidet that shoots flame instead of water."
+
+    scenery "Mirrors" desc "You see yourself, proving that you are neither invisible, nor a vampire."
+
+    scenery "Sinks"
+
     overlay if item present vogon_poetry_book {
         text "A heavy, heavily stained book sits on the back of the nearest commode."
     }
-    exit north -> restaurant
+    exit restaurant -> restaurant
 }
 
 # ========================================

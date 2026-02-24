@@ -48,7 +48,7 @@ item poetry_performer {
 
 let set keycard_hint_zone = ( amble-office, vip-bathroom )
 trigger "[HINT Radio] Find/Insert Vogon Poetry" only once
-when give item invitation to npc b_a_receptionist {
+when give item invitation to npc demerzel {
     do schedule in 3 if any(
         all(
             has item hint_radio,
@@ -72,7 +72,7 @@ when give item invitation to npc b_a_receptionist {
 
 trigger "[Poetry-Panic] Acquired Elevator Keycard" only once
 when take item elevator_keycard {
-    do set npc state b_a_receptionist bored
+    do set npc state demerzel bored
     do add flag got-elevator-keycard
     do modify item aa_3_button_main {
         name "[AA-3] Button"
@@ -90,7 +90,7 @@ when insert item vogon_poetry_book into item poetry_performer {
     do priority 50 show "The machine begins to whine at a high pitch and gives off a noxious odor like burning hair. A klaxon blares and the display warns:\n[[center]][[b]][[red]]⚠️ VOGON INPUT DETECTED - BUNKER UNLOCKED ⚠️[[/red]][[/b]][[/center]]\n\nThe whiteboard on the west wall slides to the side, revealing a small [[room]]panic room[[/room]]."
     do add flag panic-room-open
     # Demerzel seals the player inside for protection
-    do priority 60 npc says b_a_receptionist "Block your ears! Quickly!"
+    do priority 60 npc says demerzel "Block your ears! Quickly!"
     do priority 70 show "In a blur, Demerzel picks you up as if you were a toddler, tosses you into the panic room, and seals the door."
     do push player to poetry-panic
     # Poetry will be ongoing for 10 turns.

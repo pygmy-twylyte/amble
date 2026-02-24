@@ -15,7 +15,6 @@ room high-ridge {
     }
     exit "up the steps" -> parish-landing
     scenery "Stone Steps" desc "Worn smooth by time and weather, you can still see where these giant slabs were shaped by the hand tools of ancient craftsmen."
-    scenery "Paper Plate"
     scenery "Boulder"
 }
 
@@ -46,6 +45,7 @@ item scrawled_note {
 
 item ephemeral_cake {
     name "Birthday Cake"
+    aliases "embossed message", "paper plate"
     desc "A [[b]][[i]]generous[[/i]][[/b]] piece of delicious, perfectly iced birthday cake on a paper plate [[i]]embossed with a message.[[/i]]"
     text r#"[[center]]"~~~ From GLaDOS and Aperture Science Laboratories ~~~"[[/center]][[center]][[i]](embossed on the edge of the plate)[[/i]][[/center]]"#
     location room high-ridge
