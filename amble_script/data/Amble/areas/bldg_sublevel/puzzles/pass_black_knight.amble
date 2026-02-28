@@ -87,7 +87,7 @@ when give item keen_longsword to npc black_knight
 {
     do set item movability keen_longsword restricted "The knight won't fall for that again."
     do add flag appeased-black-knight
-    do set barred message from sublevel-1-entrance to room-aa-3b "As you near the door, you are overwhelmed by a sense of spinning through an unending series of fictional realities, compelling you to step away."
+    do set barred message from sublevel-entrance to room-aa-3b "As you near the door, you are overwhelmed by a sense of spinning through an unending series of fictional realities, compelling you to step away."
     do award points 5 reason "Appeased the Black Knight with a sharpened blade"
     do set npc state black_knight happy
     do priority 10 npc says black_knight "Thank you, good Sir! For your kind deed, I swear on my sword that I shall not cut you to bits with it. And you may pass wherever you like."

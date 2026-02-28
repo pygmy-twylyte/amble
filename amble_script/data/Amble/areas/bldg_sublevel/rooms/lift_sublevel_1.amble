@@ -13,7 +13,7 @@ room lift-sublevel-1 {
         text "[[b]][[bright-green]][AA-3][[/bright-green]][[/b]]"
     }
 
-    exit "sublevel AA-3" -> sublevel-1-entrance
+    exit "sublevel AA-3" -> sublevel-entrance
 }
 
 # ========================================

@@ -2,7 +2,7 @@
 # Entrance to Sublevel AA-3
 # ========================================
 
-room sublevel-1-entrance {
+room sublevel-entrance {
     name "Sublevel AA-3 Entrance"
     desc "A small landing area covered in dust. Buckets, tools, and debris are strewn about the floor. An industrial corridor extends farther south from the entrance. On your left, there is a heavy blast door marked \"Sublevel Security\". An even heavier door on the right is labeled with a sign:\n\n                        🚧 ROOM AA-3B 🚧\n                 FICTIONAL UNIVERSE CONTAINMENT"
     overlay if ( npc in state black_knight normal ) {
@@ -34,7 +34,7 @@ room sublevel-1-entrance {
 # ========================================
 
 trigger "[Sublevel-1-Entrance] Arrived" only once
-when enter room sublevel-1-entrance {
+when enter room sublevel-entrance {
     do add flag entered-sublevel-1
 }
 
@@ -47,5 +47,5 @@ goal go-to-sublevel {
     desc "The elevator should now allow you down to sublevel AA-3, and the receptionist said you're expected in Room AA-3B for... orientation? Initiation? Obfuscation?"
     group required
     start when goal complete activate-elevator
-    done when reached room sublevel-1-entrance
+    done when reached room sublevel-entrance
 }

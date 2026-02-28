@@ -5,7 +5,7 @@
 room room-aa-3b {
     name "Room AA-3B"
     desc "OK, so I was fairly sure that nobody but me would ever come this far. Massive congratulations are in order. [[b]][[i]]Good hustle.[[/i]][[/b]] But I, uh, never created an ending or an extension to a new content area. Perhaps this will be a jumping off point after it's opened up to public access..."
-    exit "sublevel entrance" -> sublevel-1-entrance
+    exit "sublevel entrance" -> sublevel-entrance
 }
 
 # ========================================

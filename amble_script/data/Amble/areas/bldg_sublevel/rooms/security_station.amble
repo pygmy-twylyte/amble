@@ -4,12 +4,17 @@
 
 room security-station {
     name "Level AA-3 Security"
-    desc "A compact but well-equipped station with reinforced blast doors, a wall of cracked CRT monitors, and a swivel chair. The space above the monitors is emblazoned with 'IN CASE OF EMERGENCY, RUN FASTER.' Paperwork is scattered across the floor, including an ominous memo titled 'AA-3B: Risk Ignorance Recommendations.'"
+    desc "A compact but well-equipped station with reinforced blast doors, a wall of cracked CRT monitors, and a swivel chair. The space above the monitors is emblazoned with: [[hl]][[b]]IN CASE OF EMERGENCY, RUN FASTER.[[/b]][[/hl]] Paperwork is scattered across the floor, including an ominous memo titled 'AA-3B: Risk Ignorance Recommendations.'"
+
+    scenery "Blast Doors"
+    scenery "Cracked CRT Monitors"
+    scenery "Swivel Chair"
+
     overlay if item evidence_locker_closed {
         present "A heavy steel evidence locker is embedded in the wall. It's covered in dents, scratches, and scorch marks -- evidence of previous failed attempts to open it."
         absent "The heavy door of the evidence locker, having surrendered at last, hangs loosely from one of its hinges."
     }
-    exit out -> sublevel-1-entrance
+    exit out -> sublevel-entrance
 }
 
 # ========================================
@@ -17,6 +22,7 @@ room security-station {
 # ========================================
 
 item evidence_locker_closed {
+    visibility scenery
     name "Evidence Locker"
     desc "A heavy-duty, astrogation-grade steel locker marked 'EVIDENCE'. It is scorched and slightly dented, as if there have been a few attempts to break into it."
     movability fixed "It's like a safe, rooted firmly into the wall."
@@ -26,6 +32,7 @@ item evidence_locker_closed {
 }
 
 item evidence_locker_open {
+    visibility scenery
     name "Evidence Locker"
     desc "A heavy-duty, astrogation-grade steel locker marked 'EVIDENCE'. The door is severely bent in one corner and hangs loosely from the bottom hinge."
     movability fixed "It's still rooted firmly in the wall, despite the sagging door."
@@ -35,6 +42,7 @@ item evidence_locker_open {
 
 item evidence_log {
     name "Evidence Log"
+    aliases "log book"
     desc "A book logging the items taken from perpetrators and placed into the evidence locker. It's smeared with mustard, fingerprints, and something you hope is hair gel."
     movability free
     location room security-station
@@ -48,6 +56,7 @@ Event:  White male in his 30's found in the monolith room pointing this whirring
 
 item risk_management_memo {
     name "Risk Management Memo"
+    aliases "ominous memo"
     desc "A stern memo to all Amble Adventures staff working in the sublevel / AA-3B area."
     movability free
     location room security-station

@@ -3,7 +3,7 @@ npc black_knight {
     desc """A towering, dark presence in a black suit of armor.
 
 Little is known about the Black Knight, an Arthurian legend, except that he is never seen without full black platemail and a longsword, and that he absolutely *hates* to let people pass. If there's one thing he detests more than would-be passers-by, it's a dull blade -- if only because it makes dicing passers-by more difficult. He has never been defeated in combat, and would never admit it if he were."""
-    location room sublevel-1-entrance
+    location room sublevel-entrance
     max_hp 500
     state normal
     dialogue happy {

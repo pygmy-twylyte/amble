@@ -12,7 +12,7 @@ let set stepped_path = (
 )
 let set near_aa3b = (
     lift-sublevel-1,
-    sublevel-1-entrance,
+    sublevel-entrance,
     corridor-north,
     corridor-south,
     observation-room,

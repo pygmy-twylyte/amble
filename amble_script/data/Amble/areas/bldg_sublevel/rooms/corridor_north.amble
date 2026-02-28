@@ -15,7 +15,7 @@ room corridor-north {
 
     scenery "Graffiti" desc "Across one wall, in huge spray-painted orange letters, it reads: [[b]]THEY NEVER LEFT AA-3B[[/b]]"
 
-    exit "toward the elevator" -> sublevel-1-entrance
+    exit "toward the elevator" -> sublevel-entrance
     exit "unmarked door" -> observation-room
     exit "archway" -> med-bay
     exit "down the corridor" -> corridor-south
