@@ -4,8 +4,16 @@
 #
 room lift-sublevel-1 {
     name "Elevator (Sublevel AA-3)"
-    desc "The elevator sits open at the end of the corridor, but its appearance is… altered. What was once a sleek, polished carriage now seems borrowed from another world entirely. Gilded scrollwork curls along the walls where none existed before, and the ceiling flickers between brass panels and a starlit void. It hums with potential—and something less easily named."
-    exit "out to sublevel AA-3" -> sublevel-1-entrance
+    desc "The elevator sits open at the end of the corridor, but its appearance is… altered. What was once a sleek, polished carriage now seems borrowed from another world entirely. Gilded scrollwork curls along the walls where none existed before, and the ceiling flickers between brass panels and a starlit void. It hums with potential—and something less easily named. Only the two buttons remain the same:"
+
+    overlay if flag set got-elevator-keycard {
+        text "[[b]][[bright-green]][Main][[/bright-green]][[/b]]"
+    }
+    overlay if flag set got-elevator-keycard {
+        text "[[b]][[bright-green]][AA-3][[/bright-green]][[/b]]"
+    }
+
+    exit "sublevel AA-3" -> sublevel-1-entrance
 }
 
 # ========================================
@@ -13,6 +21,7 @@ room lift-sublevel-1 {
 # ========================================
 
 item main_button_sublevel {
+    visibility scenery
     name "[Main] Button"
     desc "The button that sends the elevator to the main floor."
     movability fixed "It is part of the elevator control panel."
@@ -20,6 +29,7 @@ item main_button_sublevel {
 }
 
 item aa_3_button_sublevel {
+    visibility scenery
     name "[AA-3] Button"
     desc "The button that sends the elevator to the AA-3 sublevel."
     movability fixed "It is part of the elevator control panel."
@@ -33,7 +43,9 @@ item aa_3_button_sublevel {
 trigger "[Sublevel Lift] Press Main Button"
 when touch item main_button_sublevel {
     do push player to lift-main
-    do show r#"The elevator shouts "Yeeee-Haw!", and you're off literally like a rocket, accelerating and pressed into the floor of the elevator for what seems like a minute. You decelerate nearly as quickly, slamming into the elevator ceiling and then falling again when you arrive at the main level. "Have a WONDERFUL day!", the lift intones gleefully as the doors slide softly open."#
+    do priority -100 npc says elevator "YEEEEEE-HAW!!!!"
+    do priority -90 show r#"You're off, [[i]]literally[[/i]] like a rocket, accelerating and pressed into the floor of the elevator for what seems like a minute. You decelerate nearly as quickly, slamming into the elevator ceiling and then falling again when you arrive at the main level. The lift seems to sigh in satisfaction as its doors whisk softly open."#
+    do priority -80 npc says elevator "Have a WONDERFUL day! And please come back soon for another ride."
     do damage player 1 cause "elevator deceleration"
 }
 

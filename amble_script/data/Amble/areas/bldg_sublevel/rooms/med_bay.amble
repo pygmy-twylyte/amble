@@ -4,7 +4,14 @@
 
 room med-bay {
     name "Med Bay"
-    desc "A clean white infirmary with two bio-beds extending from the back wall, surrounded by a bevy of monitors and robotic surgical tools. One of the machines goes \"Bing!\" every few minutes. A small cleaning robot floats around the room disinfecting things."
+    desc "A clean white infirmary with two bio-beds extending from the back wall, surrounded by a bevy of monitors and robotic surgical tools. One of the machines goes \"Bing!\" every few minutes. A small cleaning robot floats around the room disinfecting things. A large, lit red button is set into the wall between the beds."
+
+    scenery "Bio-Beds"
+    scenery "Monitors" desc "These are typical life sign monitors to assist in treating ailing patients, or occasionally for watching tribble videos when things are slow."
+    scenery "Surgical Tools" desc "A broad array of surgical tools sealed in a sterile container. Knives and spikes, spreaders, clamps, cauterizers, sponges, and a rubber chicken, for some unthinkable procedure."
+    scenery "Machine that goes 'Bing!'" desc "Don't look at that. [[i]]You're not qualified.[[/i]]"
+    scenery "Cleaning Robot" desc "An Initech Droomba™ autonomous cleaning drone. It opens its storage door periodically when it gets bored, to redistribute the dust around the clinic — so it can start cleaning again."
+
     overlay if npc emh here {
         normal "The EMH stands with professional detachment, awaiting your symptoms."
         happy  "The EMH smiles and hums a bright tune while adjusting the diagnostic displays."
@@ -18,7 +25,9 @@ room med-bay {
 # ========================================
 
 item emh_button {
+    visibility scenery
     name "[E-M-H] Button"
+    aliases "red button", "emh button"
     desc "A large red button mounted to the wall next to the bio-bed, used to summon the Emergency Medical Hologram."
     movability fixed "It is mounted to a panel on the wall."
     location room med-bay
@@ -32,5 +41,6 @@ trigger "Spawn the EMH" only once
 when touch item emh_button {
     do spawn npc emh into room med-bay
     do award points 3 reason "Activated the Emergency Medical Hologram"
+    do show "Holo-emitters mounted near the ceiling around the room spring to life, and the EMH blinks into existence right behind you."
     do npc says emh "Please state the nature of your medical emergency."
 }

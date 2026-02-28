@@ -1,9 +1,14 @@
 room monolith-room {
     name "Monolith Room"
-    desc "The room is stark, dim, and cavernous with a deep reverb. A series of industrial floodlights cast long, angled shadows spreading out from the centerpiece: a towering, rectangular and perfectly black monolith that defies reflection. It absorbs light, sound, and—if you stare too long—possibly thought.\n\nThere is a heavy door in the east wall, next to a wide rectangular window into the observation room, where you can just make out some computer racks along the back wall."
+    desc "The room is stark, dim, and cavernous with a deep reverb. A series of industrial floodlights cast long, angled shadows spreading out from the centerpiece: a towering, rectangular and perfectly black monolith that defies reflection. It absorbs light, sound, and—if you stare too long—possibly thought.\n\nThere is a heavy door in the east wall, next to a wide rectangular window."
+
+    scenery "Floodlights"
+    scenery "Shadows"
+    scenery "Rectangular Window" desc "A broad, reinforced glass window to the [[room]]Observation Room[[/room]]. You can see [[npc]]HAL's[[/npc]] memory bank just behind the window seats."
+    scenery "Heavy Door" desc "An industrial steel door with a push bar for rapid exit. There is a sign on the front: [[box]][[b]]OBSERVATION ROOM[[/b]][[/box]]"
 
     overlay if ( flag unset talked-to-hal ) {
-        text "A HAL-9000 camera and terminal embedded in the far wall looms dark and silent, but somehow still seems to be observing your actions."
+        text "A [[npc]]HAL-9000[[/npc]] camera and terminal embedded in the far wall looms dark and silent, but somehow still seems to be observing your actions."
     }
     overlay if ( flag set hal-reboot#1 ) {
         text "Several lights blink slowly on a panel near HAL-9000's camera, whose red light still glows faintly. A few cryptic instructions flicker across the monitor."
@@ -14,8 +19,8 @@ room monolith-room {
     overlay if ( flag complete hal-reboot ) {
         text "The light in HAL-9000's lens glows an intense red and seems to stare through you and into the monolith. Various status notifications cycle on the nearby monitor."
     }
-    exit east -> corridor-south
-    exit north -> observation-room
+    exit "corridor" -> corridor-south
+    exit "heavy door" -> observation-room
 }
 
 # ========================================
