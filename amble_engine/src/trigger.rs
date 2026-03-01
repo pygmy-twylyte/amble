@@ -123,6 +123,7 @@ mod tests {
     use crate::RoomId;
     use crate::{
         room::Room,
+        spinners::{CoreSpinnerType, SpinnerType},
         world::{AmbleWorld, Location},
     };
     use std::collections::{HashMap, HashSet};
@@ -218,5 +219,113 @@ mod tests {
             &refs,
             |c| matches!(c, TriggerCondition::Enter(id) if *id == crate::idgen::new_id())
         ));
+    }
+
+    #[test]
+    fn check_triggers_only_once_triggers_do_not_refire() {
+        let (mut world, room_id, _) = build_test_world();
+        let mut view = View::new();
+        let starting_score = world.player.score;
+
+        world.triggers.push(Trigger {
+            name: "score_once".into(),
+            conditions: EventCondition::Trigger(TriggerCondition::Enter(room_id.clone())),
+            actions: vec![ScriptedAction::new(TriggerAction::AwardPoints {
+                amount: 5,
+                reason: "first entry".into(),
+            })],
+            only_once: true,
+            fired: false,
+        });
+
+        let events = vec![TriggerCondition::Enter(room_id.clone())];
+
+        let fired_first = check_triggers(&mut world, &mut view, &events).expect("initial trigger run failed");
+        assert_eq!(fired_first.len(), 1, "only_once trigger should fire the first time");
+        assert_eq!(world.player.score, starting_score + 5, "points should be awarded once");
+
+        let fired_second = check_triggers(&mut world, &mut view, &events).expect("second trigger run failed");
+        assert!(fired_second.is_empty(), "only_once trigger should not fire twice");
+        assert_eq!(
+            world.player.score,
+            starting_score + 5,
+            "score should remain unchanged after second run"
+        );
+    }
+
+    #[test]
+    fn ambient_triggers_are_excluded_from_event_fire_plan() {
+        let (mut world, room_id, _) = build_test_world();
+        let mut view = View::new();
+        let starting_score = world.player.score;
+
+        world.triggers.push(Trigger {
+            name: "ambient".into(),
+            conditions: EventCondition::Trigger(TriggerCondition::Ambient {
+                room_ids: HashSet::new(),
+                spinner: SpinnerType::Core(CoreSpinnerType::Movement),
+            }),
+            actions: vec![ScriptedAction::new(TriggerAction::AwardPoints {
+                amount: 100,
+                reason: "ambient shouldn't fire".into(),
+            })],
+            only_once: false,
+            fired: false,
+        });
+
+        world.triggers.push(Trigger {
+            name: "enter_bonus".into(),
+            conditions: EventCondition::Trigger(TriggerCondition::Enter(room_id.clone())),
+            actions: vec![ScriptedAction::new(TriggerAction::AwardPoints {
+                amount: 3,
+                reason: "entered".into(),
+            })],
+            only_once: false,
+            fired: false,
+        });
+
+        let events = vec![TriggerCondition::Enter(room_id.clone())];
+        let fired = check_triggers(&mut world, &mut view, &events).expect("ambient plan check failed");
+
+        assert_eq!(fired.len(), 1, "only non-ambient triggers should fire");
+        assert_eq!(fired[0].name, "enter_bonus");
+        assert_eq!(
+            world.player.score,
+            starting_score + 3,
+            "ambient trigger should be ignored by check_triggers"
+        );
+        assert!(!world.triggers[0].fired, "ambient trigger should remain unfired");
+    }
+
+    #[test]
+    fn repeating_triggers_fire_even_if_marked_fired() {
+        let (mut world, room_id, _) = build_test_world();
+        let mut view = View::new();
+        let starting_score = world.player.score;
+
+        world.triggers.push(Trigger {
+            name: "repeatable".into(),
+            conditions: EventCondition::Trigger(TriggerCondition::Enter(room_id.clone())),
+            actions: vec![ScriptedAction::new(TriggerAction::AwardPoints {
+                amount: 2,
+                reason: "repeat".into(),
+            })],
+            only_once: false,
+            fired: true,
+        });
+
+        let events = vec![TriggerCondition::Enter(room_id.clone())];
+
+        let first_run = check_triggers(&mut world, &mut view, &events).expect("first repeatable run failed");
+        assert_eq!(first_run.len(), 1);
+        assert_eq!(world.player.score, starting_score + 2);
+
+        let second_run = check_triggers(&mut world, &mut view, &events).expect("second repeatable run failed");
+        assert_eq!(second_run.len(), 1, "repeatable triggers should continue to fire");
+        assert_eq!(
+            world.player.score,
+            starting_score + 4,
+            "points should accumulate each time"
+        );
     }
 }
