@@ -32,7 +32,7 @@ use thiserror::Error;
 
 use crate::{
     AmbleWorld,
-    repl::find_world_object,
+    repl::find_world_entity,
     world::{nearby_reachable_items, nearby_vessel_items, nearby_visible_items},
 };
 
@@ -105,7 +105,7 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
         },
     };
 
-    let Some(entity) = find_world_object(
+    let Some(entity) = find_world_entity(
         haystack.iter(),
         std::iter::empty::<&NpcId>(),
         &world.items,
@@ -170,7 +170,7 @@ pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> 
         },
     };
 
-    let Some(entity) = find_world_object(
+    let Some(entity) = find_world_entity(
         std::iter::empty::<&ItemId>(),
         haystack.iter(),
         &world.items,
