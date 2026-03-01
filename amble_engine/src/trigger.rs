@@ -9,7 +9,7 @@ pub mod condition;
 pub use action::*;
 pub use condition::*;
 
-use crate::{AmbleWorld, View};
+use crate::{AmbleWorld, View, helpers::plural_s};
 use anyhow::Result;
 
 use crate::scheduler::EventCondition;
@@ -35,11 +35,71 @@ where
     list.iter().any(|t| t.conditions.any_trigger(|c| matcher(c)))
 }
 
-/// Evaluate triggers against recent events, execute matching actions, and return the fired set.
+/// A plan containing aggregated (indices to) `Triggers` and their `TriggerActions` to be used for
+/// dispatch and logging this turn.
+pub struct FirePlan {
+    trig_indices: Vec<usize>,
+    action_list: Vec<ScriptedAction>,
+}
+
+/// Construct a `FirePlan` from triggers and current world state.
+fn make_fire_plan(world: &AmbleWorld, events: &[TriggerCondition]) -> FirePlan {
+    let trig_indices: Vec<_> = world
+        .triggers
+        .iter()
+        .enumerate()
+        .filter(|(_, t)| {
+            (!t.only_once || !t.fired)
+                && !t
+                    .conditions
+                    .any_trigger(|cond| matches!(cond, TriggerCondition::Ambient { .. }))
+                && t.conditions.eval_with_events(world, events)
+        })
+        .map(|(idx, _)| idx)
+        .collect();
+
+    let action_list: Vec<_> = trig_indices
+        .iter()
+        .flat_map(|i| world.triggers[*i].actions.clone())
+        .collect();
+
+    FirePlan {
+        trig_indices,
+        action_list,
+    }
+}
+
+/// Fire each of the `TriggerActions` in a `FirePlan`.
 ///
-/// The provided `events` slice represents instantaneous conditions (e.g., player just entered a room).
-/// Persistent predicates are checked via [`TriggerCondition::is_ongoing`]. Each matching trigger
-/// has its actions dispatched in order, respecting the `only_once` flag.
+/// # Errors
+/// - propagated from individual action handlers
+fn fire_planned_actions(world: &mut AmbleWorld, view: &mut View, plan: &FirePlan) -> Result<()> {
+    for action in &plan.action_list {
+        dispatch_action(world, view, action)?;
+    }
+    Ok(())
+}
+
+fn mark_fired_triggers(triggers: &mut [Trigger], plan: &FirePlan) {
+    plan.trig_indices.iter().for_each(|i| triggers[*i].fired = true)
+}
+
+/// Enter the name of each `Trigger` that is firing into the log.
+fn log_firing_triggers(triggers: &[Trigger], plan: &FirePlan) {
+    let names = plan
+        .trig_indices
+        .iter()
+        .map(|i| triggers[*i].name.clone())
+        .collect::<Vec<_>>()
+        .join(",");
+    let count = plan.trig_indices.iter().count();
+    info!("{count} Trigger{} firing: {names}", plural_s(count as isize));
+}
+
+/// Evaluate triggers against recent events and world state, execute any matching actions, and return the fired set.
+/// - The provided `events` slice represents instantaneous "event" conditions (e.g., player enters a room).
+/// - Persistent predicates (e.g. player is missing an item) are checked via [`TriggerCondition::is_ongoing`].
+/// - Each `Trigger` whose conditions are met has its actions dispatched in order, respecting the `only_once` flag.
 ///
 /// # Errors
 /// - Propagates failures from action dispatch such as missing id references.
@@ -48,36 +108,12 @@ pub fn check_triggers<'a>(
     view: &mut View,
     events: &[TriggerCondition],
 ) -> Result<Vec<&'a Trigger>> {
-    // collect map of indices to triggers that should fire now
-    let to_fire: Vec<_> = world
-        .triggers
-        .iter()
-        .enumerate()
-        .filter(|(_, t)| !t.only_once || !t.fired)
-        .filter(|(_, t)| {
-            !t.conditions
-                .any_trigger(|c| matches!(c, TriggerCondition::Ambient { .. }))
-        })
-        .filter(|(_, t)| t.conditions.eval_with_events(world, events))
-        .map(|(i, _)| i)
-        .collect();
-
-    // mark each trigger as fired if a one-off and log it
-    for i in &to_fire {
-        let trigger = &mut world.triggers[*i];
-        info!("Trigger fired: {}", trigger.name);
-        if trigger.only_once {
-            trigger.fired = true;
-        }
-
-        let actions = trigger.actions.clone();
-        for action in actions {
-            dispatch_action(world, view, &action)?;
-        }
-    }
-
-    let fired_triggers: Vec<&Trigger> = to_fire.iter().map(|i| &world.triggers[*i]).collect();
-    Ok(fired_triggers)
+    let fire_plan = make_fire_plan(world, events);
+    log_firing_triggers(&world.triggers, &fire_plan);
+    fire_planned_actions(world, view, &fire_plan)?;
+    mark_fired_triggers(&mut world.triggers, &fire_plan);
+    let fired: Vec<&Trigger> = fire_plan.trig_indices.iter().map(|i| &world.triggers[*i]).collect();
+    Ok(fired)
 }
 
 #[cfg(test)]
