@@ -26,6 +26,26 @@ pub struct Trigger {
     pub fired: bool,
 }
 
+/// Evaluate triggers against recent events and world state, execute any matching actions, and return the fired set.
+/// - The provided `events` slice represents instantaneous "event" conditions (e.g., player enters a room).
+/// - Persistent predicates (e.g. player is missing an item) are checked via [`TriggerCondition::is_ongoing`].
+/// - Each `Trigger` whose conditions are met has its actions dispatched in order, respecting the `only_once` flag.
+///
+/// # Errors
+/// - Propagates failures from action dispatch such as missing id references.
+pub fn check_triggers<'a>(
+    world: &'a mut AmbleWorld,
+    view: &mut View,
+    events: &[TriggerCondition],
+) -> Result<Vec<&'a Trigger>> {
+    let fire_plan = make_fire_plan(world, events);
+    log_firing_triggers(&world.triggers, &fire_plan);
+    fire_planned_actions(world, view, &fire_plan)?;
+    mark_fired_triggers(&mut world.triggers, &fire_plan);
+    let fired: Vec<&Trigger> = fire_plan.trig_indices.iter().map(|i| &world.triggers[*i]).collect();
+    Ok(fired)
+}
+
 /// Determines if a matching trigger condition exists in a list of triggers.
 /// Useful to see if a `TriggerCondition` just sent to `check_triggers` did anything.
 pub fn triggers_contain_condition<F>(list: &[&Trigger], matcher: F) -> bool
@@ -80,6 +100,7 @@ fn fire_planned_actions(world: &mut AmbleWorld, view: &mut View, plan: &FirePlan
     Ok(())
 }
 
+/// Mark all triggers in a `FirePlan` as fired.
 fn mark_fired_triggers(triggers: &mut [Trigger], plan: &FirePlan) {
     plan.trig_indices.iter().for_each(|i| triggers[*i].fired = true)
 }
@@ -94,26 +115,6 @@ fn log_firing_triggers(triggers: &[Trigger], plan: &FirePlan) {
         .join(",");
     let count = plan.trig_indices.iter().count();
     info!("{count} Trigger{} firing: {names}", plural_s(count as isize));
-}
-
-/// Evaluate triggers against recent events and world state, execute any matching actions, and return the fired set.
-/// - The provided `events` slice represents instantaneous "event" conditions (e.g., player enters a room).
-/// - Persistent predicates (e.g. player is missing an item) are checked via [`TriggerCondition::is_ongoing`].
-/// - Each `Trigger` whose conditions are met has its actions dispatched in order, respecting the `only_once` flag.
-///
-/// # Errors
-/// - Propagates failures from action dispatch such as missing id references.
-pub fn check_triggers<'a>(
-    world: &'a mut AmbleWorld,
-    view: &mut View,
-    events: &[TriggerCondition],
-) -> Result<Vec<&'a Trigger>> {
-    let fire_plan = make_fire_plan(world, events);
-    log_firing_triggers(&world.triggers, &fire_plan);
-    fire_planned_actions(world, view, &fire_plan)?;
-    mark_fired_triggers(&mut world.triggers, &fire_plan);
-    let fired: Vec<&Trigger> = fire_plan.trig_indices.iter().map(|i| &world.triggers[*i]).collect();
-    Ok(fired)
 }
 
 #[cfg(test)]
