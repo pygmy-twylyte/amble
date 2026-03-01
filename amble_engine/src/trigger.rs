@@ -9,7 +9,7 @@ pub mod condition;
 pub use action::*;
 pub use condition::*;
 
-use crate::{AmbleWorld, View};
+use crate::{AmbleWorld, View, helpers::plural_s};
 use anyhow::Result;
 
 use crate::scheduler::EventCondition;
@@ -26,6 +26,26 @@ pub struct Trigger {
     pub fired: bool,
 }
 
+/// Evaluate triggers against recent events and world state, execute any matching actions, and return the fired set.
+/// - The provided `events` slice represents instantaneous "event" conditions (e.g., player enters a room).
+/// - Persistent predicates (e.g. player is missing an item) are checked via [`TriggerCondition::is_ongoing`].
+/// - Each `Trigger` whose conditions are met has its actions dispatched in order, respecting the `only_once` flag.
+///
+/// # Errors
+/// - Propagates failures from action dispatch such as missing id references.
+pub fn check_triggers<'a>(
+    world: &'a mut AmbleWorld,
+    view: &mut View,
+    events: &[TriggerCondition],
+) -> Result<Vec<&'a Trigger>> {
+    let fire_plan = make_fire_plan(world, events);
+    log_firing_triggers(&world.triggers, &fire_plan);
+    fire_planned_actions(world, view, &fire_plan)?;
+    mark_fired_triggers(&mut world.triggers, &fire_plan);
+    let fired: Vec<&Trigger> = fire_plan.trig_indices.iter().map(|i| &world.triggers[*i]).collect();
+    Ok(fired)
+}
+
 /// Determines if a matching trigger condition exists in a list of triggers.
 /// Useful to see if a `TriggerCondition` just sent to `check_triggers` did anything.
 pub fn triggers_contain_condition<F>(list: &[&Trigger], matcher: F) -> bool
@@ -35,49 +55,66 @@ where
     list.iter().any(|t| t.conditions.any_trigger(|c| matcher(c)))
 }
 
-/// Evaluate triggers against recent events, execute matching actions, and return the fired set.
-///
-/// The provided `events` slice represents instantaneous conditions (e.g., player just entered a room).
-/// Persistent predicates are checked via [`TriggerCondition::is_ongoing`]. Each matching trigger
-/// has its actions dispatched in order, respecting the `only_once` flag.
-///
-/// # Errors
-/// - Propagates failures from action dispatch such as missing id references.
-pub fn check_triggers<'a>(
-    world: &'a mut AmbleWorld,
-    view: &mut View,
-    events: &[TriggerCondition],
-) -> Result<Vec<&'a Trigger>> {
-    // collect map of indices to triggers that should fire now
-    let to_fire: Vec<_> = world
+/// A plan containing aggregated (indices to) `Triggers` and their `TriggerActions` to be used for
+/// dispatch and logging this turn.
+pub struct FirePlan {
+    trig_indices: Vec<usize>,
+    action_list: Vec<ScriptedAction>,
+}
+
+/// Construct a `FirePlan` from triggers and current world state.
+fn make_fire_plan(world: &AmbleWorld, events: &[TriggerCondition]) -> FirePlan {
+    let trig_indices: Vec<_> = world
         .triggers
         .iter()
         .enumerate()
-        .filter(|(_, t)| !t.only_once || !t.fired)
         .filter(|(_, t)| {
-            !t.conditions
-                .any_trigger(|c| matches!(c, TriggerCondition::Ambient { .. }))
+            (!t.only_once || !t.fired)
+                && !t
+                    .conditions
+                    .any_trigger(|cond| matches!(cond, TriggerCondition::Ambient { .. }))
+                && t.conditions.eval_with_events(world, events)
         })
-        .filter(|(_, t)| t.conditions.eval_with_events(world, events))
-        .map(|(i, _)| i)
+        .map(|(idx, _)| idx)
         .collect();
 
-    // mark each trigger as fired if a one-off and log it
-    for i in &to_fire {
-        let trigger = &mut world.triggers[*i];
-        info!("Trigger fired: {}", trigger.name);
-        if trigger.only_once {
-            trigger.fired = true;
-        }
+    let action_list: Vec<_> = trig_indices
+        .iter()
+        .flat_map(|i| world.triggers[*i].actions.clone())
+        .collect();
 
-        let actions = trigger.actions.clone();
-        for action in actions {
-            dispatch_action(world, view, &action)?;
-        }
+    FirePlan {
+        trig_indices,
+        action_list,
     }
+}
 
-    let fired_triggers: Vec<&Trigger> = to_fire.iter().map(|i| &world.triggers[*i]).collect();
-    Ok(fired_triggers)
+/// Fire each of the `TriggerActions` in a `FirePlan`.
+///
+/// # Errors
+/// - propagated from individual action handlers
+fn fire_planned_actions(world: &mut AmbleWorld, view: &mut View, plan: &FirePlan) -> Result<()> {
+    for action in &plan.action_list {
+        dispatch_action(world, view, action)?;
+    }
+    Ok(())
+}
+
+/// Mark all triggers in a `FirePlan` as fired.
+fn mark_fired_triggers(triggers: &mut [Trigger], plan: &FirePlan) {
+    plan.trig_indices.iter().for_each(|i| triggers[*i].fired = true)
+}
+
+/// Enter the name of each `Trigger` that is firing into the log.
+fn log_firing_triggers(triggers: &[Trigger], plan: &FirePlan) {
+    let names = plan
+        .trig_indices
+        .iter()
+        .map(|i| triggers[*i].name.clone())
+        .collect::<Vec<_>>()
+        .join(",");
+    let count = plan.trig_indices.iter().count();
+    info!("{count} Trigger{} firing: {names}", plural_s(count as isize));
 }
 
 #[cfg(test)]
@@ -86,6 +123,7 @@ mod tests {
     use crate::RoomId;
     use crate::{
         room::Room,
+        spinners::{CoreSpinnerType, SpinnerType},
         world::{AmbleWorld, Location},
     };
     use std::collections::{HashMap, HashSet};
@@ -181,5 +219,113 @@ mod tests {
             &refs,
             |c| matches!(c, TriggerCondition::Enter(id) if *id == crate::idgen::new_id())
         ));
+    }
+
+    #[test]
+    fn check_triggers_only_once_triggers_do_not_refire() {
+        let (mut world, room_id, _) = build_test_world();
+        let mut view = View::new();
+        let starting_score = world.player.score;
+
+        world.triggers.push(Trigger {
+            name: "score_once".into(),
+            conditions: EventCondition::Trigger(TriggerCondition::Enter(room_id.clone())),
+            actions: vec![ScriptedAction::new(TriggerAction::AwardPoints {
+                amount: 5,
+                reason: "first entry".into(),
+            })],
+            only_once: true,
+            fired: false,
+        });
+
+        let events = vec![TriggerCondition::Enter(room_id.clone())];
+
+        let fired_first = check_triggers(&mut world, &mut view, &events).expect("initial trigger run failed");
+        assert_eq!(fired_first.len(), 1, "only_once trigger should fire the first time");
+        assert_eq!(world.player.score, starting_score + 5, "points should be awarded once");
+
+        let fired_second = check_triggers(&mut world, &mut view, &events).expect("second trigger run failed");
+        assert!(fired_second.is_empty(), "only_once trigger should not fire twice");
+        assert_eq!(
+            world.player.score,
+            starting_score + 5,
+            "score should remain unchanged after second run"
+        );
+    }
+
+    #[test]
+    fn ambient_triggers_are_excluded_from_event_fire_plan() {
+        let (mut world, room_id, _) = build_test_world();
+        let mut view = View::new();
+        let starting_score = world.player.score;
+
+        world.triggers.push(Trigger {
+            name: "ambient".into(),
+            conditions: EventCondition::Trigger(TriggerCondition::Ambient {
+                room_ids: HashSet::new(),
+                spinner: SpinnerType::Core(CoreSpinnerType::Movement),
+            }),
+            actions: vec![ScriptedAction::new(TriggerAction::AwardPoints {
+                amount: 100,
+                reason: "ambient shouldn't fire".into(),
+            })],
+            only_once: false,
+            fired: false,
+        });
+
+        world.triggers.push(Trigger {
+            name: "enter_bonus".into(),
+            conditions: EventCondition::Trigger(TriggerCondition::Enter(room_id.clone())),
+            actions: vec![ScriptedAction::new(TriggerAction::AwardPoints {
+                amount: 3,
+                reason: "entered".into(),
+            })],
+            only_once: false,
+            fired: false,
+        });
+
+        let events = vec![TriggerCondition::Enter(room_id.clone())];
+        let fired = check_triggers(&mut world, &mut view, &events).expect("ambient plan check failed");
+
+        assert_eq!(fired.len(), 1, "only non-ambient triggers should fire");
+        assert_eq!(fired[0].name, "enter_bonus");
+        assert_eq!(
+            world.player.score,
+            starting_score + 3,
+            "ambient trigger should be ignored by check_triggers"
+        );
+        assert!(!world.triggers[0].fired, "ambient trigger should remain unfired");
+    }
+
+    #[test]
+    fn repeating_triggers_fire_even_if_marked_fired() {
+        let (mut world, room_id, _) = build_test_world();
+        let mut view = View::new();
+        let starting_score = world.player.score;
+
+        world.triggers.push(Trigger {
+            name: "repeatable".into(),
+            conditions: EventCondition::Trigger(TriggerCondition::Enter(room_id.clone())),
+            actions: vec![ScriptedAction::new(TriggerAction::AwardPoints {
+                amount: 2,
+                reason: "repeat".into(),
+            })],
+            only_once: false,
+            fired: true,
+        });
+
+        let events = vec![TriggerCondition::Enter(room_id.clone())];
+
+        let first_run = check_triggers(&mut world, &mut view, &events).expect("first repeatable run failed");
+        assert_eq!(first_run.len(), 1);
+        assert_eq!(world.player.score, starting_score + 2);
+
+        let second_run = check_triggers(&mut world, &mut view, &events).expect("second repeatable run failed");
+        assert_eq!(second_run.len(), 1, "repeatable triggers should continue to fire");
+        assert_eq!(
+            world.player.score,
+            starting_score + 4,
+            "points should accumulate each time"
+        );
     }
 }
