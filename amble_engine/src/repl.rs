@@ -59,9 +59,7 @@ pub enum ReplControl {
 pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     let mut view = View::new();
     let mut input_manager = InputManager::new();
-    if world.turn_count == 0 {
-        world.turn_count = 1;
-    }
+    world.turn_count = world.turn_count.max(1);
     let mut turn_log_state = TurnLogState::new(world);
     // ---- enter main game loop here ----
     loop {
@@ -649,7 +647,7 @@ impl WorldEntity<'_> {
 }
 
 /// Search item and NPC ids for a name match and return the resolved world entity.
-pub fn find_world_object<'a, S: BuildHasher>(
+pub fn find_world_entity<'a, S: BuildHasher>(
     nearby_item_ids: impl IntoIterator<Item = &'a ItemId>,
     nearby_npc_ids: impl IntoIterator<Item = &'a NpcId>,
     world_items: &'a HashMap<ItemId, Item, S>,
