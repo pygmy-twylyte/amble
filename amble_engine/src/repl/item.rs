@@ -68,7 +68,7 @@ use log::info;
 /// # Errors
 /// Returns an error if the player's current room cannot be resolved or if the scoped items
 /// referenced during trigger evaluation cannot be found.
-pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) -> Result<()> {
+pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) -> Result<bool> {
     let room_id = world.player_room_id();
     let item_id = match entity_search::find_item_match(world, item_str, SearchScope::TouchableItems(room_id.clone())) {
         Ok(uuid) => uuid,
@@ -86,11 +86,10 @@ pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) ->
                     entry.name,
                     room.symbol()
                 );
-                world.turn_count += 1;
-                return Ok(());
+                return Ok(true);
             }
             entity_not_found(world, view, input.as_str());
-            return Ok(());
+            return Ok(false);
         },
         Err(e) => bail!(e),
     };
@@ -115,8 +114,7 @@ pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) ->
             world.spin_core(CoreSpinnerType::NoEffect, "That has no discernable effect."),
         ));
     }
-    world.turn_count += 1;
-    Ok(())
+    Ok(true)
 }
 
 /// Ingests an item (or single portion of a multi-use item).
@@ -124,13 +122,13 @@ pub fn touch_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str) ->
 /// # Errors
 /// Returns an error if the player's current room cannot be located, if scoped items cannot be
 /// resolved, or if trigger evaluation encounters missing world state.
-pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, mode: IngestMode) -> Result<()> {
+pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, mode: IngestMode) -> Result<bool> {
     let room_id = world.player_room_id();
     let item_id = match entity_search::find_item_match(world, item_str, SearchScope::TouchableItems(room_id)) {
         Ok(uuid) => uuid,
         Err(SearchError::NoMatchingName(_)) => {
             entity_not_found(world, view, item_str);
-            return Ok(());
+            return Ok(false);
         },
         Err(e) => bail!(e),
     };
@@ -157,7 +155,7 @@ pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, m
             "Despite your best effort, you are unable to {mode} the {}.",
             item.name().item_style()
         )));
-        return Ok(());
+        return Ok(false);
     }
 
     /* we now have the id (item_id) of an item that is available nearby,
@@ -211,8 +209,7 @@ pub fn ingest_handler(world: &mut AmbleWorld, view: &mut View, item_str: &str, m
     }
 
     info!("{} ingested '{}' ({})", world.player.name(), item_name, item_symbol);
-    world.turn_count += 1;
-    Ok(())
+    Ok(true)
 }
 /// Uses one item on another item with a specific type of interaction.
 ///
@@ -274,9 +271,9 @@ pub fn use_item_on_handler(
     interaction: ItemInteractionType,
     tool_str: &str,
     target_str: &str,
-) -> Result<()> {
+) -> Result<bool> {
     let Some((target, tool)) = resolve_use_item_participants(world, view, tool_str, target_str)? else {
-        return Ok(());
+        return Ok(false);
     };
     let (target_id, target_name, target_sym) =
         (target.id.clone(), target.name().to_owned(), target.symbol().to_owned());
@@ -290,8 +287,7 @@ pub fn use_item_on_handler(
             tool.name().item_style(),
         )));
         info!("Player tried to {interaction:?} {target_name} ({target_sym}) with {tool_name} ({tool_sym})");
-        world.turn_count += 1;
-        return Ok(());
+        return Ok(true);
     }
     // The utilized ItemAbility is needed to send a UseItem TriggerCondition. ItemAbility::Use is
     // a reasonable default but should never come up; the existence of this Interaction
@@ -334,8 +330,7 @@ pub fn use_item_on_handler(
             }
         }
     }
-    world.turn_count += 1;
-    Ok(())
+    Ok(true)
 }
 
 fn resolve_use_item_participants<'a>(
@@ -452,7 +447,7 @@ fn dispatch_use_item_triggers(
 /// # Errors
 /// Returns an error if the player's current room cannot be determined or if trigger execution
 /// fails due to missing world data.
-pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<()> {
+pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<bool> {
     // search player's location for an item with name matching 'pattern'
     let room_id = world.player_room_id();
     let item_id = match entity_search::find_item_match(world, item_pattern, SearchScope::TouchableItems(room_id)) {
@@ -460,7 +455,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
         Err(e) => match e {
             SearchError::NoMatchingName(_) => {
                 entity_not_found(world, view, item_pattern);
-                return Ok(());
+                return Ok(false);
             },
             _ => bail!(e),
         },
@@ -502,8 +497,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
             item.name().item_style()
         )));
     }
-    world.turn_count += 1;
-    Ok(())
+    Ok(true)
 }
 
 /// Disables an item if it has the ability to be turned off.
@@ -539,7 +533,7 @@ pub fn turn_on_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &s
 /// # Errors
 /// Returns an error if the player's current room cannot be determined or if trigger execution
 /// fails because required world data is missing.
-pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<()> {
+pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &str) -> Result<bool> {
     // search player's location for an item with name matching 'pattern'
     let room_id = world.player_room_id();
     let item_id = match entity_search::find_item_match(world, item_pattern, SearchScope::TouchableItems(room_id)) {
@@ -547,7 +541,7 @@ pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &
         Err(e) => match e {
             SearchError::NoMatchingName(_) => {
                 entity_not_found(world, view, item_pattern);
-                return Ok(());
+                return Ok(false);
             },
             _ => bail!(e),
         },
@@ -589,8 +583,7 @@ pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &
         )));
     }
 
-    world.turn_count += 1;
-    Ok(())
+    Ok(true)
 }
 /// Opens a closed container item, making its contents accessible.
 ///
@@ -632,7 +625,7 @@ pub fn turn_off_handler(world: &mut AmbleWorld, view: &mut View, item_pattern: &
 /// # Errors
 /// Returns an error if the player's current room cannot be resolved, if the targeted container
 /// cannot be retrieved, or if trigger execution fails due to missing data.
-pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
+pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<bool> {
     // search player's location for an item with name matching 'pattern'
     let room_id = world.player_room_id();
     let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
@@ -640,7 +633,7 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
         Err(e) => match e {
             SearchError::NoMatchingName(_) => {
                 entity_not_found(world, view, pattern);
-                return Ok(());
+                return Ok(false);
             },
             _ => bail!(e),
         },
@@ -715,8 +708,7 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
         check_triggers(world, view, &[TriggerCondition::Open(container_id.clone())])?;
     }
 
-    world.turn_count += 1;
-    Ok(())
+    Ok(true)
 }
 
 /// Closes an open container item, hiding its contents from view.
@@ -755,7 +747,7 @@ pub fn open_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
 /// # Errors
 /// Returns an error if the player's current room cannot be resolved or if the targeted container
 /// cannot be retrieved from the world.
-pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
+pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<bool> {
     // search player's location for an item with name matching 'pattern'
     let room_id = world.player_room_id();
     let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
@@ -763,7 +755,7 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
         Err(e) => match e {
             SearchError::NoMatchingName(_) => {
                 entity_not_found(world, view, pattern);
-                return Ok(());
+                return Ok(false);
             },
             _ => bail!(e),
         },
@@ -809,8 +801,7 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
             },
         }
     }
-    world.turn_count += 1;
-    Ok(())
+    Ok(true)
 }
 
 /// Locks a container item, securing it against unauthorized access.
@@ -849,7 +840,7 @@ pub fn close_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> 
 /// # Errors
 /// Returns an error if the player's current room cannot be determined or if the targeted container
 /// cannot be located within the world state.
-pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
+pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<bool> {
     // search player's location for an item with name matching 'pattern'
     let room_id = world.player_room_id();
     let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
@@ -857,7 +848,7 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
         Err(e) => match e {
             SearchError::NoMatchingName(_) => {
                 entity_not_found(world, view, pattern);
-                return Ok(());
+                return Ok(false);
             },
             _ => bail!(e),
         },
@@ -897,8 +888,7 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
             },
         }
     }
-    world.turn_count += 1;
-    Ok(())
+    Ok(true)
 }
 
 /// Unlocks a locked container using an appropriate key from inventory.
@@ -946,7 +936,7 @@ pub fn lock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
 /// # Errors
 /// Returns an error if the player's current room cannot be determined, if the targeted container
 /// cannot be resolved from the world state, or if trigger evaluation fails.
-pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
+pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<bool> {
     // search player's location for an item with name matching 'pattern'
     let room_id = world.player_room_id();
     let container_id = match entity_search::find_item_match(world, pattern, SearchScope::TouchableItems(room_id)) {
@@ -954,7 +944,7 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
         Err(e) => match e {
             SearchError::NoMatchingName(_) => {
                 entity_not_found(world, view, pattern);
-                return Ok(());
+                return Ok(false);
             },
             _ => bail!(e),
         },
@@ -962,7 +952,9 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
 
     let key_data = find_valid_key(&world.items, &world.player.inventory, &container_id);
 
+    let mut consumed_turn = false;
     if let Some(target_item) = world.get_item_mut(&container_id) {
+        consumed_turn = true;
         let item_name = target_item.name().to_owned();
         let item_sym = target_item.symbol().to_owned();
         match target_item.container_state {
@@ -1014,9 +1006,8 @@ pub fn unlock_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) ->
                 }
             },
         }
-        world.turn_count += 1;
     }
-    Ok(())
+    Ok(consumed_turn)
 }
 
 // Key metadata.

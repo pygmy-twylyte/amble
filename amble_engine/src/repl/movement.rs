@@ -86,7 +86,7 @@ use log::info;
 /// # Errors
 /// Returns an error when the player is not currently in a room or when the
 /// stored previous room identifier cannot be resolved.
-pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
+pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<bool> {
     let leaving_id = world.player.location.room_id().inspect_err(|_| {
         view.push(ViewItem::ActionFailure("You're not in a room.".to_string()));
     })?;
@@ -119,14 +119,14 @@ pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
                 TriggerCondition::Enter(previous_room_id),
             ],
         )?;
-        world.turn_count += 1;
+        return Ok(true);
     } else {
         view.push(ViewItem::ActionFailure(
             "You haven't been anywhere else yet.".to_string(),
         ));
     }
 
-    Ok(())
+    Ok(false)
 }
 
 /// Attempts to move the player in the specified direction.
@@ -184,7 +184,7 @@ pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
 /// - **Locked exit**: Exit exists but is currently locked
 /// - **Missing requirements**: Player lacks required items or flags
 /// - **Invalid destination**: Exit points to non-existent room (returns error)
-pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str) -> Result<()> {
+pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str) -> Result<bool> {
     let player_name = world.player.name.clone();
     let travel_message = world.spin_core(CoreSpinnerType::Movement, "You head that way...");
     let leaving_id = world.player.location.room_id().inspect_err(|_| {
@@ -207,15 +207,14 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
                 input_dir.error_style(),
                 world.spin_core(CoreSpinnerType::DestinationUnknown, "Which direction is that?")
             )));
-            return Ok(());
+            return Ok(false);
         }
     };
 
     if let Some(destination_exit) = destination_exit {
         if let Some(denial_reason) = exit_access_restriction(destination_exit, &world.player) {
             handle_barred_exit(world, view, &denial_reason, destination_exit)?;
-            world.turn_count += 1;
-            return Ok(());
+            return Ok(true);
         }
 
         let destination_id = destination_exit.to.clone();
@@ -257,9 +256,9 @@ pub fn move_to_handler(world: &mut AmbleWorld, view: &mut View, input_dir: &str)
             ],
         )?;
 
-        world.turn_count += 1;
+        return Ok(true);
     }
-    Ok(())
+    Ok(false)
 }
 
 /// Reasons a player may be denied access to an exit.

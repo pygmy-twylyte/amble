@@ -127,7 +127,7 @@ fn select_npc<'a>(location: &Location, world_npcs: &'a HashMap<NpcId, Npc>, quer
 ///
 /// # Errors
 /// Returns an error if trigger evaluation fails or if the player's current location cannot be resolved.
-pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) -> Result<()> {
+pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) -> Result<bool> {
     // find one that matches npc_name in present room
     let sent_id = if let Some(npc) = select_npc(world.player.location(), &world.npcs, npc_name) {
         // disallow talking to the dead
@@ -137,12 +137,12 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
                 "Sorry - {} is dead and there is no Ouija board in sight.",
                 npc.name().npc_style()
             )));
-            return Ok(());
+            return Ok(false);
         }
         npc.id.clone()
     } else {
         entity_not_found(world, view, npc_name);
-        return Ok(());
+        return Ok(false);
     };
 
     // set a movement pause for 4 turns so NPC doesn't run off mid-interaction
@@ -171,8 +171,7 @@ pub fn talk_to_handler(world: &mut AmbleWorld, view: &mut View, npc_name: &str) 
         });
         info!("NPC \"{}\" ({}) said \"{}\"", npc.name(), npc.symbol(), dialogue);
     }
-    world.turn_count += 1;
-    Ok(())
+    Ok(true)
 }
 
 /// Attempts to give an item from player inventory to an NPC.
@@ -232,7 +231,7 @@ pub fn give_to_npc_handler(
     view: &mut View,
     item_pattern: &str,
     npc_pattern: &str,
-) -> Result<()> {
+) -> Result<bool> {
     // find the target npc in the current room and collect metadata
     let room_id = world.player_room_id();
     let npc_id = match entity_search::find_npc_match(world, npc_pattern, SearchScope::TouchableNpcs(room_id)) {
@@ -245,13 +244,13 @@ pub fn give_to_npc_handler(
                     "Sorry -- {} is dead, and cannot accept your gift.",
                     npc.name().npc_style()
                 )));
-                return Ok(());
+                return Ok(false);
             }
             id
         },
         Err(SearchError::NoMatchingName(input)) => {
             entity_not_found(world, view, input.as_str());
-            return Ok(());
+            return Ok(false);
         },
         Err(e) => bail!(e),
     };
@@ -271,13 +270,13 @@ pub fn give_to_npc_handler(
                     "Sorry, the {} isn't transferrable. {reason}",
                     item.name().error_style()
                 )));
-                return Ok(());
+                return Ok(false);
             }
             id
         },
         Err(SearchError::NoMatchingName(input)) => {
             entity_not_found(world, view, input.as_str());
-            return Ok(());
+            return Ok(false);
         },
         Err(e) => bail!(e),
     };
@@ -302,8 +301,7 @@ pub fn give_to_npc_handler(
         // a generic refusal message is given but responses to specific items can be set in triggers
         show_npc_refusal(world, view, npc_id.clone(), item_id.clone())?;
     }
-    world.turn_count += 1;
-    Ok(())
+    Ok(true)
 }
 
 /// Displays NPC item refusal to the player and logs it.

@@ -55,7 +55,7 @@ use log::info;
 ///
 /// # Errors
 /// Returns an error if the player's current room cannot be resolved.
-pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
+pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<bool> {
     let room = world.player_room_ref()?;
     room.show(
         world,
@@ -77,8 +77,7 @@ pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     // and other non-event-driven triggers to fire -- so we check triggers with an empty
     // list of TriggerConditions.
     let _fired = check_triggers(world, view, &[]);
-    world.turn_count += 1;
-    Ok(())
+    Ok(true)
 }
 
 /// Shows description of something (scoped to nearby items and npcs and inventory)
@@ -87,7 +86,7 @@ pub fn look_handler(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
 /// Returns an error if the player's current room or the scoped items cannot be resolved.
 /// # Panics
 /// If a `.get()` call failed for some reason even after the ID was verified to exist
-pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
+pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<bool> {
     let room_id = world.player_room_id();
     let entity_id = match find_entity_match(world, thing, SearchScope::AllVisible(room_id)) {
         Ok(id) => id,
@@ -100,11 +99,10 @@ pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> 
                     description: desc,
                 });
                 info!("player looked at scenery item \"{}\"", entry.name);
-                world.turn_count += 1;
-                return Ok(());
+                return Ok(true);
             }
             entity_not_found(world, view, input.as_str());
-            return Ok(());
+            return Ok(false);
         },
         Err(e) => bail!(e),
     };
@@ -124,8 +122,7 @@ pub fn look_at_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> 
         },
     }
 
-    world.turn_count += 1;
-    Ok(())
+    Ok(true)
 }
 
 /// Lowercases and adds markup to an item name for display in default descriptions.
@@ -187,7 +184,7 @@ pub fn inv_handler(world: &AmbleWorld, view: &mut View) -> Result<()> {
 /// or if trigger evaluation encounters missing world entities.
 /// # Panics
 /// If an item lookup fails for some reason even after the item is found to exist
-pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<()> {
+pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> Result<bool> {
     let room_id = world.player_room_id();
     let item_id = match find_item_match(world, pattern, SearchScope::VisibleItems(room_id)) {
         Ok(uuid) => uuid,
@@ -197,11 +194,10 @@ pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
                 let desc = describe_scenery(room, world, entry);
                 view.push(ViewItem::ItemText(desc));
                 info!("{} read scenery \"{}\"", world.player.name(), entry.name);
-                world.turn_count += 1;
-                return Ok(());
+                return Ok(true);
             }
             entity_not_found(world, view, input.as_str());
-            return Ok(());
+            return Ok(false);
         },
         Err(e) => bail!(e),
     };
@@ -218,7 +214,7 @@ pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
             item.name(),
             item.symbol()
         );
-        return Ok(());
+        return Ok(false);
     }
 
     // check triggers for any DenyRead action that may have fired, and show the text if not
@@ -250,6 +246,5 @@ pub fn read_handler(world: &mut AmbleWorld, view: &mut View, pattern: &str) -> R
         info!("{} read '{}' ({})", world.player.name(), item.name(), item.symbol());
     }
 
-    world.turn_count += 1;
-    Ok(())
+    Ok(true)
 }
