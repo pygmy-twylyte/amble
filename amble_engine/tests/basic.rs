@@ -95,7 +95,7 @@ fn test_find_world_object() {
     let mut items = HashMap::new();
     items.insert(id.clone(), item);
     let npcs = HashMap::new();
-    let res = ae::repl::find_world_entity(
+    let res = ae::entity_search::find_world_entity(
         std::iter::once(&id),
         std::iter::empty::<&ae::NpcId>(),
         &items,
@@ -601,7 +601,7 @@ fn test_check_ambient_triggers() {
 fn test_entity_not_found() {
     let world = world::AmbleWorld::new_empty();
     let mut view = View::new();
-    ae::repl::entity_not_found(&world, &mut view, "test_entity");
+    ae::entity_search::entity_not_found(&world, &mut view, "test_entity");
     assert!(view.items.iter().any(|entry| {
         matches!(
             &entry.view_item,

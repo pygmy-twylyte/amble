@@ -39,9 +39,8 @@
 
 use crate::{
     AmbleWorld, View, ViewItem, WorldObject,
-    entity_search::{EntityId, SearchError, SearchScope, find_entity_match, find_item_match},
+    entity_search::{EntityId, SearchError, SearchScope, entity_not_found, find_entity_match, find_item_match},
     item::ItemAbility,
-    repl::entity_not_found,
     room::{Room, RoomScenery},
     style::GameStyle,
     trigger::{TriggerAction, TriggerCondition, check_triggers},

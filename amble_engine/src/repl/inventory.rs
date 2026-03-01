@@ -44,10 +44,11 @@
 
 use crate::{
     AmbleWorld, Item, ItemHolder, ItemId, Location, NpcId, View, ViewItem, WorldObject,
-    entity_search::{EntityId, SearchError, SearchScope, find_entity_match, find_item_match},
+    entity_search::{
+        EntityId, SearchError, SearchScope, WorldEntity, entity_not_found, find_entity_match, find_item_match,
+    },
     helpers::{name_from_id, symbol_or_unknown},
     item::{ItemAbility, ItemInteractionType, Movability},
-    repl::{WorldEntity, entity_not_found},
     spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers},

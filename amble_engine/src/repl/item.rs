@@ -49,10 +49,9 @@ use std::collections::{HashMap, HashSet};
 
 use crate::{
     AmbleWorld, ItemId, View, WorldObject,
-    entity_search::{self, SearchError, SearchScope},
+    entity_search::{self, SearchError, SearchScope, entity_not_found},
     helpers::plural_s,
     item::{ContainerState, IngestMode, Item, ItemAbility, ItemInteractionType, consume, interaction_requirement_met},
-    repl::entity_not_found,
     spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers, triggers_contain_condition},

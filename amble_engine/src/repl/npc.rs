@@ -48,12 +48,11 @@ use std::collections::HashMap;
 
 use crate::{
     AmbleWorld, ItemHolder, ItemId, Location, NpcId, View, ViewItem, WorldObject,
-    entity_search::{self, SearchError, SearchScope},
+    entity_search::{self, SearchError, SearchScope, entity_not_found},
     health::{LifeState, LivingEntity},
     helpers::symbol_or_unknown,
     item::Movability,
     npc::Npc,
-    repl::entity_not_found,
     spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{Trigger, TriggerAction, TriggerCondition, check_triggers, triggers_contain_condition},
