@@ -188,7 +188,8 @@ fn obtain_command(world: &AmbleWorld, view: &mut View, input_mgr: &mut InputMana
     let Some(input) = get_user_input(view, input_mgr, build_prompt(world)) else {
         return Ok(None);
     };
-    let command = parse_with_exit_fallback(world, view, input)?;
+    let command = parse_with_exit_fallback(world, view, input.clone())?;
+    info!("parsed input \"{input}\" ⇒ Command::{command:?}");
     Ok(Some(command))
 }
 
