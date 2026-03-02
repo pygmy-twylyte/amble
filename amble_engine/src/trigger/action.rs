@@ -3238,7 +3238,7 @@ mod tests {
         assert_eq!(world.scheduler.heap.len(), 1);
 
         let event = &world.scheduler.events[0];
-        assert_eq!(event.on_turn, world.turn_count + 5); // Should be current turn + 5
+        assert_eq!(event.on_turn, world.turn_count + 6); // one added in handler
         assert_eq!(event.actions.len(), 1);
         assert_eq!(event.note, Some("Test event".to_string()));
     }
@@ -3323,7 +3323,7 @@ mod tests {
 
         assert_eq!(world.scheduler.events.len(), 1);
         let event = &world.scheduler.events[0];
-        assert_eq!(event.on_turn, world.turn_count + 7);
+        assert_eq!(event.on_turn, world.turn_count + 8); // one added in handler
         assert_eq!(event.note, Some("Integration test".to_string()));
     }
 

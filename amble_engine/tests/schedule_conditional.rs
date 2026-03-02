@@ -92,7 +92,7 @@ fn schedule_in_if_retry_after() {
         .player
         .flags
         .insert(ae::player::Flag::simple("g", world.turn_count));
-    world.turn_count = 3;
+    world.turn_count = 4;
     ae::repl::check_scheduled_events(&mut world, &mut view).expect("check 3");
     assert!(view.items.iter().any(|entry| {
         matches!(
@@ -172,7 +172,7 @@ fn schedule_nested_all_any() {
     world.player.flags.insert(ae::player::Flag::simple("c", 0));
 
     dispatch_action(&mut world, &mut view, &stmt(action)).expect("dispatch");
-    world.turn_count = 1;
+    world.turn_count = 2;
     ae::repl::check_scheduled_events(&mut world, &mut view).expect("check");
     assert!(view.items.iter().any(|entry| {
         matches!(
