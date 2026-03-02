@@ -61,6 +61,7 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     // ---- enter main game loop here ----
     loop {
         turn_log_state.log_if_advanced(world)?;
+
         let Some(command) = obtain_command(world, &mut view, &mut input_manager)? else {
             continue;
         };
@@ -74,7 +75,6 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
             turn_log_state.resync(world);
         }
 
-        // fire actions that only take place when a game turn is taken
         if dispatch_result.turn_advanced {
             match run_timed_events(world, &mut view, &mut input_manager)? {
                 TimedEventsResult::Continue => {},
@@ -99,53 +99,27 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     Ok(())
 }
 
-enum TimedEventsResult {
-    Continue,
-    Quit,
-    WorldReloaded,
-}
-
-fn run_timed_events(
-    world: &mut AmbleWorld,
-    view: &mut View,
-    input_mgr: &mut InputManager,
-) -> Result<TimedEventsResult> {
-    let (player_died, death_events) = run_health_effects(world, view);
-    if !death_events.is_empty() {
-        check_triggers(world, view, &death_events)?;
+/// Returns the input prompt according to current player/world state.
+fn build_prompt(world: &AmbleWorld) -> String {
+    let mut status_effects = String::new();
+    for status in world.player.status() {
+        let s = format!(" [{}]", status.status_style());
+        status_effects.push_str(&s);
     }
-    if player_died {
-        view.flush();
-        return match handle_player_death(world, view, input_mgr) {
-            DeathReaction::WorldReloaded => Ok(TimedEventsResult::WorldReloaded),
-            DeathReaction::Quit => Ok(TimedEventsResult::Quit),
-        };
-    }
-    // move surviving npcs and fire scheduled events
-    check_npc_movement(world, view)?;
-    check_scheduled_events(world, view)?;
-    Ok(TimedEventsResult::Continue)
+
+    format!(
+        "\n[Turn {} | Health {}/{} | Score: {}{}]\n→ ",
+        world.turn_count,
+        world.player.health.current_hp(),
+        world.player.health.max_hp(),
+        world.player.score,
+        status_effects
+    )
+    .prompt_style()
+    .to_string()
 }
 
-fn obtain_command(world: &AmbleWorld, view: &mut View, input_mgr: &mut InputManager) -> Result<Option<Command>> {
-    let Some(input) = get_user_input(view, input_mgr, build_prompt(world)) else {
-        return Ok(None);
-    };
-    let command = parse_with_exit_fallback(world, view, input)?;
-    Ok(Some(command))
-}
-
-fn parse_with_exit_fallback(world: &AmbleWorld, view: &mut View, input: String) -> Result<Command> {
-    let input = expand_abbreviated_input(&input);
-    let mut command = parse_command(input, view);
-    if matches!(command, Command::Unknown)
-        && let Some(move_to_cmd) = check_for_exit_fallback(input, world.player_room_ref()?.exits.keys())
-    {
-        command = move_to_cmd;
-    }
-    Ok(command)
-}
-
+/// Prompts and returns the raw command input from the user.
 fn get_user_input(view: &mut View, input_manager: &mut InputManager, prompt: String) -> Option<String> {
     let Ok(input_event) = input_manager.read_line(&prompt) else {
         view.push(ViewItem::Error("Failed to read input. Try again.".red().to_string()));
@@ -164,18 +138,7 @@ fn get_user_input(view: &mut View, input_manager: &mut InputManager, prompt: Str
     Some(input)
 }
 
-/// Result returned from the command dispatcher.
-#[derive(Debug, Clone, PartialEq)]
-struct DispatchResult {
-    // Controls whether REPL should continue to run, or quit
-    control: ReplControl,
-    // True if the world was replaced (e.g. via load command), requiring turn-log resync.
-    world_reloaded: bool,
-    // True if the turn # was advanced this time around the REPL
-    turn_advanced: bool,
-}
-
-/// Checks for an abbreviated command input and expand it as appropriate
+/// Checks for an abbreviated (single character) command input and expand it as appropriate
 fn expand_abbreviated_input(input: &str) -> &str {
     match input {
         "l" => "look",
@@ -199,6 +162,45 @@ fn check_for_exit_fallback<'a>(input: &str, directions: impl Iterator<Item = &'a
         return None;
     }
     Some(Command::MoveTo(dir_matches[0].clone()))
+}
+
+/// Parses input text into a Command variant, falling back to a MoveTo command if one of the
+/// current room's exits matches the input.
+fn parse_with_exit_fallback(world: &AmbleWorld, view: &mut View, input: String) -> Result<Command> {
+    let input = expand_abbreviated_input(&input);
+    let mut command = parse_command(input, view);
+    if matches!(command, Command::Unknown)
+        && let Some(move_to_cmd) = check_for_exit_fallback(input, world.player_room_ref()?.exits.keys())
+    {
+        command = move_to_cmd;
+    }
+    Ok(command)
+}
+
+/// Obtains input from the player and parses it into a Command variant.
+///
+/// Returns Ok(None) if no user input is obtained / command is cancelled with ctrl-c.
+/// Returns Ok(Some(Command)) if a Command variant could be constructed from user input.
+///
+/// # Errors
+/// - if player's room is invalid (propagated from `parse_with_exit_fallback()`)
+fn obtain_command(world: &AmbleWorld, view: &mut View, input_mgr: &mut InputManager) -> Result<Option<Command>> {
+    let Some(input) = get_user_input(view, input_mgr, build_prompt(world)) else {
+        return Ok(None);
+    };
+    let command = parse_with_exit_fallback(world, view, input)?;
+    Ok(Some(command))
+}
+
+/// Result returned from the command dispatcher.
+#[derive(Debug, Clone, PartialEq)]
+struct DispatchResult {
+    // Controls whether REPL should continue to run, or quit
+    control: ReplControl,
+    // True if the world was replaced (e.g. via load command), requiring turn-log resync.
+    world_reloaded: bool,
+    // True if the turn # was advanced this time around the REPL
+    turn_advanced: bool,
 }
 
 /// Dispatch a `Command` to its appropriate handler.
@@ -296,7 +298,7 @@ fn dispatch_command(command: &Command, world: &mut AmbleWorld, view: &mut View) 
     Ok(dr)
 }
 
-/// Tracks when the REPL has already emitted a turn-divider header.
+/// Tracks when the REPL needs to emit a turn-divider header to the game log.
 struct TurnLogState {
     last_logged_turn: usize,
 }
@@ -330,24 +332,40 @@ impl TurnLogState {
     }
 }
 
-/// Returns the input prompt according to current player/world state.
-fn build_prompt(world: &AmbleWorld) -> String {
-    let mut status_effects = String::new();
-    for status in world.player.status() {
-        let s = format!(" [{}]", status.status_style());
-        status_effects.push_str(&s);
-    }
+/// Overall result of running all timed events for this turn.
+enum TimedEventsResult {
+    /// Continue looping REPL as usual
+    Continue,
+    /// Quit game (may be chosen if player is killed by a timed event)
+    Quit,
+    /// World state has been reloaded from file (after player death)
+    WorldReloaded,
+}
 
-    format!(
-        "\n[Turn {} | Health {}/{} | Score: {}{}]\n→ ",
-        world.turn_count,
-        world.player.health.current_hp(),
-        world.player.health.max_hp(),
-        world.player.score,
-        status_effects
-    )
-    .prompt_style()
-    .to_string()
+/// Process any turn-based events that are due this turn.
+/// - ticks health effects (damage/heal over time) and handles any deaths
+/// - moves NPCs scheduled to do so
+/// - fires due events from the scheduler
+fn run_timed_events(
+    world: &mut AmbleWorld,
+    view: &mut View,
+    input_mgr: &mut InputManager,
+) -> Result<TimedEventsResult> {
+    let (player_died, death_events) = run_health_effects(world, view);
+    if !death_events.is_empty() {
+        check_triggers(world, view, &death_events)?;
+    }
+    if player_died {
+        view.flush();
+        return match handle_player_death(world, view, input_mgr) {
+            DeathReaction::WorldReloaded => Ok(TimedEventsResult::WorldReloaded),
+            DeathReaction::Quit => Ok(TimedEventsResult::Quit),
+        };
+    }
+    // move surviving npcs and fire scheduled events
+    check_npc_movement(world, view)?;
+    check_scheduled_events(world, view)?;
+    Ok(TimedEventsResult::Continue)
 }
 
 /// Apply and update health effects for all `LivingEntity` (player and NPCs)
@@ -397,6 +415,79 @@ fn run_health_effects(world: &mut AmbleWorld, view: &mut View) -> (bool, Vec<Tri
     }
 
     (player_died, death_events)
+}
+
+/// User's response to the death prompt.
+enum DeathReaction {
+    /// Game loaded/restarted and world state was replaced.
+    WorldReloaded,
+    /// User wants to quit.
+    Quit,
+}
+
+/// Notifies the player that their character has died and prompts for a decision
+/// on how to continue.
+///
+/// Returns a `DeathReaction` variant to indicate how the REPL should continue.
+fn handle_player_death(world: &mut AmbleWorld, view: &mut View, input_manager: &mut InputManager) -> DeathReaction {
+    crate::repl::system::push_quit_summary(world, view);
+    view.push(ViewItem::EngineMessage(
+        "You have died. Type 'load <slot>', 'restart', or 'quit'.".to_string(),
+    ));
+    view.flush();
+
+    loop {
+        let prompt = "[dead] load <slot> | restart | quit >> ";
+        let Ok(input_event) = input_manager.read_line(prompt) else {
+            return DeathReaction::Quit;
+        };
+        let mut line = match input_event {
+            InputEvent::Line(line) => line,
+            InputEvent::Eof | InputEvent::Interrupted => return DeathReaction::Quit,
+        };
+        if !line.ends_with('\n') {
+            line.push('\n');
+        }
+        let trimmed = line.trim();
+
+        if trimmed.eq_ignore_ascii_case("quit") {
+            return DeathReaction::Quit;
+        }
+
+        if trimmed.eq_ignore_ascii_case("restart") {
+            match load_world() {
+                Ok(mut new_world) => {
+                    new_world.turn_count = 1;
+                    crate::save_files::set_active_save_dir(crate::save_files::save_dir_for_world(&new_world));
+                    *world = new_world;
+                    view.push(ViewItem::EngineMessage("Restarted from the beginning.".to_string()));
+                    return DeathReaction::WorldReloaded;
+                },
+                Err(err) => {
+                    view.push(ViewItem::Error(format!("Failed to restart: {err}")));
+                    view.flush();
+                    continue;
+                },
+            }
+        }
+
+        if let Some(rest) = trimmed.strip_prefix("load") {
+            let slot = rest.trim();
+            let slot = if slot.is_empty() { "autosave" } else { slot };
+            if crate::repl::system::load_handler(world, view, slot) {
+                return DeathReaction::WorldReloaded;
+            }
+            view.push(ViewItem::EngineMessage(format!(
+                "Unable to resume from {}. Try another option.",
+                slot.error_style()
+            )));
+        }
+
+        view.push(ViewItem::EngineMessage(
+            "Please enter 'load <slot>', 'restart', or 'quit'.".to_string(),
+        ));
+        view.flush();
+    }
 }
 
 /// Check the scheduler for any due events and fire them.
@@ -536,79 +627,6 @@ pub fn check_ambient_triggers(world: &mut AmbleWorld, view: &mut View) -> Result
         }
     }
     Ok(())
-}
-
-/// User's response to the death prompt.
-enum DeathReaction {
-    /// Game loaded/restarted and world state was replaced.
-    WorldReloaded,
-    /// User wants to quit.
-    Quit,
-}
-
-/// Notifies the player that their character has died and prompts for a decision
-/// on how to continue.
-///
-/// Returns a `DeathReaction` variant to indicate how the REPL should continue.
-fn handle_player_death(world: &mut AmbleWorld, view: &mut View, input_manager: &mut InputManager) -> DeathReaction {
-    crate::repl::system::push_quit_summary(world, view);
-    view.push(ViewItem::EngineMessage(
-        "You have died. Type 'load <slot>', 'restart', or 'quit'.".to_string(),
-    ));
-    view.flush();
-
-    loop {
-        let prompt = "[dead] load <slot> | restart | quit >> ";
-        let Ok(input_event) = input_manager.read_line(prompt) else {
-            return DeathReaction::Quit;
-        };
-        let mut line = match input_event {
-            InputEvent::Line(line) => line,
-            InputEvent::Eof | InputEvent::Interrupted => return DeathReaction::Quit,
-        };
-        if !line.ends_with('\n') {
-            line.push('\n');
-        }
-        let trimmed = line.trim();
-
-        if trimmed.eq_ignore_ascii_case("quit") {
-            return DeathReaction::Quit;
-        }
-
-        if trimmed.eq_ignore_ascii_case("restart") {
-            match load_world() {
-                Ok(mut new_world) => {
-                    new_world.turn_count = 1;
-                    crate::save_files::set_active_save_dir(crate::save_files::save_dir_for_world(&new_world));
-                    *world = new_world;
-                    view.push(ViewItem::EngineMessage("Restarted from the beginning.".to_string()));
-                    return DeathReaction::WorldReloaded;
-                },
-                Err(err) => {
-                    view.push(ViewItem::Error(format!("Failed to restart: {err}")));
-                    view.flush();
-                    continue;
-                },
-            }
-        }
-
-        if let Some(rest) = trimmed.strip_prefix("load") {
-            let slot = rest.trim();
-            let slot = if slot.is_empty() { "autosave" } else { slot };
-            if crate::repl::system::load_handler(world, view, slot) {
-                return DeathReaction::WorldReloaded;
-            }
-            view.push(ViewItem::EngineMessage(format!(
-                "Unable to resume from {}. Try another option.",
-                slot.error_style()
-            )));
-        }
-
-        view.push(ViewItem::EngineMessage(
-            "Please enter 'load <slot>', 'restart', or 'quit'.".to_string(),
-        ));
-        view.flush();
-    }
 }
 
 #[cfg(test)]
