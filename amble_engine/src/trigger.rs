@@ -111,10 +111,15 @@ fn log_firing_triggers(triggers: &[Trigger], plan: &FirePlan) {
         .trig_indices
         .iter()
         .map(|i| triggers[*i].name.clone())
-        .collect::<Vec<_>>()
-        .join(",");
-    let count = plan.trig_indices.iter().count();
-    info!("{count} Trigger{} firing: {names}", plural_s(count as isize));
+        .collect::<Vec<_>>();
+    if !names.is_empty() {
+        let count = names.len();
+        info!(
+            "{count} Trigger{} firing: {}",
+            plural_s(count as isize),
+            names.join(" & ")
+        );
+    }
 }
 
 #[cfg(test)]

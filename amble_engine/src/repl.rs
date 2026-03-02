@@ -25,18 +25,15 @@ pub use system::*;
 use crate::command::{Command, parse_command};
 use crate::health::{LifeState, LivingEntity};
 use crate::loader::load_world;
-use crate::npc::{Npc, calculate_next_location, move_npc, move_scheduled};
+use crate::npc::{calculate_next_location, move_npc, move_scheduled};
 use crate::scheduler::OnFalsePolicy;
 use crate::spinners::CoreSpinnerType;
 use crate::style::GameStyle;
 use crate::trigger::{TriggerCondition, check_triggers, dispatch_action};
 use crate::world::AmbleWorld;
-use crate::{EntityId, Item, ItemId, NpcId, View, ViewItem, WorldObject};
+use crate::{NpcId, View, ViewItem, WorldObject};
 use anyhow::Result;
 use colored::Colorize;
-use std::collections::HashMap;
-use std::hash::BuildHasher;
-use variantly::Variantly;
 
 use input::{InputEvent, InputManager};
 
@@ -59,70 +56,35 @@ pub enum ReplControl {
 pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     let mut view = View::new();
     let mut input_manager = InputManager::new();
-    if world.turn_count == 0 {
-        world.turn_count = 1;
-    }
-    let mut current_turn = world.turn_count.saturating_sub(1);
+    world.turn_count = world.turn_count.max(1);
+    let mut turn_log_state = TurnLogState::new(world);
     // ---- enter main game loop here ----
     loop {
-        current_turn = turn_update(world, current_turn);
-        let prompt = build_prompt(world);
-        let Ok(input_event) = input_manager.read_line(&prompt) else {
-            view.push(ViewItem::Error("Failed to read input. Try again.".red().to_string()));
-            view.flush();
+        turn_log_state.log_if_advanced(world)?;
+
+        let Some(command) = obtain_command(world, &mut view, &mut input_manager)? else {
             continue;
         };
-
-        let input = match input_event {
-            InputEvent::Line(line) => line,
-            InputEvent::Eof => "quit".to_string(),
-            InputEvent::Interrupted => {
-                view.push(ViewItem::EngineMessage("Command canceled.".to_string()));
-                view.flush();
-                continue;
-            },
-        };
-
-        info!("player entered: \"{input}\"");
-
-        let input = expand_abbreviated_input(&input);
-        let mut command = parse_command(input, &mut view);
-        if matches!(command, Command::Unknown)
-            && let Some(move_to_cmd) = check_for_exit_fallback(input, world.player_room_ref()?.exits.keys())
-        {
-            command = move_to_cmd;
-        }
 
         let dispatch_result = dispatch_command(&command, world, &mut view)?;
         if dispatch_result.control == ReplControl::Quit {
             view.flush();
             break;
         }
-        if let Some(loaded_turn) = dispatch_result.turn {
-            current_turn = loaded_turn;
+        if dispatch_result.world_reloaded {
+            turn_log_state.resync(world);
         }
 
-        // fire actions that only take place when a game turn is taken
-        if world.turn_count > current_turn {
-            // apply all pending health effects and fire any death triggers
-            let (player_died, death_events) = run_health_effects(world, &mut view);
-            if !death_events.is_empty() {
-                check_triggers(world, &mut view, &death_events)?;
+        if dispatch_result.turn_advanced {
+            match run_timed_events(world, &mut view, &mut input_manager)? {
+                TimedEventsResult::Continue => {},
+                TimedEventsResult::Quit => break,
+                TimedEventsResult::WorldReloaded => {
+                    turn_log_state.resync(world);
+                    view.flush();
+                    continue;
+                },
             }
-            // if player died, flush the view, pause the REPL and ask how to continue
-            if player_died {
-                view.flush();
-                if matches!(
-                    handle_player_death(world, &mut view, &mut input_manager, &mut current_turn),
-                    ReplControl::Quit
-                ) {
-                    break;
-                }
-                continue;
-            }
-            // move surviving npcs and fire scheduled events
-            check_npc_movement(world, &mut view)?;
-            check_scheduled_events(world, &mut view)?;
             // autosave if appropriate
             if world.turn_count.is_multiple_of(AUTOSAVE_TURNS)
                 && let Err(err) = crate::repl::system::autosave_quiet(world, "autosave")
@@ -137,16 +99,46 @@ pub fn run_repl(world: &mut AmbleWorld) -> Result<()> {
     Ok(())
 }
 
-/// Result returned from the command dispatcher.
-#[derive(Debug, Clone, PartialEq)]
-struct DispatchResult {
-    // Controls whether REPL should continue to run, or quit
-    control: ReplControl,
-    // Turn number update, if any (needed if game reloaded from file).
-    turn: Option<usize>,
+/// Returns the input prompt according to current player/world state.
+fn build_prompt(world: &AmbleWorld) -> String {
+    let mut status_effects = String::new();
+    for status in world.player.status() {
+        let s = format!(" [{}]", status.status_style());
+        status_effects.push_str(&s);
+    }
+
+    format!(
+        "\n[Turn {} | Health {}/{} | Score: {}{}]\n→ ",
+        world.turn_count,
+        world.player.health.current_hp(),
+        world.player.health.max_hp(),
+        world.player.score,
+        status_effects
+    )
+    .prompt_style()
+    .to_string()
 }
 
-/// Checks for an abbreviated command input and expand it as appropriate
+/// Prompts and returns the raw command input from the user.
+fn get_user_input(view: &mut View, input_manager: &mut InputManager, prompt: String) -> Option<String> {
+    let Ok(input_event) = input_manager.read_line(&prompt) else {
+        view.push(ViewItem::Error("Failed to read input. Try again.".red().to_string()));
+        view.flush();
+        return None;
+    };
+    let input = match input_event {
+        InputEvent::Line(line) => line,
+        InputEvent::Eof => "quit".to_string(),
+        InputEvent::Interrupted => {
+            view.push(ViewItem::EngineMessage("Command canceled.".to_string()));
+            view.flush();
+            return None;
+        },
+    };
+    Some(input)
+}
+
+/// Checks for an abbreviated (single character) command input and expand it as appropriate
 fn expand_abbreviated_input(input: &str) -> &str {
     match input {
         "l" => "look",
@@ -172,6 +164,46 @@ fn check_for_exit_fallback<'a>(input: &str, directions: impl Iterator<Item = &'a
     Some(Command::MoveTo(dir_matches[0].clone()))
 }
 
+/// Parses input text into a Command variant, falling back to a MoveTo command if one of the
+/// current room's exits matches the input.
+fn parse_with_exit_fallback(world: &AmbleWorld, view: &mut View, input: String) -> Result<Command> {
+    let input = expand_abbreviated_input(&input);
+    let mut command = parse_command(input, view);
+    if matches!(command, Command::Unknown)
+        && let Some(move_to_cmd) = check_for_exit_fallback(input, world.player_room_ref()?.exits.keys())
+    {
+        command = move_to_cmd;
+    }
+    Ok(command)
+}
+
+/// Obtains input from the player and parses it into a Command variant.
+///
+/// Returns Ok(None) if no user input is obtained / command is cancelled with ctrl-c.
+/// Returns Ok(Some(Command)) if a Command variant could be constructed from user input.
+///
+/// # Errors
+/// - if player's room is invalid (propagated from `parse_with_exit_fallback()`)
+fn obtain_command(world: &AmbleWorld, view: &mut View, input_mgr: &mut InputManager) -> Result<Option<Command>> {
+    let Some(input) = get_user_input(view, input_mgr, build_prompt(world)) else {
+        return Ok(None);
+    };
+    let command = parse_with_exit_fallback(world, view, input.clone())?;
+    info!("parsed input \"{input}\" ⇒ Command::{command:?}");
+    Ok(Some(command))
+}
+
+/// Result returned from the command dispatcher.
+#[derive(Debug, Clone, PartialEq)]
+struct DispatchResult {
+    // Controls whether REPL should continue to run, or quit
+    control: ReplControl,
+    // True if the world was replaced (e.g. via load command), requiring turn-log resync.
+    world_reloaded: bool,
+    // True if the turn # was advanced this time around the REPL
+    turn_advanced: bool,
+}
+
 /// Dispatch a `Command` to its appropriate handler.
 ///
 /// # Errors
@@ -181,10 +213,27 @@ fn dispatch_command(command: &Command, world: &mut AmbleWorld, view: &mut View) 
     use Command::*;
     let mut dr = DispatchResult {
         control: ReplControl::Continue,
-        turn: None,
+        world_reloaded: false,
+        turn_advanced: false,
     };
+
+    let mut run_turn_advancing_handler = |handler: &mut dyn FnMut(&mut AmbleWorld, &mut View) -> Result<bool>| {
+        world.turn_count = world.turn_count.saturating_add(1);
+        match handler(world, view) {
+            Ok(true) => Ok(true),
+            Ok(false) => {
+                world.turn_count = world.turn_count.saturating_sub(1);
+                Ok(false)
+            },
+            Err(e) => {
+                world.turn_count = world.turn_count.saturating_sub(1);
+                Err(e)
+            },
+        }
+    };
+
     match &command {
-        Touch(thing) => touch_handler(world, view, thing)?,
+        Touch(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| touch_handler(w, v, thing))?,
         SetViewMode(mode) => set_viewmode_handler(view, *mode),
         Goals => goals_handler(world, view),
         Help => help_handler(view),
@@ -194,18 +243,24 @@ fn dispatch_command(command: &Command, world: &mut AmbleWorld, view: &mut View) 
                 dr.control = ReplControl::Quit;
             }
         },
-        Look => look_handler(world, view)?,
-        LookAt(thing) => look_at_handler(world, view, thing)?,
-        GoBack => go_back_handler(world, view)?,
-        MoveTo(direction) => move_to_handler(world, view, direction)?,
-        Take(thing) => take_handler(world, view, thing)?,
-        TakeFrom { item, container } => take_from_handler(world, view, item, container)?,
-        Drop(thing) => drop_handler(world, view, thing)?,
-        PutIn { item, container } => put_in_handler(world, view, item, container)?,
-        Open(thing) => open_handler(world, view, thing)?,
-        Close(thing) => close_handler(world, view, thing)?,
-        LockItem(thing) => lock_handler(world, view, thing)?,
-        UnlockItem(thing) => unlock_handler(world, view, thing)?,
+        Look => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| look_handler(w, v))?,
+        LookAt(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| look_at_handler(w, v, thing))?,
+        GoBack => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| go_back_handler(w, v))?,
+        MoveTo(direction) => {
+            dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| move_to_handler(w, v, direction))?
+        },
+        Take(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| take_handler(w, v, thing))?,
+        TakeFrom { item, container } => {
+            dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| take_from_handler(w, v, item, container))?;
+        },
+        Drop(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| drop_handler(w, v, thing))?,
+        PutIn { item, container } => {
+            dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| put_in_handler(w, v, item, container))?;
+        },
+        Open(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| open_handler(w, v, thing))?,
+        Close(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| close_handler(w, v, thing))?,
+        LockItem(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| lock_handler(w, v, thing))?,
+        UnlockItem(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| unlock_handler(w, v, thing))?,
         Inventory => inv_handler(world, view)?,
         ListSaves => list_saves_handler(world, view),
         Unknown => {
@@ -216,28 +271,34 @@ fn dispatch_command(command: &Command, world: &mut AmbleWorld, view: &mut View) 
                     .to_string(),
             ));
         },
-        TalkTo(npc_name) => talk_to_handler(world, view, npc_name)?,
-        GiveToNpc { item, npc } => give_to_npc_handler(world, view, item, npc)?,
-        TurnOn(thing) => turn_on_handler(world, view, thing)?,
-        TurnOff(thing) => turn_off_handler(world, view, thing)?,
-        Read(thing) => read_handler(world, view, thing)?,
+        TalkTo(npc_name) => {
+            dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| talk_to_handler(w, v, npc_name))?;
+        },
+        GiveToNpc { item, npc } => {
+            dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| give_to_npc_handler(w, v, item, npc))?;
+        },
+        TurnOn(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| turn_on_handler(w, v, thing))?,
+        TurnOff(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| turn_off_handler(w, v, thing))?,
+        Read(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| read_handler(w, v, thing))?,
         Load(gamefile) => {
-            if !load_handler(world, view, gamefile) {
+            if load_handler(world, view, gamefile) {
+                dr.world_reloaded = true;
+            } else {
                 view.push(ViewItem::EngineMessage(
                     format!("- error loading world from '{gamefile}' -")
                         .error_style()
                         .to_string(),
                 ));
             }
-            // re-sync current turn to loaded game
-            dr.turn = Some(world.turn_count.saturating_sub(1));
         },
         Save(gamefile) => save_handler(world, view, gamefile)?,
         Theme(theme_name) => theme_handler(view, theme_name)?,
         UseItemOn { verb, tool, target } => {
-            use_item_on_handler(world, view, *verb, tool, target)?;
+            dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| use_item_on_handler(w, v, *verb, tool, target))?;
         },
-        Ingest { item, mode } => ingest_handler(world, view, item, *mode)?,
+        Ingest { item, mode } => {
+            dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| ingest_handler(w, v, item, *mode))?;
+        },
         // Commands below only available when crate::DEV_MODE is enabled.
         SpawnItem(item_symbol) => dev_spawn_item_handler(world, view, item_symbol),
         Teleport(room_symbol) => dev_teleport_handler(world, view, room_symbol),
@@ -255,39 +316,74 @@ fn dispatch_command(command: &Command, world: &mut AmbleWorld, view: &mut View) 
     Ok(dr)
 }
 
-/// Updates current turn number and adds turn divider to the log.
-fn turn_update(world: &mut AmbleWorld, mut turn: usize) -> usize {
-    if world.turn_count > turn {
-        turn += 1;
-        let loc = world.player_room_ref().expect("player room should exist").name();
-        info!(
-            "\n====================> BEGIN TURN {turn} <====================\nLocation: '{loc}' | Health {}/{} | Score {}",
-            world.player.current_hp(),
-            world.player.max_hp(),
-            world.player.score
-        );
-    }
-    turn
+/// Tracks when the REPL needs to emit a turn-divider header to the game log.
+struct TurnLogState {
+    last_logged_turn: usize,
 }
 
-/// Returns the input prompt according to current player/world state.
-fn build_prompt(world: &mut AmbleWorld) -> String {
-    let mut status_effects = String::new();
-    for status in world.player.status() {
-        let s = format!(" [{}]", status.status_style());
-        status_effects.push_str(&s);
+impl TurnLogState {
+    fn new(world: &AmbleWorld) -> Self {
+        Self {
+            last_logged_turn: world.turn_count.saturating_sub(1),
+        }
     }
 
-    format!(
-        "\n[Turn {} | Health {}/{} | Score: {}{}]\n→ ",
-        world.turn_count,
-        world.player.health.current_hp(),
-        world.player.health.max_hp(),
-        world.player.score,
-        status_effects
-    )
-    .prompt_style()
-    .to_string()
+    /// Resync tracker after replacing world state (load/restart).
+    fn resync(&mut self, world: &AmbleWorld) {
+        self.last_logged_turn = world.turn_count.saturating_sub(1);
+    }
+
+    /// Emit turn-divider header once when world turn advances.
+    fn log_if_advanced(&mut self, world: &AmbleWorld) -> Result<()> {
+        if world.turn_count > self.last_logged_turn {
+            self.last_logged_turn = world.turn_count;
+            let loc = world.player_room_ref()?.name();
+            let turn = world.turn_count;
+            info!(
+                "\n====================> BEGIN TURN {turn} <====================\nLocation: '{loc}' | Health {}/{} | Score {}",
+                world.player.current_hp(),
+                world.player.max_hp(),
+                world.player.score
+            );
+        }
+        Ok(())
+    }
+}
+
+/// Overall result of running all timed events for this turn.
+enum TimedEventsResult {
+    /// Continue looping REPL as usual
+    Continue,
+    /// Quit game (may be chosen if player is killed by a timed event)
+    Quit,
+    /// World state has been reloaded from file (after player death)
+    WorldReloaded,
+}
+
+/// Process any turn-based events that are due this turn.
+/// - ticks health effects (damage/heal over time) and handles any deaths
+/// - moves NPCs scheduled to do so
+/// - fires due events from the scheduler
+fn run_timed_events(
+    world: &mut AmbleWorld,
+    view: &mut View,
+    input_mgr: &mut InputManager,
+) -> Result<TimedEventsResult> {
+    let (player_died, death_events) = run_health_effects(world, view);
+    if !death_events.is_empty() {
+        check_triggers(world, view, &death_events)?;
+    }
+    if player_died {
+        view.flush();
+        return match handle_player_death(world, view, input_mgr) {
+            DeathReaction::WorldReloaded => Ok(TimedEventsResult::WorldReloaded),
+            DeathReaction::Quit => Ok(TimedEventsResult::Quit),
+        };
+    }
+    // move surviving npcs and fire scheduled events
+    check_npc_movement(world, view)?;
+    check_scheduled_events(world, view)?;
+    Ok(TimedEventsResult::Continue)
 }
 
 /// Apply and update health effects for all `LivingEntity` (player and NPCs)
@@ -337,6 +433,79 @@ fn run_health_effects(world: &mut AmbleWorld, view: &mut View) -> (bool, Vec<Tri
     }
 
     (player_died, death_events)
+}
+
+/// User's response to the death prompt.
+enum DeathReaction {
+    /// Game loaded/restarted and world state was replaced.
+    WorldReloaded,
+    /// User wants to quit.
+    Quit,
+}
+
+/// Notifies the player that their character has died and prompts for a decision
+/// on how to continue.
+///
+/// Returns a `DeathReaction` variant to indicate how the REPL should continue.
+fn handle_player_death(world: &mut AmbleWorld, view: &mut View, input_manager: &mut InputManager) -> DeathReaction {
+    crate::repl::system::push_quit_summary(world, view);
+    view.push(ViewItem::EngineMessage(
+        "You have died. Type 'load <slot>', 'restart', or 'quit'.".to_string(),
+    ));
+    view.flush();
+
+    loop {
+        let prompt = "[dead] load <slot> | restart | quit >> ";
+        let Ok(input_event) = input_manager.read_line(prompt) else {
+            return DeathReaction::Quit;
+        };
+        let mut line = match input_event {
+            InputEvent::Line(line) => line,
+            InputEvent::Eof | InputEvent::Interrupted => return DeathReaction::Quit,
+        };
+        if !line.ends_with('\n') {
+            line.push('\n');
+        }
+        let trimmed = line.trim();
+
+        if trimmed.eq_ignore_ascii_case("quit") {
+            return DeathReaction::Quit;
+        }
+
+        if trimmed.eq_ignore_ascii_case("restart") {
+            match load_world() {
+                Ok(mut new_world) => {
+                    new_world.turn_count = 1;
+                    crate::save_files::set_active_save_dir(crate::save_files::save_dir_for_world(&new_world));
+                    *world = new_world;
+                    view.push(ViewItem::EngineMessage("Restarted from the beginning.".to_string()));
+                    return DeathReaction::WorldReloaded;
+                },
+                Err(err) => {
+                    view.push(ViewItem::Error(format!("Failed to restart: {err}")));
+                    view.flush();
+                    continue;
+                },
+            }
+        }
+
+        if let Some(rest) = trimmed.strip_prefix("load") {
+            let slot = rest.trim();
+            let slot = if slot.is_empty() { "autosave" } else { slot };
+            if crate::repl::system::load_handler(world, view, slot) {
+                return DeathReaction::WorldReloaded;
+            }
+            view.push(ViewItem::EngineMessage(format!(
+                "Unable to resume from {}. Try another option.",
+                slot.error_style()
+            )));
+        }
+
+        view.push(ViewItem::EngineMessage(
+            "Please enter 'load <slot>', 'restart', or 'quit'.".to_string(),
+        ));
+        view.flush();
+    }
 }
 
 /// Check the scheduler for any due events and fire them.
@@ -478,145 +647,123 @@ pub fn check_ambient_triggers(world: &mut AmbleWorld, view: &mut View) -> Result
     Ok(())
 }
 
-/// Determine how to proceed when the player dies.
-///
-/// Returns a `ReplControl` variant to indicate whether the REPL should continue to run or exit.
-fn handle_player_death(
-    world: &mut AmbleWorld,
-    view: &mut View,
-    input_manager: &mut InputManager,
-    current_turn: &mut usize,
-) -> ReplControl {
-    crate::repl::system::push_quit_summary(world, view);
-    view.push(ViewItem::EngineMessage(
-        "You have died. Type 'load <slot>', 'restart', or 'quit'.".to_string(),
-    ));
-    view.flush();
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::RoomId;
+    use crate::room::{Exit, Room};
+    use crate::world::Location;
+    use std::collections::{HashMap, HashSet};
 
-    loop {
-        let prompt = "[dead] load <slot> | restart | quit >> ";
-        let Ok(input_event) = input_manager.read_line(prompt) else {
-            return ReplControl::Quit;
+    fn build_test_world() -> (AmbleWorld, RoomId, RoomId) {
+        let mut world = AmbleWorld::new_empty();
+        world.turn_count = 1;
+
+        let room1_id = crate::idgen::new_room_id();
+        let room2_id = crate::idgen::new_room_id();
+
+        let room1 = Room {
+            id: room1_id.clone(),
+            symbol: "r1".into(),
+            name: "Room1".into(),
+            base_description: "Room1".into(),
+            overlays: Vec::new(),
+            scenery: Vec::new(),
+            scenery_default: None,
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
         };
-        let mut line = match input_event {
-            InputEvent::Line(line) => line,
-            InputEvent::Eof | InputEvent::Interrupted => return ReplControl::Quit,
+        let room2 = Room {
+            id: room2_id.clone(),
+            symbol: "r2".into(),
+            name: "Room2".into(),
+            base_description: "Room2".into(),
+            overlays: Vec::new(),
+            scenery: Vec::new(),
+            scenery_default: None,
+            location: Location::Nowhere,
+            visited: false,
+            exits: HashMap::new(),
+            contents: HashSet::new(),
+            npcs: HashSet::new(),
         };
-        if !line.ends_with('\n') {
-            line.push('\n');
-        }
-        let trimmed = line.trim();
 
-        if trimmed.eq_ignore_ascii_case("quit") {
-            return ReplControl::Quit;
-        }
-
-        if trimmed.eq_ignore_ascii_case("restart") {
-            match load_world() {
-                Ok(mut new_world) => {
-                    new_world.turn_count = 1;
-                    crate::save_files::set_active_save_dir(crate::save_files::save_dir_for_world(&new_world));
-                    *world = new_world;
-                    *current_turn = world.turn_count.saturating_sub(1);
-                    view.push(ViewItem::EngineMessage("Restarted from the beginning.".to_string()));
-                    return ReplControl::Continue;
-                },
-                Err(err) => {
-                    view.push(ViewItem::Error(format!("Failed to restart: {err}")));
-                    view.flush();
-                    continue;
-                },
-            }
-        }
-
-        if let Some(rest) = trimmed.strip_prefix("load") {
-            let slot = rest.trim();
-            let slot = if slot.is_empty() { "autosave" } else { slot };
-            if crate::repl::system::load_handler(world, view, slot) {
-                *current_turn = world.turn_count.saturating_sub(1);
-                return ReplControl::Continue;
-            }
-            view.push(ViewItem::EngineMessage(format!(
-                "Unable to resume from {}. Try another option.",
-                slot.error_style()
-            )));
-        }
-
-        view.push(ViewItem::EngineMessage(
-            "Please enter 'load <slot>', 'restart', or 'quit'.".to_string(),
-        ));
-        view.flush();
+        world.rooms.insert(room1_id.clone(), room1);
+        world.rooms.insert(room2_id.clone(), room2);
+        world.player.location = Location::Room(room1_id.clone());
+        (world, room1_id, room2_id)
     }
-}
 
-/// Returns true if there is no `Chance` within `conditions`, or if the `Chance` "roll" returns true.
-/// Returns false only if there is a `Chance` condition present *and* it "rolls" false.
-/// Encapsulates references to different types of `WorldObjects` to allow search across different types.
-#[derive(Debug, Variantly, Clone, Copy)]
-pub enum WorldEntity<'a> {
-    Item(&'a Item),
-    Npc(&'a Npc),
-}
-impl WorldEntity<'_> {
-    /// Get the name of the entity
-    pub fn name(&self) -> &str {
-        match self {
-            WorldEntity::Item(item) => item.name(),
-            WorldEntity::Npc(npc) => npc.name(),
-        }
-    }
-    /// Get the typed id of the entity.
-    pub fn entity_id(&self) -> EntityId {
-        match self {
-            WorldEntity::Item(item) => EntityId::Item(item.id.clone()),
-            WorldEntity::Npc(npc) => EntityId::Npc(npc.id.clone()),
-        }
-    }
-    /// Get the symbol for the entity
-    pub fn symbol(&self) -> &str {
-        match self {
-            WorldEntity::Item(item) => item.symbol(),
-            WorldEntity::Npc(npc) => npc.symbol(),
-        }
-    }
-}
+    #[test]
+    fn turn_log_state_logs_once_and_resyncs_after_reload() {
+        let (mut world, _, _) = build_test_world();
+        let mut turn_log = TurnLogState::new(&world);
+        assert_eq!(turn_log.last_logged_turn, 0);
 
-/// Search item and NPC ids for a name match and return the resolved world entity.
-pub fn find_world_object<'a, S: BuildHasher>(
-    nearby_item_ids: impl IntoIterator<Item = &'a ItemId>,
-    nearby_npc_ids: impl IntoIterator<Item = &'a NpcId>,
-    world_items: &'a HashMap<ItemId, Item, S>,
-    world_npcs: &'a HashMap<NpcId, Npc, S>,
-    search_term: &str,
-) -> Option<WorldEntity<'a>> {
-    let lc_term = search_term.to_lowercase();
-    for item_id in nearby_item_ids {
-        if let Some(found_item) = world_items.get(item_id)
-            && (found_item.name().to_lowercase().contains(&lc_term)
-                || found_item
-                    .aliases
-                    .iter()
-                    .any(|alias| alias.to_lowercase().contains(&lc_term)))
-        {
-            return Some(WorldEntity::Item(found_item));
-        }
-    }
-    for npc_id in nearby_npc_ids {
-        if let Some(found_npc) = world_npcs.get(npc_id)
-            && found_npc.name().to_lowercase().contains(&lc_term)
-        {
-            return Some(WorldEntity::Npc(found_npc));
-        }
-    }
-    None
-}
+        turn_log
+            .log_if_advanced(&world)
+            .expect("initial log_if_advanced failed");
+        assert_eq!(turn_log.last_logged_turn, 1);
 
-/// Feedback to player if an entity search comes up empty
-pub fn entity_not_found(world: &AmbleWorld, view: &mut View, search_text: &str) {
-    view.push(ViewItem::Error(format!(
-        "\"{}\"? {}\n{}",
-        search_text.error_style(),
-        world.spin_core(CoreSpinnerType::EntityNotFound, "What's that?"),
-        "(word not understood in context)".to_string().italic().dimmed()
-    )));
+        turn_log.log_if_advanced(&world).expect("second log_if_advanced failed");
+        assert_eq!(turn_log.last_logged_turn, 1);
+
+        world.turn_count = 3;
+        turn_log.log_if_advanced(&world).expect("third log_if_advanced failed");
+        assert_eq!(turn_log.last_logged_turn, 3);
+
+        world.turn_count = 8;
+        turn_log.resync(&world);
+        assert_eq!(turn_log.last_logged_turn, 7);
+    }
+
+    #[test]
+    fn parse_with_exit_fallback_returns_move_to_when_match_is_unique() {
+        let (mut world, room1_id, room2_id) = build_test_world();
+        let room = world.rooms.get_mut(&room1_id).expect("missing room1");
+        room.exits.insert("down the rope ladder".into(), Exit::new(room2_id));
+
+        let mut view = View::new();
+        let command = parse_with_exit_fallback(&world, &mut view, "rope".to_string()).expect("parse failed");
+        assert_eq!(command, Command::MoveTo("down the rope ladder".to_string()));
+    }
+
+    #[test]
+    fn parse_with_exit_fallback_leaves_unknown_when_match_is_ambiguous() {
+        let (mut world, room1_id, room2_id) = build_test_world();
+        let room = world.rooms.get_mut(&room1_id).expect("missing room1");
+        room.exits
+            .insert("down the rope ladder".into(), Exit::new(room2_id.clone()));
+        room.exits.insert("rope bridge".into(), Exit::new(room2_id));
+
+        let mut view = View::new();
+        let command = parse_with_exit_fallback(&world, &mut view, "rope".to_string()).expect("parse failed");
+        assert_eq!(command, Command::Unknown);
+    }
+
+    #[test]
+    fn dispatch_command_marks_look_as_turn_advancing() {
+        let (mut world, _, _) = build_test_world();
+        let mut view = View::new();
+        let turn_before = world.turn_count;
+        let result = dispatch_command(&Command::Look, &mut world, &mut view).expect("dispatch failed");
+        assert!(result.turn_advanced);
+        assert!(!result.world_reloaded);
+        assert_eq!(world.turn_count, turn_before + 1);
+    }
+
+    #[test]
+    fn dispatch_command_marks_failed_move_as_not_turn_advancing() {
+        let (mut world, _, _) = build_test_world();
+        let mut view = View::new();
+        let turn_before = world.turn_count;
+        let result =
+            dispatch_command(&Command::MoveTo("north".to_string()), &mut world, &mut view).expect("dispatch failed");
+        assert!(!result.turn_advanced);
+        assert!(!result.world_reloaded);
+        assert_eq!(world.turn_count, turn_before);
+    }
 }

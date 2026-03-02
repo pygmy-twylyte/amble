@@ -44,10 +44,11 @@
 
 use crate::{
     AmbleWorld, Item, ItemHolder, ItemId, Location, NpcId, View, ViewItem, WorldObject,
-    entity_search::{EntityId, SearchError, SearchScope, find_entity_match, find_item_match},
+    entity_search::{
+        EntityId, SearchError, SearchScope, WorldEntity, entity_not_found, find_entity_match, find_item_match,
+    },
     helpers::{name_from_id, symbol_or_unknown},
     item::{ItemAbility, ItemInteractionType, Movability},
-    repl::{WorldEntity, entity_not_found},
     spinners::CoreSpinnerType,
     style::GameStyle,
     trigger::{TriggerCondition, check_triggers},
@@ -95,19 +96,18 @@ use log::{error, info, warn};
 ///
 /// # Panics
 /// - none (expect is called only after key is already known to exist)
-pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
+pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<bool> {
     let room_id = world.player_room_id();
     let item_id = match find_item_match(world, thing, SearchScope::Inventory) {
         Ok(item_id) => item_id,
         Err(SearchError::NoMatchingName(input)) => {
             entity_not_found(world, view, input.as_str());
-            return Ok(());
+            return Ok(false);
         },
         Err(e) => bail!(e),
     };
     let item = world.items.get_mut(&item_id).expect("item_id already validated");
 
-    world.turn_count += 1;
     if matches!(item.movability, Movability::Free) {
         if let Some(dropped) = world.items.get_mut(&item_id) {
             dropped.set_location_room(room_id.clone());
@@ -141,9 +141,9 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
             "You can't drop the {}. {reason}",
             item.name().item_style()
         )));
-        return Ok(());
+        return Ok(true);
     }
-    Ok(())
+    Ok(true)
 }
 
 /// Picks up an item from the current area and adds it to the player's inventory.
@@ -192,7 +192,7 @@ pub fn drop_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
 ///
 /// # Panics
 /// None... the call to expect only happens after the key (`item_id`) is already validated
-pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<()> {
+pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Result<bool> {
     let take_verb = world.spin_core(CoreSpinnerType::TakeVerb, "take");
     let room_id = world.player_room_id();
 
@@ -212,25 +212,24 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                     entry.name,
                     room.symbol()
                 );
-                return Ok(());
+                return Ok(false);
             }
             entity_not_found(world, view, input.as_str());
-            return Ok(());
+            return Ok(false);
         },
         Err(e) => bail!(e),
     };
 
-    match entity_id {
+    let consumed_turn = match entity_id {
         EntityId::Item(item_id) => {
             let item = world.items.get(&item_id).expect("known OK from entity match");
-            world.turn_count += 1;
 
             // deny and return early if the the item has to be handled using another "tool" item
             // e.g. "take hot pan" fails but "take hot pan using potholder" should succeed
             // the latter command is run through a different (use tool on target) handler.
             if let Some(ability) = item.requires_capability_for(ItemInteractionType::Handle) {
                 report_handling_requirement(view, item, &ability);
-                return Ok(());
+                return Ok(true);
             }
 
             if matches!(item.movability, Movability::Free) {
@@ -273,6 +272,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                 // item is fixed or restricted
                 report_immovable_item(world, view, &take_verb, item);
             }
+            true
         },
         EntityId::Npc(npc_id) => {
             let npc = world.npcs.get(&npc_id).expect("known ok from entity match");
@@ -286,9 +286,10 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                 npc.name(),
                 npc.symbol()
             );
+            false
         },
-    }
-    Ok(())
+    };
+    Ok(consumed_turn)
 }
 
 /// Reports that an item can't be taken and why, and logs the attempt.
@@ -404,7 +405,7 @@ pub fn take_from_handler(
     view: &mut View,
     item_pattern: &str,
     vessel_pattern: &str,
-) -> Result<()> {
+) -> Result<bool> {
     // find vessel id from containers and NPCs in the current room matching `vessel_pattern`
     let current_room = world.player_room_id();
     let vessel_id = match find_entity_match(world, vessel_pattern, SearchScope::NearbyVessels(current_room)) {
@@ -414,7 +415,7 @@ pub fn take_from_handler(
                 "You don't see a \"{}\" here that you can loot.",
                 input.error_style()
             )));
-            return Ok(());
+            return Ok(false);
         },
         Err(e) => bail!(e),
     };
@@ -427,7 +428,7 @@ pub fn take_from_handler(
                 view.push(ViewItem::ActionFailure(format!(
                     "{reason} You can't take anything from it."
                 )));
-                return Ok(());
+                return Ok(false);
             }
             validate_and_transfer_from_item(world, view, item_pattern, &vessel_uuid)?;
         },
@@ -435,8 +436,7 @@ pub fn take_from_handler(
             validate_and_transfer_from_npc(world, view, item_pattern, &npc_id)?;
         },
     }
-    world.turn_count += 1;
-    Ok(())
+    Ok(true)
 }
 
 #[derive(Debug, Clone, Default)]
@@ -721,15 +721,14 @@ pub(crate) fn transfer_to_player(world: &mut AmbleWorld, view: &mut View, tx_dat
 ///
 /// # Panics
 /// None... expect is called on a `HashMap::get` where the key is already known to be present
-pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, container: &str) -> Result<()> {
+pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, container: &str) -> Result<bool> {
     // get uuid of item and container
     let (item_id, item_name) = match find_item_match(world, item, SearchScope::Inventory) {
         Ok(item_id) => {
             let item = world.items.get(&item_id).expect("id known valid here");
             if let Some(reason) = item.take_denied_reason() {
                 view.push(ViewItem::ActionFailure(reason));
-                world.turn_count += 1;
-                return Ok(());
+                return Ok(true);
             }
             let name = name_from_id(&world.items, &item_id)
                 .expect("item_id must be valid")
@@ -738,7 +737,7 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
         },
         Err(SearchError::NoMatchingName(input)) => {
             entity_not_found(world, view, input.as_str());
-            return Ok(());
+            return Ok(false);
         },
         Err(e) => bail!(e),
     };
@@ -751,8 +750,7 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
                 view.push(ViewItem::ActionFailure(format!(
                     "{reason} You can't put anything in it."
                 )));
-                world.turn_count += 1;
-                return Ok(());
+                return Ok(true);
             }
 
             let name = name_from_id(&world.items, &vessel_id)
@@ -762,7 +760,7 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
         },
         Err(SearchError::NoMatchingName(input)) => {
             entity_not_found(world, view, input.as_str());
-            return Ok(());
+            return Ok(false);
         },
         Err(e) => bail!(e),
     };
@@ -802,8 +800,7 @@ pub fn put_in_handler(world: &mut AmbleWorld, view: &mut View, item: &str, conta
             TriggerCondition::Drop(item_id.clone()),
         ],
     )?;
-    world.turn_count += 1;
-    Ok(())
+    Ok(true)
 }
 
 /// Handles cases where an NPC is found when searching for items.

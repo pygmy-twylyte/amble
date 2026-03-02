@@ -24,15 +24,19 @@
 //! `find_npc_match(...)` when only interested in npcs
 //! `find_entity_match(...)` when the input could refer to either an item or an npc
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::hash::BuildHasher;
 
 pub use crate::EntityId;
-use crate::{ItemId, NpcId, RoomId};
+use crate::{Item, ItemId, Npc, NpcId, RoomId, View, ViewItem, WorldObject};
+use colored::Colorize;
 use thiserror::Error;
+use variantly::Variantly;
 
 use crate::{
     AmbleWorld,
-    repl::find_world_object,
+    spinners::CoreSpinnerType,
+    style::GameStyle,
     world::{nearby_reachable_items, nearby_vessel_items, nearby_visible_items},
 };
 
@@ -74,6 +78,78 @@ pub enum SearchError {
     Unknown(#[from] anyhow::Error),
 }
 
+/// Encapsulates references to different types of `WorldObjects` to allow search across different types.
+#[derive(Debug, Variantly, Clone, Copy)]
+pub enum WorldEntity<'a> {
+    Item(&'a Item),
+    Npc(&'a Npc),
+}
+impl WorldEntity<'_> {
+    /// Get the name of the entity.
+    pub fn name(&self) -> &str {
+        match self {
+            WorldEntity::Item(item) => item.name(),
+            WorldEntity::Npc(npc) => npc.name(),
+        }
+    }
+
+    /// Get the typed id of the entity.
+    pub fn entity_id(&self) -> EntityId {
+        match self {
+            WorldEntity::Item(item) => EntityId::Item(item.id.clone()),
+            WorldEntity::Npc(npc) => EntityId::Npc(npc.id.clone()),
+        }
+    }
+
+    /// Get the symbol for the entity.
+    pub fn symbol(&self) -> &str {
+        match self {
+            WorldEntity::Item(item) => item.symbol(),
+            WorldEntity::Npc(npc) => npc.symbol(),
+        }
+    }
+}
+
+/// Search item and NPC ids for a name match and return the resolved world entity.
+pub fn find_world_entity<'a, S: BuildHasher>(
+    nearby_item_ids: impl IntoIterator<Item = &'a ItemId>,
+    nearby_npc_ids: impl IntoIterator<Item = &'a NpcId>,
+    world_items: &'a HashMap<ItemId, Item, S>,
+    world_npcs: &'a HashMap<NpcId, Npc, S>,
+    search_term: &str,
+) -> Option<WorldEntity<'a>> {
+    let lc_term = search_term.to_lowercase();
+    for item_id in nearby_item_ids {
+        if let Some(found_item) = world_items.get(item_id)
+            && (found_item.name().to_lowercase().contains(&lc_term)
+                || found_item
+                    .aliases
+                    .iter()
+                    .any(|alias| alias.to_lowercase().contains(&lc_term)))
+        {
+            return Some(WorldEntity::Item(found_item));
+        }
+    }
+    for npc_id in nearby_npc_ids {
+        if let Some(found_npc) = world_npcs.get(npc_id)
+            && found_npc.name().to_lowercase().contains(&lc_term)
+        {
+            return Some(WorldEntity::Npc(found_npc));
+        }
+    }
+    None
+}
+
+/// Feedback to player if an entity search comes up empty.
+pub fn entity_not_found(world: &AmbleWorld, view: &mut View, search_text: &str) {
+    view.push(ViewItem::Error(format!(
+        "\"{}\"? {}\n{}",
+        search_text.error_style(),
+        world.spin_core(CoreSpinnerType::EntityNotFound, "What's that?"),
+        "(word not understood in context)".to_string().italic().dimmed()
+    )));
+}
+
 /// Find an `Item` with name matching `pattern` in the given `SearchScope` and return its id.
 ///
 /// # Errors
@@ -105,7 +181,7 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
         },
     };
 
-    let Some(entity) = find_world_object(
+    let Some(entity) = find_world_entity(
         haystack.iter(),
         std::iter::empty::<&NpcId>(),
         &world.items,
@@ -170,7 +246,7 @@ pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> 
         },
     };
 
-    let Some(entity) = find_world_object(
+    let Some(entity) = find_world_entity(
         std::iter::empty::<&ItemId>(),
         haystack.iter(),
         &world.items,
