@@ -2128,7 +2128,9 @@ pub fn schedule_in(
 
     world
         .scheduler
-        .schedule_in(world.turn_count, turns_ahead, actions.to_vec(), note);
+        // one added to turns_ahead b/c turn is immediately advanced after this runs,
+        // making it fire earlier than likely intended
+        .schedule_in(world.turn_count, turns_ahead + 1, actions.to_vec(), note);
     Ok(())
 }
 
@@ -2197,7 +2199,7 @@ pub fn schedule_in_if(
     );
     world.scheduler.schedule_in_if(
         world.turn_count,
-        turns_ahead,
+        turns_ahead + 1, /* turn # is advanced immediately after this runs */
         Some(condition.clone()),
         on_false,
         actions.to_vec(),
