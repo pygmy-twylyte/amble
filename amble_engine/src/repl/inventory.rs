@@ -428,7 +428,7 @@ pub fn take_from_handler(
                 view.push(ViewItem::ActionFailure(format!(
                     "{reason} You can't take anything from it."
                 )));
-                return Ok(true);
+                return Ok(false);
             }
             validate_and_transfer_from_item(world, view, item_pattern, &vessel_uuid)?;
         },
