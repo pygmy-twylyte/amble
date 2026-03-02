@@ -217,23 +217,8 @@ fn dispatch_command(command: &Command, world: &mut AmbleWorld, view: &mut View) 
         turn_advanced: false,
     };
 
-    let mut run_turn_advancing_handler = |handler: &mut dyn FnMut(&mut AmbleWorld, &mut View) -> Result<bool>| {
-        world.turn_count = world.turn_count.saturating_add(1);
-        match handler(world, view) {
-            Ok(true) => Ok(true),
-            Ok(false) => {
-                world.turn_count = world.turn_count.saturating_sub(1);
-                Ok(false)
-            },
-            Err(e) => {
-                world.turn_count = world.turn_count.saturating_sub(1);
-                Err(e)
-            },
-        }
-    };
-
     match &command {
-        Touch(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| touch_handler(w, v, thing))?,
+        Touch(thing) => dr.turn_advanced = touch_handler(world, view, thing)?,
         SetViewMode(mode) => set_viewmode_handler(view, *mode),
         Goals => goals_handler(world, view),
         Help => help_handler(view),
@@ -243,24 +228,22 @@ fn dispatch_command(command: &Command, world: &mut AmbleWorld, view: &mut View) 
                 dr.control = ReplControl::Quit;
             }
         },
-        Look => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| look_handler(w, v))?,
-        LookAt(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| look_at_handler(w, v, thing))?,
-        GoBack => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| go_back_handler(w, v))?,
-        MoveTo(direction) => {
-            dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| move_to_handler(w, v, direction))?
-        },
-        Take(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| take_handler(w, v, thing))?,
+        Look => dr.turn_advanced = look_handler(world, view)?,
+        LookAt(thing) => dr.turn_advanced = look_at_handler(world, view, thing)?,
+        GoBack => dr.turn_advanced = go_back_handler(world, view)?,
+        MoveTo(direction) => dr.turn_advanced = move_to_handler(world, view, direction)?,
+        Take(thing) => dr.turn_advanced = take_handler(world, view, thing)?,
         TakeFrom { item, container } => {
-            dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| take_from_handler(w, v, item, container))?;
+            dr.turn_advanced = take_from_handler(world, view, item, container)?;
         },
-        Drop(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| drop_handler(w, v, thing))?,
+        Drop(thing) => dr.turn_advanced = drop_handler(world, view, thing)?,
         PutIn { item, container } => {
-            dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| put_in_handler(w, v, item, container))?;
+            dr.turn_advanced = put_in_handler(world, view, item, container)?;
         },
-        Open(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| open_handler(w, v, thing))?,
-        Close(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| close_handler(w, v, thing))?,
-        LockItem(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| lock_handler(w, v, thing))?,
-        UnlockItem(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| unlock_handler(w, v, thing))?,
+        Open(thing) => dr.turn_advanced = open_handler(world, view, thing)?,
+        Close(thing) => dr.turn_advanced = close_handler(world, view, thing)?,
+        LockItem(thing) => dr.turn_advanced = lock_handler(world, view, thing)?,
+        UnlockItem(thing) => dr.turn_advanced = unlock_handler(world, view, thing)?,
         Inventory => inv_handler(world, view)?,
         ListSaves => list_saves_handler(world, view),
         Unknown => {
@@ -272,14 +255,14 @@ fn dispatch_command(command: &Command, world: &mut AmbleWorld, view: &mut View) 
             ));
         },
         TalkTo(npc_name) => {
-            dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| talk_to_handler(w, v, npc_name))?;
+            dr.turn_advanced = talk_to_handler(world, view, npc_name)?;
         },
         GiveToNpc { item, npc } => {
-            dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| give_to_npc_handler(w, v, item, npc))?;
+            dr.turn_advanced = give_to_npc_handler(world, view, item, npc)?;
         },
-        TurnOn(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| turn_on_handler(w, v, thing))?,
-        TurnOff(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| turn_off_handler(w, v, thing))?,
-        Read(thing) => dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| read_handler(w, v, thing))?,
+        TurnOn(thing) => dr.turn_advanced = turn_on_handler(world, view, thing)?,
+        TurnOff(thing) => dr.turn_advanced = turn_off_handler(world, view, thing)?,
+        Read(thing) => dr.turn_advanced = read_handler(world, view, thing)?,
         Load(gamefile) => {
             if load_handler(world, view, gamefile) {
                 dr.world_reloaded = true;
@@ -294,10 +277,10 @@ fn dispatch_command(command: &Command, world: &mut AmbleWorld, view: &mut View) 
         Save(gamefile) => save_handler(world, view, gamefile)?,
         Theme(theme_name) => theme_handler(view, theme_name)?,
         UseItemOn { verb, tool, target } => {
-            dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| use_item_on_handler(w, v, *verb, tool, target))?;
+            dr.turn_advanced = use_item_on_handler(world, view, *verb, tool, target)?;
         },
         Ingest { item, mode } => {
-            dr.turn_advanced = run_turn_advancing_handler(&mut |w, v| ingest_handler(w, v, item, *mode))?;
+            dr.turn_advanced = ingest_handler(world, view, item, *mode)?;
         },
         // Commands below only available when crate::DEV_MODE is enabled.
         SpawnItem(item_symbol) => dev_spawn_item_handler(world, view, item_symbol),
@@ -312,6 +295,9 @@ fn dispatch_command(command: &Command, world: &mut AmbleWorld, view: &mut View) 
         SetFlag(flag_name) => dev_set_flag_handler(world, view, flag_name),
         DevNote(note) => dev_note_handler(world, view, note),
         StartSeq { seq_name, end } => dev_start_seq_handler(world, view, seq_name, end),
+    }
+    if dr.turn_advanced {
+        world.turn_count = world.turn_count.saturating_add(1);
     }
     Ok(dr)
 }
