@@ -172,7 +172,7 @@ impl Scheduler {
 /// `on_turn` = turn on which to fire
 /// actions = list of `TriggerActions` to take when the turn arrives
 /// note = description of event (for logging)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct ScheduledEvent {
     pub on_turn: usize,
     pub actions: Vec<ScriptedAction>,
@@ -186,19 +186,7 @@ pub struct ScheduledEvent {
 impl ScheduledEvent {
     /// Placeholder events mark consumed slots within the scheduler. Determine whether this is one of them.
     fn is_placeholder(&self) -> bool {
-        self.on_turn == 0 && self.actions.is_empty() && self.note.is_none() && self.condition.is_none()
-    }
-}
-
-impl Default for ScheduledEvent {
-    fn default() -> Self {
-        Self {
-            on_turn: 0,
-            actions: Vec::new(),
-            note: None,
-            condition: None,
-            on_false: OnFalsePolicy::Cancel,
-        }
+        *self == ScheduledEvent::default()
     }
 }
 
