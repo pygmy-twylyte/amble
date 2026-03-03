@@ -97,47 +97,7 @@ impl HealthState {
         let mut death_cause: Option<String> = None;
 
         for fx in &self.effects {
-            // log and display each effect
-            match &fx {
-                HealthEffect::InstantDamage { cause, amount } => {
-                    info!("{display_name} damaged by '{cause}' (-{amount} hp)");
-                    health_messages.push(ViewItem::CharacterHarmed {
-                        name: display_name.into(),
-                        cause: cause.into(),
-                        amount: *amount,
-                    });
-                },
-                HealthEffect::InstantHeal { cause, amount } => {
-                    info!("{display_name} healed by '{cause}' (+{amount} hp)");
-                    health_messages.push(ViewItem::CharacterHealed {
-                        name: display_name.into(),
-                        cause: cause.into(),
-                        amount: *amount,
-                    });
-                },
-                HealthEffect::DamageOverTime { cause, amount, times } => {
-                    info!(
-                        "{display_name} damaged by '{cause}' d.o.t. (-{amount} hp, {} left)",
-                        times - 1
-                    );
-                    health_messages.push(ViewItem::CharacterHarmed {
-                        name: display_name.into(),
-                        cause: cause.into(),
-                        amount: *amount,
-                    });
-                },
-                HealthEffect::HealOverTime { cause, amount, times } => {
-                    info!(
-                        "{display_name} healed by '{cause}' h.o.t. (-{amount} hp, {} left)",
-                        times - 1
-                    );
-                    health_messages.push(ViewItem::CharacterHealed {
-                        name: display_name.into(),
-                        cause: cause.into(),
-                        amount: *amount,
-                    });
-                },
-            }
+            log_and_display_health_change(display_name, &mut health_messages, fx);
             let effect_outcome = fx.apply(hp_tally, self.max_hp);
             hp_tally = effect_outcome.remaining_hp;
             // break out and return if character is dead!
@@ -156,6 +116,49 @@ impl HealthState {
             view_items: health_messages,
             death_cause,
         }
+    }
+}
+
+fn log_and_display_health_change(display_name: &str, health_messages: &mut Vec<ViewItem>, fx: &HealthEffect) {
+    match &fx {
+        HealthEffect::InstantDamage { cause, amount } => {
+            info!("{display_name} damaged by '{cause}' (-{amount} hp)");
+            health_messages.push(ViewItem::CharacterHarmed {
+                name: display_name.into(),
+                cause: cause.into(),
+                amount: *amount,
+            });
+        },
+        HealthEffect::InstantHeal { cause, amount } => {
+            info!("{display_name} healed by '{cause}' (+{amount} hp)");
+            health_messages.push(ViewItem::CharacterHealed {
+                name: display_name.into(),
+                cause: cause.into(),
+                amount: *amount,
+            });
+        },
+        HealthEffect::DamageOverTime { cause, amount, times } => {
+            info!(
+                "{display_name} damaged by '{cause}' d.o.t. (-{amount} hp, {} left)",
+                times - 1
+            );
+            health_messages.push(ViewItem::CharacterHarmed {
+                name: display_name.into(),
+                cause: cause.into(),
+                amount: *amount,
+            });
+        },
+        HealthEffect::HealOverTime { cause, amount, times } => {
+            info!(
+                "{display_name} healed by '{cause}' h.o.t. (-{amount} hp, {} left)",
+                times - 1
+            );
+            health_messages.push(ViewItem::CharacterHealed {
+                name: display_name.into(),
+                cause: cause.into(),
+                amount: *amount,
+            });
+        },
     }
 }
 
