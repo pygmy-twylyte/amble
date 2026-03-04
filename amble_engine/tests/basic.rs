@@ -544,7 +544,7 @@ fn test_check_npc_movement() {
     world.npcs.insert(npc_id.clone(), npc);
     world.player.location = world::Location::Room(r1.clone());
     world.turn_count = 1;
-    ae::repl::check_npc_movement(&mut world, &mut view).unwrap();
+    ae::repl::tick_npc_movement(&mut world, &mut view).unwrap();
     let npc = world.npcs.get(&npc_id).unwrap();
     assert!(matches!(&npc.location, world::Location::Room(id) if *id == r2));
 }
