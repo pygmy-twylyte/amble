@@ -26,12 +26,12 @@ use crate::command::{Command, parse_command};
 use crate::health::{LifeState, LivingEntity};
 use crate::loader::load_world;
 use crate::npc::{calculate_next_location, move_npc, move_scheduled};
-use crate::scheduler::{OnFalsePolicy, ScheduledEvent};
+use crate::scheduler::{EventCondition, OnFalsePolicy, ScheduledEvent};
 use crate::spinners::CoreSpinnerType;
 use crate::style::GameStyle;
 use crate::trigger::{TriggerCondition, check_triggers, dispatch_action};
 use crate::world::AmbleWorld;
-use crate::{Location, NpcId, View, ViewItem, WorldObject};
+use crate::{Location, NpcId, RoomId, View, ViewItem, WorldObject};
 use anyhow::{Result, bail};
 use colored::Colorize;
 
@@ -551,6 +551,7 @@ struct MovementPlan {
     moves: Vec<(NpcId, Location)>,
 }
 
+/// Create a `MovementPlan` listing which NPCs need to move, and their destinations.
 fn create_movement_plan(world: &mut AmbleWorld) -> MovementPlan {
     let moves = world.npcs.values_mut().fold(Vec::new(), |mut plan, npc| {
         if let Some(ref mut move_opts) = npc.movement
@@ -591,45 +592,49 @@ pub fn tick_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()> 
 /// - on failed lookup of player's location
 pub fn check_ambient_triggers(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
     let current_room_id = world.player_room_id();
-    let trigger_count = world.triggers.len();
-    for idx in 0..trigger_count {
-        let should_check = {
-            let trigger = &world.triggers[idx];
-            if trigger.fired && trigger.only_once
-                || !trigger
-                    .conditions
-                    .any_trigger(|c| matches!(c, TriggerCondition::Ambient { .. }))
-            {
-                false
-            } else {
-                trigger.conditions.eval_ambient(world)
-            }
-        };
-
-        if !should_check {
-            continue;
-        }
-
-        let mut fired = false;
-        {
-            let trigger = &world.triggers[idx];
-            trigger.conditions.for_each_condition(|cond| {
-                if let TriggerCondition::Ambient { room_ids, spinner } = cond
-                    && (room_ids.is_empty() || room_ids.contains(&current_room_id))
-                {
-                    let message = world.spinners.get(spinner).and_then(Spinner::spin).unwrap_or_default();
-                    if !message.is_empty() {
-                        view.push(ViewItem::AmbientEvent(format!("{}", message.ambient_trig_style())));
-                    }
-                    fired = true;
-                }
-            });
-        }
-        if fired && let Some(trigger) = world.triggers.get_mut(idx) {
-            trigger.fired = true;
-        }
+    for idx in local_ambient_trigger_idx(world) {
+        fire_ambient_spinners(world, view, &current_room_id, idx);
     }
     Ok(())
+}
+
+/// Fires an Ambient spinner message connected to the `Trigger` at `idx`
+fn fire_ambient_spinners(world: &mut AmbleWorld, view: &mut View, current_room_id: &RoomId, idx: usize) {
+    let mut fired = false;
+    {
+        let trigger = &world.triggers[idx];
+        trigger.conditions.for_each_condition(|cond| {
+            if let TriggerCondition::Ambient { room_ids, spinner } = cond
+                && (room_ids.is_empty() || room_ids.contains(current_room_id))
+            {
+                let message = world.spinners.get(spinner).and_then(Spinner::spin).unwrap_or_default();
+                if !message.is_empty() {
+                    view.push(ViewItem::AmbientEvent(format!("{}", message.ambient_trig_style())));
+                }
+                fired = true;
+            }
+        });
+    }
+    if fired && let Some(trigger) = world.triggers.get_mut(idx) {
+        trigger.fired = true;
+    }
+}
+
+/// Returns list of indices to ambient triggers that apply to the current room.
+fn local_ambient_trigger_idx(world: &AmbleWorld) -> Vec<usize> {
+    world
+        .triggers
+        .iter()
+        .enumerate()
+        .filter(|(_, trigger)| is_ambient(&trigger.conditions))
+        .filter(|(_, trigger)| trigger.conditions.eval_ambient(world))
+        .map(|(idx, _)| idx)
+        .collect()
+}
+
+/// True if the condition contains an ambient variant.
+fn is_ambient(condition: &EventCondition) -> bool {
+    condition.any_trigger(|c| matches!(c, TriggerCondition::Ambient { .. }))
 }
 
 #[cfg(test)]
