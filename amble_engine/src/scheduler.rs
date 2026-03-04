@@ -228,7 +228,8 @@ impl EventCondition {
         self.eval_with_events(world, &[])
     }
 
-    /// Evaluate the condition while treating ambient predicates as room-based checks.
+    /// Determine whether the condition contains an Ambient that applies to the current
+    /// player location.
     pub fn eval_ambient(&self, world: &crate::world::AmbleWorld) -> bool {
         match self {
             EventCondition::Trigger(tc) => match tc {
