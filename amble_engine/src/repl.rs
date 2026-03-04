@@ -573,13 +573,12 @@ fn create_movement_plan(world: &mut AmbleWorld) -> MovementPlan {
 /// # Errors
 ///
 pub fn tick_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
-    let plan = create_movement_plan(world);
-    plan.moves.iter().try_for_each(|(npc_id, destination)| {
+    let planned = create_movement_plan(world);
+    planned.moves.iter().try_for_each(|(npc_id, destination)| {
         let Some(movement) = world.npcs.get_mut(npc_id).and_then(|npc| npc.movement.as_mut()) else {
             bail!("movement not found for npc '{}'", npc_id)
         };
         movement.last_moved_turn = world.turn_count;
-        info!("moving NPC {npc_id} -> {destination:?}");
         move_npc(world, view, npc_id, destination.clone())?;
         Ok(())
     })?;
