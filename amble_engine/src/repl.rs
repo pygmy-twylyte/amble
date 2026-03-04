@@ -613,7 +613,7 @@ pub fn check_ambient_triggers(world: &mut AmbleWorld, view: &mut View) -> Result
         let mut fired = false;
         {
             let trigger = &world.triggers[idx];
-            trigger.conditions.for_each_trigger(|cond| {
+            trigger.conditions.for_each_condition(|cond| {
                 if let TriggerCondition::Ambient { room_ids, spinner } = cond
                     && (room_ids.is_empty() || room_ids.contains(&current_room_id))
                 {

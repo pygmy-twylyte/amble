@@ -254,7 +254,7 @@ impl EventCondition {
     }
 
     /// Apply a visitor closure to every nested trigger condition.
-    pub fn for_each_trigger<F>(&self, visitor: F)
+    pub fn for_each_condition<F>(&self, visitor: F)
     where
         F: FnMut(&TriggerCondition),
     {
