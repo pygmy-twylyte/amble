@@ -26,13 +26,13 @@ use crate::command::{Command, parse_command};
 use crate::health::{LifeState, LivingEntity};
 use crate::loader::load_world;
 use crate::npc::{calculate_next_location, move_npc, move_scheduled};
-use crate::scheduler::OnFalsePolicy;
+use crate::scheduler::{OnFalsePolicy, ScheduledEvent};
 use crate::spinners::CoreSpinnerType;
 use crate::style::GameStyle;
 use crate::trigger::{TriggerCondition, check_triggers, dispatch_action};
 use crate::world::AmbleWorld;
-use crate::{NpcId, View, ViewItem, WorldObject};
-use anyhow::Result;
+use crate::{Location, NpcId, View, ViewItem, WorldObject};
+use anyhow::{Result, bail};
 use colored::Colorize;
 
 use input::{InputEvent, InputManager};
@@ -367,7 +367,7 @@ fn run_timed_events(
         };
     }
     // move surviving npcs and fire scheduled events
-    check_npc_movement(world, view)?;
+    tick_npc_movement(world, view)?;
     check_scheduled_events(world, view)?;
     Ok(TimedEventsResult::Continue)
 }
@@ -510,79 +510,79 @@ pub fn check_scheduled_events(world: &mut AmbleWorld, view: &mut View) -> Result
                 dispatch_action(world, view, &action)?;
             }
         } else {
-            match event.on_false {
-                OnFalsePolicy::Cancel => {
-                    info!("scheduled event \"{note_text}\" canceled (condition false)");
-                },
-                OnFalsePolicy::RetryAfter(dt) => {
-                    let new_turn = now.saturating_add(dt);
-                    world.scheduler.schedule_on_if(
-                        new_turn,
-                        event.condition.clone(),
-                        event.on_false.clone(),
-                        event.actions.clone(),
-                        event.note.clone(),
-                    );
-                    info!("scheduled event \"{note_text}\" rescheduled for turn {new_turn} (RetryAfter {dt})");
-                },
-                OnFalsePolicy::RetryNextTurn => {
-                    let new_turn = now.saturating_add(1);
-                    world.scheduler.schedule_on_if(
-                        new_turn,
-                        event.condition.clone(),
-                        event.on_false.clone(),
-                        event.actions.clone(),
-                        event.note.clone(),
-                    );
-                    info!("scheduled event \"{note_text}\" rescheduled for next turn {new_turn}");
-                },
-            }
+            apply_on_false_policy(world, now, note_text, event);
         }
     }
     Ok(())
 }
 
+/// Applies the policy (retry, cancel, etc) for the given conditional event in the case that its conditions are false.
+fn apply_on_false_policy(world: &mut AmbleWorld, now: usize, note_text: String, event: ScheduledEvent) {
+    match event.on_false {
+        OnFalsePolicy::Cancel => {
+            info!("scheduled event \"{note_text}\" canceled (condition false)");
+        },
+        OnFalsePolicy::RetryAfter(dt) => {
+            let new_turn = now.saturating_add(dt);
+            world.scheduler.schedule_on_if(
+                new_turn,
+                event.condition.clone(),
+                event.on_false.clone(),
+                event.actions.clone(),
+                event.note.clone(),
+            );
+            info!("scheduled event \"{note_text}\" rescheduled for turn {new_turn} (RetryAfter {dt})");
+        },
+        OnFalsePolicy::RetryNextTurn => {
+            let new_turn = now.saturating_add(1);
+            world.scheduler.schedule_on_if(
+                new_turn,
+                event.condition.clone(),
+                event.on_false.clone(),
+                event.actions.clone(),
+                event.note.clone(),
+            );
+            info!("scheduled event \"{note_text}\" rescheduled for next turn {new_turn}");
+        },
+    }
+}
+
+struct MovementPlan {
+    moves: Vec<(NpcId, Location)>,
+}
+
+fn create_movement_plan(world: &mut AmbleWorld) -> MovementPlan {
+    let moves = world.npcs.values_mut().fold(Vec::new(), |mut plan, npc| {
+        if let Some(ref mut move_opts) = npc.movement
+            && move_opts.active
+            && move_opts.paused_until.is_none()
+            && move_scheduled(move_opts, world.turn_count)
+        {
+            if let Some(destination) = calculate_next_location(move_opts)
+                && npc.location != destination
+            {
+                plan.push((npc.id.clone(), destination));
+            }
+        }
+        plan
+    });
+    MovementPlan { moves }
+}
+
 /// Check to see if any NPCs are scheduled to move and move them.
 /// # Errors
 ///
-pub fn check_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
-    let current_turn = world.turn_count;
-    let npc_ids: Vec<NpcId> = world.npcs.keys().cloned().collect();
-
-    for npc_id in npc_ids {
-        if let Some(npc) = world.npcs.get_mut(&npc_id)
-            && let Some(ref mut movement) = npc.movement
-        {
-            // skip if NPC is inactive
-            if !movement.active {
-                continue;
-            }
-
-            // clear any set pause if expired
-            if let Some(resume_turn) = movement.paused_until {
-                if current_turn >= resume_turn {
-                    info!("movement pause expiring for npc '{}': resuming activity", npc.symbol);
-                    movement.paused_until = None;
-                } else {
-                    info!(
-                        "npc '{}' is paused for player interaction, skipping movement check",
-                        npc.symbol
-                    );
-                    continue;
-                }
-            }
-
-            if move_scheduled(movement, current_turn) {
-                // just no-ops if next location == current
-                if let Some(new_location) = calculate_next_location(movement)
-                    && npc.location != new_location
-                {
-                    movement.last_moved_turn = current_turn;
-                    move_npc(world, view, &npc_id, new_location)?;
-                }
-            }
-        }
-    }
+pub fn tick_npc_movement(world: &mut AmbleWorld, view: &mut View) -> Result<()> {
+    let plan = create_movement_plan(world);
+    plan.moves.iter().try_for_each(|(npc_id, destination)| {
+        let Some(movement) = world.npcs.get_mut(npc_id).and_then(|npc| npc.movement.as_mut()) else {
+            bail!("movement not found for npc '{}'", npc_id)
+        };
+        movement.last_moved_turn = world.turn_count;
+        info!("moving NPC {npc_id} -> {destination:?}");
+        move_npc(world, view, npc_id, destination.clone())?;
+        Ok(())
+    })?;
     Ok(())
 }
 
