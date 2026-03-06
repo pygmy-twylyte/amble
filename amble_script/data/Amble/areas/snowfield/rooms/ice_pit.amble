@@ -94,6 +94,22 @@ when use item plaque_2 ability read {
     do award points 10 reason "Read the frozen plaque"
     if has visited room stargate-room {
         do show "(A new Stargate destination has been enabled.)"
+        # close woodland gate
+        do remove flag woodland-gate-open
+        do modify room parish-landing {
+            remove exit stargate-room
+        }
+        # open snowfield gate
+        do add flag snowfield-gate-open
+        do modify room ice-pit {
+            add exit "through the stargate" -> stargate-room
+        }
+        # close patio gate
+        do remove flag patio-gate-open
+        do modify room patio {
+            remove exit stargate-room
+        }
+
     }
 }
 

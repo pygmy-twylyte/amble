@@ -4,7 +4,7 @@
 
 room front-entrance {
     name "Front Entrance"
-    desc "Potted plants flank a plain, darkened glass door on the front of the building to the north. As you approach the door, a [[item]]security scanner[[/item]] above it mutters judgementally as it scans you, and an imposing sign above that commands:[[box]]Always Know Where Your Towel Is[[/box]]\nPaved walkways lead around the building to the east and west."
+    desc "Potted plants flank a plain, darkened glass door on the front of the building to the north. As you approach the door, a [[item]]security scanner[[/item]] above it mutters judgementally as it scans you, and an imposing sign above that commands:[[box]][[hl]]Always Know Where Your Towel Is[[/hl]][[/box]]\nPaved walkways lead around the building to the east and west."
 
     overlay if npc cmot_dibbler here {
         normal "C.M.O.T. Dibbler blocks the entrance, hawking dubious sausages."

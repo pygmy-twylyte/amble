@@ -24,7 +24,7 @@ room guard-post {
 
 item megaphone {
     name "Megaphone"
-    desc "A typical white megaphone with [[bright-blue]][[b]]AMBLE SECURITY[[/b]][[/bright-blue]] stenciled on one side. It appears to be broken."
+    desc "A typical white megaphone with [[bright-blue]][[b]]AMBLE SECURITY[[/b]][[/bright-blue]] stenciled on one side. It looks like someone smashed it in a fit of rage.."
     location room guard-post
     movability fixed "Stealing from security on your first day isn't a good look."
     visibility scenery

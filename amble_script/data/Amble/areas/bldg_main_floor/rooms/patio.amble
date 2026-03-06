@@ -29,14 +29,14 @@ trigger "Modify Patio: Sunglasses On"
 when take item peril_sunglasses {
     do modify room restaurant {
         remove exit blinding-glare
-        add exit "patio" -> patio
+        add exit "patio seating" -> patio
     }
 }
 trigger "Modify Patio: Sunglasses Off"
 when drop item peril_sunglasses {
     do modify room restaurant {
         remove exit patio
-        add exit "patio" -> blinding-glare
+        add exit "patio seating" -> blinding-glare
     }
 }
 
@@ -76,7 +76,23 @@ when use item plaque_3 ability read {
     do add flag read-plaque-3
     do award points 10 reason "Reached and read the third crystal plaque"
     if has visited room stargate-room {
+        # close other gates and open this one
         do show "(A new Stargate destination has been enabled.)"
+        # close woodland gate
+        do remove flag woodland-gate-open
+        do modify room parish-landing {
+            remove exit stargate-room
+        }
+        # close snowfield gate
+        do remove flag snowfield-gate-open
+        do modify room ice-pit {
+            remove exit stargate-room
+        }
+        # open patio gate
+        do add flag patio-gate-open
+        do modify room patio {
+            add exit "through the stargate" -> stargate-room
+        }
     }
 }
 

@@ -4,7 +4,7 @@
 
 room main-lobby {
     name "Main Lobby"
-    desc "The lobby is clinically clean in a way that feels suspicious. A slightly humming vending machine stands beside an empty podium. A softly glowing script over an archway on the far wall reads 'Elevator Access'. To one side, there is floor-to-ceiling frosted glass with an etched door at the farthest end from the entrance. Opposite that, the smell of searing beef wafts from a broad entryway flanked by a wobbly sign."
+    desc "The lobby is clinically clean in a way that feels suspicious. A slightly humming vending machine stands beside an empty podium. Softly glowing script over an archway on the far wall reads 'Elevator Access'. To one side, there is floor-to-ceiling frosted glass with an etched door at the farthest end from the entrance. Opposite that, the smell of searing beef wafts from a broad entryway flanked by a wobbly sign."
 
     scenery "Empty Podium" desc "A typical wooden podium used to welcome incoming visitors, and just as typically vacant. It bears an emblem that reads: [[hl]][[i]]Welcome, Candidate[[/i][[/hl]]."
 

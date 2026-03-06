@@ -9,6 +9,7 @@
 
 item fallen_tree {
     name "Fallen Tree"
+    aliases "limbs", "branches"
     desc "A huge, fallen oak tree obstructing the path further up the steps. Well, maybe not so much [[i]]\"fallen\"[[/i]] as [[b]]ripped from the mountainside[[/b]] and tossed down by whatever left the deep claw marks in the trunk."
     movability fixed "We're not talking about some little sapling here."
     location room two-sheds-landing

@@ -81,6 +81,21 @@ when use item plaque_1 ability read {
     }
     if all( has visited room stargate-room, has flag cleaned-plaque-1 ) {
         do show "(A new Stargate destination has been enabled.)"
+        # open woodland gate
+        do add flag woodland-gate-open
+        do modify room parish-landing {
+            add exit "through the stargate" -> stargate-room
+        }
+        # close snowfield gate
+        do remove flag snowfield-gate-open
+        do modify room ice-pit {
+            remove exit stargate-room
+        }
+        # close patio gate
+        do remove flag patio-gate-open
+        do modify room patio {
+            remove exit stargate-room
+        }
     }
 }
 

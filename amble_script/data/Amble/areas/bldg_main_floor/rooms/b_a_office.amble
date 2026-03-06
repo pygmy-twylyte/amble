@@ -4,7 +4,7 @@
 
 room amble-office {
     name "Amble Adventures Main Office"
-    desc "The office of [[hl]]Amble Adventures[[/hl]], a wholly [[u]]dis[[/u]]owned subsidiary of Brains Anonymous™, is a shrine to barely-funded creativity. Faded posters of games that were never released adorn the walls. A sagging ficus looms in the corner like it’s been through something. In the north wall, a closet door is marked with a sign hanging at a carefree slant. An [[item]]Initech™ Poetry Performer[[/item]] machine plays possum in another corner, hoping you don't notice it."
+    desc "The office of [[hl]]Amble Adventures[[/hl]], a wholly [[u]]dis[[/u]]owned subsidiary of Brains Anonymous™, is a shrine to barely-funded creativity. Faded posters of games that were never released adorn the walls. A sagging ficus looms in the corner like it’s been through something. In the north wall, a narrow door is marked with a sign hanging at a carefree slant. An [[item]]Initech™ Poetry Performer[[/item]] machine plays possum in another corner, hoping you don't notice it."
 
     scenery "Posters" desc "One bombastically advertises the high realism of [[b]][[i]]Pong Construction Set 3000[[/i]][[/b]] and another annotates the [[b]]Amble Adventures: The Game[[/b]] logo with an award for [[i]]Most Outrageously Overdone Title Screen, 1983[[/i]]."
     scenery "Ficus"
@@ -30,7 +30,7 @@ room amble-office {
         unset "A sturdy locked box sits behind the desk, marked [[b]]Lost & Found[[/b]]."
     }
     exit "lobby door" -> main-lobby
-    exit "closet door" -> supply-closet
+    exit "narrow door" -> supply-closet
 }
 
 item office_whiteboard {

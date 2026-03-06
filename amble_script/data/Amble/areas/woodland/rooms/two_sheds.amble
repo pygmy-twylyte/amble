@@ -22,7 +22,8 @@ room two-sheds {
     scenery "Broken Signpost"
     scenery "Single Shed"
     scenery "Forest"
-    scenery "Weed Overgrowth" desc "None of them are cannabis, if that's what you're looking for."
+    scenery "Plaque"
+    scenery "Overgrowth of Weeds" desc "None of them are cannabis, if that's what you're looking for."
     scenery default "Just your typical, everyday {thing}. Nothing unusual about it."
 }
 

@@ -20,7 +20,7 @@ room high-ridge {
 
 item scenery_trees {
     name "Trees"
-    desc "A faded sign stapled to one tree reads: [[box]]№ 1 — [[i]]The Larch[[/i]][[/box]]"
+    desc "A faded sign stapled to one tree reads: [[box]][[hl]]№ 1 — [[i]]The Larch[[/i]][[/hl]][[/box]]"
     location room high-ridge
     movability fixed "Seriously? They're rooted into the ground and twenty times your size!"
     visibility scenery

@@ -4,13 +4,17 @@
 
 room supply-closet {
     name "Supply Closet"
-    desc "A small closet lit by a bare bulb being repeatedly rammed by a fluttering moth, near a hole where a bit of the ceiling is coming down. Crowded shelves offer paper products, bottles of toner, staples, and other office... ... staples."
-    exit "reception desk" -> amble-office
+    desc "A small closet lit by a bare bulb being repeatedly rammed by a fluttering moth, near a hole where a bit of the ceiling is coming down. Crowded shelves offer paper products, bottles of toner, staples, and other office... er, staples."
 
     scenery "Ceiling Hole"
     scenery "Closet Ceiling"
     scenery "Crowded Shelves"
     scenery "Toner Bottle"
+    scenery "Light Bulb"
+    scenery "Fluttering Moth"
+
+    exit "reception desk" -> amble-office
+
 }
 
 # ========================================

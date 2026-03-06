@@ -78,13 +78,29 @@ when take item towel {
     do add flag got-towel
     do award points 3 reason "Recovered the essential towel every frood should carry"
     do show "[[u]]NOW[[/u]] you're a frood who really[[b]] \"knows where his towel is\"! [[/b]]"
-    do schedule in 10 if all(
-        has item towel,
-        missing flag read-plaque-1,
-        has flag tried-read-plaque-1,
-    )
-    note "hint: towels can clean things" {
-        do show "Towels can be awfully handy for cleaning grimy things. Just sayin'."
+}
+
+trigger "[HINT] Towel Cleans Plaque 1" only once
+when take item towel {
+    do schedule in 2
+    if any(
+        # 1: condition where may be needed and radio on
+        all(
+            has item hint_radio,
+            has flag hint-radio-on,
+            missing flag read-plaque-1,
+        ),
+        # 2: condition where hint will definitely no longer be needed
+        has flag read-plaque-1,
+    ) onFalse retryNextTurn note "towels can clean hint"{
+        # same conditions as #1 above
+        if all(
+            has item hint_radio,
+            has flag hint-radio-on,
+            missing flag read-plaque-1,
+        ) {
+            do npc says hint_radio_npc "Towels can be awfully handy for cleaning off grimy things. Just sayin'."
+        }
     }
 }
 

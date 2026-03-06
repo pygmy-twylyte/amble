@@ -222,7 +222,7 @@ let set stargate_hint_rooms = (
     parish-landing,
     ice-pit,
 )
-trigger "HINT Radio: Activating the Stargate" only once
+trigger "[HINT] Activating the Stargate" only once
 when enter room stargate-room {
     do schedule in 2
     if any(
@@ -237,7 +237,7 @@ when enter room stargate-room {
             in rooms stargate_hint_rooms,
         ),
         has flag portal-gun-powered,
-    ) onFalse retryNextTurn {
+    ) onFalse retryNextTurn note "stargate hint"{
         if all(
             has item hint_radio,
             has flag hint-radio-on,

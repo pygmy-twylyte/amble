@@ -10,12 +10,23 @@ room lounge {
         present "An ornate, brick red rug lies in the center of the room and somehow -- really ties the room together."
         absent "The trap door opened in the floor reveals a ladder down to a hidden room below."
     }
-    overlay if ( flag set lab-fire-raging ) {
+
+    overlay if flag set lab-fire-raging {
         text "Occasional wisps of black smoke rise from the portal room below."
     }
+
+    overlay if flag unset coffee-ready, flag unset coffee-machine-empty {
+        text "An automatic drip coffee machine stands ready to brew on a small stand in one corner."
+    }
+    overlay if flag set coffee-ready {
+        text "The coffee machine emits a few satisfied clicks as the rich aroma of fresh coffee fills the lounge."
+    }
+    overlay if flag set coffee-machine-empty {
+        text "A faintly acrid smell drifts from the empty coffee machine in the corner."
+    }
     overlay if flag coffee-ready {
-        set "The coffee machine emits a few satisfied clicks as the rich aroma of fresh coffee fills the lounge."
-        unset "An automatic drip coffee machine stands ready to brew on a small stand in one corner."
+        set ""
+        unset ""
     }
     overlay if npc gonk_droid here {
         normal "The gonk droid mills about by the coffee cart, muttering quiet gonks."
@@ -102,7 +113,7 @@ when drink item cooled_coffee {
 
 trigger "[Lounge] Rug Taken / Reveal Trapdoor" only once
 when take item lebowski_rug {
-    do reveal exit from lounge to portal-room direction down
+    do reveal exit from lounge to portal-room direction "trap door"
     do add flag found-portal-room
     do award points 3 reason "Found the trapdoor beneath the rug"
     do show "Light shines around the edges of a trap door revealed in the floor when you remove the rug. The room no longer seems tied together."
@@ -136,4 +147,5 @@ trigger "[Lounge] Coffee Taken"
 when take item hot_coffee
 {
     do remove flag coffee-ready
+    do add flag coffee-machine-empty
 }
