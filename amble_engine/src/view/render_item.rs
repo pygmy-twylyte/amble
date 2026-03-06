@@ -79,7 +79,7 @@ pub(super) fn item_text(view: &mut View) {
     if let Some(entry) = view.items.iter().find(|i| matches!(i.view_item, ViewItem::ItemText(_)))
         && let ViewItem::ItemText(text) = &entry.view_item
     {
-        println!("{}:\n", "Upon closer inspection, you see".subheading_style());
+        println!("{}:\n", "Looking closer, you see".subheading_style());
         println!(
             "{}",
             render_wrapped(
