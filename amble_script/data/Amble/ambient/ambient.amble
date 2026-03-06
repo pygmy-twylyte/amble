@@ -38,7 +38,7 @@ let set elevator = ( lift-main, lift-sublevel-1 )
 
 trigger "[Ambient] Woodland"
 when always {
-    if all( chance 20%, in rooms stepped_path ) {
+    if all( chance 10%, in rooms stepped_path ) {
         do spinner message ambientWoodland
     }
 }
@@ -108,7 +108,7 @@ spinner ambientAA3B {
 
 trigger "[Ambient] Main Floor"
 when always {
-    if all( chance 20%, in rooms main_floor ) {
+    if all( chance 10%, in rooms main_floor ) {
         do spinner message ambientInterior
     }
 }
@@ -141,7 +141,7 @@ spinner ambientInterior {
 
 trigger "[Ambient] Snowfield"
 when always {
-    if all( chance 20%, in rooms snowfield ) {
+    if all( chance 10%, in rooms snowfield ) {
         do spinner message ambientSnowfield
     }
 }
@@ -158,7 +158,7 @@ spinner ambientSnowfield {
 
 trigger "[Ambient] Elevator Muzak"
 when always {
-    if all( chance 30%, in rooms elevator ) {
+    if all( chance 40%, in rooms elevator ) {
         do spinner message muzak
     }
 }
