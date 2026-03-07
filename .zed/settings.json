@@ -1,0 +1,24 @@
+{
+  "terminal": {
+    "shell": {
+      "program": "fish"
+    }
+  },
+  "languages": {
+    "Amble": {
+      "indent_guides": {
+        "background_coloring": "indent_aware"
+      }
+    }
+  },
+  "prettier": {
+    "allowed": false
+  },
+  "document_symbols": "on",
+  "document_folding_ranges": "on",
+  "semantic_tokens": "combined",
+  "indent_guides": {
+    "background_coloring": "disabled",
+    "active_line_width": 3
+  }
+}
