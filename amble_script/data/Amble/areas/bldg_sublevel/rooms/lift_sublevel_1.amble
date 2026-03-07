@@ -46,7 +46,8 @@ when touch item main_button_sublevel {
     do priority -100 npc says elevator "YEEEEEE-HAW!!!!"
     do priority -90 show r#"You're off, [[i]]literally[[/i]] like a rocket, accelerating and pressed into the floor of the elevator for what seems like a minute. You decelerate nearly as quickly, slamming into the elevator ceiling and then falling again when you arrive at the main level. The lift seems to sigh in satisfaction as its doors whisk softly open."#
     do priority -80 npc says elevator "Have a WONDERFUL day! And please come back soon for another ride."
-    do damage player 1 cause "elevator deceleration"
+    do set npc state elevator custom:on_main
+    do damage player 2 cause "elevator deceleration"
 }
 
 trigger "[Sublevel Lift] Press AA-3 Button"

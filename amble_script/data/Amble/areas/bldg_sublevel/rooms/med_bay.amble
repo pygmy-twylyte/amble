@@ -4,7 +4,7 @@
 
 room med-bay {
     name "Med Bay"
-    desc "A clean white infirmary with two bio-beds extending from the back wall, surrounded by a bevy of monitors and robotic surgical tools. One of the machines goes \"Bing!\" every few minutes. A small cleaning robot floats around the room disinfecting things. A large, lit red button is set into the wall between the beds."
+    desc "A clean white infirmary with two bio-beds extending from the back wall, surrounded by a bevy of monitors and robotic surgical tools. One of the machines goes \"Bing!\" every few minutes. A small cleaning robot floats around the room disinfecting things. A large, [[b]]lit red button[[/b]] is set into the wall between the beds."
 
     scenery "Bio-Beds"
     scenery "Monitors" desc "These are typical life sign monitors to assist in treating ailing patients, or occasionally for watching tribble videos when things are slow."

@@ -5,7 +5,14 @@
 # Starts with description merely as blinding explosion of light, so player doesn't get to peek at the contents early
 room patio {
     name "Restaurant Patio"
-    desc "The patio overlooks nothing in particular—just an endless starfield gently swirling beyond a transparent force field. A few metal tables are bolted to the floor, but nicely appointed with linens and decorative centerpieces. A sign near the edge of the balcony reads: 'No Leaning Beyond This Point. You have been warned.'"
+    desc "The patio overlooks nothing in particular—just an endless starfield gently swirling beyond a transparent force field. A few metal tables are bolted to the floor, but nicely appointed with linens and decorative centerpieces. There is a sign by the edge of the balcony."
+
+    scenery "Endless Starfield" desc "You see nothing unusual about the [[item]]endless starfield[[/item]], apart from the fact that most all of the stars seem to be either exploding or imploding."
+
+    scenery "Metal Tables"
+    scenery "Decorative Centerpieces"
+    scenery "Linens"
+    scenery "Balcony Sign" desc "[[box]][[hl]]NO LEANING. YOU HAVE BEEN WARNED.[[/hl]][[/box]]"
 
     overlay if flag patio-gate-open {
         set "The Stargate shimmers off to the side by the kitchen door, its connection to the laboratory still open."

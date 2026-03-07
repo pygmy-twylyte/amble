@@ -29,3 +29,23 @@ when insert item hal_module_3 into item hal_memory_bank {
     do set item movability hal_module_3 restricted "It's magnetically locked in place."
     do show "Memory module #3 magnetically locks into place and lights up."
 }
+
+# ========================================
+# Goals
+# ========================================
+
+goal find-hal-module-3 {
+    name "Find HAL Module #3"
+    desc "Look around the building and check with NPCs to locate the third HAL memory module."
+    group required
+    start when flag in progress hal-reboot
+    done when has flag module-3-found
+}
+
+goal insert-hal-module-3 {
+    name "Insert HAL Module #3"
+    desc "You were able to trade Dibbler for the third module. Insert it into HAL's memory bank to continue rebooting -- if you're sure."
+    group required
+    start when goal complete find-hal-module-3
+    done when has flag module-3-inserted
+}

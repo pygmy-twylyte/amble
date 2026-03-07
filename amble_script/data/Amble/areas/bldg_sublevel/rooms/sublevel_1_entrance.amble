@@ -4,16 +4,18 @@
 
 room sublevel-entrance {
     name "Sublevel AA-3 Entrance"
-    desc "A small landing area covered in dust. Buckets, tools, and debris are strewn about the floor. An industrial corridor extends farther south from the entrance. On your left, there is a heavy blast door marked \"Sublevel Security\". An even heavier door on the right is labeled with a sign:\n\n                        🚧 ROOM AA-3B 🚧\n                 FICTIONAL UNIVERSE CONTAINMENT"
+    desc "A small landing area covered in dust. Buckets, tools, and debris are strewn about the floor. An industrial corridor extends farther south from the entrance. On your left, there is a heavy blast door marked \"Sublevel Security\". An even heavier door on the right is labeled with a sign:[[box]]        🚧 ROOM AA-3B 🚧\nFICTIONAL UNIVERSE CONTAINMENT[[/box]]"
+
     overlay if ( npc in state black_knight normal ) {
-        text "The Black Knight stands in your path, staring you down, leaning on his battered longsword."
+        text "The [[npc]]Black Knight[[/npc]] stands in your path, staring you down, leaning on his battered longsword."
     }
     overlay if ( npc in state black_knight mad ) {
-        text "Agitated, the Black Knight sidesteps around the room, occasionally lunging at you to grab at his sword or kick you in the shin."
+        text "Agitated, the [[npc]]Black Knight[[/npc]] sidesteps around the room, occasionally lunging at you to grab at his sword or kick you in the shin."
     }
     overlay if ( npc in state black_knight happy ) {
-        text "The Black Knight stands in a corner, helmet off, gleefully plucking hairs from his beard and splitting them with his sword."
+        text "The [[npc]]Black Knight[[/npc]] stands in a corner, helmet off, gleefully plucking hairs from his beard and splitting them with his sword."
     }
+
     exit "into the elevator" -> lift-sublevel-1
     exit "containment area" -> room-aa-3b {
         required_flags( appeased-black-knight, touched-monolith ),

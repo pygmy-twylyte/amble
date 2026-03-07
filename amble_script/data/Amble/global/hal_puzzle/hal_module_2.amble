@@ -82,7 +82,7 @@ when use item crowbar on item vending_machine interaction open
             has flag hint-radio-on,
             has flag hal-module-in-crevice,
         ),
-        has flag hal-module-2-retrieved,
+        has flag module-2-retrieved,
     ) onFalse retryNextTurn note "fishing line hint available" {
         if all(
             has item hint_radio,
@@ -119,7 +119,7 @@ when use item fishing_line on item hal_module_2_crevice interaction handle
         do set item description hal_module_2 "Second in the trio of HAL's missing memory modules. Its red LED pulses gently, like a heartbeat—or a warning. Its case was cracked during retrieval from the vending machine and floor crevice, but it still seems serviceable."
         do spawn item hal_module_2 in inventory
         do award points 10 reason "Fished HAL module #2 out of the floor crevice"
-        do add flag hal-module-2-retrieved
+        do add flag module-2-retrieved
         do advance flag module-2-puzzle
     }
 }
@@ -157,7 +157,7 @@ goal get-hal-module-2 {
     desc "You found the module in the vending machine. Now you need to find a way to get it out."
     group required
     start when goal complete find-hal-module-2
-    done when has item hal_module_2
+    done when has flag module-2-retrieved
 }
 
 goal insert-hal-module-2 {
