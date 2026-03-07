@@ -4,7 +4,7 @@ use log::{info, warn};
 
 use crate::player::{Flag, Player};
 use crate::view::{StatusAction, View, ViewItem};
-use crate::world::{AmbleWorld, Location};
+use crate::world::AmbleWorld;
 
 /// Resets a sequence flag back to its initial step (0).
 pub fn reset_flag(player: &mut Player, flag_name: &str) {
@@ -89,7 +89,8 @@ pub(super) fn add_flag_with_priority(world: &mut AmbleWorld, view: &mut View, fl
 /// Returns an error if the destination room doesn't exist in the world.
 pub fn push_player(world: &mut AmbleWorld, room_id: &RoomId) -> Result<()> {
     if world.rooms.contains_key(room_id) {
-        world.player.location = Location::Room(room_id.clone());
+        world.player.move_to_room(room_id.clone());
+        world.rooms.get_mut(room_id).expect("room_id validated above").visited = true;
         info!("└─ action: PushPlayerTo({room_id})");
         Ok(())
     } else {
