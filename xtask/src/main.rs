@@ -10,6 +10,8 @@ use std::{
     io,
     path::{Path, PathBuf},
     process::Command,
+    thread,
+    time::Duration,
 };
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -124,7 +126,7 @@ struct ContentRefreshArgs {
 
 #[derive(Args)]
 struct ReleaseArgs {
-    /// Version applied to both `amble_engine` and `amble_script` (`SemVer`).
+    /// Version applied to all publishable Amble crates and internal dependency requirements (`SemVer`).
     #[arg(long, value_name = "SEMVER")]
     version: String,
     /// Target triple used for Linux packages (defaults to host triple).
@@ -175,6 +177,7 @@ enum ArchiveFormat {
 struct Workspace {
     root: PathBuf,
     target_dir: PathBuf,
+    data_version: String,
     engine_version: String,
     script_version: String,
     host_triple: String,
@@ -389,10 +392,22 @@ fn release(workspace: &mut Workspace, args: &ReleaseArgs) -> Result<()> {
     ensure_git_clean(workspace).context("content refresh produced changes; commit or revert them before releasing")?;
 
     println!("==> Updating crate versions to v{new_version}");
+    update_manifest_version(&workspace.root.join("amble_data/Cargo.toml"), &new_version)?;
     update_manifest_version(&workspace.root.join("amble_engine/Cargo.toml"), &new_version)?;
     update_manifest_version(&workspace.root.join("amble_script/Cargo.toml"), &new_version)?;
+    update_dependency_version(
+        &workspace.root.join("amble_engine/Cargo.toml"),
+        "amble_data",
+        &new_version,
+    )?;
+    update_dependency_version(
+        &workspace.root.join("amble_script/Cargo.toml"),
+        "amble_data",
+        &new_version,
+    )?;
     update_lock_versions(&workspace.root.join("Cargo.lock"), &new_version)?;
 
+    workspace.data_version = new_version.to_string();
     workspace.engine_version = new_version.to_string();
     workspace.script_version = new_version.to_string();
 
@@ -400,6 +415,7 @@ fn release(workspace: &mut Workspace, args: &ReleaseArgs) -> Result<()> {
     cargo_check_all_targets(workspace)?;
 
     let files_to_commit = [
+        workspace.root.join("amble_data/Cargo.toml"),
         workspace.root.join("amble_engine/Cargo.toml"),
         workspace.root.join("amble_script/Cargo.toml"),
         workspace.root.join("Cargo.lock"),
@@ -407,20 +423,23 @@ fn release(workspace: &mut Workspace, args: &ReleaseArgs) -> Result<()> {
     git_add(workspace, &files_to_commit)?;
 
     let commit_message = format!("Release v{new_version}");
-    println!("==> Creating commit: {commit_message}");
-    git_commit(workspace, &commit_message)?;
+    if git_has_staged_changes(workspace)? {
+        println!("==> Creating commit: {commit_message}");
+        git_commit(workspace, &commit_message)?;
+    } else {
+        println!("==> Version files already match v{new_version}; using current HEAD without a new release commit");
+    }
 
     let tag_name = format!("v{new_version}");
     println!("==> Tagging release: {tag_name}");
     git_tag(workspace, &tag_name, &commit_message)?;
 
-    println!("==> Pushing main branch and tag");
-    git_push(workspace, "origin", "main")?;
-    git_push(workspace, "origin", &tag_name)?;
-
     if args.skip_publish {
         println!("==> Skipping cargo publish steps (flag enabled)");
     } else {
+        println!("==> Publishing amble_data");
+        cargo_publish(workspace, "amble_data")?;
+        wait_for_registry_version(workspace, "amble_data", &new_version)?;
         println!("==> Publishing amble_script");
         cargo_publish(workspace, "amble_script")?;
         println!("==> Publishing amble_engine");
@@ -477,6 +496,10 @@ fn release(workspace: &mut Workspace, args: &ReleaseArgs) -> Result<()> {
     };
     package_full(workspace, &windows_full)?;
 
+    println!("==> Pushing main branch and tag");
+    git_push(workspace, "origin", "main")?;
+    git_push(workspace, "origin", &tag_name)?;
+
     println!("==> Release v{new_version} completed");
     Ok(())
 }
@@ -498,6 +521,50 @@ fn cargo_publish(workspace: &Workspace, package: &str) -> Result<()> {
     command.arg("-p").arg(package);
     let label = format!("cargo publish ({package})");
     run_command(&mut command, &label)
+}
+
+fn wait_for_registry_version(workspace: &Workspace, package: &str, version: &Version) -> Result<()> {
+    const MAX_ATTEMPTS: usize = 18;
+    const SLEEP_BETWEEN_ATTEMPTS: Duration = Duration::from_secs(10);
+
+    println!("==> Waiting for crates.io to expose {package} v{version}");
+    for attempt in 1..=MAX_ATTEMPTS {
+        let output = cargo_cmd("info", workspace)
+            .arg(package)
+            .arg("--registry")
+            .arg("crates-io")
+            .output()
+            .with_context(|| format!("running `cargo info {package} --registry crates-io`"))?;
+
+        if output.status.success() {
+            let stdout = String::from_utf8(output.stdout).context("parsing cargo info output as UTF-8")?;
+            if registry_version_matches(&stdout, version) {
+                println!("==> crates.io now reports {package} v{version}");
+                return Ok(());
+            }
+        }
+
+        if attempt < MAX_ATTEMPTS {
+            println!(
+                "    crates.io does not show {package} v{version} yet (attempt {attempt}/{MAX_ATTEMPTS}); retrying in {}s",
+                SLEEP_BETWEEN_ATTEMPTS.as_secs()
+            );
+            thread::sleep(SLEEP_BETWEEN_ATTEMPTS);
+        }
+    }
+
+    bail!(
+        "timed out waiting for crates.io to report {package} v{version}; publish dependent crates once the new version is visible"
+    );
+}
+
+fn registry_version_matches(info_output: &str, expected: &Version) -> bool {
+    let expected = expected.to_string();
+    info_output
+        .lines()
+        .find_map(|line| line.strip_prefix("version: "))
+        .and_then(|line| line.split_whitespace().next())
+        == Some(expected.as_str())
 }
 
 fn ensure_git_clean(workspace: &Workspace) -> Result<()> {
@@ -528,12 +595,20 @@ fn ensure_git_synced_with_origin(workspace: &Workspace) -> Result<()> {
     fetch.arg("fetch").arg("origin");
     run_command(&mut fetch, "git fetch origin")?;
 
-    let head = git_output(workspace, &["rev-parse", "HEAD"])?;
-    let remote = git_output(workspace, &["rev-parse", "origin/main"])?;
-    if head.trim() != remote.trim() {
-        bail!("local main is not up to date with origin/main; please pull or push pending commits");
+    let mut command = git_cmd(workspace);
+    command
+        .arg("merge-base")
+        .arg("--is-ancestor")
+        .arg("origin/main")
+        .arg("HEAD");
+    let status = command
+        .status()
+        .context("git merge-base --is-ancestor origin/main HEAD failed to run")?;
+    match status.code() {
+        Some(0) => Ok(()),
+        Some(1) => bail!("local main is behind or has diverged from origin/main; please pull/rebase before releasing"),
+        _ => bail!("git merge-base --is-ancestor origin/main HEAD exited with {}", status),
     }
-    Ok(())
 }
 
 fn git_add(workspace: &Workspace, paths: &[PathBuf]) -> Result<()> {
@@ -550,6 +625,17 @@ fn git_commit(workspace: &Workspace, message: &str) -> Result<()> {
     command.arg("commit").arg("-m").arg(message);
     let label = format!("git commit ({message})");
     run_command(&mut command, &label)
+}
+
+fn git_has_staged_changes(workspace: &Workspace) -> Result<bool> {
+    let mut command = git_cmd(workspace);
+    command.arg("diff").arg("--cached").arg("--quiet");
+    let status = command.status().context("git diff --cached --quiet failed to run")?;
+    match status.code() {
+        Some(0) => Ok(false),
+        Some(1) => Ok(true),
+        _ => bail!("git diff --cached --quiet exited with {}", status),
+    }
 }
 
 fn git_tag(workspace: &Workspace, tag: &str, message: &str) -> Result<()> {
@@ -576,11 +662,22 @@ fn update_manifest_version(manifest: &Path, version: &Version) -> Result<()> {
     Ok(())
 }
 
+fn update_dependency_version(manifest: &Path, dependency_name: &str, version: &Version) -> Result<()> {
+    let contents = fs::read_to_string(manifest).with_context(|| format!("unable to read {}", manifest.display()))?;
+    let mut doc: Document = contents
+        .parse()
+        .with_context(|| format!("parsing {} as TOML", manifest.display()))?;
+    doc["dependencies"][dependency_name]["version"] = value(version.to_string());
+    fs::write(manifest, doc.to_string()).with_context(|| format!("writing updated {}", manifest.display()))?;
+    Ok(())
+}
+
 fn update_lock_versions(lock_path: &Path, version: &Version) -> Result<()> {
     let contents = fs::read_to_string(lock_path).with_context(|| format!("unable to read {}", lock_path.display()))?;
     let mut doc: Document = contents
         .parse()
         .with_context(|| format!("parsing {} as TOML", lock_path.display()))?;
+    let mut data_updated = false;
     let mut engine_updated = false;
     let mut script_updated = false;
     let packages = doc["package"]
@@ -591,6 +688,10 @@ fn update_lock_versions(lock_path: &Path, version: &Version) -> Result<()> {
             continue;
         };
         match name {
+            "amble_data" => {
+                package["version"] = value(version.to_string());
+                data_updated = true;
+            },
             "amble_engine" => {
                 package["version"] = value(version.to_string());
                 engine_updated = true;
@@ -602,8 +703,8 @@ fn update_lock_versions(lock_path: &Path, version: &Version) -> Result<()> {
             _ => {},
         }
     }
-    if !engine_updated || !script_updated {
-        bail!("failed to update Cargo.lock entries for amble_engine and amble_script");
+    if !data_updated || !engine_updated || !script_updated {
+        bail!("failed to update Cargo.lock entries for amble_data, amble_engine, and amble_script");
     }
     fs::write(lock_path, doc.to_string()).with_context(|| format!("writing updated {}", lock_path.display()))?;
     Ok(())
@@ -873,10 +974,12 @@ impl Workspace {
         let root = metadata.workspace_root.into_std_path_buf();
         let target_dir = metadata.target_directory.into_std_path_buf();
 
+        let mut data_version = None;
         let mut engine_version = None;
         let mut script_version = None;
         for package in metadata.packages {
             match package.name.as_str() {
+                "amble_data" => data_version = Some(package.version.to_string()),
                 "amble_engine" => engine_version = Some(package.version.to_string()),
                 "amble_script" => script_version = Some(package.version.to_string()),
                 _ => {},
@@ -886,6 +989,7 @@ impl Workspace {
         Ok(Self {
             root,
             target_dir,
+            data_version: data_version.context("unable to find amble_data package metadata")?,
             engine_version: engine_version.context("unable to find amble_engine package metadata")?,
             script_version: script_version.context("unable to find amble_script package metadata")?,
             host_triple: detect_host_triple()?,

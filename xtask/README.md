@@ -102,21 +102,22 @@ Both commands execute in the workspace root, so relative paths match those in th
 
 Automates the end-to-end release checklist:
 
-1. Verifies the working tree is clean, on `main`, and matches `origin/main`.
+1. Verifies the working tree is clean, on `main`, and not behind or diverged from `origin/main`.
 2. Runs `cargo check --workspace --all-targets` and `cargo test --workspace`.
 3. Executes `cargo xtask content refresh --deny-missing`.
-4. Bumps `amble_engine` + `amble_script` to the provided `--version` and updates `Cargo.lock`.
-5. Commits the version bump, creates an annotated tag `v<version>`, and pushes to `origin`.
-6. Publishes `amble_script` followed by `amble_engine` on crates.io.
+4. Bumps `amble_data` + `amble_engine` + `amble_script` to the provided `--version`, updates internal dependency requirements, and refreshes `Cargo.lock`.
+5. Commits the version bump and creates an annotated tag `v<version>`.
+6. Publishes `amble_data`, waits for crates.io to expose that version, then publishes `amble_script` and `amble_engine`.
 7. Builds four distributable packages (Linux + Windows, engine-only + full suite) via the existing packaging tasks.
+8. Pushes `main` and the release tag to `origin` after the release steps succeed.
 
 Options:
 
 | Flag | Default | Description |
 | --- | --- | --- |
-| `--version <semver>` | *required* | Version number applied to both crates (and tag). |
+| `--version <semver>` | *required* | Version number applied to all publishable crates (and tag). |
 | `--linux-target <triple>` | host triple | Target triple for Linux packages (`x86_64-unknown-linux-gnu` on Linux hosts). |
-| `--windows-target <triple>` | `x86_64-pc-windows-msvc` | Target triple for Windows packages. |
+| `--windows-target <triple>` | `x86_64-pc-windows-gnu` | Target triple for Windows packages. |
 | `--skip-publish` | off | Run every step except `cargo publish` (useful for rehearsals). |
 
 All steps abort on the first failure so nothing half-finished sneaks through. Provide API tokens / credentials ahead of time for `git push` and `cargo publish`.
