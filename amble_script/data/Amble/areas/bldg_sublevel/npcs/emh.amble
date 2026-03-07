@@ -40,7 +40,7 @@ The EMH is a holographic AI, intensively trained in xenobiology, who appears dre
 # Triggers
 # ========================================
 
-trigger "[Med-Bay] EMH/Cure Nausea"
+trigger "[Med-Bay] EMH/Cure Stuff"
 note "can add specific has flag conditions here to use this for any nausea-inducing condition"
 when talk to npc emh {
     if has flag read-vogon-poetry {

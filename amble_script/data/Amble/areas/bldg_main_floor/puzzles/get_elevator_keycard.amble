@@ -11,6 +11,7 @@
 
 item vogon_poetry_book {
     name "Longest Poems of the Largest Vogons"
+    aliases "book", "poetry book", "vogon poetry", "vogon poems"
     desc "A bound volume of Vogon poetry, with the usual safety devices and locks removed. Looking inside is likely to cause brain damage and a permanent smell of boiling cauliflower to haunt you, if you're lucky."
     movability free
     location room vip-bathroom
