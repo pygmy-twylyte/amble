@@ -49,9 +49,11 @@ when talk to npc emh {
         do npc says emh "You poor fool, you look horrible. You've been reading Vogon poetry, hmmm? Here, this should help."
     }
     if has flag ate-sausage {
-        do award points 3 reason "Recovered from eating Dibbler's sausage"
         do npc says emh "Ugh -- your breath is horrid! You ate one of Dibbler's sausages, didn't you? Tasty but toxic, I say."
+        do show "The EMH quickly sprays something in your mouth that tastes and smells like furniture polish -- but [[i]]decidedly[[/i]] less horrid than the aftertaste from C.M.O.T. Dibblers sausage."
         do remove flag ate-sausage
+        do remove flag status:bad-breath
+        do award points 3 reason "Recovered from eating Dibbler's sausage"
     }
     if has flag status:nauseated {
         do remove flag status:nauseated
