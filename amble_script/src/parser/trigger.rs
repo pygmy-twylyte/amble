@@ -195,6 +195,20 @@ pub(super) fn parse_trigger_pair(
                 .to_string();
             ConditionAst::TakeFromNpc { item, npc }
         },
+        Rule::take_from_item => {
+            let mut i = when.into_inner();
+            let loot = i
+                .next()
+                .ok_or(AstError::Shape("take-from-item loot ident"))?
+                .as_str()
+                .to_string();
+            let container = i
+                .next()
+                .ok_or(AstError::Shape("take-from-item container ident"))?
+                .as_str()
+                .to_string();
+            ConditionAst::TakeFromItem { loot, container }
+        },
         Rule::insert_item_into => {
             let mut i = when.into_inner();
             let item = i

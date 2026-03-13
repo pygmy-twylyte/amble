@@ -155,6 +155,11 @@ pub enum ConditionAst {
         item: String,
         npc: String,
     },
+    /// Event: player takes an item from a specific container item.
+    TakeFromItem {
+        loot: String,
+        container: String,
+    },
     /// Event: player inserts an item into a container item.
     InsertItemInto {
         item: String,
