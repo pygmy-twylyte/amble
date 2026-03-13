@@ -39,6 +39,7 @@ trigger "First time in the Lab" when enter room lab {
 - `unlock item <item>`
 - `insert item <item> into item <container>`
 - `take item <item> from npc <npc>`
+- `take item <item> from item <item>`
 - `give item <item> to npc <npc>`
 - `talk to npc <npc>`
 - `player dies`

@@ -125,7 +125,7 @@ when enter room lobby {
 The DSL supports a wide range of trigger events. A trigger fires when the player (or world) performs the described action:
 
 - Room transitions: `enter room <room_id>`, `leave room <room_id>`
-- Item interactions: `take item <item_id>`, `drop item <item_id>`, `look at item <item_id>`, `open item <item_id>`, `unlock item <item_id>`, `use item <item_id> ability <ability>`, `act <verb> on item <item_id>`, `insert item <item_id> into item <container_id>`, `take item <item_id> from npc <npc_id>`, `give item <item_id> to npc <npc_id>`
+- Item interactions: `take item <item_id>`, `drop item <item_id>`, `look at item <item_id>`, `open item <item_id>`, `unlock item <item_id>`, `use item <item_id> ability <ability>`, `act <verb> on item <item_id>`, `insert item <item_id> into item <container_id>`, `take item <item_id> from item <container_id>`, `take item <item_id> from npc <npc_id>`, `give item <item_id> to npc <npc_id>`
 - Item-on-item interactions: `use item <tool_id> on item <target_id> interaction <interaction>`
 - NPC interactions: `talk to npc <npc_id>`
 - Ambient/status: `always` (evaluated every turn against conditions)
