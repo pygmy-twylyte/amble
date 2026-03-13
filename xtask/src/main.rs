@@ -4,6 +4,7 @@
 //! and managing Amble development workflows.
 
 use std::{
+    env,
     ffi::OsStr,
     fs,
     fs::File,
@@ -201,6 +202,8 @@ fn main() -> Result<()> {
 }
 
 fn build_engine(workspace: &Workspace, args: &BuildEngineArgs) -> Result<()> {
+    ensure_target_toolchain_available(args.target.as_deref())?;
+
     let mut command = cargo_cmd("build", workspace);
     command.arg("-p").arg("amble_engine");
     if let Some(flag) = args.profile.cargo_flag() {
@@ -710,7 +713,39 @@ fn update_lock_versions(lock_path: &Path, version: &Version) -> Result<()> {
     Ok(())
 }
 
+fn ensure_target_toolchain_available(target: Option<&str>) -> Result<()> {
+    let Some(target) = target else {
+        return Ok(());
+    };
+
+    if target.ends_with("-windows-gnu") {
+        let required = ["x86_64-w64-mingw32-gcc", "x86_64-w64-mingw32-dlltool"];
+        let missing: Vec<_> = required
+            .into_iter()
+            .filter(|program| !command_exists(program))
+            .collect();
+        if !missing.is_empty() {
+            bail!(
+                "target '{target}' requires MinGW cross tools on PATH; missing: {}. Install packages such as `gcc-mingw-w64-x86-64` and `binutils-mingw-w64-x86-64`",
+                missing.join(", ")
+            );
+        }
+    }
+
+    Ok(())
+}
+
+fn command_exists(program: &str) -> bool {
+    let Some(path_var) = env::var_os("PATH") else {
+        return false;
+    };
+
+    env::split_paths(&path_var).any(|dir| dir.join(program).is_file())
+}
+
 fn build_script(workspace: &Workspace, profile: Profile, target: Option<&str>) -> Result<()> {
+    ensure_target_toolchain_available(target)?;
+
     let mut command = cargo_cmd("build", workspace);
     command.arg("-p").arg("amble_script");
     if let Some(flag) = profile.cargo_flag() {
