@@ -404,6 +404,10 @@ pub enum EventDef {
     NpcDeath {
         npc: Id,
     },
+    TakeFromItem {
+        loot: Id,
+        container: Id,
+    },
 }
 
 /// Boolean expression tree used by triggers and conditions.

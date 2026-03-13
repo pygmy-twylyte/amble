@@ -754,6 +754,10 @@ fn event_condition_from_def(def: &EventDef) -> Option<TriggerCondition> {
             item_id: item.clone().into(),
             npc_id: npc.clone().into(),
         },
+        EventDef::TakeFromItem { loot, container } => TriggerCondition::TakeFromItem {
+            loot_id: loot.clone().into(),
+            container_id: container.clone().into(),
+        },
         EventDef::InsertItemInto { item, container } => TriggerCondition::Insert {
             item: item.clone().into(),
             container: container.clone().into(),

@@ -603,16 +603,9 @@ fn summarize_trigger_condition(world: &AmbleWorld, tc: &TriggerCondition) -> Str
         TriggerCondition::Unlock(item) => format!("unlock:{}", symbol_or_unknown(&world.items, item)),
         TriggerCondition::Drop(item) => format!("drop:{}", symbol_or_unknown(&world.items, item)),
         TriggerCondition::Take(item) => format!("take:{}", symbol_or_unknown(&world.items, item)),
-        TriggerCondition::TakeFromNpc { item_id, npc_id } => format!(
-            "takeFromNpc:{}<-{}",
-            symbol_or_unknown(&world.items, item_id),
-            symbol_or_unknown(&world.npcs, npc_id)
-        ),
-        TriggerCondition::Insert { item, container } => format!(
-            "putIn:{}->{}",
-            symbol_or_unknown(&world.items, item),
-            symbol_or_unknown(&world.items, container)
-        ),
+        TriggerCondition::TakeFromNpc { item_id, npc_id } => format!("takeFromNpc:{item_id}<-{npc_id}"),
+        TriggerCondition::TakeFromItem { loot_id, container_id } => format!("takeFromItem:{loot_id}<-{container_id}"),
+        TriggerCondition::Insert { item, container } => format!("putIn:{item}->{container}"),
         TriggerCondition::ContainerHasItem { container_id, item_id } => format!(
             "containerHas:{}:{}",
             symbol_or_unknown(&world.items, container_id),
