@@ -61,6 +61,8 @@ pub enum SearchScope {
     Inventory,
     /// Only items in an NPC's inventory.
     NpcInventory(NpcId),
+    /// Only items contained within a specific item container.
+    ItemContents(ItemId),
 }
 
 /// Possible errors / situations causing a failed entity search.
@@ -68,6 +70,8 @@ pub enum SearchScope {
 pub enum SearchError {
     #[error("no entity in scope name matching user input '{0}'")]
     NoMatchingName(String),
+    #[error("no item found with the supplied id {0}")]
+    InvalidItemId(ItemId),
     #[error("no npc found with the supplied id {0}")]
     InvalidNpcId(NpcId),
     #[error("found no room with the supplied id ({0})")]
@@ -176,6 +180,10 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
             let npc = world.npcs.get(&npc_id).ok_or(SearchError::InvalidNpcId(npc_id))?;
             npc.inventory.clone()
         },
+        SearchScope::ItemContents(item_id) => {
+            let item = world.items.get(&item_id).ok_or(SearchError::InvalidItemId(item_id))?;
+            item.contents.clone()
+        },
         SearchScope::VisibleNpcs(_) | SearchScope::TouchableNpcs(_) => {
             return Err(SearchError::InvalidScope("item".to_string(), "NPC".to_string()));
         },
@@ -241,7 +249,8 @@ pub fn find_npc_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) -> 
         SearchScope::VisibleItems(_)
         | SearchScope::TouchableItems(_)
         | SearchScope::Inventory
-        | SearchScope::NpcInventory(_) => {
+        | SearchScope::NpcInventory(_)
+        | SearchScope::ItemContents(_) => {
             return Err(SearchError::InvalidScope("npc".into(), "item".into()));
         },
     };
@@ -366,6 +375,44 @@ mod tests {
 
         let result = find_item_match(&world, "chest", SearchScope::NearbyVessels(room_id)).unwrap();
         assert_eq!(result, chest_id);
+    }
+
+    #[test]
+    fn find_item_match_returns_items_from_selected_container_only() {
+        let mut world = AmbleWorld::new_empty();
+        let room_id = insert_room(&mut world, "Vault");
+        let chest_id = insert_item(
+            &mut world,
+            "Ancient Chest",
+            Location::Room(room_id.clone()),
+            Some(ContainerState::Open),
+        );
+        let chest_gem_id = insert_item(&mut world, "Gem", Location::Item(chest_id.clone()), None);
+        let floor_gem_id = insert_item(&mut world, "Gem", Location::Room(room_id.clone()), None);
+
+        world.rooms.get_mut(&room_id).unwrap().contents.insert(chest_id.clone());
+        world.rooms.get_mut(&room_id).unwrap().contents.insert(floor_gem_id);
+        world
+            .items
+            .get_mut(&chest_id)
+            .unwrap()
+            .contents
+            .insert(chest_gem_id.clone());
+
+        let result = find_item_match(&world, "gem", SearchScope::ItemContents(chest_id)).unwrap();
+        assert_eq!(result, chest_gem_id);
+    }
+
+    #[test]
+    fn find_item_match_errors_when_container_missing() {
+        let world = AmbleWorld::new_empty();
+        let item_id: ItemId = crate::idgen::new_id().into();
+
+        let err = find_item_match(&world, "gem", SearchScope::ItemContents(item_id.clone())).unwrap_err();
+        match err {
+            SearchError::InvalidItemId(id) => assert_eq!(id, item_id),
+            other => panic!("unexpected error: {other:?}"),
+        }
     }
 
     #[test]
