@@ -49,10 +49,10 @@ when <event> {
 **Events:**
 
 - `enter room <room>` | `leave room <room>`
-- `take item <item>` | `drop item <item>` | `look at item <item>` | `open item <item>` | `unlock item <item>`
-- `use item <item> ability <ability>` | `act <verb> on item <item>` | `insert item <item> into item <container>` | `take item <item> from item <container>`
+- `take <item>` | `drop item <item>` | `look at item <item>` | `open item <item>` | `unlock item <item>`
+- `use item <item> ability <ability>` | `act <verb> on item <item>` | `insert item <item> into item <container>` | `take <item> from item <container>`
 - `use item <tool> on item <target> interaction <interaction>`
-- `take item <item> from npc <npc>` | `give item <item> to npc <npc>` | `talk to npc <npc>`
+- `take <item> from npc <npc>` | `give item <item> to npc <npc>` | `talk to npc <npc>`
 - `always`
 
 **Condition atoms:**
