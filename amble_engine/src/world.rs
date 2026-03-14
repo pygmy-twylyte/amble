@@ -240,7 +240,7 @@ fn collect_room_items(
     Ok(visible_room_items.union(&contained_items).cloned().collect())
 }
 
-fn item_is_visible_item(item: &Item, world: &AmbleWorld) -> bool {
+pub(crate) fn item_is_visible_item(item: &Item, world: &AmbleWorld) -> bool {
     item.visible_when.as_ref().is_none_or(|cond| cond.eval(world))
 }
 

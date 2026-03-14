@@ -28,6 +28,7 @@ use std::collections::{HashMap, HashSet};
 use std::hash::BuildHasher;
 
 pub use crate::EntityId;
+use crate::world::item_is_visible_item;
 use crate::{Item, ItemId, Npc, NpcId, RoomId, View, ViewItem, WorldObject};
 use colored::Colorize;
 use thiserror::Error;
@@ -178,11 +179,11 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
         SearchScope::Inventory => world.player.inventory.clone(),
         SearchScope::NpcInventory(npc_id) => {
             let npc = world.npcs.get(&npc_id).ok_or(SearchError::InvalidNpcId(npc_id))?;
-            npc.inventory.clone()
+            filter_visible_items(&npc.inventory, world)?
         },
         SearchScope::ItemContents(item_id) => {
             let item = world.items.get(&item_id).ok_or(SearchError::InvalidItemId(item_id))?;
-            item.contents.clone()
+            filter_visible_items(&item.contents, world)?
         },
         SearchScope::VisibleNpcs(_) | SearchScope::TouchableNpcs(_) => {
             return Err(SearchError::InvalidScope("item".to_string(), "NPC".to_string()));
@@ -202,6 +203,27 @@ pub fn find_item_match(world: &AmbleWorld, pattern: &str, scope: SearchScope) ->
         EntityId::Item(item_id) => Ok(item_id),
         EntityId::Npc(_) => Err(SearchError::InvalidScope("item".into(), "NPC".into())),
     }
+}
+
+/// Takes a set of `ItemId`s and returns a new set, filtering out any items that
+/// shouldn't be visible.
+/// # Errors
+/// - if an `ItemId` is invalid
+pub(crate) fn filter_visible_items(
+    item_set: &HashSet<ItemId>,
+    world: &AmbleWorld,
+) -> Result<HashSet<ItemId>, SearchError> {
+    let mut visible_items = HashSet::new();
+    for item_id in item_set {
+        let item = world
+            .items
+            .get(item_id)
+            .ok_or(SearchError::InvalidItemId(item_id.clone()))?;
+        if item_is_visible_item(item, world) {
+            visible_items.insert(item_id.clone());
+        }
+    }
+    Ok(visible_items)
 }
 
 /// Find either an `NPC` or an `Item` with name matching `pattern` within the `SearchScope`.
@@ -280,6 +302,8 @@ mod tests {
         health::HealthState,
         item::{ContainerState, Movability},
         npc::NpcState,
+        scheduler::EventCondition,
+        trigger::TriggerCondition,
         world::Location,
     };
     use std::collections::{HashMap, HashSet};
@@ -401,6 +425,56 @@ mod tests {
 
         let result = find_item_match(&world, "gem", SearchScope::ItemContents(chest_id)).unwrap();
         assert_eq!(result, chest_gem_id);
+    }
+
+    #[test]
+    fn find_item_match_filters_hidden_items_from_npc_inventory() {
+        let mut world = AmbleWorld::new_empty();
+        let room_id = insert_room(&mut world, "Garden");
+        let npc_id = insert_npc(&mut world, "Caretaker", Location::Room(room_id.clone()));
+        world.rooms.get_mut(&room_id).unwrap().npcs.insert(npc_id.clone());
+
+        let hidden_gem_id = insert_item(&mut world, "Gem", Location::Npc(npc_id.clone()), None);
+        world.items.get_mut(&hidden_gem_id).unwrap().visible_when = Some(EventCondition::Trigger(
+            TriggerCondition::HasFlag("npc_inventory_visible".to_string()),
+        ));
+        let visible_coin_id = insert_item(&mut world, "Coin", Location::Npc(npc_id.clone()), None);
+
+        world.npcs.get_mut(&npc_id).unwrap().inventory.insert(hidden_gem_id);
+        world.npcs.get_mut(&npc_id).unwrap().inventory.insert(visible_coin_id.clone());
+
+        let result = find_item_match(&world, "coin", SearchScope::NpcInventory(npc_id.clone())).unwrap();
+        assert_eq!(result, visible_coin_id);
+
+        let err = find_item_match(&world, "gem", SearchScope::NpcInventory(npc_id)).unwrap_err();
+        assert!(matches!(err, SearchError::NoMatchingName(name) if name == "gem"));
+    }
+
+    #[test]
+    fn find_item_match_filters_hidden_items_from_container_contents() {
+        let mut world = AmbleWorld::new_empty();
+        let room_id = insert_room(&mut world, "Vault");
+        let chest_id = insert_item(
+            &mut world,
+            "Ancient Chest",
+            Location::Room(room_id.clone()),
+            Some(ContainerState::Open),
+        );
+        let hidden_gem_id = insert_item(&mut world, "Gem", Location::Item(chest_id.clone()), None);
+        world.items.get_mut(&hidden_gem_id).unwrap().visible_when = Some(EventCondition::Trigger(
+            TriggerCondition::HasFlag("container_contents_visible".to_string()),
+        ));
+        let visible_coin_id = insert_item(&mut world, "Coin", Location::Item(chest_id.clone()), None);
+
+        world.rooms.get_mut(&room_id).unwrap().contents.insert(chest_id.clone());
+        world.items.get_mut(&chest_id).unwrap().contents.insert(hidden_gem_id);
+        world.items.get_mut(&chest_id).unwrap().contents.insert(visible_coin_id.clone());
+
+        let result = find_item_match(&world, "coin", SearchScope::ItemContents(chest_id.clone())).unwrap();
+        assert_eq!(result, visible_coin_id);
+
+        let err = find_item_match(&world, "gem", SearchScope::ItemContents(chest_id)).unwrap_err();
+        assert!(matches!(err, SearchError::NoMatchingName(name) if name == "gem"));
     }
 
     #[test]
