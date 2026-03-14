@@ -33,7 +33,7 @@ room patio {
 
 # Triggers alter room appearance when the sunglasses are taken or dropped
 trigger "Modify Patio: Sunglasses On"
-when take item peril_sunglasses {
+when take peril_sunglasses {
     do modify room restaurant {
         remove exit blinding-glare
         add exit "patio seating" -> patio

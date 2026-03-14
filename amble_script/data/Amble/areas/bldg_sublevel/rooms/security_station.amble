@@ -88,7 +88,7 @@ when act open on item evidence_locker_closed {
 }
 
 trigger "[Security-Station] Take Sonic Screwdriver" only once
-when take item sonic_screwdriver {
+when take sonic_screwdriver {
     do add flag got-sonic
     do award points 3 reason "Retrieved the sonic screwdriver from evidence"
 }

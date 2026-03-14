@@ -37,7 +37,7 @@ item eye_bot-scenery {
 
 trigger "Toggle Eye-Bot Green"
 note "eye-bot changes when the towel is taken or dropped"
-when take item towel {
+when take towel {
     do set item description eye_bot-scenery "A security scanner made to look like a reptilian eye, maneuvered by an arthritic robotic arm. Its slit-like iris is glowing [[bright-green]]GREEN[[/bright-green]]."
 }
 

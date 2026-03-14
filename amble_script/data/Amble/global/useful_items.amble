@@ -74,14 +74,14 @@ item towel {
 }
 
 trigger "[Hint] Towel / Plaque-1 Hint" only once
-when take item towel {
+when take towel {
     do add flag got-towel
     do award points 3 reason "Recovered the essential towel every frood should carry"
     do show "[[u]]NOW[[/u]] you're a frood who really[[b]] \"knows where his towel is\"! [[/b]]"
 }
 
 trigger "[HINT] Towel Cleans Plaque 1" only once
-when take item towel {
+when take towel {
     do schedule in 2
     if any(
         # 1: condition where may be needed and radio on

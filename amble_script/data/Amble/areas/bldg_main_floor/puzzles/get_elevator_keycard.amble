@@ -72,7 +72,7 @@ when give item invitation to npc demerzel {
 }
 
 trigger "[Poetry-Panic] Acquired Elevator Keycard" only once
-when take item elevator_keycard {
+when take elevator_keycard {
     do set npc state demerzel bored
     do add flag got-elevator-keycard
     do modify item aa_3_button_main {

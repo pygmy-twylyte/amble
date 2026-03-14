@@ -57,7 +57,7 @@ item destroyed_box {
 
 trigger "[Global] Take Vogon Poetry"
 note "merely taking poetry book does not cause status effect -- reading does"
-when take item vogon_poetry_book
+when take vogon_poetry_book
 {
     do show "A greasy feeling of nausea overcomes you."
 }

@@ -55,7 +55,7 @@ when enter room med-bay {
 
 trigger "[Med-Bay] Advance Sequence when Broken Emitter Found" only once
 note "advance to mobilize-emh#1 when emitter taken"
-when take item broken_emitter {
+when take broken_emitter {
     do advance flag mobilize-emh
 }
 

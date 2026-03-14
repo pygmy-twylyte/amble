@@ -125,7 +125,7 @@ when use item fishing_line on item hal_module_2_crevice interaction handle
 }
 
 trigger "[Main-Lobby] Can't Reach HAL Module in Crevice"
-when take item hal_module_2_crevice
+when take hal_module_2_crevice
 {
     if has flag module-2-puzzle#1 {
         do show "The HAL module has fallen deep into a narrow crevice between the vending machine and the floor. You try to reach it with your hand, but the gap is too narrow. Your fingers can just barely brush against the module, pushing it slightly further away. You're going to need some kind of fishing tool to retrieve it."

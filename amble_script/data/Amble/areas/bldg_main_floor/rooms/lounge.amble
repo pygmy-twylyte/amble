@@ -95,7 +95,7 @@ item cooled_coffee {
 # ========================================
 
 trigger "Coffee Cools Down" only once
-when take item hot_coffee {
+when take hot_coffee {
     do schedule in 7 note "coffee cooled" {
         do replace item hot_coffee with cooled_coffee
     }
@@ -112,7 +112,7 @@ when drink item cooled_coffee {
 }
 
 trigger "[Lounge] Rug Taken / Reveal Trapdoor" only once
-when take item lebowski_rug {
+when take lebowski_rug {
     do reveal exit from lounge to portal-room direction "trap door"
     do add flag found-portal-room
     do award points 3 reason "Found the trapdoor beneath the rug"
@@ -144,7 +144,7 @@ when use item coffee_machine ability turnOn
 }
 
 trigger "[Lounge] Coffee Taken"
-when take item hot_coffee
+when take hot_coffee
 {
     do remove flag coffee-ready
     do add flag coffee-machine-empty
