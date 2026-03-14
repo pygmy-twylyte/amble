@@ -226,7 +226,7 @@ pub type ProgramAstBundle = (
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{ActionAst, ContainerStateAst, MovabilityAst, NpcStateValue, NpcTimingPatchAst};
+    use crate::{ActionAst, ConditionAst, ContainerStateAst, MovabilityAst, NpcStateValue, NpcTimingPatchAst};
 
     #[test]
     fn game_block_parses() {
@@ -310,6 +310,45 @@ trigger "He said:\n\"hi\"" when always {
             },
             _ => panic!("expected npc says"),
         }
+    }
+
+    #[test]
+    fn compact_take_event_parses() {
+        let src = r#"
+trigger "take towel" when take towel {
+    do show "ok"
+}
+"#;
+        let ast = parse_trigger(src).expect("parse ok");
+        assert_eq!(ast.event, ConditionAst::TakeItem("towel".into()));
+    }
+
+    #[test]
+    fn compact_take_from_events_parse() {
+        let src = r#"
+trigger "take from npc" when take dull_longsword from npc black_knight {
+    do show "npc"
+}
+
+trigger "take from item" when take keycard from item locker {
+    do show "item"
+}
+"#;
+        let (_, triggers, ..) = parse_program_full(src).expect("parse ok");
+        assert_eq!(
+            triggers[0].event,
+            ConditionAst::TakeFromNpc {
+                item: "dull_longsword".into(),
+                npc: "black_knight".into(),
+            }
+        );
+        assert_eq!(
+            triggers[1].event,
+            ConditionAst::TakeFromItem {
+                loot: "keycard".into(),
+                container: "locker".into(),
+            }
+        );
     }
 
     #[test]
