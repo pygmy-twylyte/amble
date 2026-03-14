@@ -174,7 +174,7 @@ when act burn on item security_locker {
 }
 
 trigger "[Loading-Dock] Got Crowbar" only once
-when take item crowbar {
+when take crowbar {
     do show "You feel like Gordon Freeman now, and wonder if maybe Barney's on security here?"
     do add flag got-crowbar
     do award points 3 reason "Recovered the iconic crowbar"

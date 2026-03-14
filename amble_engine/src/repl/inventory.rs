@@ -562,7 +562,7 @@ pub(crate) fn validate_and_transfer_from_npc(
 ///
 /// On successful validation:
 /// - Calls [`transfer_to_player`] to execute the actual transfer
-/// - Triggers general take conditions (container transfers don't have special triggers)
+/// - Triggers both general take conditions and container-specific take-from-item conditions
 /// - Updates container contents and player inventory
 pub(crate) fn validate_and_transfer_from_item(
     world: &mut AmbleWorld,
@@ -579,9 +579,8 @@ pub(crate) fn validate_and_transfer_from_item(
         ..Default::default()
     };
 
-    // match the item_pattern (input loot name) to an available item in the room
-    let room_id = world.player_room_id();
-    match find_item_match(world, item_pattern, SearchScope::TouchableItems(room_id)) {
+    // match the item_pattern (input loot name) only against items in the selected vessel
+    match find_item_match(world, item_pattern, SearchScope::ItemContents(vessel_id.clone())) {
         Ok(id) => {
             tx_data.loot_id.clone_from(&id);
             tx_data.loot_name = world.items.get(&id).expect("id must be present").name().to_owned();
@@ -607,7 +606,17 @@ pub(crate) fn validate_and_transfer_from_item(
 
     // vessel and loot now identified and validated -- execute the transfer
     transfer_to_player(world, view, &tx_data);
-    check_triggers(world, view, &[TriggerCondition::Take(tx_data.loot_id.clone())])?;
+    check_triggers(
+        world,
+        view,
+        &[
+            TriggerCondition::Take(tx_data.loot_id.clone()),
+            TriggerCondition::TakeFromItem {
+                loot_id: tx_data.loot_id.clone(),
+                container_id: vessel_id.clone(),
+            },
+        ],
+    )?;
     Ok(())
 }
 
@@ -1113,12 +1122,59 @@ mod tests {
         let mut tw = build_world();
         let chest_id = tw.chest_id;
         let item_id = tw.restr_chest_item_id;
-        take_from_handler(&mut tw.world, &mut tw.view, "restricted", "bob").unwrap();
+        take_from_handler(&mut tw.world, &mut tw.view, "restricted", "chest").unwrap();
         assert!(!tw.world.player.inventory.contains(&item_id));
         assert!(tw.world.items.get(&chest_id).unwrap().contents.contains(&item_id));
         assert_eq!(
             tw.world.items.get(&item_id).unwrap().location(),
             &Location::Item(chest_id)
+        );
+    }
+
+    #[test]
+    fn take_from_handler_prefers_selected_container_contents() {
+        let mut tw = build_world();
+        let floor_gem_id: ItemId = crate::idgen::new_id().into();
+        let floor_gem = Item {
+            id: floor_gem_id.clone(),
+            symbol: "floor-gem".into(),
+            name: "Gem".into(),
+            description: String::new(),
+            location: Location::Room(tw.room_id.clone()),
+            visibility: crate::item::ItemVisibility::Listed,
+            visible_when: None,
+            aliases: Vec::new(),
+            movability: Movability::Free,
+            container_state: None,
+            contents: HashSet::new(),
+            abilities: HashSet::new(),
+            interaction_requires: HashMap::new(),
+            text: None,
+            consumable: None,
+        };
+        tw.world.items.insert(floor_gem_id.clone(), floor_gem);
+        tw.world
+            .rooms
+            .get_mut(&tw.room_id)
+            .unwrap()
+            .add_item(floor_gem_id.clone());
+
+        take_from_handler(&mut tw.world, &mut tw.view, "gem", "chest").unwrap();
+
+        assert!(tw.world.player.inventory.contains(&tw.gem_id));
+        assert!(!tw.world.player.inventory.contains(&floor_gem_id));
+        assert!(!tw.world.items.get(&tw.chest_id).unwrap().contents.contains(&tw.gem_id));
+        assert!(
+            tw.world
+                .rooms
+                .get(&tw.room_id)
+                .unwrap()
+                .contents
+                .contains(&floor_gem_id)
+        );
+        assert_eq!(
+            tw.world.items.get(&floor_gem_id).unwrap().location(),
+            &Location::Room(tw.room_id)
         );
     }
 

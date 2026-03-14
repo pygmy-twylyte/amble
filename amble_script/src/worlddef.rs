@@ -726,6 +726,10 @@ fn event_from_condition(cond: &ConditionAst) -> Result<EventDef, WorldDefError> 
             item: item.clone(),
             npc: npc.clone(),
         },
+        ConditionAst::TakeFromItem { loot, container } => EventDef::TakeFromItem {
+            loot: loot.clone(),
+            container: container.clone(),
+        },
         ConditionAst::InsertItemInto { item, container } => EventDef::InsertItemInto {
             item: item.clone(),
             container: container.clone(),

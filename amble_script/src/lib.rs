@@ -91,7 +91,7 @@ pub struct TriggerAst {
     pub note: Option<String>,
     /// 1-based line number in the source file where this trigger starts.
     pub src_line: usize,
-    /// The event condition that triggers this (e.g., enter room, take item, talk to npc).
+    /// The event condition that triggers this (e.g., enter room, take, talk to npc).
     pub event: ConditionAst,
     /// List of conditions (currently only missing-flag).
     pub conditions: Vec<ConditionAst>,
@@ -154,6 +154,11 @@ pub enum ConditionAst {
     TakeFromNpc {
         item: String,
         npc: String,
+    },
+    /// Event: player takes an item from a specific container item.
+    TakeFromItem {
+        loot: String,
+        container: String,
     },
     /// Event: player inserts an item into a container item.
     InsertItemInto {

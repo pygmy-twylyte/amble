@@ -75,6 +75,10 @@ pub enum TriggerCondition {
         item_id: ItemId,
         npc_id: NpcId,
     },
+    TakeFromItem {
+        loot_id: ItemId,
+        container_id: ItemId,
+    },
     TalkToNpc(NpcId),
     Touch(ItemId),
     UseItem {

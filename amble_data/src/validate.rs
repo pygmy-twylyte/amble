@@ -390,6 +390,10 @@ fn validate_event(event: &EventDef, ids: &IdSets<'_>, errors: &mut Vec<Validatio
         EventDef::Ingest { item, .. } => {
             check_ref("item", item, ids.items, context.to_string(), errors);
         },
+        EventDef::TakeFromItem { loot, container } => {
+            check_ref("item", loot, ids.items, context.to_string(), errors);
+            check_ref("item", container, ids.items, context.to_string(), errors);
+        },
     }
 }
 

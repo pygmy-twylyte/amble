@@ -43,7 +43,7 @@ when talk to npc black_knight {
 }
 
 trigger "[Sublevel-1-Entrance] Taking Sword Angers Knight"
-when take item dull_longsword from npc black_knight {
+when take dull_longsword from npc black_knight {
     do set npc state black_knight mad
     do npc says black_knight "Wha-- HEY! Give that back, you -- you -- cowardly cur!"
 }

@@ -119,7 +119,7 @@ when act handle on item invitation {
 }
 
 trigger "[Aperture-Lab] Drop Invitation Without Insulation"
-when take item invitation {
+when take invitation {
     do replace drop item invitation with invitation
     do show "You burn your fingers and drop the invitation on the floor. It emits a reddish glow, and shimmers from the radiating heat."
     do damage player 1 cause "burned by glowing-hot invitation"
