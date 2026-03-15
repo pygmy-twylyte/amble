@@ -1,0 +1,150 @@
+# # Shoe or Gourd??
+#
+# ## Items related to belonging either to the Shoe or Gourd sects.
+#
+# At Saint Alfonzo's Parish in the early game, the player may choose to take
+# either the Shoe or the Gourd (see Life of Brian) from the Messiah Starter Kit.
+# This will be used to color some non-critical flavor tidbits throughout the game.
+#
+
+item messiah_kit {
+    name "Messiah Starter Kit"
+    desc """A masterfully handcrafted wooden box, with primitive bronze hardware and an ornately carved lid with the inscription:[[box]]+| [[item]]MESSIAH STARTER KIT[[/item]] |+[[/box]]"""
+    movability free
+    location room st-alfonzo-parish
+    container state closed
+    aliases "messiah kit"
+}
+
+item messiah_gourd {
+    name "Gourd"
+    desc "A grapefruit-sized, tan gourd. It rattles a little when you shake it."
+    movability free
+    location chest messiah_kit
+}
+
+item messiah_shoe {
+    name "Shoe"
+    desc "A single, worn leather sandal of untold age. [[i]]Something appears to be scratched into the sole.[[/i]]"
+    movability free
+    location chest messiah_kit
+    text "If found: [[b]]Return to Brian of Nazareth[[/b]]"
+    ability Read
+    aliases "sole", "sandal"
+}
+
+trigger "You Can Follow Only One" only once
+note "alert player the gourd and shoe are mutually exclusive"
+when open item messiah_kit {
+    do show "Beware! You can only be a follower of the [[item]]Shoe[[/item]] [[u]]or[[/u]] the [[item]]Gourd[[/item]]. Choose wisely, or not at all."
+}
+
+trigger "Follower of the Shoe" only once
+note "locks player into the shoe sect"
+when take messiah_shoe from item messiah_kit {
+    do show "[[hl]]You are now a follower of the [[item]]Shoe[[/item]].[[/hl]]"
+    do set item movability messiah_gourd fixed "You are already a follower of the Shoe. Your faith in the Sanctified Sandal shall not be shaken."
+    do award points 5 reason "Became a Follower of the Shoe"
+    do add flag sect-shoe
+    do add wedge "Far above, the trees seem to whisper: \"Yesss. Yes! The Shoe is the Way.\" " width 1 spinner ambientWoodland
+}
+
+trigger "Follower of the Gourd" only once
+note "locks player into the gourd sect"
+when take messiah_gourd from item messiah_kit {
+    do show "[[b]]You are now a follower of the [[item]]Gourd[[/item]].[[/b]]"
+    do set item movability messiah_gourd fixed "You are already a follower of the Gourd. Your faith in the Vaunted Vegetable shall not be shaken."
+    do award points 5 reason "Became a Follower of the Gourd"
+    do add flag sect-gourd
+    do add wedge "Far above, the trees seem to whisper: \"Yesss. Yes! The Gourd is the Way.\" " width 1 spinner ambientWoodland
+}
+
+item shoe_propaganda {
+    name "Tract of The Shoe"
+    aliases "pamphlet"
+    visible when has flag sect-shoe
+    desc "A brief and hastily printed religious pamphlet entitled [[i]]The Sole for your Soul.[[/i]]"
+    location chest jackson_mailbox
+    movability free
+    ability Read
+    text """
+    [[box]][[hl]]THE SOLE FOR YOUR SOUL[[/hl]][[/box]]
+
+    Have you considered the Shoe?
+
+    For generations the misguided have followed the Gourd,
+    a vegetable of questionable theological stability.
+    But the Shoe is firm, dependable, and already prepared
+    for walking the Path.
+
+    [[center]][[hl]]Why the Shoe?[[/hl]][[/center]]
+
+    • The Shoe protects the faithful from sharp stones.
+    • The Shoe has a clear left and right doctrine.
+    • The Shoe leaves footprints for others to follow.
+
+    [[center]][[hl]]Common Heresy[[/hl]][[/center]]
+
+    Some claim the Gourd represents nourishment.
+    This is clearly false. One cannot walk upon a gourd,
+    nor can one tie it securely. Honestly, it would
+    be easier to eat a shoe. And tastier.
+
+    [[center]][[hl]]A MESSAGE TO THE UNDECIDED[[/hl]][[/center]]
+
+    If the Shoe fits, wear it.
+
+    Followers of the Shoe meet every third Thursday
+    behind the Parish of St. Alfonzo (weather permitting).
+
+    Remember:
+    [[i]]Blessed are the semi-shod, for they shall hop the Path.[[/i]]
+"""
+}
+
+
+
+item gourd_propaganda {
+    name "Tract of The Gourd"
+    aliases "pamphlet"
+    visible when has flag sect-gourd
+    desc "A brief and hastily printed religious pamphlet entitled [[i]]The Gourd from the Lord.[[/i]]"
+    location chest jackson_mailbox
+    movability free
+    ability Read
+    text """
+    [[box]][[hl]]THE GOURD FROM OUR LORD[[/hl]][[/box]]
+
+    Friends, have you heard the Gospel of the Gourd?
+
+    While misguided sects worship shoddy unilateral footwear,
+    the Gourd offers something far greater:
+    spiritual nourishment and seasonal availability.
+
+    [[center]][[hl]]Why the Gourd?[[/hl]][[/center]]
+
+    • The Gourd grows naturally from the Earth.
+    • The Gourd contains many seeds of wisdom.
+    • The Gourd cannot accidentally be worn on the wrong foot.
+
+    [[center]][[hl]]A WARNING[[/hl]][[/center]]
+
+    The followers of the Shoe claim their object
+    "supports the faithful."
+
+    This is clearly ridiculous. Shoes merely follow
+    wherever people go.
+
+    The Gourd leads.
+
+    [[center]][[hl]]A MESSAGE TO THE CURIOUS[[/hl]][[/center]]
+
+    Take up the Gourd and rejoice!
+
+    Meetings of the Faithful of the Gourd occur
+    whenever enough people remember to show up with one.
+
+    Remember:
+    [[i]]Your Soul Cannot Afford the Absence of Gourd[[/i]]
+"""
+}
