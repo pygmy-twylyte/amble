@@ -30,29 +30,3 @@ item margarine {
 """
     ability Read
 }
-
-item messiah_kit {
-    name "Messiah Starter Kit"
-    desc """A masterfully handcrafted wooden box, with primitive bronze hardware and an ornately carved lid with the inscription:[[box]]+| [[item]]MESSIAH STARTER KIT[[/item]] |+[[/box]]"""
-    movability free
-    location room st-alfonzo-parish
-    container state closed
-    aliases "messiah kit"
-}
-
-item messiah_gourd {
-    name "Gourd"
-    desc "A grapefruit-sized, tan gourd. It rattles a little when you shake it."
-    movability free
-    location chest messiah_kit
-}
-
-item messiah_shoe {
-    name "Shoe"
-    desc "A single, worn leather sandal of untold age. [[i]]Something appears to be scratched into the sole.[[/i]]"
-    movability free
-    location chest messiah_kit
-    text "If found: [[b]]Return to Brian of Nazareth[[/b]]"
-    ability Read
-    aliases "sole", "sandal"
-}
