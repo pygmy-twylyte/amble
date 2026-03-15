@@ -4471,58 +4471,6 @@
             consumable: None,
         ),
         (
-            id: "messiah_kit",
-            name: "Messiah Starter Kit",
-            desc: "A masterfully handcrafted wooden box, with primitive bronze hardware and an ornately carved lid with the inscription:[[box]]+| [[item]]MESSIAH STARTER KIT[[/item]] |+[[/box]]",
-            movability: free,
-            container_state: Some(closed),
-            location: Room("st-alfonzo-parish"),
-            visibility: listed,
-            visible_when: None,
-            aliases: [
-                "messiah kit",
-            ],
-            abilities: [],
-            interaction_requires: {},
-            text: None,
-            consumable: None,
-        ),
-        (
-            id: "messiah_gourd",
-            name: "Gourd",
-            desc: "A grapefruit-sized, tan gourd. It rattles a little when you shake it.",
-            movability: free,
-            container_state: None,
-            location: Item("messiah_kit"),
-            visibility: listed,
-            visible_when: None,
-            aliases: [],
-            abilities: [],
-            interaction_requires: {},
-            text: None,
-            consumable: None,
-        ),
-        (
-            id: "messiah_shoe",
-            name: "Shoe",
-            desc: "A single, worn leather sandal of untold age. [[i]]Something appears to be scratched into the sole.[[/i]]",
-            movability: free,
-            container_state: None,
-            location: Item("messiah_kit"),
-            visibility: listed,
-            visible_when: None,
-            aliases: [
-                "sole",
-                "sandal",
-            ],
-            abilities: [
-                read,
-            ],
-            interaction_requires: {},
-            text: Some("If found: [[b]]Return to Brian of Nazareth[[/b]]"),
-            consumable: None,
-        ),
-        (
             id: "scenery_claw_marks",
             name: "Claw Marks",
             desc: "Deep claw marks gouged into the hardwood trunk. They could have been made by a [[i]]bear on cocaine[[/i]]. Or a [[i]]velociraptor[[/i]].",
@@ -4943,6 +4891,100 @@
             ],
             interaction_requires: {},
             text: None,
+            consumable: None,
+        ),
+        (
+            id: "messiah_kit",
+            name: "Messiah Starter Kit",
+            desc: "A masterfully handcrafted wooden box, with primitive bronze hardware and an ornately carved lid with the inscription:[[box]]+| [[item]]MESSIAH STARTER KIT[[/item]] |+[[/box]]",
+            movability: free,
+            container_state: Some(closed),
+            location: Room("st-alfonzo-parish"),
+            visibility: listed,
+            visible_when: None,
+            aliases: [
+                "messiah kit",
+            ],
+            abilities: [],
+            interaction_requires: {},
+            text: None,
+            consumable: None,
+        ),
+        (
+            id: "messiah_gourd",
+            name: "Gourd",
+            desc: "A grapefruit-sized, tan gourd. It rattles a little when you shake it.",
+            movability: free,
+            container_state: None,
+            location: Item("messiah_kit"),
+            visibility: listed,
+            visible_when: None,
+            aliases: [],
+            abilities: [],
+            interaction_requires: {},
+            text: None,
+            consumable: None,
+        ),
+        (
+            id: "messiah_shoe",
+            name: "Shoe",
+            desc: "A single, worn leather sandal of untold age. [[i]]Something appears to be scratched into the sole.[[/i]]",
+            movability: free,
+            container_state: None,
+            location: Item("messiah_kit"),
+            visibility: listed,
+            visible_when: None,
+            aliases: [
+                "sole",
+                "sandal",
+            ],
+            abilities: [
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("If found: [[b]]Return to Brian of Nazareth[[/b]]"),
+            consumable: None,
+        ),
+        (
+            id: "shoe_propaganda",
+            name: "Tract of The Shoe",
+            desc: "A brief and hastily printed religious pamphlet entitled [[i]]The Sole for your Soul.[[/i]]",
+            movability: free,
+            container_state: None,
+            location: Item("jackson_mailbox"),
+            visibility: listed,
+            visible_when: Some(Pred(hasFlag(
+                flag: "sect-shoe",
+            ))),
+            aliases: [
+                "pamphlet",
+            ],
+            abilities: [
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("\n    [[box]][[hl]]THE SOLE FOR YOUR SOUL[[/hl]][[/box]]\n\n    Have you considered the Shoe?\n\n    For generations the misguided have followed the Gourd,\n    a vegetable of questionable theological stability.\n    But the Shoe is firm, dependable, and already prepared\n    for walking the Path.\n\n    [[center]][[hl]]Why the Shoe?[[/hl]][[/center]]\n\n    • The Shoe protects the faithful from sharp stones.\n    • The Shoe has a clear left and right doctrine.\n    • The Shoe leaves footprints for others to follow.\n\n    [[center]][[hl]]Common Heresy[[/hl]][[/center]]\n\n    Some claim the Gourd represents nourishment.\n    This is clearly false. One cannot walk upon a gourd,\n    nor can one tie it securely. Honestly, it would\n    be easier to eat a shoe. And tastier.\n\n    [[center]][[hl]]A MESSAGE TO THE UNDECIDED[[/hl]][[/center]]\n\n    If the Shoe fits, wear it.\n\n    Followers of the Shoe meet every third Thursday\n    behind the Parish of St. Alfonzo (weather permitting).\n\n    Remember:\n    [[i]]Blessed are the semi-shod, for they shall hop the Path.[[/i]]\n"),
+            consumable: None,
+        ),
+        (
+            id: "gourd_propaganda",
+            name: "Tract of The Gourd",
+            desc: "A brief and hastily printed religious pamphlet entitled [[i]]The Gourd from the Lord.[[/i]]",
+            movability: free,
+            container_state: None,
+            location: Item("jackson_mailbox"),
+            visibility: listed,
+            visible_when: Some(Pred(hasFlag(
+                flag: "sect-gourd",
+            ))),
+            aliases: [
+                "pamphlet",
+            ],
+            abilities: [
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("\n    [[box]][[hl]]THE GOURD FROM THE LORD[[/hl]][[/box]]\n\n    Friends, have you heard the Gospel of the Gourd?\n\n    While misguided sects worship shoddy unilateral footwear,\n    the Gourd offers something far greater:\n    spiritual nourishment and seasonal availability.\n\n    [[center]][[hl]]Why the Gourd?[[/hl]][[/center]]\n\n    • The Gourd grows naturally from the Earth.\n    • The Gourd contains many seeds of wisdom.\n    • The Gourd cannot accidentally be worn on the wrong foot.\n\n    [[center]][[hl]]A WARNING[[/hl]][[/center]]\n\n    The followers of the Shoe claim their object\n    \"supports the faithful.\"\n\n    This is clearly ridiculous. Shoes merely follow\n    wherever people go.\n\n    The Gourd leads.\n\n    [[center]][[hl]]A MESSAGE TO THE CURIOUS[[/hl]][[/center]]\n\n    Take up the Gourd and rejoice!\n\n    Meetings of the Faithful of the Gourd occur\n    whenever enough people remember to show up with one.\n\n    Remember:\n    [[i]]Your Soul Cannot Afford the Absence of Gourd[[/i]]\n"),
             consumable: None,
         ),
         (
@@ -13639,6 +13681,123 @@
                 (
                     action: showMessage(
                         text: "The radio clicks off.",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "You Can Follow Only One",
+            note: Some("alert player the gourd and shoe are mutually exclusive"),
+            only_once: true,
+            event: openItem(
+                item: "messiah_kit",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "Beware! You can only be a follower of the [[item]]Shoe[[/item]] [[u]]or[[/u]] the [[item]]Gourd[[/item]]. Choose wisely, or not at all.",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Follower of the Shoe",
+            note: Some("locks player into the shoe sect"),
+            only_once: true,
+            event: takeFromItem(
+                loot: "messiah_shoe",
+                container: "messiah_kit",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "[[hl]]You are now a follower of the [[item]]Shoe[[/item]].[[/hl]]",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: setItemMovability(
+                        item: "messiah_gourd",
+                        movability: fixed(
+                            reason: "You are already a follower of the Shoe. Your faith in the Sanctified Sandal shall not be shaken.",
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: awardPoints(
+                        amount: 5,
+                        reason: "Became a Follower of the Shoe",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: addFlag(
+                        flag: simple(
+                            name: "sect-shoe",
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: addSpinnerWedge(
+                        spinner: "ambientWoodland",
+                        text: "Far above, the trees seem to whisper: \"Yesss. Yes! The Shoe is the Way.\" ",
+                        width: 1,
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Follower of the Gourd",
+            note: Some("locks player into the gourd sect"),
+            only_once: true,
+            event: takeFromItem(
+                loot: "messiah_gourd",
+                container: "messiah_kit",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "[[b]]You are now a follower of the [[item]]Gourd[[/item]].[[/b]]",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: setItemMovability(
+                        item: "messiah_gourd",
+                        movability: fixed(
+                            reason: "You are already a follower of the Gourd. Your faith in the Vaunted Vegetable shall not be shaken.",
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: awardPoints(
+                        amount: 5,
+                        reason: "Became a Follower of the Gourd",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: addFlag(
+                        flag: simple(
+                            name: "sect-gourd",
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: addSpinnerWedge(
+                        spinner: "ambientWoodland",
+                        text: "Far above, the trees seem to whisper: \"Yesss. Yes! The Gourd is the Way.\" ",
+                        width: 1,
                     ),
                     priority: None,
                 ),
