@@ -252,6 +252,14 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                     Location::Item(container_id) => {
                         if let Some(container) = world.items.get_mut(&container_id) {
                             container.remove_item(loot_id.clone());
+                            check_triggers(
+                                world,
+                                view,
+                                &[
+                                    TriggerCondition::Take(loot_id.clone()),
+                                    TriggerCondition::TakeFromItem { loot_id, container_id },
+                                ],
+                            )?;
                         } else {
                             bail!("container ({container_id}) not found during Take({loot_id})");
                         }
@@ -259,6 +267,7 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                     Location::Room(room_id) => {
                         if let Some(room) = world.rooms.get_mut(&room_id) {
                             room.remove_item(loot_id.clone());
+                            check_triggers(world, view, &[TriggerCondition::Take(loot_id)])?;
                         } else {
                             bail!("room ({room_id}) not found during Take({loot_id})");
                         }
@@ -267,7 +276,6 @@ pub fn take_handler(world: &mut AmbleWorld, view: &mut View, thing: &str) -> Res
                         warn!("'take' matched an item at {orig_loc:?}: shouldn't be in scope");
                     },
                 }
-                check_triggers(world, view, &[TriggerCondition::Take(loot_id.clone())])?;
             } else {
                 // item is fixed or restricted
                 report_immovable_item(world, view, &take_verb, item);
