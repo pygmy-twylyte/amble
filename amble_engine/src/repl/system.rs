@@ -572,7 +572,7 @@ fn log_and_report_failed_parse(
         gamefile.error_style(),
         err
     )));
-    *warn!(
+    warn!(
         "player attempted to load '{gamefile}' from '{}': parse failure ({err})",
         load_path.display()
     );
