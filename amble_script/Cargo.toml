@@ -1,6 +1,6 @@
 [package]
 name = "amble_script"
-version = "0.66.0"
+version = "0.67.0-alpha"
 edition.workspace = true
 license.workspace = true
 homepage.workspace = true
