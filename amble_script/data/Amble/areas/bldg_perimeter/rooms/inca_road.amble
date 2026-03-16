@@ -6,6 +6,10 @@ room inca-road {
     name "Inca Road"
     desc "An ancient road of broken and uneven stones winds precariously along the mountainside, half-swallowed by time and weeds. Across the road lies a trim, modern lawn with an improbably square footprint. Oddly, the pristene green grass leads right up to the loading dock of a squat commercial building that seems to have landed here by accident. A [[item]]welcome sign[[/item]] looms large next to the road at the edge of the lawn."
 
+    overlay if flag set sect-shoe {
+        text "A tiny metal [[item]]billboard[[/item]] is planted at the base of the [[item]]welcome sign[[/item]]."
+    }
+
     exit "across the lawn" -> loading-dock
     exit "down the slope" -> guard-post
 

@@ -59,6 +59,12 @@ when take messiah_gourd from item messiah_kit {
     do add wedge "Far above, the trees seem to whisper: \"Yesss. Yes! The Gourd is the Way.\" " width 1 spinner ambientWoodland
 }
 
+#
+#
+# SHOE SECT PROPAGANDA
+#
+#
+
 item shoe_propaganda {
     name "Tract of The Shoe"
     aliases "pamphlet"
@@ -102,7 +108,22 @@ item shoe_propaganda {
 """
 }
 
+item gourdies_out_sign {
+    name "Tiny Billboard"
+    visibility scenery
+    visible when has flag sect-shoe
+    desc "A tiny metal billboard, planted at a slight angle into the mulch around the base of the much larger welcome sign."
+    location room inca-road
+    movability fixed "Heresy! As a Follower of the Shoe, you must let this sign stand."
+    ability Read
+    text "[[center]]AUTHORIZED FOOTWEAR ZONE[[/center]][[center]]— Gourdites Keep Out![[/center]]"
+}
 
+#
+#
+# GOURD SECT PROPAGANDA
+#
+#
 
 item gourd_propaganda {
     name "Tract of The Gourd"
@@ -147,4 +168,25 @@ item gourd_propaganda {
     Remember:
     [[i]]Your Soul Cannot Afford the Absence of Gourd[[/i]]
 """
+}
+
+item gourd_meeting_note {
+    name "Gourder Meeting Memo"
+    visible when has flag sect-gourd
+    desc "A handwritten memo to the [[i]][[b]]Followers of the Gourd[[/b]][[/i]] found tacked to the St. Alfonzo's sign."
+    location room parish-landing
+    movability free
+    ability Read
+    text "Meeting of the true [[i]]Followers of the Gourd[[/i]] moved to Tuesday, to avoid nastiness with the vile [[i]]Faithful of the Gourd[[/i]] -- not to mention those smelly [[i]]Shoeists[[/i]] that come in afterward."
+}
+
+item anti_shoe_sticker {
+    name "Religious Sticker"
+    visibility scenery
+    visible when has flag sect-gourd
+    desc "A boldly-colored applique with a message to catch the attention of believers and non-believers alike."
+    location room vip-bathroom
+    movability fixed "It's irretrievably stuck to the mirror."
+    ability Read
+    text "[[box]][[u]]eschew the shoe![[/u]][[/box]]"
 }

@@ -12,6 +12,10 @@ room front-entrance {
         bored  "Dibbler sighs about the slow foot traffic."
     }
 
+    overlay if any( flag set sect-gourd, flag set sect-shoe ) {
+        text "Graffiti in huge red letters is splayed across the facade a hundred times over: [[bright-red]]ROMANI, ITE DOMUM![[//bright-red]]"
+    }
+
     exit "glass door" -> main-lobby {
         required_flags( got-towel ),
         barred "Not so fast! The Initech Eye-bot™ is absolutely insistent that you have a towel before you go inside."
@@ -23,6 +27,7 @@ room front-entrance {
     scenery "Plants" desc "Tall broad leaf plants which would be typical, if it weren't for the fact that they're covered in jaundice-yellow splotches. [[i]]And [[u]]moaning[[/u]], softly[[/i]]."
     scenery "Glass Door"
     scenery "Paved Walkway"
+    scenery "Graffiti"
 
 }
 
