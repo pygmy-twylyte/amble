@@ -1,4 +1,7 @@
 {
+  "inlay_hints": {
+    "show_background": true
+  },
   "terminal": {
     "shell": {
       "program": "fish"

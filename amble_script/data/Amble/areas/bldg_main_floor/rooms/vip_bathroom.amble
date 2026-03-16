@@ -12,6 +12,10 @@ room vip-bathroom {
     scenery "Sinks"
     scenery "Vanity"
 
+    overlay if flag set sect-gourd {
+        text "A brightly colored [[item]]sticker[[/item]] is applied near the center of one of the large mirrors."
+    }
+
     overlay if item present vogon_poetry_book {
         text "A heavy — I mean [[u]][[i]]heavily[[/i]][[/u]] stained book sits on the back of the nearest commode."
     }
