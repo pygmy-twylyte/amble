@@ -36,7 +36,7 @@ dependencies = [
 
 [[package]]
 name = "amble_engine"
-version = "0.66.0"
+version = "0.67.0-dev"
 dependencies = [
  "amble_data",
  "anyhow",
@@ -65,7 +65,7 @@ dependencies = [
 
 [[package]]
 name = "amble_script"
-version = "0.66.0"
+version = "0.67.0-dev"
 dependencies = [
  "amble_data",
  "pest",
