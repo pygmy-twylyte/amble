@@ -5,7 +5,10 @@
 
 use std::{env, fs, process};
 
-use amble_script::{ActionAst, ActionStmt, ConditionAst, GameAst, GoalCondAst, parse_program_full, worlddef_from_asts};
+use amble_script::{
+    ActionAst, ActionStmt, ConditionAliasSpec, ConditionAst, GameAst, GoalCondAst, collect_condition_alias_specs,
+    parse_program_full, parse_program_full_with_aliases, resolve_condition_aliases, worlddef_from_asts,
+};
 use ron::ser::PrettyConfig;
 use std::collections::{HashMap, HashSet};
 
@@ -193,6 +196,10 @@ fn run_compile_dir(args: &[String]) {
         process::exit(1);
     }
     files.sort();
+    let global_aliases = collect_global_condition_aliases(&files, "compile-dir").unwrap_or_else(|msg| {
+        eprintln!("{msg}");
+        process::exit(1);
+    });
 
     let mut game: Option<GameAst> = None;
     let mut trigs = Vec::new();
@@ -217,7 +224,7 @@ fn run_compile_dir(args: &[String]) {
                 continue;
             },
         };
-        match parse_program_full(&src) {
+        match parse_program_full_with_aliases(&src, &global_aliases) {
             Ok((gdef, t, r, it, sp, n, g)) => {
                 if let Some(next_game) = gdef {
                     if game.is_some() {
@@ -347,9 +354,18 @@ fn run_lint(args: &[String]) {
         files.push(path.clone());
     }
 
+    let shared_aliases = if md.is_dir() {
+        Some(collect_global_condition_aliases(&files, "lint").unwrap_or_else(|msg| {
+            eprintln!("{msg}");
+            process::exit(1);
+        }))
+    } else {
+        None
+    };
+
     let mut any_missing = 0usize;
     for f in files {
-        any_missing += lint_one_file(&f, &world);
+        any_missing += lint_one_file(&f, &world, shared_aliases.as_ref());
     }
     if any_missing == 0 {
         eprintln!("lint: OK (no missing cross references)");
@@ -379,7 +395,7 @@ fn collect_dsl_files_recursive(dir: &str, out: &mut Vec<String>) {
     }
 }
 
-fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
+fn lint_one_file(path: &str, world: &WorldRefs, aliases: Option<&HashMap<String, ConditionAst>>) -> usize {
     let src = match fs::read_to_string(path) {
         Ok(s) => s,
         Err(e) => {
@@ -387,7 +403,11 @@ fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
             return 0;
         },
     };
-    let (_game, asts, rooms_asts, item_asts, spinner_asts, npc_asts, goal_asts) = match parse_program_full(&src) {
+    let parsed = match aliases {
+        Some(shared) => parse_program_full_with_aliases(&src, shared),
+        None => parse_program_full(&src),
+    };
+    let (_game, asts, rooms_asts, item_asts, spinner_asts, npc_asts, goal_asts) = match parsed {
         Ok(v) => v,
         Err(e) => {
             eprintln!("lint: parse error in '{path}': {e}");
@@ -547,6 +567,28 @@ fn lint_one_file(path: &str, world: &WorldRefs) -> usize {
         }
     }
     missing
+}
+
+fn collect_global_condition_aliases(files: &[String], label: &str) -> Result<HashMap<String, ConditionAst>, String> {
+    let mut all_specs: Vec<ConditionAliasSpec> = Vec::new();
+    let mut seen: HashMap<String, String> = HashMap::new();
+
+    for file in files {
+        let src = fs::read_to_string(file).map_err(|e| format!("{label}: cannot read '{file}': {e}"))?;
+        let specs =
+            collect_condition_alias_specs(&src).map_err(|e| format!("{label}: parse error in '{file}': {e}"))?;
+        for spec in &specs {
+            if let Some(prev) = seen.insert(spec.name.clone(), file.clone()) {
+                return Err(format!(
+                    "{label}: duplicate condition alias '{}' in '{}' and '{}'",
+                    spec.name, prev, file
+                ));
+            }
+        }
+        all_specs.extend(specs);
+    }
+
+    resolve_condition_aliases(&all_specs).map_err(|e| format!("{label}: condition alias error: {e}"))
 }
 
 fn report_missing_with_location(

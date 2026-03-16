@@ -1,11 +1,52 @@
 use std::collections::HashMap;
 
-use crate::{ConditionAst, NpcStateValue};
+use crate::{ConditionAliasSpec, ConditionAst, NpcStateValue};
 
 use super::AstError;
 use super::helpers::{parse_string_at, split_top_level_commas};
 
-pub(super) fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String>>) -> Result<ConditionAst, AstError> {
+pub(super) fn parse_condition_text(
+    text: &str,
+    sets: &HashMap<String, Vec<String>>,
+    aliases: &HashMap<String, ConditionAst>,
+) -> Result<ConditionAst, AstError> {
+    let mut lookup = |name: &str| Ok(aliases.get(name).cloned());
+    parse_condition_text_inner(text, sets, &mut lookup)
+}
+
+pub(super) fn resolve_condition_aliases(
+    specs: &[ConditionAliasSpec],
+) -> Result<HashMap<String, ConditionAst>, AstError> {
+    let mut by_name: HashMap<&str, &ConditionAliasSpec> = HashMap::new();
+    for spec in specs {
+        if by_name.insert(spec.name.as_str(), spec).is_some() {
+            return Err(AstError::ShapeAt {
+                msg: "duplicate condition alias",
+                context: spec.name.clone(),
+            });
+        }
+    }
+
+    let mut resolver = AliasResolver {
+        specs: by_name,
+        resolved: HashMap::new(),
+        visiting: Vec::new(),
+    };
+    let names = resolver.specs.keys().copied().collect::<Vec<_>>();
+    for name in names {
+        resolver.resolve_alias(name)?;
+    }
+    Ok(resolver.resolved)
+}
+
+fn parse_condition_text_inner<F>(
+    text: &str,
+    sets: &HashMap<String, Vec<String>>,
+    resolve_alias: &mut F,
+) -> Result<ConditionAst, AstError>
+where
+    F: FnMut(&str) -> Result<Option<ConditionAst>, AstError>,
+{
     let cleaned = strip_comments(text);
     let t = cleaned.trim();
     if let Some(inner) = t.strip_prefix("all(") {
@@ -13,7 +54,7 @@ pub(super) fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String
         let parts = split_top_level_commas(inner);
         let mut kids = Vec::new();
         for p in parts {
-            kids.push(parse_condition_text(p, sets)?);
+            kids.push(parse_condition_text_inner(p, sets, resolve_alias)?);
         }
         return Ok(ConditionAst::All(kids));
     }
@@ -22,7 +63,7 @@ pub(super) fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String
         let parts = split_top_level_commas(inner);
         let mut kids = Vec::new();
         for p in parts {
-            kids.push(parse_condition_text(p, sets)?);
+            kids.push(parse_condition_text_inner(p, sets, resolve_alias)?);
         }
         return Ok(ConditionAst::Any(kids));
     }
@@ -159,7 +200,56 @@ pub(super) fn parse_condition_text(text: &str, sets: &HashMap<String, Vec<String
         }
         return Ok(ConditionAst::ChancePercent(pct));
     }
+    if let Some(alias) = resolve_alias(t)? {
+        return Ok(alias);
+    }
     Err(AstError::Shape("unknown condition"))
+}
+
+struct AliasResolver<'a> {
+    specs: HashMap<&'a str, &'a ConditionAliasSpec>,
+    resolved: HashMap<String, ConditionAst>,
+    visiting: Vec<String>,
+}
+
+impl AliasResolver<'_> {
+    fn resolve_alias(&mut self, name: &str) -> Result<Option<ConditionAst>, AstError> {
+        if let Some(ast) = self.resolved.get(name) {
+            return Ok(Some(ast.clone()));
+        }
+        let Some(spec) = self.specs.get(name).copied() else {
+            return Ok(None);
+        };
+        if let Some(idx) = self.visiting.iter().position(|n| n == name) {
+            let mut cycle = self.visiting[idx..].to_vec();
+            cycle.push(name.to_string());
+            return Err(AstError::ShapeAt {
+                msg: "recursive condition alias",
+                context: cycle.join(" -> "),
+            });
+        }
+
+        self.visiting.push(name.to_string());
+        let parsed = {
+            let mut lookup = |candidate: &str| self.resolve_alias(candidate);
+            parse_condition_text_inner(&spec.text, &spec.sets, &mut lookup)
+        };
+        self.visiting.pop();
+
+        let ast = match parsed {
+            Ok(ast) => ast,
+            Err(AstError::Shape(msg)) => {
+                return Err(AstError::ShapeAt {
+                    msg,
+                    context: format!("condition alias '{}'", spec.name),
+                });
+            },
+            Err(err) => return Err(err),
+        };
+
+        self.resolved.insert(name.to_string(), ast.clone());
+        Ok(Some(ast))
+    }
 }
 
 fn strip_comments(input: &str) -> String {

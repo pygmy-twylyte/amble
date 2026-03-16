@@ -8,7 +8,7 @@ use pest_derive::Parser as PestParser;
 
 use std::collections::HashMap;
 
-use crate::{GoalAst, ItemAst, NpcAst, RoomAst, SpinnerAst, TriggerAst};
+use crate::{ConditionAliasSpec, GoalAst, ItemAst, NpcAst, RoomAst, SpinnerAst, TriggerAst};
 
 mod actions;
 mod conditions;
@@ -26,6 +26,7 @@ use actions::{parse_modify_item_action, parse_modify_npc_action, parse_modify_ro
 #[cfg(test)]
 use helpers::parse_string;
 
+use conditions::resolve_condition_aliases as resolve_condition_aliases_impl;
 use game::parse_game_pair;
 use goal::parse_goal_pair;
 use helpers::SourceMap;
@@ -74,10 +75,27 @@ pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
 /// Returns an error when parsing fails or when the grammar encounters an
 /// unexpected shape.
 pub fn parse_program_full(source: &str) -> Result<ProgramAstBundle, AstError> {
+    let local_alias_specs = collect_condition_alias_specs(source)?;
+    let local_aliases = resolve_condition_aliases_impl(&local_alias_specs)?;
+    parse_program_full_with_aliases(source, &local_aliases)
+}
+
+/// Parse a full program using a caller-provided map of resolved condition aliases.
+///
+/// This is primarily useful for multi-file callers that want aliases defined in
+/// one source file to be available in another.
+///
+/// # Errors
+/// Returns an error when parsing fails or when the grammar encounters an
+/// unexpected shape.
+pub fn parse_program_full_with_aliases(
+    source: &str,
+    aliases: &HashMap<String, crate::ConditionAst>,
+) -> Result<ProgramAstBundle, AstError> {
     let mut pairs = DslParser::parse(Rule::program, source).map_err(|e| AstError::Pest(e.to_string()))?;
     let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
     let smap = SourceMap::new(source);
-    let mut sets: HashMap<String, Vec<String>> = HashMap::new();
+    let (sets, _) = collect_sets_and_alias_specs(&pair)?;
     let mut game_pair = None;
     let mut trigger_pairs = Vec::new();
     let mut room_pairs = Vec::new();
@@ -87,18 +105,7 @@ pub fn parse_program_full(source: &str) -> Result<ProgramAstBundle, AstError> {
     let mut goal_pairs = Vec::new();
     for item in pair.clone().into_inner() {
         match item.as_rule() {
-            Rule::set_decl => {
-                let mut it = item.into_inner();
-                let name = it.next().expect("set name").as_str().to_string();
-                let list_pair = it.next().expect("set list");
-                let mut vals = Vec::new();
-                for p in list_pair.into_inner() {
-                    if p.as_rule() == Rule::ident {
-                        vals.push(p.as_str().to_string());
-                    }
-                }
-                sets.insert(name, vals);
-            },
+            Rule::set_decl | Rule::cond_decl => {},
             Rule::game_def => {
                 if game_pair.is_some() {
                     return Err(AstError::Shape("multiple game blocks"));
@@ -128,7 +135,7 @@ pub fn parse_program_full(source: &str) -> Result<ProgramAstBundle, AstError> {
     }
     let mut triggers = Vec::new();
     for trig in trigger_pairs {
-        let mut ts = parse_trigger_pair(trig, source, &smap, &sets)?;
+        let mut ts = parse_trigger_pair(trig, source, &smap, &sets, aliases)?;
         triggers.append(&mut ts);
     }
     let mut rooms = Vec::new();
@@ -138,7 +145,7 @@ pub fn parse_program_full(source: &str) -> Result<ProgramAstBundle, AstError> {
     }
     let mut items = Vec::new();
     for ip in item_pairs {
-        let it = parse_item_pair(ip, source, &sets)?;
+        let it = parse_item_pair(ip, source, &sets, aliases)?;
         items.push(it);
     }
     let mut spinners = Vec::new();
@@ -162,6 +169,78 @@ pub fn parse_program_full(source: &str) -> Result<ProgramAstBundle, AstError> {
         None
     };
     Ok((game, triggers, rooms, items, spinners, npcs, goals))
+}
+
+/// Collect top-level condition alias definitions from a source file.
+///
+/// The returned specs preserve the room-set environment from the defining
+/// source so aliases can later be resolved globally across files.
+///
+/// # Errors
+/// Returns an error if the source cannot be parsed as a program.
+pub fn collect_condition_alias_specs(source: &str) -> Result<Vec<ConditionAliasSpec>, AstError> {
+    let mut pairs = DslParser::parse(Rule::program, source).map_err(|e| AstError::Pest(e.to_string()))?;
+    let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
+    let (_, specs) = collect_sets_and_alias_specs(&pair)?;
+    Ok(specs)
+}
+
+/// Resolve collected condition alias specs into reusable condition ASTs.
+///
+/// # Errors
+/// Returns an error when aliases are duplicated, recursive, or reference an
+/// invalid condition.
+pub fn resolve_condition_aliases(
+    specs: &[ConditionAliasSpec],
+) -> Result<HashMap<String, crate::ConditionAst>, AstError> {
+    resolve_condition_aliases_impl(specs)
+}
+
+fn collect_sets_and_alias_specs(
+    pair: &pest::iterators::Pair<'_, Rule>,
+) -> Result<(HashMap<String, Vec<String>>, Vec<ConditionAliasSpec>), AstError> {
+    let mut sets: HashMap<String, Vec<String>> = HashMap::new();
+    for item in pair.clone().into_inner() {
+        if item.as_rule() != Rule::set_decl {
+            continue;
+        }
+        let mut it = item.into_inner();
+        let name = it.next().ok_or(AstError::Shape("set name"))?.as_str().to_string();
+        let list_pair = it.next().ok_or(AstError::Shape("set list"))?;
+        let mut vals = Vec::new();
+        for p in list_pair.into_inner() {
+            if p.as_rule() == Rule::ident {
+                vals.push(p.as_str().to_string());
+            }
+        }
+        sets.insert(name, vals);
+    }
+
+    let mut specs = Vec::new();
+    for item in pair.clone().into_inner() {
+        if item.as_rule() != Rule::cond_decl {
+            continue;
+        }
+        let mut it = item.into_inner();
+        let name = it
+            .next()
+            .ok_or(AstError::Shape("condition alias name"))?
+            .as_str()
+            .to_string();
+        let cond = it
+            .next()
+            .ok_or(AstError::Shape("condition alias condition"))?
+            .as_str()
+            .trim()
+            .to_string();
+        specs.push(ConditionAliasSpec {
+            name,
+            text: cond,
+            sets: sets.clone(),
+        });
+    }
+
+    Ok((sets, specs))
 }
 
 /// Parse only rooms from a source (helper/testing).
@@ -597,8 +676,12 @@ trigger "patch guard" when always {
     #[test]
     fn parse_modify_item_action_helper_handles_basic_block() {
         let snippet = "do modify item locker { name \"Ok\" }\n";
-        let (action, used) =
-            super::parse_modify_item_action(snippet, &std::collections::HashMap::new()).expect("parse helper");
+        let (action, used) = super::parse_modify_item_action(
+            snippet,
+            &std::collections::HashMap::new(),
+            &std::collections::HashMap::new(),
+        )
+        .expect("parse helper");
         assert_eq!(&snippet[..used], "do modify item locker { name \"Ok\" }");
         match &action.action {
             ActionAst::ModifyItem { item, patch } => {
@@ -760,6 +843,88 @@ npc bot {
         let s2 = "\"It’s fine\"";
         let parsed2 = parse_string(s2).expect("parse ok");
         assert_eq!(parsed2, "It’s fine");
+    }
+
+    #[test]
+    fn condition_aliases_expand_in_same_file_conditions() {
+        let src = r#"
+let cond radio_ready = all(has item hint_radio, has flag hint-radio-on)
+let cond hint_needed = all(radio_ready, missing flag puzzle-solved)
+
+item receiver {
+  name "Receiver"
+  desc "Listens."
+  movability free
+  location nowhere "spawn later"
+  visible when radio_ready
+}
+
+trigger "Radio Hint" when always {
+  if hint_needed {
+    do show "Need a hint."
+  }
+}
+"#;
+        let (_game, triggers, _rooms, items, _spinners, _npcs, _goals) =
+            parse_program_full(src).expect("alias parse succeeds");
+
+        assert_eq!(triggers.len(), 1);
+        assert_eq!(items.len(), 1);
+        assert_eq!(
+            items[0].visible_when,
+            Some(ConditionAst::All(vec![
+                ConditionAst::HasItem("hint_radio".into()),
+                ConditionAst::HasFlag("hint-radio-on".into()),
+            ]))
+        );
+        assert_eq!(
+            triggers[0].conditions,
+            vec![ConditionAst::All(vec![
+                ConditionAst::All(vec![
+                    ConditionAst::HasItem("hint_radio".into()),
+                    ConditionAst::HasFlag("hint-radio-on".into()),
+                ]),
+                ConditionAst::MissingFlag("puzzle-solved".into()),
+            ])]
+        );
+    }
+
+    #[test]
+    fn condition_aliases_resolve_across_files() {
+        let defs = r#"
+let cond radio_ready = all(has item hint_radio, has flag hint-radio-on)
+"#;
+        let usage = r#"
+trigger "Radio Hint" when always {
+  if radio_ready {
+    do show "Ready."
+  }
+}
+"#;
+        let mut specs = super::collect_condition_alias_specs(defs).expect("collect alias defs");
+        specs.extend(super::collect_condition_alias_specs(usage).expect("usage has no local aliases"));
+        let aliases = super::resolve_condition_aliases(&specs).expect("resolve aliases");
+        let (_game, triggers, ..) =
+            super::parse_program_full_with_aliases(usage, &aliases).expect("cross-file alias parse succeeds");
+
+        assert_eq!(
+            triggers[0].conditions,
+            vec![ConditionAst::All(vec![
+                ConditionAst::HasItem("hint_radio".into()),
+                ConditionAst::HasFlag("hint-radio-on".into()),
+            ])]
+        );
+    }
+
+    #[test]
+    fn recursive_condition_aliases_are_rejected() {
+        let src = r#"
+let cond a = b
+let cond b = a
+"#;
+        let specs = super::collect_condition_alias_specs(src).expect("collect aliases");
+        let err = super::resolve_condition_aliases(&specs).expect_err("recursive aliases should fail");
+        assert!(format!("{err}").contains("recursive condition alias"));
     }
 
     #[test]

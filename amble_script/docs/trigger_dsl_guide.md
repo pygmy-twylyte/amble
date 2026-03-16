@@ -62,6 +62,7 @@ Grouping:
 - `all(cond1, cond2, …)` — AND
 - `any(cond1, cond2, …)` — OR
 - You can nest groups, e.g. `all(has flag a, any(has item key, with npc guard))`
+- Reusable aliases: `let cond radio_ready = all(has item hint_radio, has flag hint-radio-on)`
 
 Examples:
 
@@ -74,6 +75,10 @@ if player in room sublevel-1-entrance { … }
 
 # OR logic
 if any(has item keycard, with npc receptionist) { … }
+
+# Reusable condition alias
+let cond radio_ready = all(has item hint_radio, has flag hint-radio-on)
+if radio_ready { … }
 
 # Ambient condition (see sets below)
 if in rooms lobby,restaurant { … }
