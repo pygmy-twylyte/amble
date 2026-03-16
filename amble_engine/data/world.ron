@@ -1439,7 +1439,16 @@
                     barred_message: None,
                 ),
             ],
-            overlays: [],
+            overlays: [
+                (
+                    conditions: [
+                        flagSet(
+                            flag: "sect-shoe",
+                        ),
+                    ],
+                    text: "A tiny metal [[item]]billboard[[/item]] is planted at the base of the [[item]]welcome sign[[/item]].",
+                ),
+            ],
             scenery: [
                 (
                     name: "Modern Lawn",
@@ -2385,7 +2394,7 @@
         (
             id: "parish-landing",
             name: "Parish Landing",
-            desc: "A small plateau carved into the slope, marked by an old [[b]]wooden sign[[/b]] which reads:\n[[box:Candidates Welcome]][[b]]Pancakes Served Daily (Terms and Conditions Apply)[[/b]][[/box]]\nA faded poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a holy relic. From here, the steps curve gently upward, disappearing into the woodland growth again. A modest trail leads west toward a nearby parish.",
+            desc: "A small plateau carved into the slope, marked by an old [[b]]wooden sign[[/b]] which reads:\n[[box:Candidates Welcome]][[b]]Pancakes Served Daily (Terms and Conditions Apply)[[/b]][[/box]]\nA faded poster nailed beside it shows a smiling Saint Alfonzo wielding a spatula like a holy relic. From here, the steps curve gently upward, disappearing into the woodland growth again. A modest, rutted trail leads west toward a nearby parish.",
             visited: false,
             exits: [
                 (
@@ -2398,7 +2407,7 @@
                     barred_message: None,
                 ),
                 (
-                    direction: "westward trail",
+                    direction: "rutted trail",
                     to: "st-alfonzo-parish",
                     hidden: false,
                     locked: false,
@@ -2448,6 +2457,17 @@
                         ),
                     ],
                     text: "Just beyond the treeline stands an impressive, intricately sculpted pillar bearing a [[item]]plaque[[/item]] tarnished with age and forest grime.",
+                ),
+                (
+                    conditions: [
+                        flagSet(
+                            flag: "sect-gourd",
+                        ),
+                        itemPresent(
+                            item: "gourd_meeting_note",
+                        ),
+                    ],
+                    text: "A [[item]]handwritten note[[/item]] is tacked near the end of St. Alfonzo\'s spatula.",
                 ),
             ],
             scenery: [
@@ -4411,7 +4431,7 @@
             consumable: None,
         ),
         (
-            id: "scenery_woodland_gate",
+            id: "scenery_woodland_stargate",
             name: "Woodlands Stargate",
             desc: "A garage-sized metallic ring with a shimmering portal in the center hidden behind the St. Alfonzo\'s sign. Symbols around its edge seem to indicate destinations. On chevron is locked to a tree icon, and the other is locked to a microscope.",
             movability: fixed(
@@ -4967,6 +4987,27 @@
             consumable: None,
         ),
         (
+            id: "gourdies_out_sign",
+            name: "Tiny Billboard",
+            desc: "A tiny metal billboard, planted at a slight angle into the mulch around the base of the much larger welcome sign.",
+            movability: fixed(
+                reason: "Heresy! As a Follower of the Shoe, you must let this sign stand.",
+            ),
+            container_state: None,
+            location: Room("inca-road"),
+            visibility: scenery,
+            visible_when: Some(Pred(hasFlag(
+                flag: "sect-shoe",
+            ))),
+            aliases: [],
+            abilities: [
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("[[center]]AUTHORIZED FOOTWEAR ZONE[[/center]][[center]]— Gourdites Keep Out![[/center]]"),
+            consumable: None,
+        ),
+        (
             id: "gourd_propaganda",
             name: "Tract of The Gourd",
             desc: "A brief and hastily printed religious pamphlet entitled [[i]]The Gourd from the Lord.[[/i]]",
@@ -4984,7 +5025,26 @@
                 read,
             ],
             interaction_requires: {},
-            text: Some("\n    [[box]][[hl]]THE GOURD FROM THE LORD[[/hl]][[/box]]\n\n    Friends, have you heard the Gospel of the Gourd?\n\n    While misguided sects worship shoddy unilateral footwear,\n    the Gourd offers something far greater:\n    spiritual nourishment and seasonal availability.\n\n    [[center]][[hl]]Why the Gourd?[[/hl]][[/center]]\n\n    • The Gourd grows naturally from the Earth.\n    • The Gourd contains many seeds of wisdom.\n    • The Gourd cannot accidentally be worn on the wrong foot.\n\n    [[center]][[hl]]A WARNING[[/hl]][[/center]]\n\n    The followers of the Shoe claim their object\n    \"supports the faithful.\"\n\n    This is clearly ridiculous. Shoes merely follow\n    wherever people go.\n\n    The Gourd leads.\n\n    [[center]][[hl]]A MESSAGE TO THE CURIOUS[[/hl]][[/center]]\n\n    Take up the Gourd and rejoice!\n\n    Meetings of the Faithful of the Gourd occur\n    whenever enough people remember to show up with one.\n\n    Remember:\n    [[i]]Your Soul Cannot Afford the Absence of Gourd[[/i]]\n"),
+            text: Some("\n    [[box]][[hl]]THE GOURD FROM OUR LORD[[/hl]][[/box]]\n\n    Friends, have you heard the Gospel of the Gourd?\n\n    While misguided sects worship shoddy unilateral footwear,\n    the Gourd offers something far greater:\n    spiritual nourishment and seasonal availability.\n\n    [[center]][[hl]]Why the Gourd?[[/hl]][[/center]]\n\n    • The Gourd grows naturally from the Earth.\n    • The Gourd contains many seeds of wisdom.\n    • The Gourd cannot accidentally be worn on the wrong foot.\n\n    [[center]][[hl]]A WARNING[[/hl]][[/center]]\n\n    The followers of the Shoe claim their object\n    \"supports the faithful.\"\n\n    This is clearly ridiculous. Shoes merely follow\n    wherever people go.\n\n    The Gourd leads.\n\n    [[center]][[hl]]A MESSAGE TO THE CURIOUS[[/hl]][[/center]]\n\n    Take up the Gourd and rejoice!\n\n    Meetings of the Faithful of the Gourd occur\n    whenever enough people remember to show up with one.\n\n    Remember:\n    [[i]]Your Soul Cannot Afford the Absence of Gourd[[/i]]\n"),
+            consumable: None,
+        ),
+        (
+            id: "gourd_meeting_note",
+            name: "Gourder Meeting Memo",
+            desc: "A handwritten memo to the [[i]][[b]]Followers of the Gourd[[/b]][[/i]] found tacked to the St. Alfonzo\'s sign.",
+            movability: free,
+            container_state: None,
+            location: Room("parish-landing"),
+            visibility: listed,
+            visible_when: Some(Pred(hasFlag(
+                flag: "sect-gourd",
+            ))),
+            aliases: [],
+            abilities: [
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("Meeting of the true [[i]]Followers of the Gourd[[/i]] moved to Tuesday, to avoid nastiness with the vile [[i]]Faithful of the Gourd[[/i]] -- not to mention those smelly [[i]]Shoeists[[/i]] that come in afterward."),
             consumable: None,
         ),
         (
