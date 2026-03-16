@@ -13800,12 +13800,14 @@
                         turns_ahead: 2,
                         condition: Any([
                             All([
-                                Pred(hasItem(
-                                    item: "hint_radio",
-                                )),
-                                Pred(hasFlag(
-                                    flag: "hint-radio-on",
-                                )),
+                                All([
+                                    Pred(hasItem(
+                                        item: "hint_radio",
+                                    )),
+                                    Pred(hasFlag(
+                                        flag: "hint-radio-on",
+                                    )),
+                                ]),
                                 Pred(missingFlag(
                                     flag: "read-plaque-1",
                                 )),
@@ -13819,12 +13821,14 @@
                             (
                                 action: conditional(
                                     condition: All([
-                                        Pred(hasItem(
-                                            item: "hint_radio",
-                                        )),
-                                        Pred(hasFlag(
-                                            flag: "hint-radio-on",
-                                        )),
+                                        All([
+                                            Pred(hasItem(
+                                                item: "hint_radio",
+                                            )),
+                                            Pred(hasFlag(
+                                                flag: "hint-radio-on",
+                                            )),
+                                        ]),
                                         Pred(missingFlag(
                                             flag: "read-plaque-1",
                                         )),
