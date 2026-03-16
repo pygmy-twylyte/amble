@@ -550,40 +550,53 @@ pub fn load_handler(world: &mut AmbleWorld, view: &mut View, gamefile: &str) -> 
                 true
             },
             Err(err) => {
-                view.push(ViewItem::ActionFailure(format!(
-                    "Unable to load the {} save file. The Amble engine may have changed since it was created ({}).",
-                    gamefile.error_style(),
-                    err
-                )));
-                warn!(
-                    "player attempted to load '{gamefile}' from '{}': parse failure ({err})",
-                    load_path.display()
-                );
+                log_and_report_failed_parse(view, gamefile, &load_path, err);
                 false
             },
         },
         Err(err) => {
-            if err.kind() == std::io::ErrorKind::NotFound {
-                view.push(ViewItem::Error(format!(
-                    "Unable to find {} save file. Load aborted. Type {} to list available saves.",
-                    gamefile.error_style(),
-                    "`saves`".highlight()
-                )));
-            } else {
-                view.push(ViewItem::ActionFailure(format!(
-                    "Unable to load the {} save file ({}).",
-                    gamefile.error_style(),
-                    err
-                )));
-            }
-            warn!(
-                "player attempted to load '{gamefile}' from '{}': {}",
-                load_path.display(),
-                err
-            );
+            log_and_report_failed_load(view, gamefile, load_path, err);
             false
         },
     }
+}
+
+fn log_and_report_failed_parse(
+    view: &mut View,
+    gamefile: &str,
+    load_path: &std::path::PathBuf,
+    err: ron::de::SpannedError,
+) {
+    view.push(ViewItem::ActionFailure(format!(
+        "Unable to load the {} save file. The Amble engine may have changed since it was created ({}).",
+        gamefile.error_style(),
+        err
+    )));
+    *warn!(
+        "player attempted to load '{gamefile}' from '{}': parse failure ({err})",
+        load_path.display()
+    );
+}
+
+fn log_and_report_failed_load(view: &mut View, gamefile: &str, load_path: std::path::PathBuf, err: std::io::Error) {
+    if err.kind() == std::io::ErrorKind::NotFound {
+        view.push(ViewItem::Error(format!(
+            "Unable to find {} save file. Load aborted. Type {} to list available saves.",
+            gamefile.error_style(),
+            "`saves`".highlight()
+        )));
+    } else {
+        view.push(ViewItem::ActionFailure(format!(
+            "Unable to load the {} save file ({}).",
+            gamefile.error_style(),
+            err
+        )));
+    }
+    warn!(
+        "player attempted to load '{gamefile}' from '{}': {}",
+        load_path.display(),
+        err
+    );
 }
 
 fn match_world_source<'a>(world: &AmbleWorld, sources: &'a [WorldSource]) -> Option<&'a WorldSource> {
