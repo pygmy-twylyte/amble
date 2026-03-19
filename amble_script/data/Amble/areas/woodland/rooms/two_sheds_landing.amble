@@ -17,12 +17,14 @@ room two-sheds-landing {
     overlay if ( flag set burned-fallen-tree ) {
         text "Charred twigs and smoldering ash are all that remain of the fallen tree."
     }
+
     exit "up the slope" -> guard-post {
         required_flags( cleared-fallen-tree ),
         barred "You can't get around the fallen tree. You'll need to find a way to clear it from the path."
     }
     exit "down the steps" -> parish-landing
     exit "trail east" -> two-sheds
+
     scenery "Trail Sign" desc "A hand-cut but well crafted, arrow-shaped wooden sign pointing to the head of the eastern trail."
     scenery "Steps"
     scenery "Branches"

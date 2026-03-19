@@ -62,22 +62,19 @@ when act sharpen on item dull_longsword {
     do award points 3 reason "Sharpened the Black Knight's sword"
 }
 
+let cond with_angry_knight = all(
+    with npc black_knight,
+    npc in state black_knight mad,
+    missing flag appeased-black-knight,
+)
+
 trigger "[Sublevel-1-Entrance] Black Knight Kicks Player After Sword Taken"
 when always {
-    if all(
-        with npc black_knight,
-        npc in state black_knight mad,
-        missing flag appeased-black-knight,
-    ) {
+    if with_angry_knight {
         do priority -30 show "The Black Knight prances around the room, occasionally trying to kick you in the shins."
         do priority -10 npc random dialogue black_knight
     }
-    if all(
-        chance 50%,
-        with npc black_knight,
-        npc in state black_knight mad,
-        missing flag appeased-black-knight,
-    ) {
+    if all( chance 50%, with_angry_knight ) {
         do priority -20 damage player 1 cause "knight's shin-kick"
     }
 }

@@ -72,23 +72,21 @@ when look at item vending_machine
     }
 }
 
+#
+#
+# HINT RADIO: MODULE STUCK IN CREVICE
+#
+#
+
+let cond fishing_hint_maybe_needed = all( hint_radio_ready, has flag hal-module-in-crevice )
+
 trigger "[HINT Available] Make A Fishing Line" only once
 note "makes hint available when HAL module trapped in crevice"
 when use item crowbar on item vending_machine interaction open
 {
-    do schedule in 2 if any(
-        all(
-            has item hint_radio,
-            has flag hint-radio-on,
-            has flag hal-module-in-crevice,
-        ),
-        has flag module-2-retrieved,
-    ) onFalse retryNextTurn note "fishing line hint available" {
-        if all(
-            has item hint_radio,
-            has flag hint-radio-on,
-            has flag hal-module-in-crevice,
-        ) {
+    do schedule in 2 if any( fishing_hint_maybe_needed, has flag module-2-retrieved ) onFalse retryNextTurn
+    note "fishing line hint available" {
+        if fishing_hint_maybe_needed {
             do npc says hint_radio_npc "Whoops. That electronic bit fell way down in that crevice. Looks like you'll need something like a fishing line to pull it out. There must be **something** you can use around here."
         }
     }

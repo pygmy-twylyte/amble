@@ -5,11 +5,14 @@
 room st-alfonzo-parish {
     name "Parish of Saint Alfonzo"
     desc "The parish resembles a half-abandoned diner and half-absolved church, complete with stained glass windows depicting breakfast foods in heroic poses. The air smells faintly of syrup and tobacco.\n\nA refrigerated pedestal in the corner hums solemnly. Near the door, the hymn board lists this week’s sermon: [[b]]'On the Sanctity of the Short Stack.'[[/b]]"
+
     overlay if item margarine {
         present  r#"A large tub of [[item]]Nanook's Finest™ margarine[[/item]] sits upon the pedestal."#
         absent  "The pedestal stands empty, chilling nothing in particular."
     }
+
     exit "out the door" -> parish-landing
+
     scenery "Stained Glass Windows" desc "In one, a [[i]]formidable[[/i]] stack of pancakes wields a fork like a javelin, valiantly defending a bowl of cereal from a [[i]]vicious[[/i]] mug of coffee."
     scenery "Hymn Board"
     scenery "Parish Door"

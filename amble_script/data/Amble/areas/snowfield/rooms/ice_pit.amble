@@ -128,10 +128,12 @@ when act burn on item unlit_campfire {
     do award points 2 reason "Lit the campfire beneath the ice pillar"
     do replace item unlit_campfire with campfire
     do add flag campfire-lit
+
     do add seq flag reveal-ice-plaque limit 4
     # reveal-ice-plaque#0 -> just lit
     # reveal-ice-plaque#{1-3} -> progressive melting
     # reveal-ice-plaque#4 -> melted, plaque revealed
+
     do schedule in 2 note "melting sequence to #1" {
         do show "Tiny rivulets of water begin to form on the side of the ice pillar closest to the fire."
         do set item description plaque_2_frozen "Small rivulets of water have begun to stream down the sides of the pillar, but it's had little effect on the thickness of the ice so far."
@@ -163,26 +165,21 @@ when act burn on item unlit_campfire {
 }
 
 # ========================================
-# Hint Radio Messages
+# Hint Radio Message
 # ========================================
+
+let cond campfire_hint_needed = all(
+    missing flag campfire-lit,
+    hint_radio_ready,
+    in rooms ice-pit,
+)
+
 trigger "Hint: Find Items to Build a Fire" only once
 note "schedule radio hint about building a fire"
 when use item plaque_2_frozen ability read {
-    do schedule in 4 if any(
-        all(
-            missing flag campfire-lit,
-            has flag hint-radio-on,
-            has item hint_radio,
-            in rooms ice-pit,
-        ),
-        has flag campfire-lit,
-    ) onFalse retryNextTurn note "radio gives campfire hint" {
-        if all(
-            missing flag campfire-lit,
-            has flag hint-radio-on,
-            has item hint_radio,
-            in rooms ice-pit,
-        ) {
+    do schedule in 4 if any( campfire_hint_needed, has flag campfire-lit ) onFalse retryNextTurn
+    note "radio gives campfire hint" {
+        if campfire_hint_needed {
             do npc says hint_radio_npc "To melt that pillar, you'll need to drop some firewood here and light it with something."
         }
     }

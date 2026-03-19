@@ -23,6 +23,6 @@ when leave room high-ridge
     }
     do schedule in 6 if in rooms woods onFalse retryNextTurn
     note "gnats: alarmed" {
-        do priority -40 show """The gnat cloud zips past again in the other direction, this time shaped like "!!!"."""
+        do priority -40 show """The gnat cloud [[u]]bolts[[/u]] past the other way in a panic, this time shaped like "!!!"."""
     }
 }

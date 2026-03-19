@@ -5,6 +5,11 @@
 # At Saint Alfonzo's Parish in the early game, the player may choose to take
 # either the Shoe or the Gourd (see Life of Brian) from the Messiah Starter Kit.
 # This will be used to color some non-critical flavor tidbits throughout the game.
+
+#
+#
+# CORE ITEMS -- SHOE, GOURD, KIT
+#
 #
 
 item messiah_kit {
@@ -39,6 +44,14 @@ when open item messiah_kit {
     do show "Beware! You can only be a follower of the [[item]]Shoe[[/item]] [[u]]or[[/u]] the [[item]]Gourd[[/item]]. Choose wisely, or not at all."
 }
 
+#
+#
+# JOINING A SECT
+#
+#
+
+let cond joined_any_sect = any( has flag sect-shoe, has flag sect-gourd )
+
 trigger "Follower of the Shoe" only once
 note "locks player into the shoe sect"
 when take messiah_shoe from item messiah_kit {
@@ -53,7 +66,7 @@ trigger "Follower of the Gourd" only once
 note "locks player into the gourd sect"
 when take messiah_gourd from item messiah_kit {
     do show "[[b]]You are now a follower of the [[item]]Gourd[[/item]].[[/b]]"
-    do set item movability messiah_gourd fixed "You are already a follower of the Gourd. Your faith in the Vaunted Vegetable shall not be shaken."
+    do set item movability messiah_shoe fixed "You are already a follower of the Gourd. Your faith in the Vaunted Vegetable shall not be shaken."
     do award points 5 reason "Became a Follower of the Gourd"
     do add flag sect-gourd
     do add wedge "Far above, the trees seem to whisper: \"Yesss. Yes! The Gourd is the Way.\" " width 1 spinner ambientWoodland
@@ -61,7 +74,7 @@ when take messiah_gourd from item messiah_kit {
 
 #
 #
-# SHOE SECT PROPAGANDA
+# SHOE SECT PROPAGANDA ITEMS
 #
 #
 
@@ -121,7 +134,7 @@ item gourdies_out_sign {
 
 #
 #
-# GOURD SECT PROPAGANDA
+# GOURD SECT PROPAGANDA ITEMS
 #
 #
 
