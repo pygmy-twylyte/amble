@@ -26,7 +26,10 @@ use actions::{parse_modify_item_action, parse_modify_npc_action, parse_modify_ro
 #[cfg(test)]
 use helpers::parse_string;
 
-use conditions::resolve_condition_aliases as resolve_condition_aliases_impl;
+use conditions::{
+    resolve_condition_aliases as resolve_condition_aliases_impl,
+    resolve_condition_aliases_with_base as resolve_condition_aliases_with_base_impl,
+};
 use game::parse_game_pair;
 use goal::parse_goal_pair;
 use helpers::SourceMap;
@@ -75,9 +78,7 @@ pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
 /// Returns an error when parsing fails or when the grammar encounters an
 /// unexpected shape.
 pub fn parse_program_full(source: &str) -> Result<ProgramAstBundle, AstError> {
-    let local_alias_specs = collect_condition_alias_specs(source)?;
-    let local_aliases = resolve_condition_aliases_impl(&local_alias_specs)?;
-    parse_program_full_with_aliases(source, &local_aliases)
+    parse_program_full_with_aliases(source, &HashMap::new())
 }
 
 /// Parse a full program using a caller-provided map of resolved condition aliases.
@@ -95,7 +96,10 @@ pub fn parse_program_full_with_aliases(
     let mut pairs = DslParser::parse(Rule::program, source).map_err(|e| AstError::Pest(e.to_string()))?;
     let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
     let smap = SourceMap::new(source);
-    let (sets, _) = collect_sets_and_alias_specs(&pair)?;
+    let (sets, local_alias_specs) = collect_sets_and_alias_specs(&pair)?;
+    let local_aliases = resolve_condition_aliases_with_base_impl(&local_alias_specs, aliases)?;
+    let mut merged_aliases = aliases.clone();
+    merged_aliases.extend(local_aliases);
     let mut game_pair = None;
     let mut trigger_pairs = Vec::new();
     let mut room_pairs = Vec::new();
@@ -135,7 +139,7 @@ pub fn parse_program_full_with_aliases(
     }
     let mut triggers = Vec::new();
     for trig in trigger_pairs {
-        let mut ts = parse_trigger_pair(trig, source, &smap, &sets, aliases)?;
+        let mut ts = parse_trigger_pair(trig, source, &smap, &sets, &merged_aliases)?;
         triggers.append(&mut ts);
     }
     let mut rooms = Vec::new();
@@ -145,7 +149,7 @@ pub fn parse_program_full_with_aliases(
     }
     let mut items = Vec::new();
     for ip in item_pairs {
-        let it = parse_item_pair(ip, source, &sets, aliases)?;
+        let it = parse_item_pair(ip, source, &sets, &merged_aliases)?;
         items.push(it);
     }
     let mut spinners = Vec::new();
@@ -912,6 +916,38 @@ trigger "Radio Hint" when always {
             vec![ConditionAst::All(vec![
                 ConditionAst::HasItem("hint_radio".into()),
                 ConditionAst::HasFlag("hint-radio-on".into()),
+            ])]
+        );
+    }
+
+    #[test]
+    fn parse_program_full_with_aliases_merges_local_aliases() {
+        let defs = r#"
+let cond radio_ready = all(has item hint_radio, has flag hint-radio-on)
+"#;
+        let usage = r#"
+let cond hint_needed = all(radio_ready, missing flag puzzle-solved)
+
+trigger "Radio Hint" when always {
+  if hint_needed {
+    do show "Need a hint."
+  }
+}
+"#;
+        let aliases =
+            super::resolve_condition_aliases(&super::collect_condition_alias_specs(defs).expect("collect defs"))
+                .expect("resolve shared aliases");
+        let (_game, triggers, ..) =
+            super::parse_program_full_with_aliases(usage, &aliases).expect("local aliases should merge");
+
+        assert_eq!(
+            triggers[0].conditions,
+            vec![ConditionAst::All(vec![
+                ConditionAst::All(vec![
+                    ConditionAst::HasItem("hint_radio".into()),
+                    ConditionAst::HasFlag("hint-radio-on".into()),
+                ]),
+                ConditionAst::MissingFlag("puzzle-solved".into()),
             ])]
         );
     }

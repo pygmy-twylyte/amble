@@ -3,6 +3,7 @@
 //! - `cargo run -p amble_script -- compile-dir /path/to/root/data/dir --out-dir amble_engine/data`
 //! - `cargo run -p amble_script -- lint amble_script/data/Amble --deny-missing`
 
+use std::path::{Path, PathBuf};
 use std::{env, fs, process};
 
 use amble_script::{
@@ -354,13 +355,19 @@ fn run_lint(args: &[String]) {
         files.push(path.clone());
     }
 
-    let shared_aliases = if md.is_dir() {
-        Some(collect_global_condition_aliases(&files, "lint").unwrap_or_else(|msg| {
-            eprintln!("{msg}");
-            process::exit(1);
-        }))
-    } else {
+    let alias_scope_files = lint_alias_scope_files(&path, md.is_dir()).unwrap_or_else(|msg| {
+        eprintln!("{msg}");
+        process::exit(1);
+    });
+    let shared_aliases = if alias_scope_files.is_empty() {
         None
+    } else {
+        Some(
+            collect_global_condition_aliases(&alias_scope_files, "lint").unwrap_or_else(|msg| {
+                eprintln!("{msg}");
+                process::exit(1);
+            }),
+        )
     };
 
     let mut any_missing = 0usize;
@@ -393,6 +400,33 @@ fn collect_dsl_files_recursive(dir: &str, out: &mut Vec<String>) {
             }
         }
     }
+}
+
+fn lint_alias_scope_files(path: &str, is_dir: bool) -> Result<Vec<String>, String> {
+    let scope_root = if is_dir {
+        PathBuf::from(path)
+    } else {
+        discover_lint_project_root(Path::new(path))?
+    };
+    let scope = scope_root
+        .to_str()
+        .ok_or_else(|| format!("lint: invalid utf-8 path '{}'", scope_root.display()))?;
+    let mut files = Vec::new();
+    collect_dsl_files_recursive(scope, &mut files);
+    files.sort();
+    Ok(files)
+}
+
+fn discover_lint_project_root(path: &Path) -> Result<PathBuf, String> {
+    let start = path
+        .parent()
+        .ok_or_else(|| format!("lint: cannot determine parent directory for '{}'", path.display()))?;
+    for dir in start.ancestors() {
+        if dir.join("game.amble").is_file() || dir.join("game.able").is_file() {
+            return Ok(dir.to_path_buf());
+        }
+    }
+    Ok(start.to_path_buf())
 }
 
 fn lint_one_file(path: &str, world: &WorldRefs, aliases: Option<&HashMap<String, ConditionAst>>) -> usize {
@@ -1015,5 +1049,54 @@ fn flag_name(flag: &amble_data::FlagDef) -> String {
     match flag {
         amble_data::FlagDef::Simple { name } => name.clone(),
         amble_data::FlagDef::Sequence { name, .. } => name.clone(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn make_temp_dir(label: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time before unix epoch")
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!("amble-{label}-{}-{nanos}", std::process::id()));
+        fs::create_dir_all(&dir).expect("create temp dir");
+        dir
+    }
+
+    #[test]
+    fn single_file_lint_scope_uses_project_root_aliases() {
+        let root = make_temp_dir("lint-alias-scope");
+        let global_dir = root.join("global");
+        let area_dir = root.join("areas");
+        fs::create_dir_all(&global_dir).expect("create global dir");
+        fs::create_dir_all(&area_dir).expect("create area dir");
+
+        fs::write(
+            root.join("game.amble"),
+            "game { title \"Demo\" intro \"Hi\" player { name \"P\" desc \"Player\" max_hp 10 start room foyer } }\n",
+        )
+        .expect("write game");
+        fs::write(
+            global_dir.join("shared.amble"),
+            "let cond radio_ready = all(has item hint_radio, has flag hint-radio-on)\n",
+        )
+        .expect("write alias defs");
+        let target = area_dir.join("use_alias.amble");
+        fs::write(
+            &target,
+            "trigger \"Radio Hint\" when always { if radio_ready { do show \"Ready.\" } }\n",
+        )
+        .expect("write usage");
+
+        let scope_files = lint_alias_scope_files(target.to_str().expect("utf-8 path"), false).expect("scope files");
+        let aliases = collect_global_condition_aliases(&scope_files, "lint-test").expect("resolve aliases");
+        let src = fs::read_to_string(&target).expect("read target");
+        parse_program_full_with_aliases(&src, &aliases).expect("single-file lint should parse with shared aliases");
+
+        fs::remove_dir_all(root).expect("remove temp dir");
     }
 }

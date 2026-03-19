@@ -17,6 +17,13 @@ pub(super) fn parse_condition_text(
 pub(super) fn resolve_condition_aliases(
     specs: &[ConditionAliasSpec],
 ) -> Result<HashMap<String, ConditionAst>, AstError> {
+    resolve_condition_aliases_with_base(specs, &HashMap::new())
+}
+
+pub(super) fn resolve_condition_aliases_with_base(
+    specs: &[ConditionAliasSpec],
+    base_aliases: &HashMap<String, ConditionAst>,
+) -> Result<HashMap<String, ConditionAst>, AstError> {
     let mut by_name: HashMap<&str, &ConditionAliasSpec> = HashMap::new();
     for spec in specs {
         if by_name.insert(spec.name.as_str(), spec).is_some() {
@@ -29,6 +36,7 @@ pub(super) fn resolve_condition_aliases(
 
     let mut resolver = AliasResolver {
         specs: by_name,
+        base_aliases,
         resolved: HashMap::new(),
         visiting: Vec::new(),
     };
@@ -208,6 +216,7 @@ where
 
 struct AliasResolver<'a> {
     specs: HashMap<&'a str, &'a ConditionAliasSpec>,
+    base_aliases: &'a HashMap<String, ConditionAst>,
     resolved: HashMap<String, ConditionAst>,
     visiting: Vec<String>,
 }
@@ -218,7 +227,7 @@ impl AliasResolver<'_> {
             return Ok(Some(ast.clone()));
         }
         let Some(spec) = self.specs.get(name).copied() else {
-            return Ok(None);
+            return Ok(self.base_aliases.get(name).cloned());
         };
         if let Some(idx) = self.visiting.iter().position(|n| n == name) {
             let mut cycle = self.visiting[idx..].to_vec();
