@@ -148,10 +148,11 @@ single_quoted = @{ "'" ~ (escape | (!("\\" | "'") ~ ANY))* ~ "'" }
 // Unified string literal
 string = @{ triple_quoted | raw_quoted_h5 | raw_quoted_h4 | raw_quoted_h3 | raw_quoted_h2 | raw_quoted_h1 | raw_quoted | quoted | single_quoted }
 
-program = { SOI ~ (set_decl | game_def | trigger | room_def | item_def | spinner_def | npc_def | goal_def)+ ~ EOI }
+program = { SOI ~ (set_decl | cond_decl | game_def | trigger | room_def | item_def | spinner_def | npc_def | goal_def)+ ~ EOI }
 
 set_decl = { "let" ~ "set" ~ ident ~ "=" ~ set_list }
 set_list = { "(" ~ ident ~ ("," ~ ident)* ~ (",")? ~ ")" }
+cond_decl = { "let" ~ "cond" ~ ident ~ "=" ~ cond }
 
 game_def        =  { "game" ~ game_block }
 game_block      =  { "{" ~ game_stmt* ~ "}" }
@@ -355,6 +356,7 @@ cond = {
   | container_has_item
   | chance_cond
   | ambient_cond
+  | cond_alias_ref
 }
 
 has_flag         = { "has" ~ "flag" ~ ident }
@@ -375,6 +377,7 @@ chance_cond        = { "chance" ~ pos_int ~ "%" }
 ambient_cond       = { "ambient" ~ ident ~ ("in" ~ "rooms" ~ ident ~ ("," ~ ident)*)? }
 // Preferred shorthand for ambient room gating: "in rooms a,b,c"
 in_rooms = { "in" ~ "rooms" ~ ident ~ ("," ~ ident)* }
+cond_alias_ref = { ident }
 
 all_group = { "all" ~ "(" ~ cond_list ~ ")" }
 any_group = { "any" ~ "(" ~ cond_list ~ ")" }

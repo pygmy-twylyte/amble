@@ -13,6 +13,7 @@ pub(super) fn parse_item_pair(
     item: pest::iterators::Pair<Rule>,
     _source: &str,
     sets: &HashMap<String, Vec<String>>,
+    aliases: &HashMap<String, ConditionAst>,
 ) -> Result<ItemAst, AstError> {
     let (src_line, _src_col) = item.as_span().start_pos().line_col();
     let mut it = item.into_inner();
@@ -28,7 +29,7 @@ pub(super) fn parse_item_pair(
     let mut location: Option<ItemLocationAst> = None;
     let mut visibility: Option<ItemVisibilityAst> = None;
     let mut visible_when: Option<ConditionAst> = None;
-    let mut aliases: Vec<String> = Vec::new();
+    let mut item_aliases: Vec<String> = Vec::new();
     let mut container_state: Option<ContainerStateAst> = None;
     let mut abilities: Vec<ItemAbilityAst> = Vec::new();
     let mut text: Option<String> = None;
@@ -123,7 +124,7 @@ pub(super) fn parse_item_pair(
                     .next()
                     .ok_or(AstError::Shape("missing visibility condition"))?;
                 let cond_text = cond_pair.as_str().trim();
-                visible_when = Some(parse_condition_text(cond_text, sets)?);
+                visible_when = Some(parse_condition_text(cond_text, sets, aliases)?);
             },
             Rule::item_aliases => {
                 let aliases_list = stmt
@@ -131,7 +132,7 @@ pub(super) fn parse_item_pair(
                     .filter(|p| p.as_rule() == Rule::string)
                     .map(|p| unquote(p.as_str()))
                     .collect::<Vec<_>>();
-                aliases.extend(aliases_list);
+                item_aliases.extend(aliases_list);
             },
             Rule::item_container_state => {
                 let val = stmt
@@ -259,7 +260,7 @@ pub(super) fn parse_item_pair(
         location,
         visibility,
         visible_when,
-        aliases,
+        aliases: item_aliases,
         container_state,
         abilities,
         text,

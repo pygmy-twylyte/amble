@@ -15,6 +15,7 @@ pub(super) fn parse_trigger_pair(
     source: &str,
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
+    aliases: &HashMap<String, ConditionAst>,
 ) -> Result<Vec<TriggerAst>, AstError> {
     let src_line = trig.as_span().start_pos().line_col().0;
     let mut it = trig.into_inner();
@@ -275,7 +276,7 @@ pub(super) fn parse_trigger_pair(
             let rest = &inner[if_pos + 3..];
             let brace_rel = rest.find('{').ok_or(AstError::Shape("missing '{' after if"))?;
             let cond_text = &rest[..brace_rel].trim();
-            let cond = match parse_condition_text(cond_text, sets) {
+            let cond = match parse_condition_text(cond_text, sets, aliases) {
                 Ok(c) => c,
                 Err(AstError::Shape(m)) => {
                     let base_offset = str_offset(source, inner);
@@ -295,7 +296,7 @@ pub(super) fn parse_trigger_pair(
             // Extract the block body after this '{' balancing braces
             let block_after = &rest[brace_rel..]; // starts with '{'
             let body = extract_body(block_after)?;
-            let actions = parse_actions_from_body(body, source, smap, sets)?;
+            let actions = parse_actions_from_body(body, source, smap, sets, aliases)?;
             lowered.push(TriggerAst {
                 name: name.clone(),
                 note: None,
@@ -311,7 +312,7 @@ pub(super) fn parse_trigger_pair(
             continue;
         }
         let remainder = &inner[i..];
-        match parse_modify_item_action(remainder, sets) {
+        match parse_modify_item_action(remainder, sets, aliases) {
             Ok((action, used)) => {
                 unconditional_actions.push(action);
                 i += used;
@@ -379,7 +380,7 @@ pub(super) fn parse_trigger_pair(
             Err(e) => return Err(e),
         }
         // Top-level do schedule ... or do ... line
-        match parse_schedule_action(remainder, source, smap, sets) {
+        match parse_schedule_action(remainder, source, smap, sets, aliases) {
             Ok((action, used)) => {
                 unconditional_actions.push(action);
                 i += used;
