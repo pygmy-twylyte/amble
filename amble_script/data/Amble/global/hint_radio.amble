@@ -82,3 +82,11 @@ npc hint_radio_npc {
         "(static)"
     }
 }
+
+#
+#
+# CONDITION SETS TO SIMPLIFY HINT RADIO TRIGGERS
+#
+#
+
+let cond radio_ready = all( has item hint_radio, has flag hint-radio-on )

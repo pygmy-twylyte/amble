@@ -441,7 +441,12 @@ mod tests {
         let visible_coin_id = insert_item(&mut world, "Coin", Location::Npc(npc_id.clone()), None);
 
         world.npcs.get_mut(&npc_id).unwrap().inventory.insert(hidden_gem_id);
-        world.npcs.get_mut(&npc_id).unwrap().inventory.insert(visible_coin_id.clone());
+        world
+            .npcs
+            .get_mut(&npc_id)
+            .unwrap()
+            .inventory
+            .insert(visible_coin_id.clone());
 
         let result = find_item_match(&world, "coin", SearchScope::NpcInventory(npc_id.clone())).unwrap();
         assert_eq!(result, visible_coin_id);
@@ -468,7 +473,12 @@ mod tests {
 
         world.rooms.get_mut(&room_id).unwrap().contents.insert(chest_id.clone());
         world.items.get_mut(&chest_id).unwrap().contents.insert(hidden_gem_id);
-        world.items.get_mut(&chest_id).unwrap().contents.insert(visible_coin_id.clone());
+        world
+            .items
+            .get_mut(&chest_id)
+            .unwrap()
+            .contents
+            .insert(visible_coin_id.clone());
 
         let result = find_item_match(&world, "coin", SearchScope::ItemContents(chest_id.clone())).unwrap();
         assert_eq!(result, visible_coin_id);

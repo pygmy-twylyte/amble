@@ -41,9 +41,26 @@
 
 mod parser;
 mod worlddef;
-pub use parser::{AstError, parse_program, parse_trigger};
-pub use parser::{parse_goals, parse_items, parse_npcs, parse_program_full, parse_rooms, parse_spinners};
+pub use parser::{
+    AstError, collect_condition_alias_specs, parse_program, parse_program_full, parse_program_full_with_aliases,
+    parse_trigger,
+};
+pub use parser::{parse_goals, parse_items, parse_npcs, parse_rooms, parse_spinners};
+use std::collections::HashMap;
 pub use worlddef::{WorldDefError, worlddef_from_asts};
+
+pub fn resolve_condition_aliases(specs: &[ConditionAliasSpec]) -> Result<HashMap<String, ConditionAst>, AstError> {
+    parser::resolve_condition_aliases(specs)
+}
+
+/// Captured top-level `let cond` declaration plus the room-set environment used
+/// to resolve it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ConditionAliasSpec {
+    pub name: String,
+    pub text: String,
+    pub sets: HashMap<String, Vec<String>>,
+}
 
 /// Game-level configuration AST.
 #[derive(Debug, Clone, PartialEq)]

@@ -139,8 +139,10 @@ Conditions refine when actions run. You can mix and nest logical groups:
 - NPC checks: `with npc guard`, `npc has item guard badge`, `npc in state guard alert`
 - Randomised ambience: `chance 40%`, `in rooms lobby,atrium` (supports comma-separated lists and declared sets)
 - Grouping: `all(cond1, cond2, …)` (AND), `any(cond1, cond2, …)` (OR). Nested groups are allowed.
+- Reusable aliases: `let cond radio_ready = all(has item hint_radio, has flag hint-radio-on)`
 
 Each condition group inside an `if` compiles into a flat list of engine conditions. `any(…)` groups are lowered into multiple triggers under the hood so you can use them freely.
+Condition aliases are global across a `compile-dir` run, so a `let cond ...` declaration in one DSL file can be referenced from another.
 
 ### Actions (`do …`)
 

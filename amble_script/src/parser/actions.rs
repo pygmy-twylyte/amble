@@ -773,6 +773,7 @@ fn parse_if_action(
     source: &str,
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
+    aliases: &HashMap<String, ConditionAst>,
 ) -> Result<Option<(ActionStmt, usize)>, AstError> {
     if !body[start..].starts_with("if ") {
         return Ok(None);
@@ -781,7 +782,7 @@ fn parse_if_action(
     let rest = &body[if_pos + 3..];
     let brace_rel = rest.find('{').ok_or(AstError::Shape("missing '{' after if"))?;
     let cond_text = rest[..brace_rel].trim();
-    let cond = match parse_condition_text(cond_text, sets) {
+    let cond = match parse_condition_text(cond_text, sets, aliases) {
         Ok(c) => c,
         Err(AstError::Shape(m)) => {
             return Err(shape_at_condition(m, source, smap, body, cond_text));
@@ -790,7 +791,7 @@ fn parse_if_action(
     };
     let block_after = &rest[brace_rel..];
     let inner_body = extract_body(block_after)?;
-    let actions = parse_actions_from_body(inner_body, source, smap, sets)?;
+    let actions = parse_actions_from_body(inner_body, source, smap, sets, aliases)?;
     let action = ActionStmt::new(ActionAst::Conditional {
         condition: Box::new(cond),
         actions,
@@ -807,8 +808,9 @@ fn parse_modify_action(
     body: &str,
     offset: usize,
     sets: &HashMap<String, Vec<String>>,
+    aliases: &HashMap<String, ConditionAst>,
 ) -> Result<Option<(ActionStmt, usize)>, AstError> {
-    match parse_modify_item_action(remainder, sets) {
+    match parse_modify_item_action(remainder, sets, aliases) {
         Ok((action, used)) => return Ok(Some((action, offset + used))),
         Err(AstError::Shape("not a modify item action")) => {},
         Err(AstError::Shape(m)) => return Err(shape_at(m, source, smap, body, offset)),
@@ -834,9 +836,10 @@ fn parse_schedule_action_line(
     source: &str,
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
+    aliases: &HashMap<String, ConditionAst>,
     offset: usize,
 ) -> Result<Option<(ActionStmt, usize)>, AstError> {
-    match parse_schedule_action(remainder, source, smap, sets) {
+    match parse_schedule_action(remainder, source, smap, sets, aliases) {
         Ok((action, used)) => Ok(Some((action, offset + used))),
         Err(AstError::Shape("not a schedule action")) => Ok(None),
         Err(e) => Err(e),
@@ -871,6 +874,7 @@ pub(super) fn parse_actions_from_body(
     source: &str,
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
+    aliases: &HashMap<String, ConditionAst>,
 ) -> Result<Vec<ActionStmt>, AstError> {
     let mut out = Vec::new();
     let mut i = 0usize;
@@ -879,18 +883,18 @@ pub(super) fn parse_actions_from_body(
         if i >= body.len() {
             break;
         }
-        if let Some((action, new_i)) = parse_if_action(body, i, source, smap, sets)? {
+        if let Some((action, new_i)) = parse_if_action(body, i, source, smap, sets, aliases)? {
             out.push(action);
             i = new_i;
             continue;
         }
         let remainder = &body[i..];
-        if let Some((action, new_i)) = parse_modify_action(remainder, source, smap, body, i, sets)? {
+        if let Some((action, new_i)) = parse_modify_action(remainder, source, smap, body, i, sets, aliases)? {
             out.push(action);
             i = new_i;
             continue;
         }
-        if let Some((action, new_i)) = parse_schedule_action_line(remainder, source, smap, sets, i)? {
+        if let Some((action, new_i)) = parse_schedule_action_line(remainder, source, smap, sets, aliases, i)? {
             out.push(action);
             i = new_i;
             continue;
@@ -952,6 +956,7 @@ fn parse_modify_header<'a>(
 pub(super) fn parse_modify_item_action(
     text: &str,
     sets: &HashMap<String, Vec<String>>,
+    aliases: &HashMap<String, ConditionAst>,
 ) -> Result<(ActionStmt, usize), AstError> {
     let (priority, item, patch_block, consumed) = parse_modify_header(
         text,
@@ -1021,7 +1026,7 @@ pub(super) fn parse_modify_item_action(
                     .next()
                     .ok_or(AstError::Shape("modify item visible_when missing condition"))?;
                 let cond_text = cond_pair.as_str().trim();
-                patch.visible_when = Some(parse_condition_text(cond_text, sets)?);
+                patch.visible_when = Some(parse_condition_text(cond_text, sets, aliases)?);
             },
             Rule::item_aliases_patch => {
                 let list = stmt
@@ -1444,6 +1449,7 @@ type ScheduledActionOpts = (Option<ConditionAst>, Option<OnFalseAst>, Option<Str
 fn parse_scheduled_action_opts(
     header: &str,
     sets: &HashMap<String, Vec<String>>,
+    aliases: &HashMap<String, ConditionAst>,
 ) -> Result<ScheduledActionOpts, AstError> {
     let mut on_false = None;
     let mut note = None;
@@ -1484,7 +1490,7 @@ fn parse_scheduled_action_opts(
         if let Some(n) = extract_note(header) {
             note = Some(n);
         }
-        cond = Some(parse_condition_text(cond_str, sets)?);
+        cond = Some(parse_condition_text(cond_str, sets, aliases)?);
     } else if !header.is_empty() {
         if let Some(n) = extract_note(header) {
             note = Some(n);
@@ -1525,11 +1531,12 @@ pub(super) fn parse_schedule_action(
     source: &str,
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
+    aliases: &HashMap<String, ConditionAst>,
 ) -> Result<(ActionStmt, usize), AstError> {
     let header = parse_schedule_header(text)?;
-    let (cond, on_false, note) = parse_scheduled_action_opts(header.header, sets)?;
+    let (cond, on_false, note) = parse_scheduled_action_opts(header.header, sets, aliases)?;
     let (p, inner_body) = find_schedule_block(header.rest1, header.brace_pos)?;
-    let actions = parse_actions_from_body(inner_body, source, smap, sets)?;
+    let actions = parse_actions_from_body(inner_body, source, smap, sets, aliases)?;
     let consumed = header.leading_ws + (header.trimmed.len() - header.rest1[p + 1..].len());
 
     let act = match (header.is_in, cond) {
