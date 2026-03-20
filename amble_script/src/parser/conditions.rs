@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
+use pest::Parser;
+
 use crate::{ConditionAliasSpec, ConditionAst, NpcStateValue};
 
-use super::AstError;
-use super::helpers::{parse_string_at, split_top_level_commas};
+use super::helpers::parse_string_at;
+use super::{AstError, DslParser, Rule};
 
 pub(super) fn parse_condition_text(
     text: &str,
@@ -59,21 +61,11 @@ where
     let t = cleaned.trim();
     if let Some(inner) = t.strip_prefix("all(") {
         let inner = inner.strip_suffix(')').ok_or(AstError::Shape("all() close"))?;
-        let parts = split_top_level_commas(inner);
-        let mut kids = Vec::new();
-        for p in parts {
-            kids.push(parse_condition_text_inner(p, sets, resolve_alias)?);
-        }
-        return Ok(ConditionAst::All(kids));
+        return Ok(ConditionAst::All(parse_condition_list(inner, sets, resolve_alias)?));
     }
     if let Some(inner) = t.strip_prefix("any(") {
         let inner = inner.strip_suffix(')').ok_or(AstError::Shape("any() close"))?;
-        let parts = split_top_level_commas(inner);
-        let mut kids = Vec::new();
-        for p in parts {
-            kids.push(parse_condition_text_inner(p, sets, resolve_alias)?);
-        }
-        return Ok(ConditionAst::Any(kids));
+        return Ok(ConditionAst::Any(parse_condition_list(inner, sets, resolve_alias)?));
     }
     if let Some(rest) = t.strip_prefix("has flag ") {
         return Ok(ConditionAst::HasFlag(rest.trim().to_string()));
@@ -212,6 +204,30 @@ where
         return Ok(alias);
     }
     Err(AstError::Shape("unknown condition"))
+}
+
+fn parse_condition_list<F>(
+    text: &str,
+    sets: &HashMap<String, Vec<String>>,
+    resolve_alias: &mut F,
+) -> Result<Vec<ConditionAst>, AstError>
+where
+    F: FnMut(&str) -> Result<Option<ConditionAst>, AstError>,
+{
+    let text = text.trim();
+    if text.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let mut pairs = DslParser::parse(Rule::cond_list, text).map_err(|e| AstError::Pest(e.to_string()))?;
+    let pair = pairs.next().ok_or(AstError::Shape("condition list"))?;
+    let mut kids = Vec::new();
+    for cond in pair.into_inner() {
+        if cond.as_rule() == Rule::cond {
+            kids.push(parse_condition_text_inner(cond.as_str(), sets, resolve_alias)?);
+        }
+    }
+    Ok(kids)
 }
 
 struct AliasResolver<'a> {

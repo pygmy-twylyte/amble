@@ -964,6 +964,18 @@ let cond b = a
     }
 
     #[test]
+    fn condition_aliases_can_be_adjacent_in_any_group() {
+        let src = r#"
+let cond radio_ready = all(has item hint_radio, has flag hint-radio-on)
+let cond hint_not_needed = any(has flag read-plaque-2, has item firewood)
+let cond hint_gate = any(radio_ready, hint_not_needed)
+"#;
+        let specs = super::collect_condition_alias_specs(src).expect("collect aliases");
+        let aliases = super::resolve_condition_aliases(&specs).expect("resolve aliases");
+        assert!(matches!(aliases.get("hint_gate"), Some(ConditionAst::Any(kids)) if kids.len() == 2));
+    }
+
+    #[test]
     fn reserved_keywords_are_excluded_from_ident() {
         // Using a keyword as an identifier should fail to parse
         let src = r#"
