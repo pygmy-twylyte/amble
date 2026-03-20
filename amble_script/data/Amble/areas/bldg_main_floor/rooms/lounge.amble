@@ -3,7 +3,7 @@ room lounge {
     desc "A small space to relax, with a worn sofa, and a ringed coffee table. A few outdated magazines and parts of a jigsaw puzzle are scattered across the table."
     scenery "Worn Sofa"
     scenery "Coffee Table"
-    scenery "Magazines"
+    scenery "Magazines" desc "Editions include a [[i]]Highlights[[/i]] magazine with all of the puzzles completed (incorrectly) and a [[i]]National Geographic[[/i]] from 1983."
     scenery "Jigsaw Puzzle" desc "Partially assembled, it the [[item]]jigsaw puzzle[[/item]] appears to be a depiction of a Borg cube."
 
     overlay if item lebowski_rug {

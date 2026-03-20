@@ -38,17 +38,17 @@ item messiah_shoe {
     aliases "sole", "sandal"
 }
 
-trigger "You Can Follow Only One" only once
-note "alert player the gourd and shoe are mutually exclusive"
-when open item messiah_kit {
-    do show "Beware! You can only be a follower of the [[item]]Shoe[[/item]] [[u]]or[[/u]] the [[item]]Gourd[[/item]]. Choose wisely, or not at all."
-}
-
 #
 #
 # JOINING A SECT
 #
 #
+
+trigger "You Can Follow Only One" only once
+note "alert player the gourd and shoe are mutually exclusive"
+when open item messiah_kit {
+    do show "Beware! You can only be a follower of the [[item]]Shoe[[/item]] [[u]]or[[/u]] the [[item]]Gourd[[/item]]. Choose wisely, or not at all."
+}
 
 let cond joined_any_sect = any( has flag sect-shoe, has flag sect-gourd )
 
@@ -132,6 +132,16 @@ item gourdies_out_sign {
     text "[[center]]AUTHORIZED FOOTWEAR ZONE[[/center]][[center]]— Gourdites Keep Out![[/center]]"
 }
 
+item shoe_pamphlet {
+    name "Worn Pamphlet"
+    visible when has flag sect-shoe
+    desc "A newly printed pamphlet, advertising a narrow selection of simple sandals — but only the [[u]]left[[/u]] ones, \"[[i]]For the discerning Follower of the Shoe[[/i]]\""
+    movability free
+    location room lounge
+    ability Read
+    text "[[i]]Printed on flame-retardant sheets from Initech™[[/i]]"
+}
+
 #
 #
 # GOURD SECT PROPAGANDA ITEMS
@@ -202,4 +212,12 @@ item anti_shoe_sticker {
     movability fixed "It's irretrievably stuck to the mirror."
     ability Read
     text "[[box]][[u]]eschew the shoe![[/u]][[/box]]"
+}
+
+item gourd_polishing_wipes {
+    name "Gourd Polishing Wipes"
+    visible when has flag sect-gourd
+    desc "Wipes -- to polish your Gourd. Unless you're one of those footwear fetishists who follow the filthy shoe."
+    movability free
+    location chest lost_and_found_box
 }
