@@ -68,13 +68,15 @@ let cond with_angry_knight = all(
     missing flag appeased-black-knight,
 )
 
+let cond occasional_damage = all( with_angry_knight, chance 50% )
+
 trigger "[Sublevel-1-Entrance] Black Knight Kicks Player After Sword Taken"
 when always {
     if with_angry_knight {
         do priority -30 show "The Black Knight prances around the room, occasionally trying to kick you in the shins."
         do priority -10 npc random dialogue black_knight
     }
-    if all( chance 50%, with_angry_knight ) {
+    if occasional_damage {
         do priority -20 damage player 1 cause "knight's shin-kick"
     }
 }

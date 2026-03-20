@@ -48,7 +48,7 @@ item firewood {
 #
 #
 
-let cond firewood_hint_maybe_needed = all(
+let cond firewood_hint_needed = all(
     hint_radio_ready,
     has flag tried-read-plaque-2,
     missing flag campfire-lit,
@@ -62,13 +62,15 @@ let cond firewood_hint_not_needed = any(
     has item firewood,
 )
 
+let cond firewood_hint_maybe_needed = any( firewood_hint_needed, firewood_hint_not_needed )
+
 trigger "Firewood HINT" only once
 note "HINT radio: add firewood hint to scheduler"
 when enter room snow-camp {
-    do schedule in 4 if any( firewood_hint_maybe_needed, firewood_hint_not_needed ) onFalse retryNextTurn
+    do schedule in 4 if firewood_hint_maybe_needed onFalse retryNextTurn
     note "HINT radio: deliver firewood hint"
     {
-        if firewood_hint_maybe_needed {
+        if firewood_hint_needed {
             do npc says hint_radio_npc "Looks like the researchers didn't get their fire lit before the dog-Thing got to them. Bad day for them, but maybe good for you. Could you move the firewood down into the ice pit to melt the ice around the frozen pillar?"
         }
     }

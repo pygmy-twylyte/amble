@@ -12,7 +12,7 @@ room front-entrance {
         bored  "Dibbler sighs about the slow foot traffic."
     }
 
-    overlay if any( flag set sect-gourd, flag set sect-shoe ) {
+    overlay if flag set sect-gourd {
         text "Graffiti in huge red letters is splayed across the facade a hundred times over: [[bright-red]]ROMANI, ITE DOMUM![[//bright-red]]"
     }
 

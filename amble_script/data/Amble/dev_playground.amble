@@ -12,12 +12,42 @@ room dev-room {
     name "Test Chamber"
     desc "A large workshop area, used for development, construction and testing of Amble engine features. A Linux workstation sits on a desk near the window, next to a 3D printer. Pneumatic tubes criss-cross the ceiling to destinations unknown. Two metal lockers occupy the opposite side of the room, with a broom and dustpan leaning against them."
     exit "back to game start" -> high-ridge
+    exit "dark closet" -> dark-room
+
     scenery default "There's nothing interesting about the {thing}."
     scenery "Tubes"
     scenery "Broom"
     scenery "Dustpan"
     scenery "Lockers" desc "One is marked 'Unsafe'. The other is marked 'Unsound'. Both are locked tight."
 }
+
+#
+# Let's see if we can use triggers and visibility settings to implement darkness in a room
+#
+
+room dark-room {
+    name "Developer's Closet"
+    desc "This is a dark closet where you can't see anything unless you bring some light."
+    exit "dev room" -> dev-room
+}
+
+item universal_cable {
+    name "Universal Patch Cable"
+    desc "A magic cable that can attach any kind of port to any other kind of port."
+    movability free
+    visible when has item glow_stick
+    location room dark-room
+}
+
+item glow_stick {
+    name "Gigantic Glow Stick"
+    desc "A very bright glow stick, roughly the size of your forearm."
+    aliases "glowstick"
+    location room dev-room
+    movability free
+}
+
+
 
 item pc {
     name "Linux Workstation"
