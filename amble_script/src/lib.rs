@@ -75,7 +75,7 @@ pub struct GameAst {
     pub scoring: Option<ScoringAst>,
 }
 
-/// Player definition contained inside the game block.
+/// Player definition (from `player` statement within the game block.)
 #[derive(Debug, Clone, PartialEq)]
 pub struct PlayerAst {
     pub name: String,
@@ -84,7 +84,7 @@ pub struct PlayerAst {
     pub start_room: String,
 }
 
-/// Scoring definition emitted from the DSL.
+/// Scorecard title and rank definitions from the `scoring` game block.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ScoringAst {
     pub report_title: Option<String>,
@@ -92,6 +92,9 @@ pub struct ScoringAst {
 }
 
 /// Single scoring rank entry.
+///
+/// `threshold` defines when the player ascends to this rank, specified as a
+/// percentage of total available points in the game.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ScoringRankAst {
     pub threshold: f32,
@@ -99,7 +102,7 @@ pub struct ScoringRankAst {
     pub description: String,
 }
 
-/// A minimal AST for a single trigger.
+/// AST for a `Trigger`
 #[derive(Debug, Clone, PartialEq)]
 pub struct TriggerAst {
     /// Human-readable trigger name.
@@ -119,6 +122,9 @@ pub struct TriggerAst {
 }
 
 /// Trigger condition variants.
+///
+/// These are the events that can be detected in the "when" clause and the conditions
+/// that can be tested in the `if` clause of a `trigger` statement.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ConditionAst {
     /// Event: trigger has no event; conditions only.
@@ -194,10 +200,15 @@ pub enum ConditionAst {
     HasItem(String),
     /// Require that the player is currently in a room (by symbol id).
     PlayerInRoom(String),
+    /// Require that the player has visited a particular location.
     HasVisited(String),
+    /// Require that an item is missing from player's inventory.
     MissingItem(String),
+    /// Require that a sequence flag is in progress (not yet at final stage.)
     FlagInProgress(String),
+    /// Require that a sequence flag is complete (has reached final stage.)
     FlagComplete(String),
+    /// Require that the player is in the same location as a specified Npc.
     WithNpc(String),
     NpcHasItem {
         npc: String,
