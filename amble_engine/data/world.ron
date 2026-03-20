@@ -3,7 +3,7 @@
         title: "AMBLE: An Absurd Adventure",
         slug: "amble-demo",
         author: "Dave",
-        version: "0.66.0",
+        version: "0.67.0-alpha",
         blurb: "A surreal sci-fi comedy adventure about cake, curiosity, and improbable facilities.",
         intro: "You find yourself standing on a rocky outcrop of a ridge high in the mountains -- maybe the Andes? Emerging from a daze, you realize you were brought here and dropped off by some sort of flying vehicle. When it flew off, it didn\'t make a sound. [[i]]Did it have a motor, or was it something different?[[/i]]\n\nYour head gradually begins to clear, and you start to take stock of your surroundings...\n\n[[hl]][[i]](type \"help\" for basic instructions)[[/i]][[/hl]]\n",
         player: (
@@ -631,7 +631,7 @@
                 ),
                 (
                     name: "Magazines",
-                    desc: None,
+                    desc: Some("Editions include a [[i]]Highlights[[/i]] magazine with all of the puzzles completed (incorrectly) and a [[i]]National Geographic[[/i]] from 1983."),
                 ),
                 (
                     name: "Jigsaw Puzzle",
@@ -1198,6 +1198,14 @@
             overlays: [
                 (
                     conditions: [
+                        flagSet(
+                            flag: "sect-gourd",
+                        ),
+                    ],
+                    text: "A brightly colored [[item]]sticker[[/item]] is applied near the center of one of the large mirrors.",
+                ),
+                (
+                    conditions: [
                         itemPresent(
                             item: "vogon_poetry_book",
                         ),
@@ -1393,6 +1401,14 @@
                     ],
                     text: "Dibbler sighs about the slow foot traffic.",
                 ),
+                (
+                    conditions: [
+                        flagSet(
+                            flag: "sect-gourd",
+                        ),
+                    ],
+                    text: "Graffiti in huge red letters is splayed across the facade a hundred times over: [[bright-red]]ROMANI, ITE DOMUM![[//bright-red]]",
+                ),
             ],
             scenery: [
                 (
@@ -1409,6 +1425,10 @@
                 ),
                 (
                     name: "Paved Walkway",
+                    desc: None,
+                ),
+                (
+                    name: "Graffiti",
                     desc: None,
                 ),
             ],
@@ -2751,6 +2771,15 @@
                     required_items: [],
                     barred_message: None,
                 ),
+                (
+                    direction: "dark closet",
+                    to: "dark-room",
+                    hidden: false,
+                    locked: false,
+                    required_flags: [],
+                    required_items: [],
+                    barred_message: None,
+                ),
             ],
             overlays: [],
             scenery: [
@@ -2772,6 +2801,26 @@
                 ),
             ],
             scenery_default: Some("There\'s nothing interesting about the {thing}."),
+        ),
+        (
+            id: "dark-room",
+            name: "Developer\'s Closet",
+            desc: "This is a dark closet where you can\'t see anything unless you bring some light.",
+            visited: false,
+            exits: [
+                (
+                    direction: "dev room",
+                    to: "dev-room",
+                    hidden: false,
+                    locked: false,
+                    required_flags: [],
+                    required_items: [],
+                    barred_message: None,
+                ),
+            ],
+            overlays: [],
+            scenery: [],
+            scenery_default: None,
         ),
     ],
     items: [
@@ -4544,6 +4593,40 @@
             consumable: None,
         ),
         (
+            id: "universal_cable",
+            name: "Universal Patch Cable",
+            desc: "A magic cable that can attach any kind of port to any other kind of port.",
+            movability: free,
+            container_state: None,
+            location: Room("dark-room"),
+            visibility: listed,
+            visible_when: Some(Pred(hasItem(
+                item: "glow_stick",
+            ))),
+            aliases: [],
+            abilities: [],
+            interaction_requires: {},
+            text: None,
+            consumable: None,
+        ),
+        (
+            id: "glow_stick",
+            name: "Gigantic Glow Stick",
+            desc: "A very bright glow stick, roughly the size of your forearm.",
+            movability: free,
+            container_state: None,
+            location: Room("dev-room"),
+            visibility: listed,
+            visible_when: None,
+            aliases: [
+                "glowstick",
+            ],
+            abilities: [],
+            interaction_requires: {},
+            text: None,
+            consumable: None,
+        ),
+        (
             id: "pc",
             name: "Linux Workstation",
             desc: "A System76 laptop running Pop!_OS with COSMIC DE, with Zed open to a file called [[i]]dev_playground.amble[[/i]].",
@@ -5008,6 +5091,25 @@
             consumable: None,
         ),
         (
+            id: "shoe_pamphlet",
+            name: "Worn Pamphlet",
+            desc: "A newly printed pamphlet, advertising a narrow selection of simple sandals — but only the [[u]]left[[/u]] ones, \"[[i]]For the discerning Follower of the Shoe[[/i]]\"",
+            movability: free,
+            container_state: None,
+            location: Room("lounge"),
+            visibility: listed,
+            visible_when: Some(Pred(hasFlag(
+                flag: "sect-shoe",
+            ))),
+            aliases: [],
+            abilities: [
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("[[i]]Printed on flame-retardant sheets from Initech™[[/i]]"),
+            consumable: None,
+        ),
+        (
             id: "gourd_propaganda",
             name: "Tract of The Gourd",
             desc: "A brief and hastily printed religious pamphlet entitled [[i]]The Gourd from the Lord.[[/i]]",
@@ -5045,6 +5147,44 @@
             ],
             interaction_requires: {},
             text: Some("Meeting of the true [[i]]Followers of the Gourd[[/i]] moved to Tuesday, to avoid nastiness with the vile [[i]]Faithful of the Gourd[[/i]] -- not to mention those smelly [[i]]Shoeists[[/i]] that come in afterward."),
+            consumable: None,
+        ),
+        (
+            id: "anti_shoe_sticker",
+            name: "Religious Sticker",
+            desc: "A boldly-colored applique with a message to catch the attention of believers and non-believers alike.",
+            movability: fixed(
+                reason: "It\'s irretrievably stuck to the mirror.",
+            ),
+            container_state: None,
+            location: Room("vip-bathroom"),
+            visibility: scenery,
+            visible_when: Some(Pred(hasFlag(
+                flag: "sect-gourd",
+            ))),
+            aliases: [],
+            abilities: [
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("[[box]][[u]]eschew the shoe![[/u]][[/box]]"),
+            consumable: None,
+        ),
+        (
+            id: "gourd_polishing_wipes",
+            name: "Gourd Polishing Wipes",
+            desc: "Wipes -- to polish your Gourd. Unless you\'re one of those footwear fetishists who follow the filthy shoe.",
+            movability: free,
+            container_state: None,
+            location: Item("lost_and_found_box"),
+            visibility: listed,
+            visible_when: Some(Pred(hasFlag(
+                flag: "sect-gourd",
+            ))),
+            aliases: [],
+            abilities: [],
+            interaction_requires: {},
+            text: None,
             consumable: None,
         ),
         (
@@ -10028,7 +10168,7 @@
                 ),
                 (
                     action: showMessage(
-                        text: "You hear a thud behind you, back toward the dock, like something was just dropped off. You glimpse a drone flying away quickly, as if hoping not to be seen. Was that an Initech logo on the side?",
+                        text: "You hear a [[i]]THUD[[/i]] behind you, back toward the dock, like something was just dropped off. You glimpse a drone flying away quickly, as if hoping not to be seen. Was that an Initech logo on the side?",
                     ),
                     priority: None,
                 ),
@@ -10601,18 +10741,20 @@
             only_once: false,
             event: always,
             conditions: All([
+                All([
+                    Pred(withNpc(
+                        npc: "black_knight",
+                    )),
+                    Pred(npcInState(
+                        npc: "black_knight",
+                        state: mad,
+                    )),
+                    Pred(missingFlag(
+                        flag: "appeased-black-knight",
+                    )),
+                ]),
                 Pred(chancePercent(
                     percent: 50.0,
-                )),
-                Pred(withNpc(
-                    npc: "black_knight",
-                )),
-                Pred(npcInState(
-                    npc: "black_knight",
-                    state: mad,
-                )),
-                Pred(missingFlag(
-                    flag: "appeased-black-knight",
                 )),
             ]),
             actions: [
@@ -11458,12 +11600,14 @@
                                 Pred(missingFlag(
                                     flag: "campfire-lit",
                                 )),
-                                Pred(hasFlag(
-                                    flag: "hint-radio-on",
-                                )),
-                                Pred(hasItem(
-                                    item: "hint_radio",
-                                )),
+                                All([
+                                    Pred(hasItem(
+                                        item: "hint_radio",
+                                    )),
+                                    Pred(hasFlag(
+                                        flag: "hint-radio-on",
+                                    )),
+                                ]),
                                 Pred(playerInRoom(
                                     room: "ice-pit",
                                 )),
@@ -11480,12 +11624,14 @@
                                         Pred(missingFlag(
                                             flag: "campfire-lit",
                                         )),
-                                        Pred(hasFlag(
-                                            flag: "hint-radio-on",
-                                        )),
-                                        Pred(hasItem(
-                                            item: "hint_radio",
-                                        )),
+                                        All([
+                                            Pred(hasItem(
+                                                item: "hint_radio",
+                                            )),
+                                            Pred(hasFlag(
+                                                flag: "hint-radio-on",
+                                            )),
+                                        ]),
                                         Pred(playerInRoom(
                                             room: "ice-pit",
                                         )),
@@ -11511,7 +11657,7 @@
         ),
         (
             name: "Firewood HINT",
-            note: Some("HINT radio: use firewood in ice-pit for plaque 2"),
+            note: Some("HINT radio: add firewood hint to scheduler"),
             only_once: true,
             event: enterRoom(
                 room: "snow-camp",
@@ -11523,31 +11669,36 @@
                         turns_ahead: 4,
                         condition: Any([
                             All([
-                                Pred(hasFlag(
-                                    flag: "hint-radio-on",
-                                )),
+                                All([
+                                    Pred(hasItem(
+                                        item: "hint_radio",
+                                    )),
+                                    Pred(hasFlag(
+                                        flag: "hint-radio-on",
+                                    )),
+                                ]),
                                 Pred(hasFlag(
                                     flag: "tried-read-plaque-2",
                                 )),
-                                Pred(missingItem(
-                                    item: "firewood",
-                                )),
                                 Pred(missingFlag(
                                     flag: "campfire-lit",
+                                )),
+                                Pred(missingItem(
+                                    item: "firewood",
                                 )),
                                 Pred(playerInRoom(
                                     room: "snow-camp",
                                 )),
                             ]),
                             Any([
-                                Pred(hasItem(
-                                    item: "firewood",
+                                Pred(hasFlag(
+                                    flag: "read-plaque-2",
                                 )),
                                 Pred(hasFlag(
                                     flag: "campfire-lit",
                                 )),
-                                Pred(hasFlag(
-                                    flag: "read-plaque-2",
+                                Pred(hasItem(
+                                    item: "firewood",
                                 )),
                             ]),
                         ]),
@@ -11556,17 +11707,22 @@
                             (
                                 action: conditional(
                                     condition: All([
-                                        Pred(hasFlag(
-                                            flag: "hint-radio-on",
-                                        )),
+                                        All([
+                                            Pred(hasItem(
+                                                item: "hint_radio",
+                                            )),
+                                            Pred(hasFlag(
+                                                flag: "hint-radio-on",
+                                            )),
+                                        ]),
                                         Pred(hasFlag(
                                             flag: "tried-read-plaque-2",
                                         )),
-                                        Pred(missingItem(
-                                            item: "firewood",
-                                        )),
                                         Pred(missingFlag(
                                             flag: "campfire-lit",
+                                        )),
+                                        Pred(missingItem(
+                                            item: "firewood",
                                         )),
                                         Pred(playerInRoom(
                                             room: "snow-camp",
@@ -11585,7 +11741,7 @@
                                 priority: None,
                             ),
                         ],
-                        note: None,
+                        note: Some("HINT radio: deliver firewood hint"),
                     ),
                     priority: None,
                 ),
@@ -11762,7 +11918,7 @@
                         actions: [
                             (
                                 action: showMessage(
-                                    text: "The gnat cloud zips past again in the other direction, this time shaped like \"!!!\".",
+                                    text: "The gnat cloud [[u]]bolts[[/u]] past the other way in a panic, this time shaped like \"!!!\".",
                                 ),
                                 priority: Some(-40),
                             ),
@@ -13129,12 +13285,14 @@
                         turns_ahead: 2,
                         condition: Any([
                             All([
-                                Pred(hasItem(
-                                    item: "hint_radio",
-                                )),
-                                Pred(hasFlag(
-                                    flag: "hint-radio-on",
-                                )),
+                                All([
+                                    Pred(hasItem(
+                                        item: "hint_radio",
+                                    )),
+                                    Pred(hasFlag(
+                                        flag: "hint-radio-on",
+                                    )),
+                                ]),
                                 Pred(hasFlag(
                                     flag: "hal-module-in-crevice",
                                 )),
@@ -13148,12 +13306,14 @@
                             (
                                 action: conditional(
                                     condition: All([
-                                        Pred(hasItem(
-                                            item: "hint_radio",
-                                        )),
-                                        Pred(hasFlag(
-                                            flag: "hint-radio-on",
-                                        )),
+                                        All([
+                                            Pred(hasItem(
+                                                item: "hint_radio",
+                                            )),
+                                            Pred(hasFlag(
+                                                flag: "hint-radio-on",
+                                            )),
+                                        ]),
                                         Pred(hasFlag(
                                             flag: "hal-module-in-crevice",
                                         )),
@@ -13831,7 +13991,7 @@
                 ),
                 (
                     action: setItemMovability(
-                        item: "messiah_gourd",
+                        item: "messiah_shoe",
                         movability: fixed(
                             reason: "You are already a follower of the Gourd. Your faith in the Vaunted Vegetable shall not be shaken.",
                         ),
