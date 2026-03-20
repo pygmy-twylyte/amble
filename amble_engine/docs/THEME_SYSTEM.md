@@ -35,9 +35,9 @@ Classic black and white terminal aesthetic using only grayscale values.
 
 ## Adding Custom Themes
 
-Themes are defined in `amble_engine/data/themes.toml`. To add a new theme:
+Themes are defined in the runtime support file `data/themes.toml` (`amble_engine/data/themes.toml` in this repository). To add a new theme:
 
-1. Open `amble_engine/data/themes.toml`
+1. Open `data/themes.toml`
 2. Add a new `[[themes]]` section
 3. Define all required colors
 
@@ -130,25 +130,28 @@ When creating a new theme, consider:
 The theme system uses:
 - `theme.rs`: Core theme structures and management
 - `style.rs`: Application of theme colors to text
-- `themes.toml`: Theme definitions
+- `data/themes.toml`: Static theme definitions loaded at startup
 
 ### Theme Loading
-Themes are loaded at startup from `amble_engine/data/themes.toml`. If the file is missing or invalid, the system falls back to the hardcoded default theme.
+Themes are loaded at startup from `data/themes.toml`. If the file is missing or invalid, the system falls back to the built-in default theme.
 
 ### Performance
 Theme colors are cached and only retrieved when text is styled, ensuring minimal performance impact during gameplay.
 
 ## Testing Themes
 
-Use the provided test scripts to verify your theme:
+The simplest verification loop is:
 
 ```bash
-# Show all themes with various game elements
-./showcase_themes.sh
+# Run the engine with the bundled content
+cargo run -p amble_engine
 
-# Test specific color categories
-./test_all_theme_colors.sh
+# In the game REPL
+theme list
+theme <your_theme_name>
 ```
+
+If you are validating a packaged build instead of a source checkout, edit the packaged `data/themes.toml` and use the same in-game commands.
 
 ## Troubleshooting
 

@@ -48,7 +48,7 @@ The Amble DSL is designed to read like plain English while staying precise and c
 4. Iterate with `amble_script lint …` to catch missing references early.
 
 ## Crates in this Repository
-- `amble_engine` - loads world data from `world.ron` or `worlds/*.ron` (plus TOML configs for themes/help) or a saved state, then runs the game
+- `amble_engine` - loads compiled world data from `world.ron` or `worlds/*.ron`, plus static support files such as themes/help, or a saved state, then runs the game
 - `amble_script` - an intuitive, English-like language (DSL) for defining the game world, which compiles into `WorldDef` (RON) used by `amble_engine`
 - [`xtask`](../xtask/README.md) - automation helpers for builds, packaging, and the content pipeline
 

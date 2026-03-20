@@ -44,21 +44,27 @@ room two-sheds-landing {
 }
 ```
 
-Emits nested tables:
+Compiles to `ExitDef` entries in `world.ron`, conceptually like:
 
 ```
-[rooms.exits.up]
-to = "guard-post"
-locked = true
-barred_message = "Need to clear the tree."
-required_flags = [{ type = "simple", name = "cleared-fallen-tree" }]
-
-[rooms.exits.down]
-to = "parish-landing"
-
-[rooms.exits.east]
-to = "two-sheds"
-required_items = ["machete", "gasoline"]
+[
+  (
+    direction: "up",
+    to: "guard-post",
+    locked: true,
+    required_flags: ["cleared-fallen-tree"],
+    barred_message: Some("Need to clear the tree."),
+  ),
+  (
+    direction: "down",
+    to: "parish-landing",
+  ),
+  (
+    direction: "east",
+    to: "two-sheds",
+    required_items: ["machete", "gasoline"],
+  ),
+]
 ```
 
 Notes:
@@ -137,27 +143,31 @@ room foyer {
 - `scenery default "..."` is used when a matching scenery entry has no `desc`.
 - `scenery "<name>"` adds a lookable noun; add `desc` to override the default.
 
-Emits overlay entries:
+These compile into `OverlayDef` entries inside the room, for example:
 
 ```
-[[rooms.overlays]]
-conditions = [{ type = "flagSet", flag = "got-towel" }]
-text = "The doors unlatch and open slightly."
+(
+  conditions: [FlagSet(flag: "got-towel")],
+  text: "The doors unlatch and open slightly.",
+)
 
-[[rooms.overlays]]
-conditions = [
-  { type = "npcPresent", npc_id = "cmot_dibbler" },
-  { type = "npcInState", npc_id = "cmot_dibbler", state = "happy" }
-]
-text = "Dibbler beams and offers a celebratory sausage-inna-bun."
+(
+  conditions: [
+    NpcPresent(npc: "cmot_dibbler"),
+    NpcInState(npc: "cmot_dibbler", state: "happy"),
+  ],
+  text: "Dibbler beams and offers a celebratory sausage-inna-bun.",
+)
 
-[[rooms.overlays]]
-conditions = [{ type = "npcInState", npc_id = "emh", state = { custom = "want-emitter" } }]
-text = "The EMH fidgets restlessly, craving a mobile emitter."
+(
+  conditions: [NpcInState(npc: "emh", state: Custom("want-emitter"))],
+  text: "The EMH fidgets restlessly, craving a mobile emitter.",
+)
 
-[[rooms.overlays]]
-conditions = [{ type = "itemInRoom", item_id = "margarine", room_id = "st-alfonzo-parish" }]
-text = "On the pedestal sits a tub of margarine."
+(
+  conditions: [ItemInRoom(item: "margarine", room: "st-alfonzo-parish")],
+  text: "On the pedestal sits a tub of margarine.",
+)
 ```
 
 ### NPC State Block (Sugar)
@@ -175,21 +185,24 @@ overlay if npc emh here {
 This expands to three overlays equivalent to writing separate entries with conditions:
 
 ```
-[[rooms.overlays]]
-conditions = [{ type = "npcPresent", npc_id = "emh" }, { type = "npcInState", npc_id = "emh", state = "normal" }]
-text = "EMH behaving normally."
+(
+  conditions: [NpcPresent(npc: "emh"), NpcInState(npc: "emh", state: "normal")],
+  text: "EMH behaving normally.",
+)
 
-[[rooms.overlays]]
-conditions = [{ type = "npcPresent", npc_id = "emh" }, { type = "npcInState", npc_id = "emh", state = "happy" }]
-text = "EMH is singing a tune."
+(
+  conditions: [NpcPresent(npc: "emh"), NpcInState(npc: "emh", state: "happy")],
+  text: "EMH is singing a tune.",
+)
 
-[[rooms.overlays]]
-conditions = [{ type = "npcPresent", npc_id = "emh" }, { type = "npcInState", npc_id = "emh", state = { custom = "want-emitter" } }]
-text = "EMH won't stop griping about his missing emitter."
+(
+  conditions: [NpcPresent(npc: "emh"), NpcInState(npc: "emh", state: Custom("want-emitter"))],
+  text: "EMH won't stop griping about his missing emitter.",
+)
 ```
 
 Notes:
-- The `custom(name)` form accepts an identifier; it maps to the engine’s `{ custom = "name" }` state.
+- The `custom(name)` form accepts an identifier; it maps to the engine’s custom NPC state variant for that name.
 - Each line inside the block becomes its own overlay with `npcPresent` + `npcInState` conditions.
 - You can still use the explicit form with `overlay if (npc present X, npc in state X Y) { ... }`.
 

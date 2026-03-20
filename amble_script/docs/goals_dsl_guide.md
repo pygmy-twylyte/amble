@@ -3,8 +3,8 @@
 Goals communicate progress and objectives to the player. This guide explains the goal syntax in the `amble_script` DSL and how it compiles into `WorldDef` (`world.ron`).
 
 Highlights:
-- Required fields: `name`, `desc`, `group`, and `complete when …`.
-- Optional `activate when …` gates when the goal becomes visible/active.
+- Required fields: `name`, `desc`, `group`, and `done when …`.
+- Optional `start when …` gates when the goal becomes visible/active.
 - Optional `fail when …` marks failure states.
 - Conditions can reference flags, items, rooms, other goals, and sequence progress.
 - Output matches the engine’s goal schema for traceability.
@@ -53,7 +53,7 @@ goal stabilize-reactor {
 }
 ```
 
-`activate when …` is optional; omit it to make the goal visible from the start. Likewise, `fail when …` is optional—leave it off if the goal cannot fail.
+`start when …` is optional; omit it to make the goal visible from the start. Likewise, `fail when …` is optional; leave it off if the goal cannot fail.
 
 ## Library Usage
 

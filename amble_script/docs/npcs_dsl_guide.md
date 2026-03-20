@@ -55,7 +55,7 @@ Options:
 
 - `movement route rooms (…)` walks through the list in order.
 - `movement random rooms (…)` chooses a random destination from the list.
-- `timing <ident>` with the timing string in the form of "every_N_turns" or "on_turn_N".
+- `timing <ident>` accepts identifiers such as `every_3_turns` or `on_turn_5`.
 - `active true|false` decides whether the routine starts immediately (`true` by default).
 - `loop true|false` controls whether route patrols wrap to the first room or stop after one lap.
 
@@ -78,7 +78,7 @@ dialogue custom emergency {
 
 - Multiple dialogue blocks are allowed; add new blocks for each state you support.
 - The compiler prefixes custom dialogue states with `custom:` internally to match engine expectations.
-- Triggers can use `do npc says random guard` to pull from these banks.
+- Triggers can use `do npc random dialogue guard` to pull from these banks.
 
 ## Library Usage
 

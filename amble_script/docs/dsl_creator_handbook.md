@@ -74,7 +74,7 @@ __Note: Because the linter uses `world.ron` in the engine's data directory as a 
 
 ## Game Configuration
 
-Include exactly one `game` block across your DSL sources. It defines the title shown at startup, the intro text, the player character, and optional scoring ranks. This replaces `player.ron`, `intro.txt`, and `scoring.toml`.
+Include exactly one `game` block across your DSL sources. It defines the title shown at startup, the intro text, the player character, and optional scoring ranks and metadata. It consolidates older split config like `player.ron`, `intro.txt`, and `scoring.toml` into the DSL.
 
 ```amble
 game {
@@ -148,12 +148,12 @@ Condition aliases are global across a `compile-dir` run, so a `let cond ...` dec
 
 Actions describe the outcomes once all conditions pass. Common categories include:
 
-- **Player feedback and flags:** `do show "…"`, `do award points 5`, `do add flag …`, `do add seq flag goal limit 3`, `do advance flag goal`, `do reset flag goal`, `do remove flag goal`
+- **Player feedback and flags:** `do show "…"`, `do award points 5 reason "…"`, `do add flag …`, `do add seq flag goal limit 3`, `do advance flag goal`, `do reset flag goal`, `do remove flag goal`
 - **Item/NPC/world state:**
   - Spawn/Despawn/Swap: `do spawn item keycard into room security-office`, `do spawn item keycard into container locker`, `do spawn item kit in inventory`, `do spawn item kit in current room`, `do spawn npc guard into room lobby`, `do despawn item vines`, `do despawn npc guard`, `do replace item glow-rod with drained-rod`, `do replace drop item badge with badge-fragments`
   - Exits/locks: `do reveal exit from lab to hallway direction east`, `do lock exit from lobby direction north`, `do unlock exit from lobby direction north`, `do lock item locker`, `do unlock item locker`, `do set barred message from lobby to vault "The door doesn’t budge."`
-  - Items/NPCs: `do set item description statue "…"`, `do set container state locker locked`, `do npc says receptionist "We’re closed."`, `do npc says random receptionist`, `do npc refuse item receptionist "That’s not helpful."`, `do set npc state guard alert`, `do set npc active guard false`, `do give item badge to player from npc guard`
-- **Player movement & restrictions:** `do push player to infirmary`, `do restrict item trophy`, `do deny read "It’s encrypted."`
+  - Items/NPCs: `do set item description statue "…"`, `do set item movability statue fixed "It is part of the plaza."`, `do set container state locker locked`, `do npc says receptionist "We’re closed."`, `do npc random dialogue receptionist`, `do npc refuse item receptionist "That’s not helpful."`, `do set npc state guard alert`, `do set npc active guard false`, `do give item badge to player from npc guard`
+- **Player movement & restrictions:** `do push player to infirmary`, `do deny read "It’s encrypted."`
 - **Spinners (ambient random lines):** `do spinner message ambientInterior`, `do add wedge "Clanging pipes" width 2 spinner ambientInterior`
 - **Scheduling follow-up actions:**
   - Unconditional: `do schedule in 2 { … }`, `do schedule on 15 { … }`
@@ -161,7 +161,7 @@ Actions describe the outcomes once all conditions pass. Common categories includ
   - Conditional absolute: `do schedule on 30 if has flag finaleReady onFalse cancel { … }`
   - `onFalse` policies: `cancel`, `retryAfter <turns>`, `retryNextTurn`; `note "label"` tags the scheduled event for debugging.
 
-You can also patch existing content with `do modify item|room|npc … { … }` blocks. They accept the same fields as the primary definitions—tweak names/descriptions, toggle `portable`/`restricted`, adjust container state (`container state off` clears it), add/remove abilities, exits, overlays, dialogue, or NPC movement (`route (…)`, `random rooms (…)`, `timing every 3 turns`, `timing on turn 5`, `active true|false`, `loop true|false`).
+You can also patch existing content with `do modify item|room|npc … { … }` blocks. They accept the same fields as the primary definitions: tweak names/descriptions, change `movability`, adjust container state (`container state off` clears it), add/remove abilities, exits, overlays, dialogue, or NPC movement (`route (…)`, `random rooms (…)`, `timing every_3_turns`, `timing on_turn_5`, `active true|false`, `loop true|false`).
 
 Need a deeper dive? See the [Trigger DSL Guide](./trigger_dsl_guide.md).
 
@@ -229,10 +229,9 @@ Items represent objects the player can interact with, carry, or read.
 item portal_gun {
   name "Portal Gun"
   desc "A compact device humming with potential."
-  portable true
+  movability free
   location nowhere "Appears after calibrating the emitter"
   container state closed
-  restricted false
 
   ability TurnOn
   ability Fire portal_emitter
@@ -244,10 +243,10 @@ item portal_gun {
 
 Key fields:
 
-- `name`, `desc`, and `portable` are required.
+- `name`, `desc`, and `location` are required. `movability` is optional and defaults to `free`.
+- `movability free`, `movability fixed "..."`, and `movability restricted "..."` control whether the item can be moved or taken.
 - `location` accepts `inventory <owner>`, `room <room_id>`, `npc <npc_id>`, `chest <container_id>`, or `nowhere "note"` for items that spawn later.
 - Optional container states: `open`, `closed`, `locked`, `transparentClosed`, `transparentLocked`.
-- `restricted true` marks an item as non-droppable until explicitly allowed.
 - `visibility listed|scenery|hidden` controls listing and discoverability; `visible when <condition>` gates visibility; `aliases` adds alternate match terms.
 - Each `ability` entry becomes an `ItemDef.abilities` entry with optional target (`ability Unlock vault_door`).
 - `text` attaches readable flavour.
@@ -346,8 +345,8 @@ goal stabilize-reactor {
 Components:
 
 - `group` categorises the goal: `required`, `optional`, or `status-effect`.
-- `activate when …` is optional; when omitted, the goal is active from the start. Conditions accept `has flag`, `missing flag`, `has item`, `reached room`, `goal complete <other_goal>`, `flag in progress`, and `flag complete`.
-- `complete when …` is required and uses the same condition vocabulary.
+- `start when …` is optional; when omitted, the goal is active from the start. Conditions accept `has flag`, `missing flag`, `has item`, `reached room`, `goal complete <other_goal>`, `flag in progress`, and `flag complete`.
+- `done when …` is required and uses the same condition vocabulary.
 - `fail when …` is optional and uses the same condition set to model failure states.
 
 Goals compile into `world.ron` as part of the `WorldDef`, matching the engine schema for in-game goal tracking.

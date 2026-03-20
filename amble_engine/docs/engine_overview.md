@@ -91,7 +91,7 @@ Save files (`saved_games/<world>/*.ron`) serialise the entire structure, so load
 ## 6. Rendering and Theming
 
 - **`view.rs`** – Defines `ViewItem` (success/error text, room descriptions, NPC dialogue, etc.) and renders them using the active `GameStyle`.
-- **`style.rs` / `theme.rs`** – Apply colors/styles to text. Themes live in `data/themes.toml` and are cached by `theme::ThemeManager`. See [THEME_SYSTEM.md](./THEME_SYSTEM.md) for full details and guidance on creating new palettes.
+- **`style.rs` / `theme.rs`** – Apply colors/styles to text. Theme definitions live in the static `data/themes.toml` support file and are cached by `theme::ThemeManager`. See [THEME_SYSTEM.md](./THEME_SYSTEM.md) for full details and guidance on creating new palettes.
 - **CLI output** – The engine uses `colored` and ASCII control sequences; the REPL clears the screen at startup for a clean slate.
 
 ---

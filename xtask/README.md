@@ -55,7 +55,7 @@ Subcommands:
 ### `package engine`
 Creates a distribution containing:
 - `bin/amble_engine` (or `.exe` on Windows) built with the requested profile/target.
-- `amble_engine/data/` world data (`world.ron` or `worlds/*.ron`) plus configuration TOMLs (themes/help).
+- `amble_engine/data/` compiled world data (`world.ron` or `worlds/*.ron`) plus static support files (`themes.toml`, `help_basic.txt`, `help_commands.toml`).
 
 ### `package full`
 Includes everything from `package engine` plus:

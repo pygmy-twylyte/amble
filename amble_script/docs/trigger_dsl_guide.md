@@ -20,7 +20,7 @@ trigger "First time in the Lab" when enter room lab {
   if missing flag visited:lab {
     do show "The ozone smell hints at recent experiments."
     do add flag visited:lab
-    do award points 1
+    do award points 1 reason "Found the lab"
   }
 }
 ```
@@ -92,7 +92,7 @@ Player feedback and flags:
 - `do add seq flag <name>` — sequence flag (unbounded)
 - `do add seq flag <name> limit <n>` — sequence flag with a final step
 - `do remove flag <name>` | `do reset flag <name>` | `do advance flag <name>`
-- `do award points <number>` (negative allowed)
+- `do award points <number> reason "..."` (negative allowed)
 - `do damage player <amount> [for <turns> turns] cause "<cause>"`
 - `do heal player <amount> [for <turns> turns] cause "<cause>"`
 - `do remove player effect "<cause>"`
@@ -116,8 +116,9 @@ Item/NPC/world state:
   - `do set barred message from <from_room> to <to_room> "Message…"`
 - Items/NPCs:
   - `do set item description <item_sym> "New description…"`
+  - `do set item movability <item> free|fixed "Reason…"|restricted "Reason…"`
   - `do set container state <item> <state|none>`
-  - `do npc says <npc> "Quote…"` | `do npc says random <npc>`
+  - `do npc says <npc> "Quote…"` | `do npc random dialogue <npc>`
   - `do npc refuse item <npc> "Reason…"`
   - `do set npc state <npc> <state>`
   - `do set npc active <npc> <true|false>`
@@ -127,7 +128,6 @@ Item/NPC/world state:
   - `do give item <item> to player from npc <npc>`
 - Player movement/restrictions:
   - `do push player to <room>`
-  - `do restrict item <item>` (item can’t be taken right now)
   - `do deny read "Reason…"`
 - Spinners (styled random lines):
   - `do add wedge "Text…" width <n> spinner <spinner>`
@@ -162,7 +162,7 @@ do schedule in 1 if player in room lobby onFalse retryNextTurn note "ambient-lob
 
 # Absolute turn with cancel if not met
 do schedule on 20 if any(player in room hall, player in room kitchen) onFalse cancel {
-  do award points 5
+  do award points 5 reason "Caught the timed event"
 }
 ```
 
@@ -175,6 +175,7 @@ do modify item locker {
   name "Ransacked Locker"
   container state open
   remove ability Lockpick
+  movability restricted "Security has sealed it."
 }
 
 do modify room lobby {
@@ -185,11 +186,11 @@ do modify room lobby {
 do modify npc guard {
   active false
   route (lobby, security-station)
-  timing every 3 turns
+  timing every_3_turns
 }
 ```
 
-Supported statements mirror their top-level counterparts: you can adjust names/descriptions, toggle `portable`/`restricted`, add or remove abilities, switch container states (use `container state off` to clear), add/remove exits, patch overlays, reconfigure NPC movement (`route (…)`, `random rooms (…)`, `timing every <n> turns`, `timing on turn <n>`, `active true|false`, `loop true|false`), and mutate dialogue banks (`add line "…" to state custom panic`). See the entity-specific guides for the complete statement lists.
+Supported statements mirror their top-level counterparts: you can adjust names/descriptions, change `movability`, add or remove abilities, switch container states (use `container state off` to clear), add/remove exits, patch overlays, reconfigure NPC movement (`route (…)`, `random rooms (…)`, `timing every_<n>_turns`, `timing on_turn_<n>`, `active true|false`, `loop true|false`), and mutate dialogue banks (`add line "…" to state custom panic`). See the entity-specific guides for the complete statement lists.
 
 **NOTE:** **The turn counter is advanced immediately after events are scheduled, so an event scheduled in 1 turn will appear to fire with no delay. Use 2 or more for something to fire after an apparent delay.**
 
@@ -276,11 +277,11 @@ Condition atoms:
 - Groups: `all(… , …)` | `any(… , …)` (nestable)
 
 Action atoms:
-- Feedback/flags/score: `do show …`, `do add flag …`, `do add seq flag … [limit n]`, `do remove/reset/advance flag …`, `do award points n`
+- Feedback/flags/score: `do show …`, `do add flag …`, `do add seq flag … [limit n]`, `do remove/reset/advance flag …`, `do award points n reason "…"`
 - Spawns: `do spawn item … into room …`, `… into container …`, `… in inventory`, `… in current room`, `do despawn item …`
 - Exits/locks: `do reveal/lock/unlock exit …`, `do lock/unlock item …`, `do set barred message from … to … "msg"`
-- Items/NPCs: `do set item description … "…"`, `do npc says … "…"`, `do npc says random …`, `do set npc state … state`, `do npc refuse item … "…"`
-- Player/world: `do push player to …`, `do restrict item …`, `do deny read "…"`
+- Items/NPCs: `do set item description … "…"`, `do set item movability … restricted "…"`, `do npc says … "…"`, `do npc random dialogue …`, `do set npc state … state`, `do npc refuse item … "…"`
+- Player/world: `do push player to …`, `do deny read "…"`
 - Spinners: `do add wedge "…" width n spinner <spinner>`, `do spinner message <spinner>`
 - Schedules: `do schedule in n { … }`, `do schedule on t { … }`, and `do schedule in/on … if <cond> onFalse <policy> note "…" { … }`
 

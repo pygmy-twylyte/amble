@@ -66,14 +66,14 @@ when <event> {
 
 **Action atoms:**
 
-- Feedback: `do show`, `do award points`
+- Feedback: `do show`, `do award points <n> reason "…"`
 - Flags: `do add/remove/reset/advance flag`, `do add seq flag [limit n]`
 - Health: `do damage/heal player <amt> [for <turns> turns] cause "…"`, `do damage/heal npc <npc> <amt> [for <turns> turns] cause "…"`
 - Spawn/Despawn/Swap: `do spawn item … into room|container|inventory|current room`, `do spawn npc … into room …`, `do despawn item`, `do despawn npc`, `do replace item <old> with <new>`, `do replace drop item <old> with <new>`
 - Exits & locks: `do reveal/lock/unlock exit`, `do lock/unlock item`, `do set barred message`
-- NPC dialogue/state: `do npc says`, `do npc says random`, `do npc refuse item`, `do set npc state`, `do set npc active`
-- Item tweaks: `do set item description`, `do set container state <item> <state|none>`
-- Player/world: `do push player to`, `do restrict item`, `do deny read`
+- NPC dialogue/state: `do npc says`, `do npc random dialogue`, `do npc refuse item`, `do set npc state`, `do set npc active`
+- Item tweaks: `do set item description`, `do set item movability <item> <free|fixed "..."|restricted "...">`, `do set container state <item> <state|none>`
+- Player/world: `do push player to`, `do deny read`
 - Bulk updates: `do modify item|room|npc <id> { … }`
 - Spinners: `do spinner message <spinner>`, `do add wedge "…" width <n> spinner <spinner>`
 - Scheduling: `do schedule in/on <n> { … }`, `do schedule in/on … if <cond> onFalse <policy> [note "…"] { … }`
@@ -108,13 +108,12 @@ Overlay conditions: `flag set`, `flag unset`, `flag complete`, `item present`, `
 item <id> {
   name "Name"
   desc "Description"
-  portable true|false
+  [movability free|fixed "..."|restricted "..."]
   location inventory <owner>|room <room>|npc <npc>|chest <container>|nowhere "note"
   [visibility listed|scenery|hidden]
   [visible when <condition>]
   [aliases "alias one", "alias two"]
   [container state open|closed|locked|transparentClosed|transparentLocked]
-  [restricted true]
   [ability <Ability> [<target>]]
   [text "Readable text"]
   [requires <ability> to <interaction>]
