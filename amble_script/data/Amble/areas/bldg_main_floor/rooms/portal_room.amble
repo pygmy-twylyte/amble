@@ -26,29 +26,3 @@ room portal-room {
     }
     exit "up the ladder" -> lounge
 }
-
-# ========================================
-# HINT Radio Trigger
-# ========================================
-trigger "HINT Radio: Where do I charge this battery?" only once
-when take empty_battery {
-    do schedule in 2
-    if any(
-        all(
-            has item hint_radio,
-            has flag hint-radio-on,
-            missing flag portal-gun-powered,
-            in rooms portal-room,
-        ),
-        has flag portal-gun-powered,
-    ) onFalse retryNextTurn {
-        if all(
-            has item hint_radio,
-            has flag hint-radio-on,
-            missing flag portal-gun-powered,
-            in rooms portal-room,
-        ) {
-            do npc says hint_radio_npc "Wasn't there a gonk droid clomping about up in the lounge or the lobby? They can power or charge just about anything, from what I hear. Not much for conversation though, the gonks."
-        }
-    }
-}

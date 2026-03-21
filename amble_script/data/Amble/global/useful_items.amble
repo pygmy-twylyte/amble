@@ -80,23 +80,6 @@ when take towel {
     do show "[[u]]NOW[[/u]] you're a frood who really[[b]] \"knows where his towel is\"! [[/b]]"
 }
 
-let cond cleaning_hint_maybe_needed = all( hint_radio_ready, missing flag read-plaque-1 )
-
-trigger "[HINT] Towel Cleans Plaque 1" only once
-when take towel {
-    do schedule in 2
-
-    if any( cleaning_hint_maybe_needed, has flag read-plaque-1 ) onFalse retryNextTurn
-    note "towels can clean hint"
-    {
-        # same conditions as #1 above
-        if cleaning_hint_maybe_needed {
-
-            do npc says hint_radio_npc "Towels can be awfully handy for cleaning off grimy things. Just sayin'."
-        }
-    }
-}
-
 # ========================================
 # Butane Lighter
 # ========================================

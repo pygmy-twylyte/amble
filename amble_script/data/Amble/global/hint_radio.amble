@@ -85,10 +85,192 @@ npc hint_radio_npc {
     }
 }
 
+#############################################################################################
+
 #
 #
-# CONDITION SETS TO SIMPLIFY HINT RADIO TRIGGERS
+# STARGATE ROOM HINT
 #
 #
 
-let cond radio_ready = all( has item hint_radio, has flag hint-radio-on )
+let set stargate_hint_rooms = (
+    stargate-room,
+    patio,
+    parish-landing,
+    ice-pit,
+)
+
+let cond no_gate_open = all(
+    missing flag woodland-gate-open,
+    missing flag snowfield-gate-open,
+    missing flag patio-gate-open,
+)
+
+let cond any_gate_open = any(
+    has flag woodland-gate-open,
+    has flag snowfield-gate-open,
+    has flag patio-gate-open,
+)
+
+let cond stargate_hint_needed = all(
+    hint_radio_ready,
+    no_gate_open,
+    has visited room stargate-room,
+    in rooms stargate_hint_rooms,
+)
+
+trigger "[HINT] Activating the Stargate" only once
+when enter room stargate-room {
+    do schedule in 2
+    if any( stargate_hint_needed, any_gate_open ) onFalse retryNextTurn
+    note "stargate hint" {
+        if stargate_hint_needed {
+            do npc says hint_radio_npc "The stargate seems to be tied to certain sites around the premises. It looks like there's something that you need to do at the receiving sites to be able to open those portals, though. Come to think of it, there was one of the ornate pillars with a plaque at each of the other gate sites..."
+        }
+    }
+}
+
+#########################################################################
+#
+# ELEVATOR KEYCARD HINT
+#
+
+let set poetry_hint_rooms = ( amble-office, vip-bathroom )
+
+let cond poetry_hint_needed = all(
+    hint_radio_ready,
+    missing flag panic-room-open,
+    in rooms poetry_hint_rooms,
+)
+
+trigger "[HINT Radio] Find/Insert Vogon Poetry" only once
+when give item invitation to npc demerzel {
+    do schedule in 3 if any( poetry_hint_needed, has flag panic-room-open ) onFalse retryNextTurn
+    note "poetry performer radio hint" {
+        if poetry_hint_needed
+        {
+            do npc says hint_radio_npc "The rumor around here is that the last candidate was vaporized while sealed in the hidden Poetry Panic Room at the office, and they had the sole remaining elevator keycard with them. The Poetry Performer will panic if you try to make it perform some Vogon poetry. I'm sure you can see where this is going."
+        }
+    }
+}
+
+##############################################################################
+#
+# PORTAL ROOM HINT
+#
+
+let cond battery_hint_needed = all(
+    hint_radio_ready,
+    missing flag portal-gun-powered,
+    has item empty_battery,
+    with npc gonk_droid,
+)
+
+trigger "HINT Radio: That Gonk Can Charge Your Battery" only once
+when take empty_battery {
+    do schedule in 2
+    if any( battery_hint_needed, has flag got-charged-battery ) onFalse retryNextTurn
+    note "radio gives battery hint" {
+        if battery_hint_needed {
+            do npc says hint_radio_npc "See that gonk droid clomping about over there? They can power or charge just about anything, from what I hear. Not much for conversation though, the gonks."
+        }
+    }
+}
+
+##############################################################################
+#
+# CAMPFIRE HINT
+#
+
+let cond campfire_hint_needed = all(
+    missing flag campfire-lit,
+    hint_radio_ready,
+    in rooms ice-pit,
+)
+
+trigger "Hint: Find Items to Build a Fire" only once
+note "schedule radio hint about building a fire"
+when use item plaque_2_frozen ability read {
+    do schedule in 4 if any( campfire_hint_needed, has flag campfire-lit ) onFalse retryNextTurn
+    note "radio gives campfire hint" {
+        if campfire_hint_needed {
+            do npc says hint_radio_npc "To melt that pillar, you'll need to drop some firewood here and light it with something."
+        }
+    }
+}
+
+###############################################################################
+#
+# FIREWOOD HINT
+#
+#
+
+let cond firewood_hint_needed = all(
+    hint_radio_ready,
+    has flag tried-read-plaque-2,
+    missing flag campfire-lit,
+    missing item firewood,
+    in rooms snow-camp,
+)
+
+let cond firewood_hint_not_needed = any(
+    has flag read-plaque-2,
+    has flag campfire-lit,
+    has item firewood,
+)
+
+let cond firewood_hint_maybe_needed = any( firewood_hint_needed, firewood_hint_not_needed )
+
+trigger "Firewood HINT" only once
+note "HINT radio: add firewood hint to scheduler"
+when enter room snow-camp {
+    do schedule in 4 if firewood_hint_maybe_needed onFalse retryNextTurn
+    note "HINT radio: deliver firewood hint"
+    {
+        if firewood_hint_needed {
+            do npc says hint_radio_npc "Looks like the researchers didn't get their fire lit before the dog-Thing got to them. Bad day for them, but maybe good for you. Could you move the firewood down into the ice pit to melt the ice around the frozen pillar?"
+        }
+    }
+}
+
+###############################################################################
+#
+# HINT RADIO: MODULE STUCK IN CREVICE
+#
+#
+
+let cond fishing_hint_maybe_needed = all( hint_radio_ready, has flag hal-module-in-crevice )
+
+trigger "[HINT Available] Make A Fishing Line" only once
+note "makes hint available when HAL module trapped in crevice"
+when use item crowbar on item vending_machine interaction open
+{
+    do schedule in 2 if any( fishing_hint_maybe_needed, has flag module-2-retrieved ) onFalse retryNextTurn
+    note "fishing line hint available" {
+        if fishing_hint_maybe_needed {
+            do npc says hint_radio_npc "Whoops. That electronic bit fell way down in that crevice. Looks like you'll need something like a fishing line to pull it out. There must be **something** you can use around here."
+        }
+    }
+}
+
+###############################################################################
+#
+# TOWEL CLEANING HINT
+#
+
+let cond cleaning_hint_maybe_needed = all( hint_radio_ready, missing flag read-plaque-1 )
+
+trigger "[HINT] Towel Cleans Plaque 1" only once
+when take towel {
+    do schedule in 2
+
+    if any( cleaning_hint_maybe_needed, has flag read-plaque-1 ) onFalse retryNextTurn
+    note "towels can clean hint"
+    {
+        # same conditions as #1 above
+        if cleaning_hint_maybe_needed {
+
+            do npc says hint_radio_npc "Towels can be awfully handy for cleaning off grimy things. Just sayin'."
+        }
+    }
+}
