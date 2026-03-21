@@ -774,6 +774,7 @@ fn parse_if_action(
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
     aliases: &HashMap<String, ConditionAst>,
+    resolve_action_set: &mut dyn FnMut(&str) -> Result<Option<Vec<ActionStmt>>, AstError>,
 ) -> Result<Option<(ActionStmt, usize)>, AstError> {
     if !body[start..].starts_with("if ") {
         return Ok(None);
@@ -791,7 +792,7 @@ fn parse_if_action(
     };
     let block_after = &rest[brace_rel..];
     let inner_body = extract_body(block_after)?;
-    let actions = parse_actions_from_body(inner_body, source, smap, sets, aliases)?;
+    let actions = parse_actions_from_body(inner_body, source, smap, sets, aliases, resolve_action_set)?;
     let action = ActionStmt::new(ActionAst::Conditional {
         condition: Box::new(cond),
         actions,
@@ -837,13 +838,56 @@ fn parse_schedule_action_line(
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
     aliases: &HashMap<String, ConditionAst>,
+    resolve_action_set: &mut dyn FnMut(&str) -> Result<Option<Vec<ActionStmt>>, AstError>,
     offset: usize,
 ) -> Result<Option<(ActionStmt, usize)>, AstError> {
-    match parse_schedule_action(remainder, source, smap, sets, aliases) {
+    match parse_schedule_action(remainder, source, smap, sets, aliases, resolve_action_set) {
         Ok((action, used)) => Ok(Some((action, offset + used))),
         Err(AstError::Shape("not a schedule action")) => Ok(None),
         Err(e) => Err(e),
     }
+}
+
+fn parse_run_line(
+    body: &str,
+    start: usize,
+    source: &str,
+    smap: &SourceMap,
+    resolve_action_set: &mut dyn FnMut(&str) -> Result<Option<Vec<ActionStmt>>, AstError>,
+) -> Result<Option<(Vec<ActionStmt>, usize)>, AstError> {
+    let remainder = &body[start..];
+    let trimmed = remainder.trim_start();
+    if !trimmed.starts_with("run ") {
+        return Ok(None);
+    }
+    let bytes = body.as_bytes();
+    let mut j = start;
+    while j < bytes.len() && (bytes[j] as char) != '\n' {
+        j += 1;
+    }
+    let line = body[start..j].trim();
+    let rest = &line[4..];
+    let ident_len = rest.chars().take_while(|&c| is_ident_char(c)).count();
+    if ident_len == 0 {
+        return Err(shape_at("run missing action set identifier", source, smap, body, start));
+    }
+    let name = &rest[..ident_len];
+    DslParser::parse(Rule::ident, name)
+        .map_err(|_| shape_at("run has invalid action set identifier", source, smap, body, start))?;
+    if !rest[ident_len..].trim().is_empty() {
+        return Err(shape_at(
+            "run action set has unexpected trailing text",
+            source,
+            smap,
+            body,
+            start,
+        ));
+    }
+    let actions = resolve_action_set(name)?.ok_or(AstError::ShapeAt {
+        msg: "unknown action set",
+        context: name.to_string(),
+    })?;
+    Ok(Some((actions, j)))
 }
 
 fn parse_do_line(
@@ -875,6 +919,7 @@ pub(super) fn parse_actions_from_body(
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
     aliases: &HashMap<String, ConditionAst>,
+    resolve_action_set: &mut dyn FnMut(&str) -> Result<Option<Vec<ActionStmt>>, AstError>,
 ) -> Result<Vec<ActionStmt>, AstError> {
     let mut out = Vec::new();
     let mut i = 0usize;
@@ -883,7 +928,7 @@ pub(super) fn parse_actions_from_body(
         if i >= body.len() {
             break;
         }
-        if let Some((action, new_i)) = parse_if_action(body, i, source, smap, sets, aliases)? {
+        if let Some((action, new_i)) = parse_if_action(body, i, source, smap, sets, aliases, resolve_action_set)? {
             out.push(action);
             i = new_i;
             continue;
@@ -894,8 +939,15 @@ pub(super) fn parse_actions_from_body(
             i = new_i;
             continue;
         }
-        if let Some((action, new_i)) = parse_schedule_action_line(remainder, source, smap, sets, aliases, i)? {
+        if let Some((action, new_i)) =
+            parse_schedule_action_line(remainder, source, smap, sets, aliases, resolve_action_set, i)?
+        {
             out.push(action);
+            i = new_i;
+            continue;
+        }
+        if let Some((actions, new_i)) = parse_run_line(body, i, source, smap, resolve_action_set)? {
+            out.extend(actions);
             i = new_i;
             continue;
         }
@@ -1532,11 +1584,12 @@ pub(super) fn parse_schedule_action(
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
     aliases: &HashMap<String, ConditionAst>,
+    resolve_action_set: &mut dyn FnMut(&str) -> Result<Option<Vec<ActionStmt>>, AstError>,
 ) -> Result<(ActionStmt, usize), AstError> {
     let header = parse_schedule_header(text)?;
     let (cond, on_false, note) = parse_scheduled_action_opts(header.header, sets, aliases)?;
     let (p, inner_body) = find_schedule_block(header.rest1, header.brace_pos)?;
-    let actions = parse_actions_from_body(inner_body, source, smap, sets, aliases)?;
+    let actions = parse_actions_from_body(inner_body, source, smap, sets, aliases, resolve_action_set)?;
     let consumed = header.leading_ws + (header.trimmed.len() - header.rest1[p + 1..].len());
 
     let act = match (header.is_in, cond) {

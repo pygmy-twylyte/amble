@@ -8,8 +8,9 @@ use pest_derive::Parser as PestParser;
 
 use std::collections::HashMap;
 
-use crate::{ConditionAliasSpec, GoalAst, ItemAst, NpcAst, RoomAst, SpinnerAst, TriggerAst};
+use crate::{ActionSetSpec, ConditionAliasSpec, GoalAst, ItemAst, NpcAst, RoomAst, SpinnerAst, TriggerAst};
 
+mod action_sets;
 mod actions;
 mod conditions;
 mod game;
@@ -78,7 +79,7 @@ pub fn parse_program(source: &str) -> Result<Vec<TriggerAst>, AstError> {
 /// Returns an error when parsing fails or when the grammar encounters an
 /// unexpected shape.
 pub fn parse_program_full(source: &str) -> Result<ProgramAstBundle, AstError> {
-    parse_program_full_with_aliases(source, &HashMap::new())
+    parse_program_full_with_context(source, &HashMap::new(), &HashMap::new())
 }
 
 /// Parse a full program using a caller-provided map of resolved condition aliases.
@@ -93,13 +94,34 @@ pub fn parse_program_full_with_aliases(
     source: &str,
     aliases: &HashMap<String, crate::ConditionAst>,
 ) -> Result<ProgramAstBundle, AstError> {
+    parse_program_full_with_context(source, aliases, &HashMap::new())
+}
+
+/// Parse a full program using caller-provided maps of resolved condition aliases
+/// and action sets.
+///
+/// This is primarily useful for multi-file callers that want shared definitions
+/// from other sources to be available in the current file.
+///
+/// # Errors
+/// Returns an error when parsing fails or when the grammar encounters an
+/// unexpected shape.
+pub fn parse_program_full_with_context(
+    source: &str,
+    aliases: &HashMap<String, crate::ConditionAst>,
+    action_sets: &HashMap<String, Vec<crate::ActionStmt>>,
+) -> Result<ProgramAstBundle, AstError> {
     let mut pairs = DslParser::parse(Rule::program, source).map_err(|e| AstError::Pest(e.to_string()))?;
     let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
     let smap = SourceMap::new(source);
-    let (sets, local_alias_specs) = collect_sets_and_alias_specs(&pair)?;
+    let (sets, local_alias_specs, local_action_set_specs) = collect_sets_and_specs(&pair)?;
     let local_aliases = resolve_condition_aliases_with_base_impl(&local_alias_specs, aliases)?;
     let mut merged_aliases = aliases.clone();
     merged_aliases.extend(local_aliases);
+    let local_action_sets =
+        action_sets::resolve_action_sets_with_base(&local_action_set_specs, &merged_aliases, action_sets)?;
+    let mut merged_action_sets = action_sets.clone();
+    merged_action_sets.extend(local_action_sets);
     let mut game_pair = None;
     let mut trigger_pairs = Vec::new();
     let mut room_pairs = Vec::new();
@@ -109,7 +131,7 @@ pub fn parse_program_full_with_aliases(
     let mut goal_pairs = Vec::new();
     for item in pair.clone().into_inner() {
         match item.as_rule() {
-            Rule::set_decl | Rule::cond_decl => {},
+            Rule::set_decl | Rule::cond_decl | Rule::action_set_decl => {},
             Rule::game_def => {
                 if game_pair.is_some() {
                     return Err(AstError::Shape("multiple game blocks"));
@@ -139,7 +161,7 @@ pub fn parse_program_full_with_aliases(
     }
     let mut triggers = Vec::new();
     for trig in trigger_pairs {
-        let mut ts = parse_trigger_pair(trig, source, &smap, &sets, &merged_aliases)?;
+        let mut ts = parse_trigger_pair(trig, source, &smap, &sets, &merged_aliases, &merged_action_sets)?;
         triggers.append(&mut ts);
     }
     let mut rooms = Vec::new();
@@ -185,7 +207,22 @@ pub fn parse_program_full_with_aliases(
 pub fn collect_condition_alias_specs(source: &str) -> Result<Vec<ConditionAliasSpec>, AstError> {
     let mut pairs = DslParser::parse(Rule::program, source).map_err(|e| AstError::Pest(e.to_string()))?;
     let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
-    let (_, specs) = collect_sets_and_alias_specs(&pair)?;
+    let (_, specs, _) = collect_sets_and_specs(&pair)?;
+    Ok(specs)
+}
+
+/// Collect top-level action set definitions from a source file.
+///
+/// The returned specs preserve the room-set environment from the defining
+/// source so conditions inside action sets can be resolved globally across
+/// files.
+///
+/// # Errors
+/// Returns an error if the source cannot be parsed as a program.
+pub fn collect_action_set_specs(source: &str) -> Result<Vec<ActionSetSpec>, AstError> {
+    let mut pairs = DslParser::parse(Rule::program, source).map_err(|e| AstError::Pest(e.to_string()))?;
+    let pair = pairs.next().ok_or(AstError::Shape("expected program"))?;
+    let (_, _, specs) = collect_sets_and_specs(&pair)?;
     Ok(specs)
 }
 
@@ -200,9 +237,23 @@ pub fn resolve_condition_aliases(
     resolve_condition_aliases_impl(specs)
 }
 
-fn collect_sets_and_alias_specs(
+pub fn resolve_action_sets(
+    specs: &[ActionSetSpec],
+    cond_aliases: &HashMap<String, crate::ConditionAst>,
+) -> Result<HashMap<String, Vec<crate::ActionStmt>>, AstError> {
+    action_sets::resolve_action_sets(specs, cond_aliases)
+}
+
+fn collect_sets_and_specs(
     pair: &pest::iterators::Pair<'_, Rule>,
-) -> Result<(HashMap<String, Vec<String>>, Vec<ConditionAliasSpec>), AstError> {
+) -> Result<
+    (
+        HashMap<String, Vec<String>>,
+        Vec<ConditionAliasSpec>,
+        Vec<ActionSetSpec>,
+    ),
+    AstError,
+> {
     let mut sets: HashMap<String, Vec<String>> = HashMap::new();
     for item in pair.clone().into_inner() {
         if item.as_rule() != Rule::set_decl {
@@ -220,7 +271,7 @@ fn collect_sets_and_alias_specs(
         sets.insert(name, vals);
     }
 
-    let mut specs = Vec::new();
+    let mut cond_specs = Vec::new();
     for item in pair.clone().into_inner() {
         if item.as_rule() != Rule::cond_decl {
             continue;
@@ -237,14 +288,34 @@ fn collect_sets_and_alias_specs(
             .as_str()
             .trim()
             .to_string();
-        specs.push(ConditionAliasSpec {
+        cond_specs.push(ConditionAliasSpec {
             name,
             text: cond,
             sets: sets.clone(),
         });
     }
 
-    Ok((sets, specs))
+    let mut action_set_specs = Vec::new();
+    for item in pair.clone().into_inner() {
+        if item.as_rule() != Rule::action_set_decl {
+            continue;
+        }
+        let mut it = item.into_inner();
+        let name = it
+            .next()
+            .ok_or(AstError::Shape("action set name"))?
+            .as_str()
+            .to_string();
+        let block = it.next().ok_or(AstError::Shape("action set block"))?;
+        let body = helpers::extract_body(block.as_str())?.to_string();
+        action_set_specs.push(ActionSetSpec {
+            name,
+            text: body,
+            sets: sets.clone(),
+        });
+    }
+
+    Ok((sets, cond_specs, action_set_specs))
 }
 
 /// Parse only rooms from a source (helper/testing).
@@ -309,7 +380,9 @@ pub type ProgramAstBundle = (
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{ActionAst, ConditionAst, ContainerStateAst, MovabilityAst, NpcStateValue, NpcTimingPatchAst};
+    use crate::{
+        ActionAst, ActionStmt, ConditionAst, ContainerStateAst, MovabilityAst, NpcStateValue, NpcTimingPatchAst,
+    };
 
     #[test]
     fn game_block_parses() {
@@ -973,6 +1046,143 @@ let cond hint_gate = any(radio_ready, hint_not_needed)
         let specs = super::collect_condition_alias_specs(src).expect("collect aliases");
         let aliases = super::resolve_condition_aliases(&specs).expect("resolve aliases");
         assert!(matches!(aliases.get("hint_gate"), Some(ConditionAst::Any(kids)) if kids.len() == 2));
+    }
+
+    #[test]
+    fn action_sets_expand_in_same_file_triggers() {
+        let src = r#"
+let actions common_steps = {
+  do add flag radio-ready
+  do show "Ready."
+}
+
+trigger "Radio Hint" when always {
+  run common_steps
+}
+"#;
+        let (_game, triggers, ..) = parse_program_full(src).expect("action set parse succeeds");
+
+        assert_eq!(triggers.len(), 1);
+        assert_eq!(triggers[0].actions.len(), 2);
+        assert_eq!(
+            triggers[0].actions[0],
+            ActionStmt::new(ActionAst::AddFlag("radio-ready".into()))
+        );
+        assert_eq!(
+            triggers[0].actions[1],
+            ActionStmt::new(ActionAst::Show("Ready.".into()))
+        );
+    }
+
+    #[test]
+    fn action_sets_resolve_across_files() {
+        let defs = r#"
+let actions common_steps = {
+  do add flag radio-ready
+}
+"#;
+        let usage = r#"
+trigger "Radio Hint" when always {
+  run common_steps
+}
+"#;
+        let aliases = HashMap::new();
+        let action_sets = super::resolve_action_sets(
+            &super::collect_action_set_specs(defs).expect("collect action sets"),
+            &aliases,
+        )
+        .expect("resolve action sets");
+        let (_game, triggers, ..) = super::parse_program_full_with_context(usage, &aliases, &action_sets)
+            .expect("cross-file action set parse succeeds");
+
+        assert_eq!(
+            triggers[0].actions,
+            vec![ActionStmt::new(ActionAst::AddFlag("radio-ready".into()))]
+        );
+    }
+
+    #[test]
+    fn action_sets_can_use_condition_aliases_and_nested_runs() {
+        let src = r#"
+let cond radio_ready = has flag radio-on
+let actions inner_steps = {
+  do add flag nested-ready
+}
+let actions outer_steps = {
+  if radio_ready {
+    run inner_steps
+  }
+}
+
+trigger "Radio Hint" when always {
+  run outer_steps
+}
+"#;
+        let (_game, triggers, ..) = parse_program_full(src).expect("nested action sets parse succeeds");
+
+        assert_eq!(triggers.len(), 1);
+        assert_eq!(triggers[0].actions.len(), 1);
+        match &triggers[0].actions[0].action {
+            ActionAst::Conditional { condition, actions } => {
+                assert_eq!(**condition, ConditionAst::HasFlag("radio-on".into()));
+                assert_eq!(
+                    actions,
+                    &vec![ActionStmt::new(ActionAst::AddFlag("nested-ready".into()))]
+                );
+            },
+            other => panic!("expected conditional action, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parse_program_full_with_context_merges_local_action_sets() {
+        let defs = r#"
+let actions base_steps = {
+  do add flag radio-ready
+}
+"#;
+        let usage = r#"
+let actions hint_steps = {
+  run base_steps
+  do show "Need a hint."
+}
+
+trigger "Radio Hint" when always {
+  run hint_steps
+}
+"#;
+        let aliases = HashMap::new();
+        let action_sets = super::resolve_action_sets(
+            &super::collect_action_set_specs(defs).expect("collect action sets"),
+            &aliases,
+        )
+        .expect("resolve action sets");
+        let (_game, triggers, ..) = super::parse_program_full_with_context(usage, &aliases, &action_sets)
+            .expect("local action sets should merge");
+
+        assert_eq!(
+            triggers[0].actions,
+            vec![
+                ActionStmt::new(ActionAst::AddFlag("radio-ready".into())),
+                ActionStmt::new(ActionAst::Show("Need a hint.".into())),
+            ]
+        );
+    }
+
+    #[test]
+    fn recursive_action_sets_are_rejected() {
+        let src = r#"
+let actions a = {
+  run b
+}
+let actions b = {
+  run a
+}
+"#;
+        let aliases = HashMap::new();
+        let specs = super::collect_action_set_specs(src).expect("collect action sets");
+        let err = super::resolve_action_sets(&specs, &aliases).expect_err("recursive action sets should fail");
+        assert!(format!("{err}").contains("recursive action set"));
     }
 
     #[test]

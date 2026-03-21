@@ -1,3 +1,4 @@
+use pest::Parser;
 use std::collections::HashMap;
 
 use crate::{ActionStmt, ConditionAst, IngestModeAst, TriggerAst};
@@ -7,8 +8,8 @@ use super::actions::{
     parse_modify_room_action, parse_schedule_action,
 };
 use super::conditions::parse_condition_text;
-use super::helpers::{SourceMap, extract_body, str_offset, unquote};
-use super::{AstError, Rule};
+use super::helpers::{SourceMap, extract_body, is_ident_char, str_offset, unquote};
+use super::{AstError, DslParser, Rule};
 
 pub(super) fn parse_trigger_pair(
     trig: pest::iterators::Pair<Rule>,
@@ -16,6 +17,7 @@ pub(super) fn parse_trigger_pair(
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
     aliases: &HashMap<String, ConditionAst>,
+    action_sets: &HashMap<String, Vec<ActionStmt>>,
 ) -> Result<Vec<TriggerAst>, AstError> {
     let src_line = trig.as_span().start_pos().line_col().0;
     let mut it = trig.into_inner();
@@ -252,6 +254,7 @@ pub(super) fn parse_trigger_pair(
     let inner = extract_body(block.as_str())?;
     let mut unconditional_actions: Vec<ActionStmt> = Vec::new();
     let mut lowered: Vec<TriggerAst> = Vec::new();
+    let mut resolve_action_set = |name: &str| Ok(action_sets.get(name).cloned());
     let bytes = inner.as_bytes();
     let mut i = 0usize;
     while i < inner.len() {
@@ -296,7 +299,7 @@ pub(super) fn parse_trigger_pair(
             // Extract the block body after this '{' balancing braces
             let block_after = &rest[brace_rel..]; // starts with '{'
             let body = extract_body(block_after)?;
-            let actions = parse_actions_from_body(body, source, smap, sets, aliases)?;
+            let actions = parse_actions_from_body(body, source, smap, sets, aliases, &mut resolve_action_set)?;
             lowered.push(TriggerAst {
                 name: name.clone(),
                 note: None,
@@ -380,7 +383,7 @@ pub(super) fn parse_trigger_pair(
             Err(e) => return Err(e),
         }
         // Top-level do schedule ... or do ... line
-        match parse_schedule_action(remainder, source, smap, sets, aliases) {
+        match parse_schedule_action(remainder, source, smap, sets, aliases, &mut resolve_action_set) {
             Ok((action, used)) => {
                 unconditional_actions.push(action);
                 i += used;
@@ -388,6 +391,39 @@ pub(super) fn parse_trigger_pair(
             },
             Err(AstError::Shape("not a schedule action")) => {},
             Err(e) => return Err(e),
+        }
+        if remainder.trim_start().starts_with("run ") {
+            let mut j = i;
+            while j < inner.len() && (bytes[j] as char) != '\n' {
+                j += 1;
+            }
+            let line = inner[i..j].trim();
+            let rest = &line[4..];
+            let ident_len = rest.chars().take_while(|&c| is_ident_char(c)).count();
+            if ident_len == 0 {
+                return Err(AstError::ShapeAt {
+                    msg: "run missing action set identifier",
+                    context: "trigger body".to_string(),
+                });
+            }
+            let action_set = &rest[..ident_len];
+            DslParser::parse(Rule::ident, action_set).map_err(|_| AstError::ShapeAt {
+                msg: "run has invalid action set identifier",
+                context: action_set.to_string(),
+            })?;
+            if !rest[ident_len..].trim().is_empty() {
+                return Err(AstError::ShapeAt {
+                    msg: "run action set has unexpected trailing text",
+                    context: action_set.to_string(),
+                });
+            }
+            let actions = resolve_action_set(action_set)?.ok_or(AstError::ShapeAt {
+                msg: "unknown action set",
+                context: action_set.to_string(),
+            })?;
+            unconditional_actions.extend(actions);
+            i = j;
+            continue;
         }
         if remainder.starts_with("do ") {
             // Consume a single line

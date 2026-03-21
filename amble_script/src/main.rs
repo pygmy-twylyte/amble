@@ -7,8 +7,9 @@ use std::path::{Path, PathBuf};
 use std::{env, fs, process};
 
 use amble_script::{
-    ActionAst, ActionStmt, ConditionAliasSpec, ConditionAst, GameAst, GoalCondAst, collect_condition_alias_specs,
-    parse_program_full, parse_program_full_with_aliases, resolve_condition_aliases, worlddef_from_asts,
+    ActionAst, ActionSetSpec, ActionStmt, ConditionAliasSpec, ConditionAst, GameAst, GoalCondAst,
+    collect_action_set_specs, collect_condition_alias_specs, parse_program_full, parse_program_full_with_context,
+    resolve_action_sets, resolve_condition_aliases, worlddef_from_asts,
 };
 use ron::ser::PrettyConfig;
 use std::collections::{HashMap, HashSet};
@@ -201,6 +202,10 @@ fn run_compile_dir(args: &[String]) {
         eprintln!("{msg}");
         process::exit(1);
     });
+    let global_action_sets = collect_global_action_sets(&files, &global_aliases, "compile-dir").unwrap_or_else(|msg| {
+        eprintln!("{msg}");
+        process::exit(1);
+    });
 
     let mut game: Option<GameAst> = None;
     let mut trigs = Vec::new();
@@ -225,7 +230,7 @@ fn run_compile_dir(args: &[String]) {
                 continue;
             },
         };
-        match parse_program_full_with_aliases(&src, &global_aliases) {
+        match parse_program_full_with_context(&src, &global_aliases, &global_action_sets) {
             Ok((gdef, t, r, it, sp, n, g)) => {
                 if let Some(next_game) = gdef {
                     if game.is_some() {
@@ -369,10 +374,16 @@ fn run_lint(args: &[String]) {
             }),
         )
     };
+    let shared_action_sets = shared_aliases.as_ref().map(|aliases| {
+        collect_global_action_sets(&alias_scope_files, aliases, "lint").unwrap_or_else(|msg| {
+            eprintln!("{msg}");
+            process::exit(1);
+        })
+    });
 
     let mut any_missing = 0usize;
     for f in files {
-        any_missing += lint_one_file(&f, &world, shared_aliases.as_ref());
+        any_missing += lint_one_file(&f, &world, shared_aliases.as_ref(), shared_action_sets.as_ref());
     }
     if any_missing == 0 {
         eprintln!("lint: OK (no missing cross references)");
@@ -429,7 +440,12 @@ fn discover_lint_project_root(path: &Path) -> Result<PathBuf, String> {
     Ok(start.to_path_buf())
 }
 
-fn lint_one_file(path: &str, world: &WorldRefs, aliases: Option<&HashMap<String, ConditionAst>>) -> usize {
+fn lint_one_file(
+    path: &str,
+    world: &WorldRefs,
+    aliases: Option<&HashMap<String, ConditionAst>>,
+    action_sets: Option<&HashMap<String, Vec<ActionStmt>>>,
+) -> usize {
     let src = match fs::read_to_string(path) {
         Ok(s) => s,
         Err(e) => {
@@ -437,9 +453,12 @@ fn lint_one_file(path: &str, world: &WorldRefs, aliases: Option<&HashMap<String,
             return 0;
         },
     };
-    let parsed = match aliases {
-        Some(shared) => parse_program_full_with_aliases(&src, shared),
-        None => parse_program_full(&src),
+    let parsed = match (aliases, action_sets) {
+        (Some(shared_aliases), Some(shared_action_sets)) => {
+            parse_program_full_with_context(&src, shared_aliases, shared_action_sets)
+        },
+        (Some(shared_aliases), None) => parse_program_full_with_context(&src, shared_aliases, &HashMap::new()),
+        (None, _) => parse_program_full(&src),
     };
     let (_game, asts, rooms_asts, item_asts, spinner_asts, npc_asts, goal_asts) = match parsed {
         Ok(v) => v,
@@ -623,6 +642,31 @@ fn collect_global_condition_aliases(files: &[String], label: &str) -> Result<Has
     }
 
     resolve_condition_aliases(&all_specs).map_err(|e| format!("{label}: condition alias error: {e}"))
+}
+
+fn collect_global_action_sets(
+    files: &[String],
+    aliases: &HashMap<String, ConditionAst>,
+    label: &str,
+) -> Result<HashMap<String, Vec<ActionStmt>>, String> {
+    let mut all_specs: Vec<ActionSetSpec> = Vec::new();
+    let mut seen: HashMap<String, String> = HashMap::new();
+
+    for file in files {
+        let src = fs::read_to_string(file).map_err(|e| format!("{label}: cannot read '{file}': {e}"))?;
+        let specs = collect_action_set_specs(&src).map_err(|e| format!("{label}: parse error in '{file}': {e}"))?;
+        for spec in &specs {
+            if let Some(prev) = seen.insert(spec.name.clone(), file.clone()) {
+                return Err(format!(
+                    "{label}: duplicate action set '{}' in '{}' and '{}'",
+                    spec.name, prev, file
+                ));
+            }
+        }
+        all_specs.extend(specs);
+    }
+
+    resolve_action_sets(&all_specs, aliases).map_err(|e| format!("{label}: action set error: {e}"))
 }
 
 fn report_missing_with_location(
@@ -1094,8 +1138,10 @@ mod tests {
 
         let scope_files = lint_alias_scope_files(target.to_str().expect("utf-8 path"), false).expect("scope files");
         let aliases = collect_global_condition_aliases(&scope_files, "lint-test").expect("resolve aliases");
+        let action_sets = collect_global_action_sets(&scope_files, &aliases, "lint-test").expect("resolve action sets");
         let src = fs::read_to_string(&target).expect("read target");
-        parse_program_full_with_aliases(&src, &aliases).expect("single-file lint should parse with shared aliases");
+        parse_program_full_with_context(&src, &aliases, &action_sets)
+            .expect("single-file lint should parse with shared aliases");
 
         fs::remove_dir_all(root).expect("remove temp dir");
     }

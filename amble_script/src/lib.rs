@@ -42,8 +42,8 @@
 mod parser;
 mod worlddef;
 pub use parser::{
-    AstError, collect_condition_alias_specs, parse_program, parse_program_full, parse_program_full_with_aliases,
-    parse_trigger,
+    AstError, collect_action_set_specs, collect_condition_alias_specs, parse_program, parse_program_full,
+    parse_program_full_with_aliases, parse_program_full_with_context, parse_trigger,
 };
 pub use parser::{parse_goals, parse_items, parse_npcs, parse_rooms, parse_spinners};
 use std::collections::HashMap;
@@ -53,10 +53,26 @@ pub fn resolve_condition_aliases(specs: &[ConditionAliasSpec]) -> Result<HashMap
     parser::resolve_condition_aliases(specs)
 }
 
+pub fn resolve_action_sets(
+    specs: &[ActionSetSpec],
+    cond_aliases: &HashMap<String, ConditionAst>,
+) -> Result<HashMap<String, Vec<ActionStmt>>, AstError> {
+    parser::resolve_action_sets(specs, cond_aliases)
+}
+
 /// Captured top-level `let cond` declaration plus the room-set environment used
 /// to resolve it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConditionAliasSpec {
+    pub name: String,
+    pub text: String,
+    pub sets: HashMap<String, Vec<String>>,
+}
+
+/// Captured top-level `let actions` declaration plus the room-set environment used
+/// to resolve conditions inside it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ActionSetSpec {
     pub name: String,
     pub text: String,
     pub sets: HashMap<String, Vec<String>>,

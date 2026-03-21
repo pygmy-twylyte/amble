@@ -37,6 +37,7 @@ keyword = {
   | "do"
   | "priority"
   | "show"
+  | "run"
   | "add"
   | "wedge"
   | "width"
@@ -53,6 +54,7 @@ keyword = {
   | "reveal"
   | "push"
   | "set"
+  | "actions"
   | "description"
   | "max_hp"
   | "damage"
@@ -148,11 +150,12 @@ single_quoted = @{ "'" ~ (escape | (!("\\" | "'") ~ ANY))* ~ "'" }
 // Unified string literal
 string = @{ triple_quoted | raw_quoted_h5 | raw_quoted_h4 | raw_quoted_h3 | raw_quoted_h2 | raw_quoted_h1 | raw_quoted | quoted | single_quoted }
 
-program = { SOI ~ (set_decl | cond_decl | game_def | trigger | room_def | item_def | spinner_def | npc_def | goal_def)+ ~ EOI }
+program = { SOI ~ (set_decl | cond_decl | action_set_decl | game_def | trigger | room_def | item_def | spinner_def | npc_def | goal_def)+ ~ EOI }
 
 set_decl = { "let" ~ "set" ~ ident ~ "=" ~ set_list }
 set_list = { "(" ~ ident ~ ("," ~ ident)* ~ (",")? ~ ")" }
 cond_decl = { "let" ~ "cond" ~ ident ~ "=" ~ cond }
+action_set_decl = { "let" ~ "actions" ~ ident ~ "=" ~ block }
 
 game_def        =  { "game" ~ game_block }
 game_block      =  { "{" ~ game_stmt* ~ "}" }
@@ -209,14 +212,15 @@ ingest_mode      = { "eat" | "drink" | "inhale" }
 block = { "{" ~ stmt_block ~ "}" }
 
 // Allow multiple if-blocks and/or plain do statements at top-level
-stmt_block = { (if_block | do_stmt)+ }
+stmt_block = { (if_block | do_stmt | run_stmt)+ }
 
 if_block = { "if" ~ cond ~ block_inner }
 
-block_inner = { "{" ~ (do_stmt)+ ~ "}" }
+block_inner = { "{" ~ (do_stmt | run_stmt)+ ~ "}" }
 
 priority_clause = { "priority" ~ number }
 do_stmt         = { "do" ~ priority_clause? ~ do_action }
+run_stmt        = { "run" ~ ident }
 
 // Helper rule for balanced braces - handles nested { } pairs properly
 balanced_braces  = { "{" ~ balanced_content ~ "}" }
