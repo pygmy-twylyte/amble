@@ -56,35 +56,14 @@ when touch item woodland_button {
     }
 }
 
+
+
 trigger "[Stargate] Press Woodland Button"
 note "open/move the Stargate connection to Parish Landing (only if plaque-1 read)"
 when touch item woodland_button {
     if all( has flag read-plaque-1, missing flag woodland-gate-open ) {
         do show "With a great whooshing like the flush of a titan's toilet, the Stargate opens a new connection. You hear singing birds and the occasional screech coming through the opening."
-        # modify stargate room
-        do modify room stargate-room {
-            desc "A hangar-size concrete room, connected to the Aperture lab through a huge, round vault door. The Stargate is filled with a shimmering energy, from which you hear whispering sound and birdsong. Occasionally, a bird flies out of the gate and circles it, but -- finding nowhere to land -- flies back in."
-            # add exit to parish-landing and remove either of the others if previously opened
-            add exit "through the stargate" -> parish-landing
-            remove exit ice-pit
-            remove exit patio
-        }
-        # modify receiving rooms
-        # open woodland gate
-        do add flag woodland-gate-open
-        do modify room parish-landing {
-            add exit "through the stargate" -> stargate-room
-        }
-        # close snowfield gate
-        do remove flag snowfield-gate-open
-        do modify room ice-pit {
-            remove exit stargate-room
-        }
-        # close patio gate
-        do remove flag patio-gate-open
-        do modify room patio {
-            remove exit stargate-room
-        }
+        run connect_woodland_stargate
     }
     if all( has flag read-plaque-1, has flag woodland-gate-open ) {
         do show "The gate to the woodlands is already open."
@@ -114,37 +93,14 @@ when touch item snowfield_button {
     }
 }
 
+
+
 trigger "[Stargate] Press Snowfield Button"
 note "open/move the Stargate connection to Ice Pit (only if plaque 2 read)"
 when touch item snowfield_button {
     if all( has flag read-plaque-2, missing flag snowfield-gate-open ) {
         do show "With a great whooshing like the flush of a titan's toilet, the Stargate opens a new connection. Suddenly, you can see your breath -- condensed by the frigid air pouring through the opening."
-        # modify stargate room
-        do modify room stargate-room {
-            desc "A chilly, hangar-size concrete room, connected to the Aperture lab through a huge, round vault door. The Stargate is filled with a shimmering energy, from which you hear howling wind. Occasionally, another unearthly howl (Zomby Woof?) joins in."
-            # add exit to parish-landing and remove either of the others if previously opened
-            add exit "through the stargate" -> ice-pit
-            remove exit parish-landing
-            remove exit patio
-        }
-
-        # modify receiving rooms
-
-        # close woodland gate
-        do remove flag woodland-gate-open
-        do modify room parish-landing {
-            remove exit stargate-room
-        }
-        # open snowfield gate
-        do add flag snowfield-gate-open
-        do modify room ice-pit {
-            add exit "through the stargate" -> stargate-room
-        }
-        # close patio gate
-        do remove flag patio-gate-open
-        do modify room patio {
-            remove exit stargate-room
-        }
+        run connect_snowfield_stargate
     }
     if all( has flag read-plaque-2, has flag snowfield-gate-open ) {
         do show "The gate to the snowfield is already open."
@@ -174,36 +130,14 @@ when touch item patio_button {
     }
 }
 
+
+
 trigger "[Stargate] Press Patio Button"
 note "open/move the Stargate connection to the Patio (only if plaque-3 read)"
 when touch item patio_button {
     if all( has flag read-plaque-3, missing flag patio-gate-open ) {
         do show "With a great whooshing like the flush of a titan's toilet, the Stargate opens a new connection. The smells of fresh baked bread and searing beef waft  through the opening."
-        # modify stargate room
-        do modify room stargate-room {
-            desc "A hangar-size concrete room, connected to the Aperture lab through a round vault door. The Stargate in the center is filled with a shimmering energy, from which you hear the sounds of clinking glasses punctuated by explosions. Occasionally, you catch a whiff of fresh baked bread in the air."
-            # add exit to parish-landing and remove either of the others if previously opened
-            add exit "through the stargate" -> patio
-            remove exit ice-pit
-            remove exit parish-landing
-        }
-        # modify receiving rooms
-
-        # close woodland gate
-        do remove flag woodland-gate-open
-        do modify room parish-landing {
-            remove exit stargate-room
-        }
-        # close snowfield gate
-        do remove flag snowfield-gate-open
-        do modify room ice-pit {
-            remove exit stargate-room
-        }
-        # open patio gate
-        do add flag patio-gate-open
-        do modify room patio {
-            add exit "through the stargate" -> stargate-room
-        }
+        run connect_patio_stargate
     }
     if all( has flag read-plaque-3, has flag patio-gate-open ) {
         do show "The gate to the restaurant patio is already open."
@@ -213,44 +147,108 @@ when touch item patio_button {
     }
 }
 
-# ========================================
-# HINT Radio Trigger
-# ========================================
-let set stargate_hint_rooms = (
-    stargate-room,
-    patio,
-    parish-landing,
-    ice-pit,
-)
-trigger "[HINT] Activating the Stargate" only once
-when enter room stargate-room {
-    do schedule in 2
-    if any(
-        all(
-            has item hint_radio,
-            has flag hint-radio-on,
-            all(
-                missing flag woodland-gate-open,
-                missing flag snowfield-gate-open,
-                missing flag patio-gate-open,
-            ),
-            in rooms stargate_hint_rooms,
-        ),
-        has flag portal-gun-powered,
-    ) onFalse retryNextTurn note "stargate hint"{
-        if all(
-            has item hint_radio,
-            has flag hint-radio-on,
-            all(
-                missing flag woodland-gate-open,
-                missing flag snowfield-gate-open,
-                missing flag patio-gate-open,
-            ),
-            in rooms stargate_hint_rooms,
-        ) {
-            do npc says hint_radio_npc "The stargate seems to be tied to certain sites around the premises. It looks like there's something that you need to do at the receiving sites to be able to open those portals, though. Come to think of it, there was one of those ornate pillars at each of the other gate sites..."
-        }
+# Below is an example of how action sets can be used to group a set of related changes to
+# create complex effects. In this instance, a Stargate connection must be changed. The change
+# could be triggered from either the stargate_room or any destination gate. When the Stargate
+# destination is changed, several things must occur to maintain consistent state:
+#
+# - the appearance of the stargate room must be changed to match the open gate
+# - the exit in the stargate room must be moved to the new destination
+# - an exit must be created from the destination back to the stargate
+# - the exits from the other destinations back to stargate_room must be removed
+# - corresponding flags must be set to indicate which gate is open and which aren't
+#
+# The sets below compose all of these changes into reusable procedures that can be `run`
+# from wherever the gate activation is triggered. Note how sets can also be used within sets,
+# allowing you to compose more complex actions using simpler ones.
+
+let actions open_woodland_gate = {
+    do add flag woodland-gate-open
+    do modify room parish-landing {
+        add exit "through the stargate" -> stargate-room
     }
+}
+
+let actions close_woodland_gate = {
+    do remove flag woodland-gate-open
+    do modify room parish-landing {
+        remove exit stargate-room
+    }
+}
+
+let actions open_snowfield_gate = {
+    do add flag snowfield-gate-open
+    do modify room ice-pit {
+        add exit "through the stargate" -> stargate-room
+    }
+}
+
+let actions close_snowfield_gate = {
+    do remove flag snowfield-gate-open
+    do modify room ice-pit {
+        remove exit stargate-room
+    }
+}
+
+let actions open_patio_gate = {
+    do add flag patio-gate-open
+    do modify room patio {
+        add exit "through the stargate" -> stargate-room
+    }
+}
+
+let actions close_patio_gate = {
+    do remove flag patio-gate-open
+    do modify room patio {
+        remove exit stargate-room
+    }
+}
+
+let actions connect_woodland_stargate = {
+    # modify stargate room
+    do modify room stargate-room {
+        desc "A hangar-size concrete room, connected to the Aperture lab through a huge, round vault door. The Stargate is filled with a shimmering energy, from which you hear whispering sound and birdsong. Occasionally, a bird flies out of the gate and circles it, but -- finding nowhere to land -- flies back in."
+        # add exit to parish-landing and remove either of the others if previously opened
+        add exit "through the stargate" -> parish-landing
+        remove exit ice-pit
+        remove exit patio
+    }
+
+    # modify receiving rooms and flags
+    run open_woodland_gate
+    run close_snowfield_gate
+    run close_patio_gate
+}
+
+let actions connect_snowfield_stargate = {
+    # modify stargate room
+    do modify room stargate-room {
+        desc "A chilly, hangar-size concrete room, connected to the Aperture lab through a huge, round vault door. The Stargate is filled with a shimmering energy, from which you hear howling wind. Occasionally, another unearthly howl (Zomby Woof?) joins in."
+        # add exit to parish-landing and remove either of the others if previously opened
+        add exit "through the stargate" -> ice-pit
+        remove exit parish-landing
+        remove exit patio
+    }
+
+    # modify receiving rooms and flags
+    run open_snowfield_gate
+    run close_woodland_gate
+    run close_patio_gate
+}
+
+let actions connect_patio_stargate = {
+    # modify stargate room
+    do modify room stargate-room {
+        desc "A hangar-size concrete room, connected to the Aperture lab through a round vault door. The Stargate in the center is filled with a shimmering energy, from which you hear the sounds of clinking glasses punctuated by explosions. Occasionally, you catch a whiff of fresh baked bread in the air."
+        # add exit to parish-landing and remove either of the others if previously opened
+        add exit "through the stargate" -> patio
+        remove exit ice-pit
+        remove exit parish-landing
+    }
+    # modify receiving rooms and flags
+    run open_patio_gate
+    run close_woodland_gate
+    run close_snowfield_gate
 }
 
 # ========================================================================
