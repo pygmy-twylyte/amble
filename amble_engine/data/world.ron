@@ -8946,6 +8946,61 @@
                     priority: None,
                 ),
                 (
+                    action: modifyRoom(
+                        room: "stargate-room",
+                        patch: (
+                            name: None,
+                            desc: Some("A hangar-size concrete room, connected to the Aperture lab through a round vault door. The Stargate in the center is filled with a shimmering energy, from which you hear the sounds of clinking glasses punctuated by explosions. Occasionally, you catch a whiff of fresh baked bread in the air."),
+                            remove_exits: [
+                                "ice-pit",
+                                "parish-landing",
+                            ],
+                            add_exits: [
+                                (
+                                    direction: "through the stargate",
+                                    to: "patio",
+                                    hidden: false,
+                                    locked: false,
+                                    required_flags: [],
+                                    required_items: [],
+                                    barred_message: None,
+                                ),
+                            ],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: addFlag(
+                        flag: simple(
+                            name: "patio-gate-open",
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyRoom(
+                        room: "patio",
+                        patch: (
+                            name: None,
+                            desc: None,
+                            remove_exits: [],
+                            add_exits: [
+                                (
+                                    direction: "through the stargate",
+                                    to: "stargate-room",
+                                    hidden: false,
+                                    locked: false,
+                                    required_flags: [],
+                                    required_items: [],
+                                    barred_message: None,
+                                ),
+                            ],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
                     action: removeFlag(
                         name: "woodland-gate-open",
                     ),
@@ -8981,36 +9036,6 @@
                                 "stargate-room",
                             ],
                             add_exits: [],
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: addFlag(
-                        flag: simple(
-                            name: "patio-gate-open",
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: modifyRoom(
-                        room: "patio",
-                        patch: (
-                            name: None,
-                            desc: None,
-                            remove_exits: [],
-                            add_exits: [
-                                (
-                                    direction: "through the stargate",
-                                    to: "stargate-room",
-                                    hidden: false,
-                                    locked: false,
-                                    required_flags: [],
-                                    required_items: [],
-                                    barred_message: None,
-                                ),
-                            ],
                         ),
                     ),
                     priority: None,
@@ -9643,26 +9668,6 @@
                     priority: None,
                 ),
                 (
-                    action: removeFlag(
-                        name: "woodland-gate-open",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: modifyRoom(
-                        room: "parish-landing",
-                        patch: (
-                            name: None,
-                            desc: None,
-                            remove_exits: [
-                                "stargate-room",
-                            ],
-                            add_exits: [],
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
                     action: addFlag(
                         flag: simple(
                             name: "snowfield-gate-open",
@@ -9688,6 +9693,26 @@
                                     barred_message: None,
                                 ),
                             ],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: removeFlag(
+                        name: "woodland-gate-open",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyRoom(
+                        room: "parish-landing",
+                        patch: (
+                            name: None,
+                            desc: None,
+                            remove_exits: [
+                                "stargate-room",
+                            ],
+                            add_exits: [],
                         ),
                     ),
                     priority: None,
@@ -9844,6 +9869,36 @@
                     priority: None,
                 ),
                 (
+                    action: addFlag(
+                        flag: simple(
+                            name: "patio-gate-open",
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyRoom(
+                        room: "patio",
+                        patch: (
+                            name: None,
+                            desc: None,
+                            remove_exits: [],
+                            add_exits: [
+                                (
+                                    direction: "through the stargate",
+                                    to: "stargate-room",
+                                    hidden: false,
+                                    locked: false,
+                                    required_flags: [],
+                                    required_items: [],
+                                    barred_message: None,
+                                ),
+                            ],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
                     action: removeFlag(
                         name: "woodland-gate-open",
                     ),
@@ -9879,36 +9934,6 @@
                                 "stargate-room",
                             ],
                             add_exits: [],
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: addFlag(
-                        flag: simple(
-                            name: "patio-gate-open",
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: modifyRoom(
-                        room: "patio",
-                        patch: (
-                            name: None,
-                            desc: None,
-                            remove_exits: [],
-                            add_exits: [
-                                (
-                                    direction: "through the stargate",
-                                    to: "stargate-room",
-                                    hidden: false,
-                                    locked: false,
-                                    required_flags: [],
-                                    required_items: [],
-                                    barred_message: None,
-                                ),
-                            ],
                         ),
                     ),
                     priority: None,
@@ -9953,112 +9978,6 @@
                 (
                     action: showMessage(
                         text: "The fork-shaped button is already pressed down as far as it can go.",
-                    ),
-                    priority: None,
-                ),
-            ],
-        ),
-        (
-            name: "[HINT] Activating the Stargate",
-            note: None,
-            only_once: true,
-            event: enterRoom(
-                room: "stargate-room",
-            ),
-            conditions: All([]),
-            actions: [
-                (
-                    action: scheduleInIf(
-                        turns_ahead: 2,
-                        condition: Any([
-                            All([
-                                Pred(hasItem(
-                                    item: "hint_radio",
-                                )),
-                                Pred(hasFlag(
-                                    flag: "hint-radio-on",
-                                )),
-                                All([
-                                    Pred(missingFlag(
-                                        flag: "woodland-gate-open",
-                                    )),
-                                    Pred(missingFlag(
-                                        flag: "snowfield-gate-open",
-                                    )),
-                                    Pred(missingFlag(
-                                        flag: "patio-gate-open",
-                                    )),
-                                ]),
-                                Any([
-                                    Pred(playerInRoom(
-                                        room: "stargate-room",
-                                    )),
-                                    Pred(playerInRoom(
-                                        room: "patio",
-                                    )),
-                                    Pred(playerInRoom(
-                                        room: "parish-landing",
-                                    )),
-                                    Pred(playerInRoom(
-                                        room: "ice-pit",
-                                    )),
-                                ]),
-                            ]),
-                            Pred(hasFlag(
-                                flag: "portal-gun-powered",
-                            )),
-                        ]),
-                        on_false: retryNextTurn,
-                        actions: [
-                            (
-                                action: conditional(
-                                    condition: All([
-                                        Pred(hasItem(
-                                            item: "hint_radio",
-                                        )),
-                                        Pred(hasFlag(
-                                            flag: "hint-radio-on",
-                                        )),
-                                        All([
-                                            Pred(missingFlag(
-                                                flag: "woodland-gate-open",
-                                            )),
-                                            Pred(missingFlag(
-                                                flag: "snowfield-gate-open",
-                                            )),
-                                            Pred(missingFlag(
-                                                flag: "patio-gate-open",
-                                            )),
-                                        ]),
-                                        Any([
-                                            Pred(playerInRoom(
-                                                room: "stargate-room",
-                                            )),
-                                            Pred(playerInRoom(
-                                                room: "patio",
-                                            )),
-                                            Pred(playerInRoom(
-                                                room: "parish-landing",
-                                            )),
-                                            Pred(playerInRoom(
-                                                room: "ice-pit",
-                                            )),
-                                        ]),
-                                    ]),
-                                    actions: [
-                                        (
-                                            action: npcSays(
-                                                npc: "hint_radio_npc",
-                                                quote: "The stargate seems to be tied to certain sites around the premises. It looks like there\'s something that you need to do at the receiving sites to be able to open those portals, though. Come to think of it, there was one of those ornate pillars at each of the other gate sites...",
-                                            ),
-                                            priority: None,
-                                        ),
-                                    ],
-                                ),
-                                priority: None,
-                            ),
-                        ],
-                        note: Some("stargate hint"),
                     ),
                     priority: None,
                 ),
@@ -11238,21 +11157,26 @@
                     priority: None,
                 ),
                 (
-                    action: removeFlag(
-                        name: "woodland-gate-open",
-                    ),
-                    priority: None,
-                ),
-                (
                     action: modifyRoom(
-                        room: "parish-landing",
+                        room: "stargate-room",
                         patch: (
                             name: None,
-                            desc: None,
+                            desc: Some("A chilly, hangar-size concrete room, connected to the Aperture lab through a huge, round vault door. The Stargate is filled with a shimmering energy, from which you hear howling wind. Occasionally, another unearthly howl (Zomby Woof?) joins in."),
                             remove_exits: [
-                                "stargate-room",
+                                "parish-landing",
+                                "patio",
                             ],
-                            add_exits: [],
+                            add_exits: [
+                                (
+                                    direction: "through the stargate",
+                                    to: "ice-pit",
+                                    hidden: false,
+                                    locked: false,
+                                    required_flags: [],
+                                    required_items: [],
+                                    barred_message: None,
+                                ),
+                            ],
                         ),
                     ),
                     priority: None,
@@ -11283,6 +11207,26 @@
                                     barred_message: None,
                                 ),
                             ],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: removeFlag(
+                        name: "woodland-gate-open",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyRoom(
+                        room: "parish-landing",
+                        patch: (
+                            name: None,
+                            desc: None,
+                            remove_exits: [
+                                "stargate-room",
+                            ],
+                            add_exits: [],
                         ),
                     ),
                     priority: None,
@@ -12353,6 +12297,31 @@
                 (
                     action: showMessage(
                         text: "(A new Stargate destination has been enabled.)",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyRoom(
+                        room: "stargate-room",
+                        patch: (
+                            name: None,
+                            desc: Some("A hangar-size concrete room, connected to the Aperture lab through a huge, round vault door. The Stargate is filled with a shimmering energy, from which you hear whispering sound and birdsong. Occasionally, a bird flies out of the gate and circles it, but -- finding nowhere to land -- flies back in."),
+                            remove_exits: [
+                                "ice-pit",
+                                "patio",
+                            ],
+                            add_exits: [
+                                (
+                                    direction: "through the stargate",
+                                    to: "parish-landing",
+                                    hidden: false,
+                                    locked: false,
+                                    required_flags: [],
+                                    required_items: [],
+                                    barred_message: None,
+                                ),
+                            ],
+                        ),
                     ),
                     priority: None,
                 ),
@@ -13901,6 +13870,112 @@
                 (
                     action: showMessage(
                         text: "The radio clicks off.",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[HINT] Activating the Stargate",
+            note: None,
+            only_once: true,
+            event: enterRoom(
+                room: "stargate-room",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: scheduleInIf(
+                        turns_ahead: 2,
+                        condition: Any([
+                            All([
+                                Pred(hasItem(
+                                    item: "hint_radio",
+                                )),
+                                Pred(hasFlag(
+                                    flag: "hint-radio-on",
+                                )),
+                                All([
+                                    Pred(missingFlag(
+                                        flag: "woodland-gate-open",
+                                    )),
+                                    Pred(missingFlag(
+                                        flag: "snowfield-gate-open",
+                                    )),
+                                    Pred(missingFlag(
+                                        flag: "patio-gate-open",
+                                    )),
+                                ]),
+                                Any([
+                                    Pred(playerInRoom(
+                                        room: "stargate-room",
+                                    )),
+                                    Pred(playerInRoom(
+                                        room: "patio",
+                                    )),
+                                    Pred(playerInRoom(
+                                        room: "parish-landing",
+                                    )),
+                                    Pred(playerInRoom(
+                                        room: "ice-pit",
+                                    )),
+                                ]),
+                            ]),
+                            Pred(hasFlag(
+                                flag: "portal-gun-powered",
+                            )),
+                        ]),
+                        on_false: retryNextTurn,
+                        actions: [
+                            (
+                                action: conditional(
+                                    condition: All([
+                                        Pred(hasItem(
+                                            item: "hint_radio",
+                                        )),
+                                        Pred(hasFlag(
+                                            flag: "hint-radio-on",
+                                        )),
+                                        All([
+                                            Pred(missingFlag(
+                                                flag: "woodland-gate-open",
+                                            )),
+                                            Pred(missingFlag(
+                                                flag: "snowfield-gate-open",
+                                            )),
+                                            Pred(missingFlag(
+                                                flag: "patio-gate-open",
+                                            )),
+                                        ]),
+                                        Any([
+                                            Pred(playerInRoom(
+                                                room: "stargate-room",
+                                            )),
+                                            Pred(playerInRoom(
+                                                room: "patio",
+                                            )),
+                                            Pred(playerInRoom(
+                                                room: "parish-landing",
+                                            )),
+                                            Pred(playerInRoom(
+                                                room: "ice-pit",
+                                            )),
+                                        ]),
+                                    ]),
+                                    actions: [
+                                        (
+                                            action: npcSays(
+                                                npc: "hint_radio_npc",
+                                                quote: "The stargate seems to be tied to certain sites around the premises. It looks like there\'s something that you need to do at the receiving sites to be able to open those portals, though. Come to think of it, there was one of those ornate pillars at each of the other gate sites...",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        note: Some("stargate hint"),
                     ),
                     priority: None,
                 ),
