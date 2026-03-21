@@ -85,21 +85,7 @@ when use item plaque_3 ability read {
     if has visited room stargate-room {
         # close other gates and open this one
         do show "(A new Stargate destination has been enabled.)"
-        # close woodland gate
-        do remove flag woodland-gate-open
-        do modify room parish-landing {
-            remove exit stargate-room
-        }
-        # close snowfield gate
-        do remove flag snowfield-gate-open
-        do modify room ice-pit {
-            remove exit stargate-room
-        }
-        # open patio gate
-        do add flag patio-gate-open
-        do modify room patio {
-            add exit "through the stargate" -> stargate-room
-        }
+        run connect_patio_stargate
     }
 }
 
