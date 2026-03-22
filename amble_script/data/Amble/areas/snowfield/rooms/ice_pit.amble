@@ -94,22 +94,7 @@ when use item plaque_2 ability read {
     do award points 10 reason "Read the frozen plaque"
     if has visited room stargate-room {
         do show "(A new Stargate destination has been enabled.)"
-        # close woodland gate
-        do remove flag woodland-gate-open
-        do modify room parish-landing {
-            remove exit stargate-room
-        }
-        # open snowfield gate
-        do add flag snowfield-gate-open
-        do modify room ice-pit {
-            add exit "through the stargate" -> stargate-room
-        }
-        # close patio gate
-        do remove flag patio-gate-open
-        do modify room patio {
-            remove exit stargate-room
-        }
-
+        run connect_snowfield_stargate
     }
 }
 
@@ -163,28 +148,6 @@ when act burn on item unlit_campfire {
         }
     }
 }
-
-# ========================================
-# Hint Radio Message
-# ========================================
-
-let cond campfire_hint_needed = all(
-    missing flag campfire-lit,
-    hint_radio_ready,
-    in rooms ice-pit,
-)
-
-trigger "Hint: Find Items to Build a Fire" only once
-note "schedule radio hint about building a fire"
-when use item plaque_2_frozen ability read {
-    do schedule in 4 if any( campfire_hint_needed, has flag campfire-lit ) onFalse retryNextTurn
-    note "radio gives campfire hint" {
-        if campfire_hint_needed {
-            do npc says hint_radio_npc "To melt that pillar, you'll need to drop some firewood here and light it with something."
-        }
-    }
-}
-
 
 # ========================================
 # Goals
