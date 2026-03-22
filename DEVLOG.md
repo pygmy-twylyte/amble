@@ -8,6 +8,23 @@ I've been looking for a way to keep informal notes on development of Amble for a
 For the *few* of you out there lurking and watching the my pet project so far, it may sometimes seem like nothing is changing, though I work on Amble just about every day in some aspect or another. Many times, these are small changes buried in the DSL, the demo game content, or updates to the companion Zed extension and language server. 
 
 So, I intend to keep an informal log here, going forward. With the exception of this intro, newest entries will be at the top.
+
+---
+# 3-21-2026
+
+Well, it's been a minute since the last entry I see. Got the **0.66.0 release** out with a some small bit of public interest. That featured the new NewType Ids, game chooser, and conditional visibility.
+
+Started adding an optional questline to the demo to showcase that last bit -- **religious sects** based on Life of Brian and whether you pick of the Gourd or the Shoe or neither. Fun!
+
+Working on 0.67.0-alpha now.  So far we have:
+- global reusable **condition sets** in DSL
+- similar reusable **action sets** _(may not work predictably if these contain conditional clauses)_
+- updates to the **tree-sitter** and **language server** to complement those additions
+
+Additional features for 0.67.0 in planning stages:
+- `else` clauses for `if` statements in trigger action bodies
+- per-location light/dark + item Illuminate ability
+
 ---
 # 2-23-2026
 
