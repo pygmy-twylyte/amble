@@ -92,7 +92,7 @@ when use item plaque_1 ability read {
     }
     if all( has visited room stargate-room, has flag cleaned-plaque-1 ) {
         do show "(A new Stargate destination has been enabled.)"
-        run connect_woodland_stargate
+        run CONNECT_WOODLAND_STARGATE
     }
 }
 

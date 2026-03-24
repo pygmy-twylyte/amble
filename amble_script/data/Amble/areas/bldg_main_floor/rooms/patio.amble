@@ -83,9 +83,10 @@ when use item plaque_3 ability read {
     do add flag read-plaque-3
     do award points 10 reason "Reached and read the third crystal plaque"
     if has visited room stargate-room {
-        # close other gates and open this one
         do show "(A new Stargate destination has been enabled.)"
-        run connect_patio_stargate
+        run CONNECT_PATIO_STARGATE
+    } else {
+        do show "(Somewhere, something connected has been enabled.)"
     }
 }
 

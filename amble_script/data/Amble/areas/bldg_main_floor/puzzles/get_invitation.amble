@@ -4,6 +4,7 @@
 
 item charred_invitation_bits {
     name "Charred Paper Bits"
+    visible when missing flag status:flash-blind
     desc "The charred remains of a sheet of printer paper. A few areas aren't completely black, or vaporized. One bit remains legible."
     movability free
     location nowhere "spawns@aperture-lab"
@@ -22,6 +23,7 @@ item asbestos_sheet {
 
 item invitation {
     name "Engraved Invitation"
+    visible when missing flag status:flash-blind
     desc "A standard letter-size slab of asbestos with ornate and official-looking lettering burned into it. It remains too hot to touch."
     movability free
     location nowhere "spawns@aperture-lab"
@@ -31,34 +33,40 @@ You are cordially invited to complete your evaluation and induction. Please pres
     requires insulate to handle
 }
 
+item purple_vision_blob {
+    name "Scintillating Purple Blob"
+    visible when has flag status:flash-blind
+    desc "A pretty violet blob flashed into your central vision by the PlasmaJet printer."
+    location room aperture-lab
+    movability fixed "It's an optical illusion. Hopefully temporary."
+}
+
 # ========================================
-# Triggers
+# PLASMAJET PRINTER TRIGGERS / DEFINITIONS
 # ========================================
 
-trigger "[Aperture-Lab] Printer Loaded"
+trigger "[Aperture-Lab] Printer Loaded (paper)"
 note "change printer display when paper inserted"
 when insert item printer_paper into item lab_printer {
     if has flag got-invitation {
         do modify item lab_printer {
             text "0 JOB(S) PENDING"
         }
-    }
-    if missing flag got-invitation {
+    } else {
         do modify item lab_printer {
             text "1 JOB(S) PENDING"
         }
     }
 }
 
-trigger "[Aperture-Lab] Printer Loaded"
+trigger "[Aperture-Lab] Printer Loaded (asbestos)"
 note "change printer display when asbestos sheet inserted"
 when insert item asbestos_sheet into item lab_printer {
     if has flag got-invitation {
         do modify item lab_printer {
             text "0 JOB(S) PENDING"
         }
-    }
-    if missing flag got-invitation {
+    } else {
         do modify item lab_printer {
             text "1 JOB(S) PENDING"
         }
@@ -73,36 +81,66 @@ when use item lab_printer ability turnOn {
     }
 }
 
-trigger "[Aperture-Lab] Printer Burns Paper"
+trigger "[Aperture-Lab] PlasmaJet Used"
 when use item lab_printer ability turnOn {
     if container lab_printer has item printer_paper {
-        do despawn item printer_paper
-        do add flag burned-invitation
-        do spawn item flaming_invitation into room aperture-lab
-        do schedule in 5 note "invitation finishes burning" {
-            do replace item flaming_invitation with charred_invitation_bits
-        }
-        do add wedge "An annoyed voice on the PA: ATTENTION Staff - do NOT use regular copy paper in the lab PlasmaJet printer, or we will be shut down again -- by order of FEMA, PETA, the ATF, FBI, and our HOA." width 1 spinner ambientInterior
-        do show "The paper ignites in a flash, and the PlasmaJet spits a flaming document on the floor at your feet."
-        do schedule in 2 {
-            do show "A nearby smoke detector alarms briefly, the quits with an exasperated sigh when it sees you near the PlasmaJet printer, figuring you get what you deserve."
-        }
+        run PRINTER_USED_WITH_PAPER
+    } else if container lab_printer has item asbestos_sheet {
+        run PRINTER_USED_WITH_ASBESTOS
+    } else {
+        do show "The printer just clicks once. You may want to check the status screen or the paper tray."
     }
 }
 
-trigger "[Aperture-Lab] Print Invitation on Asbestos" only once
-when use item lab_printer ability turnOn {
-    if container lab_printer has item asbestos_sheet {
-        do add flag invitation-sans-ignition
-        do award points 10 reason "Printed the invitation on asbestos stock"
-        do despawn item asbestos_sheet
-        do show "The PlasmaJet emits a blinding flash of light, leaving a printer-shaped purple blob in your visual field and blinding you for a few moments."
-        do schedule in 2 note "blindness clears" {
-            do spawn item invitation into room aperture-lab
-            do show "Your vision begins to clear, and you see an engraved invitation on the floor. It glows slightly, and waves of heat warp the air around it."
-        }
+let actions PRINTER_USED_WITH_PAPER = {
+    do show "The paper ignites in an instant, and the PlasmaJet spits a flaming document on the floor at your feet."
+    do add flag burned-invitation
+    do despawn item printer_paper
+    do spawn item flaming_invitation into room aperture-lab
+    do schedule in 5 note "invitation finishes burning" {
+        do show "The flaming invitation goes fizzles out, leaving behind a few charred remains."
+        do replace item flaming_invitation with charred_invitation_bits
+    }
+
+    do add wedge "An annoyed voice on the PA: ATTENTION Staff - do NOT use regular copy paper in the lab PlasmaJet printer, or we will be shut down again -- by order of FEMA, PETA, the ATF, FBI, and our HOA." width 1 spinner ambientInterior
+    do schedule in 2 note "desensitized smoke detector" {
+        do show "A nearby smoke detector alarms briefly, the quits with an exasperated sigh when it sees you near the PlasmaJet printer, figuring you get what you deserve."
     }
 }
+
+let actions PRINTER_USED_WITH_ASBESTOS = {
+    do add flag invitation-sans-ignition
+    do award points 10 reason "Printed the invitation on asbestos stock"
+    do despawn item asbestos_sheet
+    do spawn item invitation into room aperture-lab
+    run FLASH_BLINDNESS
+}
+
+let actions FLASH_BLINDNESS = {
+    do add flag status:flash-blind
+    do show "The PlasmaJet emits a blinding flash of light, leaving a printer-shaped purple blob in your visual field and blinding you for a few moments."
+    do modify room aperture-lab {
+        name "Purple Blob Lab"
+        desc "It still feels like you're in the lab, but all you can see is a fading purple blob in your central vision."
+        remove exit portal-room
+        remove exit stargate-room
+    }
+    do schedule in 3 note "flash blindness clears" {
+        do show "Your vision begins to clear, and you see an invitation on the floor, burned into the asbestos sheet. It glows slightly, and waves of heat warp the air around it."
+        do remove flag status:flash-blind
+        do modify room aperture-lab {
+            name "Aperture Laboratory"
+            desc "The walls, floor, ceiling, and even the air here feels clinical and overexposed. Everything hums at a frequency designed to encourage strict compliance. A few [[bright-red]]fire extinguishers[[/bright-red]] are scattered about. A very dated computer console glows green on a table beside a [[i]]highly[[/i]] over-engineered printer labeled [[hl]][[b]]Aperture|Amble Hospitality Generator[[/b]][[/hl]]. Across the room, a [[item]]vault-like door[[/item]] all but [[i]]demands[[/i]] attention."
+            add exit "through the portal" -> portal-room
+            add exit "into the vault" -> stargate-room
+        }
+    }
+
+}
+
+# ========================================
+# INVITATION INSULATION TRIGGERS
+# ========================================
 
 trigger "[Aperture-Lab] Insulate With Towel"
 when use item towel on item invitation interaction handle {
