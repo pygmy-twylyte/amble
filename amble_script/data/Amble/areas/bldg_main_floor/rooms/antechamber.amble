@@ -1,0 +1,7 @@
+# Antechamber to the Sect Shrines
+
+room antechamber {
+    name "Antechamber"
+    desc "<TODO> Fun description of antechamber leading to two doors, one for each sect."
+    exit "through the stargate" -> stargate-room
+}
