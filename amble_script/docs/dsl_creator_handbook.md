@@ -118,7 +118,7 @@ when enter room lobby {
 
 - `note` is optional and copied into generated comments to help debugging.
 - `only once` prevents the trigger (and any lowered clones—see below) from firing more than a single time.
-- Each top-level `if { … }` block compiles into its own trigger entry; standalone `do …` lines outside of `if` become an unconditional variant.
+- Standalone top-level `if { … }` blocks still compile into their own trigger entry, but `if / else if / else` chains stay in-place as ordered conditional actions inside the trigger body.
 
 ### Events (`when …`)
 
