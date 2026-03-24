@@ -767,7 +767,7 @@ fn skip_ws_and_comments(body: &str, mut i: usize) -> usize {
     i
 }
 
-fn parse_if_action(
+pub(super) fn parse_if_action(
     body: &str,
     start: usize,
     source: &str,
@@ -793,12 +793,36 @@ fn parse_if_action(
     let block_after = &rest[brace_rel..];
     let inner_body = extract_body(block_after)?;
     let actions = parse_actions_from_body(inner_body, source, smap, sets, aliases, resolve_action_set)?;
+    let mut new_i = if_pos + 3 + brace_rel + 1 + inner_body.len() + 1;
+    let mut false_actions = None;
+    let after_if = skip_ws_and_comments(body, new_i);
+    if let Some(after_else_kw) = body[after_if..].strip_prefix("else").map(|_| after_if + 4) {
+        let after_else = skip_ws_and_comments(body, after_else_kw);
+        if let Some((else_if, else_end)) =
+            parse_if_action(body, after_else, source, smap, sets, aliases, resolve_action_set)?
+        {
+            false_actions = Some(vec![else_if]);
+            new_i = else_end;
+        } else if body[after_else..].starts_with('{') {
+            let else_body = extract_body(&body[after_else..])?;
+            false_actions = Some(parse_actions_from_body(
+                else_body,
+                source,
+                smap,
+                sets,
+                aliases,
+                resolve_action_set,
+            )?);
+            new_i = after_else + 1 + else_body.len() + 1;
+        } else {
+            return Err(AstError::Shape("missing '{' or 'if' after else"));
+        }
+    }
     let action = ActionStmt::new(ActionAst::Conditional {
         condition: Box::new(cond),
         actions,
+        false_actions,
     });
-    let consumed = brace_rel + 1 + inner_body.len() + 1;
-    let new_i = if_pos + 3 + consumed;
     Ok(Some((action, new_i)))
 }
 

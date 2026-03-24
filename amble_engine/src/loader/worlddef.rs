@@ -502,12 +502,20 @@ fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
             npc_id: npc.clone().into(),
             patch: npc_patch_from_def(patch),
         },
-        ActionKind::Conditional { condition, actions } => TriggerAction::Conditional {
+        ActionKind::Conditional {
+            condition,
+            actions,
+            false_actions,
+        } => TriggerAction::Conditional {
             condition: condition_expr_from_def(condition),
             actions: actions
                 .iter()
                 .map(scripted_action_from_def)
                 .collect::<Result<Vec<_>>>()?,
+            false_actions: false_actions
+                .as_ref()
+                .map(|actions| actions.iter().map(scripted_action_from_def).collect::<Result<Vec<_>>>())
+                .transpose()?,
         },
         ActionKind::ScheduleIn {
             turns_ahead,

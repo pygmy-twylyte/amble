@@ -4,10 +4,9 @@ use std::collections::HashMap;
 use crate::{ActionStmt, ConditionAst, IngestModeAst, TriggerAst};
 
 use super::actions::{
-    parse_action_from_str, parse_actions_from_body, parse_modify_item_action, parse_modify_npc_action,
+    parse_action_from_str, parse_if_action, parse_modify_item_action, parse_modify_npc_action,
     parse_modify_room_action, parse_schedule_action,
 };
-use super::conditions::parse_condition_text;
 use super::helpers::{SourceMap, extract_body, is_ident_char, str_offset, unquote};
 use super::{AstError, DslParser, Rule};
 
@@ -272,46 +271,28 @@ pub(super) fn parse_trigger_pair(
             }
             continue;
         }
-        // If-block
-        if inner[i..].starts_with("if ") {
-            let if_pos = i;
-            // Find opening brace
-            let rest = &inner[if_pos + 3..];
-            let brace_rel = rest.find('{').ok_or(AstError::Shape("missing '{' after if"))?;
-            let cond_text = &rest[..brace_rel].trim();
-            let cond = match parse_condition_text(cond_text, sets, aliases) {
-                Ok(c) => c,
-                Err(AstError::Shape(m)) => {
-                    let base_offset = str_offset(source, inner);
-                    let cond_abs = base_offset + (cond_text.as_ptr() as usize - inner.as_ptr() as usize);
-                    let (line, col) = smap.line_col(cond_abs);
-                    let snippet = smap.line_snippet(line);
-                    return Err(AstError::ShapeAt {
-                        msg: m,
-                        context: format!(
-                            "line {line}, col {col}: {snippet}\n{}^",
-                            " ".repeat(col.saturating_sub(1))
-                        ),
-                    });
-                },
-                Err(e) => return Err(e),
-            };
-            // Extract the block body after this '{' balancing braces
-            let block_after = &rest[brace_rel..]; // starts with '{'
-            let body = extract_body(block_after)?;
-            let actions = parse_actions_from_body(body, source, smap, sets, aliases, &mut resolve_action_set)?;
-            lowered.push(TriggerAst {
-                name: name.clone(),
-                note: None,
-                src_line,
-                event: event.clone(),
-                conditions: vec![cond],
-                actions,
-                only_once,
-            });
-            // Advance i to after the block we just consumed
-            let consumed = brace_rel + 1 + body.len() + 1; // '{' + body + '}'
-            i = if_pos + 3 + consumed;
+        if let Some((action, new_i)) = parse_if_action(inner, i, source, smap, sets, aliases, &mut resolve_action_set)?
+        {
+            match action.action {
+                crate::ActionAst::Conditional {
+                    condition,
+                    actions,
+                    false_actions: None,
+                } => lowered.push(TriggerAst {
+                    name: name.clone(),
+                    note: None,
+                    src_line,
+                    event: event.clone(),
+                    conditions: vec![*condition],
+                    actions,
+                    only_once,
+                }),
+                other => unconditional_actions.push(ActionStmt {
+                    priority: action.priority,
+                    action: other,
+                }),
+            }
+            i = new_i;
             continue;
         }
         let remainder = &inner[i..];

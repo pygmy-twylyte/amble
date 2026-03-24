@@ -941,6 +941,7 @@ fn dispatch_action_conditional_executes_nested_actions_when_condition_true() {
         actions: vec![ScriptedAction::new(TriggerAction::ShowMessage(
             "Conditional fired".into(),
         ))],
+        false_actions: None,
     });
 
     dispatch_action(&mut world, &mut view, &action).unwrap();
@@ -965,10 +966,44 @@ fn dispatch_action_conditional_skips_actions_when_condition_false() {
         actions: vec![ScriptedAction::new(TriggerAction::ShowMessage(
             "Should not appear".into(),
         ))],
+        false_actions: None,
     });
 
     dispatch_action(&mut world, &mut view, &action).unwrap();
 
+    assert!(view.items.iter().all(|entry| {
+        !matches!(
+            &entry.view_item,
+            ViewItem::TriggeredEvent(msg) if msg.contains("Should not appear")
+        )
+    }));
+}
+
+#[test]
+fn dispatch_action_conditional_executes_false_branch_when_condition_false() {
+    let (mut world, _, _) = build_test_world();
+    world.player.flags.insert(Flag::simple("hint", world.turn_count));
+    let mut view = View::new();
+
+    let action = ScriptedAction::new(TriggerAction::Conditional {
+        condition: crate::scheduler::EventCondition::Trigger(crate::trigger::TriggerCondition::MissingFlag(
+            "hint".into(),
+        )),
+        actions: vec![ScriptedAction::new(TriggerAction::ShowMessage(
+            "Should not appear".into(),
+        ))],
+        false_actions: Some(vec![ScriptedAction::new(TriggerAction::ShowMessage(
+            "False branch fired".into(),
+        ))]),
+    });
+
+    dispatch_action(&mut world, &mut view, &action).unwrap();
+
+    assert!(
+        view.items.iter().any(
+            |entry| matches!(&entry.view_item, ViewItem::TriggeredEvent(msg) if msg.contains("False branch fired"))
+        )
+    );
     assert!(view.items.iter().all(|entry| {
         !matches!(
             &entry.view_item,

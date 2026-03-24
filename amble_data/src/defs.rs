@@ -642,6 +642,8 @@ pub enum ActionKind {
     Conditional {
         condition: ConditionExpr,
         actions: Vec<ActionDef>,
+        #[serde(default)]
+        false_actions: Option<Vec<ActionDef>>,
     },
     ScheduleIn {
         turns_ahead: usize,

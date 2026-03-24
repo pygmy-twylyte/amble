@@ -151,6 +151,7 @@ pub enum TriggerAction {
     Conditional {
         condition: EventCondition,
         actions: Vec<ScriptedAction>,
+        false_actions: Option<Vec<ScriptedAction>>,
     },
     /// Schedules a list of actions to fire after a specified number of turns.
     ScheduleIn {
@@ -313,9 +314,17 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, scripted: &Scrip
         AddFlag(flag) => add_flag_with_priority(world, view, flag, *priority),
         RemoveFlag(flag) => remove_flag_with_priority(world, view, flag, *priority),
         AwardPoints { amount, reason } => award_points_with_priority(world, view, *amount, reason, *priority),
-        Conditional { condition, actions } => {
+        Conditional {
+            condition,
+            actions,
+            false_actions,
+        } => {
             if condition.eval(world) {
                 for nested in actions {
+                    dispatch_action(world, view, nested)?;
+                }
+            } else if let Some(false_actions) = false_actions {
+                for nested in false_actions {
                     dispatch_action(world, view, nested)?;
                 }
             }
