@@ -2,6 +2,72 @@
 
 room antechamber {
     name "Antechamber"
-    desc "<TODO> Fun description of antechamber leading to two doors, one for each sect."
+    desc """A circular waiting room lies beyond the Stargate, laid out with the solemn grandeur of a temple and the administrative cheer of a municipal licensing office. The floor is an intricate mosaic of sandals, vines, halos and what may simply be decorative punctuation. Two nearly identical doors stand opposite the gate, each trying very hard to look like the only reasonable choice a civilized soul could make. Between them, a brass [[item]]Directory Plaque[[/item]] and an overstuffed [[item]]Suggestion Box[[/item]] quietly imply that sectarian certainty requires a surprising amount of paperwork."""
+
+    overlay if flag set sect-shoe {
+        text "The sandal-marked door seems calm, welcoming, and faintly superior. The gourd-marked door somehow manages to look judgmental despite being a vegetable-themed door."
+    }
+
+    overlay if flag set sect-gourd {
+        text "The gourd-marked door radiates a mellow autumnal confidence. The sandal-marked door has the air of something that would correct your posture while condemning your soul."
+    }
+
     exit "through the stargate" -> stargate-room
+    exit "through the sandal-marked door" -> shoe-shrine {
+        required_flags( sect-shoe ),
+        barred "The sandal-marked door refuses to admit you. A tiny brass voice grille politely explains that access is restricted to the properly shod in spirit."
+    }
+    exit "through the gourd-marked door" -> gourd-shrine {
+        required_flags( sect-gourd ),
+        barred "The gourd-marked door remains shut. Somewhere within the woodwork, a mellow but disapproving silence suggests you lack sufficient cucurbit conviction."
+    }
+
+    scenery "Mosaic Floor" desc "Thousands of tiny tiles depict worshippers arguing over footwear, produce, and the exact angle at which enlightenment ought to be shelved."
+    scenery "Twin Doors" desc "One bears a carved sandal haloed in gold leaf; the other bears a plump gourd wreathed in vines. Each has the smug air of a doctrine that has won an argument with itself."
+    scenery "Ceiling Dome" desc "The painted dome above shows a starry sky in which several constellations have been suspiciously redrawn to resemble either a sandal or a gourd, depending on where you stand and how willing you are to be persuaded."
+    scenery "Benches" desc "Two padded benches line the wall beneath framed notices about reverence, queueing, and the inadvisability of starting comparative theology before lunch."
+}
+
+item sect_directory_plaque {
+    name "Directory Plaque"
+    aliases "plaque", "directory"
+    desc "A polished brass plaque mounted between the two inner doors."
+    movability fixed "It is bolted to the wall with ecumenical firmness."
+    visibility scenery
+    location room antechamber
+    ability Read
+    text """[[box:WAYFINDING FOR THE DEVOUT]]
+Left of Certainty ........ Shrine of the Holy Shoe
+Right of Certainty ....... Shrine of the Holy Gourd
+Straight Back ............ Stargate / Unscheduled Transcendence
+
+[[center]][[i]]Please keep doctrinal disputes below a resonant chanting level.[[/i]][[/center]]"""
+}
+
+item schism_suggestion_box {
+    name "Suggestion Box"
+    aliases "box"
+    desc "An oak suggestion box with two slots labeled [[i]]Constructive Feedback[[/i]] and [[i]]Vindictive Denunciation[[/i]]. The second slot is much more worn."
+    movability fixed "It is chained to a pedestal, presumably after an incident."
+    visibility scenery
+    location room antechamber
+    ability Read
+    text """[[box:SUGGESTION BOX GUIDELINES]]
+1. Keep notes brief, legible, and only moderately anathematizing.
+2. Do not submit produce.
+3. Do not submit footwear.
+4. Do not submit produce about footwear.
+5. Complaints concerning the nonbeliever observation room will be accepted once reality catches up."""
+}
+
+trigger "[Antechamber] First Arrival" only once
+when enter room antechamber {
+    do show "The room greets you with the hushed tension of a place in which people have spent centuries being polite at each other as hard as they can."
+    do schedule in 2 if player in room antechamber onFalse cancel {
+        if has flag sect-shoe {
+            do show "From somewhere beyond the gourd-marked door comes a muffled chant whose general theme appears to be that vegetables were a mistake."
+        } else if has flag sect-gourd {
+            do show "From somewhere beyond the sandal-marked door comes a clipped chorus suggesting that produce has no business in serious metaphysics."
+        }
+    }
 }
