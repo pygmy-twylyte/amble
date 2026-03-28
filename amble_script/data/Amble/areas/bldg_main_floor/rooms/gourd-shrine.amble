@@ -1,6 +1,6 @@
 room gourd-shrine {
     name "Shrine of the Holy Gourd"
-    desc """This chapel glows with warm amber light filtered through bottle-green glass, giving everything the reverent complexion of very expensive soup. Vines curl around fluted pillars, seed motifs repeat across the floor, and at the far end a circular [[item]]Harvest Altar[[/item]] stands beneath a domed canopy. A velvet-lined recess at its center is being guarded by atmosphere alone, which in this room seems to consider itself armed. The air smells of beeswax, autumn leaves, and the smug serenity of people who believe a vegetable solved the major philosophical questions decades ago."""
+    desc """This chapel glows with warm amber light filtered through bottle-green glass, giving everything the reverent complexion of very expensive soup. Vines curl around fluted pillars, seed motifs repeat across the floor, and at the far end a circular [[item]]Harvest Altar[[/item]] stands beneath a domed canopy. A velvet-lined recess at its center is being guarded by atmosphere alone, which in this room seems to consider itself armed. The air smells of beeswax, autumn leaves, and the smug serenity of people who believe a vegetable solved the major philosophical questions decades ago. Near the entry, a [[item]]hymn board[[//item]] spells out the plan for the day's worship while an [[item]]abacus[[/item]] stands ready to count the devoted."""
 
     exit "leave the shrine" -> antechamber
 
