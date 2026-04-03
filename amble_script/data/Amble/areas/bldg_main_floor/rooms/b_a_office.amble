@@ -97,7 +97,11 @@ when open item poetry_performer {
 
 trigger "[Office] Gifted Lost and Found Key" only once
 when enter room amble-office {
-    if all( has flag got-elevator-keycard, with npc demerzel ) {
+    if all(
+        has flag got-elevator-keycard,
+        with npc demerzel,
+        npc has item demerzel lost_and_found_key,
+    ) {
         do give item lost_and_found_key to player from npc demerzel
         do priority -40 show "Seeing you return with the keycard, the receptionist looks around warily and slips something into your hand, then looks directly at the lost and found box."
         do priority -50 npc says demerzel "Finally! A Candidate bright enough to get to that keycard. I lost the pool. Who would have thought it would be a primate?"
@@ -130,4 +134,12 @@ goal get-visitor-pass {
     group required
     start when goal complete get-invited
     done when has flag got-visitor-pass
+}
+
+goal access-lost-and-found {
+    name "Gain Access to Lost and Found"
+    desc "There is a Lost and Found box in the office, and Demerzel has the key. When she's impressed enough with your progress, she'll give it to you."
+    group required
+    start when reached room amble-office
+    done when has flag lost-and-found-opened
 }
