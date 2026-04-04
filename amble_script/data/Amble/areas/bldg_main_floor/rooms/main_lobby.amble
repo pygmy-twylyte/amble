@@ -4,11 +4,11 @@
 
 room main-lobby {
     name "Main Lobby"
-    desc "The lobby is clinically clean in a way that feels suspicious. A slightly humming vending machine stands beside an empty podium. Softly glowing script over an archway on the far wall reads 'Elevator Access'. To one side, there is floor-to-ceiling frosted glass with an etched door at the farthest end from the entrance. Opposite that, the smell of searing beef wafts from a broad entryway flanked by a wobbly sign."
+    desc "The lobby is clinically clean in a way that feels suspicious. A slightly humming vending machine stands beside an empty podium. Softly glowing script over an archway on the far wall reads [[i]][[blue]]Lift Access[[/blue]][[/i]] where a few short steps lead up to an elevator bank. To one side, there is floor-to-ceiling frosted glass with an etched door at the farthest end from the entrance. Opposite that, the smell of searing beef wafts from a broad entryway flanked by a wobbly sign."
 
     scenery "Empty Podium" desc "A typical wooden podium used to welcome incoming visitors, and just as typically vacant. It bears an emblem that reads: [[hl]][[i]]Welcome, Candidate[[/i][[/hl]]."
 
-    scenery "Etched Door" desc "A frosted glass office door, etched with: [[box:MAIN OFFICE]]Amble Adventures[[/box]]"
+    scenery "Frosted Glass Door" desc "A frosted glass office door, etched with: [[box:MAIN OFFICE]]Amble Adventures[[/box]]"
 
     overlay if npc gonk_droid here {
         normal "A gonk droid stands idle in the corner, muttering to itself and tottering in circles."
@@ -19,10 +19,10 @@ room main-lobby {
         happy  "Dibbler grins broadly, offering a complimentary bite."
         bored  "Dibbler mutters about slow lobby sales."
     }
-    exit "elevator access" -> lift-bank-main
+    exit "lift access" -> lift-bank-main
     exit "outside" -> front-entrance
     exit "broad entryway" -> restaurant
-    exit "etched door" -> amble-office
+    exit "frosted glass door" -> amble-office
 }
 
 item restaurant_sign {
@@ -194,11 +194,15 @@ spinner fortunes {
 trigger "[Main-Lobby] Security Reminder" only once
 when enter room main-lobby
 {
-    do show """A chime echoes through the lobby. "Candidates: Please do not loiter in the lobby," intones an overhead voice."""
-    do schedule in 3 if player in room main-lobby onFalse cancel
-    note "lobby loitering reminder" {
-        do show """The chime sounds again. "Candidates: We **said** not to loiter in the lobby," says the voice, in more of an annoyed tone."""
-        do award points -1 reason "Ignored the lobby loitering reminder"
+    do schedule in 2 note "lobby loitering warning"
+    {
+        do show """A chime echoes through the lobby. "Candidates: Please do not loiter in the lobby," intones an overhead voice."""
+
+        do schedule in 5 if player in room main-lobby onFalse cancel
+        note "lobby loitering penalty" {
+            do show """The chime sounds again. "Candidates: We **said** not to loiter in the lobby," says the voice, in more of an annoyed tone."""
+            do award points -1 reason "Ignored the lobby loitering warning"
+        }
     }
 }
 
@@ -221,5 +225,5 @@ when use item fishing_line on item zircon_tweezers_crevice interaction handle
     do despawn item zircon_tweezers_crevice
     do spawn item zircon_tweezers in inventory
     do add flag recovered-tweezers
-    do award points 3 reason "Fished the zircon tweezers out of the vending machine"
+    do award points 3 reason "Fished the zircon tweezers out of the vending machine crevice"
 }

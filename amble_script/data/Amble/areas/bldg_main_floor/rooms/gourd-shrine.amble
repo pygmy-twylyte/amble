@@ -1,0 +1,64 @@
+room gourd-shrine {
+    name "Shrine of the Holy Gourd"
+    desc """This chapel glows with warm amber light filtered through bottle-green glass, giving everything the reverent complexion of very expensive soup. Vines curl around fluted pillars, seed motifs repeat across the floor, and at the far end a circular [[item]]Harvest Altar[[/item]] stands beneath a domed canopy. A velvet-lined recess at its center is being guarded by atmosphere alone, which in this room seems to consider itself armed. The air smells of beeswax, autumn leaves, and the smug serenity of people who believe a vegetable solved the major philosophical questions decades ago. Near the entry, a [[item]]hymn board[[//item]] spells out the plan for the day's worship while an [[item]]abacus[[/item]] stands ready to count the devoted."""
+
+    exit "leave the shrine" -> antechamber
+
+    scenery "Stained Glass" desc "Panels of heroic gourds float among stars, feed the multitudes, and in one especially ambitious scene appear to invent both ethics and seasonal decor."
+    scenery "Seed Mosaics" desc "Tiny polished seeds have been pressed into the floor in elaborate spirals. They form sacred symbols, or possibly a diagram explaining how to make a very complicated tart."
+    scenery "Pews" desc "Low benches arc toward the altar in a gentle crescent. Each kneeler is stuffed with something pleasantly springy that you suspect is either moss or doctrine."
+    scenery "Vines" desc "Decorative vines wind up the pillars in careful symmetry. They are either carved wood or very disciplined plants."
+}
+
+item gourd_hymn_board {
+    name "Hymn Board"
+    aliases "board", "hymn board"
+    desc "A carved wooden board displays the order of service in tidy movable letters."
+    movability fixed "It is mounted securely to the wall."
+    visibility scenery
+    location room gourd-shrine
+    ability Read
+    text """[[box:ORDER OF MELLOW EXULTATION]]
+Opening Chant ............ O Round and Plentiful One
+Responsive Reading ....... Seeds of Wisdom, Verses 4-12
+Meditation ............... On the Folly of Single Sandals
+Closing Hymn ............. Abide With Gourd
+
+[[center]][[i]]Latecomers may join in at whatever verse feels spiritually seasonal.[[/i]][[/center]]"""
+}
+
+item harvest_altar {
+    name "Harvest Altar"
+    aliases "altar"
+    desc "A circular altar of polished wood and green stone. Its center holds a velvet-lined niche clearly reserved for an Object of Great Significance, or at least an Object prepared to put up with a great deal of incense."
+    movability fixed "It appears to weigh slightly more than piety."
+    visibility scenery
+    location room gourd-shrine
+}
+
+item seed_abacus {
+    name "Seed Abacus"
+    aliases "abacus"
+    desc "A brass frame strung with lacquered seeds. It seems to be used for counting prayers, blessings, or casserole attendees."
+    movability fixed "It is attached to a stand that looks rooted in theology."
+    visibility scenery
+    location room gourd-shrine
+}
+
+trigger "[Gourd-Shrine] First Visit" only once
+when enter room gourd-shrine {
+    do show "A tranquil hush settles around you. It is the sort of hush that fully expects applause for being tranquil."
+    do schedule in 2 if player in room gourd-shrine onFalse cancel {
+        do show "A hidden choir hums a note so warm and rounded it feels less heard than gently ladled."
+    }
+}
+
+trigger "[Gourd-Shrine] Touch Altar"
+when touch item harvest_altar {
+    do show "The polished surface is warm to the touch. Either candles burn nearby, or devotion here has been left simmering."
+}
+
+trigger "[Gourd-Shrine] Touch Abacus"
+when touch item seed_abacus {
+    do show "Several seeds click across the rods and settle on a number that feels meaningful, though it may simply indicate soup."
+}

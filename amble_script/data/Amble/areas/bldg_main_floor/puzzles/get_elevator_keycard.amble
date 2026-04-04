@@ -47,11 +47,9 @@ item poetry_performer {
 # Triggers
 # ========================================
 
-
-
 trigger "[Poetry-Panic] Acquired Elevator Keycard" only once
 when take elevator_keycard {
-    do set npc state demerzel bored
+    do set npc state demerzel custom:impressed
     do add flag got-elevator-keycard
     do modify item aa_3_button_main {
         name "[AA-3] Button"

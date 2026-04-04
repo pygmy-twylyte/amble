@@ -1123,12 +1123,127 @@ trigger "Radio Hint" when always {
         assert_eq!(triggers.len(), 1);
         assert_eq!(triggers[0].actions.len(), 1);
         match &triggers[0].actions[0].action {
-            ActionAst::Conditional { condition, actions } => {
+            ActionAst::Conditional {
+                condition,
+                actions,
+                false_actions,
+            } => {
                 assert_eq!(**condition, ConditionAst::HasFlag("radio-on".into()));
                 assert_eq!(
                     actions,
                     &vec![ActionStmt::new(ActionAst::AddFlag("nested-ready".into()))]
                 );
+                assert_eq!(false_actions, &None);
+            },
+            other => panic!("expected conditional action, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn top_level_if_without_else_still_lowers_to_separate_trigger() {
+        let src = r#"
+trigger "Radio Hint" when always {
+  if has flag radio-on {
+    do show "Ready."
+  }
+  do add flag radio-ready
+}
+"#;
+        let (_game, triggers, ..) = parse_program_full(src).expect("top-level if parse succeeds");
+
+        assert_eq!(triggers.len(), 2);
+        assert_eq!(triggers[0].conditions, vec![ConditionAst::HasFlag("radio-on".into())]);
+        assert_eq!(
+            triggers[0].actions,
+            vec![ActionStmt::new(ActionAst::Show("Ready.".into()))]
+        );
+        assert!(triggers[1].conditions.is_empty());
+        assert_eq!(
+            triggers[1].actions,
+            vec![ActionStmt::new(ActionAst::AddFlag("radio-ready".into()))]
+        );
+    }
+
+    #[test]
+    fn top_level_if_else_lowers_to_runtime_conditional_action() {
+        let src = r#"
+trigger "Radio Hint" when always {
+  if has flag radio-on {
+    do show "Ready."
+  } else {
+    do show "Not ready."
+  }
+}
+"#;
+        let (_game, triggers, ..) = parse_program_full(src).expect("top-level if-else parse succeeds");
+
+        assert_eq!(triggers.len(), 1);
+        assert!(triggers[0].conditions.is_empty());
+        assert_eq!(triggers[0].actions.len(), 1);
+        match &triggers[0].actions[0].action {
+            ActionAst::Conditional {
+                condition,
+                actions,
+                false_actions,
+            } => {
+                assert_eq!(**condition, ConditionAst::HasFlag("radio-on".into()));
+                assert_eq!(actions, &vec![ActionStmt::new(ActionAst::Show("Ready.".into()))]);
+                assert_eq!(
+                    false_actions,
+                    &Some(vec![ActionStmt::new(ActionAst::Show("Not ready.".into()))])
+                );
+            },
+            other => panic!("expected conditional action, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn nested_else_if_chain_parses_as_recursive_conditional_actions() {
+        let src = r#"
+let actions outer_steps = {
+  if has flag radio-on {
+    do add flag first-path
+  } else if has item hint_radio {
+    do add flag second-path
+  } else {
+    do add flag third-path
+  }
+}
+
+trigger "Radio Hint" when always {
+  run outer_steps
+}
+"#;
+        let (_game, triggers, ..) = parse_program_full(src).expect("nested else-if parse succeeds");
+
+        assert_eq!(triggers.len(), 1);
+        match &triggers[0].actions[0].action {
+            ActionAst::Conditional {
+                condition,
+                actions,
+                false_actions: Some(false_actions),
+            } => {
+                assert_eq!(**condition, ConditionAst::HasFlag("radio-on".into()));
+                assert_eq!(actions, &vec![ActionStmt::new(ActionAst::AddFlag("first-path".into()))]);
+                assert_eq!(false_actions.len(), 1);
+                match &false_actions[0].action {
+                    ActionAst::Conditional {
+                        condition,
+                        actions,
+                        false_actions: Some(false_actions),
+                    } => {
+                        assert_eq!(**condition, ConditionAst::HasItem("hint_radio".into()));
+                        assert_eq!(
+                            actions,
+                            &vec![ActionStmt::new(ActionAst::AddFlag("second-path".into()))]
+                        );
+                        assert_eq!(
+                            false_actions,
+                            &vec![ActionStmt::new(ActionAst::AddFlag("third-path".into()))]
+                        );
+                    },
+                    other => panic!("expected nested conditional action, got {other:?}"),
+                }
             },
             other => panic!("expected conditional action, got {other:?}"),
         }

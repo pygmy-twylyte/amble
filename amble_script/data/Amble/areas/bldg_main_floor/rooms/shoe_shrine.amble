@@ -1,0 +1,66 @@
+room shoe-shrine {
+    name "Shrine of the Holy Shoe"
+    desc """A long, narrow chapel of polished oak and stern symmetry stretches before you, lit by stained glass windows that cast sandal-shaped colors across the floor. A [[item]]liturgy board[[/item]] announces the day's plan near the entryway, with the obligatory [[item]]donation box[[/item]] mounted below it. At the far end, on a raised [[item]]Sandal Altar[[/item]], a velvet-lined recess sits at attention beneath a cone of buttery light. Rows of pews face forward with the crisp obedience of well-behaved feet. The air carries beeswax, old leather, and the faint, intoxicating scent of absolute certainty rubbed to a shine."""
+
+    exit "leave the shrine" -> antechamber
+
+    scenery "Stained Glass" desc "The windows depict the Sacred Sandal performing small but decisive miracles: crossing deserts, toppling heretics, and in one panel apparently inventing the idea of [[b]]left[[/b]] and [[b]]right[[/b]]."
+    scenery "Pews" desc "Straight-backed pews stand in impeccable rows. The kneelers are shaped with orthopedic conviction."
+    scenery "Polished Floor" desc "The boards gleam so brightly you can see your reflection looking slightly more devout than usual."
+    scenery "Censers" desc "Brass censers hang from the rafters, swinging very slightly and releasing a fragrance halfway between incense and a cobbler's workshop."
+}
+
+item shoe_liturgy_board {
+    name "Liturgy Board"
+    aliases "board", "liturgy board", "hymn board"
+    desc "A mahogany board lists the day's readings and hymns in severe gold letters."
+    movability fixed "It is affixed with screws that look doctrinally approved."
+    visibility scenery
+    location room shoe-shrine
+    ability Read
+    text """[[box:ORDER OF SOLEMN OBSERVANCE]]
+Opening Processional ..... Tread Lightly, Yet With Conviction
+Reading .................. The Book of Arch Support, Chapter 3
+Homily ................... On the Error of Overvaluing Produce
+Closing Hymn ............. Guide Me, O Thou Great Sandal
+
+[[center]][[i]]Please keep both feet pointed toward the altar during moments of revelation.[[/i]][[/center]]"""
+}
+
+item sandal_altar {
+    name "Sandal Altar"
+    aliases "altar"
+    desc "A lacquered wooden altar trimmed in brass. At its center rests a velvet-lined recess shaped for an article of singular sacred importance, patiently awaiting either revelation or a careful dusting."
+    movability fixed "It is solid, immovable, and plainly in favor of arch support."
+    visibility scenery
+    location room shoe-shrine
+}
+
+item heel_the_poor_fund {
+    name "Heel the Poor Fund"
+    aliases "donation box", "fund"
+    desc "A brass donation box polished to missionary brightness. The slot is worn smooth by generations of charitable guilt."
+    movability fixed "It is locked, weighted, and probably insured."
+    visibility scenery
+    location room shoe-shrine
+    ability Read
+    text "[[box]]HEEL THE POOR[[/box]][[center]][[i]]Loose change gladly accepted. Tight change accepted with gentle disappointment.[[/i]][[/center]]"
+}
+
+trigger "[Shoe-Shrine] First Visit" only once
+when enter room shoe-shrine {
+    do show "A discreet bell chimes somewhere overhead, as if noting your arrival in a ledger maintained by very tidy angels."
+    do schedule in 2 if player in room shoe-shrine onFalse cancel {
+        do show "From the rafters comes a whisper: \"If the Shoe fits...\" followed by several devout voices murmuring, \"...mind the laces of destiny.\""
+    }
+}
+
+trigger "[Shoe-Shrine] Touch Altar"
+when touch item sandal_altar {
+    do show "The wood is mirror-smooth and faintly warm. The shrine's caretakers either polish constantly or have achieved a workable theology of wax."
+}
+
+trigger "[Shoe-Shrine] Touch Donation Box"
+when touch item heel_the_poor_fund {
+    do show "The box gives off the dense metallic clink of accumulated virtue."
+}

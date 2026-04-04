@@ -72,5 +72,11 @@ when give item initech_mug to npc cmot_dibbler {
     do npc says cmot_dibbler "Whoa! Me favorite mug from the lads down at Initech?! Where did it turn up? Ah -- no matter, really. I still haven't figured out how to open the bloody thing, making it somewhat useless. Here -- seems fitting I give you this useless gizmo as a more-than-fair trade."
     do give item hal_module_3 to player from npc cmot_dibbler
     do add flag module-3-found
-    do award points 5 reason "Traded the Initech mug for HAL's third module"
+
+    # Don't give the identity of the gizmo away prematurely!
+    if flag in progress hal-reboot {
+        do award points 5 reason "Traded the Initech mug for HAL's third module"
+    } else {
+        do award points 5 reason "Traded the Initech mug for some electronic gizmo."
+    }
 }

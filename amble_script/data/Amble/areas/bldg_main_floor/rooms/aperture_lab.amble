@@ -7,10 +7,14 @@ room aperture-lab {
     desc "The unnaturally white walls, floor, ceiling, even the air here feels clinical and overexposed. Everything hums at a frequency designed to encourage strict compliance. A few [[bright-red]]fire extinguishers[[/bright-red]] are scattered about, though there isn't any obvious source of ignition around. A very dated computer console glows green on a table beside a [[i]]highly[[/i]] over-engineered printer labeled [[hl]][[b]]Aperture|Amble Hospitality Generator[[/b]][[/hl]]. Across the room, a [[item]]vault-like door[[/item]] all but [[i]]demands[[/i]] attention."
 
     scenery default "The {thing} [[i]][[u]]seems[[/u]][[/i]] normal, but here in [[room]]Aperture Laboratories[[/room]]? I wouldn't trust it."
+
     scenery "Walls" desc "The unnatural thing about these white walls is that they emit light, but sharp shadows can still be cast on them... which allows you to see that your shadow seems to merely [[i]]approximate[[/i]] your movements, and with a barely perceptible delay."
+
     scenery "Lab Floor"
+
     scenery "Ceiling" desc "A typical industrial ceiling with barely hidden conduits and pipes for fire (or riot) suppression systems overhead."
     scenery "Table"
+
     scenery "Your Shadow" desc "[[b]][[i]]It looks back at you.[[/i]][[/b]]"
 
     overlay if ( flag set burned-invitation, flag unset invitation-sans-ignition ) {
@@ -25,7 +29,7 @@ room aperture-lab {
     overlay if ( flag set invitation-sans-ignition ) {
         text "The printer is in its 3-day cooldown period, and there are no jobs pending."
     }
-    overlay if ( item present invitation ) {
+    overlay if ( item present invitation, flag unset status:flash-blind ) {
         text "A glowing, steaming, sizzling invitation engraved on an asbestos sheet sits on the floor in front of the printer."
     }
 
@@ -38,6 +42,7 @@ room aperture-lab {
 # ========================================
 item apple_lab_pc {
     visibility scenery
+    visible when missing flag status:flash-blind
     name "Apple ][+"
     aliases "pc", "console", "computer", "apple"
     desc "An ancient, 8-bit Apple ][+ computer complete with monochrome CRT character display, and inexplicably hard-wired into the [[i]]bleeding edge[[/i]] plasma-jet printer nearby."
@@ -62,6 +67,7 @@ item lab_vault_door {
 
 item magnifying_glass {
     name "Magnifying Glass"
+    visible when missing flag status:flash-blind
     desc "Small gets big -- it's a rig."
     movability free
     location room aperture-lab
@@ -70,6 +76,7 @@ item magnifying_glass {
 
 item lab_printer {
     name "Initech PlasmaJet 2 Printer"
+    visible when missing flag status:flash-blind
     aliases "status", "screen", "hospitality generator"
     desc "A sleek, off white printer, with a blinking LED near a small status screen. This model is known for its high precision, micrometer-level resolution, and ability to ignite almost any printing surface."
     movability fixed "It is mounted to the lab bench."

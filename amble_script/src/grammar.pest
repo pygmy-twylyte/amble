@@ -211,12 +211,12 @@ ingest_mode      = { "eat" | "drink" | "inhale" }
 
 block = { "{" ~ stmt_block ~ "}" }
 
-// Allow multiple if-blocks and/or plain do statements at top-level
-stmt_block = { (if_block | do_stmt | run_stmt)+ }
-
-if_block = { "if" ~ cond ~ block_inner }
-
-block_inner = { "{" ~ (do_stmt | run_stmt)+ ~ "}" }
+// Allow nested if/else statements as well as plain do/run statements.
+stmt_block = { stmt_item+ }
+stmt_item = { if_block | do_stmt | run_stmt }
+if_block = { "if" ~ cond ~ block_inner ~ else_clause? }
+else_clause = { "else" ~ (if_block | block_inner) }
+block_inner = { "{" ~ stmt_item+ ~ "}" }
 
 priority_clause = { "priority" ~ number }
 do_stmt         = { "do" ~ priority_clause? ~ do_action }

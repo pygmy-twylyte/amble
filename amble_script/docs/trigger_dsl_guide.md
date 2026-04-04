@@ -84,6 +84,18 @@ if radio_ready { … }
 if in rooms lobby,restaurant { … }
 ```
 
+Conditional branches may also include `else` clauses:
+
+```amble
+if has flag quest-started {
+  do show "The machine hums to life."
+} else if has item toolkit {
+  do show "You can probably fix this manually."
+} else {
+  do show "Nothing happens."
+}
+```
+
 ## Actions (`do …`)
 
 Player feedback and flags:
@@ -293,7 +305,8 @@ If you find yourself repeating a list of rooms for ambients, declare a `set` onc
 
 You can have multiple top‑level `if { … }` blocks in a single trigger, plus plain `do …` lines not wrapped by an `if`.
 
-- Each `if` block compiles to its own trigger sharing the same `when` event; it carries only that block’s conditions and actions.
+- A standalone top-level `if { … }` block with no `else` compiles to its own trigger sharing the same `when` event; it carries only that block’s conditions and actions.
+- An `if / else if / else` chain stays inside the trigger body as an ordered conditional action, so only the first matching branch runs.
 - Plain `do …` lines outside any `if` compile to an additional unconditional trigger for the same event.
 - If several blocks’ conditions are true on the same turn, each corresponding trigger can fire.
 - `only once` applies to all triggers produced from the parent.
@@ -308,4 +321,4 @@ trigger "Arrival" when enter room lab {
 }
 ```
 
-Compiles to three triggers with the same name and event: one for each `if` and one unconditional.
+Compiles to three triggers with the same name and event: one for each standalone `if` and one unconditional.

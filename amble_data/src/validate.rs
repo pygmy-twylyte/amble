@@ -562,10 +562,19 @@ fn validate_action(action: &ActionDef, ids: &IdSets<'_>, errors: &mut Vec<Valida
                 }
             }
         },
-        ActionKind::Conditional { condition, actions } => {
+        ActionKind::Conditional {
+            condition,
+            actions,
+            false_actions,
+        } => {
             validate_condition_expr(condition, ids, errors, context);
             for action in actions {
                 validate_action(action, ids, errors, context);
+            }
+            if let Some(false_actions) = false_actions {
+                for action in false_actions {
+                    validate_action(action, ids, errors, context);
+                }
             }
         },
         ActionKind::ScheduleIn { actions, .. } | ActionKind::ScheduleOn { actions, .. } => {

@@ -157,6 +157,8 @@ when act break on item security_locker {
         do spawn item initech_mug in current room
         do show "With a few hefty blows, you manage to break the lock haft completely off of the security locker -- well after a few misses had already caved in the lid and destroyed it, but you were having fun. It looks like you broke a couple of the items that were inside in the process."
         do add wedge "PA Announcement: 'Someone broke into the security locker on the dock. Mind your belongings and report any suspicious activity to security.'" width 1 spinner ambientInterior
+    } else {
+        do show "Despite already having unlocked the crate, you bash it a few times for emphasis."
     }
 }
 
@@ -170,6 +172,8 @@ when act burn on item security_locker {
         do spawn item initech_mug in current room
         do show "WHOOOOOMP! The locker, which you now realize may have been made from the solid magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking your eyebrows with it. It looks like *some* of the items inside weren't flammable."
         do add wedge "PA Announcement: 'Someone used an Arson-Aid to torch the security locker at the loading dock. An investigation is underway. Report anyone with scorched clothes or missing eyebrows to security.'" width 1 spinner ambientInterior
+    } else {
+        do show "Strange… it seems like this crate should burn easily, but somehow it doesn't."
     }
 }
 

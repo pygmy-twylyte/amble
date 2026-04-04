@@ -22,14 +22,14 @@ item messiah_kit {
 }
 
 item messiah_gourd {
-    name "Gourd"
+    name "The Messiah's Gourd"
     desc "A grapefruit-sized, tan gourd. It rattles a little when you shake it."
     movability free
     location chest messiah_kit
 }
 
 item messiah_shoe {
-    name "Shoe"
+    name "The Messiah's Shoe"
     desc "A single, worn leather sandal of untold age. [[i]]Something appears to be scratched into the sole.[[/i]]"
     movability free
     location chest messiah_kit
@@ -51,25 +51,48 @@ when open item messiah_kit {
 }
 
 let cond joined_any_sect = any( has flag sect-shoe, has flag sect-gourd )
+let cond no_sect_joined = all( missing flag sect-shoe, missing flag sect-gourd )
 
-trigger "Follower of the Shoe" only once
-note "locks player into the shoe sect"
-when take messiah_shoe from item messiah_kit {
-    do show "[[hl]]You are now a follower of the [[item]]Shoe[[/item]].[[/hl]]"
-    do set item movability messiah_gourd fixed "You are already a follower of the Shoe. Your faith in the Sanctified Sandal shall not be shaken."
-    do award points 5 reason "Became a Follower of the Shoe"
-    do add flag sect-shoe
-    do add wedge "Far above, the trees seem to whisper: \"Yesss. Yes! The Shoe is the Way.\" " width 1 spinner ambientWoodland
+let actions warn_player_about_sects = {
+    do show "[[bright-red]][[b]][[i]]…before fully taking it into your grasp, you have a moment of doubt…[[/i]][[/b]][[/bright-red]]"
+    do show "Is your faith [[u]]unshakable[[/u]]? Once you take either the [[item]]Shoe[[/item]] or the [[item]]Gourd[[/item]], there is no going back."
+    do add flag warned-about-sects
 }
 
-trigger "Follower of the Gourd" only once
+trigger "Follower of the Shoe"
+note "locks player into the shoe sect"
+when take messiah_shoe from item messiah_kit {
+    if missing flag warned-about-sects {
+        run warn_player_about_sects
+        do despawn item messiah_shoe
+        do spawn item messiah_shoe in container messiah_kit
+    } else {
+        if no_sect_joined {
+            do show "[[hl]]You are now a follower of the [[item]]Shoe[[/item]].[[/hl]]"
+            do set item movability messiah_gourd fixed "You are already a follower of the Shoe. Your faith in the Sanctified Sandal shall not be shaken."
+            do award points 5 reason "Became a Follower of the Shoe"
+            do add flag sect-shoe
+            do add wedge "Far above, the trees seem to whisper: \"Yesss. Yes! The Shoe is the Way.\" " width 1 spinner ambientWoodland
+        }
+    }
+}
+
+trigger "Follower of the Gourd"
 note "locks player into the gourd sect"
 when take messiah_gourd from item messiah_kit {
-    do show "[[b]]You are now a follower of the [[item]]Gourd[[/item]].[[/b]]"
-    do set item movability messiah_shoe fixed "You are already a follower of the Gourd. Your faith in the Vaunted Vegetable shall not be shaken."
-    do award points 5 reason "Became a Follower of the Gourd"
-    do add flag sect-gourd
-    do add wedge "Far above, the trees seem to whisper: \"Yesss. Yes! The Gourd is the Way.\" " width 1 spinner ambientWoodland
+    if missing flag warned-about-sects {
+        run warn_player_about_sects
+        do despawn item messiah_gourd
+        do spawn item messiah_gourd in container messiah_kit
+    } else {
+        if no_sect_joined {
+            do show "[[b]]You are now a follower of the [[item]]Gourd[[/item]].[[/b]]"
+            do set item movability messiah_shoe fixed "You are already a follower of the Gourd. Your faith in the Vaunted Vegetable shall not be shaken."
+            do award points 5 reason "Became a Follower of the Gourd"
+            do add flag sect-gourd
+            do add wedge "Far above, the trees seem to whisper: \"Yesss. Yes! The Gourd is the Way.\" " width 1 spinner ambientWoodland
+        }
+    }
 }
 
 #
@@ -195,6 +218,7 @@ item gourd_propaganda {
 
 item gourd_meeting_note {
     name "Gourder Meeting Memo"
+    aliases "handwritten note"
     visible when has flag sect-gourd
     desc "A handwritten memo to the [[i]][[b]]Followers of the Gourd[[/b]][[/i]] found tacked to the St. Alfonzo's sign."
     location room parish-landing

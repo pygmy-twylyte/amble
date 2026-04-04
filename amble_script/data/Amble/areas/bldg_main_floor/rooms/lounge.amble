@@ -6,9 +6,9 @@ room lounge {
     scenery "Magazines" desc "Editions include a [[i]]Highlights[[/i]] magazine with all of the puzzles completed (incorrectly) and a [[i]]National Geographic[[/i]] from 1983."
     scenery "Jigsaw Puzzle" desc "Partially assembled, it the [[item]]jigsaw puzzle[[/item]] appears to be a depiction of a Borg cube."
 
-    overlay if item lebowski_rug {
-        present "An ornate, brick red rug lies in the center of the room and somehow -- really ties the room together."
-        absent "The trap door opened in the floor reveals a ladder down to a hidden room below."
+    overlay if flag found-portal-room {
+        set "With the rug out of the way, the trap door found underneath opens to reveal a ladder down to a [[room]]hidden room[[/room]] below."
+        unset "An ornate, brick red [[item]]rug[[/item]] lies in the center of the room and somehow -- really ties the room together, man."
     }
 
     overlay if flag set lab-fire-raging {
@@ -51,6 +51,8 @@ item lebowski_rug {
     movability free
     location room lounge
     requires ignite to burn
+    ability Read
+    text "[[box]]Property of Maude Lebowski[[/box]]"
 }
 
 item coffee_machine {
@@ -96,7 +98,7 @@ item cooled_coffee {
 
 trigger "Coffee Cools Down" only once
 when take hot_coffee {
-    do schedule in 7 note "coffee cooled" {
+    do schedule in 10 note "coffee cooled" {
         do replace item hot_coffee with cooled_coffee
     }
 }

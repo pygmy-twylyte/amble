@@ -70,6 +70,82 @@
     ),
     rooms: [
         (
+            id: "antechamber",
+            name: "Antechamber",
+            desc: "A circular waiting room lies beyond the Stargate, laid out with the solemn grandeur of a temple and the administrative cheer of a municipal licensing office. The floor is an intricate mosaic of sandals, vines, halos and what may simply be decorative punctuation. Two nearly identical doors stand opposite the gate, each trying very hard to look like the only reasonable choice a civilized soul could make. Between them, a brass [[item]]Directory Plaque[[/item]] and an overstuffed [[item]]Suggestion Box[[/item]] quietly imply that sectarian certainty requires a surprising amount of paperwork.",
+            visited: false,
+            exits: [
+                (
+                    direction: "through the stargate",
+                    to: "stargate-room",
+                    hidden: false,
+                    locked: false,
+                    required_flags: [],
+                    required_items: [],
+                    barred_message: None,
+                ),
+                (
+                    direction: "through the sandal-marked door",
+                    to: "shoe-shrine",
+                    hidden: false,
+                    locked: false,
+                    required_flags: [
+                        "sect-shoe",
+                    ],
+                    required_items: [],
+                    barred_message: Some("The sandal-marked door refuses to admit you. A tiny brass voice grille politely explains that access is restricted to the properly shod in spirit."),
+                ),
+                (
+                    direction: "through the gourd-marked door",
+                    to: "gourd-shrine",
+                    hidden: false,
+                    locked: false,
+                    required_flags: [
+                        "sect-gourd",
+                    ],
+                    required_items: [],
+                    barred_message: Some("The gourd-marked door remains shut. Somewhere within the woodwork, a mellow but disapproving silence suggests you lack sufficient cucurbit conviction."),
+                ),
+            ],
+            overlays: [
+                (
+                    conditions: [
+                        flagSet(
+                            flag: "sect-shoe",
+                        ),
+                    ],
+                    text: "The sandal-marked door seems calm, welcoming, and faintly superior. The gourd-marked door somehow manages to look judgmental despite being a vegetable-themed door.",
+                ),
+                (
+                    conditions: [
+                        flagSet(
+                            flag: "sect-gourd",
+                        ),
+                    ],
+                    text: "The gourd-marked door radiates a mellow autumnal confidence. The sandal-marked door has the air of something that would correct your posture while condemning your soul.",
+                ),
+            ],
+            scenery: [
+                (
+                    name: "Mosaic Floor",
+                    desc: Some("Thousands of tiny tiles depict worshippers arguing over footwear, produce, and the exact angle at which enlightenment ought to be shelved."),
+                ),
+                (
+                    name: "Twin Doors",
+                    desc: Some("One bears a carved sandal haloed in gold leaf; the other bears a plump gourd wreathed in vines. Each has the smug air of a doctrine that has won an argument with itself."),
+                ),
+                (
+                    name: "Ceiling Dome",
+                    desc: Some("The painted dome above shows a starry sky in which several constellations have been suspiciously redrawn to resemble either a sandal or a gourd, depending on where you stand and how willing you are to be persuaded."),
+                ),
+                (
+                    name: "Benches",
+                    desc: Some("Two padded benches line the wall beneath framed notices about reverence, queueing, and the inadvisability of starting comparative theology before lunch."),
+                ),
+            ],
+            scenery_default: None,
+        ),
+        (
             id: "aperture-lab",
             name: "Aperture Science Laboratory",
             desc: "The unnaturally white walls, floor, ceiling, even the air here feels clinical and overexposed. Everything hums at a frequency designed to encourage strict compliance. A few [[bright-red]]fire extinguishers[[/bright-red]] are scattered about, though there isn\'t any obvious source of ignition around. A very dated computer console glows green on a table beside a [[i]]highly[[/i]] over-engineered printer labeled [[hl]][[b]]Aperture|Amble Hospitality Generator[[/b]][[/hl]]. Across the room, a [[item]]vault-like door[[/item]] all but [[i]]demands[[/i]] attention.",
@@ -137,6 +213,9 @@
                     conditions: [
                         itemPresent(
                             item: "invitation",
+                        ),
+                        flagUnset(
+                            flag: "status:flash-blind",
                         ),
                     ],
                     text: "A glowing, steaming, sizzling invitation engraved on an asbestos sheet sits on the floor in front of the printer.",
@@ -283,6 +362,43 @@
             exits: [],
             overlays: [],
             scenery: [],
+            scenery_default: None,
+        ),
+        (
+            id: "gourd-shrine",
+            name: "Shrine of the Holy Gourd",
+            desc: "This chapel glows with warm amber light filtered through bottle-green glass, giving everything the reverent complexion of very expensive soup. Vines curl around fluted pillars, seed motifs repeat across the floor, and at the far end a circular [[item]]Harvest Altar[[/item]] stands beneath a domed canopy. A velvet-lined recess at its center is being guarded by atmosphere alone, which in this room seems to consider itself armed. The air smells of beeswax, autumn leaves, and the smug serenity of people who believe a vegetable solved the major philosophical questions decades ago. Near the entry, a [[item]]hymn board[[//item]] spells out the plan for the day\'s worship while an [[item]]abacus[[/item]] stands ready to count the devoted.",
+            visited: false,
+            exits: [
+                (
+                    direction: "leave the shrine",
+                    to: "antechamber",
+                    hidden: false,
+                    locked: false,
+                    required_flags: [],
+                    required_items: [],
+                    barred_message: None,
+                ),
+            ],
+            overlays: [],
+            scenery: [
+                (
+                    name: "Stained Glass",
+                    desc: Some("Panels of heroic gourds float among stars, feed the multitudes, and in one especially ambitious scene appear to invent both ethics and seasonal decor."),
+                ),
+                (
+                    name: "Seed Mosaics",
+                    desc: Some("Tiny polished seeds have been pressed into the floor in elaborate spirals. They form sacred symbols, or possibly a diagram explaining how to make a very complicated tart."),
+                ),
+                (
+                    name: "Pews",
+                    desc: Some("Low benches arc toward the altar in a gentle crescent. Each kneeler is stuffed with something pleasantly springy that you suspect is either moss or doctrine."),
+                ),
+                (
+                    name: "Vines",
+                    desc: Some("Decorative vines wind up the pillars in careful symmetry. They are either carved wood or very disciplined plants."),
+                ),
+            ],
             scenery_default: None,
         ),
         (
@@ -494,19 +610,19 @@
             overlays: [
                 (
                     conditions: [
-                        itemPresent(
-                            item: "lebowski_rug",
+                        flagSet(
+                            flag: "found-portal-room",
                         ),
                     ],
-                    text: "An ornate, brick red rug lies in the center of the room and somehow -- really ties the room together.",
+                    text: "With the rug out of the way, the trap door found underneath opens to reveal a ladder down to a [[room]]hidden room[[/room]] below.",
                 ),
                 (
                     conditions: [
-                        itemAbsent(
-                            item: "lebowski_rug",
+                        flagUnset(
+                            flag: "found-portal-room",
                         ),
                     ],
-                    text: "The trap door opened in the floor reveals a ladder down to a hidden room below.",
+                    text: "An ornate, brick red [[item]]rug[[/item]] lies in the center of the room and somehow -- really ties the room together, man.",
                 ),
                 (
                     conditions: [
@@ -643,11 +759,11 @@
         (
             id: "main-lobby",
             name: "Main Lobby",
-            desc: "The lobby is clinically clean in a way that feels suspicious. A slightly humming vending machine stands beside an empty podium. Softly glowing script over an archway on the far wall reads \'Elevator Access\'. To one side, there is floor-to-ceiling frosted glass with an etched door at the farthest end from the entrance. Opposite that, the smell of searing beef wafts from a broad entryway flanked by a wobbly sign.",
+            desc: "The lobby is clinically clean in a way that feels suspicious. A slightly humming vending machine stands beside an empty podium. Softly glowing script over an archway on the far wall reads [[i]][[blue]]Lift Access[[/blue]][[/i]] where a few short steps lead up to an elevator bank. To one side, there is floor-to-ceiling frosted glass with an etched door at the farthest end from the entrance. Opposite that, the smell of searing beef wafts from a broad entryway flanked by a wobbly sign.",
             visited: false,
             exits: [
                 (
-                    direction: "elevator access",
+                    direction: "lift access",
                     to: "lift-bank-main",
                     hidden: false,
                     locked: false,
@@ -674,7 +790,7 @@
                     barred_message: None,
                 ),
                 (
-                    direction: "etched door",
+                    direction: "frosted glass door",
                     to: "amble-office",
                     hidden: false,
                     locked: false,
@@ -751,7 +867,7 @@
                     desc: Some("A typical wooden podium used to welcome incoming visitors, and just as typically vacant. It bears an emblem that reads: [[hl]][[i]]Welcome, Candidate[[/i][[/hl]]."),
                 ),
                 (
-                    name: "Etched Door",
+                    name: "Frosted Glass Door",
                     desc: Some("A frosted glass office door, etched with: [[box:MAIN OFFICE]]Amble Adventures[[/box]]"),
                 ),
             ],
@@ -1057,6 +1173,43 @@
             scenery_default: None,
         ),
         (
+            id: "shoe-shrine",
+            name: "Shrine of the Holy Shoe",
+            desc: "A long, narrow chapel of polished oak and stern symmetry stretches before you, lit by stained glass windows that cast sandal-shaped colors across the floor. A [[item]]liturgy board[[/item]] announces the day\'s plan near the entryway, with the obligatory [[item]]donation box[[/item]] mounted below it. At the far end, on a raised [[item]]Sandal Altar[[/item]], a velvet-lined recess sits at attention beneath a cone of buttery light. Rows of pews face forward with the crisp obedience of well-behaved feet. The air carries beeswax, old leather, and the faint, intoxicating scent of absolute certainty rubbed to a shine.",
+            visited: false,
+            exits: [
+                (
+                    direction: "leave the shrine",
+                    to: "antechamber",
+                    hidden: false,
+                    locked: false,
+                    required_flags: [],
+                    required_items: [],
+                    barred_message: None,
+                ),
+            ],
+            overlays: [],
+            scenery: [
+                (
+                    name: "Stained Glass",
+                    desc: Some("The windows depict the Sacred Sandal performing small but decisive miracles: crossing deserts, toppling heretics, and in one panel apparently inventing the idea of [[b]]left[[/b]] and [[b]]right[[/b]]."),
+                ),
+                (
+                    name: "Pews",
+                    desc: Some("Straight-backed pews stand in impeccable rows. The kneelers are shaped with orthopedic conviction."),
+                ),
+                (
+                    name: "Polished Floor",
+                    desc: Some("The boards gleam so brightly you can see your reflection looking slightly more devout than usual."),
+                ),
+                (
+                    name: "Censers",
+                    desc: Some("Brass censers hang from the rafters, swinging very slightly and releasing a fragrance halfway between incense and a cobbler\'s workshop."),
+                ),
+            ],
+            scenery_default: None,
+        ),
+        (
             id: "stargate-room",
             name: "Stargate Room",
             desc: "A hangar-size concrete room, connected to the Aperture lab through a huge, round vault door. Little light reaches the darkened corners of the room, but at its center stands a round control console in a crossfire of floodligts and ringed with [[b]]strange symbols[[/b]]. A giant metallic ring festooned with similar symbols stands on end at the end of the room.\n\nThere are three large buttons in the center of the console:",
@@ -1120,6 +1273,33 @@
                         ),
                     ],
                     text: "On the right, shaped like a fork:       [[red]][[dimmed]]sunken[[/dimmed]][[/red]]",
+                ),
+                (
+                    conditions: [
+                        flagSet(
+                            flag: "sect-gourd",
+                        ),
+                    ],
+                    text: "Underneath, shaped like a fish:         [[green]]RAISED[[/green]]",
+                ),
+                (
+                    conditions: [
+                        flagSet(
+                            flag: "sect-shoe",
+                        ),
+                    ],
+                    text: "Underneath, shaped like a fish:         [[green]]RAISED[[/green]]",
+                ),
+                (
+                    conditions: [
+                        flagUnset(
+                            flag: "sect-gourd",
+                        ),
+                        flagUnset(
+                            flag: "sect-shoe",
+                        ),
+                    ],
+                    text: "Underneath, shaped like a fish:         [[red]][[dimmed]]sunken[[/dimmed]][[/red]]",
                 ),
             ],
             scenery: [
@@ -2928,8 +3108,8 @@
         ),
         (
             id: "gonk_family_photo",
-            name: "Gonk\'s Family Photo",
-            desc: "A slightly scorched photograph of the gonk droid with its family: a PC power supply, a D-cell, and a set of adorable AAA triplets.",
+            name: "Fading Photograph",
+            desc: "A slightly scorched and faded photograph depicts the gonk droid with its family: a PC power supply, a D-cell, and a set of adorable AAA triplets.",
             movability: free,
             container_state: None,
             location: Npc("gonk_droid"),
@@ -2990,7 +3170,9 @@
             container_state: None,
             location: Nowhere,
             visibility: listed,
-            visible_when: None,
+            visible_when: Some(Pred(missingFlag(
+                flag: "status:flash-blind",
+            ))),
             aliases: [],
             abilities: [
                 read,
@@ -3024,7 +3206,9 @@
             container_state: None,
             location: Nowhere,
             visibility: listed,
-            visible_when: None,
+            visible_when: Some(Pred(missingFlag(
+                flag: "status:flash-blind",
+            ))),
             aliases: [],
             abilities: [
                 read,
@@ -3033,6 +3217,25 @@
                 handle: insulate,
             },
             text: Some("Candidate #2112-42:\nYou are cordially invited to complete your evaluation and induction. Please present this invitation at the Amble Adventures office immediately upon arrival."),
+            consumable: None,
+        ),
+        (
+            id: "purple_vision_blob",
+            name: "Scintillating Purple Blob",
+            desc: "A pretty violet blob flashed into your central vision by the PlasmaJet printer.",
+            movability: fixed(
+                reason: "It\'s an optical illusion. Hopefully temporary.",
+            ),
+            container_state: None,
+            location: Room("aperture-lab"),
+            visibility: listed,
+            visible_when: Some(Pred(hasFlag(
+                flag: "status:flash-blind",
+            ))),
+            aliases: [],
+            abilities: [],
+            interaction_requires: {},
+            text: None,
             consumable: None,
         ),
         (
@@ -3070,6 +3273,49 @@
             consumable: None,
         ),
         (
+            id: "sect_directory_plaque",
+            name: "Directory Plaque",
+            desc: "A polished brass plaque mounted between the two inner doors.",
+            movability: fixed(
+                reason: "It is bolted to the wall with ecumenical firmness.",
+            ),
+            container_state: None,
+            location: Room("antechamber"),
+            visibility: scenery,
+            visible_when: None,
+            aliases: [
+                "plaque",
+                "directory",
+            ],
+            abilities: [
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("[[box:WAYFINDING FOR THE DEVOUT]]\nLeft of Certainty ........ Shrine of the Holy Shoe\nRight of Certainty ....... Shrine of the Holy Gourd\nStraight Back ............ Stargate / Unscheduled Transcendence\n\n[[center]][[i]]Please keep doctrinal disputes below a resonant chanting level.[[/i]][[/center]]"),
+            consumable: None,
+        ),
+        (
+            id: "schism_suggestion_box",
+            name: "Suggestion Box",
+            desc: "An oak suggestion box with two slots labeled [[i]]Constructive Feedback[[/i]] and [[i]]Vindictive Denunciation[[/i]]. The second slot is much more worn.",
+            movability: fixed(
+                reason: "It is chained to a pedestal, presumably after an incident.",
+            ),
+            container_state: None,
+            location: Room("antechamber"),
+            visibility: scenery,
+            visible_when: None,
+            aliases: [
+                "box",
+            ],
+            abilities: [
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("[[box:SUGGESTION BOX GUIDELINES]]\n1. Keep notes brief, legible, and only moderately anathematizing.\n2. Do not submit produce.\n3. Do not submit footwear.\n4. Do not submit produce about footwear.\n5. Complaints concerning the nonbeliever observation room will be accepted once reality catches up."),
+            consumable: None,
+        ),
+        (
             id: "apple_lab_pc",
             name: "Apple ][+",
             desc: "An ancient, 8-bit Apple ][+ computer complete with monochrome CRT character display, and inexplicably hard-wired into the [[i]]bleeding edge[[/i]] plasma-jet printer nearby.",
@@ -3079,7 +3325,9 @@
             container_state: None,
             location: Room("aperture-lab"),
             visibility: scenery,
-            visible_when: None,
+            visible_when: Some(Pred(missingFlag(
+                flag: "status:flash-blind",
+            ))),
             aliases: [
                 "pc",
                 "console",
@@ -3120,7 +3368,9 @@
             container_state: None,
             location: Room("aperture-lab"),
             visibility: listed,
-            visible_when: None,
+            visible_when: Some(Pred(missingFlag(
+                flag: "status:flash-blind",
+            ))),
             aliases: [
                 "magnifier",
             ],
@@ -3139,7 +3389,9 @@
             container_state: Some(open),
             location: Room("aperture-lab"),
             visibility: listed,
-            visible_when: None,
+            visible_when: Some(Pred(missingFlag(
+                flag: "status:flash-blind",
+            ))),
             aliases: [
                 "status",
                 "screen",
@@ -3248,6 +3500,66 @@
             consumable: None,
         ),
         (
+            id: "gourd_hymn_board",
+            name: "Hymn Board",
+            desc: "A carved wooden board displays the order of service in tidy movable letters.",
+            movability: fixed(
+                reason: "It is mounted securely to the wall.",
+            ),
+            container_state: None,
+            location: Room("gourd-shrine"),
+            visibility: scenery,
+            visible_when: None,
+            aliases: [
+                "board",
+                "hymn board",
+            ],
+            abilities: [
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("[[box:ORDER OF MELLOW EXULTATION]]\nOpening Chant ............ O Round and Plentiful One\nResponsive Reading ....... Seeds of Wisdom, Verses 4-12\nMeditation ............... On the Folly of Single Sandals\nClosing Hymn ............. Abide With Gourd\n\n[[center]][[i]]Latecomers may join in at whatever verse feels spiritually seasonal.[[/i]][[/center]]"),
+            consumable: None,
+        ),
+        (
+            id: "harvest_altar",
+            name: "Harvest Altar",
+            desc: "A circular altar of polished wood and green stone. Its center holds a velvet-lined niche clearly reserved for an Object of Great Significance, or at least an Object prepared to put up with a great deal of incense.",
+            movability: fixed(
+                reason: "It appears to weigh slightly more than piety.",
+            ),
+            container_state: None,
+            location: Room("gourd-shrine"),
+            visibility: scenery,
+            visible_when: None,
+            aliases: [
+                "altar",
+            ],
+            abilities: [],
+            interaction_requires: {},
+            text: None,
+            consumable: None,
+        ),
+        (
+            id: "seed_abacus",
+            name: "Seed Abacus",
+            desc: "A brass frame strung with lacquered seeds. It seems to be used for counting prayers, blessings, or casserole attendees.",
+            movability: fixed(
+                reason: "It is attached to a stand that looks rooted in theology.",
+            ),
+            container_state: None,
+            location: Room("gourd-shrine"),
+            visibility: scenery,
+            visible_when: None,
+            aliases: [
+                "abacus",
+            ],
+            abilities: [],
+            interaction_requires: {},
+            text: None,
+            consumable: None,
+        ),
+        (
             id: "aa_3_button_main",
             name: "[AA-3] Button (Unlit)",
             desc: "The button to send the elevator to sublevel AA-3, currently unlit and disabled.",
@@ -3299,11 +3611,13 @@
             visibility: scenery,
             visible_when: None,
             aliases: [],
-            abilities: [],
+            abilities: [
+                read,
+            ],
             interaction_requires: {
                 burn: ignite,
             },
-            text: None,
+            text: Some("[[box]]Property of Maude Lebowski[[/box]]"),
             consumable: None,
         ),
         (
@@ -3639,6 +3953,87 @@
             ],
             interaction_requires: {},
             text: Some("    Zaphod B............................ happy hour\n    Marvin (ugh, not again)............. teatime\n    Candidate (#2112-42) ............... (overdue)\n    Jenkins the Time Ferret............. (last Thursday)\n\nThere\'s a smudged doodle of a blinding sun and a stylish pair of sunglasses next to the list for patio seating."),
+            consumable: None,
+        ),
+        (
+            id: "shoe_liturgy_board",
+            name: "Liturgy Board",
+            desc: "A mahogany board lists the day\'s readings and hymns in severe gold letters.",
+            movability: fixed(
+                reason: "It is affixed with screws that look doctrinally approved.",
+            ),
+            container_state: None,
+            location: Room("shoe-shrine"),
+            visibility: scenery,
+            visible_when: None,
+            aliases: [
+                "board",
+                "liturgy board",
+                "hymn board",
+            ],
+            abilities: [
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("[[box:ORDER OF SOLEMN OBSERVANCE]]\nOpening Processional ..... Tread Lightly, Yet With Conviction\nReading .................. The Book of Arch Support, Chapter 3\nHomily ................... On the Error of Overvaluing Produce\nClosing Hymn ............. Guide Me, O Thou Great Sandal\n\n[[center]][[i]]Please keep both feet pointed toward the altar during moments of revelation.[[/i]][[/center]]"),
+            consumable: None,
+        ),
+        (
+            id: "sandal_altar",
+            name: "Sandal Altar",
+            desc: "A lacquered wooden altar trimmed in brass. At its center rests a velvet-lined recess shaped for an article of singular sacred importance, patiently awaiting either revelation or a careful dusting.",
+            movability: fixed(
+                reason: "It is solid, immovable, and plainly in favor of arch support.",
+            ),
+            container_state: None,
+            location: Room("shoe-shrine"),
+            visibility: scenery,
+            visible_when: None,
+            aliases: [
+                "altar",
+            ],
+            abilities: [],
+            interaction_requires: {},
+            text: None,
+            consumable: None,
+        ),
+        (
+            id: "heel_the_poor_fund",
+            name: "Heel the Poor Fund",
+            desc: "A brass donation box polished to missionary brightness. The slot is worn smooth by generations of charitable guilt.",
+            movability: fixed(
+                reason: "It is locked, weighted, and probably insured.",
+            ),
+            container_state: None,
+            location: Room("shoe-shrine"),
+            visibility: scenery,
+            visible_when: None,
+            aliases: [
+                "donation box",
+                "fund",
+            ],
+            abilities: [
+                read,
+            ],
+            interaction_requires: {},
+            text: Some("[[box]]HEEL THE POOR[[/box]][[center]][[i]]Loose change gladly accepted. Tight change accepted with gentle disappointment.[[/i]][[/center]]"),
+            consumable: None,
+        ),
+        (
+            id: "sect_gate_button",
+            name: "[ Fish ]",
+            desc: "A stylized, fish-shaped icon adorns this button. It\'s a little smaller than the other buttons, placed quietly out of the way, and seems almost like the designer of the Stargate control didn\'t want to include it at all.",
+            movability: fixed(
+                reason: "It\'s part of the Stargate control console.",
+            ),
+            container_state: None,
+            location: Room("stargate-room"),
+            visibility: listed,
+            visible_when: None,
+            aliases: [],
+            abilities: [],
+            interaction_requires: {},
+            text: None,
             consumable: None,
         ),
         (
@@ -5015,7 +5410,7 @@
         ),
         (
             id: "messiah_gourd",
-            name: "Gourd",
+            name: "The Messiah\'s Gourd",
             desc: "A grapefruit-sized, tan gourd. It rattles a little when you shake it.",
             movability: free,
             container_state: None,
@@ -5030,7 +5425,7 @@
         ),
         (
             id: "messiah_shoe",
-            name: "Shoe",
+            name: "The Messiah\'s Shoe",
             desc: "A single, worn leather sandal of untold age. [[i]]Something appears to be scratched into the sole.[[/i]]",
             movability: free,
             container_state: None,
@@ -5141,7 +5536,9 @@
             visible_when: Some(Pred(hasFlag(
                 flag: "sect-gourd",
             ))),
-            aliases: [],
+            aliases: [
+                "handwritten note",
+            ],
             abilities: [
                 read,
             ],
@@ -5446,20 +5843,20 @@
             id: "demerzel",
             name: "Demerzel",
             desc: "A sharply dressed android sitting at the reception desk.\n\nDemerzel is a positronic android, and has been continuously online for thousands of years -- working at reception desks going back as far as Pharoah Ramses II. At her position at Amble Adentures, she also serves as a firewall, preventing any clearly unworthy Candidates from making any progress through the system.",
-            max_hp: 20,
+            max_hp: 200,
             location: Room("amble-office"),
-            state: normal,
+            state: custom("unhelpful"),
             dialogue: {
-                bored: [
-                    "Impressive work, getting the keycard. Many of our previous applicants have died in the attempt. Very promising! The evaluator will be pleased. Strong lateral thinking and slight psychosis are essential for such a dangerous position, as I\'m sure you are aware.",
-                    "You can now use the elevator to find room AA-3B for the next stage of your initiation.",
-                ],
-                happy: [
+                custom("helpful"): [
                     "Terribly sorry to report that we are in a bit of trouble here today. The last candidate was inconsiderate enough to take the elevator access card into the poetry panic room just before he melted, and we can\'t retrieve it.",
                     "The elevator keycard last pinged our system from the Poetry Panic Room, but it is sealed, and concealed behind the whiteboard. Only the Poetry Performer Unit can grant access.",
                     "Sorry I didn\'t immediately recognize that you are a Candidate, but most of your competitors have been blurry, furry, or out of phase.",
                 ],
-                normal: [
+                custom("impressed"): [
+                    "Impressive work, getting the keycard. Many of our previous applicants have died in the attempt. Very promising! The evaluator will be pleased. Strong lateral thinking and slight psychosis are essential for such a dangerous position, as I\'m sure you are aware.",
+                    "You can now use the elevator to find room AA-3B for the next stage of your initiation.",
+                ],
+                custom("unhelpful"): [
                     "(She rolls her eyes.) Please wait quietly out of the way. There are people with invitations who should be assisted first.",
                     "(She simply ignores you.)",
                     "(She continues doing her job -- which appears to be pointedly ignoring anyone without an invitation.)",
@@ -6771,7 +7168,7 @@
         ),
         (
             name: "[Aperture-Lab]",
-            note: None,
+            note: Some("barehanded \'take\' not possible - it\'s on fire"),
             only_once: false,
             event: takeItem(
                 item: "flaming_invitation",
@@ -7059,9 +7456,53 @@
                     priority: None,
                 ),
                 (
-                    action: awardPoints(
-                        amount: 5,
-                        reason: "Traded the Initech mug for HAL\'s third module",
+                    action: conditional(
+                        condition: Pred(flagInProgress(
+                            flag: "hal-reboot",
+                        )),
+                        actions: [
+                            (
+                                action: awardPoints(
+                                    amount: 5,
+                                    reason: "Traded the Initech mug for HAL\'s third module",
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        false_actions: Some([
+                            (
+                                action: awardPoints(
+                                    amount: 5,
+                                    reason: "Traded the Initech mug for some electronic gizmo.",
+                                ),
+                                priority: None,
+                            ),
+                        ]),
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[Gonk Droid] Photo Taken",
+            note: None,
+            only_once: false,
+            event: takeFromNpc(
+                item: "gonk_family_photo",
+                npc: "gonk_droid",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "The gonk droid excitedly points out something on the photograph. Or would, if it had anything to point with.",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: npcSays(
+                        npc: "gonk_droid",
+                        quote: "Gonk! →",
                     ),
                     priority: None,
                 ),
@@ -7070,7 +7511,35 @@
         (
             name: "[Gonk Droid] Happy When Family Photo Inspected",
             note: None,
-            only_once: true,
+            only_once: false,
+            event: lookAtItem(
+                item: "gonk_family_photo",
+            ),
+            conditions: Pred(missingFlag(
+                flag: "made-gonk-proud",
+            )),
+            actions: [
+                (
+                    action: awardPoints(
+                        amount: 2,
+                        reason: "Admired the gonk droid\'s family photo",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: addFlag(
+                        flag: simple(
+                            name: "made-gonk-proud",
+                        ),
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[Gonk Droid] Happy When Family Photo Inspected",
+            note: None,
+            only_once: false,
             event: lookAtItem(
                 item: "gonk_family_photo",
             ),
@@ -7086,21 +7555,6 @@
                 (
                     action: showMessage(
                         text: "The gonk droid totters with pride as you view its family photo.",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: awardPoints(
-                        amount: 2,
-                        reason: "Admired the gonk droid\'s family photo",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: addFlag(
-                        flag: simple(
-                            name: "made-gonk-proud",
-                        ),
                     ),
                     priority: None,
                 ),
@@ -7151,7 +7605,7 @@
                 (
                     action: setNpcState(
                         npc: "demerzel",
-                        state: normal,
+                        state: custom("unhelpful"),
                     ),
                     priority: None,
                 ),
@@ -7177,7 +7631,7 @@
                 (
                     action: setNpcState(
                         npc: "demerzel",
-                        state: happy,
+                        state: custom("helpful"),
                     ),
                     priority: None,
                 ),
@@ -7223,7 +7677,7 @@
                 (
                     action: setNpcState(
                         npc: "demerzel",
-                        state: happy,
+                        state: custom("helpful"),
                     ),
                     priority: None,
                 ),
@@ -7316,85 +7770,6 @@
             ],
         ),
         (
-            name: "[HINT Radio] Find/Insert Vogon Poetry",
-            note: None,
-            only_once: true,
-            event: giveToNpc(
-                item: "invitation",
-                npc: "demerzel",
-            ),
-            conditions: All([]),
-            actions: [
-                (
-                    action: scheduleInIf(
-                        turns_ahead: 3,
-                        condition: Any([
-                            All([
-                                Pred(hasItem(
-                                    item: "hint_radio",
-                                )),
-                                Pred(hasFlag(
-                                    flag: "hint-radio-on",
-                                )),
-                                Pred(missingFlag(
-                                    flag: "panic-room-open",
-                                )),
-                                Any([
-                                    Pred(playerInRoom(
-                                        room: "amble-office",
-                                    )),
-                                    Pred(playerInRoom(
-                                        room: "vip-bathroom",
-                                    )),
-                                ]),
-                            ]),
-                            Pred(hasFlag(
-                                flag: "panic-room-open",
-                            )),
-                        ]),
-                        on_false: retryNextTurn,
-                        actions: [
-                            (
-                                action: conditional(
-                                    condition: All([
-                                        Pred(hasItem(
-                                            item: "hint_radio",
-                                        )),
-                                        Pred(hasFlag(
-                                            flag: "hint-radio-on",
-                                        )),
-                                        Pred(missingFlag(
-                                            flag: "panic-room-open",
-                                        )),
-                                        Any([
-                                            Pred(playerInRoom(
-                                                room: "amble-office",
-                                            )),
-                                            Pred(playerInRoom(
-                                                room: "vip-bathroom",
-                                            )),
-                                        ]),
-                                    ]),
-                                    actions: [
-                                        (
-                                            action: npcSays(
-                                                npc: "hint_radio_npc",
-                                                quote: "The rumor around here is that the last candidate was vaporized while sealed in the hidden Poetry Panic Room at the office, and they had the sole remaining elevator keycard with them. The Poetry Performer will panic if you try to make it perform some Vogon poetry. I\'m sure you see where this is going.",
-                                            ),
-                                            priority: None,
-                                        ),
-                                    ],
-                                ),
-                                priority: None,
-                            ),
-                        ],
-                        note: Some("poetry performer radio hint"),
-                    ),
-                    priority: None,
-                ),
-            ],
-        ),
-        (
             name: "[Poetry-Panic] Acquired Elevator Keycard",
             note: None,
             only_once: true,
@@ -7406,7 +7781,7 @@
                 (
                     action: setNpcState(
                         npc: "demerzel",
-                        state: bored,
+                        state: custom("impressed"),
                     ),
                     priority: None,
                 ),
@@ -7544,132 +7919,124 @@
             ],
         ),
         (
-            name: "[Aperture-Lab] Printer Loaded",
+            name: "[Aperture-Lab] Printer Loaded (paper)",
             note: Some("change printer display when paper inserted"),
             only_once: false,
             event: insertItemInto(
                 item: "printer_paper",
                 container: "lab_printer",
             ),
-            conditions: Pred(hasFlag(
-                flag: "got-invitation",
-            )),
+            conditions: All([]),
             actions: [
                 (
-                    action: modifyItem(
-                        item: "lab_printer",
-                        patch: (
-                            name: None,
-                            desc: None,
-                            text: Some("0 JOB(S) PENDING"),
-                            movability: None,
-                            container_state: None,
-                            remove_container_state: false,
-                            visibility: None,
-                            visible_when: None,
-                            aliases: None,
-                            add_abilities: [],
-                            remove_abilities: [],
-                        ),
+                    action: conditional(
+                        condition: Pred(hasFlag(
+                            flag: "got-invitation",
+                        )),
+                        actions: [
+                            (
+                                action: modifyItem(
+                                    item: "lab_printer",
+                                    patch: (
+                                        name: None,
+                                        desc: None,
+                                        text: Some("0 JOB(S) PENDING"),
+                                        movability: None,
+                                        container_state: None,
+                                        remove_container_state: false,
+                                        visibility: None,
+                                        visible_when: None,
+                                        aliases: None,
+                                        add_abilities: [],
+                                        remove_abilities: [],
+                                    ),
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        false_actions: Some([
+                            (
+                                action: modifyItem(
+                                    item: "lab_printer",
+                                    patch: (
+                                        name: None,
+                                        desc: None,
+                                        text: Some("1 JOB(S) PENDING"),
+                                        movability: None,
+                                        container_state: None,
+                                        remove_container_state: false,
+                                        visibility: None,
+                                        visible_when: None,
+                                        aliases: None,
+                                        add_abilities: [],
+                                        remove_abilities: [],
+                                    ),
+                                ),
+                                priority: None,
+                            ),
+                        ]),
                     ),
                     priority: None,
                 ),
             ],
         ),
         (
-            name: "[Aperture-Lab] Printer Loaded",
-            note: Some("change printer display when paper inserted"),
-            only_once: false,
-            event: insertItemInto(
-                item: "printer_paper",
-                container: "lab_printer",
-            ),
-            conditions: Pred(missingFlag(
-                flag: "got-invitation",
-            )),
-            actions: [
-                (
-                    action: modifyItem(
-                        item: "lab_printer",
-                        patch: (
-                            name: None,
-                            desc: None,
-                            text: Some("1 JOB(S) PENDING"),
-                            movability: None,
-                            container_state: None,
-                            remove_container_state: false,
-                            visibility: None,
-                            visible_when: None,
-                            aliases: None,
-                            add_abilities: [],
-                            remove_abilities: [],
-                        ),
-                    ),
-                    priority: None,
-                ),
-            ],
-        ),
-        (
-            name: "[Aperture-Lab] Printer Loaded",
+            name: "[Aperture-Lab] Printer Loaded (asbestos)",
             note: Some("change printer display when asbestos sheet inserted"),
             only_once: false,
             event: insertItemInto(
                 item: "asbestos_sheet",
                 container: "lab_printer",
             ),
-            conditions: Pred(hasFlag(
-                flag: "got-invitation",
-            )),
+            conditions: All([]),
             actions: [
                 (
-                    action: modifyItem(
-                        item: "lab_printer",
-                        patch: (
-                            name: None,
-                            desc: None,
-                            text: Some("0 JOB(S) PENDING"),
-                            movability: None,
-                            container_state: None,
-                            remove_container_state: false,
-                            visibility: None,
-                            visible_when: None,
-                            aliases: None,
-                            add_abilities: [],
-                            remove_abilities: [],
-                        ),
-                    ),
-                    priority: None,
-                ),
-            ],
-        ),
-        (
-            name: "[Aperture-Lab] Printer Loaded",
-            note: Some("change printer display when asbestos sheet inserted"),
-            only_once: false,
-            event: insertItemInto(
-                item: "asbestos_sheet",
-                container: "lab_printer",
-            ),
-            conditions: Pred(missingFlag(
-                flag: "got-invitation",
-            )),
-            actions: [
-                (
-                    action: modifyItem(
-                        item: "lab_printer",
-                        patch: (
-                            name: None,
-                            desc: None,
-                            text: Some("1 JOB(S) PENDING"),
-                            movability: None,
-                            container_state: None,
-                            remove_container_state: false,
-                            visibility: None,
-                            visible_when: None,
-                            aliases: None,
-                            add_abilities: [],
-                            remove_abilities: [],
-                        ),
+                    action: conditional(
+                        condition: Pred(hasFlag(
+                            flag: "got-invitation",
+                        )),
+                        actions: [
+                            (
+                                action: modifyItem(
+                                    item: "lab_printer",
+                                    patch: (
+                                        name: None,
+                                        desc: None,
+                                        text: Some("0 JOB(S) PENDING"),
+                                        movability: None,
+                                        container_state: None,
+                                        remove_container_state: false,
+                                        visibility: None,
+                                        visible_when: None,
+                                        aliases: None,
+                                        add_abilities: [],
+                                        remove_abilities: [],
+                                    ),
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        false_actions: Some([
+                            (
+                                action: modifyItem(
+                                    item: "lab_printer",
+                                    patch: (
+                                        name: None,
+                                        desc: None,
+                                        text: Some("1 JOB(S) PENDING"),
+                                        movability: None,
+                                        container_state: None,
+                                        remove_container_state: false,
+                                        visibility: None,
+                                        visible_when: None,
+                                        aliases: None,
+                                        add_abilities: [],
+                                        remove_abilities: [],
+                                    ),
+                                ),
+                                priority: None,
+                            ),
+                        ]),
                     ),
                     priority: None,
                 ),
@@ -7707,145 +8074,225 @@
             ],
         ),
         (
-            name: "[Aperture-Lab] Printer Burns Paper",
+            name: "[Aperture-Lab] PlasmaJet Used",
             note: None,
             only_once: false,
             event: useItem(
                 item: "lab_printer",
                 ability: turnOn,
             ),
-            conditions: Pred(containerHasItem(
-                container: "lab_printer",
-                item: "printer_paper",
-            )),
+            conditions: All([]),
             actions: [
                 (
-                    action: despawnItem(
-                        item: "printer_paper",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: addFlag(
-                        flag: simple(
-                            name: "burned-invitation",
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemInRoom(
-                        item: "flaming_invitation",
-                        room: "aperture-lab",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: scheduleIn(
-                        turns_ahead: 5,
-                        actions: [
-                            (
-                                action: replaceItem(
-                                    old_item: "flaming_invitation",
-                                    new_item: "charred_invitation_bits",
-                                ),
-                                priority: None,
-                            ),
-                        ],
-                        note: Some("invitation finishes burning"),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: addSpinnerWedge(
-                        spinner: "ambientInterior",
-                        text: "An annoyed voice on the PA: ATTENTION Staff - do NOT use regular copy paper in the lab PlasmaJet printer, or we will be shut down again -- by order of FEMA, PETA, the ATF, FBI, and our HOA.",
-                        width: 1,
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: showMessage(
-                        text: "The paper ignites in a flash, and the PlasmaJet spits a flaming document on the floor at your feet.",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: scheduleIn(
-                        turns_ahead: 2,
+                    action: conditional(
+                        condition: Pred(containerHasItem(
+                            container: "lab_printer",
+                            item: "printer_paper",
+                        )),
                         actions: [
                             (
                                 action: showMessage(
-                                    text: "A nearby smoke detector alarms briefly, the quits with an exasperated sigh when it sees you near the PlasmaJet printer, figuring you get what you deserve.",
+                                    text: "The paper ignites in an instant, and the PlasmaJet spits a flaming document on the floor at your feet.",
                                 ),
                                 priority: None,
                             ),
-                        ],
-                        note: None,
-                    ),
-                    priority: None,
-                ),
-            ],
-        ),
-        (
-            name: "[Aperture-Lab] Print Invitation on Asbestos",
-            note: None,
-            only_once: true,
-            event: useItem(
-                item: "lab_printer",
-                ability: turnOn,
-            ),
-            conditions: Pred(containerHasItem(
-                container: "lab_printer",
-                item: "asbestos_sheet",
-            )),
-            actions: [
-                (
-                    action: addFlag(
-                        flag: simple(
-                            name: "invitation-sans-ignition",
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: awardPoints(
-                        amount: 10,
-                        reason: "Printed the invitation on asbestos stock",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: despawnItem(
-                        item: "asbestos_sheet",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: showMessage(
-                        text: "The PlasmaJet emits a blinding flash of light, leaving a printer-shaped purple blob in your visual field and blinding you for a few moments.",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: scheduleIn(
-                        turns_ahead: 2,
-                        actions: [
+                            (
+                                action: addFlag(
+                                    flag: simple(
+                                        name: "burned-invitation",
+                                    ),
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: despawnItem(
+                                    item: "printer_paper",
+                                ),
+                                priority: None,
+                            ),
                             (
                                 action: spawnItemInRoom(
-                                    item: "invitation",
+                                    item: "flaming_invitation",
                                     room: "aperture-lab",
                                 ),
                                 priority: None,
                             ),
                             (
-                                action: showMessage(
-                                    text: "Your vision begins to clear, and you see an engraved invitation on the floor. It glows slightly, and waves of heat warp the air around it.",
+                                action: scheduleIn(
+                                    turns_ahead: 5,
+                                    actions: [
+                                        (
+                                            action: showMessage(
+                                                text: "The flaming invitation goes fizzles out, leaving behind a few charred remains.",
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: replaceItem(
+                                                old_item: "flaming_invitation",
+                                                new_item: "charred_invitation_bits",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    note: Some("invitation finishes burning"),
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: addSpinnerWedge(
+                                    spinner: "ambientInterior",
+                                    text: "An annoyed voice on the PA: ATTENTION Staff - do NOT use regular copy paper in the lab PlasmaJet printer, or we will be shut down again -- by order of FEMA, PETA, the ATF, FBI, and our HOA.",
+                                    width: 1,
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: scheduleIn(
+                                    turns_ahead: 2,
+                                    actions: [
+                                        (
+                                            action: showMessage(
+                                                text: "A nearby smoke detector alarms briefly, the quits with an exasperated sigh when it sees you near the PlasmaJet printer, figuring you get what you deserve.",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    note: Some("desensitized smoke detector"),
                                 ),
                                 priority: None,
                             ),
                         ],
-                        note: Some("blindness clears"),
+                        false_actions: Some([
+                            (
+                                action: conditional(
+                                    condition: Pred(containerHasItem(
+                                        container: "lab_printer",
+                                        item: "asbestos_sheet",
+                                    )),
+                                    actions: [
+                                        (
+                                            action: addFlag(
+                                                flag: simple(
+                                                    name: "invitation-sans-ignition",
+                                                ),
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: awardPoints(
+                                                amount: 10,
+                                                reason: "Printed the invitation on asbestos stock",
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: despawnItem(
+                                                item: "asbestos_sheet",
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: spawnItemInRoom(
+                                                item: "invitation",
+                                                room: "aperture-lab",
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: addFlag(
+                                                flag: simple(
+                                                    name: "status:flash-blind",
+                                                ),
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: showMessage(
+                                                text: "The PlasmaJet emits a blinding flash of light, leaving a printer-shaped purple blob in your visual field and blinding you for a few moments.",
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: modifyRoom(
+                                                room: "aperture-lab",
+                                                patch: (
+                                                    name: Some("Purple Blob Lab"),
+                                                    desc: Some("It still feels like you\'re in the lab, but all you can see is a fading purple blob in your central vision."),
+                                                    remove_exits: [
+                                                        "portal-room",
+                                                        "stargate-room",
+                                                    ],
+                                                    add_exits: [],
+                                                ),
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: scheduleIn(
+                                                turns_ahead: 3,
+                                                actions: [
+                                                    (
+                                                        action: showMessage(
+                                                            text: "Your vision begins to clear, and you see an invitation on the floor, burned into the asbestos sheet. It glows slightly, and waves of heat warp the air around it.",
+                                                        ),
+                                                        priority: None,
+                                                    ),
+                                                    (
+                                                        action: removeFlag(
+                                                            name: "status:flash-blind",
+                                                        ),
+                                                        priority: None,
+                                                    ),
+                                                    (
+                                                        action: modifyRoom(
+                                                            room: "aperture-lab",
+                                                            patch: (
+                                                                name: Some("Aperture Laboratory"),
+                                                                desc: Some("The walls, floor, ceiling, and even the air here feels clinical and overexposed. Everything hums at a frequency designed to encourage strict compliance. A few [[bright-red]]fire extinguishers[[/bright-red]] are scattered about. A very dated computer console glows green on a table beside a [[i]]highly[[/i]] over-engineered printer labeled [[hl]][[b]]Aperture|Amble Hospitality Generator[[/b]][[/hl]]. Across the room, a [[item]]vault-like door[[/item]] all but [[i]]demands[[/i]] attention."),
+                                                                remove_exits: [],
+                                                                add_exits: [
+                                                                    (
+                                                                        direction: "through the portal",
+                                                                        to: "portal-room",
+                                                                        hidden: false,
+                                                                        locked: false,
+                                                                        required_flags: [],
+                                                                        required_items: [],
+                                                                        barred_message: None,
+                                                                    ),
+                                                                    (
+                                                                        direction: "into the vault",
+                                                                        to: "stargate-room",
+                                                                        hidden: false,
+                                                                        locked: false,
+                                                                        required_flags: [],
+                                                                        required_items: [],
+                                                                        barred_message: None,
+                                                                    ),
+                                                                ],
+                                                            ),
+                                                        ),
+                                                        priority: None,
+                                                    ),
+                                                ],
+                                                note: Some("flash blindness clears"),
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    false_actions: Some([
+                                        (
+                                            action: showMessage(
+                                                text: "The printer just clicks once. You may want to check the status screen or the paper tray.",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ]),
+                                ),
+                                priority: None,
+                            ),
+                        ]),
                     ),
                     priority: None,
                 ),
@@ -7957,6 +8404,12 @@
             conditions: All([]),
             actions: [
                 (
+                    action: showMessage(
+                        text: "Elated that you\'ve given it such a large, empty battery to charge, the gonk droid gives you a fully charged one, free of ... charge?",
+                    ),
+                    priority: None,
+                ),
+                (
                     action: awardPoints(
                         amount: 2,
                         reason: "Swapped the drained battery with the helpful gonk droid",
@@ -7980,15 +8433,17 @@
                     priority: None,
                 ),
                 (
-                    action: setNpcState(
-                        npc: "gonk_droid",
-                        state: happy,
+                    action: addFlag(
+                        flag: simple(
+                            name: "got-charged-battery",
+                        ),
                     ),
                     priority: None,
                 ),
                 (
-                    action: showMessage(
-                        text: "Elated that you\'ve given it such a large, empty battery to charge, the gonk droid gives you a fully charged one, free of ... charge?",
+                    action: setNpcState(
+                        npc: "gonk_droid",
+                        state: happy,
                     ),
                     priority: None,
                 ),
@@ -8024,6 +8479,12 @@
             conditions: All([]),
             actions: [
                 (
+                    action: showMessage(
+                        text: "Arcing wildly as you insert it, the fully charged 20 KV battery fuses itself to the contacts inside the portal gun -- when then emits a quick high-pitched whine. The POWER indicator lights a steady green.",
+                    ),
+                    priority: None,
+                ),
+                (
                     action: addFlag(
                         flag: simple(
                             name: "portal-gun-powered",
@@ -8054,72 +8515,145 @@
                     ),
                     priority: None,
                 ),
-                (
-                    action: showMessage(
-                        text: "Arcing wildly as you insert it, the fully charged 20 KV battery fuses itself to the contacts inside the portal gun -- when then emits a quick high-pitched whine. The POWER indicator lights a steady green.",
-                    ),
-                    priority: None,
-                ),
             ],
         ),
         (
             name: "[Portal-Room] Gun Fired / Open Portal",
-            note: None,
-            only_once: true,
-            event: useItem(
-                item: "portal_gun",
-                ability: turnOn,
-            ),
-            conditions: Pred(hasFlag(
-                flag: "portal-gun-powered",
-            )),
-            actions: [
-                (
-                    action: revealExit(
-                        exit_from: "portal-room",
-                        exit_to: "aperture-lab",
-                        direction: "through the portal",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: addFlag(
-                        flag: simple(
-                            name: "portal-opened",
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: awardPoints(
-                        amount: 5,
-                        reason: "Opened a portal into Aperture Labs",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: showMessage(
-                        text: "A loud SQUIP! comes from the gun when you turn it on. The wall in front of it sizzles for a moment, and then a crackling oval blue portal expands there to reveal a laboratory space on the other side.",
-                    ),
-                    priority: None,
-                ),
-            ],
-        ),
-        (
-            name: "[Portal-Room] Tried Gun Without Power",
             note: None,
             only_once: false,
             event: useItem(
                 item: "portal_gun",
                 ability: turnOn,
             ),
-            conditions: Pred(missingFlag(
-                flag: "portal-gun-powered",
-            )),
+            conditions: All([]),
+            actions: [
+                (
+                    action: conditional(
+                        condition: Pred(hasFlag(
+                            flag: "portal-opened",
+                        )),
+                        actions: [
+                            (
+                                action: showMessage(
+                                    text: "The gun emits a low [[hl]]brop[[/hl] sound and the portal changes shape, but the view to the laboratory on the other side remains the same.",
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        false_actions: Some([
+                            (
+                                action: conditional(
+                                    condition: Pred(hasFlag(
+                                        flag: "portal-gun-powered",
+                                    )),
+                                    actions: [
+                                        (
+                                            action: showMessage(
+                                                text: "A loud SQUIP! comes from the gun when you turn it on. The wall in front of it sizzles for a moment, and then a crackling oval blue portal expands there to reveal a laboratory space on the other side.",
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: revealExit(
+                                                exit_from: "portal-room",
+                                                exit_to: "aperture-lab",
+                                                direction: "through the portal",
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: addFlag(
+                                                flag: simple(
+                                                    name: "portal-opened",
+                                                ),
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: awardPoints(
+                                                amount: 5,
+                                                reason: "Opened a portal into Aperture Labs",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    false_actions: Some([
+                                        (
+                                            action: showMessage(
+                                                text: "You attempt to turn the portal gun on, but the POWER light briefly flashes red, then goes dark. Nothing else happens.",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ]),
+                                ),
+                                priority: None,
+                            ),
+                        ]),
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[Antechamber] First Arrival",
+            note: None,
+            only_once: true,
+            event: enterRoom(
+                room: "antechamber",
+            ),
+            conditions: All([]),
             actions: [
                 (
                     action: showMessage(
-                        text: "You attempt to turn the portal gun on, but the POWER light briefly flashes red, then goes dark. Nothing else happens.",
+                        text: "The room greets you with the hushed tension of a place in which people have spent centuries being polite at each other as hard as they can.",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: scheduleInIf(
+                        turns_ahead: 2,
+                        condition: Pred(playerInRoom(
+                            room: "antechamber",
+                        )),
+                        on_false: cancel,
+                        actions: [
+                            (
+                                action: conditional(
+                                    condition: Pred(hasFlag(
+                                        flag: "sect-shoe",
+                                    )),
+                                    actions: [
+                                        (
+                                            action: showMessage(
+                                                text: "From somewhere beyond the gourd-marked door comes a muffled chant whose general theme appears to be that vegetables were a mistake.",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    false_actions: Some([
+                                        (
+                                            action: conditional(
+                                                condition: Pred(hasFlag(
+                                                    flag: "sect-gourd",
+                                                )),
+                                                actions: [
+                                                    (
+                                                        action: showMessage(
+                                                            text: "From somewhere beyond the sandal-marked door comes a clipped chorus suggesting that produce has no business in serious metaphysics.",
+                                                        ),
+                                                        priority: None,
+                                                    ),
+                                                ],
+                                                false_actions: None,
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ]),
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        note: None,
                     ),
                     priority: None,
                 ),
@@ -8155,6 +8689,10 @@
                 )),
                 Pred(withNpc(
                     npc: "demerzel",
+                )),
+                Pred(npcHasItem(
+                    npc: "demerzel",
+                    item: "lost_and_found_key",
                 )),
             ]),
             actions: [
@@ -8215,6 +8753,76 @@
                     action: setItemDescription(
                         item: "lost_and_found_box",
                         text: "A sturdy metal lockbox marked \'Lost and Found\'. Its lid is cracked slightly open.",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[Gourd-Shrine] First Visit",
+            note: None,
+            only_once: true,
+            event: enterRoom(
+                room: "gourd-shrine",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "A tranquil hush settles around you. It is the sort of hush that fully expects applause for being tranquil.",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: scheduleInIf(
+                        turns_ahead: 2,
+                        condition: Pred(playerInRoom(
+                            room: "gourd-shrine",
+                        )),
+                        on_false: cancel,
+                        actions: [
+                            (
+                                action: showMessage(
+                                    text: "A hidden choir hums a note so warm and rounded it feels less heard than gently ladled.",
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        note: None,
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[Gourd-Shrine] Touch Altar",
+            note: None,
+            only_once: false,
+            event: touchItem(
+                item: "harvest_altar",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "The polished surface is warm to the touch. Either candles burn nearby, or devotion here has been left simmering.",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[Gourd-Shrine] Touch Abacus",
+            note: None,
+            only_once: false,
+            event: touchItem(
+                item: "seed_abacus",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "Several seeds click across the rods and settle on a number that feels meaningful, though it may simply indicate soup.",
                     ),
                     priority: None,
                 ),
@@ -8444,7 +9052,7 @@
             actions: [
                 (
                     action: scheduleIn(
-                        turns_ahead: 7,
+                        turns_ahead: 10,
                         actions: [
                             (
                                 action: replaceItem(
@@ -8735,34 +9343,43 @@
             conditions: All([]),
             actions: [
                 (
-                    action: showMessage(
-                        text: "A chime echoes through the lobby. \"Candidates: Please do not loiter in the lobby,\" intones an overhead voice.",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: scheduleInIf(
-                        turns_ahead: 3,
-                        condition: Pred(playerInRoom(
-                            room: "main-lobby",
-                        )),
-                        on_false: cancel,
+                    action: scheduleIn(
+                        turns_ahead: 2,
                         actions: [
                             (
                                 action: showMessage(
-                                    text: "The chime sounds again. \"Candidates: We **said** not to loiter in the lobby,\" says the voice, in more of an annoyed tone.",
+                                    text: "A chime echoes through the lobby. \"Candidates: Please do not loiter in the lobby,\" intones an overhead voice.",
                                 ),
                                 priority: None,
                             ),
                             (
-                                action: awardPoints(
-                                    amount: -1,
-                                    reason: "Ignored the lobby loitering reminder",
+                                action: scheduleInIf(
+                                    turns_ahead: 5,
+                                    condition: Pred(playerInRoom(
+                                        room: "main-lobby",
+                                    )),
+                                    on_false: cancel,
+                                    actions: [
+                                        (
+                                            action: showMessage(
+                                                text: "The chime sounds again. \"Candidates: We **said** not to loiter in the lobby,\" says the voice, in more of an annoyed tone.",
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: awardPoints(
+                                                amount: -1,
+                                                reason: "Ignored the lobby loitering warning",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    note: Some("lobby loitering penalty"),
                                 ),
                                 priority: None,
                             ),
                         ],
-                        note: Some("lobby loitering reminder"),
+                        note: Some("lobby loitering warning"),
                     ),
                     priority: None,
                 ),
@@ -8851,7 +9468,7 @@
                 (
                     action: awardPoints(
                         amount: 3,
-                        reason: "Fished the zircon tweezers out of the vending machine",
+                        reason: "Fished the zircon tweezers out of the vending machine crevice",
                     ),
                     priority: None,
                 ),
@@ -8935,121 +9552,6 @@
                 item: "plaque_3",
                 ability: read,
             ),
-            conditions: Pred(hasVisited(
-                room: "stargate-room",
-            )),
-            actions: [
-                (
-                    action: showMessage(
-                        text: "(A new Stargate destination has been enabled.)",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: modifyRoom(
-                        room: "stargate-room",
-                        patch: (
-                            name: None,
-                            desc: Some("A hangar-size concrete room, connected to the Aperture lab through a round vault door. The Stargate in the center is filled with a shimmering energy, from which you hear the sounds of clinking glasses punctuated by explosions. Occasionally, you catch a whiff of fresh baked bread in the air."),
-                            remove_exits: [
-                                "ice-pit",
-                                "parish-landing",
-                            ],
-                            add_exits: [
-                                (
-                                    direction: "through the stargate",
-                                    to: "patio",
-                                    hidden: false,
-                                    locked: false,
-                                    required_flags: [],
-                                    required_items: [],
-                                    barred_message: None,
-                                ),
-                            ],
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: addFlag(
-                        flag: simple(
-                            name: "patio-gate-open",
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: modifyRoom(
-                        room: "patio",
-                        patch: (
-                            name: None,
-                            desc: None,
-                            remove_exits: [],
-                            add_exits: [
-                                (
-                                    direction: "through the stargate",
-                                    to: "stargate-room",
-                                    hidden: false,
-                                    locked: false,
-                                    required_flags: [],
-                                    required_items: [],
-                                    barred_message: None,
-                                ),
-                            ],
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: removeFlag(
-                        name: "woodland-gate-open",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: modifyRoom(
-                        room: "parish-landing",
-                        patch: (
-                            name: None,
-                            desc: None,
-                            remove_exits: [
-                                "stargate-room",
-                            ],
-                            add_exits: [],
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: removeFlag(
-                        name: "snowfield-gate-open",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: modifyRoom(
-                        room: "ice-pit",
-                        patch: (
-                            name: None,
-                            desc: None,
-                            remove_exits: [
-                                "stargate-room",
-                            ],
-                            add_exits: [],
-                        ),
-                    ),
-                    priority: None,
-                ),
-            ],
-        ),
-        (
-            name: "[Plaque 3] Read the Plaque",
-            note: None,
-            only_once: true,
-            event: useItem(
-                item: "plaque_3",
-                ability: read,
-            ),
             conditions: All([]),
             actions: [
                 (
@@ -9064,6 +9566,146 @@
                     action: awardPoints(
                         amount: 10,
                         reason: "Reached and read the third crystal plaque",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: conditional(
+                        condition: Pred(hasVisited(
+                            room: "stargate-room",
+                        )),
+                        actions: [
+                            (
+                                action: showMessage(
+                                    text: "(A new Stargate destination has been enabled.)",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: modifyRoom(
+                                    room: "stargate-room",
+                                    patch: (
+                                        name: None,
+                                        desc: Some("A hangar-size concrete room, connected to the Aperture lab through a round vault door. The Stargate in the center is filled with a shimmering energy, from which you hear the sounds of clinking glasses punctuated by explosions. Occasionally, you catch a whiff of fresh baked bread in the air."),
+                                        remove_exits: [
+                                            "ice-pit",
+                                            "parish-landing",
+                                            "antechamber",
+                                        ],
+                                        add_exits: [
+                                            (
+                                                direction: "through the stargate",
+                                                to: "patio",
+                                                hidden: false,
+                                                locked: false,
+                                                required_flags: [],
+                                                required_items: [],
+                                                barred_message: None,
+                                            ),
+                                        ],
+                                    ),
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: addFlag(
+                                    flag: simple(
+                                        name: "patio-gate-open",
+                                    ),
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: modifyRoom(
+                                    room: "patio",
+                                    patch: (
+                                        name: None,
+                                        desc: None,
+                                        remove_exits: [],
+                                        add_exits: [
+                                            (
+                                                direction: "through the stargate",
+                                                to: "stargate-room",
+                                                hidden: false,
+                                                locked: false,
+                                                required_flags: [],
+                                                required_items: [],
+                                                barred_message: None,
+                                            ),
+                                        ],
+                                    ),
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: removeFlag(
+                                    name: "woodland-gate-open",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: modifyRoom(
+                                    room: "parish-landing",
+                                    patch: (
+                                        name: None,
+                                        desc: None,
+                                        remove_exits: [
+                                            "stargate-room",
+                                        ],
+                                        add_exits: [],
+                                    ),
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: removeFlag(
+                                    name: "snowfield-gate-open",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: modifyRoom(
+                                    room: "ice-pit",
+                                    patch: (
+                                        name: None,
+                                        desc: None,
+                                        remove_exits: [
+                                            "stargate-room",
+                                        ],
+                                        add_exits: [],
+                                    ),
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: removeFlag(
+                                    name: "sect-gate-open",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: modifyRoom(
+                                    room: "antechamber",
+                                    patch: (
+                                        name: None,
+                                        desc: None,
+                                        remove_exits: [
+                                            "stargate-room",
+                                        ],
+                                        add_exits: [],
+                                    ),
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        false_actions: Some([
+                            (
+                                action: showMessage(
+                                    text: "(Somewhere, something connected has been enabled.)",
+                                ),
+                                priority: None,
+                            ),
+                        ]),
                     ),
                     priority: None,
                 ),
@@ -9313,68 +9955,312 @@
             ],
         ),
         (
-            name: "HINT Radio: Where do I charge this battery?",
+            name: "[Shoe-Shrine] First Visit",
             note: None,
             only_once: true,
-            event: takeItem(
-                item: "empty_battery",
+            event: enterRoom(
+                room: "shoe-shrine",
             ),
             conditions: All([]),
             actions: [
                 (
+                    action: showMessage(
+                        text: "A discreet bell chimes somewhere overhead, as if noting your arrival in a ledger maintained by very tidy angels.",
+                    ),
+                    priority: None,
+                ),
+                (
                     action: scheduleInIf(
                         turns_ahead: 2,
-                        condition: Any([
-                            All([
-                                Pred(hasItem(
-                                    item: "hint_radio",
-                                )),
-                                Pred(hasFlag(
-                                    flag: "hint-radio-on",
-                                )),
-                                Pred(missingFlag(
-                                    flag: "portal-gun-powered",
-                                )),
-                                Pred(playerInRoom(
-                                    room: "portal-room",
-                                )),
-                            ]),
-                            Pred(hasFlag(
-                                flag: "portal-gun-powered",
-                            )),
-                        ]),
-                        on_false: retryNextTurn,
+                        condition: Pred(playerInRoom(
+                            room: "shoe-shrine",
+                        )),
+                        on_false: cancel,
                         actions: [
                             (
-                                action: conditional(
-                                    condition: All([
-                                        Pred(hasItem(
-                                            item: "hint_radio",
-                                        )),
-                                        Pred(hasFlag(
-                                            flag: "hint-radio-on",
-                                        )),
-                                        Pred(missingFlag(
-                                            flag: "portal-gun-powered",
-                                        )),
-                                        Pred(playerInRoom(
-                                            room: "portal-room",
-                                        )),
-                                    ]),
-                                    actions: [
-                                        (
-                                            action: npcSays(
-                                                npc: "hint_radio_npc",
-                                                quote: "Wasn\'t there a gonk droid clomping about up in the lounge or the lobby? They can power or charge just about anything, from what I hear. Not much for conversation though, the gonks.",
-                                            ),
-                                            priority: None,
-                                        ),
-                                    ],
+                                action: showMessage(
+                                    text: "From the rafters comes a whisper: \"If the Shoe fits...\" followed by several devout voices murmuring, \"...mind the laces of destiny.\"",
                                 ),
                                 priority: None,
                             ),
                         ],
                         note: None,
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[Shoe-Shrine] Touch Altar",
+            note: None,
+            only_once: false,
+            event: touchItem(
+                item: "sandal_altar",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "The wood is mirror-smooth and faintly warm. The shrine\'s caretakers either polish constantly or have achieved a workable theology of wax.",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[Shoe-Shrine] Touch Donation Box",
+            note: None,
+            only_once: false,
+            event: touchItem(
+                item: "heel_the_poor_fund",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "The box gives off the dense metallic clink of accumulated virtue.",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[Stargate] Sect Gate: Activate",
+            note: Some("schedule/give point award for first time opening gate"),
+            only_once: true,
+            event: touchItem(
+                item: "sect_gate_button",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: scheduleInIf(
+                        turns_ahead: 1,
+                        condition: Any([
+                            Pred(hasFlag(
+                                flag: "sect-shoe",
+                            )),
+                            Pred(hasFlag(
+                                flag: "sect-gourd",
+                            )),
+                        ]),
+                        on_false: retryNextTurn,
+                        actions: [
+                            (
+                                action: awardPoints(
+                                    amount: 5,
+                                    reason: "Activated the Sectarian Gate",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: addFlag(
+                                    flag: simple(
+                                        name: "sect-gate-enabled",
+                                    ),
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        note: None,
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[Stargate] Press Woodland Button",
+            note: Some("open/move the Stargate connection to the Sect Antechamber (only if a member)"),
+            only_once: false,
+            event: touchItem(
+                item: "sect_gate_button",
+            ),
+            conditions: All([
+                Any([
+                    Pred(hasFlag(
+                        flag: "sect-shoe",
+                    )),
+                    Pred(hasFlag(
+                        flag: "sect-gourd",
+                    )),
+                ]),
+                Pred(missingFlag(
+                    flag: "sect-gate-open",
+                )),
+            ]),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "With a great whooshing like the flush of a titan\'s toilet, the Stargate opens a new connection. Angelic sounds float through the gate, oddly paired with the smell of leather and pumpkins.",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyRoom(
+                        room: "stargate-room",
+                        patch: (
+                            name: None,
+                            desc: Some("A hangar-size concrete room, connected to the Aperture lab through a huge, round vault door. The Stargate is filled with a shimmering energy, from which you hear faint choir-like — [[i]]almost angelic[[/i]] — sound. Occasionally, you catch a whiff of leather. Or pumpkin?"),
+                            remove_exits: [
+                                "ice-pit",
+                                "patio",
+                                "parish-landing",
+                            ],
+                            add_exits: [
+                                (
+                                    direction: "through the stargate",
+                                    to: "antechamber",
+                                    hidden: false,
+                                    locked: false,
+                                    required_flags: [],
+                                    required_items: [],
+                                    barred_message: None,
+                                ),
+                            ],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: addFlag(
+                        flag: simple(
+                            name: "sect-gate-open",
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyRoom(
+                        room: "antechamber",
+                        patch: (
+                            name: None,
+                            desc: None,
+                            remove_exits: [],
+                            add_exits: [
+                                (
+                                    direction: "through the stargate",
+                                    to: "stargate-room",
+                                    hidden: false,
+                                    locked: false,
+                                    required_flags: [],
+                                    required_items: [],
+                                    barred_message: None,
+                                ),
+                            ],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: removeFlag(
+                        name: "snowfield-gate-open",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyRoom(
+                        room: "ice-pit",
+                        patch: (
+                            name: None,
+                            desc: None,
+                            remove_exits: [
+                                "stargate-room",
+                            ],
+                            add_exits: [],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: removeFlag(
+                        name: "patio-gate-open",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyRoom(
+                        room: "patio",
+                        patch: (
+                            name: None,
+                            desc: None,
+                            remove_exits: [
+                                "stargate-room",
+                            ],
+                            add_exits: [],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: removeFlag(
+                        name: "woodland-gate-open",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyRoom(
+                        room: "parish-landing",
+                        patch: (
+                            name: None,
+                            desc: None,
+                            remove_exits: [
+                                "stargate-room",
+                            ],
+                            add_exits: [],
+                        ),
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[Stargate] Press Woodland Button",
+            note: Some("open/move the Stargate connection to the Sect Antechamber (only if a member)"),
+            only_once: false,
+            event: touchItem(
+                item: "sect_gate_button",
+            ),
+            conditions: All([
+                Any([
+                    Pred(hasFlag(
+                        flag: "sect-shoe",
+                    )),
+                    Pred(hasFlag(
+                        flag: "sect-gourd",
+                    )),
+                ]),
+                Pred(hasFlag(
+                    flag: "sect-gate-open",
+                )),
+            ]),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "The gate to the antechamber is already open.",
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[Stargate] Press Woodland Button",
+            note: Some("open/move the Stargate connection to the Sect Antechamber (only if a member)"),
+            only_once: false,
+            event: touchItem(
+                item: "sect_gate_button",
+            ),
+            conditions: All([
+                Pred(missingFlag(
+                    flag: "sect-shoe",
+                )),
+                Pred(missingFlag(
+                    flag: "sect-gourd",
+                )),
+            ]),
+            actions: [
+                (
+                    action: showMessage(
+                        text: "The fish button is already pressed down as far as it can go; you can\'t activate it.",
                     ),
                     priority: None,
                 ),
@@ -9450,6 +10336,7 @@
                             remove_exits: [
                                 "ice-pit",
                                 "patio",
+                                "antechamber",
                             ],
                             add_exits: [
                                 (
@@ -9525,6 +10412,26 @@
                 (
                     action: modifyRoom(
                         room: "patio",
+                        patch: (
+                            name: None,
+                            desc: None,
+                            remove_exits: [
+                                "stargate-room",
+                            ],
+                            add_exits: [],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: removeFlag(
+                        name: "sect-gate-open",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyRoom(
+                        room: "antechamber",
                         patch: (
                             name: None,
                             desc: None,
@@ -9651,6 +10558,7 @@
                             remove_exits: [
                                 "parish-landing",
                                 "patio",
+                                "antechamber",
                             ],
                             add_exits: [
                                 (
@@ -9726,6 +10634,26 @@
                 (
                     action: modifyRoom(
                         room: "patio",
+                        patch: (
+                            name: None,
+                            desc: None,
+                            remove_exits: [
+                                "stargate-room",
+                            ],
+                            add_exits: [],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: removeFlag(
+                        name: "sect-gate-open",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyRoom(
+                        room: "antechamber",
                         patch: (
                             name: None,
                             desc: None,
@@ -9852,6 +10780,7 @@
                             remove_exits: [
                                 "ice-pit",
                                 "parish-landing",
+                                "antechamber",
                             ],
                             add_exits: [
                                 (
@@ -9927,6 +10856,26 @@
                 (
                     action: modifyRoom(
                         room: "ice-pit",
+                        patch: (
+                            name: None,
+                            desc: None,
+                            remove_exits: [
+                                "stargate-room",
+                            ],
+                            add_exits: [],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: removeFlag(
+                        name: "sect-gate-open",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyRoom(
+                        room: "antechamber",
                         patch: (
                             name: None,
                             desc: None,
@@ -10154,51 +11103,67 @@
                 target: "security_locker",
                 action: break,
             ),
-            conditions: Pred(missingFlag(
-                flag: "unlocked-security-crate",
-            )),
+            conditions: All([]),
             actions: [
                 (
-                    action: despawnItem(
-                        item: "security_locker",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "crowbar",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "security_log",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "shattered_vial",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "initech_mug",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: showMessage(
-                        text: "With a few hefty blows, you manage to break the lock haft completely off of the security locker -- well after a few misses had already caved in the lid and destroyed it, but you were having fun. It looks like you broke a couple of the items that were inside in the process.",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: addSpinnerWedge(
-                        spinner: "ambientInterior",
-                        text: "PA Announcement: \'Someone broke into the security locker on the dock. Mind your belongings and report any suspicious activity to security.\'",
-                        width: 1,
+                    action: conditional(
+                        condition: Pred(missingFlag(
+                            flag: "unlocked-security-crate",
+                        )),
+                        actions: [
+                            (
+                                action: despawnItem(
+                                    item: "security_locker",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "crowbar",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "security_log",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "shattered_vial",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "initech_mug",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: showMessage(
+                                    text: "With a few hefty blows, you manage to break the lock haft completely off of the security locker -- well after a few misses had already caved in the lid and destroyed it, but you were having fun. It looks like you broke a couple of the items that were inside in the process.",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: addSpinnerWedge(
+                                    spinner: "ambientInterior",
+                                    text: "PA Announcement: \'Someone broke into the security locker on the dock. Mind your belongings and report any suspicious activity to security.\'",
+                                    width: 1,
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        false_actions: Some([
+                            (
+                                action: showMessage(
+                                    text: "Despite already having unlocked the crate, you bash it a few times for emphasis.",
+                                ),
+                                priority: None,
+                            ),
+                        ]),
                     ),
                     priority: None,
                 ),
@@ -10212,51 +11177,67 @@
                 target: "security_locker",
                 action: burn,
             ),
-            conditions: Pred(missingFlag(
-                flag: "unlocked-security-crate",
-            )),
+            conditions: All([]),
             actions: [
                 (
-                    action: despawnItem(
-                        item: "security_locker",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "crowbar",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "burned_security_log",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "strange_liquid",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "initech_mug",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: showMessage(
-                        text: "WHOOOOOMP! The locker, which you now realize may have been made from the solid magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking your eyebrows with it. It looks like *some* of the items inside weren\'t flammable.",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: addSpinnerWedge(
-                        spinner: "ambientInterior",
-                        text: "PA Announcement: \'Someone used an Arson-Aid to torch the security locker at the loading dock. An investigation is underway. Report anyone with scorched clothes or missing eyebrows to security.\'",
-                        width: 1,
+                    action: conditional(
+                        condition: Pred(missingFlag(
+                            flag: "unlocked-security-crate",
+                        )),
+                        actions: [
+                            (
+                                action: despawnItem(
+                                    item: "security_locker",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "crowbar",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "burned_security_log",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "strange_liquid",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "initech_mug",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: showMessage(
+                                    text: "WHOOOOOMP! The locker, which you now realize may have been made from the solid magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking your eyebrows with it. It looks like *some* of the items inside weren\'t flammable.",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: addSpinnerWedge(
+                                    spinner: "ambientInterior",
+                                    text: "PA Announcement: \'Someone used an Arson-Aid to torch the security locker at the loading dock. An investigation is underway. Report anyone with scorched clothes or missing eyebrows to security.\'",
+                                    width: 1,
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        false_actions: Some([
+                            (
+                                action: showMessage(
+                                    text: "Strange… it seems like this crate should burn easily, but somehow it doesn\'t.",
+                                ),
+                                priority: None,
+                            ),
+                        ]),
                     ),
                     priority: None,
                 ),
@@ -11165,6 +12146,7 @@
                             remove_exits: [
                                 "parish-landing",
                                 "patio",
+                                "antechamber",
                             ],
                             add_exits: [
                                 (
@@ -11240,6 +12222,26 @@
                 (
                     action: modifyRoom(
                         room: "patio",
+                        patch: (
+                            name: None,
+                            desc: None,
+                            remove_exits: [
+                                "stargate-room",
+                            ],
+                            add_exits: [],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: removeFlag(
+                        name: "sect-gate-open",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyRoom(
+                        room: "antechamber",
                         patch: (
                             name: None,
                             desc: None,
@@ -11516,176 +12518,12 @@
                                             priority: None,
                                         ),
                                     ],
+                                    false_actions: None,
                                 ),
                                 priority: None,
                             ),
                         ],
                         note: Some("finish burning campfire down"),
-                    ),
-                    priority: None,
-                ),
-            ],
-        ),
-        (
-            name: "Hint: Find Items to Build a Fire",
-            note: Some("schedule radio hint about building a fire"),
-            only_once: true,
-            event: useItem(
-                item: "plaque_2_frozen",
-                ability: read,
-            ),
-            conditions: All([]),
-            actions: [
-                (
-                    action: scheduleInIf(
-                        turns_ahead: 4,
-                        condition: Any([
-                            All([
-                                Pred(missingFlag(
-                                    flag: "campfire-lit",
-                                )),
-                                All([
-                                    Pred(hasItem(
-                                        item: "hint_radio",
-                                    )),
-                                    Pred(hasFlag(
-                                        flag: "hint-radio-on",
-                                    )),
-                                ]),
-                                Pred(playerInRoom(
-                                    room: "ice-pit",
-                                )),
-                            ]),
-                            Pred(hasFlag(
-                                flag: "campfire-lit",
-                            )),
-                        ]),
-                        on_false: retryNextTurn,
-                        actions: [
-                            (
-                                action: conditional(
-                                    condition: All([
-                                        Pred(missingFlag(
-                                            flag: "campfire-lit",
-                                        )),
-                                        All([
-                                            Pred(hasItem(
-                                                item: "hint_radio",
-                                            )),
-                                            Pred(hasFlag(
-                                                flag: "hint-radio-on",
-                                            )),
-                                        ]),
-                                        Pred(playerInRoom(
-                                            room: "ice-pit",
-                                        )),
-                                    ]),
-                                    actions: [
-                                        (
-                                            action: npcSays(
-                                                npc: "hint_radio_npc",
-                                                quote: "To melt that pillar, you\'ll need to drop some firewood here and light it with something.",
-                                            ),
-                                            priority: None,
-                                        ),
-                                    ],
-                                ),
-                                priority: None,
-                            ),
-                        ],
-                        note: Some("radio gives campfire hint"),
-                    ),
-                    priority: None,
-                ),
-            ],
-        ),
-        (
-            name: "Firewood HINT",
-            note: Some("HINT radio: add firewood hint to scheduler"),
-            only_once: true,
-            event: enterRoom(
-                room: "snow-camp",
-            ),
-            conditions: All([]),
-            actions: [
-                (
-                    action: scheduleInIf(
-                        turns_ahead: 4,
-                        condition: Any([
-                            All([
-                                All([
-                                    Pred(hasItem(
-                                        item: "hint_radio",
-                                    )),
-                                    Pred(hasFlag(
-                                        flag: "hint-radio-on",
-                                    )),
-                                ]),
-                                Pred(hasFlag(
-                                    flag: "tried-read-plaque-2",
-                                )),
-                                Pred(missingFlag(
-                                    flag: "campfire-lit",
-                                )),
-                                Pred(missingItem(
-                                    item: "firewood",
-                                )),
-                                Pred(playerInRoom(
-                                    room: "snow-camp",
-                                )),
-                            ]),
-                            Any([
-                                Pred(hasFlag(
-                                    flag: "read-plaque-2",
-                                )),
-                                Pred(hasFlag(
-                                    flag: "campfire-lit",
-                                )),
-                                Pred(hasItem(
-                                    item: "firewood",
-                                )),
-                            ]),
-                        ]),
-                        on_false: retryNextTurn,
-                        actions: [
-                            (
-                                action: conditional(
-                                    condition: All([
-                                        All([
-                                            Pred(hasItem(
-                                                item: "hint_radio",
-                                            )),
-                                            Pred(hasFlag(
-                                                flag: "hint-radio-on",
-                                            )),
-                                        ]),
-                                        Pred(hasFlag(
-                                            flag: "tried-read-plaque-2",
-                                        )),
-                                        Pred(missingFlag(
-                                            flag: "campfire-lit",
-                                        )),
-                                        Pred(missingItem(
-                                            item: "firewood",
-                                        )),
-                                        Pred(playerInRoom(
-                                            room: "snow-camp",
-                                        )),
-                                    ]),
-                                    actions: [
-                                        (
-                                            action: npcSays(
-                                                npc: "hint_radio_npc",
-                                                quote: "Looks like the researchers didn\'t get their fire lit before the dog-Thing got to them. Bad day for them, but maybe good for you. Could you move the firewood down into the ice pit to melt the ice around the frozen pillar?",
-                                            ),
-                                            priority: None,
-                                        ),
-                                    ],
-                                ),
-                                priority: None,
-                            ),
-                        ],
-                        note: Some("HINT radio: deliver firewood hint"),
                     ),
                     priority: None,
                 ),
@@ -11814,6 +12652,7 @@
                                             priority: Some(-50),
                                         ),
                                     ],
+                                    false_actions: None,
                                 ),
                                 priority: None,
                             ),
@@ -11830,6 +12669,7 @@
                                             priority: Some(-50),
                                         ),
                                     ],
+                                    false_actions: None,
                                 ),
                                 priority: None,
                             ),
@@ -12309,6 +13149,7 @@
                             remove_exits: [
                                 "ice-pit",
                                 "patio",
+                                "antechamber",
                             ],
                             add_exits: [
                                 (
@@ -12384,6 +13225,26 @@
                 (
                     action: modifyRoom(
                         room: "patio",
+                        patch: (
+                            name: None,
+                            desc: None,
+                            remove_exits: [
+                                "stargate-room",
+                            ],
+                            add_exits: [],
+                        ),
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: removeFlag(
+                        name: "sect-gate-open",
+                    ),
+                    priority: None,
+                ),
+                (
+                    action: modifyRoom(
+                        room: "antechamber",
                         patch: (
                             name: None,
                             desc: None,
@@ -12482,37 +13343,63 @@
             conditions: All([]),
             actions: [
                 (
-                    action: showMessage(
-                        text: "Modifying the Luggage...",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: modifyNpc(
-                        npc: "the_luggage",
-                        patch: (
-                            name: Some("Hungry Luggage"),
-                            desc: Some("The Luggage is ravenous! Beware!!"),
-                            state: Some(custom("hungry")),
-                            add_lines: [
-                                (
-                                    state: custom("hungry"),
-                                    line: "(The Luggage nearly bites your face off when you approach.)",
+                    action: conditional(
+                        condition: Pred(missingFlag(
+                            flag: "tried-the-blue-button",
+                        )),
+                        actions: [
+                            (
+                                action: addFlag(
+                                    flag: simple(
+                                        name: "tried-the-blue-button",
+                                    ),
                                 ),
-                            ],
-                            movement: Some((
-                                route: None,
-                                random_rooms: Some([
-                                    "dev-room",
-                                    "lounge",
-                                ]),
-                                timing: Some(everyNTurns(
-                                    turns: 5,
-                                )),
-                                active: Some(true),
-                                loop_route: Some(true),
-                            )),
-                        ),
+                                priority: None,
+                            ),
+                            (
+                                action: showMessage(
+                                    text: "That will make the Luggage hungry. You might want to rethink that.",
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        false_actions: Some([
+                            (
+                                action: showMessage(
+                                    text: "Modifying the Luggage...",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: modifyNpc(
+                                    npc: "the_luggage",
+                                    patch: (
+                                        name: Some("Hungry Luggage"),
+                                        desc: Some("The Luggage is ravenous! Beware!!"),
+                                        state: Some(custom("hungry")),
+                                        add_lines: [
+                                            (
+                                                state: custom("hungry"),
+                                                line: "(The Luggage nearly bites your face off when you approach.)",
+                                            ),
+                                        ],
+                                        movement: Some((
+                                            route: None,
+                                            random_rooms: Some([
+                                                "dev-room",
+                                                "lounge",
+                                            ]),
+                                            timing: Some(everyNTurns(
+                                                turns: 5,
+                                            )),
+                                            active: Some(true),
+                                            loop_route: Some(true),
+                                        )),
+                                    ),
+                                ),
+                                priority: None,
+                            ),
+                        ]),
                     ),
                     priority: None,
                 ),
@@ -12797,32 +13684,29 @@
             event: dropItem(
                 item: "vogon_poetry_book",
             ),
-            conditions: Pred(missingFlag(
-                flag: "read-vogon-poetry",
-            )),
+            conditions: All([]),
             actions: [
                 (
-                    action: showMessage(
-                        text: "That greasy, queasy feeling subsides.",
-                    ),
-                    priority: None,
-                ),
-            ],
-        ),
-        (
-            name: "[Global] Drop Vogon Poetry",
-            note: Some("dropping only stops the nausea if player has not read it"),
-            only_once: false,
-            event: dropItem(
-                item: "vogon_poetry_book",
-            ),
-            conditions: Pred(hasFlag(
-                flag: "read-vogon-poetry",
-            )),
-            actions: [
-                (
-                    action: showMessage(
-                        text: "Getting rid of the book helps a little, but the poem is burned into your mind and the nausea continues.",
+                    action: conditional(
+                        condition: Pred(hasFlag(
+                            flag: "read-vogon-poetry",
+                        )),
+                        actions: [
+                            (
+                                action: showMessage(
+                                    text: "Getting rid of the book helps a little, but the poem is burned into your mind and the nausea continues.",
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        false_actions: Some([
+                            (
+                                action: showMessage(
+                                    text: "That greasy, queasy feeling quickly subsides.",
+                                ),
+                                priority: None,
+                            ),
+                        ]),
                     ),
                     priority: None,
                 ),
@@ -13233,74 +14117,6 @@
                             name: "module-2-puzzle",
                             end: Some(2),
                         ),
-                    ),
-                    priority: None,
-                ),
-            ],
-        ),
-        (
-            name: "[HINT Available] Make A Fishing Line",
-            note: Some("makes hint available when HAL module trapped in crevice"),
-            only_once: true,
-            event: useItemOnItem(
-                tool: "crowbar",
-                target: "vending_machine",
-                interaction: open,
-            ),
-            conditions: All([]),
-            actions: [
-                (
-                    action: scheduleInIf(
-                        turns_ahead: 2,
-                        condition: Any([
-                            All([
-                                All([
-                                    Pred(hasItem(
-                                        item: "hint_radio",
-                                    )),
-                                    Pred(hasFlag(
-                                        flag: "hint-radio-on",
-                                    )),
-                                ]),
-                                Pred(hasFlag(
-                                    flag: "hal-module-in-crevice",
-                                )),
-                            ]),
-                            Pred(hasFlag(
-                                flag: "module-2-retrieved",
-                            )),
-                        ]),
-                        on_false: retryNextTurn,
-                        actions: [
-                            (
-                                action: conditional(
-                                    condition: All([
-                                        All([
-                                            Pred(hasItem(
-                                                item: "hint_radio",
-                                            )),
-                                            Pred(hasFlag(
-                                                flag: "hint-radio-on",
-                                            )),
-                                        ]),
-                                        Pred(hasFlag(
-                                            flag: "hal-module-in-crevice",
-                                        )),
-                                    ]),
-                                    actions: [
-                                        (
-                                            action: npcSays(
-                                                npc: "hint_radio_npc",
-                                                quote: "Whoops. That electronic bit fell way down in that crevice. Looks like you\'ll need something like a fishing line to pull it out. There must be **something** you can use around here.",
-                                            ),
-                                            priority: None,
-                                        ),
-                                    ],
-                                ),
-                                priority: None,
-                            ),
-                        ],
-                        note: Some("fishing line hint available"),
                     ),
                     priority: None,
                 ),
@@ -13889,12 +14705,14 @@
                         turns_ahead: 2,
                         condition: Any([
                             All([
-                                Pred(hasItem(
-                                    item: "hint_radio",
-                                )),
-                                Pred(hasFlag(
-                                    flag: "hint-radio-on",
-                                )),
+                                All([
+                                    Pred(hasItem(
+                                        item: "hint_radio",
+                                    )),
+                                    Pred(hasFlag(
+                                        flag: "hint-radio-on",
+                                    )),
+                                ]),
                                 All([
                                     Pred(missingFlag(
                                         flag: "woodland-gate-open",
@@ -13906,6 +14724,9 @@
                                         flag: "patio-gate-open",
                                     )),
                                 ]),
+                                Pred(hasVisited(
+                                    room: "stargate-room",
+                                )),
                                 Any([
                                     Pred(playerInRoom(
                                         room: "stargate-room",
@@ -13921,21 +14742,31 @@
                                     )),
                                 ]),
                             ]),
-                            Pred(hasFlag(
-                                flag: "portal-gun-powered",
-                            )),
+                            Any([
+                                Pred(hasFlag(
+                                    flag: "woodland-gate-open",
+                                )),
+                                Pred(hasFlag(
+                                    flag: "snowfield-gate-open",
+                                )),
+                                Pred(hasFlag(
+                                    flag: "patio-gate-open",
+                                )),
+                            ]),
                         ]),
                         on_false: retryNextTurn,
                         actions: [
                             (
                                 action: conditional(
                                     condition: All([
-                                        Pred(hasItem(
-                                            item: "hint_radio",
-                                        )),
-                                        Pred(hasFlag(
-                                            flag: "hint-radio-on",
-                                        )),
+                                        All([
+                                            Pred(hasItem(
+                                                item: "hint_radio",
+                                            )),
+                                            Pred(hasFlag(
+                                                flag: "hint-radio-on",
+                                            )),
+                                        ]),
                                         All([
                                             Pred(missingFlag(
                                                 flag: "woodland-gate-open",
@@ -13947,6 +14778,9 @@
                                                 flag: "patio-gate-open",
                                             )),
                                         ]),
+                                        Pred(hasVisited(
+                                            room: "stargate-room",
+                                        )),
                                         Any([
                                             Pred(playerInRoom(
                                                 room: "stargate-room",
@@ -13966,16 +14800,483 @@
                                         (
                                             action: npcSays(
                                                 npc: "hint_radio_npc",
-                                                quote: "The stargate seems to be tied to certain sites around the premises. It looks like there\'s something that you need to do at the receiving sites to be able to open those portals, though. Come to think of it, there was one of those ornate pillars at each of the other gate sites...",
+                                                quote: "The stargate seems to be tied to certain sites around the premises. It looks like there\'s something that you need to do at the receiving sites to be able to open those portals, though. Come to think of it, there was one of the ornate pillars with a plaque at each of the other gate sites...",
                                             ),
                                             priority: None,
                                         ),
                                     ],
+                                    false_actions: None,
                                 ),
                                 priority: None,
                             ),
                         ],
                         note: Some("stargate hint"),
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[HINT Radio] Find/Insert Vogon Poetry",
+            note: None,
+            only_once: true,
+            event: giveToNpc(
+                item: "invitation",
+                npc: "demerzel",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: scheduleInIf(
+                        turns_ahead: 3,
+                        condition: Any([
+                            All([
+                                All([
+                                    Pred(hasItem(
+                                        item: "hint_radio",
+                                    )),
+                                    Pred(hasFlag(
+                                        flag: "hint-radio-on",
+                                    )),
+                                ]),
+                                Pred(missingFlag(
+                                    flag: "panic-room-open",
+                                )),
+                                Any([
+                                    Pred(playerInRoom(
+                                        room: "amble-office",
+                                    )),
+                                    Pred(playerInRoom(
+                                        room: "vip-bathroom",
+                                    )),
+                                ]),
+                            ]),
+                            Pred(hasFlag(
+                                flag: "panic-room-open",
+                            )),
+                        ]),
+                        on_false: retryNextTurn,
+                        actions: [
+                            (
+                                action: conditional(
+                                    condition: All([
+                                        All([
+                                            Pred(hasItem(
+                                                item: "hint_radio",
+                                            )),
+                                            Pred(hasFlag(
+                                                flag: "hint-radio-on",
+                                            )),
+                                        ]),
+                                        Pred(missingFlag(
+                                            flag: "panic-room-open",
+                                        )),
+                                        Any([
+                                            Pred(playerInRoom(
+                                                room: "amble-office",
+                                            )),
+                                            Pred(playerInRoom(
+                                                room: "vip-bathroom",
+                                            )),
+                                        ]),
+                                    ]),
+                                    actions: [
+                                        (
+                                            action: npcSays(
+                                                npc: "hint_radio_npc",
+                                                quote: "The rumor around here is that the last candidate was vaporized while sealed in the hidden Poetry Panic Room at the office, and they had the sole remaining elevator keycard with them. The Poetry Performer will panic if you try to make it perform some Vogon poetry. I\'m sure you can see where this is going.",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    false_actions: None,
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        note: Some("poetry performer radio hint"),
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "HINT Radio: That Gonk Can Charge Your Battery",
+            note: None,
+            only_once: true,
+            event: takeItem(
+                item: "empty_battery",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: scheduleInIf(
+                        turns_ahead: 2,
+                        condition: Any([
+                            All([
+                                All([
+                                    Pred(hasItem(
+                                        item: "hint_radio",
+                                    )),
+                                    Pred(hasFlag(
+                                        flag: "hint-radio-on",
+                                    )),
+                                ]),
+                                Pred(missingFlag(
+                                    flag: "portal-gun-powered",
+                                )),
+                                Pred(hasItem(
+                                    item: "empty_battery",
+                                )),
+                                Pred(withNpc(
+                                    npc: "gonk_droid",
+                                )),
+                            ]),
+                            Pred(hasFlag(
+                                flag: "got-charged-battery",
+                            )),
+                        ]),
+                        on_false: retryNextTurn,
+                        actions: [
+                            (
+                                action: conditional(
+                                    condition: All([
+                                        All([
+                                            Pred(hasItem(
+                                                item: "hint_radio",
+                                            )),
+                                            Pred(hasFlag(
+                                                flag: "hint-radio-on",
+                                            )),
+                                        ]),
+                                        Pred(missingFlag(
+                                            flag: "portal-gun-powered",
+                                        )),
+                                        Pred(hasItem(
+                                            item: "empty_battery",
+                                        )),
+                                        Pred(withNpc(
+                                            npc: "gonk_droid",
+                                        )),
+                                    ]),
+                                    actions: [
+                                        (
+                                            action: npcSays(
+                                                npc: "hint_radio_npc",
+                                                quote: "See that gonk droid clomping about over there? They can power or charge just about anything, from what I hear. Not much for conversation though, the gonks.",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    false_actions: None,
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        note: Some("radio gives battery hint"),
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Hint: Find Items to Build a Fire",
+            note: Some("schedule radio hint about building a fire"),
+            only_once: true,
+            event: useItem(
+                item: "plaque_2_frozen",
+                ability: read,
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: scheduleInIf(
+                        turns_ahead: 4,
+                        condition: Any([
+                            All([
+                                Pred(missingFlag(
+                                    flag: "campfire-lit",
+                                )),
+                                All([
+                                    Pred(hasItem(
+                                        item: "hint_radio",
+                                    )),
+                                    Pred(hasFlag(
+                                        flag: "hint-radio-on",
+                                    )),
+                                ]),
+                                Pred(playerInRoom(
+                                    room: "ice-pit",
+                                )),
+                            ]),
+                            Pred(hasFlag(
+                                flag: "campfire-lit",
+                            )),
+                        ]),
+                        on_false: retryNextTurn,
+                        actions: [
+                            (
+                                action: conditional(
+                                    condition: All([
+                                        Pred(missingFlag(
+                                            flag: "campfire-lit",
+                                        )),
+                                        All([
+                                            Pred(hasItem(
+                                                item: "hint_radio",
+                                            )),
+                                            Pred(hasFlag(
+                                                flag: "hint-radio-on",
+                                            )),
+                                        ]),
+                                        Pred(playerInRoom(
+                                            room: "ice-pit",
+                                        )),
+                                    ]),
+                                    actions: [
+                                        (
+                                            action: npcSays(
+                                                npc: "hint_radio_npc",
+                                                quote: "To melt that pillar, you\'ll need to drop some firewood here and light it with something.",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    false_actions: None,
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        note: Some("radio gives campfire hint"),
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "Firewood HINT",
+            note: Some("HINT radio: add firewood hint to scheduler"),
+            only_once: true,
+            event: enterRoom(
+                room: "snow-camp",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: scheduleInIf(
+                        turns_ahead: 4,
+                        condition: Any([
+                            All([
+                                All([
+                                    Pred(hasItem(
+                                        item: "hint_radio",
+                                    )),
+                                    Pred(hasFlag(
+                                        flag: "hint-radio-on",
+                                    )),
+                                ]),
+                                Pred(hasFlag(
+                                    flag: "tried-read-plaque-2",
+                                )),
+                                Pred(missingFlag(
+                                    flag: "campfire-lit",
+                                )),
+                                Pred(missingItem(
+                                    item: "firewood",
+                                )),
+                                Pred(playerInRoom(
+                                    room: "snow-camp",
+                                )),
+                            ]),
+                            Any([
+                                Pred(hasFlag(
+                                    flag: "read-plaque-2",
+                                )),
+                                Pred(hasFlag(
+                                    flag: "campfire-lit",
+                                )),
+                                Pred(hasItem(
+                                    item: "firewood",
+                                )),
+                            ]),
+                        ]),
+                        on_false: retryNextTurn,
+                        actions: [
+                            (
+                                action: conditional(
+                                    condition: All([
+                                        All([
+                                            Pred(hasItem(
+                                                item: "hint_radio",
+                                            )),
+                                            Pred(hasFlag(
+                                                flag: "hint-radio-on",
+                                            )),
+                                        ]),
+                                        Pred(hasFlag(
+                                            flag: "tried-read-plaque-2",
+                                        )),
+                                        Pred(missingFlag(
+                                            flag: "campfire-lit",
+                                        )),
+                                        Pred(missingItem(
+                                            item: "firewood",
+                                        )),
+                                        Pred(playerInRoom(
+                                            room: "snow-camp",
+                                        )),
+                                    ]),
+                                    actions: [
+                                        (
+                                            action: npcSays(
+                                                npc: "hint_radio_npc",
+                                                quote: "Looks like the researchers didn\'t get their fire lit before the dog-Thing got to them. Bad day for them, but maybe good for you. Could you move the firewood down into the ice pit to melt the ice around the frozen pillar?",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    false_actions: None,
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        note: Some("HINT radio: deliver firewood hint"),
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[HINT Available] Make A Fishing Line",
+            note: Some("makes hint available when HAL module trapped in crevice"),
+            only_once: true,
+            event: useItemOnItem(
+                tool: "crowbar",
+                target: "vending_machine",
+                interaction: open,
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: scheduleInIf(
+                        turns_ahead: 2,
+                        condition: Any([
+                            All([
+                                All([
+                                    Pred(hasItem(
+                                        item: "hint_radio",
+                                    )),
+                                    Pred(hasFlag(
+                                        flag: "hint-radio-on",
+                                    )),
+                                ]),
+                                Pred(hasFlag(
+                                    flag: "hal-module-in-crevice",
+                                )),
+                            ]),
+                            Pred(hasFlag(
+                                flag: "module-2-retrieved",
+                            )),
+                        ]),
+                        on_false: retryNextTurn,
+                        actions: [
+                            (
+                                action: conditional(
+                                    condition: All([
+                                        All([
+                                            Pred(hasItem(
+                                                item: "hint_radio",
+                                            )),
+                                            Pred(hasFlag(
+                                                flag: "hint-radio-on",
+                                            )),
+                                        ]),
+                                        Pred(hasFlag(
+                                            flag: "hal-module-in-crevice",
+                                        )),
+                                    ]),
+                                    actions: [
+                                        (
+                                            action: npcSays(
+                                                npc: "hint_radio_npc",
+                                                quote: "Whoops. That electronic bit fell way down in that crevice. Looks like you\'ll need something like a fishing line to pull it out. There must be **something** you can use around here.",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    false_actions: None,
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        note: Some("fishing line hint available"),
+                    ),
+                    priority: None,
+                ),
+            ],
+        ),
+        (
+            name: "[HINT] Towel Cleans Plaque 1",
+            note: None,
+            only_once: true,
+            event: takeItem(
+                item: "towel",
+            ),
+            conditions: All([]),
+            actions: [
+                (
+                    action: scheduleInIf(
+                        turns_ahead: 2,
+                        condition: Any([
+                            All([
+                                All([
+                                    Pred(hasItem(
+                                        item: "hint_radio",
+                                    )),
+                                    Pred(hasFlag(
+                                        flag: "hint-radio-on",
+                                    )),
+                                ]),
+                                Pred(missingFlag(
+                                    flag: "read-plaque-1",
+                                )),
+                            ]),
+                            Pred(hasFlag(
+                                flag: "read-plaque-1",
+                            )),
+                        ]),
+                        on_false: retryNextTurn,
+                        actions: [
+                            (
+                                action: conditional(
+                                    condition: All([
+                                        All([
+                                            Pred(hasItem(
+                                                item: "hint_radio",
+                                            )),
+                                            Pred(hasFlag(
+                                                flag: "hint-radio-on",
+                                            )),
+                                        ]),
+                                        Pred(missingFlag(
+                                            flag: "read-plaque-1",
+                                        )),
+                                    ]),
+                                    actions: [
+                                        (
+                                            action: npcSays(
+                                                npc: "hint_radio_npc",
+                                                quote: "Towels can be awfully handy for cleaning off grimy things. Just sayin\'.",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    false_actions: None,
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        note: Some("towels can clean hint"),
                     ),
                     priority: None,
                 ),
@@ -14001,7 +15302,7 @@
         (
             name: "Follower of the Shoe",
             note: Some("locks player into the shoe sect"),
-            only_once: true,
+            only_once: false,
             event: takeFromItem(
                 loot: "messiah_shoe",
                 container: "messiah_kit",
@@ -14009,40 +15310,101 @@
             conditions: All([]),
             actions: [
                 (
-                    action: showMessage(
-                        text: "[[hl]]You are now a follower of the [[item]]Shoe[[/item]].[[/hl]]",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: setItemMovability(
-                        item: "messiah_gourd",
-                        movability: fixed(
-                            reason: "You are already a follower of the Shoe. Your faith in the Sanctified Sandal shall not be shaken.",
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: awardPoints(
-                        amount: 5,
-                        reason: "Became a Follower of the Shoe",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: addFlag(
-                        flag: simple(
-                            name: "sect-shoe",
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: addSpinnerWedge(
-                        spinner: "ambientWoodland",
-                        text: "Far above, the trees seem to whisper: \"Yesss. Yes! The Shoe is the Way.\" ",
-                        width: 1,
+                    action: conditional(
+                        condition: Pred(missingFlag(
+                            flag: "warned-about-sects",
+                        )),
+                        actions: [
+                            (
+                                action: showMessage(
+                                    text: "[[bright-red]][[b]][[i]]…before fully taking it into your grasp, you have a moment of doubt…[[/i]][[/b]][[/bright-red]]",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: showMessage(
+                                    text: "Is your faith [[u]]unshakable[[/u]]? Once you take either the [[item]]Shoe[[/item]] or the [[item]]Gourd[[/item]], there is no going back.",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: addFlag(
+                                    flag: simple(
+                                        name: "warned-about-sects",
+                                    ),
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: despawnItem(
+                                    item: "messiah_shoe",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemInContainer(
+                                    item: "messiah_shoe",
+                                    container: "messiah_kit",
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        false_actions: Some([
+                            (
+                                action: conditional(
+                                    condition: All([
+                                        Pred(missingFlag(
+                                            flag: "sect-shoe",
+                                        )),
+                                        Pred(missingFlag(
+                                            flag: "sect-gourd",
+                                        )),
+                                    ]),
+                                    actions: [
+                                        (
+                                            action: showMessage(
+                                                text: "[[hl]]You are now a follower of the [[item]]Shoe[[/item]].[[/hl]]",
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: setItemMovability(
+                                                item: "messiah_gourd",
+                                                movability: fixed(
+                                                    reason: "You are already a follower of the Shoe. Your faith in the Sanctified Sandal shall not be shaken.",
+                                                ),
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: awardPoints(
+                                                amount: 5,
+                                                reason: "Became a Follower of the Shoe",
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: addFlag(
+                                                flag: simple(
+                                                    name: "sect-shoe",
+                                                ),
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: addSpinnerWedge(
+                                                spinner: "ambientWoodland",
+                                                text: "Far above, the trees seem to whisper: \"Yesss. Yes! The Shoe is the Way.\" ",
+                                                width: 1,
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    false_actions: None,
+                                ),
+                                priority: None,
+                            ),
+                        ]),
                     ),
                     priority: None,
                 ),
@@ -14051,7 +15413,7 @@
         (
             name: "Follower of the Gourd",
             note: Some("locks player into the gourd sect"),
-            only_once: true,
+            only_once: false,
             event: takeFromItem(
                 loot: "messiah_gourd",
                 container: "messiah_kit",
@@ -14059,40 +15421,101 @@
             conditions: All([]),
             actions: [
                 (
-                    action: showMessage(
-                        text: "[[b]]You are now a follower of the [[item]]Gourd[[/item]].[[/b]]",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: setItemMovability(
-                        item: "messiah_shoe",
-                        movability: fixed(
-                            reason: "You are already a follower of the Gourd. Your faith in the Vaunted Vegetable shall not be shaken.",
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: awardPoints(
-                        amount: 5,
-                        reason: "Became a Follower of the Gourd",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: addFlag(
-                        flag: simple(
-                            name: "sect-gourd",
-                        ),
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: addSpinnerWedge(
-                        spinner: "ambientWoodland",
-                        text: "Far above, the trees seem to whisper: \"Yesss. Yes! The Gourd is the Way.\" ",
-                        width: 1,
+                    action: conditional(
+                        condition: Pred(missingFlag(
+                            flag: "warned-about-sects",
+                        )),
+                        actions: [
+                            (
+                                action: showMessage(
+                                    text: "[[bright-red]][[b]][[i]]…before fully taking it into your grasp, you have a moment of doubt…[[/i]][[/b]][[/bright-red]]",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: showMessage(
+                                    text: "Is your faith [[u]]unshakable[[/u]]? Once you take either the [[item]]Shoe[[/item]] or the [[item]]Gourd[[/item]], there is no going back.",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: addFlag(
+                                    flag: simple(
+                                        name: "warned-about-sects",
+                                    ),
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: despawnItem(
+                                    item: "messiah_gourd",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemInContainer(
+                                    item: "messiah_gourd",
+                                    container: "messiah_kit",
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        false_actions: Some([
+                            (
+                                action: conditional(
+                                    condition: All([
+                                        Pred(missingFlag(
+                                            flag: "sect-shoe",
+                                        )),
+                                        Pred(missingFlag(
+                                            flag: "sect-gourd",
+                                        )),
+                                    ]),
+                                    actions: [
+                                        (
+                                            action: showMessage(
+                                                text: "[[b]]You are now a follower of the [[item]]Gourd[[/item]].[[/b]]",
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: setItemMovability(
+                                                item: "messiah_shoe",
+                                                movability: fixed(
+                                                    reason: "You are already a follower of the Gourd. Your faith in the Vaunted Vegetable shall not be shaken.",
+                                                ),
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: awardPoints(
+                                                amount: 5,
+                                                reason: "Became a Follower of the Gourd",
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: addFlag(
+                                                flag: simple(
+                                                    name: "sect-gourd",
+                                                ),
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: addSpinnerWedge(
+                                                spinner: "ambientWoodland",
+                                                text: "Far above, the trees seem to whisper: \"Yesss. Yes! The Gourd is the Way.\" ",
+                                                width: 1,
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    false_actions: None,
+                                ),
+                                priority: None,
+                            ),
+                        ]),
                     ),
                     priority: None,
                 ),
@@ -14235,72 +15658,6 @@
                 (
                     action: showMessage(
                         text: "[[u]]NOW[[/u]] you\'re a frood who really[[b]] \"knows where his towel is\"! [[/b]]",
-                    ),
-                    priority: None,
-                ),
-            ],
-        ),
-        (
-            name: "[HINT] Towel Cleans Plaque 1",
-            note: None,
-            only_once: true,
-            event: takeItem(
-                item: "towel",
-            ),
-            conditions: All([]),
-            actions: [
-                (
-                    action: scheduleInIf(
-                        turns_ahead: 2,
-                        condition: Any([
-                            All([
-                                All([
-                                    Pred(hasItem(
-                                        item: "hint_radio",
-                                    )),
-                                    Pred(hasFlag(
-                                        flag: "hint-radio-on",
-                                    )),
-                                ]),
-                                Pred(missingFlag(
-                                    flag: "read-plaque-1",
-                                )),
-                            ]),
-                            Pred(hasFlag(
-                                flag: "read-plaque-1",
-                            )),
-                        ]),
-                        on_false: retryNextTurn,
-                        actions: [
-                            (
-                                action: conditional(
-                                    condition: All([
-                                        All([
-                                            Pred(hasItem(
-                                                item: "hint_radio",
-                                            )),
-                                            Pred(hasFlag(
-                                                flag: "hint-radio-on",
-                                            )),
-                                        ]),
-                                        Pred(missingFlag(
-                                            flag: "read-plaque-1",
-                                        )),
-                                    ]),
-                                    actions: [
-                                        (
-                                            action: npcSays(
-                                                npc: "hint_radio_npc",
-                                                quote: "Towels can be awfully handy for cleaning off grimy things. Just sayin\'.",
-                                            ),
-                                            priority: None,
-                                        ),
-                                    ],
-                                ),
-                                priority: None,
-                            ),
-                        ],
-                        note: Some("towels can clean hint"),
                     ),
                     priority: None,
                 ),
@@ -14458,6 +15815,19 @@
             )),
             finished_when: hasFlag(
                 flag: "got-visitor-pass",
+            ),
+            failed_when: None,
+        ),
+        (
+            id: "access-lost-and-found",
+            name: "Gain Access to Lost and Found",
+            description: "There is a Lost and Found box in the office, and Demerzel has the key. When she\'s impressed enough with your progress, she\'ll give it to you.",
+            group: required,
+            activate_when: Some(reachedRoom(
+                room: "amble-office",
+            )),
+            finished_when: hasFlag(
+                flag: "lost-and-found-opened",
             ),
             failed_when: None,
         ),

@@ -47,8 +47,6 @@ item glow_stick {
     movability free
 }
 
-
-
 item pc {
     name "Linux Workstation"
     desc "A System76 laptop running Pop!_OS with COSMIC DE, with Zed open to a file called [[i]]dev_playground.amble[[/i]]."
@@ -116,16 +114,21 @@ when touch item big_red_button {
 trigger "Big Blue Button Pushed"
 note "test modify npc"
 when touch item big_blue_button {
-    do show "Modifying the Luggage..."
-    do modify npc the_luggage {
-        name "Hungry Luggage"
-        desc "The Luggage is ravenous! Beware!!"
-        state custom(hungry)
-        add line "(The Luggage nearly bites your face off when you approach.)" to state custom(hungry)
-        random rooms( dev-room, lounge )
-        timing every 5 turns
-        active true
-        loop true
+    if missing flag tried-the-blue-button {
+        do add flag tried-the-blue-button
+        do show "That will make the Luggage hungry. You might want to rethink that."
+    } else {
+        do show "Modifying the Luggage..."
+        do modify npc the_luggage {
+            name "Hungry Luggage"
+            desc "The Luggage is ravenous! Beware!!"
+            state custom(hungry)
+            add line "(The Luggage nearly bites your face off when you approach.)" to state custom(hungry)
+            random rooms( dev-room, lounge )
+            timing every 5 turns
+            active true
+            loop true
+        }
     }
 }
 

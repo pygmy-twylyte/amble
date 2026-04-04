@@ -94,7 +94,7 @@ when use item plaque_2 ability read {
     do award points 10 reason "Read the frozen plaque"
     if has visited room stargate-room {
         do show "(A new Stargate destination has been enabled.)"
-        run connect_snowfield_stargate
+        run CONNECT_SNOWFIELD_STARGATE
     }
 }
 

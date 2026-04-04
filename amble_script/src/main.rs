@@ -1077,8 +1077,15 @@ fn collect_flags_from_action_defs(actions: &[amble_data::ActionDef], out: &mut H
             amble_data::ActionKind::AddFlag { flag } => {
                 out.insert(flag_name(flag));
             },
-            amble_data::ActionKind::Conditional { actions, .. }
-            | amble_data::ActionKind::ScheduleIn { actions, .. }
+            amble_data::ActionKind::Conditional {
+                actions, false_actions, ..
+            } => {
+                collect_flags_from_action_defs(actions, out);
+                if let Some(false_actions) = false_actions {
+                    collect_flags_from_action_defs(false_actions, out);
+                }
+            },
+            amble_data::ActionKind::ScheduleIn { actions, .. }
             | amble_data::ActionKind::ScheduleOn { actions, .. }
             | amble_data::ActionKind::ScheduleInIf { actions, .. }
             | amble_data::ActionKind::ScheduleOnIf { actions, .. } => {

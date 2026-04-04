@@ -561,9 +561,17 @@ fn action_to_kind(action: &ActionAst) -> Result<ActionKind, WorldDefError> {
             actions: actions_to_defs(actions)?,
             note: note.clone(),
         },
-        ActionAst::Conditional { condition, actions } => ActionKind::Conditional {
+        ActionAst::Conditional {
+            condition,
+            actions,
+            false_actions,
+        } => ActionKind::Conditional {
             condition: condition_expr_from_ast(condition)?,
             actions: actions_to_defs(actions)?,
+            false_actions: false_actions
+                .as_ref()
+                .map(|actions| actions_to_defs(actions))
+                .transpose()?,
         },
     })
 }
