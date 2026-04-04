@@ -367,7 +367,7 @@
         (
             id: "gourd-shrine",
             name: "Shrine of the Holy Gourd",
-            desc: "This chapel glows with warm amber light filtered through bottle-green glass, giving everything the reverent complexion of very expensive soup. Vines curl around fluted pillars, seed motifs repeat across the floor, and at the far end a circular [[item]]Harvest Altar[[/item]] stands beneath a domed canopy. A velvet-lined recess at its center is being guarded by atmosphere alone, which in this room seems to consider itself armed. The air smells of beeswax, autumn leaves, and the smug serenity of people who believe a vegetable solved the major philosophical questions decades ago.",
+            desc: "This chapel glows with warm amber light filtered through bottle-green glass, giving everything the reverent complexion of very expensive soup. Vines curl around fluted pillars, seed motifs repeat across the floor, and at the far end a circular [[item]]Harvest Altar[[/item]] stands beneath a domed canopy. A velvet-lined recess at its center is being guarded by atmosphere alone, which in this room seems to consider itself armed. The air smells of beeswax, autumn leaves, and the smug serenity of people who believe a vegetable solved the major philosophical questions decades ago. Near the entry, a [[item]]hymn board[[//item]] spells out the plan for the day\'s worship while an [[item]]abacus[[/item]] stands ready to count the devoted.",
             visited: false,
             exits: [
                 (
@@ -759,11 +759,11 @@
         (
             id: "main-lobby",
             name: "Main Lobby",
-            desc: "The lobby is clinically clean in a way that feels suspicious. A slightly humming vending machine stands beside an empty podium. Softly glowing script over an archway on the far wall reads \'Elevator Access\'. To one side, there is floor-to-ceiling frosted glass with an etched door at the farthest end from the entrance. Opposite that, the smell of searing beef wafts from a broad entryway flanked by a wobbly sign.",
+            desc: "The lobby is clinically clean in a way that feels suspicious. A slightly humming vending machine stands beside an empty podium. Softly glowing script over an archway on the far wall reads [[i]][[blue]]Lift Access[[/blue]][[/i]] where a few short steps lead up to an elevator bank. To one side, there is floor-to-ceiling frosted glass with an etched door at the farthest end from the entrance. Opposite that, the smell of searing beef wafts from a broad entryway flanked by a wobbly sign.",
             visited: false,
             exits: [
                 (
-                    direction: "elevator access",
+                    direction: "lift access",
                     to: "lift-bank-main",
                     hidden: false,
                     locked: false,
@@ -790,7 +790,7 @@
                     barred_message: None,
                 ),
                 (
-                    direction: "etched door",
+                    direction: "frosted glass door",
                     to: "amble-office",
                     hidden: false,
                     locked: false,
@@ -867,7 +867,7 @@
                     desc: Some("A typical wooden podium used to welcome incoming visitors, and just as typically vacant. It bears an emblem that reads: [[hl]][[i]]Welcome, Candidate[[/i][[/hl]]."),
                 ),
                 (
-                    name: "Etched Door",
+                    name: "Frosted Glass Door",
                     desc: Some("A frosted glass office door, etched with: [[box:MAIN OFFICE]]Amble Adventures[[/box]]"),
                 ),
             ],
@@ -1175,7 +1175,7 @@
         (
             id: "shoe-shrine",
             name: "Shrine of the Holy Shoe",
-            desc: "A long, narrow chapel of polished oak and stern symmetry stretches before you, lit by stained glass windows that cast sandal-shaped colors across the floor. At the far end, on a raised [[item]]Sandal Altar[[/item]], a velvet-lined recess sits at attention beneath a cone of buttery light. Rows of pews face forward with the crisp obedience of well-behaved feet. The air carries beeswax, old leather, and the faint, intoxicating scent of absolute certainty rubbed to a shine.",
+            desc: "A long, narrow chapel of polished oak and stern symmetry stretches before you, lit by stained glass windows that cast sandal-shaped colors across the floor. A [[item]]liturgy board[[/item]] announces the day\'s plan near the entryway, with the obligatory [[item]]donation box[[/item]] mounted below it. At the far end, on a raised [[item]]Sandal Altar[[/item]], a velvet-lined recess sits at attention beneath a cone of buttery light. Rows of pews face forward with the crisp obedience of well-behaved feet. The air carries beeswax, old leather, and the faint, intoxicating scent of absolute certainty rubbed to a shine.",
             visited: false,
             exits: [
                 (
@@ -1192,7 +1192,7 @@
             scenery: [
                 (
                     name: "Stained Glass",
-                    desc: Some("The windows depict the Sacred Sandal performing small but decisive miracles: crossing deserts, toppling heretics, and in one panel apparently inventing left and right."),
+                    desc: Some("The windows depict the Sacred Sandal performing small but decisive miracles: crossing deserts, toppling heretics, and in one panel apparently inventing the idea of [[b]]left[[/b]] and [[b]]right[[/b]]."),
                 ),
                 (
                     name: "Pews",
@@ -7168,7 +7168,7 @@
         ),
         (
             name: "[Aperture-Lab]",
-            note: None,
+            note: Some("barehanded \'take\' not possible - it\'s on fire"),
             only_once: false,
             event: takeItem(
                 item: "flaming_invitation",
@@ -8690,6 +8690,10 @@
                 Pred(withNpc(
                     npc: "demerzel",
                 )),
+                Pred(npcHasItem(
+                    npc: "demerzel",
+                    item: "lost_and_found_key",
+                )),
             ]),
             actions: [
                 (
@@ -9339,34 +9343,43 @@
             conditions: All([]),
             actions: [
                 (
-                    action: showMessage(
-                        text: "A chime echoes through the lobby. \"Candidates: Please do not loiter in the lobby,\" intones an overhead voice.",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: scheduleInIf(
-                        turns_ahead: 3,
-                        condition: Pred(playerInRoom(
-                            room: "main-lobby",
-                        )),
-                        on_false: cancel,
+                    action: scheduleIn(
+                        turns_ahead: 2,
                         actions: [
                             (
                                 action: showMessage(
-                                    text: "The chime sounds again. \"Candidates: We **said** not to loiter in the lobby,\" says the voice, in more of an annoyed tone.",
+                                    text: "A chime echoes through the lobby. \"Candidates: Please do not loiter in the lobby,\" intones an overhead voice.",
                                 ),
                                 priority: None,
                             ),
                             (
-                                action: awardPoints(
-                                    amount: -1,
-                                    reason: "Ignored the lobby loitering reminder",
+                                action: scheduleInIf(
+                                    turns_ahead: 5,
+                                    condition: Pred(playerInRoom(
+                                        room: "main-lobby",
+                                    )),
+                                    on_false: cancel,
+                                    actions: [
+                                        (
+                                            action: showMessage(
+                                                text: "The chime sounds again. \"Candidates: We **said** not to loiter in the lobby,\" says the voice, in more of an annoyed tone.",
+                                            ),
+                                            priority: None,
+                                        ),
+                                        (
+                                            action: awardPoints(
+                                                amount: -1,
+                                                reason: "Ignored the lobby loitering warning",
+                                            ),
+                                            priority: None,
+                                        ),
+                                    ],
+                                    note: Some("lobby loitering penalty"),
                                 ),
                                 priority: None,
                             ),
                         ],
-                        note: Some("lobby loitering reminder"),
+                        note: Some("lobby loitering warning"),
                     ),
                     priority: None,
                 ),
@@ -9455,7 +9468,7 @@
                 (
                     action: awardPoints(
                         amount: 3,
-                        reason: "Fished the zircon tweezers out of the vending machine",
+                        reason: "Fished the zircon tweezers out of the vending machine crevice",
                     ),
                     priority: None,
                 ),
@@ -11090,51 +11103,67 @@
                 target: "security_locker",
                 action: break,
             ),
-            conditions: Pred(missingFlag(
-                flag: "unlocked-security-crate",
-            )),
+            conditions: All([]),
             actions: [
                 (
-                    action: despawnItem(
-                        item: "security_locker",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "crowbar",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "security_log",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "shattered_vial",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "initech_mug",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: showMessage(
-                        text: "With a few hefty blows, you manage to break the lock haft completely off of the security locker -- well after a few misses had already caved in the lid and destroyed it, but you were having fun. It looks like you broke a couple of the items that were inside in the process.",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: addSpinnerWedge(
-                        spinner: "ambientInterior",
-                        text: "PA Announcement: \'Someone broke into the security locker on the dock. Mind your belongings and report any suspicious activity to security.\'",
-                        width: 1,
+                    action: conditional(
+                        condition: Pred(missingFlag(
+                            flag: "unlocked-security-crate",
+                        )),
+                        actions: [
+                            (
+                                action: despawnItem(
+                                    item: "security_locker",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "crowbar",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "security_log",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "shattered_vial",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "initech_mug",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: showMessage(
+                                    text: "With a few hefty blows, you manage to break the lock haft completely off of the security locker -- well after a few misses had already caved in the lid and destroyed it, but you were having fun. It looks like you broke a couple of the items that were inside in the process.",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: addSpinnerWedge(
+                                    spinner: "ambientInterior",
+                                    text: "PA Announcement: \'Someone broke into the security locker on the dock. Mind your belongings and report any suspicious activity to security.\'",
+                                    width: 1,
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        false_actions: Some([
+                            (
+                                action: showMessage(
+                                    text: "Despite already having unlocked the crate, you bash it a few times for emphasis.",
+                                ),
+                                priority: None,
+                            ),
+                        ]),
                     ),
                     priority: None,
                 ),
@@ -11148,51 +11177,67 @@
                 target: "security_locker",
                 action: burn,
             ),
-            conditions: Pred(missingFlag(
-                flag: "unlocked-security-crate",
-            )),
+            conditions: All([]),
             actions: [
                 (
-                    action: despawnItem(
-                        item: "security_locker",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "crowbar",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "burned_security_log",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "strange_liquid",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: spawnItemCurrentRoom(
-                        item: "initech_mug",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: showMessage(
-                        text: "WHOOOOOMP! The locker, which you now realize may have been made from the solid magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking your eyebrows with it. It looks like *some* of the items inside weren\'t flammable.",
-                    ),
-                    priority: None,
-                ),
-                (
-                    action: addSpinnerWedge(
-                        spinner: "ambientInterior",
-                        text: "PA Announcement: \'Someone used an Arson-Aid to torch the security locker at the loading dock. An investigation is underway. Report anyone with scorched clothes or missing eyebrows to security.\'",
-                        width: 1,
+                    action: conditional(
+                        condition: Pred(missingFlag(
+                            flag: "unlocked-security-crate",
+                        )),
+                        actions: [
+                            (
+                                action: despawnItem(
+                                    item: "security_locker",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "crowbar",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "burned_security_log",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "strange_liquid",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: spawnItemCurrentRoom(
+                                    item: "initech_mug",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: showMessage(
+                                    text: "WHOOOOOMP! The locker, which you now realize may have been made from the solid magnesium magnolia trees of Siwenna, goes up in a white hot flash -- taking your eyebrows with it. It looks like *some* of the items inside weren\'t flammable.",
+                                ),
+                                priority: None,
+                            ),
+                            (
+                                action: addSpinnerWedge(
+                                    spinner: "ambientInterior",
+                                    text: "PA Announcement: \'Someone used an Arson-Aid to torch the security locker at the loading dock. An investigation is underway. Report anyone with scorched clothes or missing eyebrows to security.\'",
+                                    width: 1,
+                                ),
+                                priority: None,
+                            ),
+                        ],
+                        false_actions: Some([
+                            (
+                                action: showMessage(
+                                    text: "Strange… it seems like this crate should burn easily, but somehow it doesn\'t.",
+                                ),
+                                priority: None,
+                            ),
+                        ]),
                     ),
                     priority: None,
                 ),
@@ -15770,6 +15815,19 @@
             )),
             finished_when: hasFlag(
                 flag: "got-visitor-pass",
+            ),
+            failed_when: None,
+        ),
+        (
+            id: "access-lost-and-found",
+            name: "Gain Access to Lost and Found",
+            description: "There is a Lost and Found box in the office, and Demerzel has the key. When she\'s impressed enough with your progress, she\'ll give it to you.",
+            group: required,
+            activate_when: Some(reachedRoom(
+                room: "amble-office",
+            )),
+            finished_when: hasFlag(
+                flag: "lost-and-found-opened",
             ),
             failed_when: None,
         ),
