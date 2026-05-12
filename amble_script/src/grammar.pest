@@ -39,8 +39,7 @@ keyword = {
   | "show"
   | "run"
   | "add"
-  | "wedge"
-  | "width"
+  | "entry"
   | "spinner"
   | "replace"
   | "with"
@@ -229,7 +228,7 @@ balanced_content = { (balanced_braces | (!("}") ~ ANY))* }
 do_action        =  {
     ("set" ~ "npc" ~ "active" ~ ident ~ boolean)
   | ("show" ~ string)
-  | ("add" ~ "wedge" ~ string ~ ("width" ~ number)? ~ "spinner" ~ ident)
+  | ("add" ~ "entry" ~ string ~ "spinner" ~ ident)
   | ("add" ~ "seq" ~ "flag" ~ ident ~ ("limit" ~ number)?)
   | ("replace" ~ "item" ~ ident ~ "with" ~ ident)
   | ("replace" ~ "drop" ~ "item" ~ ident ~ "with" ~ ident)
@@ -490,8 +489,8 @@ consume_replace_current_room = { "replace" ~ "current" ~ "room" ~ ident }
 // -----------------
 
 spinner_def   = { "spinner" ~ ident ~ spinner_block }
-spinner_block = { "{" ~ wedge_stmt+ ~ "}" }
-wedge_stmt    = { "wedge" ~ string ~ ("width" ~ pos_int)? }
+spinner_block = { "{" ~ spinner_entry+ ~ "}" }
+spinner_entry = { string }
 
 // -----------------
 // NPCs

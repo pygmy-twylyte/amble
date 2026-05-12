@@ -142,7 +142,7 @@ Item/NPC/world state:
   - `do push player to <room>`
   - `do deny read "Reason…"`
 - Spinners (styled random lines):
-  - `do add wedge "Text…" width <n> spinner <spinner>`
+  - `do add entry "Text…" spinner <spinner>`
   - `do spinner message <spinner>`
 
 Scheduling:
@@ -294,7 +294,7 @@ Action atoms:
 - Exits/locks: `do reveal/lock/unlock exit …`, `do lock/unlock item …`, `do set barred message from … to … "msg"`
 - Items/NPCs: `do set item description … "…"`, `do set item movability … restricted "…"`, `do npc says … "…"`, `do npc random dialogue …`, `do set npc state … state`, `do npc refuse item … "…"`
 - Player/world: `do push player to …`, `do deny read "…"`
-- Spinners: `do add wedge "…" width n spinner <spinner>`, `do spinner message <spinner>`
+- Spinners: `do add entry "…" spinner <spinner>`, `do spinner message <spinner>`
 - Schedules: `do schedule in n { … }`, `do schedule on t { … }`, and `do schedule in/on … if <cond> onFalse <policy> note "…" { … }`
 
 —

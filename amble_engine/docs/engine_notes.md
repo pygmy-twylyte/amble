@@ -45,6 +45,6 @@ check_triggers() returns a Vec<Trigger> of all fired triggers, which allows the 
 * imported from my 'gametools' crate
 * provide randomized, customizable rephrasing of common message types to keep them more interesting
 * provide intermittent, location-based "ambient" messages for environment
-* wedges are Strings and can be weighted by being given different 'widths'
+* spinner entries are Strings drawn from refilling pools
 * intermittent messages are created using a `chance` trigger condition
-* spinner wedges can be added at runtime by triggers, allowing game events to color messages that follow
+* spinner entries can be added at runtime by triggers, allowing game events to color messages that follow

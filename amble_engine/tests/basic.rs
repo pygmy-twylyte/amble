@@ -552,9 +552,8 @@ fn test_check_npc_movement() {
 #[test]
 fn test_check_ambient_triggers() {
     use ae::scheduler::EventCondition;
-    use ae::spinners::SpinnerType;
+    use ae::spinners::{SpinnerType, TextPool};
     use ae::trigger::{Trigger, TriggerCondition};
-    use gametools::{Spinner, Wedge};
     let mut world = world::AmbleWorld::new_empty();
     let mut view = View::new();
     let r1 = ae::idgen::new_room_id();
@@ -575,7 +574,7 @@ fn test_check_ambient_triggers() {
     world.rooms.insert(r1.clone(), room1);
     world.player.location = world::Location::Room(r1.clone());
     let spinner_type = SpinnerType::Custom("test_spinner".to_string());
-    let spinner = Spinner::new(vec![Wedge::new("test message".to_string())]);
+    let spinner = TextPool::new(["test message".to_string()]).unwrap();
     world.spinners.insert(spinner_type.clone(), spinner);
     let trigger = Trigger {
         name: "ambient".into(),

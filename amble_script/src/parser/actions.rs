@@ -19,7 +19,7 @@ fn parse_action_core(text: &str) -> Result<ActionAst, AstError> {
     if let Some(action) = parse_show_action(t)? {
         return Ok(action);
     }
-    if let Some(action) = parse_add_wedge_action(t)? {
+    if let Some(action) = parse_add_spinner_entry_action(t)? {
         return Ok(action);
     }
     if let Some(action) = parse_add_flag_action(t)? {
@@ -140,31 +140,19 @@ fn parse_show_action(text: &str) -> Result<Option<ActionAst>, AstError> {
     Ok(None)
 }
 
-fn parse_add_wedge_action(text: &str) -> Result<Option<ActionAst>, AstError> {
-    let Some(rest) = text.strip_prefix("do add wedge ") else {
+fn parse_add_spinner_entry_action(text: &str) -> Result<Option<ActionAst>, AstError> {
+    let Some(rest) = text.strip_prefix("do add entry ") else {
         return Ok(None);
     };
     let r = rest.trim();
-    let (text, used) = parse_string_at(r).map_err(|_| AstError::Shape("add wedge missing or invalid quote"))?;
-    let mut after = r[used..].trim_start();
-    let mut width: usize = 1;
-    if let Some(wrest) = after.strip_prefix("width ") {
-        let mut j = 0usize;
-        while j < wrest.len() && wrest.as_bytes()[j].is_ascii_digit() {
-            j += 1;
-        }
-        if j == 0 {
-            return Err(AstError::Shape("add wedge missing width number"));
-        }
-        width = wrest[..j].parse().map_err(|_| AstError::Shape("invalid wedge width"))?;
-        after = wrest[j..].trim_start();
-    }
+    let (text, used) = parse_string_at(r).map_err(|_| AstError::Shape("add entry missing or invalid quote"))?;
+    let after = r[used..].trim_start();
     let spinner = after
         .strip_prefix("spinner ")
-        .ok_or(AstError::Shape("add wedge missing 'spinner'"))?
+        .ok_or(AstError::Shape("add entry missing 'spinner'"))?
         .trim()
         .to_string();
-    Ok(Some(ActionAst::AddSpinnerWedge { spinner, width, text }))
+    Ok(Some(ActionAst::AddSpinnerEntry { spinner, text }))
 }
 
 fn parse_add_flag_action(text: &str) -> Result<Option<ActionAst>, AstError> {

@@ -89,8 +89,8 @@ when give item working_emitter to npc emh {
     do show "The EMH flickers, then vanishes in a flash. He reappears a few moments later."
     do npc says emh "All seems to be in order. As promised, I retrieved one of HAL's modules. I dropped it off in the observation room across the hall, next to HAL's memory bank -- but insert it at your own peril."
     do spawn item hal_module_1 into room observation-room
-    do add wedge "Heard overhead: \"Will the E.M.H. please return to the med bay? There's been a yellow snow blinding incident.\"" width 1 spinner ambientInterior
-    do add wedge "Over the PA: \"E.M.H and sanitation, please report to the lunch room. Mr. Creosote ate a tiny, wafer thin mint again.\"" width 1 spinner ambientInterior
+    do add entry "Heard overhead: \"Will the E.M.H. please return to the med bay? There's been a yellow snow blinding incident.\"" spinner ambientInterior
+    do add entry "Over the PA: \"E.M.H and sanitation, please report to the lunch room. Mr. Creosote ate a tiny, wafer thin mint again.\"" spinner ambientInterior
 }
 
 trigger "[HAL] HAL/Module #1 Inserted" only once

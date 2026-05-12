@@ -128,7 +128,7 @@ when act burn on item lebowski_rug {
     do add flag found-portal-room
     do award points 3 reason "Revealed the trapdoor by torching the rug"
     do show "When the acrid smoke clears and your eyes stop burning, you can make out a trap door revealed in the floor where the rug used to be."
-    do add wedge "Security Announcement: Some arsonist burned the rug in the lounge. It no longer ties the room together. This aggression will not stand, man." width 1 spinner ambientInterior
+    do add entry "Security Announcement: Some arsonist burned the rug in the lounge. It no longer ties the room together. This aggression will not stand, man." spinner ambientInterior
 }
 
 trigger "[Lounge] Brew Coffee" only once

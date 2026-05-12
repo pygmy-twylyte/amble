@@ -1,19 +1,19 @@
 # Spinners DSL Guide
 
-Spinners power ambient flavour text and other weighted random selections. This guide explains the `spinner` syntax in the `amble_script` DSL and how it compiles into `WorldDef` (`world.ron`).
+Spinners power ambient flavour text and other random selections. This guide explains the `spinner` syntax in the `amble_script` DSL and how it compiles into `WorldDef` (`world.ron`).
 
 Highlights:
-- A spinner is a named collection of wedges (`spinner <id> { wedge "Text" [width <n>] … }`).
-- Each wedge carries an optional weight; omit `width` to default to 1.
-- Referenced from triggers via `do spinner message <spinner_id>` or expanded with `do add wedge … spinner <spinner_id>`.
+- A spinner is a named collection of text entries (`spinner <id> { "Text" … }`).
+- Entries are unweighted; the engine draws from a refilling pool so every entry appears once before reshuffling.
+- Referenced from triggers via `do spinner message <spinner_id>` or expanded with `do add entry … spinner <spinner_id>`.
 - Compiles directly to the engine’s spinner schema inside `WorldDef`.
 
 ## Minimal Spinner
 
 ```amble
 spinner ambientLobby {
-  wedge "The HVAC sighs."
-  wedge "Footsteps echo from deeper inside." width 2
+  "The HVAC sighs."
+  "Footsteps echo from deeper inside."
 }
 ```
 
@@ -22,18 +22,18 @@ WorldDef excerpt (RON):
 ```ron
 (
   id: "ambientLobby",
-  wedges: [
-    (text: "The HVAC sighs.", width: 1),
-    (text: "Footsteps echo from deeper inside.", width: 2),
+  entries: [
+    "The HVAC sighs.",
+    "Footsteps echo from deeper inside.",
   ],
 )
 ```
 
-The engine rolls a weighted random selection whenever the spinner is triggered. In this example, the second line is twice as likely as the first.
+The engine draws from a refilling pool whenever the spinner is triggered, which prevents repeats until every entry has appeared once.
 
-## Wedge Tips
+## Entry Tips
 
-- Keep wedge text concise; use triggers to gate long-form narration.
+- Keep entry text concise; use triggers to gate long-form narration.
 - Combine with `schedule` triggers for recurring ambience (`do schedule in 3 { do spinner message ambientLobby }`).
 - Use multiple spinners for themed areas (e.g. `ambientLab`, `ambientAtrium`) and swap between them via `do spinner message …` actions.
 

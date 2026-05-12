@@ -964,7 +964,7 @@ fn gather_refs_from_action(stmt: &ActionStmt, out: &mut HashMap<&'static str, Ha
         ActionAst::SetContainerState { item, .. } => {
             out.get_mut("item").unwrap().insert(item.clone());
         },
-        ActionAst::SpinnerMessage { spinner } | ActionAst::AddSpinnerWedge { spinner, .. } => {
+        ActionAst::SpinnerMessage { spinner } | ActionAst::AddSpinnerEntry { spinner, .. } => {
             out.get_mut("spinner").unwrap().insert(spinner.clone());
         },
         ActionAst::SetBarredMessage { exit_from, exit_to, .. } | ActionAst::RevealExit { exit_from, exit_to, .. } => {

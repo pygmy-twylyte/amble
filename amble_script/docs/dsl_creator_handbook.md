@@ -154,7 +154,7 @@ Actions describe the outcomes once all conditions pass. Common categories includ
   - Exits/locks: `do reveal exit from lab to hallway direction east`, `do lock exit from lobby direction north`, `do unlock exit from lobby direction north`, `do lock item locker`, `do unlock item locker`, `do set barred message from lobby to vault "The door doesn’t budge."`
   - Items/NPCs: `do set item description statue "…"`, `do set item movability statue fixed "It is part of the plaza."`, `do set container state locker locked`, `do npc says receptionist "We’re closed."`, `do npc random dialogue receptionist`, `do npc refuse item receptionist "That’s not helpful."`, `do set npc state guard alert`, `do set npc active guard false`, `do give item badge to player from npc guard`
 - **Player movement & restrictions:** `do push player to infirmary`, `do deny read "It’s encrypted."`
-- **Spinners (ambient random lines):** `do spinner message ambientInterior`, `do add wedge "Clanging pipes" width 2 spinner ambientInterior`
+- **Spinners (ambient random lines):** `do spinner message ambientInterior`, `do add entry "Clanging pipes" spinner ambientInterior`
 - **Scheduling follow-up actions:**
   - Unconditional: `do schedule in 2 { … }`, `do schedule on 15 { … }`
   - Conditional: `do schedule in 1 if player in room lobby onFalse retryNextTurn note "ambient-chime" { … }`
@@ -312,18 +312,18 @@ For movement and dialogue patching examples, see the [NPCs DSL Guide](./npcs_dsl
 
 ## Spinners
 
-Spinners are random text selectors. They are used by the engine to vary common messages (like command not found) to keep things fresh. There are defaults for each of those spinners, but they can be overridden by content creators simply by including a spinner with one of the core spinner identifiers. They can also be used to create ambient effects, status effects, bits of randomized dialogue, etc. Each spinner contains one or more wedges, each with text and an optional width (weight). Widths default to 1, so all wedges are equally likely to be selected if they are omitted (which is usually the desired behavior.)
+Spinners are random text selectors. They are used by the engine to vary common messages (like command not found) to keep things fresh. There are defaults for each of those spinners, but they can be overridden by content creators simply by including a spinner with one of the core spinner identifiers. They can also be used to create ambient effects, status effects, bits of randomized dialogue, etc. Each spinner contains one or more text entries. Entries are unweighted; the engine draws from a refilling pool so every entry appears once before reshuffling.
 
 ```amble
 spinner ambientLobby {
-  wedge "The HVAC sighs." width 2
-  wedge "Footsteps echo from deeper inside."
+  "The HVAC sighs."
+  "Footsteps echo from deeper inside."
 }
 ```
 
-When referenced from triggers (`do spinner message ambientLobby`), the engine rolls a wedge according to its weight.
+When referenced from triggers (`do spinner message ambientLobby`), the engine draws the next refilling-pool entry.
 
-Check the [Spinners DSL Guide](./spinners_dsl_guide.md) for weighting tips and additional examples.
+Check the [Spinners DSL Guide](./spinners_dsl_guide.md) for entry tips and additional examples.
 
 ---
 

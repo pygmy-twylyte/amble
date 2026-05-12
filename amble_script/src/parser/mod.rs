@@ -923,6 +923,38 @@ npc bot {
     }
 
     #[test]
+    fn spinner_entries_and_runtime_additions_parse() {
+        let src = r##"
+spinner ambientLobby {
+  "The HVAC sighs."
+  r#"Footsteps echo from deeper inside."#
+}
+
+trigger "Add ambience" when always {
+  do add entry "A pipe knocks." spinner ambientLobby
+  do spinner message ambientLobby
+}
+"##;
+        let (_game, triggers, _rooms, _items, spinners, _npcs, _goals) =
+            parse_program_full(src).expect("spinner syntax parse succeeds");
+
+        assert_eq!(spinners.len(), 1);
+        assert_eq!(
+            spinners[0].entries,
+            vec!["The HVAC sighs.", "Footsteps echo from deeper inside."]
+        );
+        assert!(matches!(
+            &triggers[0].actions[0].action,
+            ActionAst::AddSpinnerEntry { spinner, text }
+                if spinner == "ambientLobby" && text == "A pipe knocks."
+        ));
+        assert!(matches!(
+            &triggers[0].actions[1].action,
+            ActionAst::SpinnerMessage { spinner } if spinner == "ambientLobby"
+        ));
+    }
+
+    #[test]
     fn condition_aliases_expand_in_same_file_conditions() {
         let src = r#"
 let cond radio_ready = all(has item hint_radio, has flag hint-radio-on)

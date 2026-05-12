@@ -13,7 +13,6 @@ pub mod npc;
 pub mod system;
 
 pub use dev::*;
-use gametools::Spinner;
 pub use inventory::*;
 pub use item::*;
 use log::info;
@@ -607,7 +606,7 @@ fn fire_ambient_spinners(world: &mut AmbleWorld, view: &mut View, current_room_i
             if let TriggerCondition::Ambient { room_ids, spinner } = cond
                 && (room_ids.is_empty() || room_ids.contains(current_room_id))
             {
-                let message = world.spinners.get(spinner).and_then(Spinner::spin).unwrap_or_default();
+                let message = world.spinners.get(spinner).map(|pool| pool.draw()).unwrap_or_default();
                 if !message.is_empty() {
                     view.push(ViewItem::AmbientEvent(format!("{}", message.ambient_trig_style())));
                 }

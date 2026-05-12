@@ -8,7 +8,6 @@ use crate::{
     view::{View, ViewItem},
     world::{AmbleWorld, Location},
 };
-use gametools::{Spinner, Wedge};
 use std::collections::{HashMap, HashSet};
 
 fn build_test_world() -> (AmbleWorld, RoomId, RoomId) {
@@ -1072,7 +1071,7 @@ fn npc_says_random_uses_npc_dialogue() {
     let (mut world, room1, _) = build_test_world();
     world.spinners.insert(
         crate::spinners::SpinnerType::Core(crate::spinners::CoreSpinnerType::NpcIgnore),
-        Spinner::new(vec![Wedge::new("Ignores you.".into())]),
+        crate::spinners::TextPool::new(["Ignores you.".to_string()]).unwrap(),
     );
     let npc_id: NpcId = crate::idgen::new_id().into();
     let mut npc = make_npc(npc_id.clone(), Location::Room(room1.clone()), NpcState::Normal);

@@ -8,18 +8,18 @@
 # ========================================
 
 spinner nauseated {
-    wedge "You can't shake a background queasiness that has you constantly on the lookout for a trash bin."
-    wedge "You throw up a little in your mouth."
-    wedge "You regurgitate a bit of last night's dinner, but can't remember what it was."
-    wedge "Everything smells faintly of old tuna. Why?"
-    wedge "Your stomach roils, like that time you stayed up all night drinking mezcal with Ruben. Why did you eat that worm?"
-    wedge "You stop by the nearest wastebin for a few dry heaves."
-    wedge "You feel like you've just eaten a Klingon gagh sampler platter. Raw."
-    wedge "Your digestive system briefly considers filing a formal complaint with management."
-    wedge "You experience the gastric equivalent of a Windows blue screen of death."
-    wedge "A wave of nausea hits you like a brick made entirely of other, smaller bricks."
-    wedge "You feel queasy enough to consider switching to a liquid diet of nothing but antacids."
-    wedge "Throat burning with acid bile, you pray to all the gods for relief. They ignore you, just like last time."
+    "You can't shake a background queasiness that has you constantly on the lookout for a trash bin."
+    "You throw up a little in your mouth."
+    "You regurgitate a bit of last night's dinner, but can't remember what it was."
+    "Everything smells faintly of old tuna. Why?"
+    "Your stomach roils, like that time you stayed up all night drinking mezcal with Ruben. Why did you eat that worm?"
+    "You stop by the nearest wastebin for a few dry heaves."
+    "You feel like you've just eaten a Klingon gagh sampler platter. Raw."
+    "Your digestive system briefly considers filing a formal complaint with management."
+    "You experience the gastric equivalent of a Windows blue screen of death."
+    "A wave of nausea hits you like a brick made entirely of other, smaller bricks."
+    "You feel queasy enough to consider switching to a liquid diet of nothing but antacids."
+    "Throat burning with acid bile, you pray to all the gods for relief. They ignore you, just like last time."
 }
 
 trigger "[Status] Nauseated"
@@ -52,18 +52,18 @@ goal survive-vogon-poetry {
 # ========================================
 
 spinner bad-breath {
-    wedge "You exhale, and immediately regret it."
-    wedge "A faint haze of despair and lunch surrounds you."
-    wedge "Your tongue feels like it’s wearing a sweater made of meat."
-    wedge "Something in your mouth has turned. Possibly democracy itself."
-    wedge "Your breath could startle livestock."
-    wedge "You swear the air just took a cautious step back."
-    wedge "There’s a faint metallic taste of shame."
-    wedge "You try to swallow the smell, but it fights back."
-    wedge "Your reflection looks concerned."
-    wedge "A thin film of moral decay coats your teeth."
-    wedge "You’re pretty sure your last exhale qualified as a gas attack under the Geneva Convention."
-    wedge "Somewhere deep within, your soul quietly mints itself in self-defense."
+    "You exhale, and immediately regret it."
+    "A faint haze of despair and lunch surrounds you."
+    "Your tongue feels like it’s wearing a sweater made of meat."
+    "Something in your mouth has turned. Possibly democracy itself."
+    "Your breath could startle livestock."
+    "You swear the air just took a cautious step back."
+    "There’s a faint metallic taste of shame."
+    "You try to swallow the smell, but it fights back."
+    "Your reflection looks concerned."
+    "A thin film of moral decay coats your teeth."
+    "You’re pretty sure your last exhale qualified as a gas attack under the Geneva Convention."
+    "Somewhere deep within, your soul quietly mints itself in self-defense."
 }
 
 trigger "[Status] Bad Breath"

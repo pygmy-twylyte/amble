@@ -1,30 +1,27 @@
 use anyhow::{Context, Result, bail};
-use gametools::{Spinner, Wedge};
 use log::info;
 use std::collections::HashMap;
 use std::hash::BuildHasher;
 
-use crate::spinners::SpinnerType;
+use crate::spinners::{SpinnerType, TextPool};
 use crate::style::GameStyle;
 use crate::view::{View, ViewItem};
 use crate::world::AmbleWorld;
 
-/// Adds a weighted text option ("wedge") to a random text spinner.
+/// Adds a text entry to a random text spinner.
 ///
 /// # Errors
 /// Returns an error if the specified spinner type doesn't exist.
-pub fn add_spinner_wedge<S: BuildHasher>(
-    spinners: &mut HashMap<SpinnerType, Spinner<String>, S>,
+pub fn add_spinner_entry<S: BuildHasher>(
+    spinners: &mut HashMap<SpinnerType, TextPool, S>,
     spin_type: &SpinnerType,
     text: &str,
-    width: usize,
 ) -> Result<()> {
-    let wedge = Wedge::new_weighted(text.to_string(), width);
-    let spinref = spinners
+    let pool = spinners
         .get_mut(spin_type)
-        .with_context(|| format!("add_spinner_wedge(_, {spin_type:?}, _, _): spinner not found"))?;
-    *spinref = spinref.add_wedge(wedge);
-    info!("└─ action: AddSpinnerWedge({spin_type:?}, \"{text}\"");
+        .with_context(|| format!("add_spinner_entry(_, {spin_type:?}, _): spinner not found"))?;
+    pool.add(text.to_string());
+    info!("└─ action: AddSpinnerEntry({spin_type:?}, \"{text}\"");
     Ok(())
 }
 
@@ -39,7 +36,7 @@ pub fn spinner_message(
     priority: Option<isize>,
 ) -> Result<()> {
     if let Some(spinner) = world.spinners.get(spinner_type) {
-        let msg = spinner.spin().unwrap_or_default();
+        let msg = spinner.draw();
         if !msg.is_empty() {
             view.push_with_custom_priority(
                 ViewItem::AmbientEvent(format!("{}", msg.ambient_trig_style())),

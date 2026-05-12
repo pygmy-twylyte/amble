@@ -6,9 +6,6 @@ use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
 
-use anyhow::{Context, Result};
-use gametools::{Spinner, Wedge};
-
 use amble_data::{
     ActionDef, ActionKind, ConditionDef, ConditionExpr, ConsumableDef, ConsumeTypeDef,
     ContainerState as DefContainerState, EventDef, ExitDef, FlagDef, GoalCondition as DefGoalCondition, GoalDef,
@@ -18,6 +15,7 @@ use amble_data::{
     NpcMovementType, NpcPatchDef, NpcState as DefNpcState, OnFalsePolicy as DefOnFalsePolicy, OverlayCondDef,
     OverlayDef, RoomDef, RoomExitPatchDef, RoomPatchDef, SpinnerDef, TriggerDef, WorldDef,
 };
+use anyhow::{Context, Result};
 
 use crate::goal::{Goal, GoalCondition, GoalGroup};
 use crate::health::HealthState;
@@ -31,8 +29,8 @@ use crate::npc::{MovementTiming, MovementType, Npc, NpcMovement, NpcState};
 use crate::player::Flag;
 use crate::room::{Exit, OverlayCondition, Room, RoomOverlay, RoomScenery};
 use crate::scheduler::{EventCondition, OnFalsePolicy};
-use crate::spinners::SpinnerType;
 use crate::spinners::create_default_spinners;
+use crate::spinners::{SpinnerType, TextPool};
 use crate::trigger::{ScriptedAction, Trigger, TriggerAction, TriggerCondition};
 use crate::world::{AmbleWorld, Location};
 use crate::{ItemId, NpcId, RoomId};
@@ -62,7 +60,7 @@ pub fn build_world_from_def(def: &WorldDef) -> Result<AmbleWorld> {
     world.scoring = ScoringConfig::from_def(&def.game.scoring);
     world.player = build_player(&def.game.player);
 
-    world.spinners = build_spinners(&def.spinners);
+    world.spinners = build_spinners(&def.spinners)?;
 
     for room_def in &def.rooms {
         let room = room_from_def(room_def);
@@ -87,18 +85,15 @@ pub fn build_world_from_def(def: &WorldDef) -> Result<AmbleWorld> {
     Ok(world)
 }
 
-fn build_spinners(defs: &[SpinnerDef]) -> HashMap<SpinnerType, Spinner<String>> {
+fn build_spinners(defs: &[SpinnerDef]) -> Result<HashMap<SpinnerType, TextPool>> {
     let mut spinners = create_default_spinners();
     for def in defs {
         let spinner_type = SpinnerType::from_toml_key(&def.id);
-        let wedges: Vec<Wedge<String>> = def
-            .wedges
-            .iter()
-            .map(|w| Wedge::new_weighted(w.text.clone(), w.width))
-            .collect();
-        spinners.insert(spinner_type, Spinner::new(wedges));
+        let pool = TextPool::new(def.entries.clone())
+            .with_context(|| format!("spinner '{}' must define at least one entry", def.id))?;
+        spinners.insert(spinner_type, pool);
     }
-    spinners
+    Ok(spinners)
 }
 
 fn room_from_def(def: &RoomDef) -> Room {
@@ -413,10 +408,9 @@ fn action_from_def(def: &ActionKind) -> Result<TriggerAction> {
             item_id: item.clone().into(),
         },
         ActionKind::PushPlayerTo { room } => TriggerAction::PushPlayerTo(RoomId(room.clone())),
-        ActionKind::AddSpinnerWedge { spinner, text, width } => TriggerAction::AddSpinnerWedge {
+        ActionKind::AddSpinnerEntry { spinner, text } => TriggerAction::AddSpinnerEntry {
             spinner: SpinnerType::from_toml_key(spinner),
             text: text.clone(),
-            width: *width,
         },
         ActionKind::SpinnerMessage { spinner } => TriggerAction::SpinnerMessage {
             spinner: SpinnerType::from_toml_key(spinner),
