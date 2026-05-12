@@ -484,7 +484,7 @@ fn validate_action(action: &ActionDef, ids: &IdSets<'_>, errors: &mut Vec<Valida
         ActionKind::PushPlayerTo { room } => {
             check_ref("room", room, ids.rooms, context.to_string(), errors);
         },
-        ActionKind::AddSpinnerWedge { spinner, .. } | ActionKind::SpinnerMessage { spinner } => {
+        ActionKind::AddSpinnerEntry { spinner, .. } | ActionKind::SpinnerMessage { spinner } => {
             check_ref("spinner", spinner, ids.spinners, context.to_string(), errors);
         },
         ActionKind::SpawnItemCurrentRoom { item }

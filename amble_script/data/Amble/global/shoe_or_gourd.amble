@@ -72,7 +72,7 @@ when take messiah_shoe from item messiah_kit {
             do set item movability messiah_gourd fixed "You are already a follower of the Shoe. Your faith in the Sanctified Sandal shall not be shaken."
             do award points 5 reason "Became a Follower of the Shoe"
             do add flag sect-shoe
-            do add wedge "Far above, the trees seem to whisper: \"Yesss. Yes! The Shoe is the Way.\" " width 1 spinner ambientWoodland
+            do add entry "Far above, the trees seem to whisper: \"Yesss. Yes! The Shoe is the Way.\" " spinner ambientWoodland
         }
     }
 }
@@ -90,7 +90,7 @@ when take messiah_gourd from item messiah_kit {
             do set item movability messiah_shoe fixed "You are already a follower of the Gourd. Your faith in the Vaunted Vegetable shall not be shaken."
             do award points 5 reason "Became a Follower of the Gourd"
             do add flag sect-gourd
-            do add wedge "Far above, the trees seem to whisper: \"Yesss. Yes! The Gourd is the Way.\" " width 1 spinner ambientWoodland
+            do add entry "Far above, the trees seem to whisper: \"Yesss. Yes! The Gourd is the Way.\" " spinner ambientWoodland
         }
     }
 }

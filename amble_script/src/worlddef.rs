@@ -6,7 +6,7 @@ use amble_data::{
     ItemInteractionType, ItemPatchDef, ItemVisibility, LocationRef, Movability, NpcDef, NpcDialoguePatchDef,
     NpcMovementDef, NpcMovementPatchDef, NpcMovementTiming, NpcMovementType, NpcPatchDef, NpcState, NpcTimingPatchDef,
     OnFalsePolicy, OverlayCondDef, OverlayDef, PlayerDef, RoomDef, RoomExitPatchDef, RoomPatchDef, RoomSceneryDef,
-    ScoringDef, ScoringRankDef, SpinnerDef, SpinnerWedgeDef, TriggerDef, WorldDef,
+    ScoringDef, ScoringRankDef, SpinnerDef, TriggerDef, WorldDef,
 };
 use thiserror::Error;
 
@@ -15,7 +15,7 @@ use crate::{
     GoalCondAst, GoalGroupAst, IngestModeAst, ItemAbilityAst, ItemAst, ItemLocationAst, ItemVisibilityAst,
     MovabilityAst, NpcAst, NpcLocationAst, NpcMovementAst, NpcMovementTypeAst, NpcPatchAst, NpcStateValue,
     NpcTimingPatchAst, OnFalseAst, OverlayAst, OverlayCondAst, PlayerAst, RoomAst, RoomExitPatchAst, ScoringAst,
-    ScoringRankAst, SpinnerAst, SpinnerWedgeAst, TriggerAst,
+    ScoringRankAst, SpinnerAst, TriggerAst,
 };
 
 /// Errors emitted while lowering AST data into the WorldDef model.
@@ -254,21 +254,9 @@ fn consumable_to_def(consumable: &ConsumableAst) -> Result<ConsumableDef, WorldD
 }
 
 fn spinner_to_def(spinner: &SpinnerAst) -> Result<SpinnerDef, WorldDefError> {
-    let wedges = spinner
-        .wedges
-        .iter()
-        .map(spinner_wedge_to_def)
-        .collect::<Result<Vec<_>, _>>()?;
     Ok(SpinnerDef {
         id: spinner.id.clone(),
-        wedges,
-    })
-}
-
-fn spinner_wedge_to_def(wedge: &SpinnerWedgeAst) -> Result<SpinnerWedgeDef, WorldDefError> {
-    Ok(SpinnerWedgeDef {
-        text: wedge.text.clone(),
-        width: wedge.width,
+        entries: spinner.entries.clone(),
     })
 }
 
@@ -335,10 +323,9 @@ fn action_stmt_to_def(stmt: &ActionStmt) -> Result<ActionDef, WorldDefError> {
 fn action_to_kind(action: &ActionAst) -> Result<ActionKind, WorldDefError> {
     Ok(match action {
         ActionAst::Show(text) => ActionKind::ShowMessage { text: text.clone() },
-        ActionAst::AddSpinnerWedge { spinner, width, text } => ActionKind::AddSpinnerWedge {
+        ActionAst::AddSpinnerEntry { spinner, text } => ActionKind::AddSpinnerEntry {
             spinner: spinner.clone(),
             text: text.clone(),
-            width: *width,
         },
         ActionAst::AddFlag(name) => ActionKind::AddFlag {
             flag: FlagDef::Simple { name: name.clone() },

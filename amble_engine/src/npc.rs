@@ -13,7 +13,6 @@ use std::{
 };
 
 use colored::Colorize;
-use gametools::Spinner;
 use rand::{prelude::IndexedRandom, seq::IteratorRandom};
 
 use crate::{Id, ItemId, NpcId, RoomId};
@@ -22,7 +21,7 @@ use crate::{
     ItemHolder, Location, View, ViewItem, WorldObject,
     health::{HealthEffect, HealthState, LivingEntity},
     item::Movability,
-    spinners::CoreSpinnerType,
+    spinners::{CoreSpinnerType, TextPool},
     view::ContentLine,
     world::AmbleWorld,
 };
@@ -50,7 +49,7 @@ impl Npc {
     }
 
     /// Pick a random line of dialogue respecting the NPC's current state / mood.
-    pub fn random_dialogue(&self, ignore_spinner: &Spinner<String>) -> String {
+    pub fn random_dialogue(&self, ignore_spinner: &TextPool) -> String {
         if let Some(lines) = self.dialogue.get(&self.state) {
             let mut rng = rand::rng();
             lines
@@ -64,7 +63,7 @@ impl Npc {
                 self.id(),
                 self.state
             );
-            ignore_spinner.spin().unwrap_or("Ignores you.".to_string())
+            ignore_spinner.draw()
         }
     }
     /// Display the NPC description and visible inventory.
@@ -680,10 +679,8 @@ mod tests {
 
     #[test]
     fn npc_random_dialogue_returns_appropriate_line() {
-        use gametools::{Spinner, Wedge};
-
         let npc = create_test_npc();
-        let ignore_spinner = Spinner::new(vec![Wedge::new("Ignores you.".into())]);
+        let ignore_spinner = TextPool::new(["Ignores you.".to_string()]).unwrap();
 
         // Test normal state dialogue
         let dialogue = npc.random_dialogue(&ignore_spinner);
@@ -693,11 +690,9 @@ mod tests {
 
     #[test]
     fn npc_random_dialogue_returns_fallback_for_missing_state() {
-        use gametools::{Spinner, Wedge};
-
         let mut npc = create_test_npc();
         npc.state = NpcState::Tired; // State not in dialogue map
-        let ignore_spinner = Spinner::new(vec![Wedge::new("Ignores you.".into())]);
+        let ignore_spinner = TextPool::new(["Ignores you.".to_string()]).unwrap();
 
         let dialogue = npc.random_dialogue(&ignore_spinner);
         assert_eq!(dialogue, "Ignores you.");

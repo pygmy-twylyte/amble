@@ -157,19 +157,7 @@ pub enum OverlayCondDef {
 pub struct SpinnerDef {
     pub id: Id,
     #[serde(default)]
-    pub wedges: Vec<SpinnerWedgeDef>,
-}
-
-/// Weighted spinner entry text.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SpinnerWedgeDef {
-    pub text: String,
-    #[serde(default = "default_wedge_width")]
-    pub width: usize,
-}
-
-fn default_wedge_width() -> usize {
-    1
+    pub entries: Vec<String>,
 }
 
 fn default_report_title() -> String {
@@ -548,10 +536,9 @@ pub enum ActionKind {
     PushPlayerTo {
         room: Id,
     },
-    AddSpinnerWedge {
+    AddSpinnerEntry {
         spinner: Id,
         text: String,
-        width: usize,
     },
     SpinnerMessage {
         spinner: Id,

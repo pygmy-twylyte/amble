@@ -75,7 +75,7 @@ when <event> {
 - Item tweaks: `do set item description`, `do set item movability <item> <free|fixed "..."|restricted "...">`, `do set container state <item> <state|none>`
 - Player/world: `do push player to`, `do deny read`
 - Bulk updates: `do modify item|room|npc <id> { … }`
-- Spinners: `do spinner message <spinner>`, `do add wedge "…" width <n> spinner <spinner>`
+- Spinners: `do spinner message <spinner>`, `do add entry "…" spinner <spinner>`
 - Scheduling: `do schedule in/on <n> { … }`, `do schedule in/on … if <cond> onFalse <policy> [note "…"] { … }`
 
 **OnFalse policies:** `cancel`, `retryAfter <turns>`, `retryNextTurn`
@@ -146,7 +146,7 @@ npc <id> {
 
 ```amble
 spinner <id> {
-  wedge "Text" [width <n>]
+  "Text"
   …
 }
 ```

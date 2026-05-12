@@ -6,13 +6,12 @@
 use crate::item::{ContainerState, ItemVisibility};
 use crate::loader::scoring::ScoringConfig;
 use crate::npc::Npc;
-use crate::spinners::{CoreSpinnerType, SpinnerType};
+use crate::spinners::{CoreSpinnerType, SpinnerType, TextPool};
 use crate::trigger::Trigger;
 use crate::{AMBLE_VERSION, ItemId, NpcId, RoomId};
 use crate::{Goal, Item, Player, Room, Scheduler};
 
 use anyhow::{Context, Result, anyhow};
-use gametools::Spinner;
 use log::info;
 use serde::{Deserialize, Serialize};
 
@@ -82,8 +81,8 @@ pub struct AmbleWorld {
     /// History of the player's path since the beginning of the game (Room IDs)
     #[serde(default)]
     pub player_path: Vec<RoomId>,
-    /// Text / phrase randomizers for ambient events, status effects, and to keep engine messages from being repetitive
-    pub spinners: HashMap<SpinnerType, Spinner<String>>,
+    /// Text / phrase randomizers for ambient events, status effects, and non-repetitive engine messages.
+    pub spinners: HashMap<SpinnerType, TextPool>,
     /// Non-playable characters
     pub npcs: HashMap<NpcId, Npc>,
     /// The maximum achieveable score in the game
@@ -147,7 +146,7 @@ impl AmbleWorld {
     pub fn spin_spinner(&self, spin_type: &SpinnerType, default: &'static str) -> String {
         self.spinners
             .get(spin_type)
-            .and_then(gametools::Spinner::spin)
+            .map(TextPool::draw)
             .unwrap_or_else(|| default.to_string())
     }
 
@@ -328,9 +327,8 @@ mod tests {
         npc::{Npc, NpcState},
         player::Player,
         room::Room,
-        spinners::SpinnerType,
+        spinners::{SpinnerType, TextPool},
     };
-    use gametools::{Spinner, Wedge};
     use std::collections::{HashMap, HashSet};
 
     fn create_test_item(id: &ItemId, location: Location) -> Item {
@@ -467,7 +465,7 @@ mod tests {
         assert_eq!(result, "default");
 
         // Test with spinner
-        let spinner = Spinner::new(vec![Wedge::new("custom result".into())]);
+        let spinner = TextPool::new(["custom result".to_string()]).unwrap();
         world
             .spinners
             .insert(SpinnerType::Core(CoreSpinnerType::Movement), spinner);
@@ -494,7 +492,7 @@ mod tests {
         assert_eq!(result, "default");
 
         // Add a custom spinner and test
-        let spinner = Spinner::new(vec![Wedge::new("custom result".into())]);
+        let spinner = TextPool::new(["custom result".to_string()]).unwrap();
         world
             .spinners
             .insert(SpinnerType::Custom("testSpinner".to_string()), spinner);

@@ -263,10 +263,9 @@ pub enum IngestModeAst {
 pub enum ActionAst {
     /// Show a message to the player.
     Show(String),
-    /// Add a weighted wedge to a spinner
-    AddSpinnerWedge {
+    /// Add an entry to a spinner.
+    AddSpinnerEntry {
         spinner: String,
-        width: usize,
         text: String,
     },
     /// Add a simple flag by name.
@@ -729,19 +728,12 @@ pub enum ConsumableWhenAst {
 // Spinners
 // -----------------
 
-/// Spinner definition containing weighted text wedges.
+/// Spinner definition containing random text entries.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SpinnerAst {
     pub id: String,
-    pub wedges: Vec<SpinnerWedgeAst>,
+    pub entries: Vec<String>,
     pub src_line: usize,
-}
-
-/// Individual wedge (value + weight) inside a spinner.
-#[derive(Debug, Clone, PartialEq)]
-pub struct SpinnerWedgeAst {
-    pub text: String,
-    pub width: usize,
 }
 
 // -----------------

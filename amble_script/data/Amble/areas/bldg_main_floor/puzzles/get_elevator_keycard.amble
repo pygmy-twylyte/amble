@@ -61,7 +61,7 @@ trigger "[Office] Insert Poems to Open Panic Room" only once
 when insert item vogon_poetry_book into item poetry_performer {
     # Destroy the book and cause add a color announcement
     do despawn item vogon_poetry_book
-    do add wedge "PA announcement: Vogon poetry has been detected in the building. If you are experiencing nausea, go to med bay for assistance." width 1 spinner ambientInterior
+    do add entry "PA announcement: Vogon poetry has been detected in the building. If you are experiencing nausea, go to med bay for assistance." spinner ambientInterior
     # Reveal the poetry panic room
     do reveal exit from amble-office to poetry-panic direction "poetry panic room"
     do priority 50 show "The machine begins to whine at a high pitch and gives off a noxious odor like burning hair. A klaxon blares and the display warns:\n[[center]][[b]][[red]]⚠️ VOGON INPUT DETECTED - BUNKER UNLOCKED ⚠️[[/red]][[/b]][[/center]]\n\nThe whiteboard on the west wall slides to the side, revealing a small [[room]]panic room[[/room]]."

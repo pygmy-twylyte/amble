@@ -102,7 +102,7 @@ let actions PRINTER_USED_WITH_PAPER = {
         do replace item flaming_invitation with charred_invitation_bits
     }
 
-    do add wedge "An annoyed voice on the PA: ATTENTION Staff - do NOT use regular copy paper in the lab PlasmaJet printer, or we will be shut down again -- by order of FEMA, PETA, the ATF, FBI, and our HOA." width 1 spinner ambientInterior
+    do add entry "An annoyed voice on the PA: ATTENTION Staff - do NOT use regular copy paper in the lab PlasmaJet printer, or we will be shut down again -- by order of FEMA, PETA, the ATF, FBI, and our HOA." spinner ambientInterior
     do schedule in 2 note "desensitized smoke detector" {
         do show "A nearby smoke detector alarms briefly, the quits with an exasperated sigh when it sees you near the PlasmaJet printer, figuring you get what you deserve."
     }

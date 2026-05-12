@@ -79,8 +79,8 @@ pub enum TriggerAction {
     ReplaceDropItem { old_id: ItemId, new_id: ItemId },
     /// Adds a status flag to the player.
     AddFlag(Flag),
-    /// Adds a weighted text option to a random text spinner.
-    AddSpinnerWedge { spinner: SpinnerType, text: String, width: usize },
+    /// Adds a text entry to a random text spinner.
+    AddSpinnerEntry { spinner: SpinnerType, text: String },
     /// Advances a sequence flag to the next step.
     AdvanceFlag(String),
     /// Removes a flag from the player.
@@ -208,7 +208,7 @@ impl ScriptedAction {
 #[allow(clippy::too_many_lines)]
 pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, scripted: &ScriptedAction) -> Result<()> {
     use TriggerAction::{
-        AddFlag, AddSpinnerWedge, AdvanceFlag, AwardPoints, Conditional, DamageNpc, DamageNpcOT, DamagePlayer,
+        AddFlag, AddSpinnerEntry, AdvanceFlag, AwardPoints, Conditional, DamageNpc, DamageNpcOT, DamagePlayer,
         DamagePlayerOT, DenyRead, DespawnItem, DespawnNpc, GiveItemToPlayer, HealNpc, HealNpcOT, HealPlayer,
         HealPlayerOT, LockExit, LockItem, ModifyItem, ModifyNpc, ModifyRoom, NpcRefuseItem, NpcSays, NpcSaysRandom,
         PushPlayerTo, RemoveFlag, RemoveNpcEffect, RemovePlayerEffect, ReplaceDropItem, ReplaceItem, ResetFlag,
@@ -279,7 +279,7 @@ pub fn dispatch_action(world: &mut AmbleWorld, view: &mut View, scripted: &Scrip
             exit_to,
             msg,
         } => set_barred_message(world, exit_from, exit_to, msg)?,
-        AddSpinnerWedge { spinner, text, width } => add_spinner_wedge(&mut world.spinners, spinner, text, *width)?,
+        AddSpinnerEntry { spinner, text } => add_spinner_entry(&mut world.spinners, spinner, text)?,
         ResetFlag(flag_name) => reset_flag(&mut world.player, flag_name),
         AdvanceFlag(flag_name) => advance_flag(&mut world.player, flag_name),
         SpinnerMessage { spinner } => spinner_message(world, view, spinner, *priority)?,

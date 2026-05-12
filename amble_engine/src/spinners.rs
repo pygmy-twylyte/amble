@@ -2,9 +2,9 @@
 //!
 //! Random text generation system for varied game responses.
 //!
-//! Amble uses the `gametools` crate's `Spinner` module to provide variety
-//! in user feedback and intermittent ambient events. Spinners are weighted
-//! random text generators that help avoid repetitive messages.
+//! Amble uses `gametools::RefillingPool` to provide variety in user feedback
+//! and intermittent ambient events. Pools draw every entry once before
+//! reshuffling, which avoids repetitive back-to-back messages.
 //!
 //! The engine now supports two types of spinners:
 //! - **Core spinners** (`CoreSpinnerType`) are essential for engine operation
@@ -16,9 +16,59 @@
 
 use serde::de::{self, Deserializer};
 use serde::{Deserialize, Serialize, Serializer};
+use std::cell::RefCell;
 use std::collections::HashMap;
 
-use gametools::{Spinner, Wedge};
+use gametools::RefillingPool;
+
+/// Runtime pool for random text entries.
+#[derive(Debug, Clone)]
+pub struct TextPool {
+    entries: Vec<String>,
+    pool: RefCell<RefillingPool<String>>,
+}
+
+impl TextPool {
+    /// Build a runtime text pool from one or more entries.
+    ///
+    /// # Errors
+    /// Returns `gametools::GameError::PoolCannotBeEmpty` if no entries are supplied.
+    pub fn new(entries: impl IntoIterator<Item = String>) -> gametools::GameResult<Self> {
+        let entries = entries.into_iter().collect::<Vec<_>>();
+        let pool = RefCell::new(RefillingPool::new(entries.clone())?);
+        Ok(Self { entries, pool })
+    }
+
+    /// Draw the next text entry.
+    pub fn draw(&self) -> String {
+        self.pool.borrow_mut().draw()
+    }
+
+    /// Add an entry to the current pool and all future refills.
+    pub fn add(&mut self, entry: String) {
+        self.entries.push(entry.clone());
+        self.pool.borrow_mut().add(entry);
+    }
+}
+
+impl Serialize for TextPool {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.entries.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for TextPool {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let entries = Vec::<String>::deserialize(deserializer)?;
+        TextPool::new(entries).map_err(de::Error::custom)
+    }
+}
 
 /// Core spinner types that are essential for the engine to function.
 /// These have built-in defaults but can be overridden in world data.
@@ -202,16 +252,10 @@ impl CoreSpinnerType {
             ],
         }
     }
-
-    /// Get the default widths for this core spinner type
-    pub fn default_widths(&self) -> Vec<usize> {
-        let count = self.default_values().len();
-        vec![1; count] // Equal weight for all default values
-    }
 }
 
 /// Create a spinner map with only the core defaults.
-pub fn create_default_spinners() -> HashMap<SpinnerType, Spinner<String>> {
+pub fn create_default_spinners() -> HashMap<SpinnerType, TextPool> {
     let core_types = [
         CoreSpinnerType::EntityNotFound,
         CoreSpinnerType::DestinationUnknown,
@@ -228,16 +272,13 @@ pub fn create_default_spinners() -> HashMap<SpinnerType, Spinner<String>> {
 
     let mut spinners = HashMap::new();
     for core_type in core_types {
-        let values = core_type.default_values();
-        let widths = core_type.default_widths();
-
-        let wedges: Vec<Wedge<String>> = values
-            .iter()
-            .zip(widths.iter())
-            .map(|(val, &width)| Wedge::new_weighted((*val).to_string(), width))
-            .collect();
-
-        spinners.insert(SpinnerType::Core(core_type), Spinner::new(wedges));
+        let entries = core_type
+            .default_values()
+            .into_iter()
+            .map(str::to_string)
+            .collect::<Vec<_>>();
+        let pool = TextPool::new(entries).expect("core spinner defaults must not be empty");
+        spinners.insert(SpinnerType::Core(core_type), pool);
     }
 
     spinners
@@ -337,6 +378,21 @@ mod tests {
     }
 
     #[test]
+    fn text_pool_serializes_as_entries_and_draws_without_repeats_until_refill() {
+        let pool = TextPool::new(["one".to_string(), "two".to_string()]).unwrap();
+        let ron = ron::ser::to_string(&pool).expect("serialize text pool");
+        assert!(ron.contains("\"one\""));
+        assert!(ron.contains("\"two\""));
+
+        let first = pool.draw();
+        let second = pool.draw();
+        assert_ne!(first, second);
+
+        let restored: TextPool = ron::from_str(&ron).expect("deserialize text pool");
+        assert!(["one", "two"].contains(&restored.draw().as_str()));
+    }
+
+    #[test]
     fn core_spinner_defaults() {
         for core_type in [
             CoreSpinnerType::EntityNotFound,
@@ -351,14 +407,9 @@ mod tests {
             CoreSpinnerType::NpcLeft,
             CoreSpinnerType::NothingSpecial,
         ] {
-            let values = core_type.default_values();
-            let widths = core_type.default_widths();
-
-            assert!(!values.is_empty(), "{core_type:?} should have default values");
-            assert_eq!(
-                values.len(),
-                widths.len(),
-                "{core_type:?} values and widths should match"
+            assert!(
+                !core_type.default_values().is_empty(),
+                "{core_type:?} should have default values"
             );
         }
     }
