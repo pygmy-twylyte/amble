@@ -194,7 +194,7 @@ fn run_compile_dir(args: &[String]) {
     let mut files = Vec::new();
     collect_dsl_files_recursive(&src_dir, &mut files);
     if files.is_empty() {
-        eprintln!("compile-dir: no .amble/.able files in '{}'", &src_dir);
+        eprintln!("compile-dir: no .amble/.able files in '{}'", src_dir);
         process::exit(1);
     }
     files.sort();

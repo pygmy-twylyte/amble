@@ -120,11 +120,10 @@ pub fn go_back_handler(world: &mut AmbleWorld, view: &mut View) -> Result<bool> 
             ],
         )?;
         return Ok(true);
-    } else {
-        view.push(ViewItem::ActionFailure(
-            "You haven't been anywhere else yet.".to_string(),
-        ));
     }
+    view.push(ViewItem::ActionFailure(
+        "You haven't been anywhere else yet.".to_string(),
+    ));
 
     Ok(false)
 }

@@ -755,6 +755,7 @@ fn skip_ws_and_comments(body: &str, mut i: usize) -> usize {
     i
 }
 
+type ActionStatements = Option<Vec<ActionStmt>>;
 pub(super) fn parse_if_action(
     body: &str,
     start: usize,
@@ -762,7 +763,7 @@ pub(super) fn parse_if_action(
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
     aliases: &HashMap<String, ConditionAst>,
-    resolve_action_set: &mut dyn FnMut(&str) -> Result<Option<Vec<ActionStmt>>, AstError>,
+    resolve_action_set: &mut dyn FnMut(&str) -> Result<ActionStatements, AstError>,
 ) -> Result<Option<(ActionStmt, usize)>, AstError> {
     if !body[start..].starts_with("if ") {
         return Ok(None);
@@ -850,7 +851,7 @@ fn parse_schedule_action_line(
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
     aliases: &HashMap<String, ConditionAst>,
-    resolve_action_set: &mut dyn FnMut(&str) -> Result<Option<Vec<ActionStmt>>, AstError>,
+    resolve_action_set: &mut dyn FnMut(&str) -> Result<ActionStatements, AstError>,
     offset: usize,
 ) -> Result<Option<(ActionStmt, usize)>, AstError> {
     match parse_schedule_action(remainder, source, smap, sets, aliases, resolve_action_set) {
@@ -865,7 +866,7 @@ fn parse_run_line(
     start: usize,
     source: &str,
     smap: &SourceMap,
-    resolve_action_set: &mut dyn FnMut(&str) -> Result<Option<Vec<ActionStmt>>, AstError>,
+    resolve_action_set: &mut dyn FnMut(&str) -> Result<ActionStatements, AstError>,
 ) -> Result<Option<(Vec<ActionStmt>, usize)>, AstError> {
     let remainder = &body[start..];
     let trimmed = remainder.trim_start();
@@ -931,7 +932,7 @@ pub(super) fn parse_actions_from_body(
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
     aliases: &HashMap<String, ConditionAst>,
-    resolve_action_set: &mut dyn FnMut(&str) -> Result<Option<Vec<ActionStmt>>, AstError>,
+    resolve_action_set: &mut dyn FnMut(&str) -> Result<ActionStatements, AstError>,
 ) -> Result<Vec<ActionStmt>, AstError> {
     let mut out = Vec::new();
     let mut i = 0usize;
@@ -1596,7 +1597,7 @@ pub(super) fn parse_schedule_action(
     smap: &SourceMap,
     sets: &HashMap<String, Vec<String>>,
     aliases: &HashMap<String, ConditionAst>,
-    resolve_action_set: &mut dyn FnMut(&str) -> Result<Option<Vec<ActionStmt>>, AstError>,
+    resolve_action_set: &mut dyn FnMut(&str) -> Result<ActionStatements, AstError>,
 ) -> Result<(ActionStmt, usize), AstError> {
     let header = parse_schedule_header(text)?;
     let (cond, on_false, note) = parse_scheduled_action_opts(header.header, sets, aliases)?;
