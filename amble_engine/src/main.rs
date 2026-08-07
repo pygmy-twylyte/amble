@@ -323,7 +323,9 @@ fn main() -> Result<()> {
         )
     );
 
-    if !world.intro_text.trim().is_empty() {
+    // the match below prevents the game from displaying the introductory paragraphs every time
+    // a saved game is loaded
+    if !world.intro_text.trim().is_empty() && matches!(selection, StartupSelection::World(_)) {
         println!(
             "{}",
             render_wrapped(
@@ -334,7 +336,6 @@ fn main() -> Result<()> {
                 StyleMods::default()
             )
         );
-        //println!("{}", fill(&world.intro_text, termwidth()).description_style());
     }
 
     run_repl(&mut world)
