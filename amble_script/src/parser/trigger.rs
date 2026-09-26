@@ -1,7 +1,7 @@
 use pest::Parser;
 use std::collections::HashMap;
 
-use crate::{ActionStmt, ConditionAst, IngestModeAst, TriggerAst};
+use crate::{ActionAst, ActionStmt, ConditionAst, IngestModeAst, TriggerAst};
 
 use super::actions::{
     parse_action_from_str, parse_if_action, parse_modify_item_action, parse_modify_npc_action,
@@ -9,6 +9,36 @@ use super::actions::{
 };
 use super::helpers::{SourceMap, extract_body, is_ident_char, str_offset, unquote};
 use super::{AstError, DslParser, Rule};
+
+fn lower_trigger_scope_action(
+    action: ActionStmt,
+    lowered: &mut Vec<TriggerAst>,
+    unconditional_actions: &mut Vec<ActionStmt>,
+    name: &str,
+    src_line: usize,
+    event: &ConditionAst,
+    only_once: bool,
+) {
+    match action.action {
+        ActionAst::Conditional {
+            condition,
+            actions,
+            false_actions: None,
+        } => lowered.push(TriggerAst {
+            name: name.to_string(),
+            note: None,
+            src_line,
+            event: event.clone(),
+            conditions: vec![*condition],
+            actions,
+            only_once,
+        }),
+        other => unconditional_actions.push(ActionStmt {
+            priority: action.priority,
+            action: other,
+        }),
+    }
+}
 
 pub(super) fn parse_trigger_pair(
     trig: pest::iterators::Pair<Rule>,
@@ -273,25 +303,15 @@ pub(super) fn parse_trigger_pair(
         }
         if let Some((action, new_i)) = parse_if_action(inner, i, source, smap, sets, aliases, &mut resolve_action_set)?
         {
-            match action.action {
-                crate::ActionAst::Conditional {
-                    condition,
-                    actions,
-                    false_actions: None,
-                } => lowered.push(TriggerAst {
-                    name: name.clone(),
-                    note: None,
-                    src_line,
-                    event: event.clone(),
-                    conditions: vec![*condition],
-                    actions,
-                    only_once,
-                }),
-                other => unconditional_actions.push(ActionStmt {
-                    priority: action.priority,
-                    action: other,
-                }),
-            }
+            lower_trigger_scope_action(
+                action,
+                &mut lowered,
+                &mut unconditional_actions,
+                &name,
+                src_line,
+                &event,
+                only_once,
+            );
             i = new_i;
             continue;
         }
@@ -402,7 +422,17 @@ pub(super) fn parse_trigger_pair(
                 msg: "unknown action set",
                 context: action_set.to_string(),
             })?;
-            unconditional_actions.extend(actions);
+            for action in actions {
+                lower_trigger_scope_action(
+                    action,
+                    &mut lowered,
+                    &mut unconditional_actions,
+                    &name,
+                    src_line,
+                    &event,
+                    only_once,
+                );
+            }
             i = j;
             continue;
         }

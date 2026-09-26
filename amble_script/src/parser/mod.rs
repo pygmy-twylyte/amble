@@ -1153,6 +1153,78 @@ trigger "Radio Hint" when always {
         let (_game, triggers, ..) = parse_program_full(src).expect("nested action sets parse succeeds");
 
         assert_eq!(triggers.len(), 1);
+        assert_eq!(triggers[0].conditions, vec![ConditionAst::HasFlag("radio-on".into())]);
+        assert_eq!(
+            triggers[0].actions,
+            vec![ActionStmt::new(ActionAst::AddFlag("nested-ready".into()))]
+        );
+    }
+
+    #[test]
+    fn trigger_scope_run_lowers_top_level_if_and_preserves_unconditional_order() {
+        let src = r#"
+let actions set_with_if = {
+  do show "Set before."
+  if has flag radio-on {
+    do show "Conditional."
+  }
+  do show "Set after."
+}
+
+trigger "Radio Hint" only once note "Run regression" when always {
+  do show "Outer before."
+  run set_with_if
+  do show "Outer after."
+}
+"#;
+        let (_game, triggers, ..) = parse_program_full(src).expect("trigger-scope run should parse");
+
+        assert_eq!(triggers.len(), 2);
+        assert_eq!(triggers[0].name, "Radio Hint");
+        assert_eq!(triggers[0].note.as_deref(), Some("Run regression"));
+        assert_eq!(triggers[0].event, ConditionAst::Always);
+        assert_eq!(triggers[0].conditions, vec![ConditionAst::HasFlag("radio-on".into())]);
+        assert_eq!(
+            triggers[0].actions,
+            vec![ActionStmt::new(ActionAst::Show("Conditional.".into()))]
+        );
+        assert!(triggers[0].only_once);
+
+        assert_eq!(triggers[1].name, "Radio Hint");
+        assert_eq!(triggers[1].note.as_deref(), Some("Run regression"));
+        assert_eq!(triggers[1].event, ConditionAst::Always);
+        assert!(triggers[1].conditions.is_empty());
+        assert_eq!(
+            triggers[1].actions,
+            vec![
+                ActionStmt::new(ActionAst::Show("Outer before.".into())),
+                ActionStmt::new(ActionAst::Show("Set before.".into())),
+                ActionStmt::new(ActionAst::Show("Set after.".into())),
+                ActionStmt::new(ActionAst::Show("Outer after.".into())),
+            ]
+        );
+        assert!(triggers[1].only_once);
+    }
+
+    #[test]
+    fn action_set_conditionals_remain_nested_below_trigger_scope() {
+        let src = r#"
+let actions conditional_steps = {
+  if has flag radio-on {
+    do add flag nested-ready
+  }
+}
+
+trigger "Radio Hint" when always {
+  if has item hint_radio {
+    run conditional_steps
+  }
+}
+"#;
+        let (_game, triggers, ..) = parse_program_full(src).expect("nested action set conditional should parse");
+
+        assert_eq!(triggers.len(), 1);
+        assert_eq!(triggers[0].conditions, vec![ConditionAst::HasItem("hint_radio".into())]);
         assert_eq!(triggers[0].actions.len(), 1);
         match &triggers[0].actions[0].action {
             ActionAst::Conditional {
@@ -1167,7 +1239,7 @@ trigger "Radio Hint" when always {
                 );
                 assert_eq!(false_actions, &None);
             },
-            other => panic!("expected conditional action, got {other:?}"),
+            other => panic!("expected nested conditional action, got {other:?}"),
         }
     }
 
